@@ -1,0 +1,8 @@
+# System files
+.DS_Store
+
+# R
+.Rhistory
+.Rapp.history
+.Rproj.user
+.RData

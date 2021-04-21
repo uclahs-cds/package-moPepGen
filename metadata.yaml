@@ -1,0 +1,8 @@
+---
+Category: '' # shoule be one of docker/pipeline/project/template/tool/training/users
+Description: '' # Description of why the repository exists
+Maintainers: ['someone@mednet.ucla.edu', 'someoneelse@mednet.ucla.edu'] # email address of maintainers
+Contributors: 'Xavier Hernandez' # Full names of contributors
+Languages: ['R', 'perl', 'nextflow'] # programming languages used
+Dependencies: 'BPG' # packages, tools that repo needs to run
+References: '' # is the tool/dependencies published, is there a confluence page
