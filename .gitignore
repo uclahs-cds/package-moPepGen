@@ -6,3 +6,7 @@
 .Rapp.history
 .Rproj.user
 .RData
+
+.vscode
+
+__pycache__
