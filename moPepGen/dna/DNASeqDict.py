@@ -1,14 +1,8 @@
 """ Model for DNA sequence data
 """
-from typing import Union, Dict
 from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
-
-
-class DNASeqRecord(SeqRecord):
-    """ A DNASeqRecord object holds a single DNA sequence and information about
-    it. Derived from the Bio.SeqRecord.SeqRecord class.
-    """
+from moPepGen.dna.DNASeqRecord import DNASeqRecord
+        
 
 class DNASeqDict(dict):
     """ A DNASeqDict object is a dict-like object that the values are
@@ -21,6 +15,7 @@ class DNASeqDict(dict):
     
     @staticmethod
     def _validate(val):
+        """ validate values """
         if not isinstance(val, DNASeqRecord):
             raise TypeError(
                 "'DNASeqDict' only accepts 'DNASeqRecord' objects."
@@ -31,7 +26,7 @@ class DNASeqDict(dict):
         self._validate(v)
         super().__setitem__(k, v)
     
-    def dump_genome(self, path:str)->None:
+    def dump_fasta(self, path:str)->None:
         """ Dump a FASTA file to a DNASeqDict
         
         Args:
@@ -39,6 +34,8 @@ class DNASeqDict(dict):
         """
         for record in SeqIO.parse(path, 'fasta'):
             record.__class__ = DNASeqRecord
+            record.id = record.id.split(' ')[0]
+            record.id = record.id.split('|')[0]
             if record.id in self.keys():
                 raise ValueError(
                     'Duplicated seqnames found in FASTA file: ' + path

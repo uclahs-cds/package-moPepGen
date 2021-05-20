@@ -1,5 +1,6 @@
 """ This module defines the class for a single GTF record
 """
+from __future__ import annotations
 from typing import Dict
 
 
@@ -40,4 +41,42 @@ class GTFRecord():
         self.strand = strand
         self.frame = frame
         self.attributes = attributes
+    
+    @property
+    def biotype(self):
+        """ biotype """
+        return self.attributes['gene_type']
+    
+    def __eq__(self, other:GTFRecord)->bool:
+        """ equal to """
+        return self.start == other.start and self.stop == other.stop
+    
+    def __ne__(self, other:GTFRecord)->bool:
+        """ not equal """
+        return not (self == other)
+
+    def __gt__(self, other:GTFRecord)->bool:
+        """ greater than """
+        if self.start > other.start:
+            return True
+        elif self.start < other.start:
+            return False
+        elif self.end > other.end:
+            return True
+        elif self.end < other.end:
+            return False
+        else:
+            return False
+
+    def __ge__(self, other:GTFRecord)->bool:
+        """ greater or equal """
+        return self > other or self == other
+        
+    def __lt__(self, other:GTFRecord)->bool:
+        """ less than """
+        return not (self > other or self == other)
+    
+    def __le__(self, other:GTFRecord)->bool:
+        """" less or equal """
+        return self < other or self == other
     

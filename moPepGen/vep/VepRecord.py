@@ -56,4 +56,3 @@ class VEPRecord():
         """Return representation of the VEP record."""
         consequences = '|'.join(self.consequences)
         return f"< {self.feature}, {consequences}, {self.location} >"
-    

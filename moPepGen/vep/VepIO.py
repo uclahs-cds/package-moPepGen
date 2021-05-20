@@ -1,23 +1,24 @@
-"""
+""" The IO module for VEP output files
 """
 from typing import IO, Union
 from Bio.SeqIO.Interfaces import SequenceIterator
-from moPepGen.VEPRecord import VEPRecord
+from moPepGen.vep.VepRecord import VEPRecord
 
 
 class VepIterator(SequenceIterator):
-    """
+    """ Iterator for reading a VEP file.
     """
     def __init__(self, source:Union[IO, str], mode='t'):
+        """ Constructor """
         super().__init__(source=source, mode=mode, fmt='VEP')
 
     def parse(self, handle:IO[str]):
-        """
-        """
+        """ parse """
         records = self.iterate(handle)
         return records
 
     def iterate(self, handle:IO[str]):
+        """ Read the VEP output tsv file and returns a generator """
         for line in handle:
             if line.startswith('#'):
                 continue
@@ -25,7 +26,7 @@ class VepIterator(SequenceIterator):
             fields = line.split('\t')
             
             consequences = consequences=[consequence for consequence in \
-                    fields[6].split('_')]
+                fields[6].split(',')]
             
             amino_acids = tuple(aa for aa in fields[10].split('/'))
             if len(amino_acids) == 1:
@@ -55,14 +56,12 @@ class VepIterator(SequenceIterator):
             yield record
 
 
-def parse(handle:Union[IO[str], str]):
-    """
-    """
+def parse(handle:Union[IO[str], str]) -> VepIterator:
+    """ parse a VEP tsv file """
     return VepIterator(handle)
 
-def read(handle:Union[IO[str], str]):
-    """
-    """
+def read(handle:Union[IO[str], str]) -> VEPRecord:
+    """ read a vep tsv file """
     iterator = parse(handle)
     try:
         record = next(iterator)

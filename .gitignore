@@ -10,3 +10,5 @@
 .vscode
 
 __pycache__
+
+test/files

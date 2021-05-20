@@ -1,6 +1,6 @@
 from typing import IO, Union
 from Bio.SeqIO.Interfaces import SequenceIterator
-from moPepGen.GTFRecord import GTFRecord
+from moPepGen.SeqFeature import SeqFeature, FeatureLocation
 
 
 class GtfIterator(SequenceIterator):
@@ -20,20 +20,31 @@ class GtfIterator(SequenceIterator):
                 continue
             line = line.rstrip()
             fields = line.split('\t')
-            
-            record = GTFRecord(
+
+            try:
+                strand={'+':1, '-':-1, '?':0}[fields[6]]
+            except KeyError:
+                strand=None
+
+            attributes = {key:val.strip('"') for key,val in \
+                [field.strip().split(' ') for field in \
+                fields[8].rstrip(';').split(';')]}
+
+            location=FeatureLocation(
                 seqname=fields[0],
-                source=fields[1],
-                feature=fields[2],
-                start=int(fields[3]),
+                start=int(fields[3])-1,
                 end=int(fields[4]),
-                score=None if fields[5] == '.' else float(fields[5]),
-                strand=fields[6],
-                frame=None if fields[7] == '.' else float(fields[7]),
-                attributes={key:val.strip('"') for key,val in \
-                    [field.strip().split(' ') for field in \
-                        fields[8].rstrip(';').split(';')]}
+                strand=strand
             )
+
+            record = SeqFeature(
+                chrom=fields[0],
+                attributes=attributes,
+                location=location,
+                type=fields[2],
+                strand=strand
+            )
+            # record.id = record.attributes['transcript_id'] 
             yield record
 
 def parse(handle:Union[IO[str], str]):
