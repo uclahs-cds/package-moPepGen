@@ -66,6 +66,20 @@ class Node():
         locations = [(it.ref.start, it.ref.end) for it in self.seq.locations]
         return hash((str(self.seq.seq), *locations))
     
+    def get_edge_to(self, other:Node) -> Edge:
+        """ Find the edge from this to the other node """
+        for edge in self.out_edges:
+            if edge.out_node is other:
+                return edge
+        raise ValueError('Edge not found')
+    
+    def get_edge_from(self, other:Node) -> Edge:
+        """ Find the edge from the other to this node. """
+        for edge in self.in_edges:
+            if edge.in_node is other:
+                return edge
+        raise ValueError('Edge not found')
+    
     def is_orphan(self) -> bool:
         """ Checks if the node is an orphan, that doesn't have any inbonding
         or outbonding edge. """
@@ -87,6 +101,12 @@ class Node():
                 return edge.out_node
         return None
 
+class NodeLocation():
+    """ NodeLocation  """
+    def __init__(self, node:Node, location:FeatureLocation):
+        self.node = node
+        self.location = location
+
 class Cursor():
     """ Defines the cursor when walking through a TranscriptVariantGraph
     object.
@@ -107,95 +127,148 @@ class Cursor():
         frameshifting (List[VEPVariantRecord]): The frameshifting mutations
             to the upstream.
     """
-    def __init__(self, node:Node, seq:DNASeqRecordWithCoordinates,
-            in_edge:Edge=None, position_to_orf:str='up', search_orf:bool=False,
-            cleave_sites:List[int]=None, variants:list[VEPVariantRecord]=None,
-            frameshifting:list[VEPVariantRecord]=None):
+    def __init__(self, nodes:List[NodeLocation], in_edge:Edge=None,
+            position_to_orf:str='up', search_orf:bool=False,
+            cleave_sites:List[int]=None, frameshifted:bool=False):
         """ Constructor for Cursor. """
         if cleave_sites is None:
             cleave_sites = []
-        if variants is None:
-            variants = []
-        if frameshifting is None:
-            frameshifting = []
-        self.node = node
+        self.nodes = nodes
         self.in_edge = in_edge
-        self.seq = seq
         self.position_to_orf = position_to_orf
         self.search_orf = search_orf
         self.cleave_sites = cleave_sites
-        self.variants = variants
-        self.frameshifting = frameshifting
+        self.frameshifted = frameshifted
+        self.get_seq_from_nodes()
+        self.get_variants_from_nodes()
+
+    def get_seq_from_nodes(self):
+        """"""
+        self.seq = None
+        for node in self.nodes:
+            new_seq = node.node.seq[node.location.start:node.location.end]
+            if not self.seq:
+                self.seq = new_seq
+            else:
+                self.seq = self.seq + new_seq
+            
+    def get_variants_from_nodes(self):
+        """"""
+        self.variants = [node.node.variant for node in self.nodes if \
+            node.node.variant]
 
     def __getitem__(self, index) -> Cursor:
         """ Get item. Only the sequence is subsetted. The variants and cleave
         sites are also removed if they are not in the range any more. """
-        start,stop,step = index.indices(len(self.seq))
-        seq = self.seq[start:stop]
+        start,stop,step = index.indices(len(self))
+
+        nodes = []
+        left = 0
+        in_edge = self.in_edge
+        for i in range(len(self.nodes)):
+            node:Node = self.nodes[i]
+            node_length = node.location.end - node.location.start
+            right = left + node_length
+            if right <= start:
+                left = right
+                if i < len(self.nodes) - 1:
+                    in_edge = node.node.get_edge_to(self.nodes[i+1].node)
+                continue
+            node_start = node.location.start
+            node_end = node.location.end
+            if right > start and left <= start:
+                new_start = start - left + node_start
+                if right < stop:
+                    new_location = FeatureLocation(start=new_start,
+                        end=node_end)
+                else:
+                    new_end = stop - left + node_start
+                    new_location = FeatureLocation(start=new_start,
+                        end=new_end)
+                new_node = NodeLocation(node.node, new_location)
+                nodes.append(new_node)
+                left = right
+                continue
+            if left >= start and right <= stop:
+                nodes.append(node)
+                left = right
+                continue
+            if left >= start and left < stop and right > stop:
+                new_end = stop - left
+                new_location = FeatureLocation(start=node_start, end=new_end)
+                new_node = NodeLocation(node.node, new_location)
+                nodes.append(new_node)
+                left = right
+                continue
+            break
 
         cleave_sites = []
         for cleave_site in self.cleave_sites:
+            if cleave_site <= start or cleave_site >= stop:
+                continue
             site = cleave_site - start
-            if site > 0:
-                cleave_sites.append(site)
-
-        # only keep  the variants that are still in the range.
-        # NOTE(CZ): Because neucleotides caused by mutations are not recorded
-        # in the MatchedLocation. And if the sequence starts with a SNP, then
-        # the variant location is actually before the first location of seq.
-        if len(seq.locations) == 0:
-            raise ValueError('sequence has no locations')
-        variants = []
-        for variant in self.variants:
-            if seq.contains_variant(variant):
-                variants.append(variant)
+            cleave_sites.append(site)
         
-        return self.__class__(
-            node=self.node,
-            seq=seq,
+        new = self.__class__(
+            nodes=nodes,
+            in_edge=in_edge,
             position_to_orf=self.position_to_orf,
             search_orf=self.search_orf,
             cleave_sites=cleave_sites,
-            variants=variants,
-            frameshifting=self.frameshifting
+            frameshifted=self.frameshifted
         )
+        new.get_seq_from_nodes()
+        new.get_variants_from_nodes()
+        return new
 
+    def get_variants_between(self, start:int, stop:int
+            ) -> List[VEPVariantRecord]:
+        """"""
+        return self[start:stop].variants
 
-    def join(self, node:Node, in_edge:Edge, start:int=0,
-            position_to_orf:str=None, search_orf:bool=None,
-            check_linked:bool=False) -> Cursor:
+    def __len__(self) -> int:
+        """"""
+        return len(self.seq)
+
+    def join(self, node:Node, start:int=0, position_to_orf:str=None,
+            search_orf:bool=None, check_linked:bool=False) -> Cursor:
         """ Join the current cursor with the next. The sequence is also
         combined, as well as variants and cleave sites. """
         if check_linked:
+            last_node = self.nodes[-1].node
             linked = False
-            for edge in self.node.out_edges:
+            for edge in last_node.out_edges:
                 if node is edge.out_node:
                     linked = True
             if not linked:
                 raise ValueError('node is not out bonded.')
         
         tail = self[start:]
+        nodes = tail.nodes
+        location = FeatureLocation(start=0, end=len(node.seq))
+        new_node = NodeLocation(node, location)
+        nodes.append(new_node)
+
         if position_to_orf is None:
-            position_to_orf = tail.position_to_orf
+            position_to_orf = self.position_to_orf
         if search_orf is None:
             search_orf = tail.search_orf
         
-        variants = tail.variants
-        frameshifting = tail.frameshifting
-        if node.variant:
-            variants.append(node.variant)
-            if node.variant.is_frameshifting():
-                frameshifting.append()
+        frameshifted = self.frameshifted
+        if not self.frameshifted:
+            if node.variant and node.variant.is_frameshifting():
+                frameshifted = True
 
-        return self.__class__(
-            node=node,
-            seq=tail.seq + node.seq,
+        new = self.__class__(
+            nodes=nodes,
             position_to_orf=position_to_orf,
             search_orf=search_orf,
             cleave_sites=tail.cleave_sites,
-            variants=variants,
-            frameshifting=frameshifting
+            frameshifted=frameshifted
         )
+        new.get_seq_from_nodes()
+        new.get_variants_from_nodes()
+        return new
     
     def search_more_cleave_sites(self, rule:str, exception:str=None):
         """ Search for cleave sites after the last site. """
@@ -213,7 +286,7 @@ class Cursor():
     
     def has_any_variants(self) -> bool:
         """ Returns if the current cursor node has any variants """
-        return len(self.variants) > 0 or len(self.frameshifting) > 0
+        return len(self.variants) > 0 or self.frameshifted
 
 class TranscriptVariantGraph():
     """
@@ -241,7 +314,8 @@ class TranscriptVariantGraph():
         transcript_id (str)
         variants List[VEPVariantRecord]: All variant records.
     """
-    def __init__(self, seq:DNASeqRecordWithCoordinates, transcript_id:str):
+    def __init__(self, seq:DNASeqRecordWithCoordinates, transcript_id:str,
+            protein:AminoAcidSeqRecord):
         """ Constructor to create a TranscriptVariantGraph object.
         
         Args:
@@ -262,6 +336,7 @@ class TranscriptVariantGraph():
         self.edges = set()
         self.transcript_id = transcript_id
         self.variants = []
+        self.protein = protein
     
     def variants_are_adjacent(self, edge1:Edge, edge2:Edge) -> bool:
         """ Deprecated If two edges are both variants. """
@@ -490,18 +565,18 @@ class TranscriptVariantGraph():
         Returns:
             A set of variant peptides.
         """
-        ref_orf = self.root.seq.orf[0]
-        protein = self.seq[ref_orf.start:ref_orf.end].translate()
+        ref_orf = self.root.seq.orf
 
-        try:
-            carnonical_peptides = protein.enzymatic_cleave(
-                rule=rule,
-                miscleavage=miscleavage,
-                exception=exception,
-                min_mw=min_mw
-            )
-        except ValueError:
-            raise
+        protein = self.protein
+        if protein.seq.startswith('X'):
+            protein.seq = protein.seq.lstrip('X')
+
+        carnonical_peptides = protein.enzymatic_cleave(
+            rule=rule,
+            miscleavage=miscleavage,
+            exception=exception,
+            min_mw=min_mw
+        )
         carnonical_peptides = set([peptide.seq for peptide in \
             carnonical_peptides])
         # DNASeqRecordWithCoordinates only hashes the sequence, so here we are
@@ -511,10 +586,17 @@ class TranscriptVariantGraph():
         incarnonical_peptides = set()
 
         queue = deque()
-        queue.appendleft(Cursor(self.root, self.root.seq))
+        location = FeatureLocation(start=0, end=len(self.root.seq))
+        node_with_location = NodeLocation(node=self.root, location=location)
+        queue.appendleft(Cursor([node_with_location]))
         visited = set()
 
+        counter_for_debuging = 0
         while queue:
+            counter_for_debuging += 1
+            if counter_for_debuging == 10:
+                counter_for_debuging
+                pass
             cursor:Cursor = queue.pop()
 
             if cursor.position_to_orf == 'up':
@@ -522,28 +604,30 @@ class TranscriptVariantGraph():
                 # is a start codon lost mutation.
                 if cursor.search_orf:
                     orf_start = cursor.seq.find_orf_first()
-                    for edge in cursor.node.out_edges:
+                    for edge in cursor.nodes[-1].node.out_edges:
                         node = edge.out_node
                         if orf_start == -1:
                             # It is truncated because the first part is already
                             # check that there isn't a start codon.
-                            new_cursor = cursor.join(node, edge, -2, 'up', True)
+                            new_cursor = cursor.join(node=node, start=-8,
+                                search_orf=True)
                         else:
-                            new_cursor = cursor.join(
-                                node, edge, orf_start, 'mid', True)
+                            new_cursor = cursor.join(node=node,
+                                start=orf_start, position_to_orf='mid',
+                                search_orf=True)
                         queue.appendleft(new_cursor)
                         continue
                 # when it is before the ref_orf start
                 if cursor.seq.locations[-1].ref.end - 3 < ref_orf.start:
-                    for edge in cursor.node.out_edges:
-                        new_cursor = cursor.join(edge.out_node, edge, -2)
+                    for edge in cursor.nodes[-1].node.out_edges:
+                        new_cursor = cursor.join(node=edge.out_node, start=-2)
                         queue.appendleft(new_cursor)
                     continue
                 # when it is after the ref_orf start, we then need to check if
                 # start codon is indeed there
-                for edge in cursor.node.out_edges:
+                for edge in cursor.nodes[-1].node.out_edges:
                     index = cursor.seq.get_query_index(ref_orf.start)
-                    new_cursor = cursor.join(edge.out_node, edge, index, 'mid')
+                    new_cursor = cursor.join(edge.out_node, index, 'mid')
                     if new_cursor.seq.seq[:3] != 'ATG':
                         new_cursor.search_orf = True
                         new_cursor.position_to_orf = 'up'
@@ -552,15 +636,14 @@ class TranscriptVariantGraph():
             
             # If a frameshifting mutation occured after start codon, the
             # stop codon needs to be searched.
-            if len(cursor.frameshifting) > 0 \
-                    and not cursor.search_orf \
+            if cursor.frameshifted and not cursor.search_orf \
                     and cursor.position_to_orf != 'down':
                 cursor.search_orf = True
             
             # In case of frameshifting mutation, that the ORF needs to be
             # searched
             if cursor.search_orf:
-                stop_codon = seq.find_stop_codon()
+                stop_codon = cursor.seq.find_stop_codon()
                 if stop_codon > -1 :
                     new_cursor = cursor[:stop_codon]
                     new_cursor.search_orf = False
@@ -569,8 +652,8 @@ class TranscriptVariantGraph():
                     continue
             
             if cursor.position_to_orf == 'mid' and \
-                    len(cursor.node.seq.locations) > 0 and \
-                    cursor.node.seq.locations[-1].ref.end > ref_orf.end:
+                    len(cursor.seq.locations) > 0 and \
+                    cursor.seq.locations[-1].ref.end > ref_orf.end:
                 # means the stop codon is in the current cursor
                 stop_codon_index = cursor.seq\
                     .get_query_index(ref_orf.end)
@@ -587,17 +670,18 @@ class TranscriptVariantGraph():
             # if the seq is too short
             if len(cursor.cleave_sites) < miscleavage + 1 and \
                     cursor.position_to_orf == 'mid':
-                for edge in cursor.node.out_edges:
-                    new_cursor = cursor.join(edge.out_node, edge)
+                for edge in cursor.nodes[-1].node.out_edges:
+                    new_cursor = cursor.join(edge.out_node)
                     new_cursor.search_more_cleave_sites(rule=rule,
                             exception=exception)
                     queue.appendleft(new_cursor)
                 continue
             
             if not cursor.has_any_variants():
-                for edge in cursor.node.out_edges:
-                    new_cursor = cursor.join(edge.out_node, edge,
-                        cursor.cleave_sites[0])
+                for edge in cursor.nodes[-1].node.out_edges:
+                    start = cursor.cleave_sites[0] if cursor.cleave_sites \
+                        else 0
+                    new_cursor = cursor.join(edge.out_node, start)
                     queue.appendleft(new_cursor)
                 continue
             # cleave_iter = cursor.seq.iter_enzymatic_cleave_sites(
@@ -615,6 +699,7 @@ class TranscriptVariantGraph():
             while i <= miscleavage:
                 i += 1
                 if cleave_site is None:
+                    hit_stop_codon = True
                     break
                 seq = cursor.seq[:cleave_site]
                 
@@ -627,21 +712,18 @@ class TranscriptVariantGraph():
                     cleave_site = next(cleave_iter, None)
                     continue
                 
+                # remove peptides without variants
+                variants = cursor.get_variants_between(0, cleave_site)
+                if len(variants) == 0:
+                    cleave_site = next(cleave_iter, None)
+                    continue
+                
                 peptide = seq.translate(to_stop=True)
                 # means there may be a stop codon gained mutation
                 # TODO(CZ): valiate the stop is caused by mutation
                 # remove peptides with small MW
                 mw = SeqUtils.molecular_weight(peptide.seq, 'protein')
                 if mw < min_mw:
-                    cleave_site = next(cleave_iter, None)
-                    continue
-                
-                # remove peptides without variants
-                variants = []
-                for variant in cursor.variants:
-                    if seq.contains_variant(variant):
-                        variants.append(variant)
-                if len(variants) == 0:
                     cleave_site = next(cleave_iter, None)
                     continue
 

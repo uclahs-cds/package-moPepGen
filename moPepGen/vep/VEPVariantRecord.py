@@ -71,7 +71,7 @@ class VariantRecord():
     def __repr__(self) -> str:
         """Return representation of the VEP record."""
         return f"{self.location.start}:{self.location.end} {self.ref} ->" +\
-            " {self.alt}"
+            f" {self.alt}"
 
 
 class VEPVariantRecord():

@@ -37,14 +37,12 @@ class AminoAcidSeqDict(dict):
             infered = set()
         for record in SeqIO.parse(path, 'fasta'):
             record.__class__ = AminoAcidSeqRecord
-            
             if count > 100 and not source:
                 source = infered.pop()
             
             if not source:
                 count += 1
                 infered.add(record.infer_ids(style=source))
-                continue
 
             record.infer_ids(source)
             if record.transcript_id in self.keys():
@@ -75,12 +73,7 @@ class AminoAcidSeqDict(dict):
         protein: AminoAcidSeqRecord
         for protein in self.values():
             if protein.seq.startswith('X'):
-                try:
-                    cleave_site = protein.find_first_enzymatic_cleave_sites(
-                        rule=rule, exception=exception)
-                except StopIteration:
-                    continue
-                protein = protein[cleave_site:]
+                protein.seq = protein.seq.lstrip('X')
             peptides = protein.enzymatic_cleave(rule=rule, exception=exception,
                 miscleavage=miscleavage, min_mw=min_mw)
             for peptide in peptides:

@@ -26,9 +26,17 @@ class GtfIterator(SequenceIterator):
             except KeyError:
                 strand=None
 
-            attributes = {key:val.strip('"') for key,val in \
-                [field.strip().split(' ') for field in \
-                fields[8].rstrip(';').split(';')]}
+            attributes = {}
+            attribute_list = [field.strip().split(' ') for field in \
+                fields[8].rstrip(';').split(';')]
+            for key,val in attribute_list:
+                val = val.strip('"')
+                if key == 'tag':
+                    if key not in attributes:
+                        attributes[key] = []
+                    attributes[key].append(val)
+                else:
+                    attributes[key] = val
 
             location=FeatureLocation(
                 seqname=fields[0],

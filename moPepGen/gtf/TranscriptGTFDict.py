@@ -137,7 +137,7 @@ class TranscriptAnnotationModel():
         orf = FeatureLocation(start=cds_start, end=cds_end)
         transcript = DNASeqRecordWithCoordinates(
             seq=seq,
-            orf=[orf],
+            orf=orf,
             locations=[location]
         )
         transcript.id = self.transcript.attributes['transcript_id']

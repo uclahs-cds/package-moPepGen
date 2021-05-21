@@ -1,7 +1,6 @@
 """ DNASeqRecord """
 from __future__ import annotations
-from moPepGen.vep.VEPVariantRecord import VEPVariantRecord
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 import re
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -10,6 +9,8 @@ from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen import aa
 from moPepGen import vep
 from moPepGen.dna.MatchedLocation import MatchedLocation
+from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
+from moPepGen import vep
 
 
 
@@ -99,8 +100,10 @@ class DNASeqRecord(SeqRecord):
         Returns:
             A generator of cleave sites.
         """
-        start = 0 if start is None else start
-        end = len(self) if end is None else end
+        if start is None:
+            start = 0
+        if end is None:
+            end = len(self)
         peptides = str(self.seq[start:end].translate())
         rule = EXPASY_RULES[rule]
         exception = EXPASY_RULES.get(exception, exception)
@@ -115,6 +118,11 @@ class DNASeqRecord(SeqRecord):
     def find_all_enzymatic_cleave_sites(self, rule:str, exception:str=None,
             start:int=None, end:int=None) -> List[int]:
         """ Find all enzymatic cleave sites. """
+        if start is None:
+            start = 0
+        if end is None:
+            end = len(self)
+        end = end - (end - start) % 3
         return [i for i in self.iter_enzymatic_cleave_sites(rule=rule,
             exception=exception, start=start, end=end)]
     
@@ -213,7 +221,11 @@ class DNASeqRecord(SeqRecord):
             name:str=None, description:str=None, protein_id:str=None,
             transcript_id:str=None, gene_id:str=None) -> aa.AminoAcidSeqRecord:
         """"""
-        peptides = self.seq.translate(table=table, to_stop=to_stop)
+        if len(self.seq) % 3 > 0:
+            end = len(self.seq) - len(self.seq) % 3
+            peptides = self.seq[:end].translate(table=table, to_stop=to_stop)
+        else:
+            peptides = self.seq.translate(table=table, to_stop=to_stop)
         return aa.AminoAcidSeqRecord(
             seq=peptides,
             id=id if id else self.id,
@@ -411,10 +423,30 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
         new.orf = orf
         return new
     
-    def contains_variant(self, variant:VEPVariantRecord) -> bool:
+    def contains_variant(self, variant:vep.VEPVariantRecord) -> bool:
         """ returns if the sequence contains a given variant """
         start=self.locations[0].ref.start - self.locations[0].query.start
         end=self.locations[-1].ref.end + len(self) - \
             self.locations[-1].query.end
         location_extended = FeatureLocation(start=start, end=end)
         return location_extended.overlaps(variant.variant.location)
+    
+    def validate_orf(self, protein:AminoAcidSeqRecord
+            ) -> Tuple[DNASeqRecordWithCoordinates, AminoAcidSeqRecord]:
+        """  """
+        protein.seq = protein.seq.lstrip('X')
+        for i in [1,2]:
+            orf:FeatureLocation = self.orf
+            head = self.seq[orf.start+i:orf.start+i+24].translate()
+            if head == protein.seq[:8]:
+                orf = FeatureLocation(start=orf.start + 1, end=orf.end)
+                transcript = self.__class__(
+                    seq=self.seq,
+                    locations=self.locations,
+                    orf=orf,
+                    id=self.id,
+                    name=self.name,
+                    description=self.description
+                )
+                return transcript, protein
+        raise ValueError('orf validation failed')
