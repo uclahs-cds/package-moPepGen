@@ -3,8 +3,7 @@
 from typing import List
 from moPepGen.gtf import GtfIO
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
-from moPepGen.dna import DNASeqRecord, DNASeqRecordWithCoordinates, \
-    DNASeqRecordWithCoordinates, MatchedLocation
+from moPepGen import dna
 
 
 _GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon']
@@ -91,20 +90,20 @@ class TranscriptAnnotationModel():
                 if self.cds[-1].location.end not in exon:
                     cds_end += len(exon)
                     continue
-                cds_end += len(self.cds[-1])
+                cds_end += self.cds[-1].location.end - exon.location.start
                 break
         elif self.transcript.strand == -1:
             for exon in reversed(self.exon):
                 if self.cds[0].location.start not in exon:
                     cds_end += len(exon)
                     continue
-                cds_end += len(self.cds[0])
+                cds_end += exon.location.end - self.cds[0].location.start
         else:
             raise ValueError('Strand must not be unknown.')
         return cds_end
         
-    def get_transcript_sequence(self, chrom:DNASeqRecord
-            )->DNASeqRecordWithCoordinates:
+    def get_transcript_sequence(self, chrom:dna.DNASeqRecord
+            ) -> dna.DNASeqRecordWithCoordinates:
         """ Returns the transcript sequence. The is done by concating all the
         exon sequences. If the gene is on the negatice strand, the reverse
         complement is returned.
@@ -126,7 +125,7 @@ class TranscriptAnnotationModel():
         cds_end = self.get_cds_end_index()
         if self.transcript.strand == -1:
             seq = seq.reverse_complement()
-        location = MatchedLocation(
+        location = dna.MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),
             ref=FeatureLocation(
                 seqname=self.transcript.attributes['transcript_id'],
@@ -135,7 +134,7 @@ class TranscriptAnnotationModel():
             )
         )
         orf = FeatureLocation(start=cds_start, end=cds_end)
-        transcript = DNASeqRecordWithCoordinates(
+        transcript = dna.DNASeqRecordWithCoordinates(
             seq=seq,
             orf=orf,
             locations=[location]
@@ -147,7 +146,8 @@ class TranscriptAnnotationModel():
             + self.transcript.attributes['protein_id']
         return transcript
 
-    def get_cdna_sequence(self, chrom:DNASeqRecord)->DNASeqRecordWithCoordinates:
+    def get_cdna_sequence(self, chrom:dna.DNASeqRecord
+            ) -> dna.DNASeqRecordWithCoordinates:
         """ Get the cDNA sequence.
         
         Args:
@@ -172,7 +172,7 @@ class TranscriptAnnotationModel():
         if self.transcript.strand == -1:
             seq = seq.reverse_complement()
 
-        location = MatchedLocation(
+        location = dna.MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),
             ref=FeatureLocation(
                 seqname=self.transcript.attributes['transcript_id'],
@@ -180,7 +180,7 @@ class TranscriptAnnotationModel():
                 end=cds_start + len(seq)
             )
         )
-        cdna = DNASeqRecordWithCoordinates(
+        cdna = dna.DNASeqRecordWithCoordinates(
             seq=seq,
             locations=[location]
         )

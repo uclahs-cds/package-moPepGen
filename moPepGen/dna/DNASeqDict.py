@@ -1,7 +1,7 @@
 """ Model for DNA sequence data
 """
 from Bio import SeqIO
-from moPepGen.dna.DNASeqRecord import DNASeqRecord
+from moPepGen.dna import DNASeqRecord
         
 
 class DNASeqDict(dict):

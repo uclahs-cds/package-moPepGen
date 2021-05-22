@@ -16,6 +16,7 @@ def main(args:argparse.Namespace) -> None:
         rule=args.cleavage_rule,
         exception=args.cleavage_exception,
         miscleavage=args.miscleavage,
-        min_mw=args.min_molecular_weight
+        min_mw=args.min_molecular_weight,
+        ncpus=args.num_cpus
     )
     adapter.write_peptides(args.output_fasta)

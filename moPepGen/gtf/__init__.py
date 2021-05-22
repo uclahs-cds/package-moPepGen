@@ -1,2 +1,2 @@
-from .GTFRecord import GTFRecord
-from .TranscriptGTFDict import TranscriptAnnotationModel, TranscriptGTFDict
+from moPepGen.gtf.GTFRecord import GTFRecord
+from moPepGen.gtf.TranscriptGTFDict import TranscriptAnnotationModel, TranscriptGTFDict

@@ -85,6 +85,12 @@ def main():
         '500.',
         metavar=''
     )
+    parser_vep.add_argument(
+        '-t', '--num-cpus',
+        type=int,
+        default=1,
+        help='Number of cpus to use for parallel processing. Default to 1'
+    )
     parser_vep.set_defaults(func=vep.main)
 
     args = parser.parse_args()

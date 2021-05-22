@@ -185,7 +185,7 @@ class VEPVariantRecord():
                     alt = seq.seq[alt_start:alt_end]
             elif match_alt is not None:
                 alt = match_alt.group()
-                alt_start -= 1
+                # alt_start -= 1
                 alt_end = alt_start + 1
                 ref = seq.seq[alt_start:alt_end]
                 alt = ref + alt
