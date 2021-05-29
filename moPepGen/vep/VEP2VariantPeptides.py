@@ -2,18 +2,17 @@
 output.
 """
 from __future__ import annotations
-from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from typing import List, Set
 from pathos.pools import ProcessPool
 from Bio import SeqIO
-from moPepGen import get_equivalent
+from moPepGen import get_equivalent, logger
 from moPepGen import dna
 from moPepGen import aa
 from moPepGen import gtf
+from moPepGen import svgraph
 from moPepGen.vep.TranscriptVariantDict import TranscriptVariantDict, \
     VEPVariantRecords
 from moPepGen.vep.VEPVariantRecord import VEPVariantRecord
-from moPepGen.vep.TranscriptVariantGraph import TranscriptVariantGraph
 from moPepGen.vep import VepIO
 
 
@@ -61,18 +60,20 @@ class VEP2VariantPeptides():
         self.canonical_peptides = canonical_peptides
     
     def dump_data_files(self, vep_path:List[str], gtf_path:str,
-            genome_path:str, proteome_path:str)->None:
+            genome_path:str, proteome_path:str, verbose:bool=True) -> None:
         """ Load VEP, GTF, and FASTA files from disk.
         """
         self.annotation.dump_gtf(gtf_path)
         self.genome.dump_fasta(genome_path)
         self.proteome.dump_fasta(proteome_path)
+        if verbose:
+            logger('Reference files loaded.')
         for path in vep_path:
             self.dump_vep(path)
         for transcript in self.vep.values():
             transcript.sort()
 
-    def dump_vep(self, path:str)->None:
+    def dump_vep(self, path:str, verbose:bool=True)->None:
         """ Load a VEP file and only keep the variant information, including
         location, ref and alt of the transcript sequence.
         
@@ -91,12 +92,8 @@ class VEP2VariantPeptides():
                 self.vep[transcript_id] = VEPVariantRecords()
 
             chrom_seqname = record.location.split(':')[0]
-            try:
-                transcript_seq = self.annotation[transcript_id]\
-                    .get_transcript_sequence(self.genome[chrom_seqname])
-            except ValueError:
-                print(transcript_id)
-                raise
+            transcript_seq = self.annotation[transcript_id]\
+                .get_transcript_sequence(self.genome[chrom_seqname])
             
             variant_record = VEPVariantRecord.from_vep_record(
                 vep=record,
@@ -106,9 +103,12 @@ class VEP2VariantPeptides():
 
             self.vep[transcript_id].append(variant_record)
 
+        if verbose:
+            logger('VEP files loaded.')
+
     @staticmethod
     def set_up(vep_path:List[str], gtf_path:str, genome_path:str,
-            proteome_path:str)->VEP2VariantPeptides:
+            proteome_path:str, verbose:bool=True)->VEP2VariantPeptides:
         """ This should be the main starting point of running the
         VEP2VariantPeptides module.
 
@@ -137,12 +137,13 @@ class VEP2VariantPeptides():
             vep_path=vep_path,
             gtf_path=gtf_path,
             genome_path=genome_path,
-            proteome_path=proteome_path
+            proteome_path=proteome_path,
+            verbose=verbose
         )
         return adapter
 
     def create_carnonical_peptide_pool(self, rule:str, exception:str=None,
-            miscleavage:int=2, min_mw:float=500.):
+            miscleavage:int=2, min_mw:float=500., verbose:bool=True):
         """ Creates the carnonical peptide pool with the protein sequences.
         
         Args:
@@ -156,9 +157,13 @@ class VEP2VariantPeptides():
             rule=rule, exception=exception,
             miscleavage=miscleavage, min_mw=min_mw
         )
+        if verbose:
+            logger('Carnonical peptide pool created.')
+        
 
     def call_variant_peptides(self, rule:str, exception:str=None,
-            miscleavage:int=2, min_mw:float=500., ncpus:int=1):
+            miscleavage:int=2, min_mw:float=500., ncpus:int=1,
+            verbose:int=True):
         """
         Args:
             rule (str): The rule for enzymatic cleavage, e.g., trypsin.
@@ -167,80 +172,30 @@ class VEP2VariantPeptides():
             min_mw (float): Minimal molecular weight of the peptides to report.
                 Defaults to 500.
         """
-        pool = ProcessPool(nodes=ncpus)
-
-        if self.canonical_peptides is None:
-            self.create_carnonical_peptide_pool(
-                rule=rule,
-                exception=exception,
-                miscleavage=miscleavage,
-                min_mw=min_mw
-            )
         self.variant_peptides = set()
         variants: List[VEPVariantRecord]
 
-        def wrapper(transcript_seq, transcript_id, protein_seq, variants):
-            
-            if protein_seq.seq.startswith('N'):
-                transcript_seq, protein_seq = transcript_seq\
-                    .validate_orf(protein_seq)
-
-            graph = TranscriptVariantGraph(
-                seq=transcript_seq,
-                transcript_id=transcript_id,
-                protein=protein_seq
-            )
-            graph.create_variant_graph(variants=variants)
-            
-            return graph.walk_and_splice(
-                rule=rule,
-                exception=exception,
-                miscleavage=miscleavage,
-                min_mw=min_mw
-            )
-
-        transcript_seqs = []
-        transcript_ids = []
-        protein_seqs = []
-        variants_list = []
-
+        i = 0    # for logging only
         for transcript_id, variants in self.vep.items():
             anno:gtf.TranscriptAnnotationModel = self.annotation[transcript_id]
             chrom = anno.transcript.location.seqname
             
             transcript_seq = anno.get_transcript_sequence(self.genome[chrom])
-            protein_seq:AminoAcidSeqRecord = self.proteome[transcript_id]
+            protein_seq:aa.AminoAcidSeqRecord = self.proteome[transcript_id]
 
-            transcript_seqs.append(transcript_seq)
-            transcript_ids.append(transcript_id)
-            protein_seqs.append(protein_seq)
-            variants_list.append(variants)
 
-            if len(transcript_ids) == ncpus:
-                results = pool.map(wrapper, transcript_seqs, transcript_ids,
-                    protein_seqs, variants_list)
-                transcript_seqs = []
-                transcript_ids = []
-                protein_seqs = []
-                variants_list = []
-
-                for peptides in results:
-                    for peptide in peptides:
-                        if str(peptide.seq) in self.canonical_peptides:
-                            continue
-                        same_peptide = get_equivalent(
-                            self.variant_peptides, peptide)
-                        if same_peptide:
-                            same_peptide.id += '||' + peptide.id
-                            same_peptide.name = same_peptide.id
-                            same_peptide.description = same_peptide.id
-                            continue
-                        self.variant_peptides.add(peptide)
+            if verbose:    # for logging
+                i += 1
+                if i % 500 == 0:
+                    logger(f'{i} transcripts processed.')
         
-    def write_peptides(self, output_path:str):
+    def write_peptides(self, output_path:str, verbose:bool=True):
         """ Write the variant peptides to FASTA file. """
         with open(output_path, 'w') as handle:
             SeqIO.write(self.variant_peptides, handle, 'fasta')
+        
+        if verbose:
+            logger('FASTA file wrote to disk.')
 
 
 if __name__ == '__main__':
@@ -266,13 +221,25 @@ if __name__ == '__main__':
         genome_path=genome_path,
         proteome_path=proteome_path,
     )
+    
+    peptides = adapter.call_variant_peptides(rule='trypsin', ncpus=8)
+
     # vep = adapter.vep
     # gtf = adapter.annotation
     # genome = adapter.genome
+    # ENST00000642590.1 infinity loop
+    # ENST00000284548.16 a lot of loops
+    # ENST00000422127.5 # big gene, 30 variants
     # transcript_id = 'ENST00000519684.5'
     # transcript = gtf[transcript_id].get_transcript_sequence(genome['chr22'])
     # protein = adapter.proteome[transcript_id]
     # graph = TranscriptVariantGraph(transcript, transcript_id, protein)
     # graph.create_variant_graph(vep[transcript_id])
     # graph.walk_and_splice('trypsin')
-    peptides = adapter.call_variant_peptides(rule='trypsin', ncpus=8)
+
+    # graph = TranscriptVariantGraph(
+    #     seq=transcript_seq,
+    #     transcript_id=transcript_id,
+    #     protein=protein_seq
+    # )
+    # graph.create_variant_graph(variants=variants)

@@ -1,6 +1,6 @@
 """"""
 from __future__ import annotations
-from typing import Iterable
+from typing import Iterable, List
 import re
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqUtils
@@ -20,6 +20,24 @@ class AminoAcidSeqRecord(SeqRecord):
         self.transcript_id = transcript_id
         self.protein_id = protein_id
     
+    def __getitem__(self, index) -> AminoAcidSeqRecord:
+        """"""
+        new_one = super().__getitem__(index)
+        new_one.__class__ = self.__class__
+        new_one.gene_id = self.gene_id
+        new_one.transcript_id = self.transcript_id
+        new_one.protein_id = self.protein_id
+        return new_one
+    
+    def __add__(self, other:AminoAcidSeqRecord) -> AminoAcidSeqRecord:
+        """"""
+        new_one = super().__add__(other)
+        new_one.__class__ = self.__class__
+        new_one.gene_id = self.gene_id
+        new_one.transcript_id = self.transcript_id
+        new_one.protein_id = self.protein_id
+        return new_one
+
     def __hash__(self):
         """ hash """
         return hash(str(self.seq))
@@ -127,12 +145,15 @@ class AminoAcidSeqRecord(SeqRecord):
                 yield x.end()
         return
     
-    def find_first_enzymatic_cleave_sites(self, rule:str, exception:str=None,
+    def find_first_enzymatic_cleave_site(self, rule:str, exception:str=None,
             start:int=0) -> int:
         """ Find the first enzymatic cleave site """
         iter = self[start:]\
             .iter_enzymatic_cleave_sites(rule=rule, exception=exception)
-        return next(iter) + start
+        try:
+            return next(iter) + start
+        except StopIteration:
+            return -1
     
     def find_all_enzymatic_cleave_sites(self, rule:str, exception:str=None,
             ) -> List[int]:

@@ -94,6 +94,10 @@ class VEPVariantRecord():
         self.variant = variant
         self.consequences = consequences
     
+    def __hash__(self):
+        """"""
+        return hash((self.variant, *self.consequences))
+    
     @property
     def transcript_id(self):
         """ Returns the transcirpt_id """
@@ -224,6 +228,10 @@ class VEPVariantRecord():
     def is_insertion(self) -> bool:
         """ Checks if is a insertion """
         return len(self.variant.ref) == 1 and len(self.variant.alt) > 1
+    
+    def is_snv(self) -> bool:
+        """ Checks if is a SNV/SNP """
+        return len(self.variant.ref) == 1 and len(self.variant_alt) == 1
 
     def is_start_codon_retained(self,
             seq:dna.DNASeqRecordWithCoordinates) -> bool:

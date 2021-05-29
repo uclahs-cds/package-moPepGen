@@ -1,6 +1,6 @@
 """Main entry point"""
 import argparse
-from moPepGen import vep
+from moPepGen.vep.__main__ import main as vep_main
 
 
 def main():
@@ -91,7 +91,13 @@ def main():
         default=1,
         help='Number of cpus to use for parallel processing. Default to 1'
     )
-    parser_vep.set_defaults(func=vep.main)
+    parser_vep.add_argument(
+        '--verbose',
+        type=bool,
+        default=True,
+        help='Wheather to print out messages.'
+    )
+    parser_vep.set_defaults(func=vep_main)
 
     args = parser.parse_args()
 

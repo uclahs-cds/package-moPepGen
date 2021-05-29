@@ -1,3 +1,5 @@
+from datetime import datetime
+
 
 class _CaptureEq:
     """Object wrapper that remembers "other" for successful equality tests.
@@ -35,3 +37,10 @@ def get_equivalent(container, item, default=None):
     if t in container:
         return t.match
     return default
+
+
+def logger(message:str) -> None:
+    print(
+        f'[ {datetime.now().strftime(format="%Y-%m-%d %H:%M:%S")} ] {message}',
+        flush=True
+    )

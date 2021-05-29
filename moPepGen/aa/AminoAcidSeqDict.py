@@ -71,15 +71,30 @@ class AminoAcidSeqDict(dict):
         """
         pool = set()
         protein: AminoAcidSeqRecord
-        for protein in self.values():
+        it = iter(self.values())
+        protein = next(it, None)
+        while protein:
             if protein.seq.startswith('X'):
                 protein.seq = protein.seq.lstrip('X')
-            peptides = protein.enzymatic_cleave(rule=rule, exception=exception,
-                miscleavage=miscleavage, min_mw=min_mw)
+            try:
+                peptides = protein.enzymatic_cleave(
+                    rule=rule,
+                    exception=exception,
+                    miscleavage=miscleavage,
+                    min_mw=min_mw
+                )
+            except ValueError as e:
+                msg = "'X' is not a valid unambiguous letter for protein"
+                if e.args[0] == msg:
+                    protein.seq = protein.seq.split('X')[0]
+                    continue
             for peptide in peptides:
                 pool.add(str(peptide.seq))
                 # Convert all I with L and add to the carnonical peptide pool.
                 pool.add(str(peptide.seq).replace('I', 'L'))
+            
+            protein = next(it, None)
+
         return pool
 
 
