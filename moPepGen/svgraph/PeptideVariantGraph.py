@@ -65,6 +65,7 @@ class PeptideNode():
         """"""
         left_seq = self.seq[:index]
         right_seq = self.seq[index:]
+        
         left_variants = []
         right_variants = []
         for variant in self.variants:
@@ -80,6 +81,7 @@ class PeptideNode():
 
         while self.out_nodes:
             node = self.out_nodes.pop()
+            self.remove_out_edge(node)
             new_node.add_out_edge(node)
         self.add_out_edge(new_node)
         return new_node
@@ -148,7 +150,10 @@ class PeptideVariantGraph():
                     if frameshift not in node.frameshifts:
                         branches.add(cur)
             upstream.add_out_edge(cur)
-            self.cleave_if_posible(cur, rule=rule, exception=exception)
+            last = self.cleave_if_posible(cur, rule=rule, exception=exception)
+            if to_return is cur:
+                to_return = last
+            
         
         upstream.remove_out_edge(node)
         return to_return, branches
@@ -195,7 +200,7 @@ class PeptideVariantGraph():
 
             frameshifts = copy.copy(first.frameshifts)
             frameshifts_before = len(frameshifts)
-            frameshifts.update(second.framshifts)
+            frameshifts.update(second.frameshifts)
             frameshifts_after = len(frameshifts)
             
             new_node = PeptideNode(
@@ -246,7 +251,7 @@ class PeptideVariantGraph():
         primary_nodes2 = set()
         while primary_nodes:
             first = primary_nodes.pop()
-            first.seq = first.seq + left
+            first.seq = first.seq + left.seq
             while first.out_nodes:
                 out_node = first.out_nodes.pop()
                 first.remove_out_edge(out_node)
@@ -256,13 +261,13 @@ class PeptideVariantGraph():
         primary_nodes = primary_nodes2
         
         for second in secondary_nodes:
-            second.seq = right + second.seq
+            second.seq = right.seq + second.seq
             
             variants = []
             for variant in right.variants:
                 variants.append(variant)
             for variant in second.variants:
-                variants.append(variant.shift(len(right)))
+                variants.append(variant.shift(len(right.seq)))
             second.variants = variants
 
             while second.in_nodes:

@@ -44,8 +44,7 @@ class TranscriptVariantGraph():
         variants List[svgraph.VariantRecordWithCoordinate]: All variant
             records.
     """
-    def __init__(self, seq:DNASeqRecordWithCoordinates, transcript_id:str,
-            protein:AminoAcidSeqRecord):
+    def __init__(self, seq:DNASeqRecordWithCoordinates, transcript_id:str):
         """ Constructor to create a TranscriptVariantGraph object.
         
         Args:
@@ -63,7 +62,6 @@ class TranscriptVariantGraph():
         self.root = node
         self.transcript_id = transcript_id
         self.variants = []
-        self.protein = protein
     
     # def __repr__(self) -> str:
     #     """"""
@@ -602,8 +600,7 @@ class TranscriptVariantGraph():
                 continue
         return
     
-    def translate(self, transcript_id:str, protein_id:str, gene_id:str
-            ) -> svgraph.PeptideVariantGraph:
+    def translate(self) -> svgraph.PeptideVariantGraph:
         """ Converts a DNA transcript variant graph into a peptide variant
         graph. A stop * is added to the end of all branches.
         
@@ -637,9 +634,7 @@ class TranscriptVariantGraph():
                 if stop_index > -1:
                     seq = seq[:stop_index]
                 
-                seq.transcript_id = transcript_id
-                seq.protein_id = protein_id
-                seq.gene_id = gene_id
+                seq.transcript_id = self.transcript_id
 
                 # translate the dna variant location to peptide coordinates.
                 variants = []

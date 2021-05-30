@@ -183,6 +183,14 @@ class VEP2VariantPeptides():
             transcript_seq = anno.get_transcript_sequence(self.genome[chrom])
             protein_seq:aa.AminoAcidSeqRecord = self.proteome[transcript_id]
 
+            dgraph = svgraph.TranscriptVariantGraph(
+                seq=transcript_seq,
+                transcript_id=transcript_id
+            )
+            dgraph.fit_into_codons()
+            pgraph = dgraph.translate()
+            pgraph.to_cleavage_graph(rule, exception)
+            peptides = pgraph.call_vaiant_peptides()
 
             if verbose:    # for logging
                 i += 1
