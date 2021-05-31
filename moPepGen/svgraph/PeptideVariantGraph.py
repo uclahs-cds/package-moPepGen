@@ -112,7 +112,7 @@ class PeptideVariantGraph():
                 exception=exception)
         return first_node if return_first else node
 
-    def expand_alignment_backword(self, node:PeptideNode, rule:str,
+    def expand_alignment_backward(self, node:PeptideNode, rule:str,
             exception:str=None) -> Tuple[PeptideNode, Set[PeptideNode]]:
         """"""
         branches = set()
@@ -316,7 +316,7 @@ class PeptideVariantGraph():
             if self.next_is_stop(cur):
                 if len(cur.out_nodes) > 1:
                     # return branch
-                    cur, branches = self.expand_alignment_backword(cur,
+                    cur, branches = self.expand_alignment_backward(cur,
                         rule=rule, exception=exception)
                     for branch in branches:
                         queue.appendleft(branch)
@@ -325,17 +325,18 @@ class PeptideVariantGraph():
             # expand the variant alignments to the left
             # returns the new reference node in the alignment.
             # cur is NOT stop
-            cur, branches = self.expand_alignment_backword(cur,
+            if len(cur.in_nodes) == 1:
+                cur, branches = self.expand_alignment_backward(cur,
                         rule=rule, exception=exception)
-            for branch in branches:
-                queue.appendleft(branch)
+                for branch in branches:
+                    queue.appendleft(branch)
 
-            if self.next_is_stop(cur):
-                # leave it to the next iteration to handle
-                queue.append(cur)
-                continue
+                if self.next_is_stop(cur):
+                    # leave it to the next iteration to handle
+                    queue.append(cur)
+                    continue
 
-            cur = cur.find_reference_next()
+                cur = cur.find_reference_next()
 
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=rule,
                 exception=exception)
@@ -405,7 +406,7 @@ class PeptideVariantGraph():
                         continue
                     variant_label = ''
                     for variant in variants:
-                        variant_label += ('|' + str(variant))
+                        variant_label += ('|' + str(variant.variant))
                     same_peptide = get_equivalent(variant_peptides, seq)
                     if same_peptide:
                         same_peptide.id += variant_label
