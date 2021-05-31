@@ -1,4 +1,4 @@
-""""""
+""" Module for peptide variation graph """
 from __future__ import annotations
 import copy
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
@@ -100,6 +100,14 @@ class PeptideVariantGraph():
     def next_is_stop(self, node:PeptideNode):
         return self.stop in node.out_nodes
     
+    def remove_node(self, node:PeptideNode) -> None:
+        while node.in_nodes:
+            in_node = node.in_nodes.pop()
+            in_node.remove_out_edge(node)
+        while node.out_nodes:
+            out_node = node.out_nodes.pop()
+            node.remove_out_edge(out_node)
+    
     def cleave_if_posible(self, node:PeptideNode, rule:str,
             exception:str=None, return_first:bool=False) -> PeptideNode:
         """"""
@@ -168,7 +176,6 @@ class PeptideVariantGraph():
 
         while node.in_nodes:
             cur = node.in_nodes.pop()
-            cur.remove_out_edge(node)
             cur.seq = cur.seq + node.seq
             cur.remove_out_edge(node)
             cur.add_out_edge(downstream)
@@ -225,17 +232,14 @@ class PeptideVariantGraph():
             if not new_node.variants:
                 to_return = new_node
             
-        
         for first in primary_nodes:
-            upstream.remove_out_edge(first)
+            self.remove_node(first)
         
         for second in secondary_nodes:
-            downstreams = copy.copy(second.out_nodes)
-            for downstream in downstreams:
-                second.remove_out_edge(downstream)
+            self.remove_node(second)
         
-        if to_return is not self.stop:
-            to_return = to_return.find_reference_next()
+        self.remove_node(node)
+        
         return to_return, branches
     
     def cleave_merge_alignments(self, node:PeptideNode, site:int, rule:str,
@@ -349,6 +353,8 @@ class PeptideVariantGraph():
                     continue
                 cur, branches = self.join_merge_alignments(cur,
                     rule=rule, exception=exception)
+                if len(cur.out_nodes) == 1 and not self.next_is_stop(cur):
+                    cur = cur.find_reference_next()
             elif len(sites) == 1:
                 cur, branches = self.cleave_merge_alignments(cur, sites[0],
                     rule=rule, exception=exception)

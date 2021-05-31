@@ -1,4 +1,4 @@
-""""""
+""" Module for transcript (DNA) variant graph """
 from __future__ import annotations
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
 from moPepGen.svgraph.VariantRecordWithCoordinate import VariantRecordWithCoordinate
@@ -62,24 +62,7 @@ class TranscriptVariantGraph():
         self.root = node
         self.transcript_id = transcript_id
         self.variants = []
-    
-    # def __repr__(self) -> str:
-    #     """"""
-    #     ref = MutableSeq('')
-    #     cur = self.root
-    #     while cur:
-    #         if cur.seq is None:
-    #             cur = cur.get_reference_next()
-    #             continue
-    #         if ref:
-    #             ref.append('-')
-    #         for i in cur.seq.seq:
-    #             ref.append(i)
-    #     out = deque([ref])
-    #     up = True
-    #     cur = self.root
 
-    
     def variants_are_adjacent(self, edge1:svgraph.Edge, edge2:svgraph.Edge) -> bool:
         """ Deprecated If two edges are both variants. """
         if edge1 is None:
