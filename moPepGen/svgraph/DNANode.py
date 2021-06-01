@@ -1,4 +1,4 @@
-""""""
+""" Module for DNANode class """
 from __future__ import annotations
 from typing import List, Set, Tuple
 from collections import deque
@@ -7,12 +7,12 @@ from moPepGen.vep.VEPVariantRecord import VEPVariantRecord
 from moPepGen import svgraph
 
 
-class Node():
+class DNANode():
     """ Defines the nodes in the TranscriptVariantGraph
     
     Attributes:
-        in_edges (Set[Edge]): The inbonding edges.
-        out_edges (Set[Edge]): The outbonding edges.
+        in_edges (Set[DNAEdge]): The inbonding edges.
+        out_edges (Set[DNAEdge]): The outbonding edges.
         seq (DNASeqRecord): The sequence.
         variant (VEPVariantRecord | None): The variant record or None for
             reference.
@@ -20,7 +20,7 @@ class Node():
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[svgraph.VariantRecordWithCoordinate]=None,
             frameshifts:List[VEPVariantRecord]=None):
-        """ Constructor for Node.
+        """ Constructor for DNANode.
         
         Args:
             seq (DNASeqRecord): The sequence.
@@ -38,26 +38,26 @@ class Node():
         locations = [(it.ref.start, it.ref.end) for it in self.seq.locations]
         return hash((str(self.seq.seq), *locations))
     
-    def get_edge_to(self, other:Node) -> svgraph.Edge:
+    def get_edge_to(self, other:DNANode) -> svgraph.DNAEdge:
         """ Find the edge from this to the other node """
         for edge in self.out_edges:
             if edge.out_node is other:
                 return edge
-        raise ValueError('Edge not found')
+        raise ValueError('DNAEdge not found')
     
-    def get_edge_from(self, other:Node) -> svgraph.Edge:
+    def get_edge_from(self, other:DNANode) -> svgraph.DNAEdge:
         """ Find the edge from the other to this node. """
         for edge in self.in_edges:
             if edge.in_node is other:
                 return edge
-        raise ValueError('Edge not found')
+        raise ValueError('DNAEdge not found')
     
     def is_orphan(self) -> bool:
         """ Checks if the node is an orphan, that doesn't have any inbonding
         or outbonding edge. """
         return (not self.in_edges) and (not self.out_edges)
     
-    def get_reference_next(self) -> Node:
+    def get_reference_next(self) -> DNANode:
         """ Get the next node of which the edge is reference (not variant
         or cleavage). """
         for edge in self.out_edges:
@@ -65,7 +65,7 @@ class Node():
                 return edge.out_node
         return None
     
-    def get_reference_prev(self) -> Node:
+    def get_reference_prev(self) -> DNANode:
         """ Get the previous node of which the edge is reference (not variant
         or cleavage) """
         for edge in self.in_edges:
@@ -73,7 +73,7 @@ class Node():
                 return edge.in_node
         return None
     
-    def deepcopy(self) -> Node:
+    def deepcopy(self) -> DNANode:
         """ Create a deep copy of the node and all its downstream nodes. """
 
         new_node = self.__class__(
@@ -82,7 +82,7 @@ class Node():
             frameshifts=self.framshifts
         )
 
-        queue:deque[Tuple[Node, Node]] = deque([(self, new_node)])
+        queue:deque[Tuple[DNANode, DNANode]] = deque([(self, new_node)])
 
         while queue:
             source, target = queue.pop()
@@ -92,14 +92,14 @@ class Node():
                     variants=edge.out_node.variants,
                     frameshifts=edge.out_node.framshifts
                 )
-                new_edge = svgraph.Edge(target, new_out_node, type=edge.type)
+                new_edge = svgraph.DNAEdge(target, new_out_node, type=edge.type)
                 target.out_edges.add(new_edge)
                 new_out_node.in_edges.add(new_edge)
                 queue.appendleft((edge.out_node, new_out_node))
 
         return new_node
     
-    def find_farthest_node_with_overlap(self) -> Node:
+    def find_farthest_node_with_overlap(self) -> DNANode:
         """ Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
         reference sequence.
@@ -117,7 +117,7 @@ class Node():
         queue = deque([edge.out_node for edge in self.out_edges])
         visited = set([self])
         while queue:
-            cur:Node = queue.popleft()
+            cur:DNANode = queue.popleft()
             
             visited_len_before = len(visited)
             visited.add(cur)

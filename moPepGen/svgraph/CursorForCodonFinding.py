@@ -4,7 +4,7 @@ from moPepGen import svgraph
 
 class CursorForCodonFinding():
     """"""
-    def __init__(self, node:svgraph.Node, position_to_orf:str='up',
+    def __init__(self, node:svgraph.DNANode, position_to_orf:str='up',
             search_orf:bool=False, start_codon_index:int=None,
             stop_codon_index:int=None):
         """"""

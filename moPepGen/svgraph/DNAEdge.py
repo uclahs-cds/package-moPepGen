@@ -1,8 +1,8 @@
-""""""
+""" Module for ENAEdge class """
 from moPepGen import svgraph
 
 
-class Edge():
+class DNAEdge():
     """ Defines the edges in the TranscriptVariantGraph
 
     Attributes:
@@ -11,7 +11,7 @@ class Edge():
         type (str): The edge type. Must be either of orf_start, orf_end,
             variant_start, variant_end, cleave, or reference
     """
-    def __init__(self, in_node:svgraph.Node, out_node:svgraph.Node,
+    def __init__(self, in_node:svgraph.DNANode, out_node:svgraph.DNANode,
             type:str):
         """ Constructor for Edge
 

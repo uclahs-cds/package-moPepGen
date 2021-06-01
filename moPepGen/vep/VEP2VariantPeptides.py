@@ -189,7 +189,7 @@ class VEP2VariantPeptides():
             )
             dgraph.fit_into_codons()
             pgraph = dgraph.translate()
-            pgraph.to_cleavage_graph(rule, exception)
+            pgraph.form_cleavage_graph(rule, exception)
             peptides = pgraph.call_vaiant_peptides()
 
             if verbose:    # for logging
