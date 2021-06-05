@@ -1,8 +1,8 @@
 """ The IO module for VEP output files
 """
-from typing import IO, Union
+from typing import IO, Union, Iterable
 from Bio.SeqIO.Interfaces import SequenceIterator
-from moPepGen.vep.VepRecord import VEPRecord
+from moPepGen import vep
 
 
 class VepIterator(SequenceIterator):
@@ -12,12 +12,12 @@ class VepIterator(SequenceIterator):
         """ Constructor """
         super().__init__(source=source, mode=mode, fmt='VEP')
 
-    def parse(self, handle:IO[str]):
+    def parse(self, handle:IO[str]) -> Iterable[vep.VEPRecord]:
         """ parse """
         records = self.iterate(handle)
         return records
 
-    def iterate(self, handle:IO[str]):
+    def iterate(self, handle:IO[str]) -> vep.VEPRecord:
         """ Read the VEP output tsv file and returns a generator """
         for line in handle:
             if line.startswith('#'):
@@ -36,7 +36,7 @@ class VepIterator(SequenceIterator):
             if len(codons) == 1:
                 codons = (codons[0], '')
             
-            record = VEPRecord(
+            yield vep.VEPRecord(
                 uploaded_variation=fields[0],
                 location=fields[1],
                 allele=fields[2],
@@ -53,14 +53,13 @@ class VepIterator(SequenceIterator):
                 extra={key:val for key,val in \
                     [field.split('=') for field in fields[13].split(';')]}
             )
-            yield record
 
 
 def parse(handle:Union[IO[str], str]) -> VepIterator:
     """ parse a VEP tsv file """
     return VepIterator(handle)
 
-def read(handle:Union[IO[str], str]) -> VEPRecord:
+def read(handle:Union[IO[str], str]) -> vep.VEPRecord:
     """ read a vep tsv file """
     iterator = parse(handle)
     try:

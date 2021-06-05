@@ -3,7 +3,7 @@ from typing import Tuple, Dict
 import unittest
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import aa, svgraph, vep
+from moPepGen import aa, svgraph, seqvar
 
 
 def create_pgraph(data:dict
@@ -24,22 +24,20 @@ def create_pgraph(data:dict
             if it is None:
                 continue
             location_transcirpt = FeatureLocation(start=it[0], end=it[1])
-            location_peptide = FeatureLocation(start=it[5], end=it[6])
-            var_record = vep.VariantRecord(
-                    location_transcirpt,
-                    ref=it[2],
-                    alt=it[3]
-                )
-            var_record = vep.VEPVariantRecord(
-                variant=var_record,
-                consequences=it[4]
+            location_peptide = FeatureLocation(start=it[6], end=it[7])
+            var_record = seqvar.VariantRecord(
+                location=location_transcirpt,
+                ref=it[2],
+                alt=it[3],
+                type=it[4],
+                id=it[5]
             )
-            variant = svgraph.VariantRecordWithCoordinate(
+            variant = seqvar.VariantRecordWithCoordinate(
                 variant=var_record,
                 location=location_peptide
             )
             variants.append(variant)
-            if 'frameshift' in variant.variant.consequences:
+            if it[8]:
                 frameshifts.add(variant.variant)
         node = svgraph.PeptideNode(seq, variants, frameshifts=frameshifts)
         node_list[key] = node
@@ -60,10 +58,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         """
         data = {
             1: ('MNAAC', [0], [None]),
-            2: ('V', [1],[(0, 3, 'TCT', 'T', ['frameshift', 'deletion'], 0, 1)]),
+            2: ('V', [1],[(0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)]),
             3: ('P', [2], [None]),
             4: ('VC', [1], [None]),
-            5: ('DC', [1], [(0, 1, 'T', 'A', [], 0, 1)]),
+            5: ('DC', [1], [(0, 1, 'T', 'A', 'SNV', '0:T-A', 0, 1, False)]),
             6: ('PRN', [4, 5], [None])
         }
         
@@ -90,10 +88,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         data = {
             1: ('MNAAC', [0], [None]),
             2: ('GCVV', [1], [None]),
-            3: ('V', [2],[(0,3,'TCT','T',['frameshift', 'deletion'], 0, 1)]),
+            3: ('V', [2],[(0,3,'TCT','T','INDEL', '0:TCT-T', 0, 1, True)]),
             4: ('P', [3], [None]),
             5: ('VC', [2], [None]),
-            6: ('DC', [2], [(0, 1, 'T', 'A', [], 0, 1)]),
+            6: ('DC', [2], [(0, 1, 'T', 'A', 'SNV', '0:T-A', 0, 1, False)]),
             7: ('PRN', [5, 6], [None])
         }
         
@@ -122,10 +120,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         """
         data = {
             1: ('MNAAR', [0], [None]),
-            2: ('GCVVV', [1], [(0, 3, 'TCT', 'T', [], 0, 1)]),
+            2: ('GCVVV', [1], [(0, 3, 'TCT', 'T', 'INDEL', '', 0, 1, True)]),
             3: ('P', [3], [None]),
             4: ('GCVVVC', [1], [None]),
-            5: ('GCVVDC', [1], [(0, 1, 'T', 'A', [], 0, 1)]),
+            5: ('GCVVDC', [1], [(0, 1, 'T', 'A', 'SNV', '', 0, 1, False)]),
             6: ('PDNK', [4, 5], [None]),
             7: ('DCAGP', [6], [None])
         }
@@ -151,10 +149,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         """
         data = {
             1: ('MNAAR', [0], [None]),
-            2: ('GCVVV', [1], [(0, 3, 'TCT', 'T', [], 0, 1)]),
+            2: ('GCVVV', [1], [(0, 3, 'TCT', 'T', 'INDEL', '', 0, 1, True)]),
             3: ('P', [3], [None]),
             4: ('GCVVVC', [1], [None]),
-            5: ('GCVVRC', [1], [(0, 1, 'T', 'A', [], 0, 1)]),
+            5: ('GCVVRC', [1], [(0, 1, 'T', 'A', 'SNV', '', 0, 1, False)]),
             6: ('PDNK', [4, 5], [None]),
             7: ('DCAGP', [6], [None])
         }
@@ -185,10 +183,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         data = {
             1: ('AER', [0], [None]),
             2: ('NCWH', [1], [None]),
-            3: ('NCWV', [1], [(0, 1, 'A', 'T', [], 0, 1)]),
+            3: ('NCWV', [1], [(0, 1, 'A', 'T', 'SNV', '', 0, 1, False)]),
             4: ('STQ', [2,3], []),
             5: ('Q', [4], []),
-            6: ('V', [4], [(0, 1, 'A', 'T', [], 0, 1)]),
+            6: ('V', [4], [(0, 1, 'A', 'T', 'SNV', '', 0, 1, False)]),
             7: ('PK', [5,6], [])
         }
         graph, nodes = create_pgraph(data)
@@ -214,10 +212,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         data = {
             1: ('AER', [0], [None]),
             2: ('NCWH', [1], [None]),
-            3: ('NCWR', [1], [(0, 1, 'A', 'T', [], 0, 1)]),
+            3: ('NCWR', [1], [(0, 1, 'A', 'T', 'SNV', '', 0, 1, False)]),
             4: ('STQ', [2,3], []),
             5: ('Q', [4], []),
-            6: ('V', [4], [(0, 1, 'A', 'T', [], 0, 1)]),
+            6: ('V', [4], [(0, 1, 'A', 'T', 'SNV', '', 0, 1, False)]),
             7: ('PK', [5,6], [])
         }
         graph, nodes = create_pgraph(data)
@@ -242,10 +240,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         data = {
             1: ('AER', [0], [None]),
             2: ('NCWH', [1], [None]),
-            3: ('NCWV', [1], [(0, 1, 'A', 'T', [], 3, 4)]),
+            3: ('NCWV', [1], [(0, 1, 'A', 'T', 'SNV', '', 3, 4, False)]),
             4: ('STEEKLPAQ', [2,3], [None]),
             5: ('Q', [4], [None]),
-            6: ('V', [4], [(0, 1, 'A', 'T', [], 0, 1)]),
+            6: ('V', [4], [(0, 1, 'A', 'T', 'SNV', '', 0, 1, False)]),
             7: ('PK', [5,6], [None])
         }
         graph, nodes = create_pgraph(data)

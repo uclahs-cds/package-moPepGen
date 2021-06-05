@@ -6,12 +6,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.aa.expasy_rules import EXPASY_RULES
-from moPepGen import aa
-from moPepGen import vep
-from moPepGen.dna.MatchedLocation import MatchedLocation
-from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
-from moPepGen import vep
-
+from moPepGen import aa, dna
 
 
 class DNASeqRecord(SeqRecord):
@@ -189,18 +184,6 @@ class DNASeqRecord(SeqRecord):
                 sites.append(None)
         return sites
     
-    def find_gained_cleave_site(self, variant:vep.VEPVariantRecord, rule:str,
-            exception:int=None) -> int:
-        """ Find the new cleave site caused by the mutation """
-        last_codon_index = variant.variant.location.start - \
-            (variant.variant.location.start - seq.orf.start) % 3
-        left = self.find_last_cleave_position(end=last_codon_index,
-            rule=rule, exception=exception)
-        right = self.find_next_cleave_position(start=last_codon_index,
-            rule=rule, exception=exception)
-        new_site = self[left:right].mutate(self).iter_enzymatic_cleave_sites(
-            rule=rule, exception=exception).__next__().end()
-        return new_site + left
     
     def find_cleave_positions_within(self, start:int, end:int, rule:int,
             exception:str=None) -> List[int]:
@@ -241,8 +224,9 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
     """ The DNASeqReocrdWithLocation holds a sequence and its location matched
     to another sequence, e.g., chromosome or transcript.
     """
-    def __init__(self, seq:Seq, locations:List[MatchedLocation],
+    def __init__(self, seq:Seq, locations:List[dna.MatchedLocation],
         orf:FeatureLocation=None, *args, **kwargs):
+        """  """
         super().__init__(seq=seq, *args, **kwargs)
         self.locations = locations
         # query index
@@ -399,54 +383,4 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
         for location in self.locations:
             if ref_index in location.ref:
                 return location.query.start + ref_index - location.ref.start
-
-    def mutate(self, variant:vep.VEPVariantRecord
-            ) -> DNASeqRecordWithCoordinates:
-        """ Mutate the current DNA sequence with a given variant, and keep the
-        original coordinates the same. """
-        start = self.get_query_index(variant.variant.location.start)
-        end = self.get_query_index(variant.variant.location.end)
-        head = self[:start]
-        head.seq += variant.variant.alt
-        tail = self[end:]
-        for i in range(len(tail.locations)):
-            tail.locations[i] = tail.locations[i].shift(len(variant.variant.alt))
-        head.seq += tail.seq
-        head.locations.extend(tail.locations)
-        return head
     
-    def as_transcript(self, orf:FeatureLocation
-            ) -> DNASeqRecordWithCoordinates:
-        """  """
-        new = self
-        new.__class__ = DNASeqRecordWithCoordinates
-        new.orf = orf
-        return new
-    
-    def contains_variant(self, variant:vep.VEPVariantRecord) -> bool:
-        """ returns if the sequence contains a given variant """
-        start=self.locations[0].ref.start - self.locations[0].query.start
-        end=self.locations[-1].ref.end + len(self) - \
-            self.locations[-1].query.end
-        location_extended = FeatureLocation(start=start, end=end)
-        return location_extended.overlaps(variant.variant.location)
-    
-    def validate_orf(self, protein:AminoAcidSeqRecord
-            ) -> Tuple[DNASeqRecordWithCoordinates, AminoAcidSeqRecord]:
-        """  """
-        protein.seq = protein.seq.lstrip('X')
-        for i in [1,2]:
-            orf:FeatureLocation = self.orf
-            head = self.seq[orf.start+i:orf.start+i+24].translate()
-            if head == protein.seq[:8]:
-                orf = FeatureLocation(start=orf.start + 1, end=orf.end)
-                transcript = self.__class__(
-                    seq=self.seq,
-                    locations=self.locations,
-                    orf=orf,
-                    id=self.id,
-                    name=self.name,
-                    description=self.description
-                )
-                return transcript, protein
-        raise ValueError('orf validation failed')

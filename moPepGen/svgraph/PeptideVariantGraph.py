@@ -6,9 +6,7 @@ from collections import deque
 import itertools
 import copy
 from Bio.Seq import Seq
-from moPepGen import get_equivalent
-from moPepGen import aa
-from moPepGen import svgraph
+from moPepGen import aa, svgraph, seqvar, get_equivalent
     
     
 class PeptideVariantGraph():
@@ -76,7 +74,7 @@ class PeptideVariantGraph():
             )
         return first_node if return_first else node
 
-    def expand_alignment_backward(self, node:svgraph.PeptideNode
+    def expand_alignment_backward(self, node:svgraph.PeptideNode,
             ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
         """ Expands the alignment bubble backward to the previous cleave site.
         The sequence of the input node is first prepended to each of outbound
@@ -130,14 +128,19 @@ class PeptideVariantGraph():
                     variants.append(variant.shift(len(cur.seq)))
                 cur.variants = variants
                 
-                # only branches out if there is new frameshifts
-                for frameshift in cur.frameshifts:
-                    if frameshift not in node.frameshifts:
-                        branches.add(cur)
+            # only branches out if there is new frameshifts
+            frameshifts = copy.copy(node.frameshifts)
+            frameshifts_before = len(frameshifts)
+            frameshifts.update(cur.frameshifts)
+            frameshifts_after = len(frameshifts)
+
             upstream.add_out_edge(cur)
             last = self.cleave_if_posible(cur)
             if to_return is cur:
                 to_return = last
+            
+            if frameshifts_before != frameshifts_after:
+                branches.add(last)
             
         upstream.remove_out_edge(node)
         return to_return, branches
@@ -186,11 +189,11 @@ class PeptideVariantGraph():
         """ For a given node, join all the inbond nodes and outbond nodes with
         any combinations.
 
-        In the example below, node PK is returned
+        In the example below, node NCWHSTQQ is returned
 
                                        NCWHSTQV
                                       /        \ 
-            NCWV     R               | NCWVSTQV |
+            NCWV     V               | NCWVSTQV |
            /    \   / \              |/        \| 
         AER-NCWH-STQ-Q-PK    ->    AER-NCWHSTQQ-PK
                                       \        /
@@ -201,10 +204,10 @@ class PeptideVariantGraph():
          """
         branches = set()
         to_return = self.stop
-        prev_ref = node.find_reference_prev()
-        if len(prev_ref.in_nodes) > 1:
-            raise ValueError('upstream has multiple')
-        upstream = next(iter(prev_ref.in_nodes))
+        # prev_ref = node.find_reference_prev()
+        # if len(prev_ref.in_nodes) > 1:
+        #     raise ValueError('upstream has multiple')
+        # upstream = next(iter(prev_ref.in_nodes))
         primary_nodes = copy.copy(node.in_nodes)
         secondary_nodes = copy.copy(node.out_nodes)
         for first, second in itertools.product(primary_nodes, secondary_nodes):
@@ -227,10 +230,8 @@ class PeptideVariantGraph():
                 variants=variants,
                 frameshifts=frameshifts
             )
-            upstream.add_out_edge(new_node)
-
-            if frameshifts_before != frameshifts_after:
-                branches.add()
+            for upstream in first.in_nodes:
+                upstream.add_out_edge(new_node)
             
             if second is self.stop:
                 self.add_stop(new_node)
@@ -238,10 +239,18 @@ class PeptideVariantGraph():
                 for downstream in second.out_nodes:
                     new_node.add_out_edge(downstream)
             
-            new_node = self.cleave_if_posible(new_node)
-
             if not new_node.variants:
                 to_return = new_node
+
+            last_node = self.cleave_if_posible(new_node)
+            
+            # return the last cleaved
+            if to_return is new_node:
+                to_return = last_node
+            
+            # aslo add the last cleaved to branch
+            if frameshifts_before != frameshifts_after:
+                branches.add(new_node)
             
         for first in primary_nodes:
             self.remove_node(first)
@@ -253,7 +262,7 @@ class PeptideVariantGraph():
         
         return to_return, branches
     
-    def cleave_join_alignments(self, node:svgraph.PeptideNode, site:int,
+    def cross_join_alignments(self, node:svgraph.PeptideNode, site:int,
             ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
         """ For a given node, split at the given position, expand inbound and
         outbound alignments, and join them with edges.
@@ -261,7 +270,7 @@ class PeptideVariantGraph():
         In the example below, the node PK is returned
 
             NCWV           V                 NCWVSTEEK-LPAQV
-           /    \         / \               /         X     \
+           /    \         / \               /         X     \ 
         AER-NCWH-STEEKLPAQ-Q-PK    ->    AER-NCWHSTEEK-LPAQQ-PK
 
         Args:
@@ -314,8 +323,6 @@ class PeptideVariantGraph():
         for first, second in itertools.product(primary_nodes, secondary_nodes):
             first.add_out_edge(second)
         
-        if to_return is not self.stop:
-            to_return = to_return.find_reference_next()
         return to_return, branches
     
     def form_cleavage_graph(self, rule:str, exception:str=None) -> None:
@@ -358,19 +365,17 @@ class PeptideVariantGraph():
             
             # expand the variant alignments to the left
             # returns the new reference node in the alignment.
-            # cur is NOT stop
-            # this should always be true
-            # if len(cur.in_nodes) == 1:
-            cur, branches = self.expand_alignment_backward(cur)
-            for branch in branches:
-                queue.appendleft(branch)
+            # This is when the node between to bubbles don't have any cleavages
+            if len(cur.in_nodes) == 1:
+                cur, branches = self.expand_alignment_backward(cur)
+                for branch in branches:
+                    queue.appendleft(branch)
 
-            if self.next_is_stop(cur):
-                # leave it to the next iteration to handle
-                queue.append(cur)
-                continue
-
-            cur = cur.find_reference_next()
+                if self.next_is_stop(cur):
+                    # leave it to the next iteration to handle
+                    queue.append(cur)
+                    continue
+                cur = cur.find_reference_next()
 
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
                 exception=self.exception)
@@ -384,7 +389,14 @@ class PeptideVariantGraph():
                 if len(cur.out_nodes) == 1 and not self.next_is_stop(cur):
                     cur = cur.find_reference_next()
             elif len(sites) == 1:
-                cur, branches = self.cleave_join_alignments(cur, sites[0])
+                if self.next_is_stop(cur):
+                    cur.split_node(sites[0])
+                    cur = self.expand_alignment_forward(cur)
+                    queue.appendleft(cur)
+                    continue
+                cur, branches = self.cross_join_alignments(cur, sites[0])
+                if not self.next_is_stop(cur):
+                    cur = cur.find_reference_next()
             else:
                 cur.split_node(sites[0])
                 cur = self.expand_alignment_forward(cur)
@@ -446,8 +458,9 @@ class PeptideVariantGraph():
                     if not variants:
                         continue
                     variant_label = ''
+                    variant:seqvar.VariantRecordWithCoordinate
                     for variant in variants:
-                        variant_label += ('|' + str(variant.variant))
+                        variant_label += ('|' + str(variant.variant.id))
                     same_peptide = get_equivalent(variant_peptides, seq)
                     if same_peptide:
                         same_peptide.id += variant_label

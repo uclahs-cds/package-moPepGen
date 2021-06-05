@@ -1,11 +1,9 @@
-from moPepGen.vep import VEPVariantRecord
 import unittest
 from collections import deque
 from Bio.Seq import Seq
-from moPepGen import svgraph
-from moPepGen import vep
-from moPepGen import dna
+from moPepGen import svgraph, seqvar, dna
 from moPepGen.SeqFeature import FeatureLocation
+from test import create_dgraph
 
 
 def create_graph(seq, variants) -> svgraph.TranscriptVariantGraph:
@@ -18,25 +16,61 @@ def create_graph(seq, variants) -> svgraph.TranscriptVariantGraph:
         locations=[location],
         orf=FeatureLocation(start=0, end=len(seq))
     )
-    graph = svgraph.TranscriptVariantGraph(seq, '', None)
+    graph = svgraph.TranscriptVariantGraph(seq, '')
     records = []
-    for start, end, ref, alt, consequences in variants:
+    for start, end, ref, alt, type, _id in variants:
         location = FeatureLocation(start=start, end=end)
-        records.append(vep.VEPVariantRecord(
-            variant=vep.VariantRecord(location=location, ref=ref, alt=alt),
-            consequences=consequences
+        records.append(seqvar.VariantRecord(
+            location=location, ref=ref, alt=alt,
+            type=type, id=_id
         ))
     graph.create_variant_graph(records)
     return graph
     
 
 class TestTranscriptGraph(unittest.TestCase):
+    def test_splice(self):
+        """ Test node splice at position """
+        data = {
+            1: ('AACCTTGG', [], [])
+        }
+        graph, nodes = create_dgraph(data)
+        left, right = graph.splice(nodes[1], 4, 'reference')
+        self.assertIs(left, graph.root)
+        self.assertEqual(str(left.seq.seq), 'AACC')
+        self.assertIn(right, [e.out_node for e in left.out_edges])
+        self.assertIn(left, [e.in_node for e in right.in_edges])
+    
+    def test_apply_variant_case1(self):
+        """
+                               C
+                              / \
+        AACCTTGG    ->    AACC-T-TGG
+        """
+        data = {
+            1: ('AACCTTGG', [], [])
+        }
+        graph, nodes = create_dgraph(data)
+        variant = seqvar.VariantRecord(
+            location=FeatureLocation(start=4, end=5),
+            ref='T',
+            alt='C',
+            type='SNV',
+            id=''
+        )
+        node = graph.apply_variant(nodes[1], variant)
+        self.assertEqual(str(node.seq.seq), 'AACC')
+        self.assertIs(node, graph.root)
+        seqs = set([str(e.out_node.seq.seq) for e in node.out_edges])
+        seqs_expected = set(['T', 'C'])
+        self.assertEqual(seqs, seqs_expected)
+
     
     def test_create_graph(self):
         seq = 'ATGGTCTGCCCTCTGAAC'
         variants = [
-            (3, 4, 'G', 'T', ['missense']),
-            (3, 4, 'G', 'A', ['missense'])
+            (3, 4, 'G', 'T', 'SNV', '3:G-T'),
+            (3, 4, 'G', 'A', 'SNV', '3:G-A')
         ]
         graph = create_graph(seq, variants)
         variant_site_nodes = [edge.out_node for edge in graph.root.out_edges]
@@ -52,8 +86,8 @@ class TestTranscriptGraph(unittest.TestCase):
 
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
-            (4, 7, 'TCT', 'T', ['missense']),
-            (4, 5, 'T', 'A', ['missense'])
+            (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
+            (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
         graph = create_graph(seq, variants)
 
@@ -63,8 +97,8 @@ class TestTranscriptGraph(unittest.TestCase):
     def test_expand_bubble(self):
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
-            (3, 4, 'G', 'T', ['missense']),
-            (3, 4, 'G', 'A', ['missense'])
+            (3, 4, 'G', 'T', 'SNV', '3:G-T'),
+            (3, 4, 'G', 'A', 'SNV', '3:G-A')
         ]
         graph = create_graph(seq, variants)
         graph.expand_alignments(graph.root)
@@ -80,8 +114,8 @@ class TestTranscriptGraph(unittest.TestCase):
     def test_find_overlaps(self):
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
-            (4, 7, 'TCT', 'T', ['missense']),
-            (4, 5, 'T', 'A', ['missense'])
+            (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
+            (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
         graph = create_graph(seq, variants)
         farthest = graph.root.find_farthest_node_with_overlap()
@@ -90,8 +124,8 @@ class TestTranscriptGraph(unittest.TestCase):
         # case 2
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
-            (4, 7, 'TCT', 'T', ['deletion']),
-            (7, 8, 'G', 'A', ['missense'])
+            (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
+            (7, 8, 'G', 'A', 'SNV', '7:G-A')
         ]
         graph = create_graph(seq, variants)
         farthest = graph.root.find_farthest_node_with_overlap()
@@ -102,8 +136,8 @@ class TestTranscriptGraph(unittest.TestCase):
         # case 1
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
-            (4, 7, 'TCT', 'T', ['missense']),
-            (4, 5, 'T', 'A', ['missense'])
+            (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
+            (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
         graph = create_graph(seq, variants)
         graph.align_varints(graph.root)
@@ -115,8 +149,8 @@ class TestTranscriptGraph(unittest.TestCase):
         # case 2
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
-            (4, 7, 'TCT', 'T', ['missense']),
-            (7, 8, 'G', 'A', ['missense'])
+            (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
+            (7, 8, 'G', 'A', 'SNV', '7:G-A')
         ]
         graph = create_graph(seq, variants)
         graph.align_varints(graph.root)
@@ -130,8 +164,8 @@ class TestTranscriptGraph(unittest.TestCase):
         # case 1
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
-            (4, 7, 'TCT', 'T', ['missense']),
-            (4, 5, 'T', 'A', ['missense'])
+            (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
+            (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
         graph = create_graph(seq, variants)
         graph.fit_into_codons()
@@ -147,8 +181,8 @@ class TestTranscriptGraph(unittest.TestCase):
     def test_translate(self):
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
-            (4, 7, 'TCT', 'T', ['missense']),
-            (4, 5, 'T', 'A', ['missense'])
+            (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
+            (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
         graph = create_graph(seq, variants)
         graph.fit_into_codons()

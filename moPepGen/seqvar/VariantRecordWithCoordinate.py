@@ -1,12 +1,12 @@
 """"""
 from __future__ import annotations
-from moPepGen import vep
+from moPepGen import seqvar
 from moPepGen.SeqFeature import FeatureLocation
 
 
 class VariantRecordWithCoordinate():
     """"""
-    def __init__(self, variant:vep.VEPVariantRecord, location:FeatureLocation):
+    def __init__(self, variant:seqvar.VariantRecord, location:FeatureLocation):
         """"""
         self.variant = variant
         self.location = location

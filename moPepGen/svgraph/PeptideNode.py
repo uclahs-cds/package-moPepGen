@@ -2,9 +2,7 @@
 from __future__ import annotations
 import copy
 from typing import List, Set
-from moPepGen import vep
-from moPepGen import aa
-from moPepGen.svgraph.VariantRecordWithCoordinate import VariantRecordWithCoordinate
+from moPepGen import aa, seqvar
 
 
 class PeptideNode():
@@ -13,24 +11,24 @@ class PeptideNode():
     
     Attributes:
         seq (aa.AminoAcidSeqRecord): The amino acid sequence.
-        variants (List[VariantRecordWithCoordinate]): The variant records
+        variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
             carried in the sequence.
-        frameshifts (Set[VEPVariantRecord]): Frameshifting variants.
+        frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
         in_nodes (Set[PeptideNode]): Inbound nodes.
         ou_nodes (Set[PeptideNode]): Outbound nodes
     """
     def __init__(self, seq:aa.AminoAcidSeqRecord,
-            variants:List[VariantRecordWithCoordinate]=None,
+            variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PeptideNode]=None,
             out_nodes:Set[PeptideNode]=None,
-            frameshifts:Set[vep.VEPVariantRecord]=None):
+            frameshifts:Set[seqvar.VariantRecord]=None):
         """ Construct a PeptideNode object.
         
         Args:
             seq (aa.AminoAcidSeqRecord): The amino acid sequence.
-            variants (List[VariantRecordWithCoordinate]): The variant records
+            variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
                 carried in the sequence.
-            frameshifts (Set[VEPVariantRecord]): Frameshifting variants.
+            frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
             in_nodes (Set[PeptideNode]): Inbound nodes.
             ou_nodes (Set[PeptideNode]): Outbound nodes
         """

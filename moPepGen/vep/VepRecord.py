@@ -1,6 +1,9 @@
 """ This module defines the class for a single VEP record
 """
 from typing import List, Tuple
+import re
+from moPepGen.SeqFeature import FeatureLocation
+from moPepGen import seqvar, dna
 
 
 class VEPRecord():
@@ -56,3 +59,64 @@ class VEPRecord():
         """Return representation of the VEP record."""
         consequences = '|'.join(self.consequences)
         return f"< {self.feature}, {consequences}, {self.location} >"
+    
+    def convert_to_variant_record(self, seq:dna.DNASeqRecord
+            ) -> seqvar.VariantRecord:
+        """ """
+        alt_position = self.cdna_position.split('-')
+        alt_start = int(alt_position[0]) - 1
+        
+        codon_ref, codon_alt = self.codons
+
+        if codon_ref == '-':
+            alt_end = alt_start + 1
+            ref = seq.seq[alt_start:alt_end]
+            alt = ref + codon_alt
+            alt_end = alt_start + len(ref)
+        elif codon_alt == '-':
+            alt_start -= 1
+            alt_end = alt_start + len(codon_ref) + 1
+            ref = seq.seq[alt_start:alt_end]
+            alt = seq.seq[alt_start:alt_start+1]
+        else:
+            pattern = re.compile('[ATCG]+')
+            match_ref = pattern.search(codon_ref)
+            match_alt = pattern.search(codon_alt)
+            if match_ref is not None:
+                if match_alt is not None:
+                    ref = match_ref.group()
+                    alt_end = alt_start + len(ref)
+                    alt = match_alt.group()
+                else:
+                    ref = match_ref.group()
+                    alt_start -= 1
+                    ref = seq.seq[alt_start] + ref
+                    alt_end = alt_start + len(ref)
+                    alt = seq.seq[alt_start:alt_end]
+            elif match_alt is not None:
+                alt = match_alt.group()
+                # alt_start -= 1
+                alt_end = alt_start + 1
+                ref = seq.seq[alt_start:alt_end]
+                alt = ref + alt
+            else:
+                raise ValueError('No alteration found in this VEP record')
+
+        type = 'SNV' if len(ref) == 1 and len(alt) == 1 else 'INDEL'
+        _id = f'{alt_start}:{ref}-{alt}'
+
+        try:
+            return seqvar.VariantRecord(
+                location=FeatureLocation(
+                    seqname=self.feature,
+                    start=alt_start,
+                    end=alt_end
+                ),
+                ref=ref,
+                alt=alt,
+                type=type,
+                id=_id
+            )
+        except ValueError as e:
+            raise ValueError(e.args[0] + f' [{self.feature}]')
+        
