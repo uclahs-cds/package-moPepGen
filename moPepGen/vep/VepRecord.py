@@ -103,7 +103,7 @@ class VEPRecord():
                 raise ValueError('No alteration found in this VEP record')
 
         type = 'SNV' if len(ref) == 1 and len(alt) == 1 else 'INDEL'
-        _id = f'{alt_start}:{ref}-{alt}'
+        _id = f'{type}-{alt_start}-{ref}-{alt}'
 
         try:
             return seqvar.VariantRecord(

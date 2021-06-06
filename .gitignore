@@ -10,5 +10,6 @@
 .vscode
 
 __pycache__
+.ipynb_checkpoints
 
 test/files
