@@ -82,13 +82,13 @@ class AminoAcidSeqRecord(SeqRecord):
         """
         if not style:
             try:
-                self._infer_ids_gencode()
+                self.infer_ids_gencode()
                 return 'gencode'
             except ValueError:
                 pass
 
             try:
-                self._infer_ids_ensembl()
+                self.infer_ids_ensembl()
                 return 'ensembl'
             except ValueError as e:
                 raise ValueError(
@@ -96,15 +96,15 @@ class AminoAcidSeqRecord(SeqRecord):
                     r'using both ENSEMBL and GENCODE\'s format.'
                 ) from e
         elif style == 'gencode':
-            self._infer_ids_gencode()
+            self.infer_ids_gencode()
         elif style == 'ensembl':
-            self._infer_ids_ensembl()
+            self.infer_ids_ensembl()
         else:
             raise ValueError(f'style {style} is not supported')
         return style
 
 
-    def _infer_ids_gencode(self):
+    def infer_ids_gencode(self):
         """ Infers the gene, transcript, and protein ID from description base
         on GENCODE's format
         """
@@ -136,7 +136,7 @@ class AminoAcidSeqRecord(SeqRecord):
         self.protein_id = protein_id
         self.transcript_id = transcript_id
 
-    def _infer_ids_ensembl(self):
+    def infer_ids_ensembl(self):
         """ Infers the gene, transcript, and protein ID from description base
         on ENSEMBL's format
         """

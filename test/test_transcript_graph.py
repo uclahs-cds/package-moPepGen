@@ -5,7 +5,6 @@ from collections import deque
 from test import create_dgraph2, create_dgraph1
 from moPepGen import svgraph, seqvar
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
 
 
 class TestTranscriptGraph(unittest.TestCase):
