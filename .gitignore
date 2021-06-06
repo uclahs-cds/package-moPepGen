@@ -9,7 +9,11 @@
 
 .vscode
 
+# python
 __pycache__
 .ipynb_checkpoints
+.pytest_cache
+*.egg-info
+build
 
 test/files
