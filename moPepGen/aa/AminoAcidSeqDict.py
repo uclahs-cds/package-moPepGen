@@ -15,7 +15,7 @@ class AminoAcidSeqDict(dict):
                     'The value of a DNASeqDict must be AminoAcidSeqRecord.'
                 )
         super().__init__(*args, **kwargs)
-    
+
     def __setitem__(self, k:str, v:AminoAcidSeqRecord)->None:
         """ set item """
         if not isinstance(v, AminoAcidSeqRecord):
@@ -39,7 +39,7 @@ class AminoAcidSeqDict(dict):
             record.__class__ = AminoAcidSeqRecord
             if count > 100 and not source:
                 source = infered.pop()
-            
+
             if not source:
                 count += 1
                 infered.add(record.infer_ids(style=source))
@@ -65,7 +65,7 @@ class AminoAcidSeqDict(dict):
             start (int): Index to start searching.
             min_mw (float): Minimal molecular weight of the peptides to report.
                 Defaults to 500.
-        
+
         Returns:
             A set of unique peptides as string.
         """
@@ -92,14 +92,7 @@ class AminoAcidSeqDict(dict):
                 pool.add(str(peptide.seq))
                 # Convert all I with L and add to the carnonical peptide pool.
                 pool.add(str(peptide.seq).replace('I', 'L'))
-            
+
             protein = next(it, None)
 
         return pool
-
-
-if __name__ == '__main__':
-    proteome = AminoAcidSeqDict()
-    file_dir = 'test/files/downsampled_set'
-    proteome.dump_fasta(f'{file_dir}/gencode_v34_translations_chr22.fasta')
-    proteome.create_unique_peptide_pool('trypsin')

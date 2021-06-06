@@ -1,34 +1,35 @@
-""""""
+""" Module for Amino Acid Record """
 from __future__ import annotations
-from typing import Iterable, List
+from typing import Iterable, List, Set
 import re
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqUtils
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 
 
+_NO_SEQRECORD_COMPARISON = "SeqRecord comparison is deliberately not" +\
+    " implemented. Explicitly compare the attributes of interest."
 class AminoAcidSeqRecord(SeqRecord):
     """ A AminoAcidSeqRecord holds a protein or peptide sequence
     """
-    def __init__(self, seq:SeqRecord, id:str="<unknown id>",
+    def __init__(self, seq:SeqRecord, _id:str="<unknown id>",
             name:str="<unknown name>", description:str="<unknown description>",
             gene_id:str=None, transcript_id:str=None, protein_id:str=None,
             **kwargs):
-        super().__init__(seq, id=id, name=name, description=description,
+        super().__init__(seq, id=_id, name=name, description=description,
             **kwargs)
         self.gene_id = gene_id
         self.transcript_id = transcript_id
         self.protein_id = protein_id
-    
+
     def __getitem__(self, index) -> AminoAcidSeqRecord:
         """"""
-        new_one = super().__getitem__(index)
-        new_one.__class__ = self.__class__
-        new_one.gene_id = self.gene_id
-        new_one.transcript_id = self.transcript_id
-        new_one.protein_id = self.protein_id
+        new_seq = self.seq.__getitem__(index)
+        new_one = self.__class__(seq=new_seq, _id=self.id, name=self.name,
+            description=self.description, gene_id=self.gene_id,
+            transcript_id=self.transcript_id, protein_id=self.protein_id)
         return new_one
-    
+
     def __add__(self, other:AminoAcidSeqRecord) -> AminoAcidSeqRecord:
         """"""
         new_one = super().__add__(other)
@@ -41,17 +42,41 @@ class AminoAcidSeqRecord(SeqRecord):
     def __hash__(self):
         """ hash """
         return hash(str(self.seq))
-    
+
     def __eq__(self, other:AminoAcidSeqRecord):
         """ equal to """
         return self.seq == other.seq
-    
+
+    def __ne__(self, other:AminoAcidSeqRecord) -> bool:
+        """ not equal to """
+        return not self == other
+
+    def __gt__(self, other:AminoAcidSeqRecord):
+        """ greater than """
+        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
+
+    def __ge__(self, other:AminoAcidSeqRecord):
+        """ greater or equal to """
+        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
+
+    def __lt__(self, other:AminoAcidSeqRecord):
+        """ less than """
+        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
+
+    def __le__(self, other:AminoAcidSeqRecord):
+        """ less or equal to """
+        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
+
+    def __le___(self, other:AminoAcidSeqRecord):
+        """ Due to an typo in biopython """
+        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
+
     def infer_ids(self, style:str=None) -> str:
         """
         Args:
             source (str): The style of the fasta file header. Either 'gencode'
                 or 'ensembl'. If None, it will try both. Defaults to None.
-        
+
         Returns:
             The style ifered.
         """
@@ -61,15 +86,15 @@ class AminoAcidSeqRecord(SeqRecord):
                 return 'gencode'
             except ValueError:
                 pass
-            
+
             try:
                 self._infer_ids_ensembl()
                 return 'ensembl'
-            except ValueError:
+            except ValueError as e:
                 raise ValueError(
                     'Failed to infer gene ID, transcript ID, and protein ID '
-                    'using both ENSEMBL and GENCODE\'s format.'
-                )
+                    r'using both ENSEMBL and GENCODE\'s format.'
+                ) from e
         elif style == 'gencode':
             self._infer_ids_gencode()
         elif style == 'ensembl':
@@ -85,8 +110,8 @@ class AminoAcidSeqRecord(SeqRecord):
         """
         delimiter = '|'
         if delimiter not in self.description:
-            raise ValueError('The description does not have any \'' + delimiter
-            + '\'.')
+            raise ValueError(r'The description does not have any \'' +
+            delimiter + r'\'.')
         ids = self.description.split(delimiter)
         gene_id, protein_id, transcript_id = None, None, None
         for _id in ids:
@@ -99,35 +124,37 @@ class AminoAcidSeqRecord(SeqRecord):
             else:
                 continue
         if gene_id is None:
-            raise ValueError('Couldn\'t find gene ID')
+            raise ValueError(r'Couldn\'t find gene ID')
         if transcript_id is None:
-            raise ValueError('Transcript ID could\'t be inferred.')
+            raise ValueError(r'Transcript ID could\'t be inferred.')
         if protein_id is None:
-            raise ValueError('Protein ID could\'t be inferred.')
-        
+            raise ValueError(r'Protein ID could\'t be inferred.')
+
+        self.id = protein_id
+        self.name = protein_id
         self.gene_id = gene_id
         self.protein_id = protein_id
         self.transcript_id = transcript_id
-    
+
     def _infer_ids_ensembl(self):
         """ Infers the gene, transcript, and protein ID from description base
         on ENSEMBL's format
         """
-        if not re.search('^ENSP\d+\.\d+ pep ', self.description):
-            raise ValueError('Description doesn\'t seem like ESEMBL\'s style')
-        
+        if not re.search(r'^ENSP\d+\.\d+ pep ', self.description):
+            raise ValueError(r'Description doesn\'t seem like ESEMBL\'s style')
+
         protein_id = self.id
 
-        match = re.search('gene:(ENSG\d+\.\d+) ', self.description)
+        match = re.search(r'gene:(ENSG\d+\.\d+) ', self.description)
         if not match:
-            raise ValueError('Couldn\'t find gene ID')
-        gene_id = match.group(0)
+            raise ValueError(r'Couldn\'t find gene ID')
+        gene_id = match.group(1)
 
-        match = re.search('transcript:(ENST\d+\.\d+) ')
+        match = re.search(r'transcript:(ENST\d+\.\d+) ', self.description)
         if not match:
-            raise ValueError('Couldn\'t find transcript ID')
-        transcript_id = match.group(0)
-        
+            raise ValueError(r'Couldn\'t find transcript ID')
+        transcript_id = match.group(1)
+
         self.gene_id = gene_id
         self.protein_id = protein_id
         self.transcript_id = transcript_id
@@ -139,30 +166,29 @@ class AminoAcidSeqRecord(SeqRecord):
         exception = EXPASY_RULES.get(exception, exception)
         exceptions = [] if exception is None else \
             [x.end() for x in re.finditer(exception, str(self.seq))]
-        
-        for x in re.finditer(rule, str(self.seq)):
-            if x not in exceptions:
-                yield x.end()
-        return
-    
+
+        for it in re.finditer(rule, str(self.seq)):
+            if it not in exceptions:
+                yield it.end()
+
     def find_first_enzymatic_cleave_site(self, rule:str, exception:str=None,
             start:int=0) -> int:
         """ Find the first enzymatic cleave site """
-        iter = self[start:]\
+        it = self[start:]\
             .iter_enzymatic_cleave_sites(rule=rule, exception=exception)
         try:
-            return next(iter) + start
+            return next(it) + start
         except StopIteration:
             return -1
-    
+
     def find_all_enzymatic_cleave_sites(self, rule:str, exception:str=None,
             ) -> List[int]:
-        """"""
-        return [i for i in self.iter_enzymatic_cleave_sites(rule=rule,
-            exception=exception)]
+        """ Find all enzymatic cleave sites. """
+        return list(self.iter_enzymatic_cleave_sites(rule=rule,
+            exception=exception))
 
     def enzymatic_cleave(self, rule:str, exception:str=None,
-            miscleavage:int=2, min_mw:float=500.0)->set[AminoAcidSeqRecord]:
+            miscleavage:int=2, min_mw:float=500.0)->Set[AminoAcidSeqRecord]:
         """ Performs enzymatic cleave """
         peptides = []
         sites = [0]
@@ -179,4 +205,3 @@ class AminoAcidSeqRecord(SeqRecord):
                 end += 1
             start += 1
         return peptides
-        

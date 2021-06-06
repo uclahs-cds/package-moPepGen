@@ -1,4 +1,4 @@
-""""""
+""" Test module for moPepGen """
 from typing import Dict, List, Tuple
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
@@ -13,7 +13,7 @@ def create_dgraph2(data:dict
     graph = None
     for key, val in data.items():
         _seq = Seq(val[0]) if val[0] else None
-        
+
         if not graph:
             if _seq:
                 seq_location = dna.MatchedLocation(
@@ -42,8 +42,8 @@ def create_dgraph2(data:dict
                 location=FeatureLocation(start=var_start, end=var_end),
                 ref=var_data[1],
                 alt=var_data[2],
-                type=var_data[3],
-                id=var_data[4]
+                _type=var_data[3],
+                _id=var_data[4]
             )
             var_location = FeatureLocation(
                 start=var_data[0],
@@ -56,7 +56,7 @@ def create_dgraph2(data:dict
             variants.append(variant)
             if variant.variant.is_frameshifting():
                 frameshifts.add(variant.variant)
-            
+
         left = 0
         seq_locations = []
         variant:seqvar.VariantRecordWithCoordinate
@@ -71,7 +71,7 @@ def create_dgraph2(data:dict
                 )
                 seq_locations.append(seq_location)
             left = variant.location.end
-        
+
         if left < len(_seq):
             right = len(_seq)
             ref_start = left + node_start
@@ -81,7 +81,7 @@ def create_dgraph2(data:dict
                 ref=FeatureLocation(start=ref_start, end=ref_end)
             )
             seq_locations.append(seq_location)
-        
+
         # create a node
         seq = dna.DNASeqRecordWithCoordinates(_seq, seq_locations)
         node = svgraph.DNANode(seq, variants, frameshifts)
@@ -97,7 +97,7 @@ def create_dgraph2(data:dict
                 edge_type = 'variant_start'
             graph.add_edge(in_node, node, edge_type)
 
-        # update graph.seq if the current node has no variants       
+        # update graph.seq if the current node has no variants
         if not node.variants:
             root_seq = graph.seq.seq + _seq if graph.seq else _seq
             root_seq_location = dna.MatchedLocation(
@@ -123,11 +123,11 @@ def create_dgraph1(seq, variants) -> svgraph.TranscriptVariantGraph:
     )
     graph = svgraph.TranscriptVariantGraph(seq, '')
     records = []
-    for start, end, ref, alt, type, _id in variants:
+    for start, end, ref, alt, _type, _id in variants:
         location = FeatureLocation(start=start, end=end)
         records.append(seqvar.VariantRecord(
             location=location, ref=ref, alt=alt,
-            type=type, id=_id
+            _type=_type, _id=_id
         ))
     graph.create_variant_graph(records)
     return graph

@@ -10,7 +10,7 @@ class VEPRecord():
     """ A VEPRecord object holds the an entry from the VEP output. The VEP
     output is defined at https://uswest.ensembl.org/info/docs/tools/vep/
     vep_formats.html#output
-    
+
     Attributes:
         uploaded_variation (str): as chromosome_start_alleles
         location (str): in standard coordinate format (chr:start or
@@ -54,18 +54,22 @@ class VEPRecord():
         self.codons = codons
         self.existing_variation = existing_variation
         self.extra = extra
-    
+
     def __repr__(self)->str:
         """Return representation of the VEP record."""
         consequences = '|'.join(self.consequences)
         return f"< {self.feature}, {consequences}, {self.location} >"
-    
+
     def convert_to_variant_record(self, seq:dna.DNASeqRecord
             ) -> seqvar.VariantRecord:
-        """ """
+        """ Convert a VepRecord to a generic VariantRecord object.
+
+        Args:
+            seq (dna.DNASeqRecord): The DNA sequence of the transcript.
+        """
         alt_position = self.cdna_position.split('-')
         alt_start = int(alt_position[0]) - 1
-        
+
         codon_ref, codon_alt = self.codons
 
         if codon_ref == '-':
@@ -102,8 +106,8 @@ class VEPRecord():
             else:
                 raise ValueError('No alteration found in this VEP record')
 
-        type = 'SNV' if len(ref) == 1 and len(alt) == 1 else 'INDEL'
-        _id = f'{type}-{alt_start}-{ref}-{alt}'
+        _type = 'SNV' if len(ref) == 1 and len(alt) == 1 else 'INDEL'
+        _id = f'{_type}-{alt_start}-{ref}-{alt}'
 
         try:
             return seqvar.VariantRecord(
@@ -114,9 +118,8 @@ class VEPRecord():
                 ),
                 ref=ref,
                 alt=alt,
-                type=type,
-                id=_id
+                _type=_type,
+                _id=_id
             )
         except ValueError as e:
-            raise ValueError(e.args[0] + f' [{self.feature}]')
-        
+            raise ValueError(e.args[0] + f' [{self.feature}]') from e

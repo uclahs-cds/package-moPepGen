@@ -1,10 +1,12 @@
-""""""
+""" Test module for DNA Node """
 import unittest
 from test import create_dgraph2
 
 
 class TestDNANode(unittest.TestCase):
+    """ Test case for DNA node """
     def test_create_graph(self):
+        """ Test the graph can be constructed successfully """
         data = {
             1: ('ATGTGGC', [], []),
             2: ('A', [1], [(0, 'C', 'A', 'SNV', '')]),
@@ -16,7 +18,7 @@ class TestDNANode(unittest.TestCase):
         self.assertEqual(nodes[1].seq.seq, 'ATGTGGC')
         node = next(iter(nodes[3].out_edges)).out_node
         self.assertEqual(node.seq.seq, nodes[4].seq.seq)
-    
+
     def test_deep_copy(self):
         """ Test that the deepcopy creates a copy of the node and its
         downstream nodes. """
@@ -33,10 +35,10 @@ class TestDNANode(unittest.TestCase):
         out_node = next(iter(node_copy.out_edges)).out_node
         self.assertEqual(out_node.seq.seq, nodes[4].seq.seq)
         self.assertIsNot(out_node, nodes[4])
-    
+
     def test_find_farthest_node_with_overlap_case1(self):
-        """
-                 T--   
+        r"""
+                 T--
                 /   \
             ATGG-TCT-G-CCCT
                     \ /
@@ -55,7 +57,7 @@ class TestDNANode(unittest.TestCase):
         self.assertIs(node, nodes[6])
 
     def test_find_farthest_node_with_overlap_case2(self):
-        """ Test case for the last node is too short. Should include the
+        r""" Test case for the last node is too short. Should include the
         following node.
                  T--   T
                 /   \ / \
@@ -78,12 +80,12 @@ class TestDNANode(unittest.TestCase):
         node = nodes[1].find_farthest_node_with_overlap()
         print(node.seq.seq)
         self.assertIs(node, nodes[9])
-    
+
     def test_find_farthest_node_with_overlap_case3(self):
-        """ For a bubble that do not merge, should return None. This would  be
+        r""" For a bubble that do not merge, should return None. This would  be
         the case of mutation at the last nucleotide.
-                 C 
-                /  
+                 C
+                /
             ATGG-T
         """
         data = {
@@ -91,14 +93,14 @@ class TestDNANode(unittest.TestCase):
             2: ('T', [1], []),
             3: ['C', [1], [(0, 'T', 'C', 'SNV', '')]]
         }
-        graph, nodes = create_dgraph2(data)
+        _, nodes = create_dgraph2(data)
         node = nodes[1].find_farthest_node_with_overlap()
         self.assertIs(node, None)
-    
+
     def test_find_farthest_node_with_overlap_case4_null_root(self):
         """ For mutation at the first nucleotide.
-                 AA 
-                /  \ 
+                 AA
+                /  \
             Null-A--TGG
         """
         data = {
@@ -107,7 +109,7 @@ class TestDNANode(unittest.TestCase):
             2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')]),
             3: ['TGG', [1,2], []]
         }
-        graph, nodes = create_dgraph2(data)
+        _, nodes = create_dgraph2(data)
         node = nodes[0].find_farthest_node_with_overlap()
         self.assertIs(node, nodes[3])
 

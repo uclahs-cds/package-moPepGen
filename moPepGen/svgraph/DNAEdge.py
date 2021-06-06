@@ -12,7 +12,7 @@ class DNAEdge():
             variant_start, variant_end, cleave, or reference
     """
     def __init__(self, in_node:svgraph.DNANode, out_node:svgraph.DNANode,
-            type:str):
+            _type:str):
         """ Constructor for Edge
 
         Args:
@@ -24,6 +24,6 @@ class DNAEdge():
         self.in_node = in_node
         self.out_node = out_node
         edge_types = ['variant_start', 'variant_end', 'reference']
-        if type not in edge_types:
-            raise ValueError(f'type {type} not from {edge_types}')
-        self.type = type
+        if _type not in edge_types:
+            raise ValueError(f'type {_type} not from {edge_types}')
+        self.type = _type

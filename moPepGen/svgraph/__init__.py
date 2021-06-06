@@ -1,3 +1,4 @@
+""" Module for the squence variant graph """
 from moPepGen.svgraph.DNANode import DNANode
 from moPepGen.svgraph.DNAEdge import DNAEdge
 from moPepGen.svgraph.TranscriptVariantGraph import TranscriptVariantGraph

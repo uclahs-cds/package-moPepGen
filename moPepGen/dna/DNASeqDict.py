@@ -2,7 +2,7 @@
 """
 from Bio import SeqIO
 from moPepGen.dna import DNASeqRecord
-        
+
 
 class DNASeqDict(dict):
     """ A DNASeqDict object is a dict-like object that the values are
@@ -12,7 +12,7 @@ class DNASeqDict(dict):
         for val in kwargs.values():
             self._validate(val)
         super().__init__(*args, **kwargs)
-    
+
     @staticmethod
     def _validate(val):
         """ validate values """
@@ -25,10 +25,10 @@ class DNASeqDict(dict):
         """ Set items. Only allow DNASeqRecord in values. """
         self._validate(v)
         super().__setitem__(k, v)
-    
+
     def dump_fasta(self, path:str)->None:
         """ Dump a FASTA file to a DNASeqDict
-        
+
         Args:
             path (str): Path to the genome assembly FASTA file.
         """

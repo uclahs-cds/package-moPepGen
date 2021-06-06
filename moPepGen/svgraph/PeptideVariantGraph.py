@@ -1,17 +1,16 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import Set, Tuple
+from typing import Set, Tuple, Deque
 from collections import deque
 import itertools
-import copy
 from Bio.Seq import Seq
 from moPepGen import aa, svgraph, seqvar, get_equivalent
-    
-    
+
+
 class PeptideVariantGraph():
     """ Defines the DAG data structure for peptide and variants.
-    
+
     Attributes:
         root (svgraph.PeptideNode): The root node of the graph.
         stop (svgraph.PeptideNode): This node is added to the end of each
@@ -22,7 +21,7 @@ class PeptideVariantGraph():
     """
     def __init__(self, root:svgraph.PeptideNode):
         """ Construct a PeptideVariantGraph.
-        
+
         Args:
             root (svgraph.PeptideNode): The root node of the graph.
         """
@@ -30,16 +29,17 @@ class PeptideVariantGraph():
         self.stop = svgraph.PeptideNode(aa.AminoAcidSeqRecord(Seq('*')))
         self.rule = None
         self.exception = None
-    
+
     def add_stop(self, node:svgraph.PeptideNode):
         """ Add the stop node to the outbound node list. """
         node.add_out_edge(self.stop)
-    
+
     def next_is_stop(self, node:svgraph.PeptideNode) -> bool:
         """ Checks if stop is linked as a outbound node. """
         return self.stop in node.out_nodes
-    
-    def remove_node(self, node:svgraph.PeptideNode) -> None:
+
+    @staticmethod
+    def remove_node(node:svgraph.PeptideNode) -> None:
         """ Remove a given node, and also remove the all edges from and to it.
         """
         while node.in_nodes:
@@ -49,13 +49,12 @@ class PeptideVariantGraph():
             out_node = node.out_nodes.pop()
             node.remove_out_edge(out_node)
         del node
-        return
-    
+
     def cleave_if_posible(self, node:svgraph.PeptideNode,
             return_first:bool=False) -> svgraph.PeptideNode:
         """ For a given node, it checks the whether there is any cleave site,
         and split at each site.
-        
+
         Args:
             node (svgraph.PeptideNode): The target node to cleave
             return_first (bool): When true, returns the first node rather
@@ -76,7 +75,7 @@ class PeptideVariantGraph():
 
     def expand_alignment_backward(self, node:svgraph.PeptideNode,
             ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
-        """ Expands the alignment bubble backward to the previous cleave site.
+        r""" Expands the alignment bubble backward to the previous cleave site.
         The sequence of the input node is first prepended to each of outbound
         node, and then the inbound node of those outbond nodes are then pointed
         to the inbond node of the input node.
@@ -86,13 +85,13 @@ class PeptideVariantGraph():
         is ST
 
                 V                    NCWV
-               / \                  /    \ 
+               / \                  /    \
         AER-NCW-H-ST     ->      AER-NCWH-ST
-        
+
         Args:
             node (svgraph.Peptide): The node that the outbond variant alignment
             bubble should be expanded.
-        
+
         Returns:
             A tuple of size 2 is returned. The first element is the end node
             of the variant alignment bubble, and the second is a set of all
@@ -102,9 +101,9 @@ class PeptideVariantGraph():
         to_return = self.stop
         if len(node.in_nodes) > 1:
             raise ValueError('Inbond node has multiple')
-        
+
         upstream = next(iter(node.in_nodes))
-        
+
         while node.out_nodes:
             cur = node.out_nodes.pop()
             node.remove_out_edge(cur)
@@ -127,7 +126,7 @@ class PeptideVariantGraph():
                 for variant in cur.variants:
                     variants.append(variant.shift(len(cur.seq)))
                 cur.variants = variants
-                
+
             # only branches out if there is new frameshifts
             frameshifts = copy.copy(node.frameshifts)
             frameshifts_before = len(frameshifts)
@@ -138,16 +137,16 @@ class PeptideVariantGraph():
             last = self.cleave_if_posible(cur)
             if to_return is cur:
                 to_return = last
-            
+
             if frameshifts_before != frameshifts_after:
                 branches.add(last)
-            
+
         upstream.remove_out_edge(node)
         return to_return, branches
-    
+
     def expand_alignment_forward(self, node:svgraph.PeptideNode
             ) -> svgraph.PeptideNode:
-        """ Explend the previous variant alignment bubble to the end of the
+        r""" Explend the previous variant alignment bubble to the end of the
         node of input. The sequencing of the node of input is first appended
         to each of the leading nodes, and the outbound node of those nodes
         are then pointed to the input node's outbound node.
@@ -159,19 +158,19 @@ class PeptideVariantGraph():
         STQQPK. The node QQPQE is then returned.
 
             NCWV                           NCWVSTQQPK
-           /    \                         /          \ 
+           /    \                         /          \
         AER-NCWH-STQQPK-QQPQE    ->    AER-NCWHSTQQPK-QQPQE
-        
+
         Args:
             node (svgraph.PeptideNode): The node that the inbound variant
                 alignment bubble to be expanded.
-        
+
         Returns:
             The end node is returned.
         """
         if len(node.out_nodes) > 1:
             raise ValueError('Outbond node has multiple')
-        
+
         downstream = next(iter(node.out_nodes))
 
         while node.in_nodes:
@@ -180,25 +179,25 @@ class PeptideVariantGraph():
             cur.remove_out_edge(node)
             cur.add_out_edge(downstream)
             self.cleave_if_posible(node=cur)
-        
+
         node.remove_out_edge(downstream)
         return downstream
-    
+
     def merge_join_alignments(self, node:svgraph.PeptideNode
             ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
-        """ For a given node, join all the inbond nodes and outbond nodes with
+        r""" For a given node, join all the inbond nodes and outbond nodes with
         any combinations.
 
         In the example below, node NCWHSTQQ is returned
 
                                        NCWHSTQV
-                                      /        \ 
+                                      /        \
             NCWV     V               | NCWVSTQV |
-           /    \   / \              |/        \| 
+           /    \   / \              |/        \|
         AER-NCWH-STQ-Q-PK    ->    AER-NCWHSTQQ-PK
                                       \        /
                                        NCWVSTQQ
-   
+
         Args:
             node (svgraph.PeptideNode): The node in the graph of target.
          """
@@ -214,7 +213,7 @@ class PeptideVariantGraph():
             variants = copy.copy(first.variants)
             for variant in second.variants:
                 variants.append(variant.shift(len(first.seq) + len(node.seq)))
-            
+
             if second is self.stop:
                 seq = first.seq + node.seq
             else:
@@ -224,7 +223,7 @@ class PeptideVariantGraph():
             frameshifts_before = len(frameshifts)
             frameshifts.update(second.frameshifts)
             frameshifts_after = len(frameshifts)
-            
+
             new_node = svgraph.PeptideNode(
                 seq=seq,
                 variants=variants,
@@ -232,45 +231,45 @@ class PeptideVariantGraph():
             )
             for upstream in first.in_nodes:
                 upstream.add_out_edge(new_node)
-            
+
             if second is self.stop:
                 self.add_stop(new_node)
             else:
                 for downstream in second.out_nodes:
                     new_node.add_out_edge(downstream)
-            
+
             if not new_node.variants:
                 to_return = new_node
 
             last_node = self.cleave_if_posible(new_node)
-            
+
             # return the last cleaved
             if to_return is new_node:
                 to_return = last_node
-            
+
             # aslo add the last cleaved to branch
             if frameshifts_before != frameshifts_after:
                 branches.add(new_node)
-            
+
         for first in primary_nodes:
             self.remove_node(first)
-        
+
         for second in secondary_nodes:
             self.remove_node(second)
-        
+
         self.remove_node(node)
-        
+
         return to_return, branches
-    
+
     def cross_join_alignments(self, node:svgraph.PeptideNode, site:int,
             ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
-        """ For a given node, split at the given position, expand inbound and
+        r""" For a given node, split at the given position, expand inbound and
         outbound alignments, and join them with edges.
-        
+
         In the example below, the node PK is returned
 
             NCWV           V                 NCWVSTEEK-LPAQV
-           /    \         / \               /         X     \ 
+           /    \         / \               /         X     \
         AER-NCWH-STEEKLPAQ-Q-PK    ->    AER-NCWHSTEEK-LPAQQ-PK
 
         Args:
@@ -293,10 +292,10 @@ class PeptideVariantGraph():
             last = self.cleave_if_posible(first)
             primary_nodes2.add(last)
         primary_nodes = primary_nodes2
-        
+
         for second in secondary_nodes:
             second.seq = right.seq + second.seq
-            
+
             variants = []
             for variant in right.variants:
                 variants.append(variant)
@@ -307,29 +306,29 @@ class PeptideVariantGraph():
             while second.in_nodes:
                 in_node = second.in_nodes.pop()
                 in_node.remove_out_edge(second)
-            
+
             # only branch out when there is new frameshifts
             for frameshift in second.frameshifts:
                 if frameshift not in right.frameshifts:
                     branches.add(second)
-            
+
             last = self.cleave_if_posible(second)
             if not variants:
                 to_return = last
-        
+
         self.remove_node(left)
         self.remove_node(right)
-            
+
         for first, second in itertools.product(primary_nodes, secondary_nodes):
             first.add_out_edge(second)
-        
+
         return to_return, branches
-    
+
     def form_cleavage_graph(self, rule:str, exception:str=None) -> None:
         """ Form a cleavage graph from a variant graph. After calling this
         method, every each in the graph should represent a cleavage in the
         sequence of the pull peptide of reference and variated.
-        
+
         Args:
             rule (str): The rule for enzymatic cleavage, e.g., trypsin.
             exception (str): The exception for cleavage rule.
@@ -347,14 +346,14 @@ class PeptideVariantGraph():
                 for out_node in cur.out_nodes:
                     queue.appendleft(out_node)
                 continue
-            
+
             site = cur.seq.find_first_enzymatic_cleave_site(rule=self.rule,
                 exception=self.exception)
             while site > -1:
                 cur = cur.split_node(site)
                 site = cur.seq.find_first_enzymatic_cleave_site(rule=self.rule,
                     exception=self.exception)
-            
+
             if self.next_is_stop(cur):
                 if len(cur.out_nodes) > 1:
                     # return branch
@@ -362,7 +361,7 @@ class PeptideVariantGraph():
                     for branch in branches:
                         queue.appendleft(branch)
                 continue
-            
+
             # expand the variant alignments to the left
             # returns the new reference node in the alignment.
             # This is when the node between to bubbles don't have any cleavages
@@ -410,14 +409,14 @@ class PeptideVariantGraph():
     def call_vaiant_peptides(self, miscleavage:int=2
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
-        
+
         Args:
             miscleavage (int): Number of miscleavages allowed.
 
         Return:
             A set of aa.AminoAcidSeqRecord.
         """
-        queue:deque[svgraph.PeptideNode] = deque([self.root])
+        queue:Deque[svgraph.PeptideNode] = deque([self.root])
         visited:Set[svgraph.PeptideNode] = set()
         variant_peptides:Set[aa.AminoAcidSeqRecord] = set()
         while queue:
@@ -426,25 +425,25 @@ class PeptideVariantGraph():
                 for out_node in cur.out_nodes:
                     queue.appendleft(out_node)
                 continue
-            
+
             # skip the node if already visited
             visited_len_before = len(visited)
             visited.add(cur)
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
                 continue
-            
+
             # add out nodes to the queue
             for out_node in cur.out_nodes:
                 if out_node is not self.stop:
                     queue.appendleft(out_node)
 
-            node_paths:deque[deque[svgraph.PeptideNode]]
+            node_paths:Deque[Deque[svgraph.PeptideNode]]
             node_paths = deque([deque([cur])])
             i = 0
             while i < miscleavage and node_paths:
                 i += 1
-                next_batch:deque[deque[svgraph.PeptideNode]] = deque()
+                next_batch:Deque[Deque[svgraph.PeptideNode]] = deque()
                 while node_paths:
                     nodes = node_paths.pop()
 
@@ -473,7 +472,7 @@ class PeptideVariantGraph():
                         seq.name = seq.id
                         seq.description = seq.id
                         variant_peptides.add(seq)
-                    
+
                     if i + 1 < miscleavage:
                     # create a new batch of node paths for the next iteration
                         last_node = nodes[-1]
@@ -485,6 +484,5 @@ class PeptideVariantGraph():
                             next_batch.appendleft(new_list)
 
                 node_paths = next_batch
-        
+
         return variant_peptides
-    

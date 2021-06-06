@@ -1,5 +1,5 @@
+""" Profile the moPepGen callPeptide process """
 import pathlib
-from pyinstrument import Profiler
 from Bio import SeqIO
 from moPepGen import dna, aa, svgraph, seqvar
 from moPepGen.gtf import TranscriptGTFDict
@@ -7,8 +7,9 @@ from moPepGen.SeqFeature import FeatureLocation
 
 
 def run_task():
+    """ run task """
     transcript_id = 'ENST00000318329.6'
-    file_dir = f'{pathlib.Path(__file__).parent.absolute()}/test/files/{transcript_id}'
+    file_dir = f'{pathlib.Path(__file__).parent.absolute()}/files/{transcript_id}'
 
     # gtf
     gtf = TranscriptGTFDict()
@@ -26,7 +27,7 @@ def run_task():
             start=gtf[transcript_id].get_cds_start_index(),
             end=gtf[transcript_id].get_cds_end_index()
         )
-    
+
     # protein
     proteins = aa.AminoAcidSeqDict()
     proteins.dump_fasta(f'{file_dir}/translate.fasta')
@@ -35,6 +36,7 @@ def run_task():
     variants = {}
 
     variant_file = f'{file_dir}/vep_moPepGen.txt'
+    transcript_seq = None
     with open(variant_file, 'rt') as handle:
         for line in handle:
             if line.startswith('#'):
@@ -49,14 +51,14 @@ def run_task():
                 ),
                 ref=fields[3],
                 alt=fields[4],
-                type=fields[5],
-                id=fields[6]
+                _type=fields[5],
+                _id=fields[6]
             )
             if transcript_id not in variants:
                 variants[transcript_id] = [record]
             else:
                 variants[transcript_id].append(record)
-    
+
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
         transcript_id=transcript_id
@@ -66,7 +68,7 @@ def run_task():
     pgraph = dgraph.translate()
     pgraph.form_cleavage_graph('trypsin')
     peptides = pgraph.call_vaiant_peptides()
-    print(peptides) 
+    print(peptides)
 
 if __name__ == '__main__':
     run_task()

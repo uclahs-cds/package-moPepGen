@@ -132,7 +132,7 @@ def main():
         help='Print out logging messages. Defaults to True',
         default=True
     )
-    
+
     parser_parse_vep.set_defaults(func=cli.parse_vep)
 
     # callPeptides

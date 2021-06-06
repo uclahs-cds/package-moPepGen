@@ -22,7 +22,7 @@ class MatchedLocation():
     """
     def __init__(self, query:FeatureLocation, ref:FeatureLocation):
         """ Constructor for MatchedLocation
-        
+
         Args:
             query (FeatureLocation): The location of the query sequence.
             ref (FeatureLocation): The location of the reference sequence.
@@ -31,11 +31,11 @@ class MatchedLocation():
             raise ValueError('Location length must equal.')
         self.query = query
         self.ref = ref
-    
+
     def __len__(self):
         """ length """
         return len(self.query)
-    
+
     def __eq__(self, other:MatchedLocation) -> bool:
         """ equal to """
         return self.ref == other.ref
@@ -43,11 +43,11 @@ class MatchedLocation():
     def __gt__(self, other:MatchedLocation) -> bool:
         """ greater than """
         return self.ref > other.ref
-    
+
     def __getitem__(self, index) -> MatchedLocation:
         """ Get item. The query location of the returned object starts at 0.
         """
-        start, stop, step = index.indices(len(self))
+        start, stop, _ = index.indices(len(self))
         query = FeatureLocation(
             seqname=self.query.seqname,
             start=0,
@@ -62,7 +62,7 @@ class MatchedLocation():
             query=query,
             ref=ref
         )
-    
+
     def shift(self, i:int) -> MatchedLocation:
         """ Shift query window by i """
         query = self.query.__class__(

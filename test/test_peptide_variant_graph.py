@@ -15,7 +15,7 @@ def create_pgraph(data:dict
     for key, val in data.items():
         seq = aa.AminoAcidSeqRecord(
             Seq(val[0]),
-            id='ENST00001',
+            _id='ENST00001',
             transcript_id='ENST00001'
         )
         variants = []
@@ -29,8 +29,8 @@ def create_pgraph(data:dict
                 location=location_transcirpt,
                 ref=it[2],
                 alt=it[3],
-                type=it[4],
-                id=it[5]
+                _type=it[4],
+                _id=it[5]
             )
             variant = seqvar.VariantRecordWithCoordinate(
                 variant=var_record,
@@ -46,15 +46,16 @@ def create_pgraph(data:dict
     return graph, node_list
 
 
-class TestPeptideVariantGraph(unittest.TestCase):    
+class TestPeptideVariantGraph(unittest.TestCase):
+    """ Test case for peptide variant graph """
     def test_expand_backward_no_inbound(self):
-        """ > Test expand backward when the node has no inbound nodes.
-        
+        r""" > Test expand backward when the node has no inbound nodes.
+
                   V-P
                  /
             MNAAC-VC-PRN
-                 \  /   
-                  DC    
+                 \  /
+                  DC
         """
         data = {
             1: ('MNAAC', [0], [None]),
@@ -64,26 +65,25 @@ class TestPeptideVariantGraph(unittest.TestCase):
             5: ('DC', [1], [(0, 1, 'T', 'A', 'SNV', '0:T-A', 0, 1, False)]),
             6: ('PRN', [4, 5], [None])
         }
-        
+
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
         graph.expand_alignment_backward(nodes[1])
-        
-        seqs = set([str(node.seq.seq) for node in graph.root.out_nodes])
-        self.assertEqual(seqs, set(['MNAACV', 'MNAACVC', 'MNAACDC']))
+
+        seqs = {str(node.seq.seq) for node in graph.root.out_nodes}
+        self.assertEqual(seqs, {'MNAACV', 'MNAACVC', 'MNAACDC'})
         self.assertEqual(len(nodes[1].in_nodes), 0)
         self.assertEqual(len(nodes[1].out_nodes), 0)
         self.assertNotIn(nodes[1], graph.root.out_nodes)
-        return
-    
+
     def test_expand_backward_one_inbound(self):
-        """ > Test expand backward when the node has no inbound nodes.
-        
+        r""" > Test expand backward when the node has no inbound nodes.
+
                        V-P
                       /
             MNAAC-GCVV-VC-PRN
-                      \  /   
-                       DC    
+                      \  /
+                       DC
         """
         data = {
             1: ('MNAAC', [0], [None]),
@@ -94,13 +94,13 @@ class TestPeptideVariantGraph(unittest.TestCase):
             6: ('DC', [2], [(0, 1, 'T', 'A', 'SNV', '0:T-A', 0, 1, False)]),
             7: ('PRN', [5, 6], [None])
         }
-        
+
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
-        cur, branches = graph.expand_alignment_backward(nodes[2])
-        
-        seqs = set([str(node.seq.seq) for node in nodes[1].out_nodes])
-        self.assertEqual(seqs, set(['GCVVV', 'GCVVVC', 'GCVVDC']))
+        _, branches = graph.expand_alignment_backward(nodes[2])
+
+        seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
+        self.assertEqual(seqs, {'GCVVV', 'GCVVVC', 'GCVVDC'})
         self.assertEqual(len(nodes[2].in_nodes), 0)
         self.assertEqual(len(nodes[2].out_nodes), 0)
         self.assertNotIn(nodes[2], nodes[1].out_nodes)
@@ -108,15 +108,14 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertEqual(len(branches), 1)
         branch = branches.pop()
         self.assertEqual(str(branch.seq.seq), 'GCVVV')
-        return
-    
+
     def test_expand_forward(self):
-        """ > expand forward
+        r""" > expand forward
                   GCVVV-P
                  /
             MNAAR-GCVVVC-PDNK-DCAGP
-                 \      /   
-                  GCVVDC    
+                 \      /
+                  GCVVDC
         """
         data = {
             1: ('MNAAR', [0], [None]),
@@ -130,22 +129,21 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
         graph.expand_alignment_forward(nodes[6])
-        seqs = set([str(node.seq.seq) for node in nodes[7].in_nodes])
-        self.assertEqual(seqs, set(['GCVVVCPDNK', 'GCVVDCPDNK']))
+        seqs = {str(node.seq.seq) for node in nodes[7].in_nodes}
+        self.assertEqual(seqs, {'GCVVVCPDNK', 'GCVVDCPDNK'})
         self.assertEqual(len(nodes[6].in_nodes), 0)
         self.assertEqual(len(nodes[6].out_nodes), 0)
         self.assertNotIn(nodes[6], nodes[4].out_nodes)
         self.assertNotIn(nodes[6], nodes[5].out_nodes)
         self.assertNotIn(nodes[6], nodes[7].in_nodes)
-        return
-    
+
     def test_expand_forward_with_new_cleave_site(self):
-        """ > expand forward when there is a new cleave site
+        r""" > expand forward when there is a new cleave site
                   GCVVV-P
                  /
             MNAAR-GCVVVC-PDNK-DCAGP
-                 \      /   
-                  GCVVRC    
+                 \      /
+                  GCVVRC
         """
         data = {
             1: ('MNAAR', [0], [None]),
@@ -159,23 +157,22 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
         graph.expand_alignment_forward(nodes[6])
-        seqs = set([str(node.seq.seq) for node in nodes[7].in_nodes])
-        self.assertEqual(seqs, set(['GCVVVCPDNK', 'CPDNK']))
-        seqs = set([str(node.seq.seq) for node in nodes[1].out_nodes])
+        seqs = {str(node.seq.seq) for node in nodes[7].in_nodes}
+        self.assertEqual(seqs, {'GCVVVCPDNK', 'CPDNK'})
+        seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
         self.assertIn('GCVVR', seqs)
         self.assertEqual(len(nodes[6].in_nodes), 0)
         self.assertEqual(len(nodes[6].out_nodes), 0)
         self.assertNotIn(nodes[6], nodes[4].out_nodes)
         self.assertNotIn(nodes[6], nodes[5].out_nodes)
         self.assertNotIn(nodes[6], nodes[7].in_nodes)
-        return
 
     def test_merge_join(self):
-        """
+        r"""
                                        NCWHSTQV
-                                      /        \ 
+                                      /        \
             NCWV     V               | NCWVSTQV |
-           /    \   / \              |/        \| 
+           /    \   / \              |/        \|
         AER-NCWH-STQ-Q-PK    ->    AER-NCWHSTQQ-PK
                                       \        /
                                        NCWVSTQQ
@@ -191,20 +188,20 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
-        cur, branches = graph.merge_join_alignments(nodes[4])
-        seqs = set([str(node.seq.seq) for node in nodes[1].out_nodes])
-        seqs_expect = set(['NCWHSTQV', 'NCWVSTQV', 'NCWHSTQQ', 'NCWVSTQQ'])
+        cur, _ = graph.merge_join_alignments(nodes[4])
+        seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
+        seqs_expect = {'NCWHSTQV', 'NCWVSTQV', 'NCWHSTQQ', 'NCWVSTQQ'}
         self.assertEqual(seqs, seqs_expect)
         self.assertEqual(len(nodes[4].in_nodes), 0)
         self.assertEqual(len(nodes[4].out_nodes), 0)
         self.assertEqual(str(cur.seq.seq), 'NCWHSTQQ')
-    
+
     def test_merge_join_with_cleave(self):
-        """
+        r"""
                                        NCWHSTQV-
-                                      /         \ 
+                                      /         \
             NCWR     V               | NCWR-STQV |
-           /    \   / \              |/         \| 
+           /    \   / \              |/         \|
         AER-NCWH-STQ-Q-PK    ->    AER-NCWHSTQQ--PK
                                       \         /
                                        NCWR-STQQ
@@ -220,21 +217,21 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
-        cur, branches = graph.merge_join_alignments(nodes[4])
-        seqs = set([str(node.seq.seq) for node in nodes[1].out_nodes])
-        seqs_expect = set(['NCWHSTQV', 'NCWR', 'NCWHSTQQ', 'NCWR'])
+        cur, _ = graph.merge_join_alignments(nodes[4])
+        seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
+        seqs_expect = {'NCWHSTQV', 'NCWR', 'NCWHSTQQ', 'NCWR'}
         self.assertEqual(seqs, seqs_expect)
         self.assertEqual(len(nodes[4].in_nodes), 0)
         self.assertEqual(len(nodes[4].out_nodes), 0)
         self.assertEqual(str(cur.seq.seq), 'NCWHSTQQ')
-        seqs = set([str(node.seq.seq) for node in nodes[7].in_nodes])
-        seqs_expect = set(['NCWHSTQV', 'STQV', 'NCWHSTQQ', 'STQQ'])
+        seqs = {str(node.seq.seq) for node in nodes[7].in_nodes}
+        seqs_expect = {'NCWHSTQV', 'STQV', 'NCWHSTQQ', 'STQQ'}
         self.assertEqual(seqs, seqs_expect)
-    
+
     def test_cross_join(self):
-        """
+        r"""
             NCWV           V                 NCWVSTEEK-LPAQV
-           /    \         / \               /         X     \ 
+           /    \         / \               /         X     \
         AER-NCWH-STEEKLPAQ-Q-PK    ->    AER-NCWHSTEEK-LPAQQ-PK
         """
         data = {
@@ -249,26 +246,26 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
         cur, branches = graph.cross_join_alignments(nodes[4], 5)
-        
+
         self.assertEqual(str(cur.seq.seq), 'LPAQQ')
         self.assertEqual(len(branches), 0)
 
-        seqs = set([str(node.seq.seq) for node in nodes[1].out_nodes])
-        seqs_expected = set(['NCWVSTEEK', 'NCWHSTEEK'])
+        seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
+        seqs_expected = {'NCWVSTEEK', 'NCWHSTEEK'}
         self.assertEqual(seqs, seqs_expected)
 
-        seqs = set([str(node.seq.seq) for node in nodes[7].in_nodes])
-        seqs_expected = set(['LPAQV', 'LPAQQ'])
+        seqs = {str(node.seq.seq) for node in nodes[7].in_nodes}
+        seqs_expected = {'LPAQV', 'LPAQQ'}
         self.assertEqual(seqs, seqs_expected)
 
-        seqs = set([str(node.seq.seq) for node in nodes[2].out_nodes])
-        seqs_expected = set(['LPAQV', 'LPAQQ'])
+        seqs = {str(node.seq.seq) for node in nodes[2].out_nodes}
+        seqs_expected = {'LPAQV', 'LPAQQ'}
         self.assertEqual(seqs, seqs_expected)
 
-        seqs = set([str(node.seq.seq) for node in nodes[3].out_nodes])
-        seqs_expected = set(['LPAQV', 'LPAQQ'])
+        seqs = {str(node.seq.seq) for node in nodes[3].out_nodes}
+        seqs_expected = {'LPAQV', 'LPAQQ'}
         self.assertEqual(seqs, seqs_expected)
-    
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,3 +1,4 @@
+""" moPepGen """
 from datetime import datetime
 
 
@@ -40,6 +41,7 @@ def get_equivalent(container, item, default=None):
 
 
 def logger(message:str) -> None:
+    """ Print message to the stdout. """
     print(
         f'[ {datetime.now().strftime(format="%Y-%m-%d %H:%M:%S")} ] {message}',
         flush=True

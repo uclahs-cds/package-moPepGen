@@ -6,9 +6,9 @@ from typing import Dict
 
 class GTFRecord():
     """ A GTFRecord object holds an entry from the a GTF file.
-    
+
     The schema of GTFRecord follows the definition from ENSMEBL (https://uswest
-    .ensembl.org/info/website/upload/gff.html). 
+    .ensembl.org/info/website/upload/gff.html).
 
     Attributes:
         seqname (str): The reference sequence name of the chromosome or
@@ -37,46 +37,44 @@ class GTFRecord():
         self.feature = feature
         self.start = start
         self.end = end
-        self.score = score,
+        self.score = score
         self.strand = strand
         self.frame = frame
         self.attributes = attributes
-    
+
     @property
     def biotype(self):
         """ biotype """
         return self.attributes['gene_type']
-    
+
     def __eq__(self, other:GTFRecord)->bool:
         """ equal to """
-        return self.start == other.start and self.stop == other.stop
-    
+        return self.start == other.start and self.end == other.end
+
     def __ne__(self, other:GTFRecord)->bool:
         """ not equal """
-        return not (self == other)
+        return not self == other
 
     def __gt__(self, other:GTFRecord)->bool:
         """ greater than """
         if self.start > other.start:
             return True
-        elif self.start < other.start:
+        if self.start < other.start:
             return False
-        elif self.end > other.end:
+        if self.end > other.end:
             return True
-        elif self.end < other.end:
+        if self.end < other.end:
             return False
-        else:
-            return False
+        return False
 
     def __ge__(self, other:GTFRecord)->bool:
         """ greater or equal """
         return self > other or self == other
-        
+
     def __lt__(self, other:GTFRecord)->bool:
         """ less than """
         return not (self > other or self == other)
-    
+
     def __le__(self, other:GTFRecord)->bool:
         """" less or equal """
         return self < other or self == other
-    

@@ -9,7 +9,7 @@ def generate_index(args:argparse.Namespace):
     path_genome:str = args.genome_fasta
     path_gtf:str = args.annotation_gtf
     parth_proteome:str = args.proteome_fasta
-    
+
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
     min_mw:float = float(args.min_mw)
@@ -53,7 +53,7 @@ def generate_index(args:argparse.Namespace):
         pickle.dump(proteome, handle)
     if verbose:
         logger('Proteome FASTA saved to disk.')
-    
+
     carnonical_peptides = proteome.create_unique_peptide_pool(
         rule=rule, exception=exception, miscleavage=miscleavage, min_mw=min_mw
     )
@@ -63,4 +63,3 @@ def generate_index(args:argparse.Namespace):
         pickle.dump(carnonical_peptides, handle)
     if verbose:
         logger('Carnonical peptide pool saved to disk.')
-
