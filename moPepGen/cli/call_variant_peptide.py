@@ -1,18 +1,17 @@
 """"""
 from typing import List, Dict
 import argparse
+import pickle
 from Bio import SeqIO, SeqUtils
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent
 from moPepGen.SeqFeature import FeatureLocation
 
 
-def call_variant_peptides(args:argparse.Namespace) -> None:
+def call_variant_peptide(args:argparse.Namespace) -> None:
     """"""
     variant_files:List[str] = args.input_variants
-    genome_fasta:str = args.genome_fasta
-    proteome_fasta:str = args.proteome_fasta
-    annotation_gtf:str = args.annotation_gtf
     output_fasta:str = args.output_fasta
+    index_dir:str = args.index_dir
     verbose:bool = args.verbose
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
@@ -22,20 +21,40 @@ def call_variant_peptides(args:argparse.Namespace) -> None:
     if verbose:
         logger('moPepGen callPeptide started.')
 
-    annotations = gtf.TranscriptGTFDict()
-    annotations.dump_gtf(annotation_gtf)
-    if verbose:
-        logger('Annotation GTF loaded.')
-    
-    genome = dna.DNASeqDict()
-    genome.dump_fasta(genome_fasta)
-    if verbose:
-        logger('Genome assembly FASTA loaded.')
-    
-    proteome = aa.AminoAcidSeqDict()
-    proteome.dump_fasta(proteome_fasta)
-    if verbose:
-        logger('Proteome FASTA loaded.')
+    if index_dir:
+        with open(f'{index_dir}/genome.pickle', 'rb') as handle:
+            genome = pickle.load(handle)
+        
+        with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
+            annotation = pickle.load(handle)
+        
+        with open(f"{index_dir}/carnonical_peptides.pickle", 'rb') as handle:
+            carnonical_peptides = pickle.load(handle)
+    else:
+        genome_fasta:str = args.genome_fasta
+        proteome_fasta:str = args.proteome_fasta
+        annotation_gtf:str = args.annotation_gtf
+        
+        annotation = gtf.TranscriptGTFDict()
+        annotation.dump_gtf(annotation_gtf)
+        if verbose:
+            logger('Annotation GTF loaded.')
+        
+        genome = dna.DNASeqDict()
+        genome.dump_fasta(genome_fasta)
+        if verbose:
+            logger('Genome assembly FASTA loaded.')
+        
+        proteome = aa.AminoAcidSeqDict()
+        proteome.dump_fasta(proteome_fasta)
+        if verbose:
+            logger('Proteome FASTA loaded.')
+        
+        carnonical_peptides = proteome.create_unique_peptide_pool(
+            rule=rule, exception=exception, miscleavage=miscleavage, min_mw=min_mw
+        )
+        if verbose:
+            logger('Carnonical peptide pool generated.')
     
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
     for file in variant_files:
@@ -67,20 +86,13 @@ def call_variant_peptides(args:argparse.Namespace) -> None:
     if verbose:
         logger(f'Variant records sorted.')
 
-    carnonical_peptides = proteome.create_unique_peptide_pool(
-        rule=rule, exception=exception, miscleavage=miscleavage, min_mw=min_mw
-    )
-    if verbose:
-        logger('Carnonical peptide pool generated.')
-
     variant_peptides = set()
 
     i = 0
     for transcript_id, variant_records in variants.items():
-        anno:gtf.TranscriptAnnotationModel = annotations[transcript_id]
+        anno:gtf.TranscriptAnnotationModel = annotation[transcript_id]
         chrom = anno.transcript.location.seqname
         transcript_seq = anno.get_transcript_sequence(genome[chrom])
-        protein_seq:aa.AminoAcidSeqRecord = proteome[transcript_id]
 
         dgraph = svgraph.TranscriptVariantGraph(
             seq=transcript_seq,
@@ -89,7 +101,7 @@ def call_variant_peptides(args:argparse.Namespace) -> None:
         dgraph.create_variant_graph(variant_records)
         dgraph.fit_into_codons()
         pgraph = dgraph.translate()
-    
+     
         pgraph.form_cleavage_graph(rule=rule, exception=exception)
         peptides = pgraph.call_vaiant_peptides(miscleavage=miscleavage)
 
@@ -122,14 +134,12 @@ def call_variant_peptides(args:argparse.Namespace) -> None:
 if __name__ == '__main__':
     args = argparse.Namespace
     args.input_variants = [
-        'test/files/downsampled_set/CPCG0100_gencode_v34_moPepGen.txt'
+        'test/files/CPCG0100_gencode_moPepGen.txt'
     ]
-    args.genome_fasta = 'test/files/downsampled_set/gencode_v34_genome_chr22.fasta'
-    args.proteome_fasta = 'test/files/downsampled_set/gencode_v34_translations_chr22.fasta'
-    args.annotation_gtf = 'test/files/downsampled_set/gencode_v34_chr22.gtf'
-    args.output_fasta = 'test/files/downsampled_set/CPCG0100_gencode_v34_moPepGen.fasta'
+    args.index_dir = 'test/files/gencode_34_index'
+    args.output_fasta = 'test/files/CPCG0100_gencode_v34_moPepGen.fasta'
     args.verbose = True
     args.cleavage_rule = 'trypsin'
     args.miscleavage = 2
     args.min_mw = 500.
-    call_variant_peptides(args)
+    call_variant_peptide(args)

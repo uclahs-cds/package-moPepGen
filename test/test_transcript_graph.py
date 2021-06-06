@@ -3,29 +3,7 @@ from collections import deque
 from Bio.Seq import Seq
 from moPepGen import svgraph, seqvar, dna
 from moPepGen.SeqFeature import FeatureLocation
-from test import create_dgraph
-
-
-def create_graph(seq, variants) -> svgraph.TranscriptVariantGraph:
-    location = dna.MatchedLocation(
-        query=FeatureLocation(start=0, end=len(seq)),
-        ref=FeatureLocation(start=0, end=len(seq))
-    )
-    seq = dna.DNASeqRecordWithCoordinates(
-        seq=Seq(seq),
-        locations=[location],
-        orf=FeatureLocation(start=0, end=len(seq))
-    )
-    graph = svgraph.TranscriptVariantGraph(seq, '')
-    records = []
-    for start, end, ref, alt, type, _id in variants:
-        location = FeatureLocation(start=start, end=end)
-        records.append(seqvar.VariantRecord(
-            location=location, ref=ref, alt=alt,
-            type=type, id=_id
-        ))
-    graph.create_variant_graph(records)
-    return graph
+from test import create_dgraph2, create_dgraph1
     
 
 class TestTranscriptGraph(unittest.TestCase):
@@ -34,7 +12,7 @@ class TestTranscriptGraph(unittest.TestCase):
         data = {
             1: ('AACCTTGG', [], [])
         }
-        graph, nodes = create_dgraph(data)
+        graph, nodes = create_dgraph2(data)
         left, right = graph.splice(nodes[1], 4, 'reference')
         self.assertIs(left, graph.root)
         self.assertEqual(str(left.seq.seq), 'AACC')
@@ -50,7 +28,7 @@ class TestTranscriptGraph(unittest.TestCase):
         data = {
             1: ('AACCTTGG', [], [])
         }
-        graph, nodes = create_dgraph(data)
+        graph, nodes = create_dgraph2(data)
         variant = seqvar.VariantRecord(
             location=FeatureLocation(start=4, end=5),
             ref='T',
@@ -66,14 +44,15 @@ class TestTranscriptGraph(unittest.TestCase):
         self.assertEqual(seqs, seqs_expected)
 
     
-    def test_create_graph(self):
+    def test_create_dgraph1(self):
         seq = 'ATGGTCTGCCCTCTGAAC'
         variants = [
             (3, 4, 'G', 'T', 'SNV', '3:G-T'),
             (3, 4, 'G', 'A', 'SNV', '3:G-A')
         ]
-        graph = create_graph(seq, variants)
-        variant_site_nodes = [edge.out_node for edge in graph.root.out_edges]
+        graph = create_dgraph1(seq, variants)
+        first_node = graph.root.get_reference_next()
+        variant_site_nodes = [edge.out_node for edge in first_node.out_edges]
         variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
         self.assertIn('T', variant_site_seqs)
         self.assertIn('A', variant_site_seqs)
@@ -81,7 +60,7 @@ class TestTranscriptGraph(unittest.TestCase):
         
         # testing that the variant nodes all go to the same reference node.
         nodes = set([next(iter(edge.out_node.out_edges)).out_node for edge \
-            in graph.root.out_edges])
+            in first_node.out_edges])
         self.assertEqual(len(nodes), 1)
 
         seq = 'ATGGTCTGCCCTCTGAACTGA'
@@ -89,26 +68,44 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
             (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
-        graph = create_graph(seq, variants)
-
+        graph = create_dgraph1(seq, variants)
         return
-        
     
-    def test_expand_bubble(self):
+    def test_expand_alignments_case1(self):
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
             (3, 4, 'G', 'T', 'SNV', '3:G-T'),
             (3, 4, 'G', 'A', 'SNV', '3:G-A')
         ]
-        graph = create_graph(seq, variants)
-        graph.expand_alignments(graph.root)
-        variant_site_nodes = [edge.out_node for edge in graph.root.out_edges]
+        graph = create_dgraph1(seq, variants)
+        first_node = graph.root.get_reference_next()
+        graph.expand_alignments(first_node)
+        variant_site_nodes = [edge.out_node for edge in first_node.out_edges]
         variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
         self.assertEqual(set(['TTC', 'ATC', 'GTC']), set(variant_site_seqs))
 
-        seqs = [edge.in_node.seq.seq for edge in graph.root\
+        seqs = [edge.in_node.seq.seq for edge in first_node\
             .get_reference_next().get_reference_next().in_edges]
         self.assertEqual(set(['TTC', 'ATC', 'GTC']), set(seqs))
+        return
+    
+    def test_expand_alignments_case2(self):
+        """ When there is a vairant at the first nucleotide
+                 AA 
+                /  \ 
+            Null-A--TGG
+        """
+        data = {
+            0: (None, [], []),
+            1: ('A', [0], []),
+            2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')]),
+            3: ['TGG', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data)
+        graph.expand_alignments(nodes[0])
+        variant_site_nodes = [edge.out_node for edge in nodes[0].out_edges]
+        variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
+        self.assertEqual(set(['ATG', 'AAT']), set(variant_site_seqs))
         return
     
     def test_find_overlaps(self):
@@ -117,8 +114,9 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
             (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
-        graph = create_graph(seq, variants)
-        farthest = graph.root.find_farthest_node_with_overlap()
+        graph = create_dgraph1(seq, variants)
+        first_node = graph.root.get_reference_next()
+        farthest = first_node.find_farthest_node_with_overlap()
         self.assertEqual('GCCCTCTGAACTGA', str(farthest.seq.seq))
 
         # case 2
@@ -127,23 +125,25 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
             (7, 8, 'G', 'A', 'SNV', '7:G-A')
         ]
-        graph = create_graph(seq, variants)
-        farthest = graph.root.find_farthest_node_with_overlap()
+        graph = create_dgraph1(seq, variants)
+        first_node = graph.root.get_reference_next()
+        farthest = first_node.find_farthest_node_with_overlap()
         self.assertEqual('CCCTCTGAACTGA', str(farthest.seq.seq))
         return
 
-    def test_align_variants(self):
+    def test_align_variants_case1(self):
         # case 1
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
             (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
-        graph = create_graph(seq, variants)
-        graph.align_varints(graph.root)
-        self.assertEqual(str(graph.root.get_reference_next().seq.seq), 'TCT')
+        graph = create_dgraph1(seq, variants)
+        first_node = graph.root.get_reference_next()
+        graph.align_varints(first_node)
+        self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCT')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
-            in graph.root.out_edges]
+            in first_node.out_edges]
         self.assertEqual(set(['T', 'TCT', 'ACT']), set(variant_seqs))
 
         # case 2
@@ -152,13 +152,31 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
             (7, 8, 'G', 'A', 'SNV', '7:G-A')
         ]
-        graph = create_graph(seq, variants)
-        graph.align_varints(graph.root)
-        self.assertEqual(str(graph.root.get_reference_next().seq.seq), 'TCTG')
+        graph = create_dgraph1(seq, variants)
+        first_node = graph.root.get_reference_next()
+        graph.align_varints(first_node)
+        self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCTG')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
-            in graph.root.out_edges]
+            in first_node.out_edges]
         self.assertEqual(set(['TG', 'TCTG', 'TCTA']), set(variant_seqs))
         return
+    
+    def test_align_variants_case2(self):
+        """ When there is a mutation at the first nucleotide.
+                 AA 
+                /  \ 
+            Null-A--TGG
+        """
+        data = {
+            0: (None, [], []),
+            1: ('A', [0], []),
+            2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')]),
+            3: ['TGG', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data)
+        node = graph.align_varints(nodes[0])
+        self.assertIs(graph.root, node)
+        self.assertIs(nodes[0], node)
     
     def test_fit_into_codons(self):
         # case 1
@@ -167,9 +185,10 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
             (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
-        graph = create_graph(seq, variants)
+        graph = create_dgraph1(seq, variants)
         graph.fit_into_codons()
-        queue:deque[svgraph.Node] = deque([graph.root])
+        first_node = graph.root.get_reference_next()
+        queue:deque[svgraph.Node] = deque([first_node])
         while queue:
             cur = queue.pop()
             if cur.seq and cur.out_edges:
@@ -184,7 +203,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
             (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
-        graph = create_graph(seq, variants)
+        graph = create_dgraph1(seq, variants)
         graph.fit_into_codons()
         pgraph = graph.translate()
         return

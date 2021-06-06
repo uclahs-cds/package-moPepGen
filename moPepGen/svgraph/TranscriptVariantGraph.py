@@ -20,7 +20,8 @@ class TranscriptVariantGraph():
         variants List[seqvar.VariantRecordWithCoordinate]: All variant
             records.
     """
-    def __init__(self, seq:dna.DNASeqRecordWithCoordinates, transcript_id:str):
+    def __init__(self, seq:dna.DNASeqRecordWithCoordinates|None,
+            transcript_id:str):
         """ Constructor to create a TranscriptVariantGraph object.
         
         Args:
@@ -28,11 +29,12 @@ class TranscriptVariantGraph():
                 transcript (reference).
             transcript_id (str)
         """
-        if seq.locations == []:
-            seq.locations = [dna.MatchedLocation(
-                query=FeatureLocation(start=0, end=len(seq)),
-                end=FeatureLocation(start=0, end=len(seq))
-            )]
+        if seq:
+            if seq.locations == []:
+                seq.locations = [dna.MatchedLocation(
+                    query=FeatureLocation(start=0, end=len(seq)),
+                    end=FeatureLocation(start=0, end=len(seq))
+                )]
         self.seq = seq
         node = svgraph.DNANode(seq)
         self.root = node
@@ -92,6 +94,13 @@ class TranscriptVariantGraph():
         while node.in_edges:
             edge = node.in_edges.pop()
             self.remove_edge(edge)
+    
+    def add_null_root(self):
+        """ Adds a null node to the root. """
+        original_root = self.root
+        new_root = svgraph.DNANode(None)
+        self.root = new_root
+        self.add_edge(self.root, original_root, 'reference')
 
     def splice(self, node:svgraph.DNANode, i:int, type:str
             ) -> Tuple[svgraph.DNANode, svgraph.DNANode]:
@@ -227,10 +236,12 @@ class TranscriptVariantGraph():
         Args:
             variant [seqvar.VariantRecord]: The variant record.
         """
+        # Add a null nood as root.
+        self.add_null_root()
         self.variants += variants
         variant_iter = variants.__iter__()
         variant = next(variant_iter)
-        cur = self.root
+        cur = self.root.get_reference_next()
 
         while variant:
             
@@ -258,8 +269,7 @@ class TranscriptVariantGraph():
             variant = next(variant_iter, None)
     
 
-    def align_varints(self, node:svgraph.DNANode
-            ) -> Tuple[svgraph.DNANode, List[svgraph.DNANode]]:
+    def align_varints(self, node:svgraph.DNANode) -> svgraph.DNANode:
         r""" Aligns all variants at that overlaps to the same start and end
         position.
 
@@ -333,7 +343,8 @@ class TranscriptVariantGraph():
 
 
     def expand_alignments(self, node:svgraph.DNANode
-            ) -> Tuple[svgraph.DNANode, List[svgraph.DNANode]]:
+            ) -> Tuple[svgraph.CursorForCodonFinding,
+                    List[svgraph.CursorForCodonFinding]]:
         """ Expand the aligned variants into the range of codons. For
         frameshifting mutations, a copy of each downstream node will be
         created and branched out.
@@ -354,9 +365,13 @@ class TranscriptVariantGraph():
         branches = []
         trash_nodes = set()
         # how many nt we should give to the mutation.
-        left_index = len(node.seq) - len(node.seq) % 3
-        left_over = node.seq[left_index:]
-        node.seq = node.seq[:left_index]
+        if node.seq:
+            left_index = len(node.seq) - len(node.seq) % 3
+            left_over = node.seq[left_index:]
+            node.seq = node.seq[:left_index]
+        else:
+            left_over = dna.DNASeqRecordWithCoordinates(Seq(''), [])
+        
         ref_node = node.get_reference_next()
         original_ref_seq_len = len(ref_node.seq)
         end_node = ref_node.get_reference_next()
@@ -456,36 +471,50 @@ class TranscriptVariantGraph():
                     \ /                \      /
                      A                  GTCTAC
         """
-        # Add a null nood as root. This might be moved to the
-        # create_variant graph method.
-        original_root = self.root
-        new_root = svgraph.DNANode(None)
-        self.root = new_root
-        self.add_edge(self.root, original_root, 'reference')
-        orf_start = self.seq.orf.start
-        orf_end = self.seq.orf.end
-        index = original_root.seq.get_query_index(orf_start)
         cur = svgraph.CursorForCodonFinding(
-            node=original_root,
+            node=self.root,
             position_to_orf='up',
-            search_orf=False,
-            start_codon_index=index
+            search_orf=False
         )
         queue = deque([cur])
 
         while queue:
             cur:svgraph.CursorForCodonFinding = queue.pop()
+            if cur.node is self.root:
+                if len(cur.node.out_edges) == 1:
+                    next_node = cur.node.get_reference_next()
+                    if self.seq.orf:
+                        start_codon_index = next_node.seq\
+                            .get_query_index(self.seq.orf.start)
+                        search_orf = False
+                    else:
+                        start_codon_index = None
+                        search_orf = True
+                    new_cursor = svgraph.CursorForCodonFinding(
+                        node=next_node,
+                        position_to_orf='up',
+                        search_orf=search_orf,
+                        start_codon_index=start_codon_index
+                    )
+                    queue.appendleft(new_cursor)
+                    continue
+                else:
+                    node = self.align_varints(cur.node)
+                    main,branches = self.expand_alignments(node)
+                    queue.appendleft(main)
+                    for branch in branches:
+                        queue.appendleft(branch)
+                    continue
+
             # not considering when there is mutation before the start codon
             # This should be the root
-            if cur.position_to_orf == 'up' and \
-                    cur.start_codon_index != -1:
+            if cur.position_to_orf == 'up' and cur.start_codon_index != -1:
                 node:svgraph.DNANode = cur.node
                 index = cur.start_codon_index
                 node.seq = node.seq[index:]
 
                 # When there is any start codon loss mutation, each mutation
-                # will start it's own branch. The root will then become a null
-                # node, and all branches will point to it.
+                # will start it's own branch.
                 if len(node.seq) < 3:
                     edges = copy.copy(cur.node.out_edges)
                     while edges:
@@ -536,7 +565,10 @@ class TranscriptVariantGraph():
                 node = cur.node
                 index = node.seq.seq.find('ATG')
                 
-                # no start codon found in the current cursor
+                # for start lost mutation or non-translatable sequences, if
+                # start codon is not found in the current cursor, merge the
+                # last nucleotides with each of the out nodes, and research.
+                # This may be improved by skipping visited nodes.
                 if index == -1:
                     for edge in node.out_edges:
                         out_node = edge.node
@@ -573,10 +605,10 @@ class TranscriptVariantGraph():
                 if len(node.out_edges) > 1:
                     node = self.align_varints(node)
                 main, branches = self.expand_alignments(node)
-                for branch in branches:
-                    queue.appendleft(branch)
                 if main:
                     queue.appendleft(main)
+                for branch in branches:
+                    queue.appendleft(branch)
                 continue
         return
     

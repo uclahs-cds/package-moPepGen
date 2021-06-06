@@ -34,8 +34,14 @@ class DNANode():
     
     def __hash__(self):
         """ hash """
-        locations = [(it.ref.start, it.ref.end) for it in self.seq.locations]
-        return hash((str(self.seq.seq), *locations))
+        if self.seq:
+            seq = self.seq.seq
+            locations = [(it.ref.start, it.ref.end) for it in \
+                self.seq.locations]
+        else:
+            seq = None
+            locations = []
+        return hash((str(seq), *locations))
     
     def get_edge_to(self, other:DNANode) -> svgraph.DNAEdge:
         """ Find the edge from this to the other node """

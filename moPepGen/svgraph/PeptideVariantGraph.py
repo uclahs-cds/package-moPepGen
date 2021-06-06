@@ -377,6 +377,8 @@ class PeptideVariantGraph():
                     continue
                 cur = cur.find_reference_next()
 
+            if cur is None:
+                raise ValueError()
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
                 exception=self.exception)
 

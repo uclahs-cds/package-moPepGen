@@ -1,6 +1,6 @@
 """"""
 import unittest
-from test import create_dgraph
+from test import create_dgraph2
 
 
 class TestDNANode(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestDNANode(unittest.TestCase):
             3: ('C', [1], []),
             4: ('TGCTG', [2,3], [])
         }
-        graph, nodes = create_dgraph(data)
+        graph, nodes = create_dgraph2(data)
         self.assertEqual(str(graph.seq.seq), 'ATGTGGCCTGCTG')
         self.assertEqual(nodes[1].seq.seq, 'ATGTGGC')
         node = next(iter(nodes[3].out_edges)).out_node
@@ -26,7 +26,7 @@ class TestDNANode(unittest.TestCase):
             3: ('C', [1], []),
             4: ('TGCTG', [2,3], [])
         }
-        _, nodes = create_dgraph(data)
+        _, nodes = create_dgraph2(data)
         node_copy = nodes[2].deepcopy()
         self.assertEqual(node_copy.seq.seq, nodes[2].seq.seq)
         self.assertIsNot(node_copy, nodes[2])
@@ -50,7 +50,7 @@ class TestDNANode(unittest.TestCase):
             5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
             6: ('CCCT', [4,5], [])
         }
-        _, nodes = create_dgraph(data)
+        _, nodes = create_dgraph2(data)
         node = nodes[1].find_farthest_node_with_overlap()
         self.assertIs(node, nodes[6])
 
@@ -74,7 +74,7 @@ class TestDNANode(unittest.TestCase):
             8: ('C', [6,7], []),
             9: ('CT', [8], [])
         }
-        _, nodes = create_dgraph(data)
+        _, nodes = create_dgraph2(data)
         node = nodes[1].find_farthest_node_with_overlap()
         print(node.seq.seq)
         self.assertIs(node, nodes[9])
@@ -91,9 +91,25 @@ class TestDNANode(unittest.TestCase):
             2: ('T', [1], []),
             3: ['C', [1], [(0, 'T', 'C', 'SNV', '')]]
         }
-        graph, nodes = create_dgraph(data)
+        graph, nodes = create_dgraph2(data)
         node = nodes[1].find_farthest_node_with_overlap()
         self.assertIs(node, None)
+    
+    def test_find_farthest_node_with_overlap_case4_null_root(self):
+        """ For mutation at the first nucleotide.
+                 AA 
+                /  \ 
+            Null-A--TGG
+        """
+        data = {
+            0: (None, [], []),
+            1: ('A', [0], []),
+            2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')]),
+            3: ['TGG', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data)
+        node = nodes[0].find_farthest_node_with_overlap()
+        self.assertIs(node, nodes[3])
 
 if __name__ == '__main__':
     unittest.main()

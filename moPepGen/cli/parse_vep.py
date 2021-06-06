@@ -1,18 +1,16 @@
 """ VEP2VariantPeptides module """
 from typing import Dict, List
 import argparse
+import pickle
 from moPepGen.vep import VepIO
-from moPepGen import gtf, dna, vep, seqvar, logger
+from moPepGen import gtf, dna, seqvar, logger
 
-
-_VALID_BIOTYPES = ['protein_coding']
 
 def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """
     # unpack args
     vep_files:List[str] = args.vep_txt
-    genome_fasta:str = args.genome_fasta
-    annotation_gtf:str = args.annotation_gtf
+    index_dir:str = args.index_dir
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '_moPepGen.txt'
     verbose = args.verbose
@@ -20,15 +18,29 @@ def parse_vep(args:argparse.Namespace) -> None:
     if verbose:
         logger('moPepGen parseVEP started.')
 
-    anno = gtf.TranscriptGTFDict()
-    anno.dump_gtf(annotation_gtf)
-    if verbose:
-        logger('Annotation GTF loaded.')
+    # if indexed files are given, load directly
+    if index_dir:
+        with open(f'{index_dir}/genome.pickle', 'rb') as handle:
+            genome = pickle.load(handle)
+        
+        with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
+            anno = pickle.load(handle)
     
-    genome = dna.DNASeqDict()
-    genome.dump_fasta(genome_fasta)
-    if verbose:
-        logger('Genome assembly FASTA loaded.')
+        if verbose:
+            logger('Indexed genome and annotations loaded.')
+    else:
+        genome_fasta:str = args.genome_fasta
+        annotation_gtf:str = args.annotation_gtf
+
+        anno = gtf.TranscriptGTFDict()
+        anno.dump_gtf(annotation_gtf)
+        if verbose:
+            logger('Annotation GTF loaded.')
+        
+        genome = dna.DNASeqDict()
+        genome.dump_fasta(genome_fasta)
+        if verbose:
+            logger('Genome assembly FASTA loaded.')
     
     vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
     
@@ -37,9 +49,6 @@ def parse_vep(args:argparse.Namespace) -> None:
             transcript_id = record.feature
 
             biotype = anno[transcript_id].transcript.biotype
-
-            if biotype not in _VALID_BIOTYPES:
-                continue
 
             if transcript_id not in vep_records.keys():
                 vep_records[transcript_id] = []
@@ -74,4 +83,15 @@ def parse_vep(args:argparse.Namespace) -> None:
     
     if verbose:
         logger('Variant info written to disk.')
-        
+
+
+if __name__ == '__main__':
+    args = argparse.Namespace
+    args.vep_txt = [
+        '/hot/projects/cpcgene/noncanonical_peptides/Mutation/gencodev34_grch38/VEP/germline/filtered_snv/CPCG0100.gencode.aa.tsv',
+        '/hot/projects/cpcgene/noncanonical_peptides/Mutation/gencodev34_grch38/VEP/germline/filtered_indel/CPCG0100.gencode.aa.tsv'
+    ]
+    args.index_dir = 'test/files/gencode_34_index/'
+    args.output_prefix = 'test/files/CPCG0100_gencode_v34'
+    args.verbose = True
+    parse_vep(args)

@@ -121,10 +121,17 @@ class TranscriptAnnotationModel():
                 seq = new_seq
             else:
                 seq = seq + new_seq
-        cds_start = self.get_cds_start_index()
-        cds_end = self.get_cds_end_index()
+        
+        if self.cds:
+            cds_start = self.get_cds_start_index()
+            cds_end = self.get_cds_end_index()
+            orf = FeatureLocation(start=cds_start, end=cds_end)
+        else:
+            orf = None
+        
         if self.transcript.strand == -1:
             seq = seq.reverse_complement()
+
         location = dna.MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),
             ref=FeatureLocation(
@@ -133,7 +140,6 @@ class TranscriptAnnotationModel():
                 end=len(seq)
             )
         )
-        orf = FeatureLocation(start=cds_start, end=cds_end)
         transcript = dna.DNASeqRecordWithCoordinates(
             seq=seq,
             orf=orf,
