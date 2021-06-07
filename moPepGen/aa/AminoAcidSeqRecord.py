@@ -16,6 +16,8 @@ class AminoAcidSeqRecord(SeqRecord):
             name:str="<unknown name>", description:str="<unknown description>",
             gene_id:str=None, transcript_id:str=None, protein_id:str=None,
             **kwargs):
+        self.id = None
+        self.name = None
         super().__init__(seq, id=_id, name=name, description=description,
             **kwargs)
         self.gene_id = gene_id
