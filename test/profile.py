@@ -16,6 +16,7 @@ def run_task():
     gtf.dump_gtf(f'{file_dir}/annotation.gtf')
 
     # transcript
+    transcript_seq = None
     for transcript_seq in SeqIO.parse(f'{file_dir}/transcript.fasta', 'fasta'):
         transcript_seq.__class__ = dna.DNASeqRecordWithCoordinates
         location = dna.MatchedLocation(
@@ -36,7 +37,7 @@ def run_task():
     variants = {}
 
     variant_file = f'{file_dir}/vep_moPepGen.txt'
-    transcript_seq = None
+
     with open(variant_file, 'rt') as handle:
         for line in handle:
             if line.startswith('#'):
