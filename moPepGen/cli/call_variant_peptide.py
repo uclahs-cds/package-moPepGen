@@ -9,7 +9,7 @@ from moPepGen.SeqFeature import FeatureLocation
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
     """ Main entry point for calling variant peptide """
-    variant_files:List[str] = args.input_variants
+    variant_files:List[str] = args.input_variant
     output_fasta:str = args.output_fasta
     index_dir:str = args.index_dir
     verbose:bool = args.verbose
@@ -28,8 +28,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
             annotation = pickle.load(handle)
 
-        with open(f"{index_dir}/carnonical_peptides.pickle", 'rb') as handle:
-            carnonical_peptides = pickle.load(handle)
+        with open(f"{index_dir}/canonical_peptides.pickle", 'rb') as handle:
+            canonical_peptides = pickle.load(handle)
     else:
         genome_fasta:str = args.genome_fasta
         proteome_fasta:str = args.proteome_fasta
@@ -50,12 +50,12 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         if verbose:
             logger('Proteome FASTA loaded.')
 
-        carnonical_peptides = proteome.create_unique_peptide_pool(
+        canonical_peptides = proteome.create_unique_peptide_pool(
             rule=rule, exception=exception, miscleavage=miscleavage,
             min_mw=min_mw
         )
         if verbose:
-            logger('Carnonical peptide pool generated.')
+            logger('canonical peptide pool generated.')
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
     for file in variant_files:
@@ -109,7 +109,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         for peptide in peptides:
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
                 continue
-            if str(peptide.seq) in carnonical_peptides:
+            if str(peptide.seq) in canonical_peptides:
                 continue
             same_peptide = get_equivalent(variant_peptides, peptide)
             if same_peptide:
@@ -122,7 +122,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
         if verbose:    # for logging
             i += 1
-            if i % 500 == 0:
+            if i % 1000 == 0:
                 logger(f'{i} transcripts processed.')
 
     with open(output_fasta, 'w') as handle:

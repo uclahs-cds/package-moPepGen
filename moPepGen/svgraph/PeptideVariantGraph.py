@@ -31,7 +31,7 @@ class PeptideVariantGraph():
         self.exception = None
 
     def add_stop(self, node:svgraph.PeptideNode):
-        """ Add the stop node to the outbound node list. """
+        """ Add the stop node after the specified node. """
         node.add_out_edge(self.stop)
 
     def next_is_stop(self, node:svgraph.PeptideNode) -> bool:
@@ -52,8 +52,8 @@ class PeptideVariantGraph():
 
     def cleave_if_posible(self, node:svgraph.PeptideNode,
             return_first:bool=False) -> svgraph.PeptideNode:
-        """ For a given node, it checks the whether there is any cleave site,
-        and split at each site.
+        """ For a given node, it checks whether there is any cleave site and
+        split at each site.
 
         Args:
             node (svgraph.PeptideNode): The target node to cleave
@@ -75,10 +75,10 @@ class PeptideVariantGraph():
 
     def expand_alignment_backward(self, node:svgraph.PeptideNode,
             ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
-        r""" Expands the alignment bubble backward to the previous cleave site.
-        The sequence of the input node is first prepended to each of outbound
-        node, and then the inbound node of those outbond nodes are then pointed
-        to the inbond node of the input node.
+        r""" Expand the variant alignment bubble backward to the previous
+        cleave site. The sequence of the input node is first prepended to each
+        of outbound node, and then the inbound node of those outbond nodes are
+        then pointed to the inbond node of the input node.
 
         In the example below, the node H and V are expanded backward to include
         NCW. The input variable node should be the node NCW. The returned node
@@ -146,7 +146,7 @@ class PeptideVariantGraph():
 
     def expand_alignment_forward(self, node:svgraph.PeptideNode
             ) -> svgraph.PeptideNode:
-        r""" Explend the previous variant alignment bubble to the end of the
+        r""" Expand the upsteam variant alignment bubble to the end of the
         node of input. The sequencing of the node of input is first appended
         to each of the leading nodes, and the outbound node of those nodes
         are then pointed to the input node's outbound node.
@@ -185,8 +185,8 @@ class PeptideVariantGraph():
 
     def merge_join_alignments(self, node:svgraph.PeptideNode
             ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
-        r""" For a given node, join all the inbond nodes and outbond nodes with
-        any combinations.
+        r""" For a given node, join all the inbond and outbond nodes with any
+        combinations.
 
         In the example below, node NCWHSTQQ is returned
 

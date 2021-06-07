@@ -90,7 +90,7 @@ class AminoAcidSeqDict(dict):
                     continue
             for peptide in peptides:
                 pool.add(str(peptide.seq))
-                # Convert all I with L and add to the carnonical peptide pool.
+                # Convert all I with L and add to the canonical peptide pool.
                 pool.add(str(peptide.seq).replace('I', 'L'))
 
             protein = next(it, None)

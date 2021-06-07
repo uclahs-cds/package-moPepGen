@@ -52,6 +52,7 @@ def parse_vep(args:argparse.Namespace) -> None:
                 vep_records[transcript_id] = []
 
             chrom_seqname = record.location.split(':')[0]
+
             transcript_seq = anno[transcript_id]\
                 .get_transcript_sequence(genome[chrom_seqname])
 
@@ -91,7 +92,7 @@ if __name__ == '__main__':
         '/hot/projects/cpcgene/noncanonical_peptides/Mutation/gencodev34_grch3'
         '8/VEP/germline/filtered_indel/CPCG0100.gencode.aa.tsv'
     ]
-    test_args.index_dir = 'test/files/gencode_34_index/'
+    test_args.index_dir = 'test/files/gencode_34_index'
     test_args.output_prefix = 'test/files/CPCG0100_gencode_v34'
     test_args.verbose = True
     parse_vep(args=test_args)

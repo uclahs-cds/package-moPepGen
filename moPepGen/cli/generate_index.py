@@ -20,7 +20,7 @@ def generate_index(args:argparse.Namespace):
     output_genome = f"{output_dir}/genome.pickle"
     output_proteome = f"{output_dir}/proteome.pickle"
     output_anno = f"{output_dir}/annotation.pickle"
-    output_peptides = f"{output_dir}/carnonical_peptides.pickle"
+    output_peptides = f"{output_dir}/canonical_peptides.pickle"
 
     if verbose:
         logger('moPepGen generateIndex started')
@@ -54,12 +54,12 @@ def generate_index(args:argparse.Namespace):
     if verbose:
         logger('Proteome FASTA saved to disk.')
 
-    carnonical_peptides = proteome.create_unique_peptide_pool(
+    canonical_peptides = proteome.create_unique_peptide_pool(
         rule=rule, exception=exception, miscleavage=miscleavage, min_mw=min_mw
     )
     if verbose:
-        logger('Carnonical peptide pool generated.')
+        logger('canonical peptide pool generated.')
     with open(output_peptides, 'wb') as handle:
-        pickle.dump(carnonical_peptides, handle)
+        pickle.dump(canonical_peptides, handle)
     if verbose:
-        logger('Carnonical peptide pool saved to disk.')
+        logger('canonical peptide pool saved to disk.')

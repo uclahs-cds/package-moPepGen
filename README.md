@@ -16,7 +16,7 @@ pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
 
 ### Build Reference Index
 
-Creating index files for genome, proteome and GTF, and create a carnonical peptide pool to be used in further steps. By default, the `generateIndex` subcommand uses trypsin, up to 2 miscleavages, and minimal molecular weight of 500. Da. However those settings can be adjusted using command line arguments. See `moPepGen generateIndex --help`.
+Creating index files for genome, proteome and GTF, and create a canonical peptide pool to be used in further steps. By default, the `generateIndex` subcommand uses trypsin, up to 2 miscleavages, and minimal molecular weight of 500. Da. However those settings can be adjusted using command line arguments. See `moPepGen generateIndex --help`.
 
 ```
 moPepGen generateIndex \
