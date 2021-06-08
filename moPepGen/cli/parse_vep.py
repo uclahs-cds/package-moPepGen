@@ -87,12 +87,12 @@ def parse_vep(args:argparse.Namespace) -> None:
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.vep_txt = [
-        '/hot/projects/cpcgene/noncanonical_peptides/Mutation/gencodev34_grch3'
-        '8/VEP/germline/filtered_snv/CPCG0100.gencode.aa.tsv',
-        '/hot/projects/cpcgene/noncanonical_peptides/Mutation/gencodev34_grch3'
-        '8/VEP/germline/filtered_indel/CPCG0100.gencode.aa.tsv'
+        'test/files/vep_test_files/vep_snp.txt',
+        'test/files/vep_test_files/vep_indel.txt'
     ]
-    test_args.index_dir = 'test/files/gencode_34_index'
-    test_args.output_prefix = 'test/files/CPCG0100_gencode_v34'
+    test_args.index_dir = None
+    test_args.genome_fasta = 'test/files/vep_test_files/genome.fasta'
+    test_args.annotation_gtf = 'test/files/vep_test_files/annotation.gtf'
+    test_args.output_prefix = 'test/files/vep_test_files/vep'
     test_args.verbose = True
     parse_vep(args=test_args)

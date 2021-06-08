@@ -65,10 +65,12 @@ class DNANode():
     def get_reference_next(self) -> DNANode:
         """ Get the next node of which the edge is reference (not variant
         or cleavage). """
+        if not self.out_edges:
+            return None
         for edge in self.out_edges:
             if edge.type in ['reference', 'variant_end']:
                 return edge.out_node
-        return None
+        raise ValueError('No reference edge was found.')
 
     def get_reference_prev(self) -> DNANode:
         """ Get the previous node of which the edge is reference (not variant

@@ -8,7 +8,7 @@ from moPepGen.SeqFeature import FeatureLocation
 
 def run_task():
     """ run task """
-    transcript_id = 'ENST00000318329.6'
+    transcript_id = 'ENST00000422127.5'
     file_dir = f'{pathlib.Path(__file__).parent.absolute()}/files/{transcript_id}'
 
     # gtf
