@@ -9,10 +9,8 @@ from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen import aa, dna
 
 
-_NO_SEQRECORD_COMPARISON = "SeqRecord comparison is deliberately not" +\
-    " implemented. Explicitly compare the attributes of interest."
-
 class DNASeqRecord(SeqRecord):
+    #pylint: disable=W0223
     """ A DNASeqRecord object holds a single DNA sequence and information about
     it. Inherits the Bio.SeqRecord.SeqRecord class.
 
@@ -31,34 +29,6 @@ class DNASeqRecord(SeqRecord):
         new = super().__add__(other)
         new.__class__ = DNASeqRecord
         return new
-
-    def __eq__(self, other:DNASeqRecord) -> bool:
-        """ equal to """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __ne__(self, other:DNASeqRecord) -> bool:
-        """ not equal to """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __gt__(self, other:DNASeqRecord) -> bool:
-        """ greater than """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __ge__(self, other:DNASeqRecord) -> bool:
-        """ greater or equal to """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __lt__(self, other:DNASeqRecord) -> bool:
-        """ less than """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __le__(self, other:DNASeqRecord) -> bool:
-        """ less or equal to """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __le___(self, other:DNASeqRecord):
-        """ Due to an typo in biopython """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
 
     def __hash__(self):
         """ hash """
@@ -393,7 +363,7 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
 
     def __le___(self, other:DNASeqRecordWithCoordinates):
         """ Due to an typo in biopython """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
+        return not self >= other
 
     def concat(self, other:DNASeqRecordWithCoordinates, _id:str=None,
             name:str=None, description:str=None

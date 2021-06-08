@@ -7,15 +7,16 @@ from Bio import SeqUtils
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 
 
-_NO_SEQRECORD_COMPARISON = "SeqRecord comparison is deliberately not" +\
-    " implemented. Explicitly compare the attributes of interest."
 class AminoAcidSeqRecord(SeqRecord):
+    #pylint: disable=W0223
     """ A AminoAcidSeqRecord holds a protein or peptide sequence
     """
     def __init__(self, seq:SeqRecord, _id:str="<unknown id>",
             name:str="<unknown name>", description:str="<unknown description>",
             gene_id:str=None, transcript_id:str=None, protein_id:str=None,
             **kwargs):
+        self.id = None
+        self.name = None
         super().__init__(seq, id=_id, name=name, description=description,
             **kwargs)
         self.gene_id = gene_id
@@ -50,26 +51,6 @@ class AminoAcidSeqRecord(SeqRecord):
     def __ne__(self, other:AminoAcidSeqRecord) -> bool:
         """ not equal to """
         return not self == other
-
-    def __gt__(self, other:AminoAcidSeqRecord):
-        """ greater than """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __ge__(self, other:AminoAcidSeqRecord):
-        """ greater or equal to """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __lt__(self, other:AminoAcidSeqRecord):
-        """ less than """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __le__(self, other:AminoAcidSeqRecord):
-        """ less or equal to """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
-
-    def __le___(self, other:AminoAcidSeqRecord):
-        """ Due to an typo in biopython """
-        return NotImplementedError(_NO_SEQRECORD_COMPARISON)
 
     def infer_ids(self, style:str=None) -> str:
         """

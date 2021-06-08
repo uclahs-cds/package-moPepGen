@@ -36,8 +36,8 @@ class VEPRecord():
     def __init__(
             self, uploaded_variation: str, location: str, allele: str,
             gene: str, feature: str, feature_type:str,
-            consequences: List[str], cdna_position: int, cds_position: int,
-            protein_position: int, amino_acids: Tuple[str, str],
+            consequences: List[str], cdna_position: str, cds_position: str,
+            protein_position: str, amino_acids: Tuple[str, str],
             codons: Tuple[str, str], existing_variation: str, extra: dict):
         """ Construct a VEPRecord object. """
         self.uploaded_variation = uploaded_variation
@@ -96,7 +96,7 @@ class VEPRecord():
                     alt_start -= 1
                     ref = seq.seq[alt_start] + ref
                     alt_end = alt_start + len(ref)
-                    alt = seq.seq[alt_start:alt_end]
+                    alt = seq.seq[alt_start:alt_start+1]
             elif match_alt is not None:
                 alt = match_alt.group()
                 # alt_start -= 1

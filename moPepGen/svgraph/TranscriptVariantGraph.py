@@ -246,7 +246,7 @@ class TranscriptVariantGraph():
         variant = next(variant_iter)
         cur = self.root.get_reference_next()
 
-        while variant:
+        while variant and cur:
 
             if cur.seq.locations[0].ref.start > variant.location.start:
                 variant = next(variant_iter, None)
@@ -260,10 +260,7 @@ class TranscriptVariantGraph():
             #     continue
 
             if cur.seq.locations[-1].ref.end <= variant.location.start:
-                try:
-                    cur = cur.get_reference_next()
-                except StopIteration:
-                    break
+                cur = cur.get_reference_next()
                 continue
 
             cur = self.apply_variant(cur, variant)
