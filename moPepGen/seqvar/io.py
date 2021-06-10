@@ -37,7 +37,14 @@ def parse(path:str) -> Iterable[seqvar.VariantRecord]:
 
 
 def write(variants:Iterable[seqvar.VariantRecord], handle:IO, mode:str='w'):
-    """"""
+    """ Write variants to an out handle.
+
+    Args:
+        variants (Iterable[seqvar.VariantRecord]): An iterable of variant
+            records to write.
+        handle (IO): The destination handle to write out.
+        mode (str): If 'w', the header will be written, otherwise not.
+    """
     if mode == 'w':
         headers = ['transcript_id', 'start', 'end', 'ref', 'alt', 'type', 'id']
         handle.write('#' + '\t'.join(headers) + '\n')
@@ -48,4 +55,3 @@ def write(variants:Iterable[seqvar.VariantRecord], handle:IO, mode:str='w'):
             str(int(record.location.end)), str(record.ref),
             str(record.alt), record.type, record.id]
         handle.write('\t'.join(line) + '\n')
-

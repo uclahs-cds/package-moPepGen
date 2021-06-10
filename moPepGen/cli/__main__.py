@@ -1,5 +1,4 @@
 """Main entry point"""
-from moPepGen.cli.parser_reditools import parse_reditools
 import sys
 import argparse
 from moPepGen import cli

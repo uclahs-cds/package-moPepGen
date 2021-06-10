@@ -22,8 +22,8 @@ def parse(path:str, transcript_id_column:int=16
         A iterable of REDItoolsRecord.
     """
     with open(path, 'r') as handle:
-        next(handle)
-        for line in handle:
+        line = next(handle, None)
+        while line:
             line = line.rstrip()
             line = re.sub('[,&$]$', '', line)
             fields = line.split('\t')
@@ -37,7 +37,7 @@ def parse(path:str, transcript_id_column:int=16
 
             if len(fields) <= transcript_id_column:
                 raise ValueError('transcript_id_column invalid.')
-            _data = re.split(',|&|\$', fields[transcript_id_column])
+            _data = re.split(r',|&|\$', fields[transcript_id_column])
             transcript_ids = [tuple(x.split('-')) for x in _data]
 
             yield REDItoolsRecord(
@@ -52,6 +52,8 @@ def parse(path:str, transcript_id_column:int=16
                 frequency=float(fields[8]),
                 transcript_id=transcript_ids
             )
+            line = next(handle, None)
+
 
 class REDItoolsRecord():
     """ A REDItoolsRecord defines the attributes from a REDItools output table.

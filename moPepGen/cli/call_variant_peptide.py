@@ -4,7 +4,6 @@ import argparse
 import pickle
 from Bio import SeqIO, SeqUtils
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent
-from moPepGen.SeqFeature import FeatureLocation
 
 
 def call_variant_peptide(args:argparse.Namespace) -> None:

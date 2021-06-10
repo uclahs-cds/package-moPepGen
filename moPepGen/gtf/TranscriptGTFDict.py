@@ -200,7 +200,7 @@ class TranscriptAnnotationModel():
         return cdna
 
     def get_transcript_index(self, genomic_index:int) -> int:
-        """"""
+        """ Get the transcript index from a genomic index. """
         index = 0
         if self.transcript.strand == 1:
             if genomic_index < self.exon[0].location.start \
@@ -213,7 +213,7 @@ class TranscriptAnnotationModel():
                     index += exon.location.end - exon.location.start
                 elif exon.location.start < genomic_index:
                     index += genomic_index - exon.location.start
-                    return index
+                    break
                 else:
                     raise ValueError(INDEX_IN_INTRON_ERROR)
         elif self.transcript.strand == -1:
@@ -227,11 +227,12 @@ class TranscriptAnnotationModel():
                     index += exon.location.end - exon.location.start
                 elif exon.location.end > genomic_index:
                     index += exon.location.end - genomic_index
-                    return index
+                    break
                 else:
                     raise ValueError(
                         'The genomic index seems to be in an intron'
                     )
+        return index
 
 class TranscriptGTFDict(dict):
     """ A VEPTranscripts object is a dict-like object that holds the GTF
