@@ -1,4 +1,4 @@
-""" Module for REDIToolsParser """
+""" Module for REDItoolsParser """
 from __future__ import annotations
 from typing import List, Tuple, Iterable
 import re
@@ -9,17 +9,17 @@ from moPepGen import seqvar, gtf
 
 
 def parse(path:str, transcript_id_column:int=16
-        ) -> Iterable[REDIToolsRecord]:
-    """ Parse REDITools output table and returns an iterator. The input
-    table must be annotated using the AnnotateTable.py script from REDITools 1.
+        ) -> Iterable[REDItoolsRecord]:
+    """ Parse REDItools output table and returns an iterator. The input
+    table must be annotated using the AnnotateTable.py script from REDItools 1.
 
     Args:
-        path (str): Path to the REDITools output table.
+        path (str): Path to the REDItools output table.
         transcript_id_column (int): The column that holds the transcript_id.
             Defaults to 10.
 
     Return:
-        A iterable of REDIToolsRecord.
+        A iterable of REDItoolsRecord.
     """
     with open(path, 'r') as handle:
         next(handle)
@@ -40,7 +40,7 @@ def parse(path:str, transcript_id_column:int=16
             _data = re.split(',|&|\$', fields[transcript_id_column])
             transcript_ids = [tuple(x.split('-')) for x in _data]
 
-            yield REDIToolsRecord(
+            yield REDItoolsRecord(
                 region=fields[0],
                 position=int(fields[1]),
                 reference=fields[2],
@@ -53,8 +53,8 @@ def parse(path:str, transcript_id_column:int=16
                 transcript_id=transcript_ids
             )
 
-class REDIToolsRecord():
-    """ A REDIToolsRecord defines the attributes from a REDITools output table.
+class REDItoolsRecord():
+    """ A REDItoolsRecord defines the attributes from a REDItools output table.
 
     Attributes:
         region (str): chromosome sequence name.

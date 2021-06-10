@@ -3,11 +3,11 @@ import unittest
 from test import create_transcript_model
 from moPepGen import parser
 from moPepGen.parser import REDItoolsParser
-from moPepGen.parser.REDItoolsParser import REDIToolsRecord
+from moPepGen.parser.REDItoolsParser import REDItoolsRecord
 
 
-class TestREDIToolsParser(unittest.TestCase):
-    """ Test case for REDIToolsParser """
+class TestREDItoolsParser(unittest.TestCase):
+    """ Test case for REDItoolsParser """
     def test_reditools_record_to_variant_case1(self):
         """ strand positive """
         attributes = {
@@ -29,7 +29,7 @@ class TestREDIToolsParser(unittest.TestCase):
         anno = {'ENST0001': model}
 
         # first exon
-        record = parser.REDIToolsRecord(
+        record = parser.REDItoolsRecord(
             region='chr22',
             position=175,
             reference='C',
@@ -48,7 +48,7 @@ class TestREDIToolsParser(unittest.TestCase):
         self.assertEqual(variants[0].alt, 'T')
 
         # second exon
-        record = parser.REDIToolsRecord(
+        record = parser.REDItoolsRecord(
             region='chr22',
             position=250,
             reference='C',
@@ -87,7 +87,7 @@ class TestREDIToolsParser(unittest.TestCase):
         anno = {'ENST0001': model}
 
         # first exon
-        record = parser.REDIToolsRecord(
+        record = parser.REDItoolsRecord(
             region='chr22',
             position=325,
             reference='C',
@@ -106,7 +106,7 @@ class TestREDIToolsParser(unittest.TestCase):
         self.assertEqual(variants[0].alt, 'A')
 
         # second exon
-        record = parser.REDIToolsRecord(
+        record = parser.REDItoolsRecord(
             region='chr22',
             position=250,
             reference='C',

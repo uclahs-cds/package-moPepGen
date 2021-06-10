@@ -1,4 +1,4 @@
-""""""
+""" Module for REDItools parser """
 from typing import Dict, List
 import argparse
 import pickle
@@ -6,9 +6,9 @@ from moPepGen import logger, gtf, seqvar, parser
 
 
 def parse_reditools(args:argparse.Namespace) -> None:
-    """"""
+    """ Parse REDItools output and save it to a moPepGen variant format. """
     # unpack args
-    table_file = args.table_file
+    table_file = args.reditools_table
     transcript_id_column = args.transcript_id_column
     index_dir:str = args.index_dir
     output_prefix:str = args.output_prefix
@@ -16,7 +16,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
     verbose = args.verbose
 
     if verbose:
-        logger('moPepGen parseREDITools started.')
+        logger('moPepGen parseREDItools started.')
 
     if index_dir:
         with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
@@ -44,7 +44,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
             variants[transcript_id].append(variant)
 
     if verbose:
-        logger(f'REDITools table {table_file} loaded.')
+        logger(f'REDItools table {table_file} loaded.')
 
     for records in variants.values():
         records.sort()
