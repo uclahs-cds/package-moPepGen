@@ -7,7 +7,7 @@ from moPepGen import dna
 
 
 _GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon']
-
+INDEX_IN_INTRON_ERROR = 'The genomic index seems to be in an intron'
 
 class TranscriptAnnotationModel():
     """ A TranscriptAnnotationModel holds all the annotations associated with
@@ -147,9 +147,11 @@ class TranscriptAnnotationModel():
         )
         transcript.id = self.transcript.attributes['transcript_id']
         transcript.name = self.transcript.attributes['transcript_id']
-        transcript.description = self.transcript.attributes['transcript_id'] + '|' \
-            + self.transcript.attributes['gene_id'] + '|' \
-            + self.transcript.attributes['protein_id']
+        transcript.description = self.transcript.attributes['transcript_id'] +\
+            '|' + self.transcript.attributes['gene_id']
+        if 'protein_id' in self.transcript.attributes:
+            transcript.description += '|' + \
+                self.transcript.attributes['protein_id']
         return transcript
 
     def get_cdna_sequence(self, chrom:dna.DNASeqRecord
@@ -196,6 +198,40 @@ class TranscriptAnnotationModel():
             + self.transcript.attributes['gene_id'] + '|' \
             + self.transcript.attributes['protein_id']
         return cdna
+
+    def get_transcript_index(self, genomic_index:int) -> int:
+        """"""
+        index = 0
+        if self.transcript.strand == 1:
+            if genomic_index < self.exon[0].location.start \
+                    or genomic_index > self.exon[-1].location.end:
+                raise ValueError(
+                    r'The genomic index isn\'t in the range of this transcript'
+                )
+            for exon in self.exon:
+                if exon.location.end < genomic_index:
+                    index += exon.location.end - exon.location.start
+                elif exon.location.start < genomic_index:
+                    index += genomic_index - exon.location.start
+                    return index
+                else:
+                    raise ValueError(INDEX_IN_INTRON_ERROR)
+        elif self.transcript.strand == -1:
+            if genomic_index < self.exon[0].location.start \
+                    or genomic_index > self.exon[-1].location.end:
+                raise ValueError(
+                    r'The genomic index isn\'t in the range of this transcript'
+                )
+            for exon in reversed(self.exon):
+                if exon.location.start > genomic_index:
+                    index += exon.location.end - exon.location.start
+                elif exon.location.end > genomic_index:
+                    index += exon.location.end - genomic_index
+                    return index
+                else:
+                    raise ValueError(
+                        'The genomic index seems to be in an intron'
+                    )
 
 class TranscriptGTFDict(dict):
     """ A VEPTranscripts object is a dict-like object that holds the GTF
