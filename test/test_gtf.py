@@ -1,10 +1,9 @@
 """ Test the GTF files are loaded and handled properly
 """
 import unittest
+from test import create_transcript_model
 from Bio import SeqIO
 from moPepGen import gtf
-from moPepGen.SeqFeature import SeqFeature, FeatureLocation
-from test import create_transcript_model
 
 
 class TestAnnotationModel(unittest.TestCase):

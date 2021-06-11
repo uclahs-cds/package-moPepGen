@@ -2,8 +2,6 @@
 import unittest
 from test import create_transcript_model
 from moPepGen import parser
-from moPepGen.parser import REDItoolsParser
-from moPepGen.parser.REDItoolsParser import REDItoolsRecord
 
 
 class TestREDItoolsParser(unittest.TestCase):
@@ -11,9 +9,9 @@ class TestREDItoolsParser(unittest.TestCase):
     def test_reditools_record_to_variant_case1(self):
         """ strand positive """
         attributes = {
-            'transcript_id': 'ENST0001',
-            'gene_id': 'ENSG0001',
-            'protein_id': 'ENSP0001'
+            'transcript_id': 'ENST0002',
+            'gene_id': 'ENSG0002',
+            'protein_id': 'ENSP0002'
         }
         data = {
             'chrom': 'chr22',
@@ -69,9 +67,9 @@ class TestREDItoolsParser(unittest.TestCase):
     def test_reditools_record_to_variant_case2(self):
         """ strand negative """
         attributes = {
-            'transcript_id': 'ENST0001',
-            'gene_id': 'ENSG0001',
-            'protein_id': 'ENSP0001'
+            'transcript_id': 'ENST0002',
+            'gene_id': 'ENSG0002',
+            'protein_id': 'ENSP0002'
         }
         data = {
             'chrom': 'chr22',
