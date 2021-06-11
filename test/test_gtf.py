@@ -4,31 +4,8 @@ import unittest
 from Bio import SeqIO
 from moPepGen import gtf
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
+from test import create_transcript_model
 
-
-def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
-    """ Create a transcript model from data.
-    """
-    chrom = data['chrom']
-    strand = data['strand']
-    entry = data['transcript']
-    location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
-    transcript = SeqFeature(chrom=chrom, location=location,
-        attributes=entry[2])
-    exons = []
-    for entry in data['exon']:
-        location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
-        exons.append(SeqFeature(chrom=chrom, location=location,
-            attributes=entry[2]))
-    cds = []
-    if 'cds' in data:
-        for entry in data['cds']:
-            location = FeatureLocation(start=entry[0], end=entry[1],
-                strand=strand)
-            cds.append(SeqFeature(chrom=chrom, location=location,
-                attributes=entry[2]))
-    model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
-    return model
 
 class TestAnnotationModel(unittest.TestCase):
     """ Test case for the annotation model """
@@ -69,6 +46,70 @@ class TestAnnotationModel(unittest.TestCase):
         chrom = SeqIO.read('test/files/genome_example.fa', 'fasta')
         seq = model.get_transcript_sequence(chrom)
         self.assertIs(seq.orf, None)
+
+    def test_get_transcript_index_case1(self):
+        """ Getting transcript index from genomic index when strand is + """
+        attributes = {
+            'transcript_id': 'ENST0001',
+            'gene_id': 'ENSG0001',
+            'protein_id': 'ENSP0001'
+        }
+        data = {
+            'chrom': 'chr22',
+            'strand': 1,
+            'transcript': (150, 350, attributes),
+            'exon': [
+                (150,200,attributes),
+                (225, 275, attributes),
+                (300, 350, attributes)
+            ]
+        }
+        model = create_transcript_model(data)
+        i = model.get_transcript_index(175)
+        self.assertEqual(i, 25)
+        i = model.get_transcript_index(250)
+        self.assertEqual(i, 75)
+
+        with self.assertRaises(ValueError):
+            model.get_transcript_index(0)
+
+        with self.assertRaises(ValueError):
+            model.get_transcript_index(210)
+
+        with self.assertRaises(ValueError):
+            model.get_transcript_index(375)
+
+    def test_get_transcript_index_case2(self):
+        """ Getting transcript index from genomic index when strand is - """
+        attributes = {
+            'transcript_id': 'ENST0001',
+            'gene_id': 'ENSG0001',
+            'protein_id': 'ENSP0001'
+        }
+        data = {
+            'chrom': 'chr22',
+            'strand': -1,
+            'transcript': (150, 350, attributes),
+            'exon': [
+                (150,200,attributes),
+                (225, 275, attributes),
+                (300, 350, attributes)
+            ]
+        }
+        model = create_transcript_model(data)
+        i = model.get_transcript_index(175)
+        self.assertEqual(i, 125)
+        i = model.get_transcript_index(250)
+        self.assertEqual(i, 75)
+
+        with self.assertRaises(ValueError):
+            model.get_transcript_index(0)
+
+        with self.assertRaises(ValueError):
+            model.get_transcript_index(210)
+
+        with self.assertRaises(ValueError):
+            model.get_transcript_index(375)
 
 class TestGTF(unittest.TestCase):
     """ Test case for GTF modules

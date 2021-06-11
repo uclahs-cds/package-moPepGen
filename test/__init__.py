@@ -1,8 +1,8 @@
 """ Test module for moPepGen """
 from typing import Dict, List, Tuple
 from Bio.Seq import Seq
-from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import svgraph, dna, seqvar
+from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from moPepGen import svgraph, dna, seqvar, gtf
 
 
 def create_dgraph2(data:dict
@@ -131,3 +131,28 @@ def create_dgraph1(seq, variants) -> svgraph.TranscriptVariantGraph:
         ))
     graph.create_variant_graph(records)
     return graph
+
+
+def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
+    """ Create a transcript model from data.
+    """
+    chrom = data['chrom']
+    strand = data['strand']
+    entry = data['transcript']
+    location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
+    transcript = SeqFeature(chrom=chrom, location=location,
+        attributes=entry[2])
+    exons = []
+    for entry in data['exon']:
+        location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
+        exons.append(SeqFeature(chrom=chrom, location=location,
+            attributes=entry[2]))
+    cds = []
+    if 'cds' in data:
+        for entry in data['cds']:
+            location = FeatureLocation(start=entry[0], end=entry[1],
+                strand=strand)
+            cds.append(SeqFeature(chrom=chrom, location=location,
+                attributes=entry[2]))
+    model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
+    return model
