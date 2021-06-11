@@ -1,0 +1,10 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Acceptor Transcript's Gene ID">
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
+ENST0001    110 SNV-110-C-A C   A   .   .   GENE_ID=ENSG0001
+ENST0002    210 SNV-210-T-A T   A   .   .   GENE_ID=ENSG0002
