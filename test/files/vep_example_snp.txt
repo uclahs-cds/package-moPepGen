@@ -1,0 +1,83 @@
+## ENSEMBL VARIANT EFFECT PREDICTOR v101.0
+## Output produced at 2020-11-20 00:50:45
+## Using cache in /opt/vep/.vep/homo_sapiens/101_GRCh38
+## Using API version 101, DB version ?
+## ensembl-io version 101.943b6c2
+## ensembl-variation version 101.851c7e0
+## ensembl version 101.856c8e8
+## ensembl-funcgen version 101.b918a49
+## HGMD-PUBLIC version 20194
+## ClinVar version 202003
+## COSMIC version 90
+## genebuild version 2014-07
+## dbSNP version 153
+## ESP version V2-SSA137
+## gnomAD version r2.1
+## assembly version GRCh38.p13
+## sift version sift5.2.2
+## regbuild version 1.0
+## gencode version GENCODE 35
+## 1000genomes version phase3
+## polyphen version 2.2.2
+## Column descriptions:
+## Uploaded_variation : Identifier of uploaded variant
+## Location : Location of variant in standard coordinate format (chr:start or chr:start-end)
+## Allele : The variant allele used to calculate the consequence
+## Gene : Stable ID of affected gene
+## Feature : Stable ID of feature
+## Feature_type : Type of feature - Transcript, RegulatoryFeature or MotifFeature
+## Consequence : Consequence type
+## cDNA_position : Relative position of base pair in cDNA sequence
+## CDS_position : Relative position of base pair in coding sequence
+## Protein_position : Relative position of amino acid in protein
+## Amino_acids : Reference and variant amino acids
+## Codons : Reference and variant codon sequence
+## Existing_variation : Identifier(s) of co-located known variants
+## Extra column keys:
+## IMPACT : Subjective impact classification of consequence type
+## DISTANCE : Shortest distance from variant to transcript
+## STRAND : Strand of the feature (1/-1)
+## FLAGS : Transcript quality flags
+## SOURCE : Source of transcript
+## GENCODEv34 : /opt/vep/.vep/gencode.v34.chr_patch_hapl_scaff.annotation.gtf.gz (overlap)
+#Uploaded_variation	Location	Allele	Gene	Feature	Feature_type	Consequence	cDNA_position	CDS_position	Protein_position	Amino_acids	Codons	Existing_variation	Extra
+rs112703963	chr1:924533	G	ENSG00000187634.12	ENST00000420190.6	Transcript	synonymous_variant	606	102	34	P	ccA/ccG	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000341065.8	Transcript	missense_variant	750	751	251	W/R	Tgg/Cgg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000342066.8	Transcript	missense_variant	1117	1027	343	W/R	Tgg/Cgg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000455979.1	Transcript	missense_variant	507	508	170	W/R	Tgg/Cgg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000616016.4	Transcript	synonymous_variant	944	864	288	P	ccT/ccC	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000616125.4	Transcript	missense_variant	783	703	235	W/R	Tgg/Cgg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000617307.4	Transcript	missense_variant	867	787	263	W/R	Tgg/Cgg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000618181.4	Transcript	missense_variant	732	652	218	W/R	Tgg/Cgg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000618323.4	Transcript	missense_variant	712	632	211	L/P	cTg/cCg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000618779.4	Transcript	missense_variant	921	841	281	W/R	Tgg/Cgg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000620200.4	Transcript	missense_variant	427	347	116	L/P	cTg/cCg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs6672356	chr1:942451	C	ENSG00000187634.12	ENST00000622503.4	Transcript	missense_variant	1110	1030	344	W/R	Tgg/Cgg	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs2272757	chr1:946247	A	ENSG00000188976.11	ENST00000327044.7	Transcript	synonymous_variant	1859	1843	615	L	Ctg/Ttg	-	IMPACT=LOW;STRAND=-1;SOURCE=GENCODEv34
+rs3828047	chr1:952421	G	ENSG00000188976.11	ENST00000327044.7	Transcript	synonymous_variant	1198	1182	394	T	acT/acC	-	IMPACT=LOW;STRAND=-1;SOURCE=GENCODEv34
+rs3748596	chr1:953259	C	ENSG00000188976.11	ENST00000327044.7	Transcript	synonymous_variant	934	918	306	E	gaA/gaG	-	IMPACT=LOW;STRAND=-1;SOURCE=GENCODEv34
+rs3748597	chr1:953279	C	ENSG00000188976.11	ENST00000327044.7	Transcript	missense_variant	914	898	300	I/V	Atc/Gtc	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs4970441	chr1:961945	C	ENSG00000187961.14	ENST00000338591.8	Transcript	synonymous_variant	719	609	203	A	gcG/gcC	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
+rs28507236	chr1:970892	C	ENSG00000187583.11	ENST00000379407.7	Transcript	synonymous_variant	528	498	166	A	gcA/gcC	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
+rs28507236	chr1:970892	C	ENSG00000187583.11	ENST00000379409.6	Transcript	synonymous_variant	648	618	206	A	gcA/gcC	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
+rs28507236	chr1:970892	C	ENSG00000187583.11	ENST00000379410.8	Transcript	synonymous_variant	548	498	166	A	gcA/gcC	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
+rs3829740	chr1:973858	C	ENSG00000187583.11	ENST00000379407.7	Transcript	missense_variant	1385	1355	452	R/P	cGt/cCt	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs3829740	chr1:973858	C	ENSG00000187583.11	ENST00000379409.6	Transcript	missense_variant	1646	1616	539	R/P	cGt/cCt	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs3829740	chr1:973858	C	ENSG00000187583.11	ENST00000379410.8	Transcript	missense_variant	1510	1460	487	R/P	cGt/cCt	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs3829740	chr1:973858	C	ENSG00000187583.11	ENST00000491024.1	Transcript	missense_variant	155	155	52	R/P	cGt/cCt	-	IMPACT=MODERATE;STRAND=1;SOURCE=GENCODEv34
+rs7417106	chr1:976215	G	ENSG00000187642.9	ENST00000341290.6	Transcript	missense_variant	2024	1988	663	V/A	gTg/gCg	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs7417106	chr1:976215	G	ENSG00000187642.9	ENST00000433179.3	Transcript	missense_variant	2330	2330	777	V/A	gTg/gCg	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs13302979	chr1:978953	G	ENSG00000187642.9	ENST00000341290.6	Transcript	missense_variant	1771	1735	579	E/Q	Gag/Cag	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs13302979	chr1:978953	G	ENSG00000187642.9	ENST00000433179.3	Transcript	missense_variant	2077	2077	693	E/Q	Gag/Cag	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs13303368	chr1:979472	C	ENSG00000187642.9	ENST00000341290.6	Transcript	missense_variant	1252	1216	406	Q/E	Cag/Gag	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs13303368	chr1:979472	C	ENSG00000187642.9	ENST00000433179.3	Transcript	missense_variant	1558	1558	520	Q/E	Cag/Gag	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs13302983	chr1:979496	C	ENSG00000187642.9	ENST00000341290.6	Transcript	missense_variant	1228	1192	398	S/G	Agc/Ggc	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs13302983	chr1:979496	C	ENSG00000187642.9	ENST00000433179.3	Transcript	missense_variant	1534	1534	512	S/G	Agc/Ggc	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs13303033	chr1:979560	C	ENSG00000187642.9	ENST00000341290.6	Transcript	synonymous_variant	1164	1128	376	A	gcA/gcG	-	IMPACT=LOW;STRAND=-1;SOURCE=GENCODEv34
+rs13303033	chr1:979560	C	ENSG00000187642.9	ENST00000433179.3	Transcript	synonymous_variant	1470	1470	490	A	gcA/gcG	-	IMPACT=LOW;STRAND=-1;SOURCE=GENCODEv34
+rs13303355	chr1:979847	G	ENSG00000187642.9	ENST00000341290.6	Transcript	synonymous_variant	877	841	281	L	Ttg/Ctg	-	IMPACT=LOW;STRAND=-1;SOURCE=GENCODEv34
+rs13303355	chr1:979847	G	ENSG00000187642.9	ENST00000433179.3	Transcript	synonymous_variant	1183	1183	395	L	Ttg/Ctg	-	IMPACT=LOW;STRAND=-1;SOURCE=GENCODEv34
+rs2298214	chr1:999842	A	ENSG00000188290.11	ENST00000428771.6	Transcript	missense_variant	331	132	44	R/S	agG/agT	-	IMPACT=MODERATE;STRAND=-1;SOURCE=GENCODEv34
+rs8997	chr1:1014274	G	ENSG00000187608.10	ENST00000624652.1	Transcript	synonymous_variant	496	270	90	V	gtA/gtG	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
+rs8997	chr1:1014274	G	ENSG00000187608.10	ENST00000624697.4	Transcript	synonymous_variant	521	270	90	V	gtA/gtG	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
+rs8997	chr1:1014274	G	ENSG00000187608.10	ENST00000649529.1	Transcript	synonymous_variant	371	294	98	V	gtA/gtG	-	IMPACT=LOW;STRAND=1;SOURCE=GENCODEv34
