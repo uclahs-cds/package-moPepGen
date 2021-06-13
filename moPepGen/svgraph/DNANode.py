@@ -15,10 +15,12 @@ class DNANode():
         seq (DNASeqRecord): The sequence.
         variant (VariantRecord | None): The variant record or None for
             reference.
+        frameshifts (seqvar.VariatnRecord)
+        branch (bool)
     """
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None):
+            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False):
         """ Constructor for DNANode.
 
         Args:
@@ -31,6 +33,7 @@ class DNANode():
         self.out_edges = set()
         self.variants = variants if variants else []
         self.frameshifts = frameshifts if frameshifts else set()
+        self.branch = branch
 
     def __hash__(self):
         """ hash """
@@ -57,10 +60,55 @@ class DNANode():
                 return edge
         raise ValueError('DNAEdge not found')
 
+    def is_inbond_of(self, node:svgraph.DNAEdge) -> bool:
+        """ Checks if this node is a inbound node of the other node. """
+        for edge in self.out_edges:
+            if node is edge.out_node:
+                return True
+        return False
+
     def is_orphan(self) -> bool:
         """ Checks if the node is an orphan, that doesn't have any inbonding
         or outbonding edge. """
         return (not self.in_edges) and (not self.out_edges)
+
+    def needs_branch_out(self, branch_out_size:int=100) -> bool:
+        """ Checks if the node needs to branch out """
+        variant = self.variants[0].variant
+        location = self.variants[0].location
+        variant_len = location.end - location.start
+        return variant.is_frameshifting() or variant_len >= branch_out_size
+
+    def next_node_to_branch_out(self, to_node:svgraph.DNANode,
+            branch_out_size:int=100) -> svgraph.DNANode:
+        """ Returns the next node that needs to be branched out between two
+        reference nodes. Returns None if not found.
+
+        Args:
+            to_node (svgraph.DNANode): The to node
+            branch_out_size (int): The size limit of the variant to forch
+                creating a branch in th graph.
+        """
+        queue:Deque[svgraph.DNANode] = deque()
+        for edge in self.out_edges:
+            queue.appendleft(edge.out_node)
+
+        while queue:
+            cur = queue.pop()
+            if cur is to_node:
+                continue
+            if cur.branch:
+                continue
+            if not cur.variants:
+                for edge in cur.out_edges:
+                    queue.appendleft(edge.out_node)
+                continue
+            if cur.needs_branch_out(branch_out_size):
+                return cur
+            for edge in cur.out_edges:
+                queue.appendleft(edge.out_node)
+
+        return None
 
     def get_reference_next(self) -> DNANode:
         """ Get the next node of which the edge is reference (not variant
@@ -80,9 +128,12 @@ class DNANode():
                 return edge.in_node
         return None
 
-    def deepcopy(self) -> DNANode:
-        """ Create a deep copy of the node and all its downstream nodes. """
+    def deepcopy(self, propagate_frameshifts:bool=True) -> DNANode:
+        """ Create a deep copy of the node and all its downstream nodes.
 
+        Args:
+            propagate_frameshifts (bool):
+        """
         new_node = self.__class__(
             seq=self.seq,
             variants=self.variants,
@@ -97,14 +148,17 @@ class DNANode():
             if source in visited:
                 continue
             for edge in source.out_edges:
-                source_out_node = edge.out_node
+                source_out_node:svgraph.DNANode = edge.out_node
                 if source_out_node in visited:
                     new_out_node = visited[source_out_node]
                 else:
+                    frameshifts = source_out_node.frameshifts
+                    if propagate_frameshifts:
+                        frameshifts.update(self.frameshifts)
                     new_out_node = self.__class__(
                         seq=source_out_node.seq,
                         variants=source_out_node.variants,
-                        frameshifts=source_out_node.frameshifts
+                        frameshifts=frameshifts
                     )
                     visited[source_out_node] = new_out_node
                 new_edge = svgraph.DNAEdge(target, new_out_node,
@@ -136,6 +190,10 @@ class DNANode():
         visited = set([self])
         while queue:
             cur:DNANode = queue.popleft()
+
+            # if this is the start of a new branch, don't count it.
+            if cur.branch:
+                continue
 
             visited_len_before = len(visited)
             visited.add(cur)

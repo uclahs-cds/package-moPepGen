@@ -93,14 +93,14 @@ class TestTranscriptGraph(unittest.TestCase):
 
     def test_expand_alignments_case2(self):
         """ When there is a vairant at the first nucleotide
-                 AA
-                /  \
-            Null-A--TGG
+                 AA-TGG
+                /
+            Null-A-TGG
         """
         data = {
             0: (None, [], []),
             1: ('A', [0], []),
-            2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')]),
+            2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')], True),
             3: ['TGG', [1,2], []]
         }
         graph, nodes = create_dgraph2(data)
@@ -108,6 +108,52 @@ class TestTranscriptGraph(unittest.TestCase):
         variant_site_nodes = [edge.out_node for edge in nodes[0].out_edges]
         variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
         self.assertEqual(set(['ATG', 'AAT']), set(variant_site_seqs))
+
+    def test_merge_with_outbounds(self):
+        """
+            ATGG-T-G-CCCT
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('T', [1], []),
+            3: ('G', [2], []),
+            4: ('CCCT', [3], [])
+        }
+        graph, nodes = create_dgraph2(data)
+        returned_nodes = graph.merge_with_outbonds(nodes[3])
+        self.assertEqual(str(nodes[4].seq.seq), 'GCCCT')
+        self.assertTrue(nodes[2].is_inbond_of(nodes[4]))
+        self.assertFalse(nodes[2].is_inbond_of(nodes[3]))
+        self.assertFalse(nodes[3].is_inbond_of(nodes[4]))
+        self.assertEqual(returned_nodes[0], nodes[4])
+
+    def test_expand_alignments_case3(self):
+        r"""
+                 T-G-CCCT
+                /
+            ATGG-TCTGAC-G-CCCT
+                       \ /
+                        A
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('T', [1], [(0, 'TCTGAC', 'T', 'INDEL', '')], True),
+            3: ('G', [2], []),
+            4: ('CCCT', [3], []),
+            5: ('TCTGAC', [1], []),
+            6: ('G', [5], []),
+            7: ('A', [5], [(0, 'G', 'T', 'SNV', '')]),
+            8: ('CCCT', [6, 7], [])
+        }
+        graph, nodes = create_dgraph2(data)
+        cur, branches = graph.expand_alignments(nodes[1])
+        variant_site_nodes = [edge.out_node for edge in nodes[1].out_edges]
+        variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
+        self.assertEqual(set(['GTCTGAC', 'GTG']), set(variant_site_seqs))
+        self.assertIs(cur, nodes[5])
+        self.assertEqual(len(branches), 1)
+        self.assertEqual(str(branches[0].seq.seq), 'CCCT')
+
 
     def test_find_overlaps(self):
         """ Correct farthest overlap node is found. """
@@ -142,7 +188,7 @@ class TestTranscriptGraph(unittest.TestCase):
         ]
         graph = create_dgraph1(seq, variants)
         first_node = graph.root.get_reference_next()
-        graph.align_varints(first_node)
+        graph.align_variants(first_node)
         self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCT')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
             in first_node.out_edges]
@@ -156,11 +202,11 @@ class TestTranscriptGraph(unittest.TestCase):
         ]
         graph = create_dgraph1(seq, variants)
         first_node = graph.root.get_reference_next()
-        graph.align_varints(first_node)
-        self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCTG')
+        graph.align_variants(first_node)
+        self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCT')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
             in first_node.out_edges]
-        self.assertEqual(set(['TG', 'TCTG', 'TCTA']), set(variant_seqs))
+        self.assertEqual(set(['T', 'TCT',]), set(variant_seqs))
 
     def test_align_variants_case2(self):
         """ When there is a mutation at the first nucleotide.
@@ -175,7 +221,7 @@ class TestTranscriptGraph(unittest.TestCase):
             3: ['TGG', [1,2], []]
         }
         graph, nodes = create_dgraph2(data)
-        node = graph.align_varints(nodes[0])
+        node = graph.align_variants(nodes[0])
         self.assertIs(graph.root, node)
         self.assertIs(nodes[0], node)
 
