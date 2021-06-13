@@ -1,7 +1,8 @@
 """ Test the VEP data model """
 import unittest
 from Bio.Seq import Seq
-from moPepGen import vep, dna
+from moPepGen import dna
+from moPepGen.parser import VEPParser
 
 
 class TestVEPRecord(unittest.TestCase):
@@ -12,7 +13,7 @@ class TestVEPRecord(unittest.TestCase):
         seq = dna.DNASeqRecord(
             seq=Seq('ATGTACTGGTCCTTCTGCCT')
         )
-        vep_record = vep.VEPRecord(
+        vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:10',
             allele='A',
@@ -40,7 +41,7 @@ class TestVEPRecord(unittest.TestCase):
         seq = dna.DNASeqRecord(
             seq=Seq('ATGTACTGGTCCTTCTGCCT')
         )
-        vep_record = vep.VEPRecord(
+        vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:11',
             allele='T',
@@ -68,7 +69,7 @@ class TestVEPRecord(unittest.TestCase):
         seq = dna.DNASeqRecord(
             seq=Seq('ATGTACTGGTCCTTCTGCCT')
         )
-        vep_record = vep.VEPRecord(
+        vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:11',
             allele='T',
@@ -98,7 +99,7 @@ class TestVEPRecord(unittest.TestCase):
         seq = dna.DNASeqRecord(
             seq=Seq('ATGTACTGGTCCTTCTGCCT')
         )
-        vep_record = vep.VEPRecord(
+        vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:11',
             allele='T',
@@ -128,7 +129,7 @@ class TestVEPRecord(unittest.TestCase):
         seq = dna.DNASeqRecord(
             seq=Seq('ATGTACTGGTCCTTCTGCCT')
         )
-        vep_record = vep.VEPRecord(
+        vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:11',
             allele='T',
@@ -158,7 +159,7 @@ class TestVEPRecord(unittest.TestCase):
         seq = dna.DNASeqRecord(
             seq=Seq('ATGTACTGGTCCTTCTGCCT')
         )
-        vep_record = vep.VEPRecord(
+        vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:11',
             allele='T',
@@ -188,7 +189,7 @@ class TestVEPRecord(unittest.TestCase):
         seq = dna.DNASeqRecord(
             seq=Seq('ATGTACTGGTCCTTCTGCCT')
         )
-        vep_record = vep.VEPRecord(
+        vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:11',
             allele='T',

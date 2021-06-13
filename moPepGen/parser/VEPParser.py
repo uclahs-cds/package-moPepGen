@@ -1,10 +1,52 @@
 """ This module defines the class for a single VEP record
 """
-from typing import List, Tuple
+from __future__ import annotations
+from typing import List, Tuple, Union, IO, Iterable
 import re
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, dna
 
+
+def parse(path:str) -> Iterable[VEPRecord]:
+    """"""
+    with open(path, 'r') as handle:
+        for line in handle:
+            if line.startswith('#'):
+                continue
+            line = line.rstrip()
+            fields = line.split('\t')
+
+            consequences = fields[6].split(',')
+
+            amino_acids = tuple(aa for aa in fields[10].split('/'))
+            if len(amino_acids) == 1:
+                amino_acids = (amino_acids[0], '')
+
+            codons = tuple(codon for codon in fields[11].split('/'))
+            if len(codons) == 1:
+                codons = (codons[0], '')
+
+            extra = {}
+            for field in fields[13].split(';'):
+                key, val = field.split('=')
+                extra[key] = val
+
+            yield VEPRecord(
+                uploaded_variation=fields[0],
+                location=fields[1],
+                allele=fields[2],
+                gene=fields[3],
+                feature=fields[4],
+                feature_type=fields[5],
+                consequences=consequences,
+                cdna_position=fields[7],
+                cds_position=fields[8],
+                protein_position=fields[9],
+                amino_acids=amino_acids,
+                codons=codons,
+                existing_variation='' if fields[12] == '-' else fields[12],
+                extra=extra
+            )
 
 class VEPRecord():
     """ A VEPRecord object holds the an entry from the VEP output. The VEP

@@ -2,7 +2,7 @@
 from typing import Dict, List
 import argparse
 import pickle
-from moPepGen.vep import VepIO
+from moPepGen.parser import VEPParser
 from moPepGen import gtf, dna, seqvar, logger
 
 
@@ -45,7 +45,7 @@ def parse_vep(args:argparse.Namespace) -> None:
     vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
 
     for vep_file in vep_files:
-        for record in VepIO.parse(vep_file):
+        for record in VEPParser.parse(vep_file):
             transcript_id = record.feature
 
             if transcript_id not in vep_records.keys():
