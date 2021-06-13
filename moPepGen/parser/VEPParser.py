@@ -1,14 +1,21 @@
 """ This module defines the class for a single VEP record
 """
 from __future__ import annotations
-from typing import List, Tuple, Union, IO, Iterable
+from typing import List, Tuple, Iterable
 import re
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, dna
 
 
 def parse(path:str) -> Iterable[VEPRecord]:
-    """"""
+    """ Parse a VEP output text file and return as an iterator.
+
+    Args:
+        path (str): Path to the REDItools output table.
+
+    Return:
+        A iterable of VEPRecord.
+    """
     with open(path, 'r') as handle:
         for line in handle:
             if line.startswith('#'):
