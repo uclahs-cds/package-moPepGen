@@ -255,10 +255,6 @@ class TranscriptVariantGraph():
                 variant = next(variant_iter, None)
                 continue
 
-            # comment it out for now
-            # # NOTE(CZ): a silent mutation may be not silent for cases that
-            # # a frameshifting mutation occured in the upstream!
-
             if cur.seq.locations[-1].ref.end <= variant.location.start:
                 cur = cur.get_reference_next()
                 continue

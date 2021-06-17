@@ -168,7 +168,8 @@ class VEPRecord():
                 ref=ref,
                 alt=alt,
                 _type=_type,
-                _id=_id
+                _id=_id,
+                attrs={'GENE_ID': self.gene}
             )
         except ValueError as e:
             raise ValueError(e.args[0] + f' [{self.feature}]') from e

@@ -1,5 +1,6 @@
 """ VEP2VariantPeptides module """
 from typing import Dict, List
+import pathlib
 import argparse
 import pickle
 from moPepGen.parser import VEPParser
@@ -12,8 +13,10 @@ def parse_vep(args:argparse.Namespace) -> None:
     vep_files:List[str] = args.vep_txt
     index_dir:str = args.index_dir
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '_moPepGem.bed'
+    output_path = output_prefix + '.tvf'
     verbose = args.verbose
+    genome_fasta = None
+    annotation_gtf = None
 
     if verbose:
         logger('moPepGen parseVEP started.')
@@ -69,12 +72,27 @@ def parse_vep(args:argparse.Namespace) -> None:
     if verbose:
         logger('VEP sorting done.')
 
-    with open(output_path, 'w') as handle:
-        mode = 'w'
-        for records in vep_records.values():
-            seqvar.io.write(records, handle, mode)
-            if mode == 'w':
-                mode = 'a'
+    if index_dir:
+        reference_index = pathlib.Path(index_dir).absolute()
+        genome_fasta = None
+        annotation_gtf = None
+    else:
+        reference_index = None
+        genome_fasta = pathlib.Path(genome_fasta).absolute()
+        annotation_gtf = pathlib.Path(annotation_gtf).absolute()
+
+    metadata = seqvar.TVFMetadata(
+        parser='parseVEP',
+        reference_index=reference_index,
+        genome_fasta=genome_fasta,
+        annotation_gtf=annotation_gtf
+    )
+
+    all_records = []
+    for records in vep_records.values():
+        all_records.extend(records)
+
+    seqvar.io.write(all_records, output_path, metadata)
 
     if verbose:
         logger('Variant info written to disk.')

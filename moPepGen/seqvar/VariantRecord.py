@@ -5,6 +5,7 @@ from moPepGen.SeqFeature import FeatureLocation
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
     'AlternativeSplicing']
+SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL']
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
@@ -46,7 +47,7 @@ class VariantRecord():
         alt (str): Altered sequence
     """
     def __init__(self, location:FeatureLocation, ref:str, alt:str, _type:str,
-            _id:str):
+            _id:str, attrs:dict=None):
         """ Construct a VariantRecord object.
 
         Args:
@@ -65,6 +66,7 @@ class VariantRecord():
         self.alt = alt
         self.type = _type
         self.id = _id
+        self.attrs = attrs if attrs else {}
 
     def __hash__(self):
         """ hash """
@@ -99,6 +101,30 @@ class VariantRecord():
     def __le__(self, other:VariantRecord) -> bool:
         """ less or equal to """
         return not self > other
+
+    def to_tvf(self) -> str:
+        """ Convert to a TVF record. """
+        chrom = self.location.seqname
+        pos = str(int(self.location.start))
+        _id = self.id
+        qual = '.'
+        _filter = '.'
+
+        if self.type in SINGLE_NUCLEOTIDE_SUBSTITUTION:
+            ref = str(self.ref)
+            alt = str(self.alt)
+        else:
+            ref = str(self.ref[0])
+            alt = f'<{self.type}>'
+
+        info = self.info
+        return '\t'.join([chrom, pos, _id, ref, alt, qual, _filter, info])
+
+    @property
+    def info(self) -> str:
+        """ Get property of the INFO field """
+        gene_id = self.attrs['GENE_ID']
+        return f'GENE_ID={gene_id}'
 
     def is_snv(self) -> bool:
         """ Checks if the variant is a single nucleotide variant. """
