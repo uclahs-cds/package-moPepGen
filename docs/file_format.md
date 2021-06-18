@@ -58,13 +58,16 @@ Below is an example of a TVF file for point mutation, including single nucleotid
 ##reference_index=
 ##genome_fasta=
 ##annotation_gtf=
+##CHROM=<Description='Transcript ID'>
 ##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Acceptor Transcript's Gene ID">
-#CHROM      POS    ID             REF    ALT    QUAL    FILTER    INFO
-ENST0001    110    SNV-110-C-A    C      A      .       .         GENE_ID=ENSG0001
-ENST0002    210    SNV-210-T-A    T      A      .       .         GENE_ID=ENSG0002
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
+ENST0001    110 SNV_110-C-A C   A   .   .   GENE_ID=ENSG0001;GENE_SYMBOL=TP53;GENOMIC_POSITION="chr1:1000-1001"
+ENST0002    210 SNV_210-T-A T   A   .   .   GENE_ID=ENSG0002;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
 ```
 
-The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene ID that the transcript belongs to. The `ID` column follows the pattern of '\<varant_type>-\<position>-\<ref>-\<alt>'. 
+The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene ID that the transcript belongs to. The `ID` column follows the pattern of '\<varant_type>_\<position>-\<ref>-\<alt>'. 
 
 ### Fusion
 
@@ -77,20 +80,24 @@ Below is an example of a TVF file for gene fusions.
 ##reference_index=
 ##genome_fasta=
 ##annotation_gtf=
+##CHROM=<Description='Transcript ID'>
 ##ALT=<ID=FUSION,Description="Fusion">
-##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Acceptor Transcript's Gene ID">
-##INFO=<ID=DONOR_GENE_ID,Number=1,Type=String,Description="Donor Transcript's Gene ID">
-##INFO=<ID=DONOR_TRANSCRIPT_ID,Number=1,Type=String,Description="Donor Transcript's Transcript ID">
+##INFO=<ID=ACCEPTOR_GENE_ID,Number=1,Type=String,Description="3' Junction (Acceptor) Transcript's Gene ID">
+##INFO=<ID=DONOR_GENE_ID,Number=1,Type=String,Description="5' Junction (Donor) Transcript's Gene ID">
+##INFO=<ID=DONOR_TRANSCRIPT_ID,Number=1,Type=String,Description="5' Junction (Donor) Transcript's Transcript ID">
 ##INFO=<ID=DONOR_POS,Number=1,Type=Integer,Description="Position of the break point of the donor transcript">
-#CHROM      POS    ID                                   REF    ALT         QUAL    FILTER    INFO
-ENST0001    500    FUSION-ENST0001:500-ENST0011:1000    A      <FUSION>    .       .         GENE_ID=ENSG0000;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0011;DONOR_POS=1000
-ENST0001    500    FUSION-ENST0001:500-ENST0012:1500    A      <FUSION>    .       .         GENE_ID=ENSG0000;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0012;DONOR_POS=1500
-ENST0002    500    FUSION-ENST0002:500-ENST0011:1000    A      <FUSION>    .       .         GENE_ID=ENSG0000;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0011;DONOR_POS=1000
-ENST0002    500    FUSION-ENST0002:500-ENST0012:1500    A      <FUSION>    .       .         GENE_ID=ENSG0000;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0012;DONOR_POS=1500
-ENST0021    500    FUSION-ENST0021:500-ENST0031:1000    C      <FUSION>    .       .         GENE_ID=ENSG0021;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0031;DONOR_POS=1000
-ENST0021    500    FUSION-ENST0021:500-ENST0032:1500    C      <FUSION>    .       .         GENE_ID=ENSG0021;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0032;DONOR_POS=1500
-ENST0022    500    FUSION-ENST0022:500-ENST0031:1000    C      <FUSION>    .       .         GENE_ID=ENSG0021;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0031;DONOR_POS=1000
-ENST0022    500    FUSION-ENST0022:500-ENST0032:1500    C      <FUSION>    .       .         GENE_ID=ENSG0021;PDONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0032;DONOR_POS=1500
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=DONOR_GENOMIC_POSITION,Number=1,Type=String,Description="Donor's Genomic Position">
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
+ENST0001    500 FUSION_ENST0001:500-ENST0011:1000    A   <FUSION>   .   .   GENE_ID=ENSG0000;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0011;DONOR_POS=1000;GENOMIC_POSITION=chr1:1000-1000;DONOR_GENOMIC_POSITION=chr2:2000-2000
+ENST0001    500 FUSION_ENST0001:500-ENST0012:1500    A   <FUSION>   .   .   GENE_ID=ENSG0000;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0012;DONOR_POS=1500;GENOMIC_POSITION=chr1:1000-1000;DONOR_GENOMIC_POSITION=chr2:2000-2000
+ENST0002    500 FUSION_ENST0002:500-ENST0011:1000    A   <FUSION>   .   .   GENE_ID=ENSG0000;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0011;DONOR_POS=1000;GENOMIC_POSITION=chr1:1000-1000;DONOR_GENOMIC_POSITION=chr2:2000-2000
+ENST0002    500 FUSION_ENST0002:500-ENST0012:1500    A   <FUSION>   .   .   GENE_ID=ENSG0000;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0012;DONOR_POS=1500;GENOMIC_POSITION=chr1:1000-1000;DONOR_GENOMIC_POSITION=chr2:2000-2000
+ENST0021    500 FUSION_ENST0021:500-ENST0031:1000    C   <FUSION>   .   .   GENE_ID=ENSG0021;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0031;DONOR_POS=1000;GENOMIC_POSITION=chr3:1000-1000;DONOR_GENOMIC_POSITION=chr4:2000-2000
+ENST0021    500 FUSION_ENST0021:500-ENST0032:1500    C   <FUSION>   .   .   GENE_ID=ENSG0021;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0032;DONOR_POS=1500;GENOMIC_POSITION=chr3:1000-1000;DONOR_GENOMIC_POSITION=chr4:2000-2000
+ENST0022    500 FUSION_ENST0022:500-ENST0031:1000    C   <FUSION>   .   .   GENE_ID=ENSG0021;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0031;DONOR_POS=1000;GENOMIC_POSITION=chr3:1000-1000;DONOR_GENOMIC_POSITION=chr4:2000-2000
+ENST0022    500 FUSION_ENST0022:500-ENST0032:1500    C   <FUSION>   .   .   GENE_ID=ENSG0021;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0032;DONOR_POS=1500;GENOMIC_POSITION=chr3:1000-1000;DONOR_GENOMIC_POSITION=chr4:2000-2000
+
 ```
 
 The `Info` column must contain the following fields:
@@ -98,6 +105,8 @@ The `Info` column must contain the following fields:
 + `DONOR_GENE_ID`: the donor transcript's gene ID.
 + `DONOR_TRANSCRIPT_ID`: the donor transcript's transcript ID.
 + `DONOR_POS`: the position of the break poitn of the donor transcript. 
++ `GENOMIC_POSITION`: the genomic position, in the format of `<chrom name>:<breakpoint>:<breakpoint>`.
++ `DONOR_GENOMIC_POSITION`: the genomic position of the donor, in the format of `<chrom name>:<breakpoint>:<breakpoint>`.
 
 In reality, gene fusion happens at the gene level. But in a TVF file, each line represents a transcript, so the same fusion events could appear multiple times, because both the acceptor and donor gene could have multiple transcript isoforms.
 
@@ -106,13 +115,19 @@ In reality, gene fusion happens at the gene level. But in a TVF file, each line 
 
 ## Variant Peptide FASTA
 
-In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, and followed by the variant IDs that it is associated separated by '|'. The Variant IDs are defined in the TVF files. If a peptide is found in multiple transcripts, the information are separated by '||'.
+In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the TVF files. In some cases, several non-carnonical from the same transcript may share the same variants. For example, a frameshifting variant may cause multiple non-carnonical peptides. A integer index is thus always added to the end to solve conflicts.
+
+If a peptide is found in multiple transcripts, the information are separated by '||'.
 
 ```
->ENST0001|SNV-110-C-A
+>ENST0001|ENSG0001|SYMB1|SNV_110-C-A|1
 XXXXXXXXXXXXXXXXXX
->ENST0002|SNV-210-T-A|SNV-220-G-C
+>ENST0002|ENSG0002|SYMB2|SNV_210-T-A|SNV_220-G-C|1
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
->ENST0003|INDEL-350-T-TACT||ENST0004|SNV-55-C-G
+>ENST0003|ENSG0003|SYMB3|INDEL_350-T-TACT|1||ENST0004|ENSG0004|SYMB4|SNV-55-C-G|1
 XXXXXXXXXXXXXXXX
+>ENST0005|ENSG0005|SYMB5|INDEL_110-CAA-A|1
+XXXXXXXXXXXXXXXXXX
+>ENST0005|ENSG0005|SYMB5|INDEL_110-CAA-A|2
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
