@@ -101,6 +101,13 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
             if variant.type == 'Fusion':
                 # TODO: inplement fusion
+                donor_transcript_id = variant.attrs['DONOR_TRANSCRIPT_ID']
+                donor_anno = annotation[donor_transcript_id]
+                donor_chrom = donor_anno.transcript.location.seqname
+                donor_seq = anno.get_transcript_sequence(genome[donor_chrom])
+                donor_variant_records = variants[donor_transcript_id] \
+                    if donor_transcript_id in variants else []
+                cur = dgraph.apply_fusion(cur, variant, donor_seq, donor_variant_records)
                 variant = next(variant_iter, None)
                 continue
 
@@ -144,10 +151,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.input_variant = [
-        'test/files/downsampled_set/CPCG0100_gencode_v34_vep.tvf'
+        'test/files/vep_test_files/vep.tvf',
+        'test/files/fusion/fusion.tvf'
     ]
-    test_args.index_dir = 'test/files/downsampled_set/gencode_v34_index'
-    test_args.output_fasta = 'test/files/downsampled_set/CPCG0100_gencode_v34_moPepGen.fasta'
+    test_args.index_dir = 'test/files/vep_test_files/index'
+    test_args.output_fasta = 'test/files/vep_test_files/vep_moPepGen.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2

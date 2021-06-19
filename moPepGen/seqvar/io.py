@@ -27,14 +27,17 @@ def parse(path:str) -> Iterable[VariantRecord]:
             start=int(fields[1])
             ref = fields[3]
             alt = fields[4]
-            attrs = []
-            for field in fields[7].split(','):
+            attrs = {}
+            for field in fields[7].split(';'):
                 key, val = field.split('=')
                 attrs[key] = val
 
             if not alt.startswith('<'):
                 end = start + len(ref)
                 _type = 'SNV' if len(ref) == len(alt) else 'INDEL'
+            elif alt == '<FUSION>':
+                end = start + 1
+                _type = 'Fusion'
             else:
                 raise ValueError('Alt type not supported.')
 

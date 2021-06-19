@@ -231,6 +231,53 @@ class TranscriptVariantGraph():
             return mid
         return body
 
+    def apply_fusion(self, node:svgraph.DNANode, variant:seqvar.VariantRecord,
+            donor_seq:dna.DNASeqRecordWithCoordinates,
+            donor_variants:List[seqvar.VariantRecord]) -> None:
+        """ Apply a fusion variant, by creating a subgraph of the donor
+        transcript and merge at the breakpoint position.
+
+        Note that all peptides from the donor transcripts are counted as
+        variant peptide at this stage, and are filtered out when comparing to
+        the global canonical peptide pool. This can be improved.
+
+        Args:
+            node (svgraph.DNANode): The node where the fusion variant should be
+                added to.
+            variant (seqvar.VariantRecord): The fusion variant.
+            donor_seq (dna.DNASeqRecordWithCoordinates): The donor transcript's
+                sequence.
+            donor_variants (List[seqvar.VariantRecord]): Variants that are
+                associated with the donor transcript. Variants before the
+                breakpoint won't be applied.
+        """
+        break_point = int(variant.attrs['DONOR_POS'])
+        branch = TranscriptVariantGraph(donor_seq, self.transcript_id)
+        branch.root.seq = branch.root.seq[break_point:]
+        branch.create_variant_graph(donor_variants)
+        var_node = branch.root.get_reference_next()
+        var_node.branch = True
+        var = seqvar.VariantRecordWithCoordinate(
+            variant=variant,
+            location=FeatureLocation(start=0, end=0)
+        )
+        var_node.variants.append(var)
+        var_node.frameshifts.add(var)
+        variant_start = variant.location.start
+        node_start = node.seq.locations[0].ref.start
+
+        if variant_start < node_start:
+            raise ValueError('Variant out of range')
+
+        if variant_start == node_start:
+            prev = node.get_reference_prev()
+            self.add_edge(prev, var_node, 'variant_start')
+            return node
+
+        index = node.seq.get_query_index(variant_start)
+        head, _ = self.splice(node, index, 'reference')
+        self.add_edge(head, var_node, 'variant_start')
+        return head
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord]
             ) -> None:
@@ -246,7 +293,7 @@ class TranscriptVariantGraph():
         self.add_null_root()
         self.variants += variants
         variant_iter = variants.__iter__()
-        variant = next(variant_iter)
+        variant = next(variant_iter, None)
         cur = self.root.get_reference_next()
 
         while variant and cur:
@@ -329,6 +376,9 @@ class TranscriptVariantGraph():
             branch_out_size=branch_out_size
         )
         while node_to_branch:
+            for variant in node_to_branch.variants:
+                if variant.variant.is_frameshifting():
+                    node_to_branch.frameshifts.add(variant.variant)
             self.create_branch(node_to_branch)
             end_node = node.find_farthest_node_with_overlap()
             node_to_branch = start_node.next_node_to_branch_out(
@@ -505,6 +555,7 @@ class TranscriptVariantGraph():
 
         if needs_expand_forward:
             if end_node:
+                end_node.seq = end_node.seq[right_index:]
                 return end_node, branches
             return None, branches
         return ref_node, branches

@@ -1,6 +1,7 @@
 """ Module for DNANode class """
 from __future__ import annotations
 from typing import List, Set, Tuple, Dict, Deque
+import copy
 from collections import deque
 from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph
@@ -152,7 +153,7 @@ class DNANode():
                 if source_out_node in visited:
                     new_out_node = visited[source_out_node]
                 else:
-                    frameshifts = source_out_node.frameshifts
+                    frameshifts = copy.copy(source_out_node.frameshifts)
                     if propagate_frameshifts:
                         frameshifts.update(self.frameshifts)
                     new_out_node = self.__class__(

@@ -140,4 +140,6 @@ class VariantRecord():
 
     def is_frameshifting(self) -> bool:
         """ Checks if the variant is frameshifting. """
-        return abs(len(self.alt) - len(self.ref)) % 3 != 0
+        return abs(len(self.alt) - len(self.ref)) % 3 != 0 or \
+            self.type == 'Fusion'
+
