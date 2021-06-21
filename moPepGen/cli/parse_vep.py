@@ -101,12 +101,12 @@ def parse_vep(args:argparse.Namespace) -> None:
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.vep_txt = [
-        'test/files/vep_test_files/vep_snp.txt',
-        'test/files/vep_test_files/vep_indel.txt'
+        'test/files/vep/vep_snp.txt',
+        'test/files/vep/vep_indel.txt'
     ]
     test_args.index_dir = None
-    test_args.genome_fasta = 'test/files/vep_test_files/genome.fasta'
-    test_args.annotation_gtf = 'test/files/vep_test_files/annotation.gtf'
-    test_args.output_prefix = 'test/files/vep_test_files/vep'
+    test_args.genome_fasta = 'test/files/genome.fasta'
+    test_args.annotation_gtf = 'test/files/annotation.gtf'
+    test_args.output_prefix = 'test/files/vep/vep'
     test_args.verbose = True
     parse_vep(args=test_args)

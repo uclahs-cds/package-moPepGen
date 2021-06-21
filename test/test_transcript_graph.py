@@ -154,6 +154,23 @@ class TestTranscriptGraph(unittest.TestCase):
         self.assertEqual(len(branches), 1)
         self.assertEqual(str(branches[0].seq.seq), 'CCCT')
 
+    def test_expand_alignments_case4(self):
+        r""" Tests that the node after variants are truncated.
+                 A
+                / \
+            ATGG-G-CCCT
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('A', [1], [(0, 'G', 'A', 'SNV', '')]),
+            3: ('G', [1], []),
+            4: ('CCCT', [2, 3], [])
+        }
+        graph, nodes = create_dgraph2(data)
+        cur, branches = graph.expand_alignments(nodes[1])
+        self.assertEqual(str(nodes[4].seq.seq), 'CCT')
+        self.assertEqual(len(branches), 0)
+        self.assertIs(cur, nodes[4])
 
     def test_find_overlaps(self):
         """ Correct farthest overlap node is found. """

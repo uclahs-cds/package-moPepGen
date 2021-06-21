@@ -151,11 +151,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.input_variant = [
-        'test/files/vep_test_files/vep.tvf',
+        'test/files/vep/vep.tvf',
         'test/files/fusion/fusion.tvf'
     ]
-    test_args.index_dir = 'test/files/vep_test_files/index'
-    test_args.output_fasta = 'test/files/vep_test_files/vep_moPepGen.fasta'
+    test_args.index_dir = 'test/files/index'
+    test_args.output_fasta = 'test/files/vep/vep_moPepGen.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2
