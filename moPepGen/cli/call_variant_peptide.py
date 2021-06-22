@@ -100,7 +100,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 continue
 
             if variant.type == 'Fusion':
-                # TODO: inplement fusion
                 donor_transcript_id = variant.attrs['DONOR_TRANSCRIPT_ID']
                 donor_anno = annotation[donor_transcript_id]
                 donor_chrom = donor_anno.transcript.location.seqname

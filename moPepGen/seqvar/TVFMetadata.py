@@ -1,4 +1,4 @@
-""""""
+""" Module for TVF metadata """
 from __future__ import annotations
 from typing import List
 from moPepGen import __version__, seqvar
