@@ -4,7 +4,6 @@ import argparse
 import pickle
 from Bio import SeqIO, SeqUtils
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent
-from moPepGen.SeqFeature import FeatureLocation
 
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
@@ -59,27 +58,12 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
     for file in variant_files:
-        with open(file, 'rt') as handle:
-            for line in handle:
-                if line.startswith('#'):
-                    continue
-                fields = line.rstrip().split('\t')
-                transcript_id = fields[0]
-                record = seqvar.VariantRecord(
-                    location=FeatureLocation(
-                        seqname=transcript_id,
-                        start=int(fields[1]),
-                        end=int(fields[2])
-                    ),
-                    ref=fields[3],
-                    alt=fields[4],
-                    _type=fields[5],
-                    _id=fields[6]
-                )
-                if transcript_id not in variants:
-                    variants[transcript_id] = [record]
-                else:
-                    variants[transcript_id].append(record)
+        for record in seqvar.io.parse(file):
+            transcript_id = record.location.seqname
+            if transcript_id not in variants:
+                variants[transcript_id] = [record]
+            else:
+                variants[transcript_id].append(record)
         logger(f'Variant file {file} loaded.')
 
     for records in variants.values():

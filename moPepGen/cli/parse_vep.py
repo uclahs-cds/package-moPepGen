@@ -12,7 +12,7 @@ def parse_vep(args:argparse.Namespace) -> None:
     vep_files:List[str] = args.vep_txt
     index_dir:str = args.index_dir
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '_moPepGen.txt'
+    output_path = output_prefix + '_moPepGem.bed'
     verbose = args.verbose
 
     if verbose:
@@ -27,7 +27,7 @@ def parse_vep(args:argparse.Namespace) -> None:
             anno = pickle.load(handle)
 
         if verbose:
-            logger('Indexed genome and annotations loaded.')
+            logger('Indexed genome and annotation loaded.')
     else:
         genome_fasta:str = args.genome_fasta
         annotation_gtf:str = args.annotation_gtf
@@ -70,15 +70,11 @@ def parse_vep(args:argparse.Namespace) -> None:
         logger('VEP sorting done.')
 
     with open(output_path, 'w') as handle:
-        headers = ['transcript_id', 'start', 'end', 'ref', 'alt', 'type', 'id']
-        handle.write('#' + '\t'.join(headers) + '\n')
-        for transcript_id, records in vep_records.items():
-            record:seqvar.VariantRecord
-            for record in records:
-                line = [transcript_id, str(int(record.location.start)),
-                    str(int(record.location.end)), str(record.ref),
-                    str(record.alt), record.type, record.id]
-                handle.write('\t'.join(line) + '\n')
+        mode = 'w'
+        for records in vep_records.values():
+            seqvar.io.write(records, handle, mode)
+            if mode == 'w':
+                mode = 'a'
 
     if verbose:
         logger('Variant info written to disk.')
