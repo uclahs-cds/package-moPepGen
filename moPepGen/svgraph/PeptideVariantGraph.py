@@ -370,6 +370,9 @@ class PeptideVariantGraph():
                 for branch in branches:
                     queue.appendleft(branch)
 
+                if cur is self.stop:
+                    continue
+
                 if self.next_is_stop(cur):
                     # leave it to the next iteration to handle
                     queue.append(cur)

@@ -23,7 +23,7 @@ class TestAnnotationModel(unittest.TestCase):
             'cds': [(0,8,attributes), (10, 18, attributes)]
         }
         model = create_transcript_model(data)
-        chrom = SeqIO.read('test/files/genome_example.fa', 'fasta')
+        chrom = SeqIO.read('test/files/genome.fasta', 'fasta')
         seq = model.get_transcript_sequence(chrom)
         self.assertEqual(len(seq.seq), 16)
 
@@ -42,7 +42,7 @@ class TestAnnotationModel(unittest.TestCase):
             'exon': [(0,8,attributes), (10, 18, attributes)]
         }
         model = create_transcript_model(data)
-        chrom = SeqIO.read('test/files/genome_example.fa', 'fasta')
+        chrom = SeqIO.read('test/files/genome.fasta', 'fasta')
         seq = model.get_transcript_sequence(chrom)
         self.assertIs(seq.orf, None)
 
@@ -123,10 +123,10 @@ class TestGTF(unittest.TestCase):
     def test_dump_gtf(self):
         """ Test that the VapIO.parse returns an iterabale of vep_record
         """
-        anno = self.load_gtf('test/files/gtf_example_gencode.gtf')
+        anno = self.load_gtf('test/files/annotation.gtf')
 
         self.assertIsInstance(anno, gtf.TranscriptGTFDict)
-        self.assertEqual(len(anno), 5)
+        self.assertEqual(len(anno), 3)
         for key, val in anno.items():
             self.assertEqual(val.transcript.attributes['transcript_id'], key)
             for cds in val.cds:

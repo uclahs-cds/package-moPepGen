@@ -1,6 +1,6 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import List, Tuple
+from typing import List, Tuple, Deque, Set
 from collections import deque
 import copy
 from Bio.Seq import Seq
@@ -96,6 +96,9 @@ class TranscriptVariantGraph():
         """ Remove a node from its inboud and outbound node. """
         while node.in_edges:
             edge = node.in_edges.pop()
+            self.remove_edge(edge)
+        while node.out_edges:
+            edge = node.out_edges.pop()
             self.remove_edge(edge)
 
     def add_null_root(self):
@@ -228,6 +231,53 @@ class TranscriptVariantGraph():
             return mid
         return body
 
+    def apply_fusion(self, node:svgraph.DNANode, variant:seqvar.VariantRecord,
+            donor_seq:dna.DNASeqRecordWithCoordinates,
+            donor_variants:List[seqvar.VariantRecord]) -> None:
+        """ Apply a fusion variant, by creating a subgraph of the donor
+        transcript and merge at the breakpoint position.
+
+        Note that all peptides from the donor transcripts are counted as
+        variant peptide at this stage, and are filtered out when comparing to
+        the global canonical peptide pool. This can be improved.
+
+        Args:
+            node (svgraph.DNANode): The node where the fusion variant should be
+                added to.
+            variant (seqvar.VariantRecord): The fusion variant.
+            donor_seq (dna.DNASeqRecordWithCoordinates): The donor transcript's
+                sequence.
+            donor_variants (List[seqvar.VariantRecord]): Variants that are
+                associated with the donor transcript. Variants before the
+                breakpoint won't be applied.
+        """
+        break_point = int(variant.attrs['DONOR_POS'])
+        branch = TranscriptVariantGraph(donor_seq, self.transcript_id)
+        branch.root.seq = branch.root.seq[break_point:]
+        branch.create_variant_graph(donor_variants)
+        var_node = branch.root.get_reference_next()
+        var_node.branch = True
+        var = seqvar.VariantRecordWithCoordinate(
+            variant=variant,
+            location=FeatureLocation(start=0, end=0)
+        )
+        var_node.variants.append(var)
+        var_node.frameshifts.add(var)
+        variant_start = variant.location.start
+        node_start = node.seq.locations[0].ref.start
+
+        if variant_start < node_start:
+            raise ValueError('Variant out of range')
+
+        if variant_start == node_start:
+            prev = node.get_reference_prev()
+            self.add_edge(prev, var_node, 'variant_start')
+            return node
+
+        index = node.seq.get_query_index(variant_start)
+        head, _ = self.splice(node, index, 'reference')
+        self.add_edge(head, var_node, 'variant_start')
+        return head
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord]
             ) -> None:
@@ -243,7 +293,7 @@ class TranscriptVariantGraph():
         self.add_null_root()
         self.variants += variants
         variant_iter = variants.__iter__()
-        variant = next(variant_iter)
+        variant = next(variant_iter, None)
         cur = self.root.get_reference_next()
 
         while variant and cur:
@@ -251,13 +301,6 @@ class TranscriptVariantGraph():
             if cur.seq.locations[0].ref.start > variant.location.start:
                 variant = next(variant_iter, None)
                 continue
-
-            # comment it out for now
-            # # NOTE(CZ): a silent mutation may be not silent for cases that
-            # # a frameshifting mutation occured in the upstream!
-            # if variant.is_silent():
-            #     variant = next(variant_iter, None)
-            #     continue
 
             if cur.seq.locations[-1].ref.end <= variant.location.start:
                 cur = cur.get_reference_next()
@@ -269,20 +312,79 @@ class TranscriptVariantGraph():
             variant = next(variant_iter, None)
 
 
-    def align_varints(self, node:svgraph.DNANode) -> svgraph.DNANode:
+    def create_branch(self, node:svgraph.DNANode) -> svgraph.DNANode:
+        """ Create a branch by making a deep copy of the specified node and
+        all its children. The branch attribute of the copied node is set
+        to True. """
+        new_node:svgraph.DNANode = node.deepcopy()
+        edges = copy.copy(node.in_edges)
+        while edges:
+            edge = edges.pop()
+            self.add_edge(edge.in_node, new_node, edge.type)
+            self.remove_edge(edge)
+        new_node.branch = True
+        return new_node
+
+    def merge_with_outbonds(self, node:svgraph.DNANode) -> List[svgraph.DNANode]:
+        """ For a given node, merge it with all its outbound nodes. """
+
+        in_edges = copy.copy(node.in_edges)
+        out_edges:Set[svgraph.DNAEdge] = copy.copy(node.out_edges)
+        out_nodes = []
+        while out_edges:
+            edge = out_edges.pop()
+            out_node = edge.out_node
+            out_node.seq = node.seq + out_node.seq
+
+            for i,_ in enumerate(out_node.variants):
+                out_node.variants[i] = out_node.variants[i].shift(len(node.seq))
+
+            for in_edge in in_edges:
+                self.add_edge(in_edge.in_node, out_node, edge.type)
+
+            out_nodes.append(out_node)
+
+        self.remove_node(node)
+
+        return out_nodes
+
+    def align_variants(self, node:svgraph.DNANode, branch_out_size:int=100
+            ) -> svgraph.DNANode:
         r""" Aligns all variants at that overlaps to the same start and end
-        position.
+        position. Frameshifting mutations will be brached out
 
         For example:
 
-                 T--                     TG--
-                /   \                   /    \
+                 T--                     T-G-CCCT
+                /   \                   /
             ATGG-TCT-G-CCCT   ->    ATGG-TCTG-CCCT
                     \ /                 \    /
                      A                   TCTA
+
+        Args:
+            node (svgraph.DNANode): The node of which the outbound nodes will
+                be aligned.
+            branch_out_size (int): The size limit of the variant to forch
+                creating a branch in th graph.
+        Returns:
+            The original input node.
         """
         start_node = node
         end_node = node.find_farthest_node_with_overlap()
+        node_to_branch = start_node.next_node_to_branch_out(
+            to_node=end_node,
+            branch_out_size=branch_out_size
+        )
+        while node_to_branch:
+            for variant in node_to_branch.variants:
+                if variant.variant.is_frameshifting():
+                    node_to_branch.frameshifts.add(variant.variant)
+            self.create_branch(node_to_branch)
+            end_node = node.find_farthest_node_with_overlap()
+            node_to_branch = start_node.next_node_to_branch_out(
+                to_node=end_node,
+                branch_out_size=branch_out_size
+            )
 
         new_nodes = set()
         queue = deque()
@@ -297,10 +399,14 @@ class TranscriptVariantGraph():
 
         while queue:
             cur:svgraph.DNANode = queue.pop()
-            if ((len(cur.out_edges) == 1 and \
+            if cur is end_node or ((len(cur.out_edges) == 1 and \
                     next(iter(cur.out_edges)).out_node == end_node)) or \
                     (not cur.out_edges):
                 continue
+            if cur.branch:
+                continue
+
+            # because the new node will be reconstructed
             new_nodes.remove(cur)
 
             while cur.out_edges:
@@ -319,7 +425,8 @@ class TranscriptVariantGraph():
                 new_node = svgraph.DNANode(
                     seq=cur.seq + out_node.seq,
                     variants=cur.variants + new_variants,
-                    frameshifts=frameshifts
+                    frameshifts=frameshifts,
+                    branch=out_node.branch
                 )
                 for edge in out_node.out_edges:
                     edge_type = 'variant_end' if new_node.variants \
@@ -340,7 +447,6 @@ class TranscriptVariantGraph():
 
         return start_node
 
-
     def expand_alignments(self, node:svgraph.DNANode
             ) -> Tuple[svgraph.CursorForCodonFinding,
                     List[svgraph.CursorForCodonFinding]]:
@@ -354,15 +460,13 @@ class TranscriptVariantGraph():
 
         For example:
 
-             TG--                   GTG-CCCT
-            /    \                 /
+             T-GCCCT                GTG-CCCT
+            /                      /
         ATGG-TCTG-CCCT    ->    ATG-GTCTGC-CCT
             \    /                 \      /
              TCTA                   GTCTAC
-
         """
         branches = []
-        trash_nodes = set()
         # how many nt we should give to the mutation.
         if node.seq:
             left_index = len(node.seq) - len(node.seq) % 3
@@ -372,7 +476,7 @@ class TranscriptVariantGraph():
             left_over = dna.DNASeqRecordWithCoordinates(Seq(''), [])
 
         ref_node = node.get_reference_next()
-        original_ref_seq_len = len(ref_node.seq)
+        # original_ref_seq_len = len(ref_node.seq)
         end_node = ref_node.get_reference_next()
         # number of nt we should get from the reference node after mutation
         right_index = len(left_over) + len(ref_node.seq)
@@ -380,13 +484,22 @@ class TranscriptVariantGraph():
         if end_node:
             right_over = end_node.seq[:right_index]
 
+        needs_expand_forward = False
+        if len(ref_node.seq.seq) + len(left_over) < 3:
+            needs_expand_forward = True
+        for edge in node.out_edges:
+            for variant in edge.out_node.variants:
+                if not variant.variant.is_frameshifting():
+                    needs_expand_forward = True
+                    break
+
         for edge in node.out_edges:
             out_node:svgraph.DNANode = edge.out_node
 
             out_node.seq = left_over + out_node.seq
 
             if out_node is ref_node:
-                if end_node:
+                if end_node and needs_expand_forward:
                     out_node.seq = out_node.seq + right_over
                 continue
 
@@ -396,7 +509,7 @@ class TranscriptVariantGraph():
             out_node.variants = variants
 
             # Look for stop codon. If stop codon is found, remove all
-            # downstream
+            # downstream edges/nodes
             stop_codon_index = out_node.seq.find_stop_codon()
             if stop_codon_index > -1:
                 out_node.seq = out_node.seq[:stop_codon_index + 3]
@@ -409,51 +522,45 @@ class TranscriptVariantGraph():
                     self.remove_edge(out_edge)
                 continue
 
-            # branch out framshifting mutations
-            original_out_node_len = len(out_node.seq) - len(left_over)
-            if (original_ref_seq_len - original_out_node_len) % 3 != 0:
-                new_out_node:svgraph.DNANode = out_node.deepcopy()
-                edge.out_node = new_out_node
-                new_out_node.in_edges.add(edge)
-                out_node.in_edges.remove(edge)
-
+            if out_node.branch:
                 # carry over nts to make codons if need
-                new_next_node = new_out_node.get_reference_next()
-                if len(new_out_node.seq) % 3 > 0 and new_next_node:
-                    new_right_index = 3 - (len(new_out_node.seq) % 3)
-                    new_out_node.seq = new_out_node.seq + \
-                        new_next_node.seq[:new_right_index]
-                    new_next_node.seq = new_next_node.seq[new_right_index:]
+                branch_next_node = out_node.get_reference_next()
+                if len(out_node.seq) % 3 > 0 and branch_next_node:
+                    branch_right_index = 3 - (len(out_node.seq) % 3)
+                    #
+                    if len(branch_next_node.seq.seq) <= branch_right_index:
+                        downstreams = self.merge_with_outbonds(branch_next_node)
+                        # checks if any of the outbound nodes is still too short
+                        out_node_needs_merge_with_its_outnodes = False
+                        if len(downstreams) > 1 or \
+                                len(downstreams[0].seq) <= branch_right_index:
+                            out_node_needs_merge_with_its_outnodes = True
 
-                new_next_node.frameshifts.update(new_out_node.frameshifts)
+                        if out_node_needs_merge_with_its_outnodes:
+                            new_out_nodes = self.merge_with_outbonds(out_node)
+                            branch_next_node = new_out_nodes[0]\
+                                .get_reference_next()
+                            branches.append(branch_next_node)
+                            continue
+                        branch_next_node = downstreams[0]
+                    out_node.seq = out_node.seq + \
+                        branch_next_node.seq[:branch_right_index]
+                    branch_next_node.seq = branch_next_node.seq[branch_right_index:]
 
-                # the original frameshifting node should be then removed
-                trash_nodes.add(out_node)
-
-                new_cursor = svgraph.CursorForCodonFinding(
-                    node=new_next_node,
-                    position_to_orf='mid',
-                    search_orf=True
-                )
-                branches.append(new_cursor)
+                branches.append(branch_next_node)
                 continue
 
             if end_node:
                 out_node.seq = out_node.seq + right_over
 
-        for trash in trash_nodes:
-            self.remove_node(trash)
+        if needs_expand_forward:
+            if end_node:
+                end_node.seq = end_node.seq[right_index:]
+                return end_node, branches
+            return None, branches
+        return ref_node, branches
 
-        if end_node:
-            end_node.seq = end_node.seq[right_index:]
-            new_cursor = svgraph.CursorForCodonFinding(
-                node=end_node,
-                position_to_orf='mid'
-            )
-            return new_cursor, branches
-        return None, branches
-
-    def fit_into_codons(self) -> None:
+    def fit_into_codons(self, branch_out_size:int=100) -> None:
         r""" This takes the variant graph, and fit all cleave sites into the
         range of codons. For frameshifting mutations, the downstream part
         will be branched out.
@@ -480,28 +587,33 @@ class TranscriptVariantGraph():
             cur:svgraph.CursorForCodonFinding = queue.pop()
             if cur.node is self.root:
                 if len(cur.node.out_edges) == 1:
-                    next_node = cur.node.get_reference_next()
-                    if self.seq.orf:
-                        start_codon_index = next_node.seq\
-                            .get_query_index(self.seq.orf.start)
-                        search_orf = False
-                    else:
-                        start_codon_index = None
-                        search_orf = True
-                    new_cursor = svgraph.CursorForCodonFinding(
-                        node=next_node,
-                        position_to_orf='up',
-                        search_orf=search_orf,
-                        start_codon_index=start_codon_index
-                    )
-                    queue.appendleft(new_cursor)
-                    continue
+                    main = cur.node.get_reference_next()
+                else:
+                    node = self.align_variants(cur.node, branch_out_size)
+                    main,branches = self.expand_alignments(node)
+                    queue.appendleft(main)
+                    for branch in branches:
+                        new_cursor = svgraph.CursorForCodonFinding(
+                            node=branch,
+                            position_to_orf='up',
+                            search_orf=True
+                        )
+                        queue.appendleft(new_cursor)
 
-                node = self.align_varints(cur.node)
-                main,branches = self.expand_alignments(node)
-                queue.appendleft(main)
-                for branch in branches:
-                    queue.appendleft(branch)
+                if self.seq.orf:
+                    start_codon_index = main.seq\
+                        .get_query_index(self.seq.orf.start)
+                    search_orf = False
+                else:
+                    start_codon_index = None
+                    search_orf = True
+                new_cursor = svgraph.CursorForCodonFinding(
+                    node=main,
+                    position_to_orf='up',
+                    search_orf=search_orf,
+                    start_codon_index=start_codon_index
+                )
+                queue.append(new_cursor)
                 continue
 
             # not considering when there is mutation before the start codon
@@ -601,12 +713,23 @@ class TranscriptVariantGraph():
                 if not node.out_edges:
                     continue
                 if len(node.out_edges) > 1:
-                    node = self.align_varints(node)
+                    node = self.align_variants(node, branch_out_size)
                 main, branches = self.expand_alignments(node)
+
                 if main:
-                    queue.appendleft(main)
+                    new_cursor = svgraph.CursorForCodonFinding(
+                        node=main,
+                        position_to_orf='mid',
+                        search_orf=False
+                    )
+                    queue.appendleft(new_cursor)
                 for branch in branches:
-                    queue.appendleft(branch)
+                    new_cursor = svgraph.CursorForCodonFinding(
+                        node=branch,
+                        position_to_orf='mid',
+                        search_orf=False
+                    )
+                    queue.appendleft(new_cursor)
                 continue
 
     def translate(self) -> svgraph.PeptideVariantGraph:

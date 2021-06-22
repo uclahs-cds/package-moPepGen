@@ -1,4 +1,5 @@
 """ Test module for DNA Node """
+from moPepGen import svgraph
 import unittest
 from test import create_dgraph2
 
@@ -32,9 +33,70 @@ class TestDNANode(unittest.TestCase):
         node_copy = nodes[2].deepcopy()
         self.assertEqual(node_copy.seq.seq, nodes[2].seq.seq)
         self.assertIsNot(node_copy, nodes[2])
-        out_node = next(iter(node_copy.out_edges)).out_node
+        out_node:svgraph.DNANode = next(iter(node_copy.out_edges)).out_node
         self.assertEqual(out_node.seq.seq, nodes[4].seq.seq)
         self.assertIsNot(out_node, nodes[4])
+        self.assertEqual(len(out_node.frameshifts), 1)
+
+    def test_next_node_to_branch_out_cas1(self):
+        r""" Returns the frameshifting mutation
+                 T--
+                /   \
+            ATGG-TCT-G-CCCT
+                    \ /
+                     A
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('T', [1], [(0, 'TCT', 'T', 'INDEL', '')]),
+            3: ('TCT', [1], []),
+            4: ('G', [2,3], []),
+            5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
+            6: ('CCCT', [4,5], [])
+        }
+        _, nodes = create_dgraph2(data)
+        node = nodes[1].next_node_to_branch_out(nodes[6])
+        self.assertIs(node, nodes[2])
+
+    def test_next_node_to_branch_out_case2(self):
+        r""" Should return None for in frame mutation
+                 T--
+                /   \
+            ATGG-TCGT-G-CCCT
+                     \ /
+                      A
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('T', [1], [(0, 'TCGT', 'T', 'INDEL', '')]),
+            3: ('TCGT', [1], []),
+            4: ('G', [2,3], []),
+            5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
+            6: ('CCCT', [4,5], [])
+        }
+        _, nodes = create_dgraph2(data)
+        node = nodes[1].next_node_to_branch_out(nodes[6])
+        self.assertIs(node, None)
+
+    def test_next_node_to_branch_out_case3(self):
+        r""" Should return for long mutation even if it's inframe
+                 T--
+                /   \
+            ATGG-TCGGGGGGGT-G-CCCT
+                           \ /
+                            A
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('T', [1], [(0, 'TCGGGGGGGT', 'T', 'INDEL', '')]),
+            3: ('TCGGGGGGGT', [1], []),
+            4: ('G', [2,3], []),
+            5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
+            6: ('CCCT', [4,5], [])
+        }
+        _, nodes = create_dgraph2(data)
+        node = nodes[1].next_node_to_branch_out(nodes[6], 5)
+        self.assertIs(node, nodes[2])
 
     def test_find_farthest_node_with_overlap_case1(self):
         r"""
@@ -112,6 +174,28 @@ class TestDNANode(unittest.TestCase):
         _, nodes = create_dgraph2(data)
         node = nodes[0].find_farthest_node_with_overlap()
         self.assertIs(node, nodes[3])
+
+    def test_find_farthest_node_with_overlap_case5_with_branch(self):
+        r"""
+                 T-G-CCCT
+                /
+            ATGG-TCTGAC-G-CCCT
+                       \ /
+                        A
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('T', [1], [(0, 'TCTGAC', 'T', 'INDEL', '')], True),
+            3: ('G', [2], []),
+            4: ('CCCT', [3], []),
+            5: ('TCTGAC', [1], []),
+            6: ('G', [5], []),
+            7: ('A', [5], [(0, 'G', 'T', 'SNV', '')]),
+            8: ('CCCT', [6, 7], [])
+        }
+        _, nodes = create_dgraph2(data)
+        node = nodes[1].find_farthest_node_with_overlap()
+        self.assertIs(node, nodes[5])
 
 if __name__ == '__main__':
     unittest.main()
