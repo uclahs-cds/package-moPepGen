@@ -4,7 +4,7 @@ from typing import Deque
 from collections import deque
 from test import create_dgraph2, create_dgraph1
 from moPepGen import svgraph, seqvar
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 
 
 class TestTranscriptGraph(unittest.TestCase):
@@ -171,6 +171,110 @@ class TestTranscriptGraph(unittest.TestCase):
         self.assertEqual(str(nodes[4].seq.seq), 'CCT')
         self.assertEqual(len(branches), 0)
         self.assertIs(cur, nodes[4])
+
+    def test_find_orf_case1(self):
+        r""" Test when start codon at 0 and no start lost mutation
+            ATGG-G-CCCT
+                \ /
+                 A
+        """
+        data = {
+            0: ('ATGG', [], []),
+            1: ('A', [0], [(0, 'G', 'A', 'SNV', '')]),
+            2: ('G', [0], []),
+            3: ['CCCT', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data)
+        graph.add_null_root()
+        graph.seq.orf = FeatureLocation(start=0, end=len(graph.seq))
+        graph.find_orf()
+        self.assertTrue(graph.root.is_inbond_of(nodes[0]))
+
+    def test_find_orf_case2(self):
+        """ When start codon is not at at 0 and no start lost variants
+
+            GGATGG-G-CCCT
+                  \ /
+                   A
+        """
+        data = {
+            0: ('GGATGG', [], []),
+            1: ('A', [0], [(0, 'G', 'A', 'SNV', '')]),
+            2: ('G', [0], []),
+            3: ['CCCT', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data)
+        graph.add_null_root()
+        graph.seq.orf = FeatureLocation(start=2, end=len(graph.seq))
+        graph.find_orf()
+        self.assertTrue(graph.root.is_inbond_of(nodes[0]))
+        self.assertTrue(nodes[0].seq.seq.startswith('ATG'))
+
+    def test_find_orf_case3(self):
+        r""" Variants before start codon
+              T
+             / \
+            G-G-ATGG-G-CCCT
+                    \ /
+                     A
+        """
+        data = {
+            0: ('G', [], []),
+            1: ('T', [0], [(0, 'T', 'T', 'SNV', '')]),
+            2: ('G', [0], []),
+            3: ('ATGG', [1,2], []),
+            4: ('A', [3], [(0, 'G', 'A', 'SNV', '')]),
+            5: ('G', [3], []),
+            6: ('CCCT', [4,5], [])
+        }
+        graph, nodes = create_dgraph2(data)
+        graph.add_null_root()
+        graph.seq.orf = FeatureLocation(start=2, end=len(graph.seq))
+        graph.find_orf()
+        self.assertTrue(graph.root.is_inbond_of(nodes[3]))
+
+    def test_find_orf_case4(self):
+        r""" Start lost variants
+                G
+               / \
+            GGA-T-GG-G-CCCT
+                    \ /
+                     A
+        """
+        data = {
+            1: ('GGA', [], []),
+            2: ('G', [1], [(0, 'T', 'G', 'SNV', '')]),
+            3: ('T', [1], []),
+            4: ('GG', [2,3], []),
+            5: ('A', [4], [(0, 'G', 'A', 'SNV', '')]),
+            6: ('G', [4], []),
+            7: ('CCCT', [5,6], [])
+        }
+        graph, nodes = create_dgraph2(data)
+        graph.add_null_root()
+        graph.seq.orf = FeatureLocation(start=2, end=len(graph.seq))
+        graph.find_orf()
+        self.assertTrue(graph.root.is_inbond_of(nodes[4]))
+        self.assertTrue(nodes[4].seq.seq.startswith('ATG'))
+
+    def test_find_orf_case5(self):
+        r""" Start lost variants
+                 AA
+                /  \
+            Null-A--TGG
+        """
+        data = {
+            0: (None, [], []),
+            1: ('A', [0], []),
+            2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')], True),
+            3: ['TGG', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data)
+        graph.seq.orf = FeatureLocation(start=0, end=len(graph.seq))
+        graph.find_orf()
+        self.assertTrue(graph.root.is_inbond_of(nodes[3]))
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
 
     def test_find_overlaps(self):
         """ Correct farthest overlap node is found. """

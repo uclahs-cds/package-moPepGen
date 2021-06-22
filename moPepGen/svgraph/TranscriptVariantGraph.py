@@ -448,8 +448,7 @@ class TranscriptVariantGraph():
         return start_node
 
     def expand_alignments(self, node:svgraph.DNANode
-            ) -> Tuple[svgraph.CursorForCodonFinding,
-                    List[svgraph.CursorForCodonFinding]]:
+            ) -> Tuple[svgraph.DNANode, List[svgraph.DNANode]]:
         r""" Expand the aligned variants into the range of codons. For
         frameshifting mutations, a copy of each downstream node will be
         created and branched out.
@@ -560,6 +559,100 @@ class TranscriptVariantGraph():
             return None, branches
         return ref_node, branches
 
+    def prune_variants_or_branch_out(self, node:svgraph.DNANode
+            ) -> Tuple[svgraph.DNANode, List[svgraph.DNANode]]:
+        """"""
+        outbound_ref = node.get_reference_next()
+        ref_start = outbound_ref.seq.locations[0].ref.start
+        orf = self.seq.orf
+        branches = []
+
+        # Maybe improved for start retained mutations
+        if orf.start > ref_start:
+            edges = copy.copy(node.out_edges)
+            for edge in edges:
+                if edge.out_node is outbound_ref:
+                    continue
+                self.remove_node(edge.out_node)
+
+        elif ref_start > orf.start + 3:
+            raise ValueError
+
+        edges = copy.copy(node.out_edges)
+        for edge in edges:
+            if edge.out_node is outbound_ref:
+                continue
+            branch = self.create_branch(edge.out_node)
+            branches.append(branch)
+        if node is not self.root:
+            nodes = self.merge_with_outbonds(node)
+            for merged_node in nodes:
+                if not merged_node.variants:
+                    return merged_node, branches
+        return outbound_ref, branches
+
+
+    def find_orf(self) -> None:
+        """"""
+        cur = svgraph.TVGCursor(node=self.root, search_orf=False)
+        queue:Deque[svgraph.TVGCursor] = deque([cur])
+
+        while queue:
+            cur = queue.pop()
+            if cur.node is self.root:
+                if len(cur.node.out_edges) == 1:
+                    main = cur.node.get_reference_next()
+                    new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
+                    queue.append(new_cursor)
+                    continue
+                main,branches = self.prune_variants_or_branch_out(cur.node)
+                new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
+                queue.appendleft(new_cursor)
+                for branch in branches:
+                    new_cursor = svgraph.TVGCursor(branch, True)
+                    queue.appendleft(new_cursor)
+                continue
+
+            if cur.search_orf:
+                node = cur.node
+                index = node.seq.seq.find('ATG')
+
+                # for start lost mutation or non-translatable sequences, if
+                # start codon is not found in the current cursor, merge the
+                # last nucleotides with each of the out nodes, and research.
+                # This may be improved by skipping visited nodes.
+                if index == -1:
+                    node.seq = node.seq[-2:]
+                    out_nodes = self.merge_with_outbonds(node)
+                    for out_node in out_nodes:
+                        new_cursor = svgraph.TVGCursor(out_node, True)
+                        queue.appendleft(new_cursor)
+                else:
+                    node.seq = node.seq[index:]
+                continue
+
+            # back to the reference track
+            start_codon_index = cur.node.seq.get_query_index(self.seq.orf.start)
+
+            if start_codon_index != -1:
+                cur_node = cur.node
+                cur_node.seq = cur_node.seq[start_codon_index:]
+                while len(cur_node.seq) <= 2:
+                    cur_node, branchs = self.prune_variants_or_branch_out(cur_node)
+                    for branch in branchs:
+                        new_cursor = svgraph.TVGCursor(branch, True)
+                        queue.appendleft(new_cursor)
+                continue
+
+            cur.node.seq = cur.node.seq[-2:]
+            main, branchs = self.prune_variants_or_branch_out(cur.node)
+            new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
+            queue.append(new_cursor)
+            for branch in branchs:
+                new_cursor = svgraph.TVGCursor(node=branch, search_orf=True)
+                queue.appendleft(new_cursor)
+
+
     def fit_into_codons(self, branch_out_size:int=100) -> None:
         r""" This takes the variant graph, and fit all cleave sites into the
         range of codons. For frameshifting mutations, the downstream part
@@ -576,161 +669,34 @@ class TranscriptVariantGraph():
                     \ /                \      /
                      A                  GTCTAC
         """
-        cur = svgraph.CursorForCodonFinding(
-            node=self.root,
-            position_to_orf='up',
-            search_orf=False
-        )
-        queue = deque([cur])
+        self.find_orf()
+        for edge in self.root.out_edges:
+            cur = svgraph.TVGCursor(node=edge.out_node, search_orf=False)
+            queue = deque([cur])
 
         while queue:
-            cur:svgraph.CursorForCodonFinding = queue.pop()
-            if cur.node is self.root:
-                if len(cur.node.out_edges) == 1:
-                    main = cur.node.get_reference_next()
-                else:
-                    node = self.align_variants(cur.node, branch_out_size)
-                    main,branches = self.expand_alignments(node)
-                    queue.appendleft(main)
-                    for branch in branches:
-                        new_cursor = svgraph.CursorForCodonFinding(
-                            node=branch,
-                            position_to_orf='up',
-                            search_orf=True
-                        )
-                        queue.appendleft(new_cursor)
+            cur:svgraph.TVGCursor = queue.pop()
 
-                if self.seq.orf:
-                    start_codon_index = main.seq\
-                        .get_query_index(self.seq.orf.start)
-                    search_orf = False
-                else:
-                    start_codon_index = None
-                    search_orf = True
-                new_cursor = svgraph.CursorForCodonFinding(
-                    node=main,
-                    position_to_orf='up',
-                    search_orf=search_orf,
-                    start_codon_index=start_codon_index
-                )
-                queue.append(new_cursor)
+            node = cur.node
+            stop_codon_index = node.seq.find_stop_codon()
+            if stop_codon_index != -1:
+                node.seq = node.seq[:stop_codon_index + 3]
+                while node.out_edges:
+                    edge = node.out_edges.pop()
+                    self.remove_edge(edge)
                 continue
-
-            # not considering when there is mutation before the start codon
-            # This should be the root
-            if cur.position_to_orf == 'up' and cur.start_codon_index != -1:
-                node:svgraph.DNANode = cur.node
-                index = cur.start_codon_index
-                node.seq = node.seq[index:]
-
-                # When there is any start codon loss mutation, each mutation
-                # will start it's own branch.
-                if len(node.seq) < 3:
-                    edges = copy.copy(cur.node.out_edges)
-                    while edges:
-                        edge:svgraph.DNAEdge = edges.pop()
-                        next_seq = cur.node.seq + edge.out_node.seq
-
-                        # reference, continue
-                        if not edge.out_node.variants:
-                            new_cursor = svgraph.CursorForCodonFinding(
-                                node=edge.out_node,
-                                position_to_orf='mid',
-                            )
-                            queue.append(new_cursor)
-                            continue
-
-                        variant = edge.out_node.variants[0].variant
-
-                        # skip if this is a start retained mutation.
-                        if not variant.is_deletion() and \
-                                next_seq.seq.endswith('ATG'):
-                            self.remove_node(edge.out_node)
-                            self.remove_edge(edge)
-                            continue
-
-                        edge.out_node.seq = next_seq
-                        edge.in_node = self.root
-
-                        # frameshifting mutation
-                        out_node_copy = edge.out_node.deepcopy()
-                        self.add_edge(edge.in_node, out_node_copy, edge.type)
-                        self.remove_node(edge.out_node)
-                        self.remove_edge(edge)
-                        new_cursor = svgraph.CursorForCodonFinding(
-                            node=out_node_copy,
-                            search_orf=True
-                        )
-                        queue.appendleft(new_cursor)
-                    continue
-
-                # otherwise, there isn't any mutation at the start codon.
-                # Continue to the next iteration
-                cur.position_to_orf = 'mid'
-                queue.append(cur)
+            if not node.out_edges:
                 continue
+            if len(node.out_edges) > 1:
+                node = self.align_variants(node, branch_out_size)
+            main, branches = self.expand_alignments(node)
 
-            if cur.search_orf and cur.position_to_orf == 'up':
-                # look for start codon
-                node = cur.node
-                index = node.seq.seq.find('ATG')
-
-                # for start lost mutation or non-translatable sequences, if
-                # start codon is not found in the current cursor, merge the
-                # last nucleotides with each of the out nodes, and research.
-                # This may be improved by skipping visited nodes.
-                if index == -1:
-                    for edge in node.out_edges:
-                        out_node = edge.node
-                        out_node.seq = node.seq[-2:] + out_node.seq
-                        edge.in_node = node.in_node
-                        self.remove_node(node)
-                        new_cursor = svgraph.CursorForCodonFinding(
-                            node=out_node,
-                            search_orf=True
-                        )
-                        queue.appendleft(new_cursor)
-                    continue
-
-                # found start codon
-                new_cursor = svgraph.CursorForCodonFinding(
-                    node=node,
-                    position_to_orf='up',
-                    search_orf=True,
-                    start_codon_index=index
-                )
-                queue.append(new_cursor)
-
-            if cur.position_to_orf == 'mid':
-                node = cur.node
-                stop_codon_index = node.seq.find_stop_codon()
-                if stop_codon_index != -1:
-                    node.seq = node.seq[:stop_codon_index + 3]
-                    while node.out_edges:
-                        edge = node.out_edges.pop()
-                        self.remove_edge(edge)
-                    continue
-                if not node.out_edges:
-                    continue
-                if len(node.out_edges) > 1:
-                    node = self.align_variants(node, branch_out_size)
-                main, branches = self.expand_alignments(node)
-
-                if main:
-                    new_cursor = svgraph.CursorForCodonFinding(
-                        node=main,
-                        position_to_orf='mid',
-                        search_orf=False
-                    )
-                    queue.appendleft(new_cursor)
-                for branch in branches:
-                    new_cursor = svgraph.CursorForCodonFinding(
-                        node=branch,
-                        position_to_orf='mid',
-                        search_orf=False
-                    )
-                    queue.appendleft(new_cursor)
-                continue
+            if main:
+                new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
+                queue.appendleft(new_cursor)
+            for branch in branches:
+                new_cursor = svgraph.TVGCursor(node=branch, search_orf=False)
+                queue.appendleft(new_cursor)
 
     def translate(self) -> svgraph.PeptideVariantGraph:
         r""" Converts a DNA transcript variant graph into a peptide variant

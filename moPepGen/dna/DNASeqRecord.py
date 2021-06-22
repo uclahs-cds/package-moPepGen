@@ -400,4 +400,4 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
         for location in self.locations:
             if ref_index in location.ref:
                 return location.query.start + ref_index - location.ref.start
-        return None
+        return -1
