@@ -2,8 +2,6 @@
 from datetime import datetime
 
 
-__version__ = '0.0.1'
-
 class _CaptureEq:
     """Object wrapper that remembers "other" for successful equality tests.
     Adopted from https://code.activestate.com/recipes/499299/

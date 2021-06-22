@@ -83,39 +83,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             seq=transcript_seq,
             transcript_id=transcript_id
         )
-
-        ## Create transcript variant graph
-        # dgraph.create_variant_graph(variant_records)
-        dgraph.add_null_root()
-        variant_iter = iter(variant_records)
-        variant = next(variant_iter, None)
-        cur = dgraph.root.get_reference_next()
-        while variant:
-            if cur.seq.locations[0].ref.start > variant.location.start:
-                variant = next(variant_iter, None)
-                continue
-
-            if cur.seq.locations[-1].ref.end <= variant.location.start:
-                cur = cur.get_reference_next()
-                continue
-
-            if variant.type == 'Fusion':
-                # TODO: inplement fusion
-                donor_transcript_id = variant.attrs['DONOR_TRANSCRIPT_ID']
-                donor_anno = annotation[donor_transcript_id]
-                donor_chrom = donor_anno.transcript.location.seqname
-                donor_seq = anno.get_transcript_sequence(genome[donor_chrom])
-                donor_variant_records = variants[donor_transcript_id] \
-                    if donor_transcript_id in variants else []
-                cur = dgraph.apply_fusion(cur, variant, donor_seq, donor_variant_records)
-                variant = next(variant_iter, None)
-                continue
-
-            cur = dgraph.apply_variant(cur, variant)
-            if len(cur.in_edges) == 0:
-                dgraph.root = cur
-            variant = next(variant_iter, None)
-
+        dgraph.create_variant_graph(variant_records)
         dgraph.fit_into_codons()
         pgraph = dgraph.translate()
 
@@ -150,12 +118,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
 if __name__ == '__main__':
     test_args = argparse.Namespace()
-    test_args.input_variant = [
-        'test/files/vep/vep.tvf',
-        'test/files/fusion/fusion.tvf'
+    test_args.input_variants = [
+        'test/files/CPCG0100_gencode_moPepGen.txt'
     ]
-    test_args.index_dir = 'test/files/index'
-    test_args.output_fasta = 'test/files/vep/vep_moPepGen.fasta'
+    test_args.index_dir = 'test/files/gencode_34_index'
+    test_args.output_fasta = 'test/files/CPCG0100_gencode_v34_moPepGen.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2

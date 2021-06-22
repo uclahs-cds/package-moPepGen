@@ -8,7 +8,7 @@ from moPepGen import cli
 
 BASE_DIR = pathlib.Path(__file__).parent.absolute()
 WORK_DIR = BASE_DIR / 'work_dir'
-DATA_DIR = BASE_DIR / 'files'
+DATA_DIR = BASE_DIR / 'files' / 'vep_test_files'
 
 class TestCli(unittest.TestCase):
     """ Test cases for the command line interface """
@@ -44,26 +44,26 @@ class TestCli(unittest.TestCase):
         """ Test genreate index """
         args = argparse.Namespace()
         args.vep_txt = [
-            DATA_DIR/'vep'/'vep_snp.txt',
-            DATA_DIR/'vep'/'vep_indel.txt'
+            DATA_DIR / 'vep_snp.txt',
+            DATA_DIR / 'vep_indel.txt'
         ]
         # args.index_dir = None
-        args.index_dir = DATA_DIR/'index'
-        args.genome_fasta = DATA_DIR/'genome.fasta'
-        args.annotation_gtf = DATA_DIR/'annotation.gtf'
-        args.output_prefix = str(WORK_DIR/'vep')
+        args.index_dir = DATA_DIR / 'index'
+        args.genome_fasta = DATA_DIR / 'genome.fasta'
+        args.annotation_gtf = DATA_DIR / 'annotation.gtf'
+        args.output_prefix = str(WORK_DIR / 'vep')
         args.verbose = False
         cli.parse_vep(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
-        expected = {'vep.tvf'}
+        expected = {'vep_moPepGen.txt'}
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide(self):
         """ Test variant peptide calling """
         args = argparse.Namespace()
-        args.input_variant = [str(DATA_DIR/'vep'/'vep.tvf')]
-        args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
-        args.index_dir = DATA_DIR/'index'
+        args.input_variant = [str(DATA_DIR / 'vep_moPepGen.txt')]
+        args.output_fasta = WORK_DIR / 'vep_moPepGen.fasta'
+        args.index_dir = DATA_DIR / 'index'
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'

@@ -1,13 +1,11 @@
 """ Module for moPepGen seqvar IO """
-from typing import Iterable, IO, Dict
-import tempfile
-from moPepGen.seqvar.TVFMetadata import TVFMetadata
-from moPepGen.seqvar.VariantRecord import VariantRecord
+from typing import Iterable, IO
+from moPepGen import seqvar
 from moPepGen.SeqFeature import FeatureLocation
 
 
-def parse(path:str) -> Iterable[VariantRecord]:
-    """ Parse a TVF file.
+def parse(path:str) -> Iterable[seqvar.VariantRecord]:
+    """ Parse a moPepGen variant file.
 
     Args:
         path (str): Path to the moPepGen variant file.
@@ -21,46 +19,24 @@ def parse(path:str) -> Iterable[VariantRecord]:
             if line.startswith('#'):
                 line = next(handle, None)
                 continue
-
             fields = line.rstrip().split('\t')
             transcript_id = fields[0]
-            start=int(fields[1])
-            ref = fields[3]
-            alt = fields[4]
-            attrs = {}
-            for field in fields[7].split(';'):
-                key, val = field.split('=')
-                attrs[key] = val
-
-            if not alt.startswith('<'):
-                end = start + len(ref)
-                _type = 'SNV' if len(ref) == len(alt) else 'INDEL'
-            elif alt == '<FUSION>':
-                end = start + 1
-                _type = 'Fusion'
-            else:
-                raise ValueError('Alt type not supported.')
-
-            _id = fields[2]
-
-            record = VariantRecord(
+            record = seqvar.VariantRecord(
                 location=FeatureLocation(
                     seqname=transcript_id,
-                    start=start,
-                    end=end
+                    start=int(fields[1]),
+                    end=int(fields[2])
                 ),
-                ref=ref,
-                alt=alt,
-                _type=_type,
-                _id=_id,
-                attrs=attrs
+                ref=fields[3],
+                alt=fields[4],
+                _type=fields[5],
+                _id=fields[6]
             )
             yield record
             line = next(handle, None)
 
 
-def write(variants:Iterable[VariantRecord], output_path:str,
-        metadata:TVFMetadata):
+def write(variants:Iterable[seqvar.VariantRecord], handle:IO, mode:str='w'):
     """ Write variants to an out handle.
 
     Args:
@@ -69,21 +45,13 @@ def write(variants:Iterable[VariantRecord], output_path:str,
         handle (IO): The destination handle to write out.
         mode (str): If 'w', the header will be written, otherwise not.
     """
-    temp_file = tempfile.TemporaryFile(mode='w+t')
-    headers = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
-    temp_file.write('#' + '\t'.join(headers) + '\n')
+    if mode == 'w':
+        headers = ['transcript_id', 'start', 'end', 'ref', 'alt', 'type', 'id']
+        handle.write('#' + '\t'.join(headers) + '\n')
     for record in variants:
-        line = record.to_tvf()
-        temp_file.write(line + '\n')
-        metadata.add_info(record.type)
-
-    out_file = open(output_path, 'w')
-
-    for line in metadata.to_strings():
-        out_file.write(line + '\n')
-
-    temp_file.seek(0)
-    for line in temp_file:
-        out_file.write(line)
-
-    out_file.close()
+        record:seqvar.VariantRecord
+        transcript_id = record.location.seqname
+        line = [transcript_id, str(int(record.location.start)),
+            str(int(record.location.end)), str(record.ref),
+            str(record.alt), record.type, record.id]
+        handle.write('\t'.join(line) + '\n')

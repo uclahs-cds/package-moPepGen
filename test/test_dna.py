@@ -20,14 +20,14 @@ class TestDNASeqRecord(unittest.TestCase):
     """ Test DNA """
     def test_dump_fasta(self):
         """ Test that the fasta file can be loaded """
-        seqs = load_fasta_from_disk('test/files/genome.fasta')
+        seqs = load_fasta_from_disk('test/files/genome_example.fa')
         self.assertIsInstance(seqs, dna.DNASeqDict)
         for record in seqs.values():
             self.assertIsInstance(record, dna.DNASeqRecord)
 
     def test_dna_seq_dict_type(self):
         """ Test that only dna.DNASeqRecord is allowed. """
-        seqs = load_fasta_from_disk('test/files/genome.fasta')
+        seqs = load_fasta_from_disk('test/files/genome_example.fa')
 
         with self.assertRaises(TypeError):
             seqs[list(seqs.keys())[0]] = 1

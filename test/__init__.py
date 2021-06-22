@@ -85,8 +85,6 @@ def create_dgraph2(data:dict
         # create a node
         seq = dna.DNASeqRecordWithCoordinates(_seq, seq_locations)
         node = svgraph.DNANode(seq, variants, frameshifts)
-        if len(val) == 4:
-            node.branch = val[3]
         node_list[key] = node
 
         # add edges to in_nodes

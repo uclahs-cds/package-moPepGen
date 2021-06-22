@@ -1,0 +1,7 @@
+##MOPEPGEN_VERSION=v0.0.01
+##PARSER=parseXXX
+##VARIANT_SUPERGROUP=point-mutation
+##COMMAND='moPepGen parseXXX --'
+#transcript_id  start   end ref alt type    id
+ENST0001    110 101 C   A   SNV SNV-110-C-A
+ENST0002    210 211 T   A   SNV SNV-210-T-A
