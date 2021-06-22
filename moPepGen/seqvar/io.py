@@ -1,5 +1,5 @@
 """ Module for moPepGen seqvar IO """
-from typing import Iterable, IO, Dict
+from typing import Iterable
 import tempfile
 from moPepGen.seqvar.TVFMetadata import TVFMetadata
 from moPepGen.seqvar.VariantRecord import VariantRecord

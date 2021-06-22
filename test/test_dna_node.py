@@ -1,7 +1,7 @@
 """ Test module for DNA Node """
-from moPepGen import svgraph
 import unittest
 from test import create_dgraph2
+from moPepGen import svgraph
 
 
 class TestDNANode(unittest.TestCase):
