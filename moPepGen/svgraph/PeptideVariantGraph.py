@@ -12,34 +12,34 @@ class PeptideVariantGraph():
     """ Defines the DAG data structure for peptide and variants.
 
     Attributes:
-        root (svgraph.PeptideNode): The root node of the graph.
-        stop (svgraph.PeptideNode): This node is added to the end of each
+        root (svgraph.PVGNode): The root node of the graph.
+        stop (svgraph.PVGNode): This node is added to the end of each
             branch of the graph to represent the end of the peptide sequence.
             The sequence of this node is '*'
         rule (str): The rule for enzymatic cleavage, e.g., trypsin.
         exception (str): The exception for cleavage rule.
     """
-    def __init__(self, root:svgraph.PeptideNode):
+    def __init__(self, root:svgraph.PVGNode):
         """ Construct a PeptideVariantGraph.
 
         Args:
-            root (svgraph.PeptideNode): The root node of the graph.
+            root (svgraph.PVGNode): The root node of the graph.
         """
         self.root = root
-        self.stop = svgraph.PeptideNode(aa.AminoAcidSeqRecord(Seq('*')))
+        self.stop = svgraph.PVGNode(aa.AminoAcidSeqRecord(Seq('*')))
         self.rule = None
         self.exception = None
 
-    def add_stop(self, node:svgraph.PeptideNode):
+    def add_stop(self, node:svgraph.PVGNode):
         """ Add the stop node after the specified node. """
         node.add_out_edge(self.stop)
 
-    def next_is_stop(self, node:svgraph.PeptideNode) -> bool:
+    def next_is_stop(self, node:svgraph.PVGNode) -> bool:
         """ Checks if stop is linked as a outbound node. """
         return self.stop in node.out_nodes
 
     @staticmethod
-    def remove_node(node:svgraph.PeptideNode) -> None:
+    def remove_node(node:svgraph.PVGNode) -> None:
         """ Remove a given node, and also remove the all edges from and to it.
         """
         while node.in_nodes:
@@ -50,13 +50,13 @@ class PeptideVariantGraph():
             node.remove_out_edge(out_node)
         del node
 
-    def cleave_if_posible(self, node:svgraph.PeptideNode,
-            return_first:bool=False) -> svgraph.PeptideNode:
+    def cleave_if_posible(self, node:svgraph.PVGNode,
+            return_first:bool=False) -> svgraph.PVGNode:
         """ For a given node, it checks whether there is any cleave site and
         split at each site.
 
         Args:
-            node (svgraph.PeptideNode): The target node to cleave
+            node (svgraph.PVGNode): The target node to cleave
             return_first (bool): When true, returns the first node rather
                 than last. Defaults to False
         """
@@ -73,8 +73,8 @@ class PeptideVariantGraph():
             )
         return first_node if return_first else node
 
-    def expand_alignment_backward(self, node:svgraph.PeptideNode,
-            ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
+    def expand_alignment_backward(self, node:svgraph.PVGNode,
+            ) -> Tuple[svgraph.PVGNode, Set[svgraph.PVGNode]]:
         r""" Expand the variant alignment bubble backward to the previous
         cleave site. The sequence of the input node is first prepended to each
         of outbound node, and then the inbound node of those outbond nodes are
@@ -108,7 +108,7 @@ class PeptideVariantGraph():
             cur = node.out_nodes.pop()
             node.remove_out_edge(cur)
             if cur is self.stop:
-                cur = svgraph.PeptideNode(
+                cur = svgraph.PVGNode(
                     seq=node.seq,
                     variants=node.variants,
                     frameshifts=copy.copy(node.frameshifts)
@@ -144,8 +144,8 @@ class PeptideVariantGraph():
         upstream.remove_out_edge(node)
         return to_return, branches
 
-    def expand_alignment_forward(self, node:svgraph.PeptideNode
-            ) -> svgraph.PeptideNode:
+    def expand_alignment_forward(self, node:svgraph.PVGNode
+            ) -> svgraph.PVGNode:
         r""" Expand the upsteam variant alignment bubble to the end of the
         node of input. The sequencing of the node of input is first appended
         to each of the leading nodes, and the outbound node of those nodes
@@ -162,7 +162,7 @@ class PeptideVariantGraph():
         AER-NCWH-STQQPK-QQPQE    ->    AER-NCWHSTQQPK-QQPQE
 
         Args:
-            node (svgraph.PeptideNode): The node that the inbound variant
+            node (svgraph.PVGNode): The node that the inbound variant
                 alignment bubble to be expanded.
 
         Returns:
@@ -183,8 +183,8 @@ class PeptideVariantGraph():
         node.remove_out_edge(downstream)
         return downstream
 
-    def merge_join_alignments(self, node:svgraph.PeptideNode
-            ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
+    def merge_join_alignments(self, node:svgraph.PVGNode
+            ) -> Tuple[svgraph.PVGNode, Set[svgraph.PVGNode]]:
         r""" For a given node, join all the inbond and outbond nodes with any
         combinations.
 
@@ -199,7 +199,7 @@ class PeptideVariantGraph():
                                        NCWVSTQQ
 
         Args:
-            node (svgraph.PeptideNode): The node in the graph of target.
+            node (svgraph.PVGNode): The node in the graph of target.
          """
         branches = set()
         to_return = self.stop
@@ -224,7 +224,7 @@ class PeptideVariantGraph():
             frameshifts.update(second.frameshifts)
             frameshifts_after = len(frameshifts)
 
-            new_node = svgraph.PeptideNode(
+            new_node = svgraph.PVGNode(
                 seq=seq,
                 variants=variants,
                 frameshifts=frameshifts
@@ -261,8 +261,8 @@ class PeptideVariantGraph():
 
         return to_return, branches
 
-    def cross_join_alignments(self, node:svgraph.PeptideNode, site:int,
-            ) -> Tuple[svgraph.PeptideNode, Set[svgraph.PeptideNode]]:
+    def cross_join_alignments(self, node:svgraph.PVGNode, site:int,
+            ) -> Tuple[svgraph.PVGNode, Set[svgraph.PVGNode]]:
         r""" For a given node, split at the given position, expand inbound and
         outbound alignments, and join them with edges.
 
@@ -273,7 +273,7 @@ class PeptideVariantGraph():
         AER-NCWH-STEEKLPAQ-Q-PK    ->    AER-NCWHSTEEK-LPAQQ-PK
 
         Args:
-            node (svgraph.PeptideNode): The node in the graph of target.
+            node (svgraph.PVGNode): The node in the graph of target.
         """
         to_return = self.stop
         branches = set()
@@ -419,8 +419,8 @@ class PeptideVariantGraph():
         Return:
             A set of aa.AminoAcidSeqRecord.
         """
-        queue:Deque[svgraph.PeptideNode] = deque([self.root])
-        visited:Set[svgraph.PeptideNode] = set()
+        queue:Deque[svgraph.PVGNode] = deque([self.root])
+        visited:Set[svgraph.PVGNode] = set()
         variant_peptides:Set[aa.AminoAcidSeqRecord] = set()
         while queue:
             cur = queue.pop()
@@ -441,12 +441,12 @@ class PeptideVariantGraph():
                 if out_node is not self.stop:
                     queue.appendleft(out_node)
 
-            node_paths:Deque[Deque[svgraph.PeptideNode]]
+            node_paths:Deque[Deque[svgraph.PVGNode]]
             node_paths = deque([deque([cur])])
             i = 0
             while i < miscleavage and node_paths:
                 i += 1
-                next_batch:Deque[Deque[svgraph.PeptideNode]] = deque()
+                next_batch:Deque[Deque[svgraph.PVGNode]] = deque()
                 while node_paths:
                     nodes = node_paths.pop()
 

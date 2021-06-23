@@ -2,7 +2,7 @@
 from moPepGen import svgraph
 
 
-class DNAEdge():
+class TVGEdge():
     """ Defines the edges in the TranscriptVariantGraph
 
     Attributes:
@@ -11,7 +11,7 @@ class DNAEdge():
         type (str): The edge type. Must be either of orf_start, orf_end,
             variant_start, variant_end, cleave, or reference
     """
-    def __init__(self, in_node:svgraph.DNANode, out_node:svgraph.DNANode,
+    def __init__(self, in_node:svgraph.TVGNode, out_node:svgraph.TVGNode,
             _type:str):
         """ Constructor for Edge
 

@@ -1,15 +1,16 @@
 """ Test module for moPepGen """
 from typing import Dict, List, Tuple
+import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import svgraph, dna, seqvar, gtf
 
 
 def create_dgraph2(data:dict
-        ) -> Tuple[svgraph.TranscriptVariantGraph, Dict[int, svgraph.DNANode]]:
+        ) -> Tuple[svgraph.TranscriptVariantGraph, Dict[int, svgraph.TVGNode]]:
     """ Create DNA transcript graph from node individuals.
     """
-    node_list:Dict[int, svgraph.DNANode] = {}
+    node_list:Dict[int, svgraph.TVGNode] = {}
     graph = None
     for key, val in data.items():
         _seq = Seq(val[0]) if val[0] else None
@@ -34,7 +35,7 @@ def create_dgraph2(data:dict
                 upstream = node
         node_start = upstream.seq.locations[-1].ref.end if upstream.seq else 0
         variants = []
-        frameshifts = upstream.frameshifts
+        frameshifts = copy.copy(upstream.frameshifts)
         for var_data in val[2]:
             var_start = node_start + var_data[0]
             var_end = var_start + len(var_data[1])
@@ -84,7 +85,7 @@ def create_dgraph2(data:dict
 
         # create a node
         seq = dna.DNASeqRecordWithCoordinates(_seq, seq_locations)
-        node = svgraph.DNANode(seq, variants, frameshifts)
+        node = svgraph.TVGNode(seq, variants, frameshifts)
         if len(val) == 4:
             node.branch = val[3]
         node_list[key] = node

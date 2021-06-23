@@ -5,8 +5,8 @@ from typing import List, Set
 from moPepGen import aa, seqvar
 
 
-class PeptideNode():
-    """ The PeptideNode class is used in the svgraph.PeptideVariantGraph, that
+class PVGNode():
+    """ The PVGNode class is used in the svgraph.PeptideVariantGraph, that
     stores the sequence in a Node.
 
     Attributes:
@@ -14,23 +14,23 @@ class PeptideNode():
         variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
             carried in the sequence.
         frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
-        in_nodes (Set[PeptideNode]): Inbound nodes.
-        ou_nodes (Set[PeptideNode]): Outbound nodes
+        in_nodes (Set[PVGNode]): Inbound nodes.
+        ou_nodes (Set[PVGNode]): Outbound nodes
     """
     def __init__(self, seq:aa.AminoAcidSeqRecord,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            in_nodes:Set[PeptideNode]=None,
-            out_nodes:Set[PeptideNode]=None,
+            in_nodes:Set[PVGNode]=None,
+            out_nodes:Set[PVGNode]=None,
             frameshifts:Set[seqvar.VariantRecord]=None):
-        """ Construct a PeptideNode object.
+        """ Construct a PVGNode object.
 
         Args:
             seq (aa.AminoAcidSeqRecord): The amino acid sequence.
             variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
                 carried in the sequence.
             frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
-            in_nodes (Set[PeptideNode]): Inbound nodes.
-            ou_nodes (Set[PeptideNode]): Outbound nodes
+            in_nodes (Set[PVGNode]): Inbound nodes.
+            ou_nodes (Set[PVGNode]): Outbound nodes
         """
         self.seq = seq
         self.variants = variants
@@ -38,21 +38,21 @@ class PeptideNode():
         self.out_nodes = set() if out_nodes is None else out_nodes
         self.frameshifts = set() if frameshifts is None else frameshifts
 
-    def add_out_edge(self, node:PeptideNode) -> None:
+    def add_out_edge(self, node:PVGNode) -> None:
         """ Add a outbound edge from this node.
 
         Args:
-            node (PeptideNode): The outboud node of the edge to add.
+            node (PVGNode): The outboud node of the edge to add.
         """
         self.out_nodes.add(node)
         node.in_nodes.add(self)
 
-    def remove_out_edge(self, node:PeptideNode) -> None:
+    def remove_out_edge(self, node:PVGNode) -> None:
         """ Remove a outbound edge. It tries to remove the node, but won't
         raise any error if it doesn't exist.
 
         Args:
-            node (PeptideNode): The outbound node of the edge to remove.
+            node (PVGNode): The outbound node of the edge to remove.
         """
         try:
             self.out_nodes.remove(node)
@@ -63,7 +63,7 @@ class PeptideNode():
         except KeyError:
             pass
 
-    def find_reference_next(self) -> PeptideNode:
+    def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. """
         if not self.out_nodes:
             return None
@@ -72,7 +72,7 @@ class PeptideNode():
                 return node
         raise ValueError('None of the out nodes is reference.')
 
-    def find_reference_prev(self) -> PeptideNode:
+    def find_reference_prev(self) -> PVGNode:
         """ Find and return the previous reference nocd. """
         if not self.out_nodes:
             return None
@@ -81,7 +81,7 @@ class PeptideNode():
                 return node
         raise ValueError('None of the in nodes is reference.')
 
-    def split_node(self, index:int) -> PeptideNode:
+    def split_node(self, index:int) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
         as the outbound edge. Variants will also be adjusted. For example:
 
@@ -108,7 +108,7 @@ class PeptideNode():
         self.seq = left_seq
         self.variants = left_variants
 
-        new_node = PeptideNode(seq=right_seq, variants=right_variants)
+        new_node = PVGNode(seq=right_seq, variants=right_variants)
         new_node.frameshifts = copy.copy(self.frameshifts)
 
         while self.out_nodes:
