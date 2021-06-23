@@ -567,10 +567,10 @@ max-attributes=30
 max-bool-expr=10
 
 # Maximum number of branch for function / method body.
-max-branches=25
+max-branches=30
 
 # Maximum number of locals for function / method body.
-max-locals=40
+max-locals=50
 
 # Maximum number of parents for a class (see R0901).
 max-parents=7
