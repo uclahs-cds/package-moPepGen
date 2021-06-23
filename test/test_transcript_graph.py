@@ -4,7 +4,7 @@ from typing import Deque
 from collections import deque
 from test import create_dgraph2, create_dgraph1
 from moPepGen import svgraph, seqvar
-from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from moPepGen.SeqFeature import FeatureLocation
 
 
 class TestTranscriptGraph(unittest.TestCase):
@@ -191,7 +191,7 @@ class TestTranscriptGraph(unittest.TestCase):
         self.assertTrue(graph.root.is_inbond_of(nodes[0]))
 
     def test_find_orf_known_case2(self):
-        """ When start codon is not at at 0 and no start lost variants
+        r""" When start codon is not at at 0 and no start lost variants
 
             GGATGG-G-CCCT
                   \ /
@@ -288,7 +288,7 @@ class TestTranscriptGraph(unittest.TestCase):
             2: ('G', [0], []),
             3: ['CCCT', [1,2], []]
         }
-        graph, nodes = create_dgraph2(data)
+        graph, _ = create_dgraph2(data)
         graph.add_null_root()
         graph.find_orf_unknown()
         self.assertEqual(len(graph.root.out_edges), 1)
@@ -296,7 +296,7 @@ class TestTranscriptGraph(unittest.TestCase):
             self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
 
     def test_find_orf_unknown_case2(self):
-        """ When start codon is not at at 0 and no start lost variants
+        r""" When start codon is not at at 0 and no start lost variants
 
             GGATGG-G-CCCT
                   \ /

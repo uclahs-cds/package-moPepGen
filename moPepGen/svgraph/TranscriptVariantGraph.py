@@ -1,6 +1,6 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Deque
 from collections import deque
 import copy
 from Bio.Seq import Seq
