@@ -7,9 +7,9 @@ from moPepGen import aa, svgraph, seqvar
 
 
 def create_pgraph(data:dict
-        ) -> Tuple[svgraph.PeptideVariantGraph,Dict[int, svgraph.PeptideNode]]:
+        ) -> Tuple[svgraph.PeptideVariantGraph,Dict[int, svgraph.PVGNode]]:
     """ Create a peptide variant graph from data """
-    root = svgraph.PeptideNode(None)
+    root = svgraph.PVGNode(None)
     graph = svgraph.PeptideVariantGraph(root)
     node_list = {0: root}
     for key, val in data.items():
@@ -39,7 +39,7 @@ def create_pgraph(data:dict
             variants.append(variant)
             if it[8]:
                 frameshifts.add(variant.variant)
-        node = svgraph.PeptideNode(seq, variants, frameshifts=frameshifts)
+        node = svgraph.PVGNode(seq, variants, frameshifts=frameshifts)
         node_list[key] = node
         for in_node_key in val[1]:
             node_list[in_node_key].add_out_edge(node)

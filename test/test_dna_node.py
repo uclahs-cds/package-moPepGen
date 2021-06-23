@@ -4,7 +4,7 @@ import unittest
 from test import create_dgraph2
 
 
-class TestDNANode(unittest.TestCase):
+class TestTVGNode(unittest.TestCase):
     """ Test case for DNA node """
     def test_create_graph(self):
         """ Test the graph can be constructed successfully """
@@ -33,7 +33,7 @@ class TestDNANode(unittest.TestCase):
         node_copy = nodes[2].deepcopy()
         self.assertEqual(node_copy.seq.seq, nodes[2].seq.seq)
         self.assertIsNot(node_copy, nodes[2])
-        out_node:svgraph.DNANode = next(iter(node_copy.out_edges)).out_node
+        out_node:svgraph.TVGNode = next(iter(node_copy.out_edges)).out_node
         self.assertEqual(out_node.seq.seq, nodes[4].seq.seq)
         self.assertIsNot(out_node, nodes[4])
         self.assertEqual(len(out_node.frameshifts), 1)

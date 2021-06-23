@@ -172,7 +172,7 @@ class TestTranscriptGraph(unittest.TestCase):
         self.assertEqual(len(branches), 0)
         self.assertIs(cur, nodes[4])
 
-    def test_find_orf_case1(self):
+    def test_find_orf_known_case1(self):
         r""" Test when start codon at 0 and no start lost mutation
             ATGG-G-CCCT
                 \ /
@@ -187,10 +187,10 @@ class TestTranscriptGraph(unittest.TestCase):
         graph, nodes = create_dgraph2(data)
         graph.add_null_root()
         graph.seq.orf = FeatureLocation(start=0, end=len(graph.seq))
-        graph.find_orf()
+        graph.find_orf_known()
         self.assertTrue(graph.root.is_inbond_of(nodes[0]))
 
-    def test_find_orf_case2(self):
+    def test_find_orf_known_case2(self):
         """ When start codon is not at at 0 and no start lost variants
 
             GGATGG-G-CCCT
@@ -206,11 +206,11 @@ class TestTranscriptGraph(unittest.TestCase):
         graph, nodes = create_dgraph2(data)
         graph.add_null_root()
         graph.seq.orf = FeatureLocation(start=2, end=len(graph.seq))
-        graph.find_orf()
+        graph.find_orf_known()
         self.assertTrue(graph.root.is_inbond_of(nodes[0]))
         self.assertTrue(nodes[0].seq.seq.startswith('ATG'))
 
-    def test_find_orf_case3(self):
+    def test_find_orf_known_case3(self):
         r""" Variants before start codon
               T
              / \
@@ -230,10 +230,10 @@ class TestTranscriptGraph(unittest.TestCase):
         graph, nodes = create_dgraph2(data)
         graph.add_null_root()
         graph.seq.orf = FeatureLocation(start=2, end=len(graph.seq))
-        graph.find_orf()
+        graph.find_orf_known()
         self.assertTrue(graph.root.is_inbond_of(nodes[3]))
 
-    def test_find_orf_case4(self):
+    def test_find_orf_known_case4(self):
         r""" Start lost variants
                 G
                / \
@@ -253,11 +253,11 @@ class TestTranscriptGraph(unittest.TestCase):
         graph, nodes = create_dgraph2(data)
         graph.add_null_root()
         graph.seq.orf = FeatureLocation(start=2, end=len(graph.seq))
-        graph.find_orf()
+        graph.find_orf_known()
         self.assertTrue(graph.root.is_inbond_of(nodes[4]))
         self.assertTrue(nodes[4].seq.seq.startswith('ATG'))
 
-    def test_find_orf_case5(self):
+    def test_find_orf_known_case5(self):
         r""" Start lost variants
                  AA
                 /  \
@@ -271,10 +271,92 @@ class TestTranscriptGraph(unittest.TestCase):
         }
         graph, nodes = create_dgraph2(data)
         graph.seq.orf = FeatureLocation(start=0, end=len(graph.seq))
-        graph.find_orf()
+        graph.find_orf_known()
         self.assertTrue(graph.root.is_inbond_of(nodes[3]))
         for edge in graph.root.out_edges:
             self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+
+    def test_find_orf_unknown_case1(self):
+        r""" Test when start codon at 0 and no start lost mutation
+            ATGG-G-CCCT
+                \ /
+                 A
+        """
+        data = {
+            0: ('ATGG', [], []),
+            1: ('A', [0], [(0, 'G', 'A', 'SNV', '')]),
+            2: ('G', [0], []),
+            3: ['CCCT', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data)
+        graph.add_null_root()
+        graph.find_orf_unknown()
+        self.assertEqual(len(graph.root.out_edges), 1)
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+
+    def test_find_orf_unknown_case2(self):
+        """ When start codon is not at at 0 and no start lost variants
+
+            GGATGG-G-CCCT
+                  \ /
+                   A
+        """
+        data = {
+            0: ('GGATGG', [], []),
+            1: ('A', [0], [(0, 'G', 'A', 'SNV', '')]),
+            2: ('G', [0], []),
+            3: ['CCCT', [1,2], []]
+        }
+        graph, _ = create_dgraph2(data)
+        graph.add_null_root()
+        graph.find_orf_unknown()
+        self.assertEqual(len(graph.root.out_edges), 1)
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+
+    def test_find_orf_unknown_case3(self):
+        r""" Variants before start codon
+              T
+             / \
+            G-G-ATGG-G-CCCT
+                    \ /
+                     A
+        """
+        data = {
+            0: ('G', [], []),
+            1: ('T', [0], [(0, 'T', 'T', 'SNV', '')]),
+            2: ('G', [0], []),
+            3: ('ATGG', [1,2], []),
+            4: ('A', [3], [(0, 'G', 'A', 'SNV', '')]),
+            5: ('G', [3], []),
+            6: ('CCCT', [4,5], [])
+        }
+        graph, _ = create_dgraph2(data)
+        graph.add_null_root()
+        graph.find_orf_unknown()
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+
+    def test_find_orf_unknown_case4(self):
+        r""" Variants before start codon
+
+            GGATGG-G-TGCT
+                  \ /
+                   A
+        """
+        data = {
+            0: ('GGATGG', [], []),
+            1: ('A', [0], [(0, 'G', 'A', 'SNV', '')]),
+            2: ('G', [0], []),
+            3: ('TGCT', [1,2], [])
+        }
+        graph, _ = create_dgraph2(data)
+        graph.add_null_root()
+        graph.find_orf_unknown()
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+        self.assertEqual(len(graph.root.out_edges), 2)
 
     def test_find_overlaps(self):
         """ Correct farthest overlap node is found. """
@@ -324,10 +406,10 @@ class TestTranscriptGraph(unittest.TestCase):
         graph = create_dgraph1(seq, variants)
         first_node = graph.root.get_reference_next()
         graph.align_variants(first_node)
-        self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCT')
+        self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCTG')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
             in first_node.out_edges]
-        self.assertEqual(set(['T', 'TCT',]), set(variant_seqs))
+        self.assertEqual(set(['T', 'TCTA', 'TCTG']), set(variant_seqs))
 
     def test_align_variants_case2(self):
         """ When there is a mutation at the first nucleotide.
@@ -346,6 +428,29 @@ class TestTranscriptGraph(unittest.TestCase):
         self.assertIs(graph.root, node)
         self.assertIs(nodes[0], node)
 
+    def test_align_variants_case3(self):
+        r""" Start lost variants
+
+                 T--                     T-G-CCCT
+                /   \                   /
+            ATGG-TCT-G-CCCT   ->    ATGG-TCTG-CCCT
+                    \ /                 \    /
+                     A                   TCTA
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('T', [1], [(0, 'TCT', 'T', 'INDEL', '')]),
+            3: ('TCT', [1], []),
+            4: ('A', [3], [(0, 'G', 'A', 'SNV', '')]),
+            5: ('G', [2,3], []),
+            6: ('CCCT', [4,5], [])
+        }
+        graph, nodes = create_dgraph2(data)
+        node = graph.align_variants(nodes[1])
+        seqs = {str(edge.out_node.seq.seq) for edge in node.out_edges}
+        expected = {'T', 'TCTG', 'TCTA'}
+        self.assertEqual(seqs, expected)
+
     def test_fit_into_codons(self):
         """ Transcript variatn graph is fit into codons. """
         # case 1
@@ -357,7 +462,7 @@ class TestTranscriptGraph(unittest.TestCase):
         graph = create_dgraph1(seq, variants)
         graph.fit_into_codons()
         first_node = graph.root.get_reference_next()
-        queue:Deque[svgraph.DNANode] = deque([first_node])
+        queue:Deque[svgraph.TVGNode] = deque([first_node])
         while queue:
             cur = queue.pop()
             if cur.seq and cur.out_edges:

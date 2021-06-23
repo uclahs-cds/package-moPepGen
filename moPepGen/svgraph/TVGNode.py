@@ -1,4 +1,4 @@
-""" Module for DNANode class """
+""" Module for TVGNode class """
 from __future__ import annotations
 from typing import List, Set, Tuple, Dict, Deque
 import copy
@@ -7,12 +7,12 @@ from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph
 
 
-class DNANode():
+class TVGNode():
     """ Defines the nodes in the TranscriptVariantGraph
 
     Attributes:
-        in_edges (Set[DNAEdge]): The inbonding edges.
-        out_edges (Set[DNAEdge]): The outbonding edges.
+        in_edges (Set[TVGEdge]): The inbonding edges.
+        out_edges (Set[TVGEdge]): The outbonding edges.
         seq (DNASeqRecord): The sequence.
         variant (VariantRecord | None): The variant record or None for
             reference.
@@ -22,7 +22,7 @@ class DNANode():
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False):
-        """ Constructor for DNANode.
+        """ Constructor for TVGNode.
 
         Args:
             seq (DNASeqRecord): The sequence.
@@ -47,21 +47,21 @@ class DNANode():
             locations = []
         return hash((str(seq), *locations))
 
-    def get_edge_to(self, other:DNANode) -> svgraph.DNAEdge:
+    def get_edge_to(self, other:TVGNode) -> svgraph.TVGEdge:
         """ Find the edge from this to the other node """
         for edge in self.out_edges:
             if edge.out_node is other:
                 return edge
-        raise ValueError('DNAEdge not found')
+        raise ValueError('TVGEdge not found')
 
-    def get_edge_from(self, other:DNANode) -> svgraph.DNAEdge:
+    def get_edge_from(self, other:TVGNode) -> svgraph.TVGEdge:
         """ Find the edge from the other to this node. """
         for edge in self.in_edges:
             if edge.in_node is other:
                 return edge
-        raise ValueError('DNAEdge not found')
+        raise ValueError('TVGEdge not found')
 
-    def is_inbond_of(self, node:svgraph.DNAEdge) -> bool:
+    def is_inbond_of(self, node:svgraph.TVGEdge) -> bool:
         """ Checks if this node is a inbound node of the other node. """
         for edge in self.out_edges:
             if node is edge.out_node:
@@ -80,17 +80,17 @@ class DNANode():
         variant_len = location.end - location.start
         return variant.is_frameshifting() or variant_len >= branch_out_size
 
-    def next_node_to_branch_out(self, to_node:svgraph.DNANode,
-            branch_out_size:int=100) -> svgraph.DNANode:
+    def next_node_to_branch_out(self, to_node:svgraph.TVGNode,
+            branch_out_size:int=100) -> svgraph.TVGNode:
         """ Returns the next node that needs to be branched out between two
         reference nodes. Returns None if not found.
 
         Args:
-            to_node (svgraph.DNANode): The to node
+            to_node (svgraph.TVGNode): The to node
             branch_out_size (int): The size limit of the variant to forch
                 creating a branch in th graph.
         """
-        queue:Deque[svgraph.DNANode] = deque()
+        queue:Deque[svgraph.TVGNode] = deque()
         for edge in self.out_edges:
             queue.appendleft(edge.out_node)
 
@@ -111,7 +111,7 @@ class DNANode():
 
         return None
 
-    def get_reference_next(self) -> DNANode:
+    def get_reference_next(self) -> TVGNode:
         """ Get the next node of which the edge is reference (not variant
         or cleavage). """
         if not self.out_edges:
@@ -121,7 +121,7 @@ class DNANode():
                 return edge.out_node
         raise ValueError('No reference edge was found.')
 
-    def get_reference_prev(self) -> DNANode:
+    def get_reference_prev(self) -> TVGNode:
         """ Get the previous node of which the edge is reference (not variant
         or cleavage) """
         for edge in self.in_edges:
@@ -129,7 +129,7 @@ class DNANode():
                 return edge.in_node
         return None
 
-    def deepcopy(self, propagate_frameshifts:bool=True) -> DNANode:
+    def deepcopy(self, propagate_frameshifts:bool=True) -> TVGNode:
         """ Create a deep copy of the node and all its downstream nodes.
 
         Args:
@@ -137,19 +137,19 @@ class DNANode():
         """
         new_node = self.__class__(
             seq=self.seq,
-            variants=self.variants,
-            frameshifts=self.frameshifts
+            variants=copy.copy(self.variants),
+            frameshifts=copy.copy(self.frameshifts)
         )
 
-        queue:Deque[Tuple[DNANode, DNANode]] = deque([(self, new_node)])
-        visited:Dict[DNANode, DNANode] = {}
+        queue:Deque[Tuple[TVGNode, TVGNode]] = deque([(self, new_node)])
+        visited:Dict[TVGNode, TVGNode] = {}
 
         while queue:
             source, target = queue.pop()
             if source in visited:
                 continue
             for edge in source.out_edges:
-                source_out_node:svgraph.DNANode = edge.out_node
+                source_out_node:svgraph.TVGNode = edge.out_node
                 if source_out_node in visited:
                     new_out_node = visited[source_out_node]
                 else:
@@ -158,11 +158,11 @@ class DNANode():
                         frameshifts.update(self.frameshifts)
                     new_out_node = self.__class__(
                         seq=source_out_node.seq,
-                        variants=source_out_node.variants,
+                        variants=copy.copy(source_out_node.variants),
                         frameshifts=frameshifts
                     )
                     visited[source_out_node] = new_out_node
-                new_edge = svgraph.DNAEdge(target, new_out_node,
+                new_edge = svgraph.TVGEdge(target, new_out_node,
                     _type=edge.type)
                 target.out_edges.add(new_edge)
                 new_out_node.in_edges.add(new_edge)
@@ -170,7 +170,7 @@ class DNANode():
 
         return new_node
 
-    def find_farthest_node_with_overlap(self) -> DNANode:
+    def find_farthest_node_with_overlap(self) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
         reference sequence.
@@ -190,7 +190,7 @@ class DNANode():
         queue = deque([edge.out_node for edge in self.out_edges])
         visited = set([self])
         while queue:
-            cur:DNANode = queue.popleft()
+            cur:TVGNode = queue.popleft()
 
             # if this is the start of a new branch, don't count it.
             if cur.branch:
@@ -211,6 +211,7 @@ class DNANode():
 
             if farthest is None and not cur.variants:
                 farthest = cur
+                queue.append(cur)
                 continue
 
             if cur.variants:
