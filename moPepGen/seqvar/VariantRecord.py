@@ -113,9 +113,12 @@ class VariantRecord():
         if self.type in SINGLE_NUCLEOTIDE_SUBSTITUTION:
             ref = str(self.ref)
             alt = str(self.alt)
+        elif self.type == 'Fusion':
+            ref = str(self.ref[0])
+            alt = '<FUSION>'
         else:
             ref = str(self.ref[0])
-            alt = f'<{self.type}>'
+            alt = f'<{self.type.upper()}>'
 
         info = self.info
         return '\t'.join([chrom, pos, _id, ref, alt, qual, _filter, info])
