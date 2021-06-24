@@ -1,0 +1,10 @@
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+#transcript_id	start	end	id	gene_id	gene_name	
+ENST0001	406	750	ENSG0001-3-4	ENSG0001	SYMB1
+ENST0001	751	769	ENSG0001-3-4	ENSG0001	SYMB1
+ENST0002	606	950	ENSG0001-3-4	ENSG0001	SYMB1	
+ENST0002	951	969	ENSG0001-3-4	ENSG0001	SYMB1

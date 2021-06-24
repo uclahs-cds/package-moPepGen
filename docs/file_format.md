@@ -5,6 +5,7 @@
     - [File Metadata](#file-metadata)
     - [Point Mutation](#point-mutation)
     - [Fusion](#fusion)
+  - [CircRNA BED Format](#circrna-bed-format)
   - [Reference Index](#reference-index)
   - [Variant Peptide FASTA](#variant-peptide-fasta)
 
@@ -110,6 +111,23 @@ The `Info` column must contain the following fields:
 + `DONOR_GENOMIC_POSITION`: the genomic position of the donor, in the format of `<chrom name>:<breakpoint>-<breakpoint>`.
 
 In reality, gene fusion happens at the gene level. But in a TVF file, each line represents a transcript, so the same fusion events could appear multiple times, because both the acceptor and donor gene could have multiple transcript isoforms.
+
+## CircRNA BED Format
+
+Circular RNAs are derived from back-spliced exons. They exist as individual RNA molecules and have the potential to be translated to proteins. We are then interested in finding the possible peptide sequences translated from circRNAs with and without variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts than variants. We then use a BED like format to represen the circRNA molecules. In the BED file, each row is an exon associated with a circRNA, represented as the transcript ID and the location (start and end) of the transcript. Each circRNA can have one or more exons, so the exons next to each other that share the same transcript ID and circRNA ID belong to the same circRNA molecule. The order of records represent the order of the exons apper on the circRNA. The same circRNA can be derived from more than one transcript of the same gene. In this case, each transcript will have its own serious of exons in the file.
+
+```
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+#transcript_id	start	end	id	gene_id	gene_name	
+ENST0001	406	750	ENSG0001-3-4	ENSG0001	SYMB1
+ENST0001	751	769	ENSG0001-3-4	ENSG0001	SYMB1
+ENST0002	606	950	ENSG0001-3-4	ENSG0001	SYMB1	
+ENST0002	951	969	ENSG0001-3-4	ENSG0001	SYMB1
+```
 
 ## Reference Index
 
