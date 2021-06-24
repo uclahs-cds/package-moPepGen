@@ -58,6 +58,19 @@ class TestCli(unittest.TestCase):
         expected = {'vep.tvf'}
         self.assertEqual(files, expected)
 
+    def test_parse_star_fusion(self):
+        """ Test parseSTARFusion """
+        args = argparse.Namespace()
+        args.fusion = DATA_DIR/'fusion/star_fusion.txt'
+        args.index_dir = DATA_DIR/'index'
+        args.output_prefix = str(WORK_DIR/'star_fusion')
+        args.verbose = True
+        cli.parse_star_fusion(args)
+        files = {str(file.name) for file in WORK_DIR.glob('*')}
+        expected = {'star_fusion.tvf'}
+        self.assertEqual(files, expected)
+
+
     def test_call_variant_peptide(self):
         """ Test variant peptide calling """
         args = argparse.Namespace()

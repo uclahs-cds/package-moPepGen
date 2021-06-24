@@ -126,7 +126,7 @@ class TestGTF(unittest.TestCase):
         anno = self.load_gtf('test/files/annotation.gtf')
 
         self.assertIsInstance(anno, gtf.TranscriptGTFDict)
-        self.assertEqual(len(anno), 3)
+        self.assertEqual(len(anno), 4)
         for key, val in anno.items():
             self.assertEqual(val.transcript.attributes['transcript_id'], key)
             for cds in val.cds:

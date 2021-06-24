@@ -2,17 +2,18 @@
 from typing import Dict, List
 import argparse
 import pickle
+import pathlib
 from moPepGen import logger, gtf, seqvar, parser
 
 
 def parse_reditools(args:argparse.Namespace) -> None:
-    """ Parse REDItools output and save it to a moPepGen variant format. """
+    """ Parse REDItools output and save it in the TVF format. """
     # unpack args
     table_file = args.reditools_table
     transcript_id_column = args.transcript_id_column
     index_dir:str = args.index_dir
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.mop'
+    output_path = output_prefix + '.tvf'
     verbose = args.verbose
 
     if verbose:
@@ -52,12 +53,25 @@ def parse_reditools(args:argparse.Namespace) -> None:
     if verbose:
         logger('Variants sorted.')
 
-    with open(output_path, 'w') as handle:
-        mode = 'w'
-        for records in variants.values():
-            seqvar.io.write(records, handle, mode)
-            if mode == 'w':
-                mode = 'a'
+    if index_dir:
+        reference_index = pathlib.Path(index_dir).absolute()
+        annotation_gtf = None
+    else:
+        reference_index = None
+        annotation_gtf = pathlib.Path(annotation_gtf).absolute()
+
+    metadata = seqvar.TVFMetadata(
+        parser='parseREDITools',
+        reference_index=reference_index,
+        genome_fasta=None,
+        annotation_gtf=annotation_gtf
+    )
+
+    all_records = []
+    for records in variants.values():
+        all_records.extend(records)
+
+    seqvar.io.write(all_records, output_path, metadata)
 
     if verbose:
         logger("Variants written to disk.")
