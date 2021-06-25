@@ -2,8 +2,9 @@
 import unittest
 from typing import Deque
 from collections import deque
+from Bio.Seq import Seq
 from test import create_dgraph2, create_dgraph1
-from moPepGen import svgraph, seqvar
+from moPepGen import svgraph, seqvar, dna
 from moPepGen.SeqFeature import FeatureLocation
 
 
@@ -339,6 +340,25 @@ class TestTranscriptGraph(unittest.TestCase):
             self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
 
     def test_find_orf_unknown_case4(self):
+        r"""
+                 AA
+                /  \
+            Null-A--TGG
+        """
+        data = {
+            0: (None, [], []),
+            1: ('A', [0], []),
+            2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')], True),
+            3: ['TGG', [1,2], []]
+        }
+        graph, _ = create_dgraph2(data)
+        graph.seq.orf = FeatureLocation(start=0, end=len(graph.seq))
+        graph.find_orf_unknown()
+        self.assertEqual(len(graph.root.out_edges), 2)
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+
+    def test_find_orf_unknown_case5(self):
         r""" Variants before start codon
 
             GGATGG-G-TGCT
@@ -481,6 +501,15 @@ class TestTranscriptGraph(unittest.TestCase):
         graph.fit_into_codons()
         pgraph = graph.translate()
         self.assertIsInstance(pgraph, svgraph.PeptideVariantGraph)
+
+    def test_create_empty_graph_with_known_seq(self):
+        """ Create an empty graph with a known sequence """
+        locations = []
+        seq = dna.DNASeqRecordWithCoordinates(Seq('ATGGTCTGCCCTCTGAACTGA'),
+            locations)
+        graph = svgraph.TranscriptVariantGraph\
+            .create_empty_graph_with_known_sequence(seq, 'ENST0001')
+        self.assertIs(graph.root.seq, None)
 
 if __name__ == '__main__':
     unittest.main()

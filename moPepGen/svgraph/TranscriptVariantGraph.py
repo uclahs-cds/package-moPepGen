@@ -1,6 +1,6 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import List, Tuple, Set, Deque
+from typing import List, Tuple, Set, Deque, Union
 from collections import deque
 import copy
 from Bio.Seq import Seq
@@ -20,7 +20,7 @@ class TranscriptVariantGraph():
         variants List[seqvar.VariantRecordWithCoordinate]: All variant
             records.
     """
-    def __init__(self, seq:dna.DNASeqRecordWithCoordinates|None,
+    def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             transcript_id:str):
         """ Constructor to create a TranscriptVariantGraph object.
 
@@ -29,17 +29,30 @@ class TranscriptVariantGraph():
                 transcript (reference).
             transcript_id (str)
         """
-        if seq:
-            if seq.locations == []:
-                seq.locations = [dna.MatchedLocation(
-                    query=FeatureLocation(start=0, end=len(seq)),
-                    ref=FeatureLocation(start=0, end=len(seq))
-                )]
         self.seq = seq
+        if self.seq and not self.seq.locations:
+            self.add_default_sequence_locations()
         node = svgraph.TVGNode(seq)
         self.root = node
         self.transcript_id = transcript_id
-        self.variants = []
+
+    def add_default_sequence_locations(self):
+        """ Add default sequence locations """
+        self.seq.locations = [dna.MatchedLocation(
+            query=FeatureLocation(start=0, end=len(self.seq)),
+            ref=FeatureLocation(start=0, end=len(self.seq))
+        )]
+
+    @classmethod
+    def create_empty_graph_with_known_sequence(cls,
+            seq:dna.DNASeqRecordWithCoordinates, transcript_id:str
+            ) -> TranscriptVariantGraph:
+        """"""
+        graph = cls(None, transcript_id)
+        graph.seq = seq
+        if graph.seq and not graph.seq.locations:
+            graph.add_default_sequence_locations()
+        return graph
 
     @staticmethod
     def variants_are_adjacent(edge1:svgraph.TVGEdge, edge2:svgraph.TVGEdge
@@ -165,7 +178,7 @@ class TranscriptVariantGraph():
 
         Returns:
             The reference node (unmutated) with the same location as the
-            node is returned.
+            input node is returned.
         """
         variant_start = variant.location.start
         variant_end = variant.location.end
@@ -290,9 +303,9 @@ class TranscriptVariantGraph():
             variant [seqvar.VariantRecord]: The variant record.
         """
         # Add a null nood as root.
-        self.add_null_root()
-        self.variants += variants
-        variant_iter = variants.__iter__()
+        if self.root.seq is not None:
+            self.add_null_root()
+        variant_iter = iter(variants)
         variant = next(variant_iter, None)
         cur = self.root.get_reference_next()
 
@@ -369,8 +382,8 @@ class TranscriptVariantGraph():
 
         return out_nodes
 
-    def align_variants(self, node:svgraph.TVGNode, branch_out_size:int=100
-            ) -> svgraph.TVGNode:
+    def align_variants(self, node:svgraph.TVGNode, branch_out_size:int=100,
+            branch_out_frameshifting:bool=True) -> svgraph.TVGNode:
         r""" Aligns all variants at that overlaps to the same start and end
         position. Frameshifting mutations will be brached out
 
@@ -392,20 +405,21 @@ class TranscriptVariantGraph():
         """
         start_node = node
         end_node = node.find_farthest_node_with_overlap()
-        node_to_branch = start_node.next_node_to_branch_out(
-            to_node=end_node,
-            branch_out_size=branch_out_size
-        )
-        while node_to_branch:
-            for variant in node_to_branch.variants:
-                if variant.variant.is_frameshifting():
-                    node_to_branch.frameshifts.add(variant.variant)
-            self.create_branch(node_to_branch)
-            end_node = node.find_farthest_node_with_overlap()
+        if branch_out_frameshifting:
             node_to_branch = start_node.next_node_to_branch_out(
                 to_node=end_node,
                 branch_out_size=branch_out_size
             )
+            while node_to_branch:
+                for variant in node_to_branch.variants:
+                    if variant.variant.is_frameshifting():
+                        node_to_branch.frameshifts.add(variant.variant)
+                self.create_branch(node_to_branch)
+                end_node = node.find_farthest_node_with_overlap()
+                node_to_branch = start_node.next_node_to_branch_out(
+                    to_node=end_node,
+                    branch_out_size=branch_out_size
+                )
 
         new_nodes = set()
         queue = deque()
@@ -542,6 +556,15 @@ class TranscriptVariantGraph():
                     self.remove_edge(out_edge)
                 continue
 
+            need_branch_out = False
+            if not out_node.branch:
+                for variant in out_node.variants:
+                    if variant.variant.is_frameshifting():
+                        need_branch_out = True
+
+            if need_branch_out:
+                out_node = self.create_branch(out_node)
+
             if out_node.branch:
                 # carry over nts to make codons if need
                 branch_next_node = out_node.get_reference_next()
@@ -614,15 +637,18 @@ class TranscriptVariantGraph():
                     return merged_node, branches
         return outbound_ref, branches
 
-    def skip_nodes_or_branch_out(self, node:svgraph.TVGNode
+    def skip_nodes_or_branch_out(self, node:svgraph.TVGNode, is_root:bool=False
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
         """ For a given reference node, remove it and the downstream nodes if
         no start codon was found. Branch out frameshifting variants.
         """
         branches = []
-        upstream_edgs = copy.copy(node.in_edges)
+        upstream_edges = copy.copy(node.in_edges)
         downstream = node.find_farthest_node_with_overlap()
-        nodes = self.merge_with_outbonds(node)
+        if is_root:
+            nodes = [edge.out_node for edge in node.out_edges]
+        else:
+            nodes = self.merge_with_outbonds(node)
 
         # this is when all variants at this positions are frameshifting
         # downstream is None whtn there is a variant at the last nucleotide.
@@ -644,7 +670,7 @@ class TranscriptVariantGraph():
                 if len(anodes) > 1:
                     raise ValueError('Multiple output nodes found.')
                 branches.append(anodes[0])
-        for edge in upstream_edgs:
+        for edge in upstream_edges:
             self.add_edge(edge.in_node, downstream, _type=edge.type)
         return downstream, branches
 
@@ -671,7 +697,8 @@ class TranscriptVariantGraph():
                     new_cursor = svgraph.TVGCursor(node=main)
                     queue.append(new_cursor)
                     continue
-                main, branches = self.skip_nodes_or_branch_out(cur.node)
+                self.align_variants(cur.node)
+                main, branches = self.skip_nodes_or_branch_out(cur.node, True)
                 new_cursor = svgraph.TVGCursor(node=main)
                 queue.appendleft(new_cursor)
                 for branch in branches:

@@ -1,13 +1,13 @@
 """ Test module for moPepGen """
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import svgraph, dna, seqvar, gtf
 
-
-def create_dgraph2(data:dict
-        ) -> Tuple[svgraph.TranscriptVariantGraph, Dict[int, svgraph.TVGNode]]:
+T = Tuple[Union[svgraph.TranscriptVariantGraph, svgraph.CircularVariantGraph],
+        Dict[int, svgraph.TVGNode]]
+def create_dgraph2(data:dict, circular:bool=False) -> T:
     """ Create DNA transcript graph from node individuals.
     """
     node_list:Dict[int, svgraph.TVGNode] = {}
@@ -109,9 +109,26 @@ def create_dgraph2(data:dict
             )
             graph.seq = dna.DNASeqRecordWithCoordinates(root_seq,
                 [root_seq_location])
+    if circular:
+        for i in data[1][1]:
+            graph.add_edge(node_list[i], graph.root, 'reference')
+            graph.__class__ = svgraph.CircularVariantGraph
 
     return graph, node_list
 
+
+def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str
+        ) -> seqvar.VariantRecord:
+    """"""
+    location = FeatureLocation(start=start, end=end)
+    return seqvar.VariantRecord(
+        location=location, ref=ref, alt=alt,
+        _type=_type, _id=_id
+    )
+
+def create_variants(data) -> List[seqvar.VariantRecord]:
+    """"""
+    return [create_variant(*x) for x in data]
 
 def create_dgraph1(seq, variants) -> svgraph.TranscriptVariantGraph:
     """ Create a dna transcript graph from sequence and variants """
@@ -125,13 +142,7 @@ def create_dgraph1(seq, variants) -> svgraph.TranscriptVariantGraph:
         orf=FeatureLocation(start=0, end=len(seq))
     )
     graph = svgraph.TranscriptVariantGraph(seq, '')
-    records = []
-    for start, end, ref, alt, _type, _id in variants:
-        location = FeatureLocation(start=start, end=end)
-        records.append(seqvar.VariantRecord(
-            location=location, ref=ref, alt=alt,
-            _type=_type, _id=_id
-        ))
+    records = create_variants(variants)
     graph.create_variant_graph(records)
     return graph
 

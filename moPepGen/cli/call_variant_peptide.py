@@ -9,6 +9,7 @@ from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent
 def call_variant_peptide(args:argparse.Namespace) -> None:
     """ Main entry point for calling variant peptide """
     variant_files:List[str] = args.input_variant
+    circ_rna_bed:str = args.circ_rna_bed
     output_fasta:str = args.output_fasta
     index_dir:str = args.index_dir
     verbose:bool = args.verbose
@@ -72,6 +73,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         logger('Variant records sorted.')
 
     variant_peptides = set()
+
+    if circ_rna_bed:
+        pass
 
     i = 0
     for transcript_id, variant_records in variants.items():
