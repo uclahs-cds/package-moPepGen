@@ -1,9 +1,11 @@
 """ Module for call variant paptide """
-from typing import List, Dict
+from __future__ import annotations
+from typing import List, Dict, Set
 import argparse
 import pickle
-from Bio import SeqIO, SeqUtils
-from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent
+from Bio import SeqUtils
+from Bio.SeqIO import FastaIO
+from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent, CircRNA
 
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
@@ -74,56 +76,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     variant_peptides = set()
 
-    if circ_rna_bed:
-        pass
-
     i = 0
-    for transcript_id, variant_records in variants.items():
-        anno:gtf.TranscriptAnnotationModel = annotation[transcript_id]
-        chrom = anno.transcript.location.seqname
-        transcript_seq = anno.get_transcript_sequence(genome[chrom])
+    for transcript_id in variants:
 
-        dgraph = svgraph.TranscriptVariantGraph(
-            seq=transcript_seq,
-            transcript_id=transcript_id
-        )
-
-        ## Create transcript variant graph
-        # dgraph.create_variant_graph(variant_records)
-        dgraph.add_null_root()
-        variant_iter = iter(variant_records)
-        variant = next(variant_iter, None)
-        cur = dgraph.root.get_reference_next()
-        while variant:
-            if cur.seq.locations[0].ref.start > variant.location.start:
-                variant = next(variant_iter, None)
-                continue
-
-            if cur.seq.locations[-1].ref.end <= variant.location.start:
-                cur = cur.get_reference_next()
-                continue
-
-            if variant.type == 'Fusion':
-                donor_transcript_id = variant.attrs['DONOR_TRANSCRIPT_ID']
-                donor_anno = annotation[donor_transcript_id]
-                donor_chrom = donor_anno.transcript.location.seqname
-                donor_seq = anno.get_transcript_sequence(genome[donor_chrom])
-                donor_variant_records = variants[donor_transcript_id] \
-                    if donor_transcript_id in variants else []
-                cur = dgraph.apply_fusion(cur, variant, donor_seq, donor_variant_records)
-                variant = next(variant_iter, None)
-                continue
-
-            cur = dgraph.apply_variant(cur, variant)
-            if len(cur.in_edges) == 0:
-                dgraph.root = cur
-            variant = next(variant_iter, None)
-
-        dgraph.fit_into_codons()
-        pgraph = dgraph.translate()
-
-        pgraph.form_cleavage_graph(rule=rule, exception=exception)
-        peptides = pgraph.call_vaiant_peptides(miscleavage=miscleavage)
+        peptides = call_peptide_main(variants, transcript_id, annotation,
+            genome, rule, exception, miscleavage)
 
         for peptide in peptides:
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
@@ -144,11 +101,105 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             if i % 1000 == 0:
                 logger(f'{i} transcripts processed.')
 
+    if circ_rna_bed:
+        for circ in CircRNA.parse(circ_rna_bed):
+            transcript_id = circ.transcript_id
+            anno:gtf.TranscriptAnnotationModel = annotation[transcript_id]
+            chrom = anno.transcript.location.seqname
+            transcript_seq = anno.get_transcript_sequence(genome[chrom])
+            circ_seq = circ.get_circ_rna_sequence(transcript_seq)
+            variant_records = variants[transcript_id]
+            peptides = call_peptide_circ_rna(circ_seq, variant_records,
+                circ.id, rule, exception, miscleavage)
+
+        for peptide in peptides:
+            if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
+                continue
+            if str(peptide.seq) in canonical_peptides:
+                continue
+            same_peptide = get_equivalent(variant_peptides, peptide)
+            if same_peptide:
+                new_label = peptide.id
+                same_peptide.id += ('||' + new_label)
+                same_peptide.name = same_peptide.id
+                same_peptide.description = same_peptide.id
+            else:
+                variant_peptides.add(peptide)
+
     with open(output_fasta, 'w') as handle:
-        SeqIO.write(variant_peptides, handle, 'fasta')
+        writer = FastaIO.FastaWriter(handle, record2title=lambda x: x.description)
+        for record in variant_peptides:
+            writer.write_record(record)
 
     if verbose:
         logger('Variant peptide FASTA file written to disk.')
+
+def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
+        transcript_id:str, annotation:gtf.TranscriptGTFDict,
+        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int
+        ) -> Set[aa.AminoAcidSeqRecord]:
+    """ Call variant peptides for main variants (except cirRNA). """
+    variant_records = variants[transcript_id]
+    anno:gtf.TranscriptAnnotationModel = annotation[transcript_id]
+    chrom = anno.transcript.location.seqname
+    transcript_seq = anno.get_transcript_sequence(genome[chrom])
+
+    dgraph = svgraph.TranscriptVariantGraph(
+        seq=transcript_seq,
+        transcript_id=transcript_id
+    )
+
+    ## Create transcript variant graph
+    # dgraph.create_variant_graph(variant_records)
+    dgraph.add_null_root()
+    variant_iter = iter(variant_records)
+    variant = next(variant_iter, None)
+    cur = dgraph.root.get_reference_next()
+    while variant:
+        if cur.seq.locations[0].ref.start > variant.location.start:
+            variant = next(variant_iter, None)
+            continue
+
+        if cur.seq.locations[-1].ref.end <= variant.location.start:
+            cur = cur.get_reference_next()
+            continue
+
+        if variant.type == 'Fusion':
+            donor_transcript_id = variant.attrs['DONOR_TRANSCRIPT_ID']
+            donor_anno = annotation[donor_transcript_id]
+            donor_chrom = donor_anno.transcript.location.seqname
+            donor_seq = anno.get_transcript_sequence(genome[donor_chrom])
+            donor_variant_records = variants[donor_transcript_id] \
+                if donor_transcript_id in variants else []
+            cur = dgraph.apply_fusion(cur, variant, donor_seq, donor_variant_records)
+            variant = next(variant_iter, None)
+            continue
+
+        cur = dgraph.apply_variant(cur, variant)
+        if len(cur.in_edges) == 0:
+            dgraph.root = cur
+        variant = next(variant_iter, None)
+
+    dgraph.find_all_orfs()
+    dgraph.fit_into_codons()
+    pgraph = dgraph.translate()
+
+    pgraph.form_cleavage_graph(rule=rule, exception=exception)
+    return pgraph.call_vaiant_peptides(miscleavage=miscleavage)
+
+
+def call_peptide_circ_rna(seq:dna.DNASeqRecordWithCoordinates,
+        variants:List[seqvar.VariantRecord], circ_id:str, rule:str,
+        exception:str, miscleavage:int)-> Set[aa.AminoAcidSeqRecord]:
+    """ Call variant peptides from a given circRNA """
+    cgraph = svgraph.CircularVariantGraph(seq, transcript_id=circ_id)
+    cgraph.create_variant_graph(variants)
+    cgraph.align_all_variants()
+    tgraph = cgraph.find_all_orfs()
+    tgraph.fit_into_codons()
+    pgraph = tgraph.translate()
+    pgraph.form_cleavage_graph(rule=rule, exception=exception)
+    return pgraph.call_vaiant_peptides(miscleavage=miscleavage)
 
 
 if __name__ == '__main__':
@@ -158,6 +209,7 @@ if __name__ == '__main__':
         'test/files/fusion/fusion.tvf'
     ]
     test_args.index_dir = 'test/files/index'
+    test_args.circ_rna_bed = 'test/files/circRNA/circ_rna.bed'
     test_args.output_fasta = 'test/files/vep/vep_moPepGen.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'

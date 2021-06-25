@@ -30,14 +30,8 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             attrs (dict): additional attributes
 
         """
-        self.seq = seq
-        if self.seq and not self.seq.locations:
-            self.add_default_sequence_locations()
-        node = svgraph.TVGNode(seq)
-        self.root = node
-        # self.add_null_root()
-        self.add_edge(node, self.root, _type='reference')
-        self.transcript_id = transcript_id
+        super().__init__(seq, transcript_id)
+        self.add_edge(self.root, self.root, _type='reference')
         self.attrs = attrs
 
     def create_variant_graph(self, variants: List[seqvar.VariantRecord]):
@@ -104,7 +98,18 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
     def find_orf_in_outbound_nodes(self, node:svgraph.TVGNode,
             carry_over:dna.DNASeqRecordWithCoordinates
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
-        """ Look for potential start codon int the out bound nodes. """
+        """ Look for potential start codon int the out bound nodes.
+
+        Args:
+            node (svgraph.TVGNode): The target node.
+            carry_over (dna.DNASeqRecordWithCoordinates): The sequence to be
+                carried over to the outbound nodes. Usually 2 last nucleotides
+                should be carried over, to see whether there a start codon is
+                splitted by the edge.
+        Returns:
+            The reference node after the current bubble (main), and any
+            branches created because of start codon.
+        """
         branches = []
         downstream = node.find_farthest_node_with_overlap()
 
@@ -125,8 +130,9 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
 
 
     def find_all_orfs(self) -> svgraph.TranscriptVariantGraph:
-        """ Find all ORFs """
-        tvg = svgraph.TranscriptVariantGraph(None, self.attrs['id'])
+        """ Find all ORFs and create a TranscriptVariantGraph which is no
+        longer cyclic."""
+        tvg = svgraph.TranscriptVariantGraph(None, self.transcript_id)
 
         self.align_all_variants()
 
@@ -161,7 +167,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         while True:
             if len(node.out_edges) > 1:
                 self.align_variants(node, branch_out_frameshifting=False)
-                node = node.find_farthest_node_with_overlap()
+                node = node.find_farthest_node_with_overlap(min_size = 0)
             else:
                 node = next(iter(node.out_edges)).out_node
             if node is self.root:

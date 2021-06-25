@@ -55,7 +55,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (3, 4, 'G', 'A', 'SNV', '3:G-A')
         ]
         graph = create_dgraph1(seq, variants)
-        first_node = graph.root.get_reference_next()
+        first_node = graph.root
         variant_site_nodes = [edge.out_node for edge in first_node.out_edges]
         variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
         self.assertIn('T', variant_site_seqs)
@@ -82,7 +82,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (3, 4, 'G', 'A', 'SNV', '3:G-A')
         ]
         graph = create_dgraph1(seq, variants)
-        first_node = graph.root.get_reference_next()
+        first_node = graph.root
         graph.expand_alignments(first_node)
         variant_site_nodes = [edge.out_node for edge in first_node.out_edges]
         variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
@@ -410,7 +410,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
         graph = create_dgraph1(seq, variants)
-        first_node = graph.root.get_reference_next()
+        first_node = graph.root
         graph.align_variants(first_node)
         self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCT')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
@@ -424,7 +424,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (7, 8, 'G', 'A', 'SNV', '7:G-A')
         ]
         graph = create_dgraph1(seq, variants)
-        first_node = graph.root.get_reference_next()
+        first_node = graph.root
         graph.align_variants(first_node)
         self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCTG')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
@@ -502,14 +502,6 @@ class TestTranscriptGraph(unittest.TestCase):
         pgraph = graph.translate()
         self.assertIsInstance(pgraph, svgraph.PeptideVariantGraph)
 
-    def test_create_empty_graph_with_known_seq(self):
-        """ Create an empty graph with a known sequence """
-        locations = []
-        seq = dna.DNASeqRecordWithCoordinates(Seq('ATGGTCTGCCCTCTGAACTGA'),
-            locations)
-        graph = svgraph.TranscriptVariantGraph\
-            .create_empty_graph_with_known_sequence(seq, 'ENST0001')
-        self.assertIs(graph.root.seq, None)
 
 if __name__ == '__main__':
     unittest.main()

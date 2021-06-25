@@ -43,17 +43,6 @@ class TranscriptVariantGraph():
             ref=FeatureLocation(start=0, end=len(self.seq))
         )]
 
-    @classmethod
-    def create_empty_graph_with_known_sequence(cls,
-            seq:dna.DNASeqRecordWithCoordinates, transcript_id:str
-            ) -> TranscriptVariantGraph:
-        """"""
-        graph = cls(None, transcript_id)
-        graph.seq = seq
-        if graph.seq and not graph.seq.locations:
-            graph.add_default_sequence_locations()
-        return graph
-
     @staticmethod
     def variants_are_adjacent(edge1:svgraph.TVGEdge, edge2:svgraph.TVGEdge
             ) -> bool:
@@ -267,6 +256,7 @@ class TranscriptVariantGraph():
         break_point = int(variant.attrs['DONOR_POS'])
         branch = TranscriptVariantGraph(donor_seq, self.transcript_id)
         branch.root.seq = branch.root.seq[break_point:]
+        branch.add_null_root()
         branch.create_variant_graph(donor_variants)
         var_node = branch.root.get_reference_next()
         var_node.branch = True
@@ -302,12 +292,12 @@ class TranscriptVariantGraph():
         Args:
             variant [seqvar.VariantRecord]: The variant record.
         """
-        # Add a null nood as root.
-        if self.root.seq is not None:
-            self.add_null_root()
         variant_iter = iter(variants)
         variant = next(variant_iter, None)
-        cur = self.root.get_reference_next()
+        if self.root.seq:
+            cur = self.root
+        else:
+            cur = self.root.get_reference_next()
 
         while variant and cur:
 
@@ -720,9 +710,10 @@ class TranscriptVariantGraph():
                     continue
                 node = self.align_variants(node)
                 main, _ = self.skip_nodes_or_branch_out(node)
-                new_cursor = svgraph.TVGCursor(node=main)
-                queue.appendleft(new_cursor)
-                continue
+                if main:
+                    new_cursor = svgraph.TVGCursor(node=main)
+                    queue.appendleft(new_cursor)
+                    continue
 
             node.seq = node.seq[index:]
             node_copy = self.copy_node(node)
@@ -805,6 +796,12 @@ class TranscriptVariantGraph():
                 new_cursor = svgraph.TVGCursor(node=branch, search_orf=True)
                 queue.appendleft(new_cursor)
 
+    def find_all_orfs(self):
+        """ Fild all ORFs """
+        if self.seq.orf:
+            self.find_orf_known()
+        else:
+            self.find_orf_unknown()
 
     def fit_into_codons(self, branch_out_size:int=100) -> None:
         r""" This takes the variant graph, and fit all cleave sites into the
@@ -822,10 +819,8 @@ class TranscriptVariantGraph():
                     \ /                \      /
                      A                  GTCTAC
         """
-        if self.seq.orf:
-            self.find_orf_known()
-        else:
-            self.find_orf_unknown()
+        if self.root.seq is not None:
+            self.add_null_root()
         for edge in self.root.out_edges:
             cur = svgraph.TVGCursor(node=edge.out_node, search_orf=False)
             queue = deque([cur])

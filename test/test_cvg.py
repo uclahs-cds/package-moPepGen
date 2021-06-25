@@ -47,8 +47,8 @@ class TestCVG(unittest.TestCase):
             3: ('G', [1], []),
             4: ('CCTGCT', [2, 3], [])
         }
+        graph, _ = create_dgraph2(data, True)
         graph:svgraph.CircularVariantGraph
-        graph, nodes = create_dgraph2(data, True)
         graph.align_all_variants()
         self.assertEqual(str(graph.root.seq.seq), 'ATAGGG')
 
@@ -64,8 +64,8 @@ class TestCVG(unittest.TestCase):
             3: ('G', [1], []),
             4: ('GCTGCT', [2, 3], [])
         }
-        cvg:svgraph.CircularVariantGraph
         cvg, _ = create_dgraph2(data, True)
+        cvg:svgraph.CircularVariantGraph
         cvg.attrs = {'id': 'ENSG0001-2'}
         tvg = cvg.find_all_orfs()
         self.assertIs(tvg.root.seq, None)
