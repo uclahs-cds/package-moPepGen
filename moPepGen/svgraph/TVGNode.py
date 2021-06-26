@@ -30,9 +30,9 @@ class TVGNode():
                 reference.
         """
         self.seq = seq
-        self.in_edges = set()
-        self.out_edges = set()
-        self.variants = variants if variants else []
+        self.in_edges:Set[svgraph.TVGEdge] = set()
+        self.out_edges:Set[svgraph.TVGEdge] = set()
+        self.variants:List[seqvar.VariantRecordWithCoordinate] = variants if variants else []
         self.frameshifts = frameshifts if frameshifts else set()
         self.branch = branch
 
@@ -75,10 +75,15 @@ class TVGNode():
 
     def needs_branch_out(self, branch_out_size:int=100) -> bool:
         """ Checks if the node needs to branch out """
-        variant = self.variants[0].variant
-        location = self.variants[0].location
-        variant_len = location.end - location.start
-        return variant.is_frameshifting() or variant_len >= branch_out_size
+        for variant in self.variants:
+            if variant.variant.is_frameshifting():
+                return True
+        for variant in self.variants:
+            location = variant.location
+            variant_len = location.end - location.start
+            if variant_len >= branch_out_size:
+                return True
+        return False
 
     def next_node_to_branch_out(self, to_node:svgraph.TVGNode,
             branch_out_size:int=100) -> svgraph.TVGNode:
@@ -149,13 +154,13 @@ class TVGNode():
             if source in visited:
                 continue
             for edge in source.out_edges:
-                source_out_node:svgraph.TVGNode = edge.out_node
+                source_out_node = edge.out_node
                 if source_out_node in visited:
                     new_out_node = visited[source_out_node]
                 else:
                     frameshifts = copy.copy(source_out_node.frameshifts)
                     if propagate_frameshifts:
-                        frameshifts.update(self.frameshifts)
+                        frameshifts.update(source.frameshifts)
                     new_out_node = self.__class__(
                         seq=source_out_node.seq,
                         variants=copy.copy(source_out_node.variants),
@@ -170,7 +175,7 @@ class TVGNode():
 
         return new_node
 
-    def find_farthest_node_with_overlap(self) -> TVGNode:
+    def find_farthest_node_with_overlap(self, min_size:int=5) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
         reference sequence.
@@ -200,11 +205,11 @@ class TVGNode():
             visited.add(cur)
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
-                if not queue and cur is farthest:
+                if not queue and cur is farthest and cur is not self:
                     # if the farthest has less than 5 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
-                    if len(cur.seq) < 5:
+                    if len(cur.seq) < min_size:
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
                 continue

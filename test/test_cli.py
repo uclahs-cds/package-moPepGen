@@ -71,10 +71,49 @@ class TestCli(unittest.TestCase):
         self.assertEqual(files, expected)
 
 
-    def test_call_variant_peptide(self):
+    def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """
         args = argparse.Namespace()
         args.input_variant = [str(DATA_DIR/'vep'/'vep.tvf')]
+        args.circ_rna_bed = None
+        args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
+        args.index_dir = DATA_DIR/'index'
+        args.cleavage_rule = 'trypsin'
+        args.miscleavage = '2'
+        args.min_mw = '500.'
+        args.verbose = False
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in WORK_DIR.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_case2(self):
+        """ Test variant peptide calling with fusion """
+        args = argparse.Namespace()
+        args.input_variant = [
+            str(DATA_DIR/'vep'/'vep.tvf'),
+            str(DATA_DIR/'fusion'/'fusion.tvf')
+        ]
+        args.circ_rna_bed = None
+        args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
+        args.index_dir = DATA_DIR/'index'
+        args.cleavage_rule = 'trypsin'
+        args.miscleavage = '2'
+        args.min_mw = '500.'
+        args.verbose = False
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in WORK_DIR.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_case3(self):
+        """ Test variant peptide calling with fusion and circRNA """
+        args = argparse.Namespace()
+        args.input_variant = [
+            str(DATA_DIR/'vep'/'vep.tvf'),
+            str(DATA_DIR/'fusion'/'fusion.tvf')
+        ]
+        args.circ_rna_bed = str(DATA_DIR/'circRNA'/'circ_rna.bed')
         args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
         args.index_dir = DATA_DIR/'index'
         args.cleavage_rule = 'trypsin'

@@ -1,7 +1,7 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import Set, Tuple, Deque
+from typing import Set, Tuple, Deque, Dict
 from collections import deque
 import itertools
 from Bio.Seq import Seq
@@ -422,6 +422,7 @@ class PeptideVariantGraph():
         queue:Deque[svgraph.PVGNode] = deque([self.root])
         visited:Set[svgraph.PVGNode] = set()
         variant_peptides:Set[aa.AminoAcidSeqRecord] = set()
+        peptide_ids:Dict[str, int] = {}
         while queue:
             cur = queue.pop()
             if cur.seq is None:
@@ -459,21 +460,29 @@ class PeptideVariantGraph():
                             seq = seq + node.seq
                         if node.variants:
                             variants.extend(node.variants)
+
                     if not variants:
                         continue
+
                     variant_label = ''
                     variant:seqvar.VariantRecordWithCoordinate
                     for variant in variants:
                         variant_label += ('|' + str(variant.variant.id))
+
+                    seq.id = seq.transcript_id
+                    seq.name = seq.transcript_id
+                    seq.description = seq.transcript_id + variant_label
+
+                    if seq.description not in peptide_ids:
+                        peptide_ids[seq.description] = 0
+
+                    peptide_ids[seq.description] += 1
+                    seq.description += '|' + str(peptide_ids[seq.description])
+
                     same_peptide = get_equivalent(variant_peptides, seq)
                     if same_peptide:
-                        same_peptide.id += variant_label
-                        same_peptide.name = same_peptide.id
-                        same_peptide.description = same_peptide.id
+                        same_peptide.description += '||' + seq.description
                     else:
-                        seq.id = seq.transcript_id + variant_label
-                        seq.name = seq.id
-                        seq.description = seq.id
                         variant_peptides.add(seq)
 
                     if i + 1 < miscleavage:

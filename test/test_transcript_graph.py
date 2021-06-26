@@ -54,7 +54,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (3, 4, 'G', 'A', 'SNV', '3:G-A')
         ]
         graph = create_dgraph1(seq, variants)
-        first_node = graph.root.get_reference_next()
+        first_node = graph.root
         variant_site_nodes = [edge.out_node for edge in first_node.out_edges]
         variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
         self.assertIn('T', variant_site_seqs)
@@ -81,7 +81,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (3, 4, 'G', 'A', 'SNV', '3:G-A')
         ]
         graph = create_dgraph1(seq, variants)
-        first_node = graph.root.get_reference_next()
+        first_node = graph.root
         graph.expand_alignments(first_node)
         variant_site_nodes = [edge.out_node for edge in first_node.out_edges]
         variant_site_seqs = [str(node.seq.seq) for node in variant_site_nodes]
@@ -339,6 +339,25 @@ class TestTranscriptGraph(unittest.TestCase):
             self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
 
     def test_find_orf_unknown_case4(self):
+        r"""
+                 AA
+                /  \
+            Null-A--TGG
+        """
+        data = {
+            0: (None, [], []),
+            1: ('A', [0], []),
+            2: ('AA', [0], [(0, 'AA', 'A', 'INDEL', '')], True),
+            3: ['TGG', [1,2], []]
+        }
+        graph, _ = create_dgraph2(data)
+        graph.seq.orf = FeatureLocation(start=0, end=len(graph.seq))
+        graph.find_orf_unknown()
+        self.assertEqual(len(graph.root.out_edges), 2)
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+
+    def test_find_orf_unknown_case5(self):
         r""" Variants before start codon
 
             GGATGG-G-TGCT
@@ -390,7 +409,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
         graph = create_dgraph1(seq, variants)
-        first_node = graph.root.get_reference_next()
+        first_node = graph.root
         graph.align_variants(first_node)
         self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCT')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
@@ -404,7 +423,7 @@ class TestTranscriptGraph(unittest.TestCase):
             (7, 8, 'G', 'A', 'SNV', '7:G-A')
         ]
         graph = create_dgraph1(seq, variants)
-        first_node = graph.root.get_reference_next()
+        first_node = graph.root
         graph.align_variants(first_node)
         self.assertEqual(str(first_node.get_reference_next().seq.seq), 'TCTG')
         variant_seqs = [str(edge.out_node.seq.seq) for edge \
@@ -481,6 +500,7 @@ class TestTranscriptGraph(unittest.TestCase):
         graph.fit_into_codons()
         pgraph = graph.translate()
         self.assertIsInstance(pgraph, svgraph.PeptideVariantGraph)
+
 
 if __name__ == '__main__':
     unittest.main()
