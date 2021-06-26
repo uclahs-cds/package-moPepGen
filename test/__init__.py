@@ -5,9 +5,9 @@ from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import svgraph, dna, seqvar, gtf
 
-T = Tuple[Union[svgraph.TranscriptVariantGraph, svgraph.CircularVariantGraph],
+Type = Tuple[Union[svgraph.TranscriptVariantGraph, svgraph.CircularVariantGraph],
         Dict[int, svgraph.TVGNode]]
-def create_dgraph2(data:dict, circular:bool=False) -> T:
+def create_dgraph2(data:dict, circular:bool=False) -> Type:
     """ Create DNA transcript graph from node individuals.
     """
     node_list:Dict[int, svgraph.TVGNode] = {}
@@ -119,7 +119,7 @@ def create_dgraph2(data:dict, circular:bool=False) -> T:
 
 def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str
         ) -> seqvar.VariantRecord:
-    """"""
+    """ Helper function to create a VariantRecord """
     location = FeatureLocation(start=start, end=end)
     return seqvar.VariantRecord(
         location=location, ref=ref, alt=alt,
@@ -127,7 +127,7 @@ def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str
     )
 
 def create_variants(data) -> List[seqvar.VariantRecord]:
-    """"""
+    """ Helper function to create a list of VariantRecord """
     return [create_variant(*x) for x in data]
 
 def create_dgraph1(seq, variants) -> svgraph.TranscriptVariantGraph:

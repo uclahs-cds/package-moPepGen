@@ -1,8 +1,8 @@
 """ Module for CircularVariantGraph """
 import unittest
-from Bio.Seq import Seq
 from test import create_variant, create_dgraph2
-from moPepGen import svgraph, seqvar, dna
+from Bio.Seq import Seq
+from moPepGen import svgraph, dna
 
 
 class TestCVG(unittest.TestCase):

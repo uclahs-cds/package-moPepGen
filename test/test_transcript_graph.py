@@ -2,9 +2,8 @@
 import unittest
 from typing import Deque
 from collections import deque
-from Bio.Seq import Seq
 from test import create_dgraph2, create_dgraph1
-from moPepGen import svgraph, seqvar, dna
+from moPepGen import svgraph, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 
 
