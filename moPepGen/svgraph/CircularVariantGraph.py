@@ -42,6 +42,8 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         """
         filtered_variants = []
         for variant in variants:
+            if variant.type == 'Fusion':
+                continue
             for location in self.seq.locations:
                 if variant.location.start > location.ref.start and \
                     variant.location.end < location.ref.end:
