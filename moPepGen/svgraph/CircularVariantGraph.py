@@ -49,13 +49,21 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                     break
         return super().create_variant_graph(filtered_variants)
 
-    def create_branch(self, node:svgraph.TVGNode) -> svgraph.TVGNode:
+    def create_branch_and_expand(self, node:svgraph.TVGNode, n_rounds:int=4
+            ) -> svgraph.TVGNode:
         """ Create a branch of a given node and all its downstream nodes. The
         returned node is a leading node of a directed acyclic graph, and can be
         added into a TranscriptVariantGraph.
 
+        For a circular nucleotide molecule (e.g. circRNA), translation can
+        continue for longer than a round until a stop codon is found. So when
+        creating a linear branch, we let the entire molecule to replicate for
+        a given times (defaults to 4).
+
         Args:
             node (svgraph.TVGNode): The node to create a branch
+            n_rounds (int): Number of rounds of the circular nucleotide
+                molecular to expand in the final branch. Defaults to 4.
         """
         new_node = svgraph.TVGNode(
             seq=node.seq,
@@ -71,7 +79,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             source, target, _round = queue.pop()
             if source is node:
                 _round += 1
-            if _round >= 4:
+            if _round >= n_rounds:
                 break
             if (source, _round) in visited:
                 continue
@@ -117,7 +125,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             seq = carry_over + edge.out_node.seq + downstream.seq[:2]
             indices = [m.start() for m in re.finditer('ATG', str(seq.seq))]
             for index in indices:
-                branch = self.create_branch(edge.out_node)
+                branch = self.create_branch_and_expand(edge.out_node)
                 branch.seq = (carry_over + edge.out_node.seq)[index:]
                 filtered_variants = []
                 for variant in branch.variants:
@@ -131,7 +139,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
 
     def find_all_orfs(self) -> svgraph.TranscriptVariantGraph:
         """ Find all ORFs and create a TranscriptVariantGraph which is no
-        longer cyclic."""
+        longer cyclic. """
         tvg = svgraph.TranscriptVariantGraph(None, self.transcript_id)
 
         self.align_all_variants()
@@ -143,7 +151,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
 
             indices = [m.start() for m in re.finditer('ATG', str(cur.seq.seq))]
             for index in indices:
-                branch = self.create_branch(cur)
+                branch = self.create_branch_and_expand(cur)
                 branch.seq = branch.seq[index:]
                 _type = 'variant_start' if branch.branch else 'reference'
                 tvg.add_edge(tvg.root, branch, _type)
