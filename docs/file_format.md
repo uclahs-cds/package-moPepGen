@@ -5,7 +5,7 @@
     - [File Metadata](#file-metadata)
     - [Point Mutation](#point-mutation)
     - [Fusion](#fusion)
-  - [CircRNA BED Format](#circrna-bed-format)
+  - [CircRNA TSV Format](#circrna-tsv-format)
   - [Reference Index](#reference-index)
   - [Variant Peptide FASTA](#variant-peptide-fasta)
 
@@ -31,16 +31,18 @@ Starting from the second line should be moPepGen's metadata. Each line should be
 ```
 ##moPepGen_version=0.0.1
 ##parser=parseXXX
-##reference_index=
-##genome_fasta=
-##annotation_gtf=
+##reference_index=/path/to/reference-index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotation.gtf
 ```
 
 + `moPepGen_version`: the version number of moPepGen used to generate the variant file.
 + `parser`: the parser used to create the variant file.
-+ `reference_index`: the path to the reference index used. Should be empty if not specified in the parser.
-+ `genome_fasta`: The genome fasta file used. Should be empty if not used in the parser.
-+ `annotation_gtf`: The annotation GTF file used. Should be empty if not specified in the parser.
++ `reference_index`: the path to the reference index used.
++ `genome_fasta`: The genome fasta file used.
++ `annotation_gtf`: The annotation GTF file used.
+
+If reference_index is not empty, `genome_fasta` and `annotation_gtf` refer to the files used to generate the index.
 
 After the moPepGen metadata section, there should be a section for field information, that defines the fields used in either `ALT` or `INFO` column. For example:
 
@@ -56,9 +58,9 @@ Below is an example of a TVF file for point mutation, including single nucleotid
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
 ##parser=parseVEP
-##reference_index=
-##genome_fasta=
-##annotation_gtf=
+##reference_index=/path/to/reference-index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotation.gtf
 ##CHROM=<Description='Transcript ID'>
 ##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Acceptor Transcript's Gene ID">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
@@ -78,9 +80,9 @@ Below is an example of a TVF file for gene fusions.
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
 ##parser=parseXXX
-##reference_index=
-##genome_fasta=
-##annotation_gtf=
+##reference_index=/path/to/reference-index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotation.gtf
 ##CHROM=<Description='Transcript ID'>
 ##ALT=<ID=FUSION,Description="Fusion">
 ##INFO=<ID=GENE_ID,Number=1,Type=String,Description="3' Junction (Acceptor) Transcript's Gene ID">
@@ -112,21 +114,22 @@ The `Info` column must contain the following fields:
 
 In reality, gene fusion happens at the gene level. But in a TVF file, each line represents a transcript, so the same fusion events could appear multiple times, because both the acceptor and donor gene could have multiple transcript isoforms.
 
-## CircRNA BED Format
+## CircRNA TSV Format
 
-Circular RNAs are derived from back-spliced exons. They exist as individual RNA molecules and have the potential to be translated to proteins. We are then interested in finding the possible peptide sequences translated from circRNAs with and without variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts than variants. We then use a BED like format to represen the circRNA molecules. In the BED file, each row is an exon associated with a circRNA, represented as the transcript ID and the location (start and end) of the transcript. Each circRNA can have one or more exons, so the exons next to each other that share the same transcript ID and circRNA ID belong to the same circRNA molecule. The order of records represent the order of the exons apper on the circRNA. The same circRNA can be derived from more than one transcript of the same gene. In this case, each transcript will have its own serious of exons in the file.
+Circular RNAs are derived from back-spliced exons. They exist as individual RNA molecules and have the potential to be translated to proteins. We are then interested in finding the possible peptide sequences translated from circRNAs with and without variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts than variants. Here we define a TSV file format to represent the circRNA molecules. In this TSV format, each row represent a circRNA, with the gene ID it is associated with, the start position at the gene, the offset and length of each segment, and IDs. Normally ach segment is an exon, but with intron retained alternative splicing, there could be introns.
 
 ```
 ##mopepgen_version=0.0.1
-##parser=parseVEP
-##reference_index=
-##genome_fasta=
-##annotation_gtf=
-#transcript_id	start	end	id	gene_id	gene_name	
-ENST0001	406	750	ENSG0001-3-4	ENSG0001	SYMB1
-ENST0001	751	769	ENSG0001-3-4	ENSG0001	SYMB1
-ENST0002	606	950	ENSG0001-3-4	ENSG0001	SYMB1	
-ENST0002	951	969	ENSG0001-3-4	ENSG0001	SYMB1
+##parser=parseXXX
+##reference_index=/path/to/reference-index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotation.gtf
+#gene_id	start offsets length	intron	 circ_id transcript_id  gene_name
+ENSG0001	413 0,211,398 72,85,63 .	ENSG0001-2-3-4	ENST0001,ENST0002	SYMB1
+ENSG0002  112 0,175 	72,85  .	ENSG0001-3-4	ENST0011,ENST0012	SYMB2
+ENSG0002  112 0,73,175 	72,103,85  2	ENSG0001-3-4	ENST0011,ENST0012	SYMB2
+ENSG0003  77  0,181,424 100,175,85  . ENSG0003-2-3-4  ENST0021  SYMB3
+ENSG0003  77  0,101,181,357,424 100,80,175,67,85  2,4 ENSG0003-2-3-4  ENST0021  SYMB3
 ```
 
 ## Reference Index
