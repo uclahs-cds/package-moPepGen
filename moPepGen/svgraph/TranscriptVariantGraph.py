@@ -558,7 +558,7 @@ class TranscriptVariantGraph():
             if need_branch_out:
                 out_node = self.create_branch(out_node)
 
-            if any([x.variant.type == 'Fusion' for x in out_node.variants]):
+            if any(x.variant.type == 'Fusion' for x in out_node.variants):
                 branches.append(out_node)
                 continue
 

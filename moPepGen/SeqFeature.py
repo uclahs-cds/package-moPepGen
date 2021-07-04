@@ -71,6 +71,7 @@ class SeqFeature(BioSeqFeature):
     additional attributes. """
     def __init__(self, chrom:str, attributes:dict, *args, **kwargs):
         """ Constructor """
+        self.location = None
         super().__init__(*args, **kwargs)
         if self.location is not None:
             self.location.__class__ = FeatureLocation
