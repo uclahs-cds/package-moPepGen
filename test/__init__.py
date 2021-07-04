@@ -117,13 +117,13 @@ def create_dgraph2(data:dict, circular:bool=False) -> Type:
     return graph, node_list
 
 
-def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str
-        ) -> seqvar.VariantRecord:
+def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str,
+        attrs:dict=None) -> seqvar.VariantRecord:
     """ Helper function to create a VariantRecord """
     location = FeatureLocation(start=start, end=end)
     return seqvar.VariantRecord(
         location=location, ref=ref, alt=alt,
-        _type=_type, _id=_id
+        _type=_type, _id=_id, attrs=attrs
     )
 
 def create_variants(data) -> List[seqvar.VariantRecord]:
@@ -169,3 +169,15 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
                 attributes=entry[2], strand=strand))
     model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
     return model
+
+def create_dna_seq_with_coordinates(seq, start=None, end=None):
+    """ Create a dna.DNASeqRecordWithCoordinates instance """
+    if not start:
+        start = 0
+    if not end:
+        end = len(seq)
+    location = dna.MatchedLocation(
+        query=FeatureLocation(start=0, end=len(seq)),
+        ref=FeatureLocation(start=start, end=end)
+    )
+    return dna.DNASeqRecordWithCoordinates(seq=Seq(seq), locations=[location])

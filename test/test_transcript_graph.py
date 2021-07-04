@@ -2,7 +2,8 @@
 import unittest
 from typing import Deque
 from collections import deque
-from test import create_dgraph2, create_dgraph1
+from test import create_dgraph2, create_dgraph1, \
+    create_dna_seq_with_coordinates, create_variant, create_variants
 from moPepGen import svgraph, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 
@@ -45,6 +46,43 @@ class TestTranscriptGraph(unittest.TestCase):
         seqs_expected = set(['T', 'C'])
         self.assertEqual(seqs, seqs_expected)
 
+    def test_apply_fusion_case1(self):
+        r""" Fusion breakpoint: acceptor 8, donor 8
+             C                   A         A
+            / \                 / \       / \
+        AACC-T-TGGCGGTTC    GAAT-T-CGATGGC-C-CTA
+        """
+        data = {
+            1: ('AACC', [], []),
+            2: ('T', [1], []),
+            3: ('C', [1], [(0, 'C', 'T', 'SNV', '')]),
+            4: ('TGGCGGTTC', [2,3], [])
+        }
+        graph, nodes = create_dgraph2(data)
+        attrs = {'DONOR_POS': 8}
+        var_fusion = create_variant(8, 9, 'C', '<FUSION>', 'Fusion',
+            'FUSIONXXX', attrs=attrs)
+        seq = 'GAATTCGATGGCCCTA'
+        donor_seq = create_dna_seq_with_coordinates(seq)
+        donor_var_data = {
+            (3, 4, 'T', 'A', 'SNV', ''),
+            (12, 13, 'C', 'A', 'SNV', '')
+        }
+        donor_vars = create_variants(donor_var_data)
+        acceptor_tail = graph.apply_fusion(nodes[4], var_fusion,
+            donor_seq, donor_vars)
+
+        self.assertEqual(len(acceptor_tail.out_edges), 2)
+        self.assertEqual(str(acceptor_tail.seq.seq), 'TGG')
+        for edge in acceptor_tail.out_edges:
+            if edge.type != 'reference':
+                root_donor = edge.out_node
+        self.assertEqual(str(root_donor.seq.seq), 'TGGC')
+        self.assertEqual(len(root_donor.in_edges), 1)
+
+        # also test alignment will treat the first fusioned node as reference
+        graph.align_variants(acceptor_tail)
+        self.assertEqual(str(root_donor.seq.seq), 'TGGC')
 
     def test_create_dgraph1(self):
         """ Transcript grpah is created """
