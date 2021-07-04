@@ -19,7 +19,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         attrs (dict): additional attributes
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
-            transcript_id:str, attrs:dict=None):
+            _id:str, attrs:dict=None):
         """ Construct a CircularVariantGraph
 
         Args:
@@ -30,7 +30,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             attrs (dict): additional attributes
 
         """
-        super().__init__(seq, transcript_id)
+        super().__init__(seq, _id)
         self.add_edge(self.root, self.root, _type='reference')
         self.attrs = attrs
 
@@ -143,7 +143,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
     def find_all_orfs(self) -> svgraph.TranscriptVariantGraph:
         """ Find all ORFs and create a TranscriptVariantGraph which is no
         longer cyclic. """
-        tvg = svgraph.TranscriptVariantGraph(None, self.transcript_id)
+        tvg = svgraph.TranscriptVariantGraph(None, self.id)
 
         self.align_all_variants()
 
@@ -167,7 +167,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                 _type = 'variant_start' if branch.branch else 'reference'
                 tvg.add_edge(tvg.root, branch, _type)
 
-            if main.is_inbond_of(self.root):
+            if not main.is_inbond_of(self.root):
                 queue.append(main)
         return tvg
 

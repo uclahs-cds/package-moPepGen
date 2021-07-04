@@ -74,6 +74,7 @@ class SeqFeature(BioSeqFeature):
         super().__init__(*args, **kwargs)
         if self.location is not None:
             self.location.__class__ = FeatureLocation
+        self.location:FeatureLocation
         self.chrom = chrom
         self.attributes = attributes
 

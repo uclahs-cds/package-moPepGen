@@ -35,7 +35,7 @@ def parse_vep(args:argparse.Namespace) -> None:
         genome_fasta:str = args.genome_fasta
         annotation_gtf:str = args.annotation_gtf
 
-        anno = gtf.TranscriptGTFDict()
+        anno = gtf.GenomicAnnotation()
         anno.dump_gtf(annotation_gtf)
         if verbose:
             logger('Annotation GTF loaded.')
@@ -56,7 +56,7 @@ def parse_vep(args:argparse.Namespace) -> None:
 
             chrom_seqname = record.location.split(':')[0]
 
-            transcript_seq = anno[transcript_id]\
+            transcript_seq = anno.transcripts[transcript_id]\
                 .get_transcript_sequence(genome[chrom_seqname])
 
             record = record.convert_to_variant_record(transcript_seq)

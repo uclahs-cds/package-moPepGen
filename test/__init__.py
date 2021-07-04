@@ -153,20 +153,19 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
     chrom = data['chrom']
     strand = data['strand']
     entry = data['transcript']
-    location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
+    location = FeatureLocation(start=entry[0], end=entry[1])
     transcript = SeqFeature(chrom=chrom, location=location,
-        attributes=entry[2])
+        attributes=entry[2], strand=strand)
     exons = []
     for entry in data['exon']:
-        location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
+        location = FeatureLocation(start=entry[0], end=entry[1])
         exons.append(SeqFeature(chrom=chrom, location=location,
-            attributes=entry[2]))
+            attributes=entry[2], strand=strand))
     cds = []
     if 'cds' in data:
         for entry in data['cds']:
-            location = FeatureLocation(start=entry[0], end=entry[1],
-                strand=strand)
+            location = FeatureLocation(start=entry[0], end=entry[1])
             cds.append(SeqFeature(chrom=chrom, location=location,
-                attributes=entry[2]))
+                attributes=entry[2], strand=strand))
     model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
     return model

@@ -113,7 +113,7 @@ class TestCli(unittest.TestCase):
             str(DATA_DIR/'vep'/'vep.tvf'),
             str(DATA_DIR/'fusion'/'fusion.tvf')
         ]
-        args.circ_rna_bed = str(DATA_DIR/'circRNA'/'circ_rna.bed')
+        args.circ_rna_bed = str(DATA_DIR/'circRNA'/'circ_rna.tsv')
         args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
         args.index_dir = DATA_DIR/'index'
         args.cleavage_rule = 'trypsin'

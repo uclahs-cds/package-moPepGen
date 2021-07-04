@@ -2,7 +2,7 @@
 import pathlib
 from Bio import SeqIO
 from moPepGen import dna, aa, svgraph, seqvar
-from moPepGen.gtf import TranscriptGTFDict
+from moPepGen.gtf import GenomicAnnotation
 from moPepGen.SeqFeature import FeatureLocation
 
 
@@ -12,7 +12,7 @@ def run_task():
     file_dir = f'{pathlib.Path(__file__).parent.absolute()}/files/{transcript_id}'
 
     # gtf
-    gtf = TranscriptGTFDict()
+    gtf = GenomicAnnotation()
     gtf.dump_gtf(f'{file_dir}/annotation.gtf')
 
     # transcript
@@ -25,8 +25,8 @@ def run_task():
         )
         transcript_seq.locations = [location]
         transcript_seq.orf = FeatureLocation(
-            start=gtf[transcript_id].get_cds_start_index(),
-            end=gtf[transcript_id].get_cds_end_index()
+            start=gtf.transcripts[transcript_id].get_cds_start_index(),
+            end=gtf.transcripts[transcript_id].get_cds_end_index()
         )
 
     # protein
@@ -62,7 +62,7 @@ def run_task():
 
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
-        transcript_id=transcript_id
+        _id=transcript_id
     )
     dgraph.create_variant_graph(variants[transcript_id])
     dgraph.fit_into_codons()

@@ -37,7 +37,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         proteome_fasta:str = args.proteome_fasta
         annotation_gtf:str = args.annotation_gtf
 
-        annotation = gtf.TranscriptGTFDict()
+        annotation = gtf.GenomicAnnotation()
         annotation.dump_gtf(annotation_gtf)
         if verbose:
             logger('Annotation GTF loaded.')
@@ -103,14 +103,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     if circ_rna_bed:
         for circ in CircRNA.parse(circ_rna_bed):
-            transcript_id = circ.transcript_id
-            anno:gtf.TranscriptAnnotationModel = annotation[transcript_id]
-            chrom = anno.transcript.location.seqname
-            transcript_seq = anno.get_transcript_sequence(genome[chrom])
-            circ_seq = circ.get_circ_rna_sequence(transcript_seq)
-            variant_records = variants[transcript_id]
-            peptides = call_peptide_circ_rna(circ_seq, variant_records,
-                circ.id, rule, exception, miscleavage)
+            peptides = call_peptide_circ_rna(circ, annotation, genome,
+                variants, rule, exception, miscleavage)
 
         for peptide in peptides:
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
@@ -135,18 +129,18 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         logger('Variant peptide FASTA file written to disk.')
 
 def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
-        transcript_id:str, annotation:gtf.TranscriptGTFDict,
+        transcript_id:str, annotation:gtf.GenomicAnnotation,
         genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     variant_records = variants[transcript_id]
-    anno:gtf.TranscriptAnnotationModel = annotation[transcript_id]
+    anno = annotation.transcripts[transcript_id]
     chrom = anno.transcript.location.seqname
     transcript_seq = anno.get_transcript_sequence(genome[chrom])
 
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
-        transcript_id=transcript_id
+        _id=transcript_id
     )
 
     ## Create transcript variant graph
@@ -166,9 +160,9 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
 
         if variant.type == 'Fusion':
             donor_transcript_id = variant.attrs['DONOR_TRANSCRIPT_ID']
-            donor_anno = annotation[donor_transcript_id]
+            donor_anno = annotation.transcripts[donor_transcript_id]
             donor_chrom = donor_anno.transcript.location.seqname
-            donor_seq = anno.get_transcript_sequence(genome[donor_chrom])
+            donor_seq = donor_anno.get_transcript_sequence(genome[donor_chrom])
             donor_variant_records = variants[donor_transcript_id] \
                 if donor_transcript_id in variants else []
             cur = dgraph.apply_fusion(cur, variant, donor_seq, donor_variant_records)
@@ -188,12 +182,31 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
     return pgraph.call_vaiant_peptides(miscleavage=miscleavage)
 
 
-def call_peptide_circ_rna(seq:dna.DNASeqRecordWithCoordinates,
-        variants:List[seqvar.VariantRecord], circ_id:str, rule:str,
+def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
+        annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
+        variants:Dict[str,List[seqvar.VariantRecord]], rule:str,
         exception:str, miscleavage:int)-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
-    cgraph = svgraph.CircularVariantGraph(seq, transcript_id=circ_id)
-    cgraph.create_variant_graph(variants)
+    gene_id = circ.gene_id
+    gene_model = annotation.genes[gene_id]
+    chrom = gene_model.location.seqname
+    gene_seq = gene_model.get_gene_sequence(genome[chrom])
+    circ_seq = circ.get_circ_rna_sequence(gene_seq)
+
+    variant_records = set()
+    for transcript_id in circ.transcript_ids:
+        for record in variants[transcript_id]:
+            record = annotation.variant_coordinates_to_gene(record, gene_id)
+            for feature in circ.fragments:
+                if feature.location.is_superset(record.location):
+                    variant_records.add(record)
+                    break
+    variant_records = list(variant_records)
+    variant_records.sort()
+
+    cgraph = svgraph.CircularVariantGraph(circ_seq, _id=circ.id)
+
+    cgraph.create_variant_graph(variant_records)
     cgraph.align_all_variants()
     tgraph = cgraph.find_all_orfs()
     tgraph.fit_into_codons()

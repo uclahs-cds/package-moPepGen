@@ -1,7 +1,5 @@
-""" This module defines the class logic for the GTF annotations.
-"""
+""" Module for Transcript Annotation model """
 from typing import List
-from moPepGen.gtf import GtfIO
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
 from moPepGen import dna
 
@@ -233,64 +231,3 @@ class TranscriptAnnotationModel():
                         'The genomic index seems to be in an intron'
                     )
         return index
-
-class TranscriptGTFDict(dict):
-    """ A VEPTranscripts object is a dict-like object that holds the GTF
-    results, that the keys are the transcript IDs and values are instances of
-    VEPRecord.
-    """
-    def __init__(self, *args, **kwargs):
-        """ Construct a TranscriptGTFDict object """
-        for val in kwargs.values():
-            self._validate(val)
-        super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def _validate(val):
-        if not isinstance(val, TranscriptAnnotationModel):
-            raise TypeError(
-                'The values of a TranscriptGTFDict must be '
-                'TranscriptAnnotationModel.'
-            )
-
-    def __setitem__(self, k:str, v:TranscriptAnnotationModel)->None:
-        """ set item """
-        self._validate(v)
-        super().__setitem__(k, v)
-
-    def __repr__(self) -> str:
-        """ Return a string representation """
-        result = ""
-        i = 0
-        while i < len(self):
-            key = list(self.keys())[i]
-            result += f"'{key}': {self[key].__repr__()}\n"
-            if i == 3 and len(self) > 7:
-                result += "...\n"
-                i = len(self) - 4
-            i += 1
-        result += f'\n{len(self)} transcripts'
-        return result
-
-    def dump_gtf(self, path:str, biotype:List[str]=None)->None:
-        """ Dump a GTF file into a TranscriptGTFDict
-
-        Args:
-            path (str): Path to a GTF file.
-            biotype (List[str]): The annotation biotype to keep. Features
-                in a GTF can be annotated as protein_coding, miRNA, lncRNA,
-                miRNA, etc.
-        """
-        for record in GtfIO.parse(path):
-            if biotype is not None and record.biotype not in biotype:
-                continue
-            feature = record.type.lower()
-            if feature not in _GTF_FEATURE_TYPES:
-                continue
-            transcript_id = record.attributes['transcript_id']
-            record.id = transcript_id
-            if transcript_id not in self.keys():
-                self[transcript_id] = TranscriptAnnotationModel()
-            self[transcript_id].add_record(feature, record)
-        for transcript_model in self.values():
-            transcript_model.sort_records()

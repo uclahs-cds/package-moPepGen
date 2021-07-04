@@ -89,7 +89,7 @@ class REDItoolsRecord():
         self.transcript_id = transcript_id
 
 
-    def convert_to_variant_records(self, anno:gtf.TranscriptGTFDict
+    def convert_to_variant_records(self, anno:gtf.GenomicAnnotation
             ) -> List[seqvar.VariantRecord]:
         """ Convert to VariantRecord.
 

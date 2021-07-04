@@ -1,9 +1,10 @@
 """ Test the GTF files are loaded and handled properly
 """
 import unittest
-from test import create_transcript_model
+from test import create_transcript_model, create_variant
 from Bio import SeqIO
 from moPepGen import gtf
+from moPepGen.SeqFeature import FeatureLocation
 
 
 class TestAnnotationModel(unittest.TestCase):
@@ -116,7 +117,7 @@ class TestGTF(unittest.TestCase):
     @staticmethod
     def load_gtf(path:str):
         """ Load the gtf file from disk """
-        anno = gtf.TranscriptGTFDict()
+        anno = gtf.GenomicAnnotation()
         anno.dump_gtf(path)
         return anno
 
@@ -125,14 +126,82 @@ class TestGTF(unittest.TestCase):
         """
         anno = self.load_gtf('test/files/annotation.gtf')
 
-        self.assertIsInstance(anno, gtf.TranscriptGTFDict)
-        self.assertEqual(len(anno), 4)
-        for key, val in anno.items():
+        self.assertIsInstance(anno, gtf.GenomicAnnotation)
+        self.assertEqual(len(anno.transcripts), 4)
+        for key, val in anno.transcripts.items():
             self.assertEqual(val.transcript.attributes['transcript_id'], key)
             for cds in val.cds:
                 self.assertEqual(cds.attributes['transcript_id'], key)
             for exon in val.exon:
                 self.assertEqual(exon.attributes['transcript_id'], key)
+
+    def test_variant_coordinates_convert_case1(self):
+        """ Test the converting the coordinates of variants to gene """
+        attributes = {
+            'transcript_id': 'ENST0001',
+            'gene_id': 'ENSG0001',
+            'protein_id': 'ENSP0001'
+        }
+        data = {
+            'chrom': 'chr22',
+            'strand': 1,
+            'transcript': (150, 350, attributes),
+            'exon': [
+                (150,200,attributes),
+                (225, 275, attributes),
+                (300, 350, attributes)
+            ]
+        }
+        transcript_model = create_transcript_model(data)
+        transcript_model.transcript.strand = 1
+        gene_model = gtf.GeneAnnotationModel(
+            location=FeatureLocation(seqname='chr22', start=0, end=350),
+            chrom='chr22',
+            transcripts=[attributes['transcript_id']],
+            attributes={}
+        )
+        genes = {attributes['gene_id']: gene_model}
+        transcripts = {attributes['transcript_id']: transcript_model}
+        anno = gtf.GenomicAnnotation(genes, transcripts)
+        var1 = create_variant(25, 26, 'A', 'C', 'SNV', 'XX')
+        var1.location.seqname = attributes['transcript_id']
+        var2 = anno.variant_coordinates_to_gene(var1, attributes['gene_id'])
+        self.assertEqual(int(var2.location.start), 175)
+        self.assertEqual(int(var2.location.end), 176)
+
+    def test_variant_coordinates_convert_case2(self):
+        """ Test the converting the coordinates of variants to gene """
+        attributes = {
+            'transcript_id': 'ENST0001',
+            'gene_id': 'ENSG0001',
+            'protein_id': 'ENSP0001'
+        }
+        data = {
+            'chrom': 'chr22',
+            'strand': -1,
+            'transcript': (150, 350, attributes),
+            'exon': [
+                (150,200,attributes),
+                (225, 275, attributes),
+                (300, 350, attributes)
+            ]
+        }
+        transcript_model = create_transcript_model(data)
+        transcript_model.transcript.strand = 1
+        gene_model = gtf.GeneAnnotationModel(
+            location=FeatureLocation(seqname='chr22', start=0, end=350),
+            chrom='chr22',
+            transcripts=[attributes['transcript_id']],
+            attributes={}
+        )
+        genes = {attributes['gene_id']: gene_model}
+        transcripts = {attributes['transcript_id']: transcript_model}
+        anno = gtf.GenomicAnnotation(genes, transcripts)
+        var1 = create_variant(25, 26, 'A', 'C', 'SNV', 'XX')
+        var1.location.seqname = attributes['transcript_id']
+        var2 = anno.variant_coordinates_to_gene(var1, attributes['gene_id'])
+        self.assertEqual(int(var2.location.start), 175)
+        self.assertEqual(int(var2.location.end), 176)
 
 
 if __name__ == '__main__':
