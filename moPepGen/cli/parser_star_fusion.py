@@ -23,7 +23,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
             genome:dna.DNASeqDict = pickle.load(handle)
 
         with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
-            anno:gtf.TranscriptGTFDict = pickle.load(handle)
+            anno:gtf.GenomicAnnotation = pickle.load(handle)
 
         if verbose:
             logger('Indexed genome and annotation loaded.')
@@ -32,7 +32,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
         genome_fasta:str = args.genome_fasta
         annotation_gtf:str = args.annotation_gtf
 
-        anno = gtf.TranscriptGTFDict()
+        anno = gtf.GenomicAnnotation()
         anno.dump_gtf(annotation_gtf)
         if verbose:
             logger('Annotation GTF loaded.')
@@ -44,7 +44,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
 
     anno2:Dict[str, Dict[str, gtf.TranscriptAnnotationModel]] = {}
     val:gtf.TranscriptAnnotationModel
-    for key, val in anno.items():
+    for key, val in anno.transcripts.items():
         gene_id = val.transcript.attributes['gene_id']
         if gene_id not in anno2:
             anno2[gene_id] = {}

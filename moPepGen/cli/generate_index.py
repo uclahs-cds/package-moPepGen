@@ -35,7 +35,7 @@ def generate_index(args:argparse.Namespace):
         logger('Genome FASTA saved to disk.')
     del genome
 
-    anno = gtf.TranscriptGTFDict()
+    anno = gtf.GenomicAnnotation()
     anno.dump_gtf(path_gtf)
     if verbose:
         logger('Genome annotation GTF loaded.')

@@ -29,7 +29,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
     else:
         annotation_gtf:str = args.annotation_gtf
 
-        anno = gtf.TranscriptGTFDict()
+        anno = gtf.GenomicAnnotation()
         anno.dump_gtf(annotation_gtf)
         if verbose:
             logger('Annotation GTF loaded.')

@@ -1,8 +1,0 @@
-##mopepgen_version=0.0.1
-##parser=parseVEP
-##reference_index=
-##genome_fasta=
-##annotation_gtf=
-#transcript_id	start	end	id	gene_id	gene_name
-ENST00000614167.2	406	750	ENSG00000128408.9-circRNA-3_4	ENSG00000128408.9	RIBC2
-ENST00000614167.2	751	869	ENSG00000128408.9-circRNA-3_4	ENSG00000128408.9	RIBC2

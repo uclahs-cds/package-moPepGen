@@ -1,4 +1,6 @@
 """ Module for GTF """
-from moPepGen.gtf.GTFRecord import GTFRecord
-from moPepGen.gtf.TranscriptGTFDict import TranscriptAnnotationModel, \
-    TranscriptGTFDict, INDEX_IN_INTRON_ERROR
+from .GTFRecord import GTFRecord
+from .TranscriptAnnotationModel import TranscriptAnnotationModel, \
+    INDEX_IN_INTRON_ERROR
+from .GenomicAnnotation import GenomicAnnotation
+from .GeneAnnotationModel import GeneAnnotationModel

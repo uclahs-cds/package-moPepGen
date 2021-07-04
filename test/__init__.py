@@ -117,13 +117,13 @@ def create_dgraph2(data:dict, circular:bool=False) -> Type:
     return graph, node_list
 
 
-def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str
-        ) -> seqvar.VariantRecord:
+def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str,
+        attrs:dict=None) -> seqvar.VariantRecord:
     """ Helper function to create a VariantRecord """
     location = FeatureLocation(start=start, end=end)
     return seqvar.VariantRecord(
         location=location, ref=ref, alt=alt,
-        _type=_type, _id=_id
+        _type=_type, _id=_id, attrs=attrs
     )
 
 def create_variants(data) -> List[seqvar.VariantRecord]:
@@ -153,20 +153,31 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
     chrom = data['chrom']
     strand = data['strand']
     entry = data['transcript']
-    location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
+    location = FeatureLocation(start=entry[0], end=entry[1])
     transcript = SeqFeature(chrom=chrom, location=location,
-        attributes=entry[2])
+        attributes=entry[2], strand=strand)
     exons = []
     for entry in data['exon']:
-        location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
+        location = FeatureLocation(start=entry[0], end=entry[1])
         exons.append(SeqFeature(chrom=chrom, location=location,
-            attributes=entry[2]))
+            attributes=entry[2], strand=strand))
     cds = []
     if 'cds' in data:
         for entry in data['cds']:
-            location = FeatureLocation(start=entry[0], end=entry[1],
-                strand=strand)
+            location = FeatureLocation(start=entry[0], end=entry[1])
             cds.append(SeqFeature(chrom=chrom, location=location,
-                attributes=entry[2]))
+                attributes=entry[2], strand=strand))
     model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
     return model
+
+def create_dna_seq_with_coordinates(seq, start=None, end=None):
+    """ Create a dna.DNASeqRecordWithCoordinates instance """
+    if not start:
+        start = 0
+    if not end:
+        end = len(seq)
+    location = dna.MatchedLocation(
+        query=FeatureLocation(start=0, end=len(seq)),
+        ref=FeatureLocation(start=start, end=end)
+    )
+    return dna.DNASeqRecordWithCoordinates(seq=Seq(seq), locations=[location])

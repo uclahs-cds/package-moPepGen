@@ -1,5 +1,5 @@
 """ Module for GTF IO """
-from typing import IO, Union
+from typing import IO, Union, Iterable
 from Bio.SeqIO.Interfaces import SequenceIterator
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
 
@@ -10,14 +10,14 @@ class GtfIterator(SequenceIterator):
         """ Constructor """
         super().__init__(source=source, mode=mode, fmt='GTF')
 
-    def parse(self, handle:IO[str]):
+    def parse(self, handle:IO[str]) -> Iterable[SeqFeature]:
         """ parse
         """
         records = self.iterate(handle)
         return records
 
     @staticmethod
-    def iterate(handle:IO[str]):
+    def iterate(handle:IO[str]) -> Iterable[SeqFeature]:
         """ Iterate through a GTF file and yield a record each time. """
         for line in handle:
             if line.startswith('#'):
@@ -45,8 +45,7 @@ class GtfIterator(SequenceIterator):
             location=FeatureLocation(
                 seqname=fields[0],
                 start=int(fields[3])-1,
-                end=int(fields[4]),
-                strand=strand
+                end=int(fields[4])
             )
 
             record = SeqFeature(
@@ -59,7 +58,7 @@ class GtfIterator(SequenceIterator):
             # record.id = record.attributes['transcript_id']
             yield record
 
-def parse(handle:Union[IO[str], str]):
+def parse(handle:Union[IO[str], str]) -> GtfIterator:
     """ Parser for GTF files.
     """
     return GtfIterator(handle)

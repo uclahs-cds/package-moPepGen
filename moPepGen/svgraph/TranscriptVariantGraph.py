@@ -21,7 +21,7 @@ class TranscriptVariantGraph():
             records.
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
-            transcript_id:str):
+            _id:str):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -34,7 +34,7 @@ class TranscriptVariantGraph():
             self.add_default_sequence_locations()
         node = svgraph.TVGNode(seq)
         self.root = node
-        self.transcript_id = transcript_id
+        self.id = _id
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -235,7 +235,7 @@ class TranscriptVariantGraph():
 
     def apply_fusion(self, node:svgraph.TVGNode, variant:seqvar.VariantRecord,
             donor_seq:dna.DNASeqRecordWithCoordinates,
-            donor_variants:List[seqvar.VariantRecord]) -> None:
+            donor_variants:List[seqvar.VariantRecord]) -> svgraph.TVGNode:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
 
@@ -254,11 +254,14 @@ class TranscriptVariantGraph():
                 breakpoint won't be applied.
         """
         break_point = int(variant.attrs['DONOR_POS'])
-        branch = TranscriptVariantGraph(donor_seq, self.transcript_id)
+        branch = TranscriptVariantGraph(donor_seq, self.id)
         branch.root.seq = branch.root.seq[break_point:]
         branch.add_null_root()
         branch.create_variant_graph(donor_variants)
         var_node = branch.root.get_reference_next()
+        while var_node.in_edges:
+            edge = var_node.in_edges.pop()
+            branch.remove_edge(edge)
         var_node.branch = True
         var = seqvar.VariantRecordWithCoordinate(
             variant=variant,
@@ -555,8 +558,12 @@ class TranscriptVariantGraph():
             if need_branch_out:
                 out_node = self.create_branch(out_node)
 
+            if any(x.variant.type == 'Fusion' for x in out_node.variants):
+                branches.append(out_node)
+                continue
+
             if out_node.branch:
-                # carry over nts to make codons if need
+                # Fusion and non-fusion are treated separately.
                 branch_next_node = out_node.get_reference_next()
                 if len(out_node.seq) % 3 > 0 and branch_next_node:
                     branch_right_index = 3 - (len(out_node.seq) % 3)
@@ -580,8 +587,9 @@ class TranscriptVariantGraph():
                         branch_next_node.seq[:branch_right_index]
                     branch_next_node.seq = branch_next_node.seq[branch_right_index:]
 
-                branches.append(branch_next_node)
-                continue
+                if branch_next_node:
+                    branches.append(branch_next_node)
+                    continue
 
             if end_node:
                 out_node.seq = out_node.seq + right_over
@@ -821,9 +829,10 @@ class TranscriptVariantGraph():
         """
         if self.root.seq is not None:
             self.add_null_root()
+        queue:Deque[svgraph.TVGCursor] = deque()
         for edge in self.root.out_edges:
             cur = svgraph.TVGCursor(node=edge.out_node, search_orf=False)
-            queue = deque([cur])
+            queue.append(cur)
 
         while queue:
             cur:svgraph.TVGCursor = queue.pop()
@@ -846,6 +855,8 @@ class TranscriptVariantGraph():
                 new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
                 queue.appendleft(new_cursor)
             for branch in branches:
+                if branch is None:
+                    print(branch)
                 new_cursor = svgraph.TVGCursor(node=branch, search_orf=False)
                 queue.appendleft(new_cursor)
 
@@ -883,7 +894,7 @@ class TranscriptVariantGraph():
                 if stop_index > -1:
                     seq = seq[:stop_index]
 
-                seq.transcript_id = self.transcript_id
+                seq.transcript_id = self.id
 
                 # translate the dna variant location to peptide coordinates.
                 variants = []

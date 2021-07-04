@@ -62,7 +62,7 @@ class DNASeqRecord(SeqRecord):
         stop_codons = ['TAA', 'TAG', 'TGA']
         n = len(self)
         for i in range(start, n - n % 3, 3):
-            if self.seq[i:i+3] in stop_codons:
+            if str(self.seq[i:i+3]) in stop_codons:
                 return i
         return -1
 
