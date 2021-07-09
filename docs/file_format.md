@@ -5,6 +5,7 @@
     - [File Metadata](#file-metadata)
     - [Point Mutation](#point-mutation)
     - [Fusion](#fusion)
+  - [Alternative Splicing Site](#alternative-splicing-site)
   - [CircRNA TSV Format](#circrna-tsv-format)
   - [Reference Index](#reference-index)
   - [Variant Peptide FASTA](#variant-peptide-fasta)
@@ -113,6 +114,42 @@ The `Info` column must contain the following fields:
 + `DONOR_GENOMIC_POSITION`: the genomic position of the donor, in the format of `<chrom name>:<breakpoint>-<breakpoint>`.
 
 In reality, gene fusion happens at the gene level. But in a TVF file, each line represents a transcript, so the same fusion events could appear multiple times, because both the acceptor and donor gene could have multiple transcript isoforms.
+
+## Alternative Splicing Site
+
+Alternative splicing site called by [rMATS](http://rnaseq-mats.sourceforge.net/) has five types, e.g. skipped exon (SE), alternative 5' splice site (A5SS), alternative 3' splice site (A3SS), mutually exclusive exons (MXE), and retained intron (RI). Each alternative splicing event can be represented as a deletion, insertion or a substitution.
+
+```
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseRMATS
+##reference_index=/path/to/reference/index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotaion.gtf
+##CHROM=<Description='Transcript ID'>
+##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Acceptor Transcript's Gene ID">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
+ENST0001    110 SE-1 C   <INS>   .   .   GENE_ID=ENSG0001;START=300;END=400;COORDINATE="gene";GENE_SYMBOL=TP53;GENOMIC_POSITION="chr1:1000-1001"
+ENST0002    210 A5SS-1 T   <DEL>   .   .   GENE_ID=ENSG0002;START=300;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
+ENST0003    320 A3SS-2 T   <INS>   .   .   GENE_ID=ENSG0003;START=320;END=380;COORDINATE="gene";GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
+ENST0003    320 MXE-1 T   <INS>   .   .   GENE_ID=ENSG0002;START=320;END=380;COORDINATE="gene";GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
+ENST0003    477 MXE-1 T   <SUB>   .   .   GENE_ID=ENSG0002;START=477;END=582;DONOR_START=1103;DONOR_END=1228;COORDINATE="gene";GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
+```
+
+SE is when a exon is skipped given its upstream and downstream exon. It is represented as a **insertion** when the target transcript from the GTF file contains the exon. And it is represented as a **deletion** when the target transcript is annotated without the exon.
+
+A5SS and A3SS are when an exon has two splicing sites that can generate a longer and a short version. When the longer version is annotated in the given transcript, the variant is represented as a deletion, and a insertion when the shorter version is annotated.
+
+MXE is represented as substitution of one exon with another exon.
+
+RI is represented as an insertion or the intron sequence.
 
 ## CircRNA TSV Format
 
