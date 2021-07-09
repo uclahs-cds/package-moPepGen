@@ -84,7 +84,8 @@ class GenomicAnnotation():
             gene_id = record.attributes['gene_id']
             if gene_id not in self.genes:
                 raise ValueError(f'Gene ID {gene_id} not found')
-            self.genes[gene_id].transcripts.append(transcript_id)
+            if transcript_id not in self.genes[gene_id].transcripts:
+                self.genes[gene_id].transcripts.append(transcript_id)
 
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()
