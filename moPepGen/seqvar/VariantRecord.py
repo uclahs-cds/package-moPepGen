@@ -4,7 +4,7 @@ from moPepGen.SeqFeature import FeatureLocation
 
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
-    'AlternativeSplicing']
+    'Insertion', 'Deletion', 'Substitution']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL']
 
 class VariantRecord():
@@ -57,7 +57,8 @@ class VariantRecord():
             _type (str): Variant type, must be one of 'SNV', 'INDEL', 'Fusion',
                 'RNAEditingSite', 'AlternativeSplicing'
         """
-        if len(location) != len(ref):
+        if _type not in ['Substitution', 'Deletion'] and \
+                len(location) != len(ref):
             raise ValueError("Length of ref must match with location.")
         if _type not in _VARIANT_TYPES:
             raise ValueError('Variant type not supported')
@@ -135,13 +136,28 @@ class VariantRecord():
 
     def is_insertion(self) -> bool:
         """ Checks if the variant is an insertion """
+        if self.type == 'Insertion':
+            return True
         return len(self.ref) == 1 and len(self.alt) > 1
 
     def is_deletion(self) -> bool:
         """ Checks if the variant is a deletion. """
+        if self.type == 'Deletion':
+            return True
         return len(self.ref) > 1 and len(self.alt) == 1
 
     def is_frameshifting(self) -> bool:
         """ Checks if the variant is frameshifting. """
-        return abs(len(self.alt) - len(self.ref)) % 3 != 0 or \
-            self.type == 'Fusion'
+        if self.type == 'Fusion':
+            return True
+        if self.type == 'Insertion':
+            end = int(self.attrs['END'])
+            start = int(self.attrs['START'])
+            return abs(end - start) % 3 != 0
+        if self.type == 'Substritution':
+            end = int(self.attrs['DONOR_END'])
+            start = int(self.attrs['DONOR_START'])
+            return abs(end - start) % 3 != 0
+        if self.type == 'Deletion':
+            return (self.location.end - self.location.start - 1) % 3 != 0
+        return abs(len(self.alt) - len(self.ref)) % 3 != 0

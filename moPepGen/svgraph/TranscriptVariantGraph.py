@@ -132,6 +132,16 @@ class TranscriptVariantGraph():
         left_node = svgraph.TVGNode(node.seq[:i])
         right_node = svgraph.TVGNode(node.seq[i:])
 
+        for variant in node.variants:
+            if variant.location.start < i:
+                left_node.variants.append(variant)
+            if variant.location.end > i:
+                right_node.variants.append(variant)
+
+        for frameshift in node.frameshifts:
+            left_node.frameshifts.add(frameshift)
+            right_node.frameshifts.add(frameshift)
+
         while node.in_edges:
             edge = node.in_edges.pop()
             self.add_edge(edge.in_node, left_node, _type=edge.type)
@@ -175,11 +185,14 @@ class TranscriptVariantGraph():
         node_end = node.seq.locations[-1].ref.end
         if variant_start < node_start or variant_start > node_end:
             raise ValueError('Variant out of range')
-        seq = dna.DNASeqRecordWithCoordinates(
-            seq=Seq(variant.alt),
-            locations=[],
-            orf=None
-        )
+        if variant.type == 'Deletion':
+            seq = self.seq[variant.location.start:variant.location.start+1]
+        else:
+            seq = dna.DNASeqRecordWithCoordinates(
+                seq=Seq(variant.alt),
+                locations=[],
+                orf=None
+            )
         variant_with_coordinates = seqvar.VariantRecordWithCoordinate(
             variant=variant,
             location=FeatureLocation(start=0, end=len(seq))
@@ -192,9 +205,8 @@ class TranscriptVariantGraph():
         mid = None
         # variant start
         if variant_start == node_start:
-            # No need to splice, just add a edge to the prev node
-            # This is the case that another variant happend at the same
-            # location
+            # No need to splice, just add a edge to the prev node This is the
+            # case that another variant happend at the same location
             prev = node.get_reference_prev()
             self.add_edge(prev, var_node, 'variant_start')
             body = node
@@ -284,6 +296,107 @@ class TranscriptVariantGraph():
         head, _ = self.splice(node, index, 'reference')
         self.add_edge(head, var_node, 'variant_start')
         return head
+
+    def _apply_insertion(self, node:svgraph.TVGNode,
+            var:seqvar.VariantRecord,
+            seq:dna.DNASeqRecordWithCoordinates,
+            variants:List[seqvar.VariantRecord]
+        ) -> svgraph.TVGNode:
+        """ Apply insertion """
+        branch = TranscriptVariantGraph(seq, self.id)
+        branch.root.variants.append(var)
+        if len(seq.seq) % 3 != 0:
+            branch.root.frameshifts.add(var)
+
+        branch.add_null_root()
+        branch.create_variant_graph(variants)
+        var_head = branch.root.get_reference_next()
+        var_tail = var_head
+        next_node = var_tail.get_reference_next()
+        while next_node:
+            var_tail = next_node
+            next_node = var_tail.get_reference_next()
+        while var_head.in_edges:
+            edge = var_head.in_edges.pop()
+            branch.remove_edge(edge)
+        var_head.branch = True
+
+        var_start = var.variant.location.start
+        var_end = var.variant.location.end
+        node_start = node.seq.locations[0].ref.start
+        node_end = node.seq.locations[-1].ref.end
+
+        if var_start < node_start:
+            raise ValueError('Variant out of range')
+
+        if var_start == node_start:
+            prev = node.get_reference_prev()
+            self.add_edge(prev, var_head, 'variant_start')
+            body = node
+        else:
+            index = node.seq.get_query_index(var_start)
+            head, body = self.splice(node, index, 'reference')
+            self.add_edge(head, var_head, 'variant_start')
+
+        if var_end < node_end:
+            index = body.seq.get_query_index(var_end)
+            mid, tail = self.splice(body, index, 'reference')
+            self.add_edge(var_tail, tail, 'variant_end')
+        else:
+            cur = body
+            while cur.seq.locations[-1].ref.end <= var_end and cur.out_edges:
+                cur = cur.get_reference_next()
+
+            if cur.seq.locations[-1].ref.end > var_end:
+                index = cur.seq.get_query_index(var_end)
+                if index == 0:
+                    self.add_edge(var_tail, cur, 'variant_end')
+                else:
+                    _, right = self.splice(cur, index, 'reference')
+                    self.add_edge(var_tail, right, 'variant_end')
+
+        if head is not None:
+            return head
+        if mid is not None:
+            return mid
+        return body
+
+    def apply_insertion(self, node:svgraph.TVGNode,
+            variant:seqvar.VariantRecord,
+            insert_seq:dna.DNASeqRecordWithCoordinates,
+            insert_variants:List[seqvar.VariantRecord]) -> svgraph.TVGNode:
+        """ Apply an insertion into the the TVG graph. """
+        # add the reference sequence to the insertion sequence.
+        ref_seq_location = dna.MatchedLocation(
+            query=FeatureLocation(start=0, end=1),
+            ref=FeatureLocation(
+                seqname=self.id,
+                start=variant.location.start,
+                end=variant.location.end
+            )
+        )
+        ref_seq = dna.DNASeqRecordWithCoordinates(
+            Seq(variant.ref),
+            locations=[ref_seq_location]
+        )
+        insert_seq = ref_seq + insert_seq
+        var = seqvar.VariantRecordWithCoordinate(
+            variant=variant,
+            location=FeatureLocation(start=1, end=len(insert_seq.seq))
+        )
+        return self._apply_insertion(node, var, insert_seq, insert_variants)
+
+    def apply_substitution(self, node:svgraph.TVGNode,
+            variant:seqvar.VariantRecord,
+            sub_seq:dna.DNASeqRecordWithCoordinates,
+            sub_variants:List[seqvar.VariantRecord]) -> svgraph.TVGNode:
+        """ Apply a substitution variant into the graph """
+        var = seqvar.VariantRecordWithCoordinate(
+            variant=variant,
+            location=FeatureLocation(start=0, end=len(sub_seq.seq))
+        )
+        return self._apply_insertion(node, var, sub_seq, sub_variants)
+
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord]
             ) -> None:

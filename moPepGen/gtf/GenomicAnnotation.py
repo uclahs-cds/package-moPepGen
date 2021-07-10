@@ -117,7 +117,7 @@ class GenomicAnnotation():
 
             while exon:
                 right = left + exon.location.end - exon.location.start
-                if right <= end:
+                if right < end:
                     left = right
                     exon = next(it, None)
                     continue

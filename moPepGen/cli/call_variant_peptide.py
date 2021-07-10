@@ -6,6 +6,7 @@ import pickle
 from Bio import SeqUtils
 from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent, CircRNA
+from moPepGen.SeqFeature import FeatureLocation
 
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
@@ -169,6 +170,50 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
             variant = next(variant_iter, None)
             continue
 
+        if variant.type == 'Insertion':
+            if variant.attrs['COORDINATE'] == 'gene':
+                gene_id = variant.attrs['GENE_ID']
+                gene_model = annotation.genes[gene_id]
+                chrom = gene_model.chrom
+                donor_start = int(variant.attrs['START'])
+                donor_end = int(variant.attrs['END'])
+                gene_seq = gene_model.get_gene_sequence(genome[chrom])
+                insert_seq = gene_seq[donor_start:donor_end]
+                insert_variants = find_gene_variants(gene_id, annotation,
+                    variants, donor_start, donor_end)
+                cur = dgraph.apply_insertion(cur, variant, insert_seq, insert_variants)
+                variant = next(variant_iter, None)
+                continue
+
+        if variant.type == 'Substitution':
+            if variant.attrs['COORDINATE'] == 'gene':
+                gene_id = variant.attrs['GENE_ID']
+                gene_model = annotation.genes[gene_id]
+                chrom = gene_model.chrom
+                donor_start = int(variant.attrs['DONOR_START'])
+                donor_end = int(variant.attrs['DONOR_END'])
+                gene_seq = gene_model.get_gene_sequence(genome[chrom])
+                sub_seq = gene_seq[donor_start:donor_end]
+                sub_variants = find_gene_variants(gene_id, annotation,
+                    variants, donor_start, donor_end)
+                cur = dgraph.apply_substitution(cur, variant, sub_seq, sub_variants)
+                variant = next(variant_iter, None)
+                continue
+
+        if variant.type == 'Deletion':
+            variant = seqvar.VariantRecord(
+                location=FeatureLocation(
+                    seqname=variant.location.seqname,
+                    start=variant.location.start,
+                    end=int(variant.attrs['END'])
+                ),
+                ref=variant.ref,
+                alt=variant.alt,
+                _type=variant.type,
+                _id=variant.id,
+                attrs=variant.attrs
+            )
+
         cur = dgraph.apply_variant(cur, variant)
         if len(cur.in_edges) == 0:
             dgraph.root = cur
@@ -195,6 +240,8 @@ def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
 
     variant_records = set()
     for transcript_id in circ.transcript_ids:
+        if transcript_id not in variants:
+            continue
         for record in variants[transcript_id]:
             record = annotation.variant_coordinates_to_gene(record, gene_id)
             for feature in circ.fragments:
@@ -214,6 +261,21 @@ def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_vaiant_peptides(miscleavage=miscleavage)
 
+def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
+        variants:Dict[str,seqvar.VariantRecord], start:int, end:int
+        ) -> List[seqvar.VariantRecord]:
+    """ Find all unique variants of a gene within a given range. """
+    records = set()
+    for transcript_id in annotation.genes[gene_id].transcripts:
+        if transcript_id not in variants:
+            continue
+        for record in variants[transcript_id]:
+            record = annotation.variant_coordinates_to_gene(record, gene_id)
+            if record.location.start > start and record.location.end < end:
+                records.add(record)
+    records = list(records)
+    records.sort()
+    return records
 
 if __name__ == '__main__':
     test_args = argparse.Namespace()
