@@ -15,6 +15,7 @@ class TestCli(unittest.TestCase):
     def setUp(self):
         """ set up working directory """
         super().setUp()
+        shutil.rmtree(WORK_DIR, ignore_errors=True)
         WORK_DIR.mkdir(parents=False, exist_ok=True)
 
     def tearDown(self):
@@ -114,6 +115,25 @@ class TestCli(unittest.TestCase):
             str(DATA_DIR/'fusion'/'fusion.tvf')
         ]
         args.circ_rna_bed = str(DATA_DIR/'circRNA'/'circ_rna.tsv')
+        args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
+        args.index_dir = DATA_DIR/'index'
+        args.cleavage_rule = 'trypsin'
+        args.miscleavage = '2'
+        args.min_mw = '500.'
+        args.verbose = False
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in WORK_DIR.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_case4(self):
+        """ Test variant peptide calling with alternative splicing """
+        args = argparse.Namespace()
+        args.input_variant = [
+            str(DATA_DIR/'vep/vep.tvf'),
+            str(DATA_DIR/'alternative_splicing/alternative_splicing.tvf')
+        ]
+        args.circ_rna_bed = None
         args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
         args.index_dir = DATA_DIR/'index'
         args.cleavage_rule = 'trypsin'

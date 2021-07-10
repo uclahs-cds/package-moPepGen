@@ -84,6 +84,128 @@ class TestTranscriptGraph(unittest.TestCase):
         graph.align_variants(acceptor_tail)
         self.assertEqual(str(root_donor.seq.seq), 'TGGC')
 
+    def test_apply_insertion_case1(self):
+        r"""
+                                    CTGCCGTTG
+                                   /         \
+        AACCTGGCGGTTC     ->    AAC-C---------TGGCGGTTC
+        """
+        seq = 'AACCTGGCGGTTC'
+        insert_seq_str = 'TGCCGTTG'
+        insert_seq = create_dna_seq_with_coordinates(insert_seq_str, 10, 18)
+        var_data = [
+            (3,4,'C','<INS>','Insertion','')
+        ]
+        varaints = create_variants(var_data)
+        insert_var = varaints.pop(-1)
+        graph = create_dgraph1(seq, [])
+        graph.add_null_root()
+        node = graph.root.get_reference_next()
+        node = graph.apply_insertion(node, insert_var, insert_seq, [])
+        self.assertEqual(str(node.seq.seq), 'AAC')
+        self.assertEqual(len(node.out_edges), 2)
+        node1 = node.get_reference_next()
+        for edge in node.out_edges:
+            x = edge.out_node
+            if x is node1:
+                self.assertEqual(str(x.seq.seq), 'C')
+            else:
+                self.assertEqual(str(x.seq.seq), 'C' + insert_seq_str)
+                self.assertEqual(len(x.in_edges), 1)
+                self.assertEqual(len(x.out_edges), 1)
+
+    def test_apply_insertion_case2(self):
+        r"""
+                                         T
+                                        / \
+                                    CTGC-C-GTTG
+                                   /           \
+        AACCTGGCGGTTC     ->    AAC-C-----------TGGCGGTTC
+        """
+        seq = 'AACCTGGCGGTTC'
+        insert_seq_str = 'TGCCGTTG'
+        insert_seq = create_dna_seq_with_coordinates(insert_seq_str, 10, 18)
+        var_data = [
+            (3,4,'C','<INS>','Insertion',''),
+            (13,14,'C',"T",'SNV','')
+        ]
+        variants = create_variants(var_data)
+        insert_var = variants.pop(0)
+        graph = create_dgraph1(seq, [])
+        graph.add_null_root()
+        node = graph.root.get_reference_next()
+        node = graph.apply_insertion(node, insert_var, insert_seq, variants)
+        self.assertEqual(str(node.seq.seq), 'AAC')
+        self.assertEqual(len(node.out_edges), 2)
+        node1 = node.get_reference_next()
+        for edge in node.out_edges:
+            x = edge.out_node
+            if x is node1:
+                self.assertEqual(str(x.seq.seq), 'C')
+            else:
+                self.assertEqual(str(x.seq.seq), 'CTGC')
+                for edge2 in x.out_edges:
+                    if edge2.type == 'reference':
+                        self.assertEqual(str(edge2.out_node.seq.seq), 'C')
+                    else:
+                        self.assertEqual(str(edge2.out_node.seq.seq), 'T')
+
+    def test_apply_substitution_case1(self):
+        r"""
+                                   TGCCGTTG
+                                  /        \
+        AACCTGGCGGTTC    ->    AAC-CTGGC----GGTTC
+        """
+        seq = 'AACCTGGCGGTTC'
+        sub_seq_str = 'TGCCGTTG'
+        sub_seq = create_dna_seq_with_coordinates(sub_seq_str, 10, 18)
+        var_data = [
+            (3,8,'C','<SUB>','Substitution','')
+        ]
+        varaints = create_variants(var_data)
+        insert_var = varaints.pop(-1)
+        graph = create_dgraph1(seq, [])
+        graph.add_null_root()
+        node = graph.root.get_reference_next()
+        node = graph.apply_substitution(node, insert_var, sub_seq, [])
+        self.assertEqual(str(node.seq.seq), 'AAC')
+        self.assertEqual(len(node.out_edges), 2)
+        for edge in node.out_edges:
+            x = edge.out_node
+            if edge.type == 'reference':
+                self.assertEqual(str(x.seq.seq), 'CTGGC')
+            else:
+                self.assertEqual(str(x.seq.seq), sub_seq_str)
+                self.assertEqual(len(x.in_edges), 1)
+                self.assertEqual(len(x.out_edges), 1)
+
+    def test_apply_deletion_case1(self):
+        r"""
+                                   C-------
+                                  /        \
+        AACCTGGCGGTTC    ->    AAC-CTGGC----GGTTC
+        """
+        seq = 'AACCTGGCGGTTC'
+        var_data = [
+            (3,8,'C','<DEL>','Deletion','')
+        ]
+        varaints = create_variants(var_data)
+        del_var = varaints.pop(-1)
+        graph = create_dgraph1(seq, [])
+        graph.add_null_root()
+        node = graph.root.get_reference_next()
+        node = graph.apply_variant(node, del_var)
+        self.assertEqual(str(node.seq.seq), 'AAC')
+        self.assertEqual(len(node.out_edges), 2)
+        for edge in node.out_edges:
+            x = edge.out_node
+            if edge.type == 'reference':
+                self.assertEqual(str(x.seq.seq), 'CTGGC')
+            else:
+                self.assertEqual(str(x.seq.seq), 'C')
+                self.assertEqual(len(x.in_edges), 1)
+                self.assertEqual(len(x.out_edges), 1)
+
     def test_create_dgraph1(self):
         """ Transcript grpah is created """
         seq = 'ATGGTCTGCCCTCTGAAC'

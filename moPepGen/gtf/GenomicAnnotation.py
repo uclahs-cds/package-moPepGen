@@ -101,6 +101,7 @@ class GenomicAnnotation():
             raise ValueError("The variant isn't associated with the gene.")
 
         transcript_model = self.transcripts[transcript_id]
+        start_genomic, end_genomic = None, None
 
         if transcript_model.transcript.location.strand == 1:
             it = iter(transcript_model.exon)
@@ -117,7 +118,7 @@ class GenomicAnnotation():
 
             while exon:
                 right = left + exon.location.end - exon.location.start
-                if right <= end:
+                if right < end:
                     left = right
                     exon = next(it, None)
                     continue
@@ -154,6 +155,10 @@ class GenomicAnnotation():
 
         else:
             raise ValueError('Transcript should not be unstranded.')
+
+        if start_genomic is None or end_genomic is None:
+            raise ValueError('The variant is out off the range of the '
+            'transcript.')
 
         if end_gene - start_gene != end - start:
             raise ValueError('Variant seems to be over a splice site.')
