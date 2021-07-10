@@ -127,7 +127,7 @@ class TestGTF(unittest.TestCase):
         anno = self.load_gtf('test/files/annotation.gtf')
 
         self.assertIsInstance(anno, gtf.GenomicAnnotation)
-        self.assertEqual(len(anno.transcripts), 4)
+        self.assertEqual(len(anno.transcripts), 5)
         for key, val in anno.transcripts.items():
             self.assertEqual(val.transcript.attributes['transcript_id'], key)
             for cds in val.cds:
