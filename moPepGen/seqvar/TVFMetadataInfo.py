@@ -1,0 +1,96 @@
+""" TVF Metadata Info """
+from typing import Dict, Union
+
+
+TVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
+    'Base': {
+        'GENE_ID': {
+            'Number': 1,
+            'Type': 'String',
+            'Description': 'Transcript\'s Gene ID'
+        },
+        'GENE_SYMBOL': {
+            'Number': 1,
+            'Type': 'String',
+            'Description': 'Gene Symbol'
+        },
+        'GENOMIC_POSITION': {
+            'Number': 1,
+            'Type': 'String',
+            'Description': 'Genomic Position'
+        }
+    },
+    'Fusion': {
+        'DONOR_GENE_ID': {
+            'Number': 1,
+            'Type': 'String',
+            'Description': 'Donor Transcript\'s Gene ID'
+        },
+        'DONOR_TRANSCRIPT_ID': {
+            'Number': 1,
+            'Type': 'String',
+            'Description': 'Donor Transcript\'s Transcript ID'
+        },
+        'DONOR_POS': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'Position of the break point of the donor transcript'
+        }
+    },
+    'Insertion': {
+        'START': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'Start Position'
+        },
+        'END': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'End Position'
+        },
+        'COORDINATE': {
+            'Numnber': 1,
+            'Type': 'String',
+            'Description': 'Coordinate for Insertion or Substitution'
+        }
+    },
+    'Deletion': {
+        'START': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'Start Position'
+        },
+        'END': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'End Position'
+        }
+    },
+    'Substitution': {
+        'START': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'Start Position'
+        },
+        'END': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'End Position'
+        },
+        'DONOR_START': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'Donor Start Position'
+        },
+        'DONOR_END': {
+            'Number': 1,
+            'Type': 'Integer',
+            'Description': 'Donor End Position'
+        },
+        'COORDINATE': {
+            'Number': 1,
+            'Type': 'String',
+            'Description': 'Coordinate for Insertion or Substitution'
+        }
+    }
+}

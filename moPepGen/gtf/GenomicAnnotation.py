@@ -90,6 +90,51 @@ class GenomicAnnotation():
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()
 
+    def coordinate_gene_to_transcript(self, index:int, gene:str,
+            transcript:str) -> int:
+        """  """
+        gene_model = self.genes[gene]
+        if transcript not in gene_model.transcripts:
+            raise ValueError(f'The transcript {transcript} is not associated'
+                f'with the gene {gene}')
+        transcript_model = self.transcripts[transcript]
+
+        if transcript_model.transcript.location.strand == 1:
+            index_genomic = gene_model.location.start + index
+            it = iter(transcript_model.exon)
+            exon = next(it, None)
+            index_transcript = 0
+            while exon:
+                if exon.location.end < index_genomic:
+                    index_transcript += exon.location.end - exon.location.start
+                    exon = next(it, None)
+                    continue
+                return index_transcript + index_genomic - exon.location.start
+
+        elif transcript_model.transcript.location.strand == -1:
+            index_genomic = gene_model.location.end - index
+            it = reversed(transcript_model.exon)
+            exon = next(it, None)
+            index_transcript = 0
+            while exon:
+                if exon.location.start > index_genomic:
+                    index_transcript += exon.location.end - exon.location.start
+                    exon = next(it, None)
+                    continue
+                return index_transcript + exon.location.end - index_genomic
+        else:
+            raise ValueError("Don't know how to handle unstranded gene.")
+
+    def coordinate_genomic_to_gene(self, index:int, gene:str) -> int:
+        """ Get the gene coordinate from genomic coordinate. """
+        gene_location = self.genes[gene].location
+        if gene_location.strand == 1:
+            return index - gene_location.start
+        elif gene_location.strand == -1:
+            return gene_location.end - index
+        else:
+            raise ValueError("Don't know how to handle unstranded gene.")
+
     def variant_coordinates_to_gene(self, variant:seqvar.VariantRecord,
             gene_id:str) -> seqvar.VariantRecord:
         """ Convert the coordinates of variant from transcript to gene """

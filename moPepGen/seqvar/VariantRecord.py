@@ -81,7 +81,9 @@ class VariantRecord():
 
     def __eq__(self, other:VariantRecord) -> bool:
         """ equal to """
-        return self.location == other.location
+        return self.location == other.location and \
+            self.ref == other.ref and \
+            self.type == other.type
 
     def __ne__(self, other:VariantRecord) -> bool:
         """ not equal to """
@@ -89,7 +91,14 @@ class VariantRecord():
 
     def __gt__(self, other:VariantRecord) -> bool:
         """ greater than """
-        return self.location > other.location
+        if self.location > other.location:
+            return True
+        if self.location == other.location:
+            if self.alt > other.alt:
+                return True
+            if self.ref == other.ref:
+                self.type > other.type
+        return False
 
     def __ge__(self, other:VariantRecord) -> bool:
         """ greather or equal to """
@@ -117,6 +126,9 @@ class VariantRecord():
         elif self.type == 'Fusion':
             ref = str(self.ref[0])
             alt = '<FUSION>'
+        elif self.type in ['Insertion', 'Deletion', 'Substitution']:
+            ref = str(self.ref[0])
+            alt = f'<{self.type.upper()[:3]}>'
         else:
             ref = str(self.ref[0])
             alt = f'<{self.type.upper()}>'
@@ -127,8 +139,10 @@ class VariantRecord():
     @property
     def info(self) -> str:
         """ Get property of the INFO field """
-        gene_id = self.attrs['GENE_ID']
-        return f'GENE_ID={gene_id}'
+        out = ''
+        for key,val in self.attrs.items():
+            out += f'{key.upper()}={val};'
+        return out.rstrip(';')
 
     def is_snv(self) -> bool:
         """ Checks if the variant is a single nucleotide variant. """
