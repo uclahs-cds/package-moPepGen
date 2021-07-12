@@ -1,14 +1,14 @@
 # File Structure Documentation
-  
+	
 - [File Structure Documentation](#file-structure-documentation)
-  - [Transcript Variant Format](#transcript-variant-format)
-    - [File Metadata](#file-metadata)
-    - [Point Mutation](#point-mutation)
-    - [Fusion](#fusion)
-  - [Alternative Splicing Site](#alternative-splicing-site)
-  - [CircRNA TSV Format](#circrna-tsv-format)
-  - [Reference Index](#reference-index)
-  - [Variant Peptide FASTA](#variant-peptide-fasta)
+	- [Transcript Variant Format](#transcript-variant-format)
+		- [File Metadata](#file-metadata)
+		- [Point Mutation](#point-mutation)
+		- [Fusion](#fusion)
+	- [Alternative Splicing Site](#alternative-splicing-site)
+	- [CircRNA TSV Format](#circrna-tsv-format)
+	- [Reference Index](#reference-index)
+	- [Variant Peptide FASTA](#variant-peptide-fasta)
 
 
 ## Transcript Variant Format
@@ -119,6 +119,14 @@ In reality, gene fusion happens at the gene level. But in a TVF file, each line 
 
 Alternative splicing site called by [rMATS](http://rnaseq-mats.sourceforge.net/) has five types, e.g. skipped exon (SE), alternative 5' splice site (A5SS), alternative 3' splice site (A3SS), mutually exclusive exons (MXE), and retained intron (RI). Each alternative splicing event can be represented as a deletion, insertion or a substitution.
 
+SE is when a exon is skipped given its upstream and downstream exon. It is represented as a **insertion** when the target transcript from the GTF file contains the exon. And it is represented as a **deletion** when the target transcript is annotated without the exon.
+
+A5SS and A3SS are when an exon has two splicing sites that can generate a longer and a short version. When the longer version is annotated in the given transcript, the variant is represented as a deletion, and a insertion when the shorter version is annotated.
+
+MXE is represented as substitution of one exon with another exon.
+
+RI is represented as an insertion or the intron sequence.
+
 ```
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
@@ -135,21 +143,39 @@ Alternative splicing site called by [rMATS](http://rnaseq-mats.sourceforge.net/)
 ##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
-#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
-ENST0001    110 SE-1 C   <INS>   .   .   GENE_ID=ENSG0001;START=300;END=400;COORDINATE="gene";GENE_SYMBOL=TP53;GENOMIC_POSITION="chr1:1000-1001"
-ENST0002    210 A5SS-1 T   <DEL>   .   .   GENE_ID=ENSG0002;START=300;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
-ENST0003    320 A3SS-2 T   <INS>   .   .   GENE_ID=ENSG0003;START=320;END=380;COORDINATE="gene";GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
-ENST0003    320 MXE-1 T   <INS>   .   .   GENE_ID=ENSG0002;START=320;END=380;COORDINATE="gene";GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
-ENST0003    477 MXE-1 T   <SUB>   .   .   GENE_ID=ENSG0002;START=477;END=582;DONOR_START=1103;DONOR_END=1228;COORDINATE="gene";GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENST0001	110	SE-300	C	<INS>	.	.	GENE_ID=ENSG0001;START=300;END=400;COORDINATE=gene;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
+ENST0002	210	A5SS-210	T	<DEL>	.	.	GENE_ID=ENSG0002;START=210;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENST0003	115	A3SS-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENST0003	115	MXE-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
-SE is when a exon is skipped given its upstream and downstream exon. It is represented as a **insertion** when the target transcript from the GTF file contains the exon. And it is represented as a **deletion** when the target transcript is annotated without the exon.
+**Examples:**
 
-A5SS and A3SS are when an exon has two splicing sites that can generate a longer and a short version. When the longer version is annotated in the given transcript, the variant is represented as a deletion, and a insertion when the shorter version is annotated.
+```
+ENST0001	110	SE-300	C	<INS>	.	.	GENE_ID=ENSG0001;START=300;END=400;COORDINATE=gene;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
+```
 
-MXE is represented as substitution of one exon with another exon.
+The line above represents an SE (skipped exon), that the sequence of 300-400 of the gene ENSG0001 is inserted to the t ranscript of ENST0001 at position 110. In this case, all transcripts of the gene in the annotation GTF don't contain this exon.
 
-RI is represented as an insertion or the intron sequence.
+```
+ENST0002	210	A5SS-210	T	<DEL>	.	.	GENE_ID=ENSG0002;START=210;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+```
+
+The line above represents a A5SS (alternative 5' splicing site), that the sequence from 210 to 400 of the transcript ENST0002 is deleted. In this case, all transcripts of the gene in the annotation GTF have the longer version of the exon.
+
+```
+ENST0003	115	MXE-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+```
+
+The line above represents a MXE (mutually exclusive exon), that the exon of 320-380 of the gene ENSG0003 is retained in the transcript ENST0003 and resulted as an insertion at position 115 of the transcript. In this case, none of the transcripts of this gene has the first exon retained and second spliced at the same time. And this transcript has both exons retained.
+
+```
+ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+```
+
+This line above represents a MXE that the exon 447-582 (transcript ENST0004 position 277) is replaced with exon 1103-1228 of the gene.
 
 ## CircRNA TSV Format
 
