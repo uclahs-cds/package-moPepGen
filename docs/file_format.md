@@ -187,13 +187,25 @@ Circular RNAs are derived from back-spliced exons. They exist as individual RNA 
 ##reference_index=/path/to/reference-index
 ##genome_fasta=/path/to/genome.fasta
 ##annotation_gtf=/path/to/annotation.gtf
-#gene_id	start offsets length	intron	 circ_id transcript_id  gene_name
-ENSG0001	413 0,211,398 72,85,63 .	ENSG0001-2-3-4	ENST0001,ENST0002	SYMB1
-ENSG0002  112 0,175 	72,85  .	ENSG0001-3-4	ENST0011,ENST0012	SYMB2
-ENSG0002  112 0,73,175 	72,103,85  2	ENSG0001-3-4	ENST0011,ENST0012	SYMB2
-ENSG0003  77  0,181,424 100,175,85  . ENSG0003-2-3-4  ENST0021  SYMB3
-ENSG0003  77  0,101,181,357,424 100,80,175,67,85  2,4 ENSG0003-2-3-4  ENST0021  SYMB3
+#gene_id	start	offset	length	intron	circ_id	transcript_id	gene_name
+ENSG0001	413	0,211,398	72,85,63	.	CIRC-ENSG0001-E2-E3-E4	ENST0001,ENST0002	SYMB1
+ENSG0002	112	0,175 	72,85	.	CIRC-ENSG0001-E3-E4	ENST0011,ENST0012	SYMB2
+ENSG0002	112	0,73,175 	72,103,85	2	CIRC-ENSG0001-E3-I3-E4	ENST0011,ENST0012	SYMB2
+ENSG0003	77	0,181,424	100,175,85	.	CIRC-ENSG0003-E2-E3-E4	ENST0021	SYMB3
+ENSG0003	77	0,101,181,357,424	100,80,175,67,85	2,4	CIRC-ENSG0003-E2-I2-E3-I3-E4	ENST0021	SYMB3
+ENSG0004	789	0	112	1	CI-ENSG0004-I3	ENST0041	SYMB4
 ```
+
+The circRNA TSV file is defined here to represent all circRNAs to be passed to moPepGen to call for variant peptides. In the TSV file, each row represents a circRNA. The TSV file has the columns below:
+
++ **`gene_id`**: The gene ID of the gene where the circRNA is derived.
++ **`start`**: The start position of the circRNA at the gene.
++ **`offset`**: The offset of each fragment after the `start` position of the gene. Each segment can be either an exon or intron.
++ **`length`**: The length of each fragmet.
++ **`intron`**: The indices of fragments that are introns.
++ **`circ_id`**: The ID of circRNAs have two components. They all start with CIRC-\<gene_id> where `gene_id` is the value from the first column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example, CIRC-ENSG0001-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
++ **`transcript_id`** The transcript IDs that are able to generate this circRNA (e.g. contains all exons and introns of the circRNA.)
++ **`gene_name`** The name of the gene.
 
 ## Reference Index
 
