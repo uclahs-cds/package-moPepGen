@@ -212,9 +212,9 @@ The circRNA TSV file is defined here to represent all circRNAs to be passed to m
 
 ## Variant Peptide FASTA
 
-In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the TVF files. In some cases, several non-carnonical from the same transcript may share the same variants. For example, a frameshifting variant may cause multiple non-carnonical peptides. A integer index is thus always added to the end to solve conflicts.
+In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the TVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. A integer index is thus always added to the end to resolve redundancies.
 
-If a peptide is found in multiple transcripts, the information are separated by '||'.
+If the same peptide is found in multiple transcripts, the annotation is separated by ';'.
 
 ```
 >ENST0001|ENSG0001|SYMB1|SNV_110-C-A|1
