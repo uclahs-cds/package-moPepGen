@@ -57,7 +57,8 @@ def generate_index(args:argparse.Namespace):
         logger('Proteome FASTA saved to disk.')
 
     canonical_peptides = proteome.create_unique_peptide_pool(
-        rule=rule, exception=exception, miscleavage=miscleavage, min_mw=min_mw
+        rule=rule, exception=exception, miscleavage=miscleavage, min_mw=min_mw,
+            min_length = min_length, max_length = max_length
     )
     if verbose:
         logger('canonical peptide pool generated.')
