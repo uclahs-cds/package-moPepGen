@@ -13,6 +13,8 @@ def generate_index(args:argparse.Namespace):
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
     min_mw:float = float(args.min_mw)
+    min_length:int = int(args.min_length)
+    max_length:int = int(args.max_length)
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     verbose:bool = args.verbose
 

@@ -64,6 +64,22 @@ def main():
         metavar=''
     )
     parser_index.add_argument(
+        '-i', '--min-length',
+        type=int,
+        help='The minimal length of non-canonical peptides.'
+        'Defaults to 7',
+        default=7,
+        metavar=''
+    )
+    parser_index.add_argument(
+        '-a', '--max-length',
+        type=int,
+        help='The maximum length of non-canonical peptides.'
+        'Defaults to 25',
+        default=25,
+        metavar=''
+    )
+    parser_index.add_argument(
         '-o', '--output-dir',
         type=str,
         help='Ouput directory for index files.',
