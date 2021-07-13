@@ -1,4 +1,4 @@
-""" Module for STAR-Fusion parser """
+""" Module for FusionCatcher parser """
 from __future__ import annotations
 from typing import Iterable, List, Dict
 import itertools
@@ -8,11 +8,11 @@ from moPepGen import seqvar, gtf, dna
 
 GeneAnnotations = Dict[str, Dict[str, gtf.TranscriptAnnotationModel]]
 
-def parse(path:str) -> Iterable[STARFusionRecord]:
-    """ Parse the STAR-Fusion's output and returns an iterator.
+def parse(path:str) -> Iterable[FusionCatcherRecord]:
+    """ Parse the FusionCatcher's output and returns an iterator.
 
     Args:
-        path (str): Path to the STAR-Fusion's output file.
+        path (str): Path to the FusionCatcher's output file.
     """
     with open(path, 'r') as handle:
         line = next(handle, None)
@@ -21,64 +21,57 @@ def parse(path:str) -> Iterable[STARFusionRecord]:
                 line = next(handle, None)
                 continue
             fields = line.rstrip().split('\t')
-            yield STARFusionRecord(
-                fusion_name=fields[0],
-                junction_read_count=int(fields[1]),
-                spanning_frag_count=int(fields[2]),
-                est_j=float(fields[3]),
-                est_s=float(fields[4]),
-                splice_type=fields[5],
-                left_gene=fields[6].split('^')[-1],
-                left_breakpoint=fields[7],
-                right_gene=fields[8].split('^')[-1],
-                right_breakpoint=fields[9],
-                junction_reads=fields[10].split(','),
-                spanning_frags=fields[11].split(','),
-                large_anchor_support=fields[12],
-                ffpm=float(fields[13]),
-                left_break_dinuc=fields[14],
-                left_break_entropy=float(fields[15]),
-                right_break_dinuc=fields[16],
-                right_break_entropy=float(fields[17]),
-                annots=fields[18].strip('][').replace('"', '').split(',')
+            yield FusionCatcherRecord(
+                five_end_gene_symbol = fields[0],
+                three_end_gene_symbol = fields[1],
+                fusion_descriptions = fields[2].split(','),
+                multimapping_read_count = int(fields[3]),
+                junction_pair_count = int(fields[4]),
+                junction_read_count = int(fields[5]),
+                longest_anchor = int(fields[6]),
+                methods = fields[7].split(';'),
+                five_end_breakpoint = fields[8],
+                three_end_breakpoint = fields[9],
+                five_end_gene_id = fields[10],
+                three_end_gene_id = fields[11],
+                five_end_exon_id = fields[12],
+                three_end_exon_id = fields[13],
+                fusion_sequence = fields[14],
+                predicted_effect = fields[15]
             )
             line = next(handle, None)
 
 
-class STARFusionRecord():
-    """ Defines a record of STAR-Fusion's output. """
-    def __init__(self, fusion_name:str, junction_read_count:int,
-            spanning_frag_count:int, est_j:float, est_s:float,
-            splice_type:str, left_gene:str, left_breakpoint:str,
-            right_gene:str, right_breakpoint:str, junction_reads:List[str],
-            spanning_frags:List[str], large_anchor_support:str, ffpm:float,
-            left_break_dinuc:str, left_break_entropy:float,
-            right_break_dinuc:str, right_break_entropy:float, annots:List[str]
+class FusionCatcherRecord():
+    """ Defines a record of FusionCatcher's output. """
+    def __init__(self, five_end_gene_symbol:str, three_end_gene_symbol:int,
+            fusion_descriptions:List[str], multimapping_read_count:int,
+            junction_pair_count:int, junction_read_count:int, longest_anchor: int,
+            methods:List[str], five_end_breakpoint:str, three_end_breakpoint:str,
+            five_end_gene_id:str, three_end_gene_id:str, five_end_exon_id:str,
+            three_end_exon_id:str, fusion_sequence:str, predicted_effect:str
             ):
         """"""
-        self.fusion_name = fusion_name
+        self.five_end_gene_symbol = five_end_gene_symbol
+        self.three_end_gene_symbol = three_end_gene_symbol
+        self.fusion_descriptions = fusion_descriptions
+        self.multimapping_read_count = multimapping_read_count
+        self.junction_pair_count = junction_pair_count
         self.junction_read_count = junction_read_count
-        self.spanning_frag_count = spanning_frag_count
-        self.est_j = est_j
-        self.est_s = est_s
-        self.splice_type = splice_type
-        self.left_gene = left_gene
-        self.left_breakpoint = left_breakpoint
-        self.right_gene = right_gene
-        self.right_breakpoint = right_breakpoint
-        self.junction_reads = junction_reads
-        self.spanning_frags = spanning_frags
-        self.large_anchor_support = large_anchor_support
-        self.ffpm = ffpm
-        self.left_break_dinuc = left_break_dinuc
-        self.left_break_entropy = left_break_entropy
-        self.right_break_dinuc = right_break_dinuc
-        self.right_break_entropy = right_break_entropy
-        self.annots = annots
+        self.longest_anchor = longest_anchor
+        self.methods = methods
+        self.five_end_breakpoint = five_end_breakpoint
+        self.three_end_breakpoint = three_end_breakpoint
+        self.five_end_gene_id = five_end_gene_id
+        self.three_end_gene_id = three_end_gene_id
+        self.five_end_exon_id = five_end_exon_id
+        self.three_end_exon_id = three_end_exon_id
+        self.fusion_sequence = fusion_sequence
+        self.predicted_effect = predicted_effect
 
     def convert_to_variant_records(self, anno:GeneAnnotations,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
-        """ COnvert a STAR-Fusion's record to VariantRecord.
+        """ COnvert a FusionCatcher's record to VariantRecord.
 
         Args:
             anno (Dict[str, Dict[str, gtf.TranscriptAnnotationModel]]): The
@@ -88,25 +81,43 @@ class STARFusionRecord():
         Returns:
             List of VariantRecord
         """
-        acceptor_transcripts = anno[self.left_gene]
-        donor_transcripts = anno[self.right_gene]
+        acceptor_transcripts = anno[self.three_end_gene_id]
+        donor_transcripts = anno[self.five_end_gene_id]
         records = []
 
         perms = itertools.product(acceptor_transcripts.keys(), donor_transcripts.keys())
         for acceptor_id, donor_id in perms:
+            # just in case ensembl ID does not match those in annotation
+            if (acceptor_id is None or donor_id is None):
+                continue
+            # fusion catcher outputs results without 'chr' prefix, align with genome
+            self.set_chrom_with_chr(genome.with_chr())
+
             acceptor_model = acceptor_transcripts[acceptor_id]
             acceptor_gene_symbol = acceptor_model.transcript.attributes['gene_name']
-            left_breakpoint = int(self.left_breakpoint.split(':')[1])
-            acceptor_chrom = self.left_breakpoint.split(':')[0]
+            # in case the ensembl ID does not match those in annotation
+            # and not the same gene is referered to
+            if (acceptor_gene_symbol != self.three_end_gene_symbol):
+                continue
+            # fusion catcher uses 1-based coordinates
+            left_breakpoint = int(self.three_end_breakpoint.split(':')[1])
+            left_strand = self.three_end_breakpoint.split(':')[2]
+            acceptor_chrom = self.three_end_breakpoint.split(':')[0]
             acceptor_position = acceptor_model.get_transcript_index(left_breakpoint)
             seq = acceptor_model.get_transcript_sequence(genome[acceptor_chrom])
             acceptor_genome_position = f'{acceptor_chrom}:{left_breakpoint}:{left_breakpoint}'
 
             donor_model = donor_transcripts[donor_id]
-            right_breakpoint = int(self.right_breakpoint.split(':')[1])
-            donor_position = donor_model.get_transcript_index(right_breakpoint)
             donor_gene_symbol = donor_model.transcript.attributes['gene_name']
-            donor_chrom = self.left_breakpoint.split(':')[0]
+            # in case the ensembl ID does not match those in annotation
+            # and not the same gene is referered to
+            if (donor_gene_symbol != self.five_end_gene_symbol):
+                continue
+            right_breakpoint = int(self.five_end_breakpoint.split(':')[1])
+            right_strand = self.five_end_breakpoint.split(':')[2]
+
+            donor_chrom = self.five_end_breakpoint.split(':')[0]
+            donor_position = donor_model.get_transcript_index(right_breakpoint)
             donor_genome_position = f'{donor_chrom}:{right_breakpoint}:{right_breakpoint}'
 
             location = FeatureLocation(
@@ -116,12 +127,12 @@ class STARFusionRecord():
             )
             _id = f'FUSION_{acceptor_id}:{acceptor_position}-{donor_id}:{donor_position}'
             attrs = {
-                'GENE_ID': self.left_gene,
-                'GENE_SYMBOL': acceptor_gene_symbol,
+                'GENE_ID': self.three_end_gene_id,
+                'GENE_SYMBOL': self.three_end_gene_symbol,
                 'GENOMIC_POSITION': acceptor_genome_position,
-                'DONOR_GENE_ID': self.right_gene,
+                'DONOR_GENE_ID': self.five_end_gene_id,
                 'DONOR_TRANSCRIPT_ID': donor_id,
-                'DONOR_SYMBOL': donor_gene_symbol,
+                'DONOR_SYMBOL': self.five_end_gene_symbol,
                 'DONOR_POS': donor_position,
                 'DONOR_GENOMIC_POSITION': donor_genome_position
             }
@@ -135,3 +146,13 @@ class STARFusionRecord():
             )
             records.append(record)
         return records
+
+    def set_chrom_with_chr(self, with_chr=True) -> None:
+        if (with_chr):
+            if ('chr' not in self.five_end_breakpoint.split(':')[0]):
+                self.five_end_breakpoint = 'chr' + self.five_end_breakpoint
+                self.three_end_breakpoint = 'chr' + self.three_end_breakpoint
+        if (not with_chr):
+            if ('chr' in self.five_end_breakpoint.split(':')[0]):
+                self.five_end_breakpoint[self.five_end_breakpoint.startswith('chr') and len('chr'):]
+                self.three_end_breakpoint[self.three_end_breakpoint.startswith('chr') and len('chr'):]

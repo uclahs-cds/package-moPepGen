@@ -8,7 +8,7 @@ class DNASeqDict(dict):
     """ A DNASeqDict object is a dict-like object that the values are
     DNASeqRecord onbjects.
     """
-    def __init__(self, *args, **kwargs)->None:
+    def __init__(self, *args, **kwargs) -> None:
         for val in kwargs.values():
             self._validate(val)
         super().__init__(*args, **kwargs)
@@ -21,7 +21,7 @@ class DNASeqDict(dict):
                 "'DNASeqDict' only accepts 'DNASeqRecord' objects."
             )
 
-    def __setitem__(self, k:str, v:DNASeqRecord)->None:
+    def __setitem__(self, k:str, v:DNASeqRecord) -> None:
         """ Set items. Only allow DNASeqRecord in values. """
         self._validate(v)
         # Sometimes v.seq._data becomes bytes after unpickling. Haven't figured
@@ -30,7 +30,7 @@ class DNASeqDict(dict):
             v.seq._data = v.seq._data.decode('utf-8')
         super().__setitem__(k, v)
 
-    def dump_fasta(self, path:str)->None:
+    def dump_fasta(self, path:str) -> None:
         """ Dump a FASTA file to a DNASeqDict
 
         Args:
@@ -45,3 +45,11 @@ class DNASeqDict(dict):
                     'Duplicated seqnames found in FASTA file: ' + path
                 )
             self[record.id] = record
+
+    def with_chr(self) -> bool:
+        """ Check whether keys have 'chr' or not """
+        # so far only works with humans
+        if 'chr1' in self.keys():
+            return True
+        else
+            return False
