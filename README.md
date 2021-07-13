@@ -32,7 +32,7 @@ Convert the VEP output TXT files to a bed-like format that moPepGen recognizes. 
 
 ```
 moPepGen parseVEP \
-    --vep-text path/to/vep_1.txt path/to/vep_2.txt
+    --vep-txt path/to/vep_1.txt path/to/vep_2.txt
     --index-dir path/to/index \
     --output-prefix path/to/vep
 ```
