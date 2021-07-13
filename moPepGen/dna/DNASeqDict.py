@@ -51,5 +51,5 @@ class DNASeqDict(dict):
         # so far only works with humans
         if 'chr1' in self.keys():
             return True
-        else
+        else:
             return False

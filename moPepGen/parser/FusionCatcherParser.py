@@ -88,7 +88,7 @@ class FusionCatcherRecord():
         perms = itertools.product(acceptor_transcripts.keys(), donor_transcripts.keys())
         for acceptor_id, donor_id in perms:
             # just in case ensembl ID does not match those in annotation
-            if (acceptor_id is None or donor_id is None):
+            if acceptor_id is None or donor_id is None:
                 continue
             # fusion catcher outputs results without 'chr' prefix, align with genome
             self.set_chrom_with_chr(genome.with_chr())
@@ -97,11 +97,11 @@ class FusionCatcherRecord():
             acceptor_gene_symbol = acceptor_model.transcript.attributes['gene_name']
             # in case the ensembl ID does not match those in annotation
             # and not the same gene is referered to
-            if (acceptor_gene_symbol != self.three_end_gene_symbol):
+            if acceptor_gene_symbol != self.three_end_gene_symbol:
                 continue
             # fusion catcher uses 1-based coordinates
             left_breakpoint = int(self.three_end_breakpoint.split(':')[1])
-            left_strand = self.three_end_breakpoint.split(':')[2]
+            # left_strand = self.three_end_breakpoint.split(':')[2]
             acceptor_chrom = self.three_end_breakpoint.split(':')[0]
             acceptor_position = acceptor_model.get_transcript_index(left_breakpoint)
             seq = acceptor_model.get_transcript_sequence(genome[acceptor_chrom])
@@ -111,10 +111,10 @@ class FusionCatcherRecord():
             donor_gene_symbol = donor_model.transcript.attributes['gene_name']
             # in case the ensembl ID does not match those in annotation
             # and not the same gene is referered to
-            if (donor_gene_symbol != self.five_end_gene_symbol):
+            if donor_gene_symbol != self.five_end_gene_symbol:
                 continue
             right_breakpoint = int(self.five_end_breakpoint.split(':')[1])
-            right_strand = self.five_end_breakpoint.split(':')[2]
+            # right_strand = self.five_end_breakpoint.split(':')[2]
 
             donor_chrom = self.five_end_breakpoint.split(':')[0]
             donor_position = donor_model.get_transcript_index(right_breakpoint)
@@ -148,11 +148,16 @@ class FusionCatcherRecord():
         return records
 
     def set_chrom_with_chr(self, with_chr=True) -> None:
-        if (with_chr):
-            if ('chr' not in self.five_end_breakpoint.split(':')[0]):
+        """ Depending on if chr is required in chrom, fix breakpoints"""
+        if with_chr:
+            if 'chr' not in self.five_end_breakpoint.split(':')[0]:
                 self.five_end_breakpoint = 'chr' + self.five_end_breakpoint
                 self.three_end_breakpoint = 'chr' + self.three_end_breakpoint
-        if (not with_chr):
-            if ('chr' in self.five_end_breakpoint.split(':')[0]):
-                self.five_end_breakpoint[self.five_end_breakpoint.startswith('chr') and len('chr'):]
-                self.three_end_breakpoint[self.three_end_breakpoint.startswith('chr') and len('chr'):]
+        if not with_chr:
+            if 'chr' in self.five_end_breakpoint.split(':')[0]:
+                feb = self.five_end_breakpoint
+                feb = feb[feb.startswith('chr') and len('chr'):]
+                teb = self.three_end_breakpoint
+                teb = teb[teb.startswith('chr') and len('chr'):]
+                self.five_end_breakpoint = feb
+                self.three_end_breakpoint = teb
