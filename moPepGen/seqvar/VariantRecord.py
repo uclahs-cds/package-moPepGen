@@ -128,7 +128,7 @@ class VariantRecord():
         elif self.type == 'Fusion':
             ref = str(self.ref[0])
             alt = '<FUSION>'
-        elif self.type in ATTRS_START:
+        elif self.type in ['Insertion', 'Deletion', 'Substitution']:
             ref = str(self.ref[0])
             alt = f'<{self.type.upper()[:3]}>'
         else:
@@ -144,7 +144,7 @@ class VariantRecord():
         out = ''
         for key,val in self.attrs.items():
             # using 1-base position
-            if key in ['DONOR_START', 'ACCEPTOR_START', 'START']:
+            if key in ATTRS_START:
                 val = str(int(val) + 1)
             out += f'{key.upper()}={val};'
         return out.rstrip(';')
