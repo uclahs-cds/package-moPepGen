@@ -192,7 +192,7 @@ def main():
 
     parser_parse_reditools.set_defaults(func=cli.parse_reditools)
 
-    ## parser_star_fusion
+    ## parseSTARFusion
     parser_star_fusion = subparsers.add_parser(
         name='parseSTARFusion',
         help='Parse STAR-Fusion result for moPepGen to call variant peptides.',
