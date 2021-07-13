@@ -106,7 +106,7 @@ class STARFusionRecord():
             right_breakpoint = int(self.right_breakpoint.split(':')[1])
             donor_position = donor_model.get_transcript_index(right_breakpoint)
             donor_gene_symbol = donor_model.transcript.attributes['gene_name']
-            donor_chrom = self.left_breakpoint.split(':')[0]
+            donor_chrom = self.right_breakpoint.split(':')[0]
             donor_genome_position = f'{donor_chrom}:{right_breakpoint}:{right_breakpoint}'
 
             location = FeatureLocation(
