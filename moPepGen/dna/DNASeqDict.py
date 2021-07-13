@@ -49,7 +49,4 @@ class DNASeqDict(dict):
     def with_chr(self) -> bool:
         """ Check whether keys have 'chr' or not """
         # so far only works with humans
-        if 'chr1' in self.keys():
-            return True
-        else:
-            return False
+        return bool('chr1' in self.keys())
