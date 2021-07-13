@@ -5,6 +5,7 @@ from .SERecord import SERecord
 from .A5SSRecord import A5SSRecord
 from .A3SSRecord import A3SSRecord
 from .MXERecord import MXERecord
+from .RIRecord import RIRecord
 
 def parse(path:str, event_type:str) -> Iterable[RMATSRecord]:
     """ parse """
@@ -20,3 +21,5 @@ def parse(path:str, event_type:str) -> Iterable[RMATSRecord]:
                 yield A3SSRecord.readline(line)
             if event_type == 'MXE':
                 yield MXERecord.readline(line)
+            if event_type == 'RI':
+                yield RIRecord.readline(line)

@@ -120,22 +120,18 @@ class A3SSRecord(RMATSRecord):
                 insert_position = anno.coordinate_gene_to_transcript(
                     insert_position_gene, self.gene_id, transcript_id
                 )
-                start = anno.coordinate_gene_to_transcript(start_gene,
-                    self.gene_id, transcript_id)
-                end = anno.coordinate_gene_to_transcript(end_gene,
-                    self.gene_id, transcript_id)
                 location = FeatureLocation(
                     seqname=transcript_id,
                     start=insert_position,
-                    end=insert_position+1
+                    end=insert_position + 1
                 )
                 seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[start])
+                ref = str(seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {
                     'GENE_ID': self.gene_id,
-                    'START': start,
-                    'END': end,
+                    'START': start_gene,
+                    'END': end_gene,
                     'COORDINATE': 'gene',
                     'GENE_SYMBOL': model.transcript.attributes['gene_name'],
                     'GENOMIC_POSITION': genomic_position

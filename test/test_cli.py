@@ -21,7 +21,7 @@ class TestCli(unittest.TestCase):
     def tearDown(self):
         """ remove working files """
         super().tearDown()
-        shutil.rmtree(WORK_DIR)
+        shutil.rmtree(WORK_DIR, ignore_errors=True)
 
     def test_generate_index(self):
         """ Test genreate index """

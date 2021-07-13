@@ -89,7 +89,7 @@ if __name__ == '__main__':
     data.alternative_5_splicing = Path('test/files/alternative_splicing/rmats_a5ss.txt')
     data.alternative_3_splicing = Path('test/files/alternative_splicing/rmats_a3ss.txt')
     data.mutually_exclusive_exons = Path('test/files/alternative_splicing/rmats_mxe.txt')
-    data.retained_intron = None
+    data.retained_intron = Path('test/files/alternative_splicing/rmats_ri.txt')
     data.index_dir = Path('test/files/index')
     data.output_prefix = 'test/files/alternative_splicing/rmats'
     data.verbose = True
