@@ -72,7 +72,7 @@ def main():
         metavar=''
     )
     parser_index.add_argument(
-        '-a', '--max-length',
+        '-x', '--max-length',
         type=int,
         help='The maximum length of non-canonical peptides, inclusive.'
         'Defaults to 25',
