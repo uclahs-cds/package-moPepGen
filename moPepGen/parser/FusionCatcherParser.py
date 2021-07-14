@@ -87,9 +87,6 @@ class FusionCatcherRecord():
 
         perms = itertools.product(acceptor_transcripts.keys(), donor_transcripts.keys())
         for acceptor_id, donor_id in perms:
-            # just in case ensembl ID does not match those in annotation
-            if acceptor_id is None or donor_id is None:
-                continue
             # fusion catcher outputs results without 'chr' prefix, align with genome
             self.set_chrom_with_chr(genome.with_chr())
 
@@ -98,8 +95,12 @@ class FusionCatcherRecord():
             # in case the ensembl ID does not match those in annotation
             # and not the same gene is referered to
             if acceptor_gene_symbol != self.three_end_gene_symbol:
-                continue
+                raise ValueError(
+                    'Annotation GTF version mismatch with FusionCatcher.'
+                )
             # fusion catcher uses 1-based coordinates
+            # left breakpoint is the first nucleotide in the fusion transcript
+            # after the breakpoint
             left_breakpoint = int(self.three_end_breakpoint.split(':')[1])
             # left_strand = self.three_end_breakpoint.split(':')[2]
             acceptor_chrom = self.three_end_breakpoint.split(':')[0]
@@ -112,7 +113,9 @@ class FusionCatcherRecord():
             # in case the ensembl ID does not match those in annotation
             # and not the same gene is referered to
             if donor_gene_symbol != self.five_end_gene_symbol:
-                continue
+                raise ValueError(
+                    'Annotation GTF version mismatch with FusionCatcher.'
+                )
             right_breakpoint = int(self.five_end_breakpoint.split(':')[1])
             # right_strand = self.five_end_breakpoint.split(':')[2]
 
