@@ -266,22 +266,6 @@ class TestCli(unittest.TestCase):
         self.assertTrue(record.type, 'Substitution')
 
     def test_parse_rmats_mxe_case_2(self):
-        """ rMATS MXE when one exon is annotated. This should results a
-        substitution. """
-        args = argparse.Namespace()
-        args.skipped_exon = None
-        args.alternative_5_splicing = None
-        args.alternative_3_splicing = None
-        args.mutually_exclusive_exons = Path('test/files/alternative_splicing/rmats_mxe_case_1.txt')
-        args.retained_intron = None
-        args.index_dir = Path('test/files/index')
-        args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
-        cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
-        self.assertTrue(record.type, 'Substitution')
-
-    def test_parse_rmats_mxe_case_2(self):
         """ rMATS MXE when both exons are annotated. This should results two
         deletions. """
         args = argparse.Namespace()
