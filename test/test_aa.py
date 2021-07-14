@@ -37,7 +37,7 @@ class TestAminoAcidSeqDict(unittest.TestCase):
             'NKDMKTALR', 'MLTDFFSQRK', 'TALRQLRK', 'DMKTALRQLR', 'DMKTALR',
             'FLAVFYSVLTPLLNPLLYTLRNK', 'MLTDFFSQRKVLSFK',
             'VLKLACTDTYR', 'FLAVFYSVLTPLLNPLLYTLR'}
-        expected_pool = expected.union(ItoL)
+        expected_pool = expected.union(itol)
         self.assertEqual(pool, expected_pool)
 
 class TestAminoAcidSeqRecord(unittest.TestCase):
