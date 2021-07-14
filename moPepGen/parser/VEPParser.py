@@ -3,6 +3,7 @@
 from __future__ import annotations
 from typing import List, Tuple, Iterable
 import re
+from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, dna, gtf
 
@@ -118,6 +119,7 @@ class VEPRecord():
         """
         chrom_seqname = self.location.split(':')[0]
         tx_model = anno.transcripts[self.feature]
+        strand = tx_model.transcript.strand
         seq = tx_model.get_transcript_sequence(genome[chrom_seqname])
         alt_position = self.cdna_position.split('-')
         alt_start = int(alt_position[0]) - 1
@@ -139,7 +141,11 @@ class VEPRecord():
                 alt_end = alt_start + len(codon_ref)
                 ref = seq.seq[alt_start:alt_end]
                 tx_start = tx_model.get_transcript_start_genomic_coordinate()
-                alt = str(genome[chrom_seqname][tx_start-2:tx_start].seq)
+                if strand == 1:
+                    alt = str(genome[chrom_seqname][tx_start-2:tx_start].seq)
+                else:
+                    alt:Seq = genome[chrom_seqname][tx_start:tx_start+2].seq
+                    alt = str(alt.reverse_complement())
         else:
             pattern = re.compile('[ATCG]+')
             match_ref = pattern.search(codon_ref)
