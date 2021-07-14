@@ -6,6 +6,7 @@ from moPepGen.SeqFeature import FeatureLocation
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL']
+ATTRS_START = ['START', 'DONOR_START', 'ACCEPTOR_START']
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
@@ -115,7 +116,8 @@ class VariantRecord():
     def to_tvf(self) -> str:
         """ Convert to a TVF record. """
         chrom = self.location.seqname
-        pos = str(int(self.location.start))
+        # using 1-base position
+        pos = str(int(self.location.start) + 1)
         _id = self.id
         qual = '.'
         _filter = '.'
@@ -141,6 +143,9 @@ class VariantRecord():
         """ Get property of the INFO field """
         out = ''
         for key,val in self.attrs.items():
+            # using 1-base position
+            if key in ATTRS_START:
+                val = str(int(val) + 1)
             out += f'{key.upper()}={val};'
         return out.rstrip(';')
 
