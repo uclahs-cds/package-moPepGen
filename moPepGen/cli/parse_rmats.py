@@ -1,5 +1,5 @@
 """ Module for rMATS parser """
-from typing import Dict, List, Set
+from typing import Dict, Set
 import argparse
 import pickle
 from pathlib import Path
@@ -9,11 +9,11 @@ from moPepGen.parser import RMATSParser
 
 def parse_rmats(args:argparse.Namespace) -> None:
     """ Parse rMATS results into TSV """
-    se = args.skipped_exon
-    a5ss = args.alternative_5_splicing
-    a3ss = args.alternative_3_splicing
-    mxe = args.mutually_exclusive_exons
-    ri = args.retained_intron
+    skipped_exon = args.skipped_exon
+    alternative_5 = args.alternative_5_splicing
+    alternative_3 = args.alternative_3_splicing
+    mutually_exclusive = args.mutually_exclusive_exons
+    retained_intron = args.retained_intron
     index_dir:Path = args.index_dir
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '.tvf'
@@ -47,8 +47,10 @@ def parse_rmats(args:argparse.Namespace) -> None:
             logger('Genome assembly FASTA loaded.')
 
     variants:Dict[str,Set[seqvar.VariantRecord]] = {}
-    rmats_outputs = (('SE', se), ('A5SS', a5ss), ('A3SS', a3ss), ('MXE', mxe),
-        ('RI', ri))
+    rmats_outputs = [
+        ('SE', skipped_exon), ('A5SS', alternative_5), ('A3SS', alternative_3),
+        ('MXE', mutually_exclusive), ('RI', retained_intron)
+    ]
     for event_type, path in rmats_outputs:
         if path:
             for record in RMATSParser.parse(path, event_type):

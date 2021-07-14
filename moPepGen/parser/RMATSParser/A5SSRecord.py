@@ -76,13 +76,13 @@ class A5SSRecord(RMATSRecord):
                 self.gene_id)
             end_gene = anno.coordinate_genomic_to_gene(self.long_exon_end,
                 self.gene_id)
-            genomic_position = f'{chrom}:{self.short_exon_end}-{self.long_exon_end}'
+            genomic_position = f'{chrom}:{self.short_exon_end+1}-{self.long_exon_end}'
         else:
             start_gene = anno.coordinate_genomic_to_gene(self.short_exon_start,
                 self.gene_id)
             end_gene = anno.coordinate_genomic_to_gene(self.long_exon_start,
                 self.gene_id)
-            genomic_position = f'{chrom}:{self.long_exon_start}-{self.short_exon_end}'
+            genomic_position = f'{chrom}:{self.long_exon_start+1}-{self.short_exon_end}'
 
         if not short:
             for transcript_id, model in long:

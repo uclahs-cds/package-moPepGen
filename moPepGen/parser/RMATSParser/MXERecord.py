@@ -57,38 +57,39 @@ class MXERecord(RMATSRecord):
             it = iter(model.exon)
             exon = next(it, None)
             while exon:
-                if int(exon.location.end) == self.upstream_exon_end:
+                if int(exon.location.end) != self.upstream_exon_end:
+                    exon = next(it, None)
+                    continue
+                exon = next(it, None)
+                if not exon:
+                    break
+                if int(exon.location.start) == self.first_exon_start and \
+                        int(exon.location.end) == self.first_exon_end:
                     exon = next(it, None)
                     if not exon:
                         break
-                    if int(exon.location.start) == self.first_exon_start and \
-                            int(exon.location.end) == self.first_exon_end:
-                        exon = next(it, None)
-                        if not exon:
-                            break
-                        if int(exon.location.start) == self.downstream_exon_start:
-                            if strand == 1:
-                                have_first.append((transcript_id, model))
-                            else:
-                                have_second.append((transcript_id, model))
-                        elif int(exon.location.start) == self.second_exon_start and \
-                                int(exon.location.end) == self.second_exon_end:
-                            exon = next(it, None)
-                            if not exon:
-                                break
-                            if int(exon.location.start) == self.downstream_exon_start:
-                                have_both.append((transcript_id, model))
+                    if int(exon.location.start) == self.downstream_exon_start:
+                        if strand == 1:
+                            have_first.append((transcript_id, model))
+                        else:
+                            have_second.append((transcript_id, model))
                     elif int(exon.location.start) == self.second_exon_start and \
                             int(exon.location.end) == self.second_exon_end:
                         exon = next(it, None)
                         if not exon:
                             break
                         if int(exon.location.start) == self.downstream_exon_start:
-                            if strand == 1:
-                                have_second.append((transcript_id, model))
-                            else:
-                                have_first.append((transcript_id, model))
-                exon = next(it, None)
+                            have_both.append((transcript_id, model))
+                elif int(exon.location.start) == self.second_exon_start and \
+                        int(exon.location.end) == self.second_exon_end:
+                    exon = next(it, None)
+                    if not exon:
+                        break
+                    if int(exon.location.start) == self.downstream_exon_start:
+                        if strand == 1:
+                            have_second.append((transcript_id, model))
+                        else:
+                            have_first.append((transcript_id, model))
 
         if (have_first and have_second) or \
                 (not have_first and not have_second and not have_both):
@@ -103,8 +104,8 @@ class MXERecord(RMATSRecord):
                 self.second_exon_start, self.gene_id)
             second_end_gene = anno.coordinate_genomic_to_gene(
                 self.second_exon_end, self.gene_id)
-            first_genomic_position = f'{chrom}:{self.first_exon_start}-{self.first_exon_end}'
-            second_genomic_position = f'{chrom}:{self.second_exon_end}-{self.second_exon_end}'
+            first_genomic_position = f'{chrom}:{self.first_exon_start + 1}-{self.first_exon_end}'
+            second_genomic_position = f'{chrom}:{self.second_exon_start + 1}-{self.second_exon_end}'
         else:
             first_start_gene = anno.coordinate_genomic_to_gene(
                 self.second_exon_end, self.gene_id)
@@ -114,12 +115,11 @@ class MXERecord(RMATSRecord):
                 self.first_exon_end, self.gene_id)
             second_end_gene = anno.coordinate_genomic_to_gene(
                 self.first_exon_start, self.gene_id)
-            second_genomic_position = f'{chrom}:{self.first_exon_start}-{self.first_exon_end}'
-            first_genomic_position = f'{chrom}:{self.second_exon_end}-{self.second_exon_end}'
+            second_genomic_position = f'{chrom}:{self.first_exon_start + 1}-{self.first_exon_end}'
+            first_genomic_position = f'{chrom}:{self.second_exon_end + 1}-{self.second_exon_end}'
 
-        genomic_position = f'{chrom}:{self.first_exon_start}-' +\
-            f'{self.first_exon_end}:' +\
-            f'{self.second_exon_start}-{self.second_exon_end}'
+        _id = f'MXE_{first_start_gene + 1}-{first_end_gene}:' +\
+            f'{second_start_gene}-{second_end_gene}'
 
         if not have_second:
             for transcript_id, model in have_first:
@@ -140,11 +140,10 @@ class MXERecord(RMATSRecord):
                     'DONOR_END': second_end_gene,
                     'COORDINATE': 'gene',
                     'GENE_SYMBOL': model.transcript.attributes['gene_name'],
-                    'GENOMIC_POSITION': genomic_position
+                    'GENOMIC_POSITION': f'{chrom}-{first_start_gene + 1}:{first_end_gene}-'
+                    f'{second_start_gene + 1}:{second_end_gene}'
                 }
                 _type = 'Substitution'
-                _id = f'MXE_{first_start_gene}-{first_end_gene}:' +\
-                    f'{second_start_gene}-{second_end_gene}'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
@@ -165,9 +164,7 @@ class MXERecord(RMATSRecord):
                     'GENE_SYMBOL': model.transcript.attributes['gene_name'],
                     'GENOMIC_POSITION': first_genomic_position
                 }
-                _type = 'Substitution'
-                _id = f'MXE_{first_start_gene}-{first_end_gene}:' +\
-                    f'{second_start_gene}-{second_end_gene}'
+                _type = 'Deletion'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
@@ -190,11 +187,10 @@ class MXERecord(RMATSRecord):
                     'DONOR_END': first_end_gene,
                     'COORDINATE': 'gene',
                     'GENE_SYMBOL': model.transcript.attributes['gene_name'],
-                    'GENOMIC_POSITION': genomic_position
+                    'GENOMIC_POSITION': f'{chrom}-{second_start_gene + 1}:{second_end_gene}-'
+                    f'{first_start_gene + 1}:{first_end_gene}'
                 }
                 _type = 'Substitution'
-                _id = f'MXE_{second_start_gene}-{second_end_gene}:' +\
-                    f'{first_start_gene}-{first_end_gene}'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
@@ -215,9 +211,7 @@ class MXERecord(RMATSRecord):
                     'GENE_SYMBOL': model.transcript.attributes['gene_name'],
                     'GENOMIC_POSITION': second_genomic_position
                 }
-                _type = 'Substitution'
-                _id = f'MXE_{second_start_gene}-{second_end_gene}:' +\
-                    f'{first_start_gene}-{first_end_gene}'
+                _type = 'Deletion'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 

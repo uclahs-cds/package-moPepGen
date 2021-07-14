@@ -98,7 +98,7 @@ class VariantRecord():
             if self.alt > other.alt:
                 return True
             if self.ref == other.ref:
-                self.type > other.type
+                return self.type > other.type
         return False
 
     def __ge__(self, other:VariantRecord) -> bool:

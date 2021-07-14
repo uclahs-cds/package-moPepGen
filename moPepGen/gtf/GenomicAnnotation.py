@@ -92,7 +92,14 @@ class GenomicAnnotation():
 
     def coordinate_gene_to_transcript(self, index:int, gene:str,
             transcript:str) -> int:
-        """  """
+        """ For a given gene position, find it the corresponding transcript
+        position.
+
+        Args:
+            index (int): The gene position index.
+            gene (str): The gene ID.
+            transcript (str): The transcript ID to map to.
+        """
         gene_model = self.genes[gene]
         if transcript not in gene_model.transcripts:
             raise ValueError(f'The transcript {transcript} is not associated'
@@ -111,7 +118,7 @@ class GenomicAnnotation():
                     continue
                 return index_transcript + index_genomic - exon.location.start
 
-        elif transcript_model.transcript.location.strand == -1:
+        if transcript_model.transcript.location.strand == -1:
             index_genomic = gene_model.location.end - index
             it = reversed(transcript_model.exon)
             exon = next(it, None)
@@ -122,18 +129,17 @@ class GenomicAnnotation():
                     exon = next(it, None)
                     continue
                 return index_transcript + exon.location.end - index_genomic
-        else:
-            raise ValueError("Don't know how to handle unstranded gene.")
+
+        raise ValueError("Don't know how to handle unstranded gene.")
 
     def coordinate_genomic_to_gene(self, index:int, gene:str) -> int:
         """ Get the gene coordinate from genomic coordinate. """
         gene_location = self.genes[gene].location
         if gene_location.strand == 1:
             return index - gene_location.start
-        elif gene_location.strand == -1:
+        if gene_location.strand == -1:
             return gene_location.end - index
-        else:
-            raise ValueError("Don't know how to handle unstranded gene.")
+        raise ValueError("Don't know how to handle unstranded gene.")
 
     def variant_coordinates_to_gene(self, variant:seqvar.VariantRecord,
             gene_id:str) -> seqvar.VariantRecord:

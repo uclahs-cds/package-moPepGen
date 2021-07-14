@@ -49,7 +49,7 @@ TVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
             'Description': 'End Position'
         },
         'COORDINATE': {
-            'Numnber': 1,
+            'Number': 1,
             'Type': 'String',
             'Description': 'Coordinate for Insertion or Substitution'
         }

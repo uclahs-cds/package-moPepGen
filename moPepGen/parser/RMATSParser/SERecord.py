@@ -83,9 +83,7 @@ class SERecord(RMATSRecord):
         if anno.genes[self.gene_id].location.strand == -1:
             start_gene, end_gene = end_gene, start_gene
 
-        genomic_position = f'{chrom}:{self.exon_start}:{self.exon_end}'\
-            if model.transcript.location.strand == 1 else \
-            f'{chrom}:{self.exon_end}-{self.exon_start}'
+        genomic_position = f'{chrom}:{self.exon_start+1}:{self.exon_end}'
 
         if not skipped:
             for transcript_id, model in retained:
