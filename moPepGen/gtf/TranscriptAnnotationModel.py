@@ -236,5 +236,4 @@ class TranscriptAnnotationModel():
         """ Get the genomic coordinate of the start point of the transcript """
         if self.transcript.location.strand == 1:
             return int(self.exon[0].location.start)
-        else:
-            return int(self.exon[-1].location.end)
+        return int(self.exon[-1].location.end)
