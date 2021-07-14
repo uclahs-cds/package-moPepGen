@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import List, Tuple, Iterable
 import re
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import seqvar, dna
+from moPepGen import seqvar, dna, gtf
 
 
 def parse(path:str) -> Iterable[VEPRecord]:
@@ -109,13 +109,16 @@ class VEPRecord():
         consequences = '|'.join(self.consequences)
         return f"< {self.feature}, {consequences}, {self.location} >"
 
-    def convert_to_variant_record(self, seq:dna.DNASeqRecord
-            ) -> seqvar.VariantRecord:
+    def convert_to_variant_record(self, anno:gtf.GenomicAnnotation,
+            genome:dna.DNASeqDict) -> seqvar.VariantRecord:
         """ Convert a VepRecord to a generic VariantRecord object.
 
         Args:
             seq (dna.DNASeqRecord): The DNA sequence of the transcript.
         """
+        chrom_seqname = self.location.split(':')[0]
+        tx_model = anno.transcripts[self.feature]
+        seq = tx_model.get_transcript_sequence(genome[chrom_seqname])
         alt_position = self.cdna_position.split('-')
         alt_start = int(alt_position[0]) - 1
 
@@ -127,10 +130,16 @@ class VEPRecord():
             alt = ref + codon_alt
             alt_end = alt_start + len(ref)
         elif codon_alt == '-':
-            alt_start -= 1
-            alt_end = alt_start + len(codon_ref) + 1
-            ref = seq.seq[alt_start:alt_end]
-            alt = seq.seq[alt_start:alt_start+1]
+            if alt_start > 0:
+                alt_start -= 1
+                alt_end = alt_start + len(codon_ref) + 1
+                ref = seq.seq[alt_start:alt_end]
+                alt = seq.seq[alt_start:alt_start+1]
+            else:
+                alt_end = alt_start + len(codon_ref)
+                ref = seq.seq[alt_start:alt_end]
+                tx_start = tx_model.get_transcript_start_genomic_coordinate()
+                alt = str(genome[chrom_seqname][tx_start-2:tx_start].seq)
         else:
             pattern = re.compile('[ATCG]+')
             match_ref = pattern.search(codon_ref)

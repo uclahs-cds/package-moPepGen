@@ -231,3 +231,10 @@ class TranscriptAnnotationModel():
                         'The genomic index seems to be in an intron'
                     )
         return index
+
+    def get_transcript_start_genomic_coordinate(self) -> int:
+        """ Get the genomic coordinate of the start point of the transcript """
+        if self.transcript.location.strand == 1:
+            return int(self.exon[0].location.start)
+        else:
+            return int(self.exon[-1].location.end)

@@ -54,12 +54,7 @@ def parse_vep(args:argparse.Namespace) -> None:
             if transcript_id not in vep_records.keys():
                 vep_records[transcript_id] = []
 
-            chrom_seqname = record.location.split(':')[0]
-
-            transcript_seq = anno.transcripts[transcript_id]\
-                .get_transcript_sequence(genome[chrom_seqname])
-
-            record = record.convert_to_variant_record(transcript_seq)
+            record = record.convert_to_variant_record(anno, genome)
 
             vep_records[transcript_id].append(record)
 

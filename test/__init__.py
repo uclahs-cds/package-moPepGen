@@ -170,6 +170,32 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
     model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
     return model
 
+def create_gene_model(data:dict) -> gtf.GeneAnnotationModel:
+    """ Create a gene model from data from testing """
+    chrom = data['chrom']
+    strand = data['strand']
+    entry = data['gene']
+    location = FeatureLocation(start=entry[0], end=entry[1])
+    return gtf.GeneAnnotationModel(chrom=chrom, location=location,
+        attributes=entry[2], strand=strand, transcripts=data['transcripts'])
+
+
+def create_genomic_annotation(data:dict) -> gtf.GenomicAnnotation:
+    """ Create a GenomicAnnotation obejct from data for testing """
+    anno = gtf.GenomicAnnotation()
+    for entry in data['genes']:
+        anno.genes[entry['gene_id']] = create_gene_model(entry)
+    for entry in data['transcripts']:
+        anno.transcripts[entry['transcript_id']] = create_transcript_model(entry)
+    return anno
+
+def create_dna_record_dict(data:dict) -> dna.DNASeqDict:
+    """ Create a DNASeqDict as genome for testing """
+    genome = dna.DNASeqDict()
+    for key, val in data.items():
+        genome[key] = dna.DNASeqRecord(Seq(val))
+    return genome
+
 def create_dna_seq_with_coordinates(seq, start=None, end=None):
     """ Create a dna.DNASeqRecordWithCoordinates instance """
     if not start:
