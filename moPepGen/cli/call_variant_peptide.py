@@ -5,6 +5,7 @@ import argparse
 import pickle
 from Bio import SeqUtils
 from Bio.SeqIO import FastaIO
+from Bio.Seq import Seq
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent, CircRNA
 from moPepGen.SeqFeature import FeatureLocation
 
@@ -90,6 +91,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 continue
             same_peptide = get_equivalent(variant_peptides, peptide)
             if same_peptide:
+                same_peptide:Seq
                 new_label = peptide.id
                 same_peptide.id += ('||' + new_label)
                 same_peptide.name = same_peptide.id
