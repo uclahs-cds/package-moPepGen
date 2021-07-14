@@ -2,8 +2,8 @@
 import unittest
 import shutil
 from pathlib import Path
-from moPepGen import seqvar
 from test import create_variant
+from moPepGen import seqvar
 
 
 BASE_DIR = Path(__file__).parent.absolute()

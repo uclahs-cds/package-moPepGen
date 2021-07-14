@@ -265,7 +265,7 @@ class TestCli(unittest.TestCase):
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Substitution')
 
-    def test_parse_rmats_mxe_case_1(self):
+    def test_parse_rmats_mxe_case_2(self):
         """ rMATS MXE when one exon is annotated. This should results a
         substitution. """
         args = argparse.Namespace()
