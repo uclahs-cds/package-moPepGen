@@ -633,7 +633,8 @@ class TranscriptVariantGraph():
                     needs_expand_forward = True
                     break
 
-        for edge in node.out_edges:
+        out_edges = copy.copy(node.out_edges)
+        for edge in out_edges:
             out_node:svgraph.TVGNode = edge.out_node
 
             out_node.seq = left_over + out_node.seq
@@ -682,6 +683,7 @@ class TranscriptVariantGraph():
                     branch_right_index = 3 - (len(out_node.seq) % 3)
                     #
                     if len(branch_next_node.seq.seq) <= branch_right_index:
+
                         downstreams = self.merge_with_outbonds(branch_next_node)
                         # checks if any of the outbound nodes is still too short
                         out_node_needs_merge_with_its_outnodes = False
@@ -691,9 +693,11 @@ class TranscriptVariantGraph():
 
                         if out_node_needs_merge_with_its_outnodes:
                             new_out_nodes = self.merge_with_outbonds(out_node)
-                            branch_next_node = new_out_nodes[0]\
-                                .get_reference_next()
-                            branches.append(branch_next_node)
+                            branches.extend(new_out_nodes)
+                            # branch_next_node = new_out_nodes[0]\
+                            #     .get_reference_next()
+                            # if branch_next_node:
+                            #    branches.append(branch_next_node)
                             continue
                         branch_next_node = downstreams[0]
                     out_node.seq = out_node.seq + \
@@ -909,6 +913,10 @@ class TranscriptVariantGraph():
                         queue.appendleft(new_cursor)
                 continue
 
+            if not cur.node.out_edges:
+                self.remove_node(cur.node)
+                continue
+
             cur.node.seq = cur.node.seq[-2:]
             main, branchs = self.prune_variants_or_branch_out(cur.node)
             new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
@@ -968,8 +976,6 @@ class TranscriptVariantGraph():
                 new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
                 queue.appendleft(new_cursor)
             for branch in branches:
-                if branch is None:
-                    print(branch)
                 new_cursor = svgraph.TVGCursor(node=branch, search_orf=False)
                 queue.appendleft(new_cursor)
 

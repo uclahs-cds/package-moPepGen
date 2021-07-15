@@ -227,6 +227,8 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
                 _id=variant.id,
                 attrs=variant.attrs
             )
+            variant = next(variant_iter, None)
+            continue
 
         cur = dgraph.apply_variant(cur, variant)
         if len(cur.in_edges) == 0:
@@ -302,12 +304,11 @@ def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.input_variant = [
-        'test/files/vep/vep.tvf',
-        'test/files/fusion/fusion.tvf'
+        'test/files/vep_test.tvf'
     ]
-    test_args.index_dir = 'test/files/index'
-    test_args.circ_rna_bed = 'test/files/circRNA/circ_rna.bed'
-    test_args.output_fasta = 'test/files/vep/vep_moPepGen.fasta'
+    test_args.index_dir = 'test/files/gencode_34_index'
+    test_args.circ_rna_bed = None
+    test_args.output_fasta = 'test/files/vep/CPCG0100_gencode_aa_index.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2

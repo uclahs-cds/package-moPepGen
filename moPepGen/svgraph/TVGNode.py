@@ -151,12 +151,12 @@ class TVGNode():
 
         while queue:
             source, target = queue.pop()
-            if source in visited:
-                continue
             for edge in source.out_edges:
                 source_out_node = edge.out_node
+                visited_this = False
                 if source_out_node in visited:
                     new_out_node = visited[source_out_node]
+                    visited_this = True
                 else:
                     frameshifts = copy.copy(source_out_node.frameshifts)
                     if propagate_frameshifts:
@@ -171,7 +171,8 @@ class TVGNode():
                     _type=edge.type)
                 target.out_edges.add(new_edge)
                 new_out_node.in_edges.add(new_edge)
-                queue.appendleft((edge.out_node, new_out_node))
+                if not visited_this and edge.out_node.out_edges:
+                    queue.appendleft((edge.out_node, new_out_node))
 
         return new_node
 
