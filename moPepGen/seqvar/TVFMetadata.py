@@ -1,7 +1,9 @@
 """ Module for TVF metadata """
 from __future__ import annotations
 from typing import List
-from moPepGen import __version__, seqvar
+from moPepGen import __version__
+from moPepGen.seqvar import SINGLE_NUCLEOTIDE_SUBSTITUTION
+from .TVFMetadataInfo import TVF_METADATA_INFO
 
 
 ALT_DESCRIPTION = {
@@ -35,15 +37,28 @@ class TVFMetadata():
         self.genome_fasta = genome_fasta
         self.annotation_gtf = annotation_gtf
         self.alt = {}
-        self.info = {}
+        self.info = TVF_METADATA_INFO['Base']
+        self.added_types = []
 
     def add_info(self, variant_type:str) -> None:
         """ Add a INFO field to the metadata. """
         self.add_alt(variant_type)
-        if variant_type in seqvar.SINGLE_NUCLEOTIDE_SUBSTITUTION:
-            self.add_info_single_nucleotide()
-        elif variant_type == 'Fusion':
-            self.add_info_fusion()
+        if variant_type in self.added_types:
+            return
+        if variant_type in SINGLE_NUCLEOTIDE_SUBSTITUTION:
+            return
+        if variant_type == 'Fusion':
+            self.info.update(TVF_METADATA_INFO['Fusion'])
+            self.added_types.append('Fusion')
+        elif variant_type == 'Insertion':
+            self.info.update(TVF_METADATA_INFO['Insertion'])
+            self.added_types.append('Insertion')
+        elif variant_type == 'Deletion':
+            self.info.update(TVF_METADATA_INFO['Deletion'])
+            self.added_types.append('Deletion')
+        elif variant_type == 'Substitution':
+            self.info.update(TVF_METADATA_INFO['Substitution'])
+            self.added_types.append('Substitution')
         else:
             raise ValueError(f'Unknown variant type: {variant_type}')
 
@@ -51,45 +66,6 @@ class TVFMetadata():
         """ Add a ALT field to the metadata. """
         if variant_type in ALT_DESCRIPTION and variant_type not in self.alt:
             self.alt[variant_type] = ALT_DESCRIPTION[variant_type]
-
-    def add_info_single_nucleotide(self):
-        """ Add a INFO field of a single nucleotide substitution. """
-        if 'GENE_ID' not in self.info:
-            self.info['GENE_ID'] = {
-                'Number': 1,
-                'Type': 'String',
-                'Description': 'Transcript\'s Gene ID'
-            }
-
-    def add_info_fusion(self):
-        """ Add a INFO fild of a gene fusion event. """
-        if 'GENE_ID' not in self.info:
-            self.info['GENE_ID'] = {
-                'Number': 1,
-                'Type': 'String',
-                'Description': 'Transcript\'s Gene ID'
-            }
-
-        if 'DONOR_GENE_ID' not in self.info:
-            self.info['DONOR_GENE_ID'] = {
-                'Number': 1,
-                'Type': 'String',
-                'Description': 'Donor Transcript\'s Gene ID'
-            }
-
-        if 'DONOR_TRANSCRIPT_ID' not in self.info:
-            self.info['DONOR_TRANSCRIPT_ID'] = {
-                'Number': 1,
-                'Type': 'String',
-                'Description': 'Donor Transcript\'s Transcript ID'
-            }
-
-        if 'DONOR_POS' not in self.info:
-            self.info['DONOR_POS'] = {
-                'Number': 1,
-                'Type': 'Integer',
-                'Description': 'Position of the break point of the donor transcript'
-            }
 
     def to_strings(self) -> List[str]:
         """ Convert metadata to a list of strings to be written to a TVF file. """

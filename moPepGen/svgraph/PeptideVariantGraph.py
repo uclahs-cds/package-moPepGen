@@ -481,6 +481,7 @@ class PeptideVariantGraph():
 
                     same_peptide = get_equivalent(variant_peptides, seq)
                     if same_peptide:
+                        same_peptide:Seq
                         same_peptide.description += '||' + seq.description
                     else:
                         variant_peptides.add(seq)

@@ -1,12 +1,12 @@
 """ Test the command line interface """
 import unittest
 import shutil
-import pathlib
+from pathlib import Path
 import argparse
-from moPepGen import cli
+from moPepGen import cli, seqvar
 
 
-BASE_DIR = pathlib.Path(__file__).parent.absolute()
+BASE_DIR = Path(__file__).parent.absolute()
 WORK_DIR = BASE_DIR / 'work_dir'
 DATA_DIR = BASE_DIR / 'files'
 
@@ -21,7 +21,7 @@ class TestCli(unittest.TestCase):
     def tearDown(self):
         """ remove working files """
         super().tearDown()
-        shutil.rmtree(WORK_DIR)
+        shutil.rmtree(WORK_DIR, ignore_errors=True)
 
     def test_generate_index(self):
         """ Test genreate index """
@@ -146,6 +146,162 @@ class TestCli(unittest.TestCase):
         files = {str(file.name) for file in WORK_DIR.glob('*')}
         expected = {'vep_moPepGen.fasta'}
         self.assertEqual(files, expected)
+
+    def test_parse_rmats_se_case_1(self):
+        """ rMATS skipped exon when the retained version is annotated. This
+        should results an deletion. """
+        args = argparse.Namespace()
+        args.skipped_exon = Path('test/files/alternative_splicing/rmats_se_case_1.txt')
+        args.alternative_5_splicing = None
+        args.alternative_3_splicing = None
+        args.mutually_exclusive_exons = None
+        args.retained_intron = None
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        self.assertTrue(record.location.start, 323)
+        self.assertTrue(record.id, 'SE_324')
+        self.assertTrue(int(record.attrs['START']), 323)
+        self.assertTrue(int(record.attrs['END']), 405)
+        self.assertTrue(record.type, 'Deletion')
+
+    def test_parse_rmats_se_case_2(self):
+        """ rMATS skipped exon when the skipped version is annotated. This
+        should result an insertion. """
+        args = argparse.Namespace()
+        args.skipped_exon = Path('test/files/alternative_splicing/rmats_se_case_2.txt')
+        args.alternative_5_splicing = None
+        args.alternative_3_splicing = None
+        args.mutually_exclusive_exons = None
+        args.retained_intron = None
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        self.assertTrue(record.location.start, 870)
+        self.assertTrue(record.id, 'SE_870')
+        self.assertTrue(int(record.attrs['START']), 870)
+        self.assertTrue(int(record.attrs['END']), 1097)
+        self.assertTrue(record.type, 'Insertion')
+
+    def test_parse_rmats_a5ss_case_1(self):
+        """ rMATS A5SS when the longer version is annotated. This should
+        results a deletion. """
+        args = argparse.Namespace()
+        args.skipped_exon = None
+        args.alternative_5_splicing = Path('test/files/alternative_splicing/rmats_a5ss_case_1.txt')
+        args.alternative_3_splicing = None
+        args.mutually_exclusive_exons = None
+        args.retained_intron = None
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        self.assertTrue(record.type, 'Deletion')
+
+    def test_parse_rmats_a5ss_case_2(self):
+        """ rMATS A5SS when the shorter version is annotated. This should
+        results an insertion. """
+        args = argparse.Namespace()
+        args.skipped_exon = None
+        args.alternative_5_splicing = Path('test/files/alternative_splicing/rmats_a5ss_case_2.txt')
+        args.alternative_3_splicing = None
+        args.mutually_exclusive_exons = None
+        args.retained_intron = None
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        self.assertTrue(record.type, 'Insertion')
+
+    def test_parse_rmats_a3ss_case_1(self):
+        """ rMATS A3SS when the longer version is annotated. This should
+        results a deletion. """
+        args = argparse.Namespace()
+        args.skipped_exon = None
+        args.alternative_5_splicing = None
+        args.alternative_3_splicing = Path('test/files/alternative_splicing/rmats_a3ss_case_1.txt')
+        args.mutually_exclusive_exons = None
+        args.retained_intron = None
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        self.assertTrue(record.type, 'Deletion')
+
+    def test_parse_rmats_a3ss_case_2(self):
+        """ rMATS A3SS when the shorter version is annotated. This should
+        results an Insertion. """
+        args = argparse.Namespace()
+        args.skipped_exon = None
+        args.alternative_5_splicing = None
+        args.alternative_3_splicing = Path('test/files/alternative_splicing/rmats_a3ss_case_2.txt')
+        args.mutually_exclusive_exons = None
+        args.retained_intron = None
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        self.assertTrue(record.type, 'Insertion')
+
+    def test_parse_rmats_mxe_case_1(self):
+        """ rMATS MXE when one exon is annotated. This should results a
+        substitution. """
+        args = argparse.Namespace()
+        args.skipped_exon = None
+        args.alternative_5_splicing = None
+        args.alternative_3_splicing = None
+        args.mutually_exclusive_exons = Path('test/files/alternative_splicing/rmats_mxe_case_1.txt')
+        args.retained_intron = None
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        self.assertTrue(record.type, 'Substitution')
+
+    def test_parse_rmats_mxe_case_2(self):
+        """ rMATS MXE when both exons are annotated. This should results two
+        deletions. """
+        args = argparse.Namespace()
+        args.skipped_exon = None
+        args.alternative_5_splicing = None
+        args.alternative_3_splicing = None
+        args.mutually_exclusive_exons = Path('test/files/alternative_splicing/rmats_mxe_case_2.txt')
+        args.retained_intron = None
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
+        self.assertTrue(len(records), 2)
+        for record in records:
+            self.assertEqual(record.type, 'Deletion')
+
+    def test_parse_rmats_ri(self):
+        """ rMATS RI. """
+        args = argparse.Namespace()
+        args.skipped_exon = None
+        args.alternative_5_splicing = None
+        args.alternative_3_splicing = None
+        args.mutually_exclusive_exons = None
+        args.retained_intron = Path('test/files/alternative_splicing/rmats_ri_case_1.txt')
+        args.index_dir = Path('test/files/index')
+        args.output_prefix = str(WORK_DIR/'rmats')
+        args.verbose = True
+        cli.parse_rmats(args)
+        records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
+        self.assertTrue(len(records), 2)
+        for record in records:
+            self.assertEqual(record.type, 'Insertion')
+
 
 if __name__ == '__main__':
     unittest.main()
