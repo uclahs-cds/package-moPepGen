@@ -31,6 +31,8 @@ class TestCli(unittest.TestCase):
         args.proteome_fasta = DATA_DIR / 'translate.fasta'
         args.cleavage_rule = 'trypsin'
         args.min_mw = 500.
+        args.min_length = 7
+        args.max_length = 25
         args.miscleavage = 2
         args.verbose = False
         args.output_dir = WORK_DIR / 'index'

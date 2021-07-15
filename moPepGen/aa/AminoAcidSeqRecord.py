@@ -169,7 +169,8 @@ class AminoAcidSeqRecord(SeqRecord):
             exception=exception))
 
     def enzymatic_cleave(self, rule:str, exception:str=None,
-            miscleavage:int=2, min_mw:float=500.0)->Set[AminoAcidSeqRecord]:
+            miscleavage:int=2, min_mw:float=500.0, min_length:int=7,
+            max_length:int=25)->Set[AminoAcidSeqRecord]:
         """ Performs enzymatic cleave """
         peptides = []
         sites = [0]
@@ -181,7 +182,9 @@ class AminoAcidSeqRecord(SeqRecord):
             end = start + 1
             while end - start - 1 <= miscleavage and end < len(sites):
                 peptide = self[sites[start]:sites[end]]
-                if SeqUtils.molecular_weight(peptide.seq, 'protein') > min_mw:
+                weight_flag = SeqUtils.molecular_weight(peptide.seq, 'protein') > min_mw
+                length_flag = len(peptide.seq) >= min_length and len(peptide.seq) <= max_length
+                if weight_flag and length_flag:
                     peptides.append(peptide)
                 end += 1
             start += 1
