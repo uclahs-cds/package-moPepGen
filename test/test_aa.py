@@ -4,6 +4,42 @@ from Bio.Seq import Seq
 from moPepGen import aa
 
 
+class TestAminoAcidSeqDict(unittest.TestCase):
+    """ Test case for AminoAcidSeqDict"""
+    def testcreate_unique_peptide_pool_by_length(self):
+        """ Test that peptides kept are of correct length. """
+        sequence = 'MKKVTAEAISWNESTSETNNSMVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGN'+\
+            'LLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLH'+\
+            'FFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVTWGIGFLHSVSQLAFAVHLLF'+\
+            'CGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLD'+\
+            'KSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDM'+\
+            'KTAIRQLRKWDAHSSVKF'
+        header = 'ENSP00000493376.2|ENST00000641515.2|ENSG00000186092.6|OTTH'+\
+            'UMG00000001094.4|OTTHUMT00000003223.4|OR4F5-202|OR4F5|326'
+        seq = aa.AminoAcidSeqRecord(
+            seq=sequence,
+            _id=header,
+            name=header,
+            description=header
+        )
+        seq.infer_ids()
+        kwargs = {seq.transcript_id : seq}
+        seqdict = aa.AminoAcidSeqDict(**kwargs)
+        pool = seqdict.create_unique_peptide_pool(rule='trypsin',
+            exception='trypsin_exception', miscleavage=2, min_mw=0.,
+            min_length = 7, max_length = 25)
+        expected = {'TAIRQLR', 'WDAHSSVKF', 'MITDFFSQR',
+            'SLDKFLAVFYSVITPLLNPIIYTLR', 'NKDMKTAIR', 'MITDFFSQRK',
+            'TAIRQLRK', 'LACTDTYR', 'DMKTAIRQLR', 'QLRKWDAHSSVK', 'DMKTAIR',
+            'FLAVFYSVITPLLNPIIYTLRNK', 'MITDFFSQRKVISFK', 'WDAHSSVK',
+            'KWDAHSSVKF', 'VIKLACTDTYR', 'KWDAHSSVK', 'FLAVFYSVITPLLNPIIYTLR'}
+        itol = {'TALRQLR', 'MLTDFFSQR', 'SLDKFLAVFYSVLTPLLNPLLYTLR',
+            'NKDMKTALR', 'MLTDFFSQRK', 'TALRQLRK', 'DMKTALRQLR', 'DMKTALR',
+            'FLAVFYSVLTPLLNPLLYTLRNK', 'MLTDFFSQRKVLSFK',
+            'VLKLACTDTYR', 'FLAVFYSVLTPLLNPLLYTLR'}
+        expected_pool = expected.union(itol)
+        self.assertEqual(pool, expected_pool)
+
 class TestAminoAcidSeqRecord(unittest.TestCase):
     """ Test case for AminoAcidSeqRecord """
     def testinfer_ids_ensembl_case1(self):
