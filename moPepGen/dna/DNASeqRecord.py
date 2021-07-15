@@ -47,7 +47,7 @@ class DNASeqRecord(SeqRecord):
         return seq
 
     def find_stop_codon(self, start:int=0) -> int:
-        """ Find and return teh stop codon.
+        """ Find and return the stop codon.
 
         Args:
             start (int): The start position to search. It only searches the

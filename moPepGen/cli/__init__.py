@@ -5,3 +5,4 @@ from moPepGen.cli.parse_vep import parse_vep
 from moPepGen.cli.parser_reditools import parse_reditools
 from moPepGen.cli.parser_star_fusion import parse_star_fusion
 from moPepGen.cli.parse_fusion_catcher import parse_fusion_catcher
+from moPepGen.cli.parse_rmats import parse_rmats

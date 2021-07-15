@@ -1,0 +1,2 @@
+ID	GeneID	geneSymbol	chr	strand	riExonStart_0base	riExonEnd	upstreamES	upstreamEE	downstreamES	downstreamEE	ID	IJC_SAMPLE_1	SJC_SAMPLE_1	IJC_SAMPLE_2	SJC_SAMPLE_2	IncFormLen	SkipFormLen	PValue	FDR	IncLevel1	IncLevel2	IncLevelDifference
+0	"ENSG00000244486.9"	"SCARF2-202"	chr22	-	4660	4963	4660	4719	4719	4963	0	3	0			148	74	NA	NA	1.0		NA

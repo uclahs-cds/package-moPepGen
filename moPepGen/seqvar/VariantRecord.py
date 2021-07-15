@@ -6,6 +6,7 @@ from moPepGen.SeqFeature import FeatureLocation
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL']
+ATTRS_START = ['START', 'DONOR_START', 'ACCEPTOR_START']
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
@@ -81,7 +82,9 @@ class VariantRecord():
 
     def __eq__(self, other:VariantRecord) -> bool:
         """ equal to """
-        return self.location == other.location
+        return self.location == other.location and \
+            self.ref == other.ref and \
+            self.type == other.type
 
     def __ne__(self, other:VariantRecord) -> bool:
         """ not equal to """
@@ -89,7 +92,14 @@ class VariantRecord():
 
     def __gt__(self, other:VariantRecord) -> bool:
         """ greater than """
-        return self.location > other.location
+        if self.location > other.location:
+            return True
+        if self.location == other.location:
+            if self.alt > other.alt:
+                return True
+            if self.ref == other.ref:
+                return self.type > other.type
+        return False
 
     def __ge__(self, other:VariantRecord) -> bool:
         """ greather or equal to """
@@ -106,7 +116,8 @@ class VariantRecord():
     def to_tvf(self) -> str:
         """ Convert to a TVF record. """
         chrom = self.location.seqname
-        pos = str(int(self.location.start))
+        # using 1-base position
+        pos = str(int(self.location.start) + 1)
         _id = self.id
         qual = '.'
         _filter = '.'
@@ -117,6 +128,9 @@ class VariantRecord():
         elif self.type == 'Fusion':
             ref = str(self.ref[0])
             alt = '<FUSION>'
+        elif self.type in ['Insertion', 'Deletion', 'Substitution']:
+            ref = str(self.ref[0])
+            alt = f'<{self.type.upper()[:3]}>'
         else:
             ref = str(self.ref[0])
             alt = f'<{self.type.upper()}>'
@@ -127,8 +141,13 @@ class VariantRecord():
     @property
     def info(self) -> str:
         """ Get property of the INFO field """
-        gene_id = self.attrs['GENE_ID']
-        return f'GENE_ID={gene_id}'
+        out = ''
+        for key,val in self.attrs.items():
+            # using 1-base position
+            if key in ATTRS_START:
+                val = str(int(val) + 1)
+            out += f'{key.upper()}={val};'
+        return out.rstrip(';')
 
     def is_snv(self) -> bool:
         """ Checks if the variant is a single nucleotide variant. """

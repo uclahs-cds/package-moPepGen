@@ -74,7 +74,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
         annotation_gtf = pathlib.Path(annotation_gtf).absolute()
 
     metadata = seqvar.TVFMetadata(
-        parser='parseREDITools',
+        parser='parseSTARFusion',
         reference_index=reference_index,
         genome_fasta=genome_fasta,
         annotation_gtf=annotation_gtf

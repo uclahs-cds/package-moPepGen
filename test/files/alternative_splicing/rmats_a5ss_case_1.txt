@@ -1,0 +1,2 @@
+ID	GeneID	geneSymbol	chr	strand	longExonStart_0base	longExonEnd	shortES	shortEE	flankingES	flankingEE	ID	IJC_SAMPLE_1	SJC_SAMPLE_1	IJC_SAMPLE_2	SJC_SAMPLE_2	IncFormLen	SkipFormLen	PValue	FDR	IncLevel1	IncLevel2	IncLevelDifference
+0	ENSG00000244486.9	SCARF2	chr22	-	3352	3468	3362	3468	3199	3352	0	0	0			78	74	NA	NA	NA		NA
