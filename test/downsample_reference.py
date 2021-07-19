@@ -1,4 +1,22 @@
-""" Downsample reference FASTA and GTF """
+r""" Downsample reference FASTA and GTF
+
+command line usage:
+    python -m test.downsample_reference --help
+
+    python -m test.downsample_reference \
+        --genome-fasta path/to/genome.fasta \
+        --annotation-gtf path/to/annotation.gtf \
+        --protein-fasta path/to/translate.fasta \
+        --tx-list ENST0001 ENST0002 \
+        --output-dir path/to/downsampled_index
+
+    python -m test.downsample_reference \
+        --genome-fasta path/to/genome.fasta \
+        --annotation-gtf path/to/annotation.gtf \
+        --protein-fasta path/to/translate.fasta \
+        --gene-list ENSG0001 ENSG0002 \
+        --output-dir path/to/downsampled_index
+"""
 import argparse
 from typing import List, Tuple, Iterable, Dict
 from pathlib import Path
@@ -262,17 +280,4 @@ def main():
 
 
 if __name__ == '__main__':
-    import sys
-    sys.argv = [
-        '/hot/users/czhu/private-moPepGen/private-moPepGen-py/test/'
-        'downsample_reference.py',
-        '--genome-fasta', '/hot/ref/reference/GRCh38-EBI-GENCODE34/GRCh38.p13.'
-        'genome.fa',
-        '--annotation-gtf', '/hot/ref/reference/GRCh38-EBI-GENCODE34/gencode.'
-        'v34.chr_patch_hapl_scaff.annotation.gtf',
-        '--protein-fasta', '/hot/ref/reference/GRCh38-EBI-GENCODE34/gencode.'
-        'v34.pc_translations.fa',
-        '--tx-list', 'ENST00000308182.9',
-        '--output-dir', 'test/files/downsampled_index/ENST00000308182.9'
-    ]
     main()
