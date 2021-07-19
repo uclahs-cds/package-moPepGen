@@ -4,7 +4,7 @@ from moPepGen.SeqFeature import SeqFeature, FeatureLocation
 from moPepGen import dna
 
 
-_GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon']
+GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon']
 INDEX_IN_INTRON_ERROR = 'The genomic index seems to be in an intron'
 
 class TranscriptAnnotationModel():
@@ -42,8 +42,8 @@ class TranscriptAnnotationModel():
                 cds, exon, start_codon, or stop_codon.
             record (GTFRecord): The GTF record to be added.
         """
-        if _type not in _GTF_FEATURE_TYPES:
-            raise ValueError(f'Type must be from {_GTF_FEATURE_TYPES}')
+        if _type not in GTF_FEATURE_TYPES:
+            raise ValueError(f'Type must be from {GTF_FEATURE_TYPES}')
         if _type == 'transcript':
             self.transcript = record
         else:

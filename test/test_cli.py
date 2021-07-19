@@ -3,6 +3,7 @@ import unittest
 import shutil
 from pathlib import Path
 import argparse
+from Bio import SeqIO
 from moPepGen import cli, seqvar
 
 
@@ -84,6 +85,8 @@ class TestCli(unittest.TestCase):
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
         args.verbose = False
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
@@ -103,6 +106,8 @@ class TestCli(unittest.TestCase):
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
         args.verbose = False
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
@@ -122,6 +127,8 @@ class TestCli(unittest.TestCase):
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
         args.verbose = False
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
@@ -141,11 +148,60 @@ class TestCli(unittest.TestCase):
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
         args.verbose = False
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
         expected = {'vep_moPepGen.fasta'}
         self.assertEqual(files, expected)
+
+    def test_call_varaint_peptide_case5(self):
+        """  """
+        args = argparse.Namespace()
+        args.input_variant = [
+            str(DATA_DIR/'vep/ENST00000308182.9_CPCG0100_indel.tvf')
+        ]
+        args.circ_rna_bed = None
+        args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
+        args.index_dir = DATA_DIR/'downsampled_index/ENST00000308182.9'
+        args.cleavage_rule = 'trypsin'
+        args.miscleavage = '2'
+        args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
+        args.verbose = False
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in WORK_DIR.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+        peptides = list(SeqIO.parse(WORK_DIR/'vep_moPepGen.fasta', 'fasta'))
+
+        seqs = {str(seq.seq) for seq in peptides}
+        expected = {
+            'EVVKGPGAPPPGK',
+            'EVVKGPGAPPPGKR',
+            'EVVKGPVLMPHFPPGK',
+            'EVVKGPVLMPHFPPGKR',
+            'EVVKGPVPHLER',
+            'EVVQGSSAPAASS',
+            'EVVQGSSAPAASSPTWK',
+            'EVVQGSSAPAASSPTWKEVVK',
+            'EVVQGSSAPAASVLLMPHFPPGK',
+            'EVVQGSSAPAASVLLMPHFPPGKR',
+            'EVVQGSSAPAASVLLMPHFPPGKRL',
+            'EVVQGSSAPAASVLPHLER',
+            'GCEGPWCSCCLIAHPER',
+            'GPGAPPPGK',
+            'GPGAPPPGKR',
+            'GPGAPPPGKRL',
+            'GPVLMPHFPPGK',
+            'GPVLMPHFPPGKR',
+            'GPVLMPHFPPGKRL',
+            'GPVPHLER',
+            'RGCEGPWCSCCLIAHPER'
+        }
+        self.assertEqual(seqs, expected)
 
     def test_parse_rmats_se_case_1(self):
         """ rMATS skipped exon when the retained version is annotated. This

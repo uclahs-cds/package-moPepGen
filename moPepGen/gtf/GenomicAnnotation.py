@@ -4,7 +4,7 @@ from typing import List, Dict
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar
 from . import GtfIO
-from .TranscriptAnnotationModel import TranscriptAnnotationModel, _GTF_FEATURE_TYPES
+from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TYPES
 from .GeneAnnotationModel import GeneAnnotationModel
 
 class GenomicAnnotation():
@@ -50,6 +50,33 @@ class GenomicAnnotation():
         result += f'\n{len(self.transcripts)} transcripts'
         return result
 
+    def add_gene_record(self, record:SeqFeature) -> None:
+        """ Add a gene record """
+        gene_id = record.attributes['gene_id']
+        if gene_id in self.genes:
+            raise ValueError(f'Same gene has multiple records: {gene_id}')
+        record.__class__ = GeneAnnotationModel
+        record.transcripts = []
+        self.genes[gene_id] = record
+
+    def add_transcript_record(self, record:SeqFeature) -> None:
+        """ Add a transcript record """
+        feature = record.type.lower()
+        if feature not in GTF_FEATURE_TYPES:
+            return
+        transcript_id = record.attributes['transcript_id']
+        record.id = transcript_id
+        if transcript_id not in self.transcripts.keys():
+            self.transcripts[transcript_id] = TranscriptAnnotationModel()
+        self.transcripts[transcript_id].add_record(feature, record)
+
+        gene_id = record.attributes['gene_id']
+        if gene_id not in self.genes:
+            raise ValueError(f'Gene ID {gene_id} not found')
+        if transcript_id not in self.genes[gene_id].transcripts:
+            self.genes[gene_id].transcripts.append(transcript_id)
+
+
     def dump_gtf(self, path:str, biotype:List[str]=None)->None:
         """ Dump a GTF file into a GenomicAnnotation
 
@@ -65,27 +92,10 @@ class GenomicAnnotation():
                 continue
             feature = record.type.lower()
             if feature == 'gene':
-                gene_id = record.attributes['gene_id']
-                if gene_id in self.genes:
-                    raise ValueError(f'Same gene has multiple records: {gene_id}')
-                record.__class__ = GeneAnnotationModel
-                record.transcripts = []
-                self.genes[gene_id] = record
+                self.add_gene_record(record)
                 continue
 
-            if feature not in _GTF_FEATURE_TYPES:
-                continue
-            transcript_id = record.attributes['transcript_id']
-            record.id = transcript_id
-            if transcript_id not in self.transcripts.keys():
-                self.transcripts[transcript_id] = TranscriptAnnotationModel()
-            self.transcripts[transcript_id].add_record(feature, record)
-
-            gene_id = record.attributes['gene_id']
-            if gene_id not in self.genes:
-                raise ValueError(f'Gene ID {gene_id} not found')
-            if transcript_id not in self.genes[gene_id].transcripts:
-                self.genes[gene_id].transcripts.append(transcript_id)
+            self.add_transcript_record(record)
 
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()

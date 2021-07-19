@@ -237,3 +237,25 @@ class TVGNode():
                 continue
 
         return farthest
+
+    def stringify(self, k:int=None) -> None:
+        """ Get a str representation of a subgraph """
+        if not k:
+            k = float("inf")
+
+        _type = 'alt' if self.variants else 'ref'
+        if self.seq:
+            l = len(self.seq.seq)
+            seq_str = f'{str(self.seq.seq[:k])}...' if l >= k else self.seq.seq
+            node = f'{seq_str}|{_type}'
+        else:
+            node = 'root'
+
+        if not self.out_edges:
+            return {node: '$'}
+
+        downstream = {}
+        for edge in self.out_edges:
+            downstream.update(edge.out_node.stringify(k))
+
+        return {node: downstream}

@@ -21,6 +21,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     miscleavage:int = int(args.miscleavage)
     min_mw:float = float(args.min_mw)
     exception = 'trypsin_exception' if rule == 'trypsin' else None
+    min_length:int = args.min_length
+    max_length:int = args.max_length
 
     if verbose:
         logger('moPepGen callPeptide started.')
@@ -69,7 +71,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 variants[transcript_id] = [record]
             else:
                 variants[transcript_id].append(record)
-        logger(f'Variant file {file} loaded.')
+        if verbose:
+            logger(f'Variant file {file} loaded.')
 
     for records in variants.values():
         records.sort()
@@ -86,6 +89,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
         for peptide in peptides:
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
+                continue
+            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
                 continue
             if str(peptide.seq) in canonical_peptides:
                 continue
@@ -111,6 +116,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
         for peptide in peptides:
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
+                continue
+            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
                 continue
             if str(peptide.seq) in canonical_peptides:
                 continue
@@ -240,7 +247,7 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
     pgraph = dgraph.translate()
 
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
-    return pgraph.call_vaiant_peptides(miscleavage=miscleavage)
+    return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 
 def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
@@ -279,7 +286,7 @@ def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
     tgraph.fit_into_codons()
     pgraph = tgraph.translate()
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
-    return pgraph.call_vaiant_peptides(miscleavage=miscleavage)
+    return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
         variants:Dict[str,seqvar.VariantRecord], start:int, end:int,

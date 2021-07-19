@@ -563,6 +563,12 @@ class TestTranscriptGraph(unittest.TestCase):
     def test_align_variants_case1(self):
         """ Variants are algined. """
         # case 1
+        # case 2
+        #      T--
+        #     /   \
+        # ATGG-T-CT-GCCCTCTGAACTGA
+        #     \ /
+        #      A
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
@@ -577,6 +583,11 @@ class TestTranscriptGraph(unittest.TestCase):
         self.assertEqual(set(['T', 'TCT', 'ACT']), set(variant_seqs))
 
         # case 2
+        #      T--
+        #     /   \
+        # ATGG-TCT-G-CCCTCTGAACTGA
+        #         \ /
+        #          A
         seq = 'ATGGTCTGCCCTCTGAACTGA'
         variants = [
             (4, 7, 'TCT', 'T', 'INDEL', '4:TCT-T'),
