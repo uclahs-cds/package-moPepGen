@@ -2,7 +2,6 @@
 import argparse
 from typing import List, Tuple, Iterable, Dict
 from pathlib import Path
-from functools import reduce
 import pickle
 from Bio import SeqIO
 from moPepGen import gtf, dna, aa
@@ -94,7 +93,7 @@ def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
             return
         if record.type.lower() == 'gene':
             if gene:
-               yield gene, transcripts
+                yield gene, transcripts
             gene = record
             gene.__class__ = gtf.GeneAnnotationModel
             gene.transcripts = []

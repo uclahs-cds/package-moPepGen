@@ -245,8 +245,8 @@ class TVGNode():
 
         _type = 'alt' if self.variants else 'ref'
         if self.seq:
-            l = len(self.seq.seq)
-            seq_str = f'{str(self.seq.seq[:k])}...' if l >= k else self.seq.seq
+            n = len(self.seq.seq)
+            seq_str = f'{str(self.seq.seq[:k])}...' if n >= k else self.seq.seq
             node = f'{seq_str}|{_type}'
         else:
             node = 'root'

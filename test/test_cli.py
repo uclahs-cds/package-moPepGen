@@ -157,7 +157,7 @@ class TestCli(unittest.TestCase):
         self.assertEqual(files, expected)
 
     def test_call_varaint_peptide_case5(self):
-        """  """
+        """ A test case with reported in issue #25, with 3 indel. """
         args = argparse.Namespace()
         args.input_variant = [
             str(DATA_DIR/'vep/ENST00000308182.9_CPCG0100_indel.tvf')
