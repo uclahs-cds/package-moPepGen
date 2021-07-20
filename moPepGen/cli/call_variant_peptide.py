@@ -69,7 +69,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 variants[transcript_id] = [record]
             else:
                 variants[transcript_id].append(record)
-        logger(f'Variant file {file} loaded.')
+        if verbose:
+            logger(f'Variant file {file} loaded.')
 
     for records in variants.values():
         records.sort()
@@ -140,10 +141,13 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
     anno = annotation.transcripts[transcript_id]
     chrom = anno.transcript.location.seqname
     transcript_seq = anno.get_transcript_sequence(genome[chrom])
+    cds_start_nf = 'tag' in anno.transcript.attributes and \
+        'cds_start_NF' in anno.transcript.attributes['tag']
 
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
-        _id=transcript_id
+        _id=transcript_id,
+        cds_start_nf=cds_start_nf
     )
 
     ## Create transcript variant graph

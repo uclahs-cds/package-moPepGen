@@ -65,7 +65,7 @@ class TestCli(unittest.TestCase):
         args.fusion = DATA_DIR/'fusion/star_fusion.txt'
         args.index_dir = DATA_DIR/'index'
         args.output_prefix = str(WORK_DIR/'star_fusion')
-        args.verbose = True
+        args.verbose = False
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
         expected = {'star_fusion.tvf'}
@@ -156,7 +156,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.location.start, 323)
@@ -176,7 +176,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.location.start, 870)
@@ -196,7 +196,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Deletion')
@@ -212,7 +212,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Insertion')
@@ -228,7 +228,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Deletion')
@@ -244,7 +244,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Insertion')
@@ -260,7 +260,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Substitution')
@@ -276,7 +276,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
         self.assertTrue(len(records), 2)
@@ -293,7 +293,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = Path('test/files/alternative_splicing/rmats_ri_case_1.txt')
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
         self.assertTrue(len(records), 2)

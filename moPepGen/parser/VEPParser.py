@@ -125,6 +125,8 @@ class VEPRecord():
         alt_start = int(alt_position[0]) - 1
 
         codon_ref, codon_alt = self.codons
+        cds_start_nf = 'tag' in tx_model.transcript.attributes and \
+            'cds_start_NF' in tx_model.transcript.attributes['tag']
 
         if codon_ref == '-':
             alt_end = alt_start + 1
@@ -137,6 +139,12 @@ class VEPRecord():
                 alt_end = alt_start + len(codon_ref) + 1
                 ref = seq.seq[alt_start:alt_end]
                 alt = seq.seq[alt_start:alt_start+1]
+            # According to GNECODE, cds_start_NF means the translation start
+            # site can not be determined.
+            elif cds_start_nf:
+                alt_end = alt_start + len(codon_ref) + 1
+                ref = seq.seq[alt_start:alt_end]
+                alt = seq.seq[alt_end-1:alt_end]
             else:
                 alt_end = alt_start + len(codon_ref)
                 ref = seq.seq[alt_start:alt_end]
