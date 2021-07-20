@@ -272,6 +272,36 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(str(variant.ref), 'CTG')
         self.assertEqual(str(variant.alt), 'TA')
 
+    def test_vep_to_variant_record_case9(self):
+        """ Test convert vep to variant record with a deletion at the begining
+        of the transcript sequence but the transcript is cds_start_NF.
+        """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno.transcripts['ENST0001.1'].transcript.attributes['tag'] = ['cds_start_NF']
+        # seq: CTGGT CCCCT ATGGG TCCTT C
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:11',
+            allele='T',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='1-3',
+            cds_position='1-3',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('ctg', '-'),
+            existing_variation='-',
+            extra={}
+        )
+        variant = vep_record.convert_to_variant_record(anno, genome)
+        self.assertEqual(int(variant.location.start), 0)
+        self.assertEqual(int(variant.location.end), 4)
+        self.assertEqual(str(variant.ref), 'CTGG')
+        self.assertEqual(str(variant.alt), 'G')
+
 
 if __name__ == '__main__':
     unittest.main()

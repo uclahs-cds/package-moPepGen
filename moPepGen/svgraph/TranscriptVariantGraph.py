@@ -21,7 +21,7 @@ class TranscriptVariantGraph():
             records.
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
-            _id:str):
+            _id:str, cds_start_nf:bool=False):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -35,6 +35,7 @@ class TranscriptVariantGraph():
         node = svgraph.TVGNode(seq)
         self.root = node
         self.id = _id
+        self.cds_start_nf = cds_start_nf
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -732,9 +733,6 @@ class TranscriptVariantGraph():
                     continue
                 self.remove_node(edge.out_node)
 
-        elif ref_start > orf.start + 3:
-            raise ValueError
-
         edges = copy.copy(node.out_edges)
         for edge in edges:
             if edge.out_node is outbound_ref:
@@ -863,7 +861,8 @@ class TranscriptVariantGraph():
                 new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
                 queue.appendleft(new_cursor)
                 for branch in branches:
-                    new_cursor = svgraph.TVGCursor(branch, True)
+                    search_orf = not self.cds_start_nf
+                    new_cursor = svgraph.TVGCursor(branch, search_orf)
                     queue.appendleft(new_cursor)
                 continue
 
@@ -897,7 +896,10 @@ class TranscriptVariantGraph():
                 continue
 
             # back to the reference track
-            start_codon_index = cur.node.seq.get_query_index(self.seq.orf.start)
+            if self.cds_start_nf:
+                start_codon_index = 0
+            else:
+                start_codon_index = cur.node.seq.get_query_index(self.seq.orf.start)
 
             if start_codon_index != -1:
                 cur_node = cur.node

@@ -436,6 +436,45 @@ class TestTranscriptGraph(unittest.TestCase):
         for edge in graph.root.out_edges:
             self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
 
+    def test_find_orf_known_case6(self):
+        r""" Deletion at beginning
+                 CG--
+                /    \
+            Null-ATGG-TGG
+        """
+        data = {
+            0: (None, [], []),
+            1: ('ATGG', [0], []),
+            2: ('CG', [0], [(0, 'ATGG', 'CG', 'INDEL', '')], True),
+            3: ['TGG', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data)
+        graph.seq.orf = FeatureLocation(start=0, end=len(graph.seq))
+        graph.find_orf_known()
+        self.assertTrue(graph.root.is_inbond_of(nodes[1]))
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+
+    def test_find_orf_known_case7(self):
+        r""" Deletion at beginning but cds start unknown
+                 T---
+                /    \
+            Null-ATGG-TGG
+        """
+        data = {
+            0: (None, [], []),
+            1: ('ATGG', [0], []),
+            2: ('T', [0], [(0, 'ATGG', 'T', 'INDEL', '')], True),
+            3: ['TGG', [1,2], []]
+        }
+        graph, nodes = create_dgraph2(data, cds_start_nf=True)
+        graph.seq.orf = FeatureLocation(start=0, end=len(graph.seq))
+        graph.find_orf_known()
+        self.assertTrue(graph.root.is_inbond_of(nodes[1]))
+        seqs = {str(edge.out_node.seq.seq) for edge in graph.root.out_edges}
+        expected = {'TTGG', 'ATGG'}
+        self.assertEqual(seqs, expected)
+
     def test_find_orf_unknown_case1(self):
         r""" Test when start codon at 0 and no start lost mutation
             ATGG-G-CCCT

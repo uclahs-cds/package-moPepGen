@@ -7,7 +7,7 @@ from moPepGen import svgraph, dna, seqvar, gtf
 
 Type = Tuple[Union[svgraph.TranscriptVariantGraph, svgraph.CircularVariantGraph],
         Dict[int, svgraph.TVGNode]]
-def create_dgraph2(data:dict, circular:bool=False) -> Type:
+def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> Type:
     """ Create DNA transcript graph from node individuals.
     """
     node_list:Dict[int, svgraph.TVGNode] = {}
@@ -24,7 +24,7 @@ def create_dgraph2(data:dict, circular:bool=False) -> Type:
                 seq = dna.DNASeqRecordWithCoordinates(_seq, [seq_location])
             else:
                 seq = None
-            graph = svgraph.TranscriptVariantGraph(seq, 'ENST0001')
+            graph = svgraph.TranscriptVariantGraph(seq, 'ENST0001', cds_start_nf)
             node_list[key] = graph.root
             continue
 
