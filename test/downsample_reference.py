@@ -256,6 +256,7 @@ def main():
     min_mw:float = float(args.min_mw)
     exception = 'trypsin_exception' if rule == 'trypsin' else None
 
+    output_dir.mkdir(exist_ok=True)
 
     anno = downsample_gtf(annotation_gtf, gene_list, tx_list)
     gene_seqs = get_gene_sequences(genome_fasta, anno)

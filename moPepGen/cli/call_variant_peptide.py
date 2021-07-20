@@ -84,8 +84,12 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     i = 0
     for transcript_id in variants:
 
-        peptides = call_peptide_main(variants, transcript_id, annotation,
-            genome, rule, exception, miscleavage)
+        try:
+            peptides = call_peptide_main(variants, transcript_id, annotation,
+                genome, rule, exception, miscleavage)
+        except:
+            logger(f'Exception raised from {transcript_id}')
+            raise
 
         for peptide in peptides:
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
@@ -311,13 +315,15 @@ def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.input_variant = [
-        'test/files/vep_test.tvf'
+        'test/files/CPCG0103_gencode_aa_indel_ENST00000314675.11.tvf'
     ]
-    test_args.index_dir = 'test/files/gencode_34_index'
+    test_args.index_dir = 'test/files/downsampled_index/ENST00000314675.11'
     test_args.circ_rna_bed = None
-    test_args.output_fasta = 'test/files/vep/CPCG0100_gencode_aa_index.fasta'
+    test_args.output_fasta = 'test/files/vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2
     test_args.min_mw = 500.
+    test_args.min_length = 7
+    test_args.max_length = 25
     call_variant_peptide(args=test_args)
