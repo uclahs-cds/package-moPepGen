@@ -65,7 +65,7 @@ def main():
         metavar=''
     )
     parser_index.add_argument(
-        '-i', '--min-length',
+        '-l', '--min-length',
         type=int,
         help='The minimal length of non-canonical peptides, inclusive.'
         'Defaults to 7',
@@ -439,7 +439,7 @@ def main():
         metavar=''
     )
     parser_index.add_argument(
-        '-i', '--min-length',
+        '-l', '--min-length',
         type=int,
         help='The minimal length of non-canonical peptides, inclusive.'
         'Defaults to 7',
