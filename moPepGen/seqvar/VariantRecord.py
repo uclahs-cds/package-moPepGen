@@ -113,6 +113,37 @@ class VariantRecord():
         """ less or equal to """
         return not self > other
 
+    def get_donor_start(self) -> int:
+        """ Get donor start position """
+        if self.type == 'Insertion':
+            return int(self.attrs['START'])
+        if self.type == 'Substitution':
+            return int(self.attrs['DONOR_START'])
+        raise ValueError(f"Don't know how to get donor start for variant type "
+            f"{self.type}")
+
+    def get_donor_end(self) -> int:
+        """ Get donor end position """
+        if self.type == 'Insertion':
+            return int(self.attrs['END'])
+        if self.type == 'Substitution':
+            return int(self.attrs['DONOR_END'])
+        raise ValueError(f"Don't know how to get donor start for variant type "
+            f"{self.type}")
+
+    def get_alt_len(self) -> int:
+        """ Get the length of the alt """
+        if not self.alt.startswith('<'):
+            return len(self.alt)
+        if self.type == 'Fusion':
+            return 1
+        if self.type == 'Deletion':
+            return 1
+        if self.type in ['Insertion', 'Deletion']:
+            return self.get_donor_end - self.get_donor_start()
+        raise ValueError(f"Don't know how to get alt len for variant type "
+            f"{self.type}")
+
     def to_tvf(self) -> str:
         """ Convert to a TVF record. """
         chrom = self.location.seqname

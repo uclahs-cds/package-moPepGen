@@ -100,16 +100,26 @@ class PVGNode():
 
         left_variants = []
         right_variants = []
+        variants_to_pop = set()
         for variant in self.variants:
             if variant.location.start < index:
                 left_variants.append(variant)
             if variant.location.end > index:
                 right_variants.append(variant.shift(-index))
+                if variant.location.start >= index:
+                    variants_to_pop.add(variant.variant)
         self.seq = left_seq
         self.variants = left_variants
 
         new_node = PVGNode(seq=right_seq, variants=right_variants)
         new_node.frameshifts = copy.copy(self.frameshifts)
+
+        # need to remove the frameshift variant if it is no longer ther after
+        # splitting the node.
+        left_frameshifts = copy.copy(self.frameshifts)
+        for variant in left_frameshifts:
+            if variant in variants_to_pop:
+                self.frameshifts.remove(variant)
 
         while self.out_nodes:
             node = self.out_nodes.pop()

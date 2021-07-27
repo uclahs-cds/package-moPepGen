@@ -1,6 +1,6 @@
 """ Test module for DNA Node """
 import unittest
-from test import create_dgraph2
+from test.unit import create_dgraph2
 from moPepGen import svgraph
 
 
@@ -157,7 +157,7 @@ class TestTVGNode(unittest.TestCase):
         }
         _, nodes = create_dgraph2(data)
         node = nodes[1].find_farthest_node_with_overlap()
-        self.assertIs(node, None)
+        self.assertEqual(str(node.seq.seq), 'T')
 
     def test_find_farthest_node_with_overlap_case4_null_root(self):
         """ For mutation at the first nucleotide.

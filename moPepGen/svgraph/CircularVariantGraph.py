@@ -92,7 +92,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                     new_out_node = visited[(source_out_node, _round)]
                 else:
                     frameshifts = copy.copy(source_out_node.frameshifts)
-                    frameshifts.update(source.frameshifts)
+                    frameshifts.update(target.frameshifts)
                     new_out_node = svgraph.TVGNode(
                         seq=source_out_node.seq,
                         variants=copy.copy(source_out_node.variants),
@@ -122,7 +122,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             branches created because of start codon.
         """
         branches = []
-        downstream = node.find_farthest_node_with_overlap()
+        downstream = node.find_farthest_node_with_overlap(circular=True)
 
         for edge in node.out_edges:
             seq = carry_over + edge.out_node.seq + downstream.seq[:2]
@@ -167,7 +167,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                 _type = 'variant_start' if branch.branch else 'reference'
                 tvg.add_edge(tvg.root, branch, _type)
 
-            if not main.is_inbond_of(self.root):
+            if cur.seq.locations[0].ref.start < main.seq.locations[0].ref.start:
                 queue.append(main)
         return tvg
 
@@ -177,9 +177,14 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         node = self.root
         while True:
             if len(node.out_edges) > 1:
-                self.align_variants(node, branch_out_frameshifting=False)
-                node = node.find_farthest_node_with_overlap(min_size = 0)
+                self.align_variants(node, branch_out_frameshifting=False,
+                    circular=True)
+                next_node = node.find_farthest_node_with_overlap(min_size = 0,
+                    circular=True)
+            elif not node.out_edges:
+                print(node)
             else:
-                node = next(iter(node.out_edges)).out_node
-            if node is self.root:
+                next_node = list(node.out_edges)[0].out_node
+            if next_node.seq.locations[0].ref.start < node.seq.locations[0].ref.start:
                 return
+            node = next_node

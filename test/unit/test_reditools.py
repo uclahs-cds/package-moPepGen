@@ -1,6 +1,6 @@
 """ Test module for reditools parser """
 import unittest
-from test import create_transcript_model
+from test.unit import create_transcript_model
 from moPepGen import parser
 
 

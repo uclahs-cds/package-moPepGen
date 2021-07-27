@@ -121,10 +121,16 @@ class TVGNode():
         or cleavage). """
         if not self.out_edges:
             return None
+        ref_node = None
         for edge in self.out_edges:
             if edge.type in ['reference', 'variant_end']:
-                return edge.out_node
-        raise ValueError('No reference edge was found.')
+                if ref_node is None:
+                    ref_node = edge.out_node
+                elif not ref_node.branch:
+                    ref_node = edge.out_node
+        if not ref_node:
+            raise ValueError('No reference edge was found.')
+        return ref_node
 
     def get_reference_prev(self) -> TVGNode:
         """ Get the previous node of which the edge is reference (not variant
@@ -160,7 +166,7 @@ class TVGNode():
                 else:
                     frameshifts = copy.copy(source_out_node.frameshifts)
                     if propagate_frameshifts:
-                        frameshifts.update(source.frameshifts)
+                        frameshifts.update(target.frameshifts)
                     new_out_node = self.__class__(
                         seq=source_out_node.seq,
                         variants=copy.copy(source_out_node.variants),
@@ -176,7 +182,8 @@ class TVGNode():
 
         return new_node
 
-    def find_farthest_node_with_overlap(self, min_size:int=5) -> TVGNode:
+    def find_farthest_node_with_overlap(self, min_size:int=6,
+            circular:bool=False) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
         reference sequence.
@@ -191,10 +198,12 @@ class TVGNode():
         """
          # find the range of overlaps
         farthest = None
+        if not self.get_reference_next():
+            return None
         if not self.get_reference_next().out_edges:
-            return farthest
+            return self.get_reference_next()
         queue = deque([edge.out_node for edge in self.out_edges])
-        visited = set([self])
+        visited = {self}
         while queue:
             cur:TVGNode = queue.popleft()
 
@@ -206,7 +215,7 @@ class TVGNode():
             visited.add(cur)
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
-                if not queue and cur is farthest and cur is not self:
+                if cur is farthest and cur is not self:
                     # if the farthest has less than 5 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
@@ -236,6 +245,20 @@ class TVGNode():
                 visited.remove(cur)
                 continue
 
+        while True:
+            if len(farthest.out_edges) != 1:
+                break
+            downstream = list(farthest.out_edges)[0].out_node
+            if circular:
+                farthest_position = farthest.seq.locations[0].ref.start
+                downstream_position = downstream.seq.locations[0].ref.start
+                if farthest_position >= downstream_position:
+                    break
+            if not downstream.out_edges:
+                break
+            if len(downstream.in_edges) > 1:
+                break
+            farthest = downstream
         return farthest
 
     def stringify(self, k:int=None) -> None:
@@ -259,3 +282,77 @@ class TVGNode():
             downstream.update(edge.out_node.stringify(k))
 
         return {node: downstream}
+
+    def truncate_left(self, i:int) -> TVGNode:
+        """ Truncate the left i nucleotides off """
+        left_seq = self.seq[:i]
+        left_variants = []
+        right_variants = []
+        left_frameshifts = copy.copy(self.frameshifts)
+
+        for variant in self.variants:
+            if variant.location.start < i:
+                left_variants.append(variant)
+            if variant.location.end > i:
+                right_variants.append(variant)
+                if variant.location.start >= i and \
+                        variant.variant.is_frameshifting():
+                    left_frameshifts.remove(variant.variant)
+
+        left_node = TVGNode(
+            seq=left_seq,
+            variants=left_variants,
+            frameshifts=left_frameshifts,
+            branch=self.branch
+        )
+
+        self.seq = self.seq[i:]
+        self.variants = right_variants
+        self.branch = False
+
+        return left_node
+
+    def truncate_right(self, i:int) -> TVGNode:
+        """ Truncate the right i nucltotide off """
+        right_seq = self.seq[i:]
+        left_variants = []
+        right_variants = []
+        right_frameshifts = copy.copy(self.frameshifts)
+
+        for variant in self.variants:
+            if variant.location.start < i:
+                left_variants.append(variant)
+            if variant.location.end > i:
+                right_variants.append(variant)
+                if variant.location.start >= i and \
+                        variant.variant.is_frameshifting():
+                    self.frameshifts.remove(variant.variant)
+
+        right_node = TVGNode(
+            seq=right_seq,
+            variants=right_variants,
+            frameshifts=right_frameshifts,
+            branch=False
+        )
+
+        self.seq = self.seq[:i]
+        self.variants = left_variants
+
+        return right_node
+
+    def append_left(self, node:TVGNode) -> None:
+        """ Combine to the left """
+        self.seq = node.seq + self.seq
+
+        variants = copy.copy(node.variants)
+        for variant in self.variants:
+            variants.append(variant.shift(len(node.seq.seq)))
+        self.variants = variants
+
+        self.frameshifts.update(node.frameshifts)
+
+    def append_right(self, node:TVGNode) -> None:
+        self.seq = self.seq + node.seq
+
+        for variant in node.variants:
+            self.varia

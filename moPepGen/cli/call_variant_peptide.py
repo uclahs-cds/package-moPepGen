@@ -193,13 +193,13 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
             variant = next(variant_iter, None)
             continue
 
-        if variant.type == 'Insertion':
+        if variant.type in 'Insertion':
             if variant.attrs['COORDINATE'] == 'gene':
                 gene_id = variant.attrs['GENE_ID']
                 gene_model = annotation.genes[gene_id]
                 chrom = gene_model.chrom
-                donor_start = int(variant.attrs['START'])
-                donor_end = int(variant.attrs['END'])
+                donor_start = variant.get_donor_start()
+                donor_end = variant.get_donor_end()
                 gene_seq = gene_model.get_gene_sequence(genome[chrom])
                 insert_seq = gene_seq[donor_start:donor_end]
                 exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
@@ -214,8 +214,8 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
                 gene_id = variant.attrs['GENE_ID']
                 gene_model = annotation.genes[gene_id]
                 chrom = gene_model.chrom
-                donor_start = int(variant.attrs['DONOR_START'])
-                donor_end = int(variant.attrs['DONOR_END'])
+                donor_start = variant.get_donor_start()
+                donor_end = variant.get_donor_end()
                 gene_seq = gene_model.get_gene_sequence(genome[chrom])
                 sub_seq = gene_seq[donor_start:donor_end]
                 exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
@@ -315,11 +315,11 @@ def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.input_variant = [
-        'test/files/CPCG0103_gencode_aa_indel_ENST00000314675.11.tvf'
+        'test/files/CPCG0100_gencode_aa_indel_ENST00000558600.1.tvf'
     ]
-    test_args.index_dir = 'test/files/downsampled_index/ENST00000314675.11'
+    test_args.index_dir = 'test/files/downsampled_index/ENST00000558600.1'
     test_args.circ_rna_bed = None
-    test_args.output_fasta = 'test/files/vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.fasta'
+    test_args.output_fasta = 'test/files/CPCG0100_gencode_aa_indel_ENST00000558600.1.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2

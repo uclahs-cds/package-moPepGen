@@ -1,7 +1,8 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import Set, Tuple, Deque, Dict
+from moPepGen.svgraph.PVGNode import PVGNode
+from typing import Set, Tuple, Deque, Dict, List
 from collections import deque
 import itertools
 from Bio.Seq import Seq
@@ -73,8 +74,38 @@ class PeptideVariantGraph():
             )
         return first_node if return_first else node
 
+    def group_sibling_out_nodes(self, upstream:svgraph.PVGNode
+            ) -> List[List[svgraph.PVGNode]]:
+        """ """
+        out_nodes = copy.copy(upstream.out_nodes)
+        groups:List[List[svgraph.PVGNode]] = []
+        while out_nodes:
+            out_node = out_nodes.pop()
+            if out_node is self.stop:
+                continue
+            downstream = out_node.find_reference_next()
+            group:List[svgraph.TVGNode] = [out_node]
+            if downstream and downstream is not self.stop:
+                for node in downstream.in_nodes:
+                    if node in out_nodes:
+                        group.append(node)
+                        out_nodes.remove(node)
+            groups.append(group)
+        return groups
+
+    def get_downstream_nodes(self, upstream:svgraph.PVGNode
+            ) -> List[List[svgraph.PVGNode]]:
+        """ """
+        downstreams = set()
+        for siblings in self.group_sibling_out_nodes(upstream):
+            if siblings[0] is self.stop:
+                continue
+            downstream = siblings[0].find_reference_next()
+            downstreams.add(downstream)
+        return downstreams
+
     def expand_alignment_backward(self, node:svgraph.PVGNode,
-            ) -> Tuple[svgraph.PVGNode, Set[svgraph.PVGNode]]:
+            ) -> Set[svgraph.PVGNode]:
         r""" Expand the variant alignment bubble backward to the previous
         cleave site. The sequence of the input node is first prepended to each
         of outbound node, and then the inbound node of those outbond nodes are
@@ -97,50 +128,48 @@ class PeptideVariantGraph():
             of the variant alignment bubble, and the second is a set of all
             branches with frameshifting variants.
         """
-        branches = set()
-        to_return = self.stop
         if len(node.in_nodes) > 1:
             raise ValueError('Inbond node has multiple')
 
         upstream = next(iter(node.in_nodes))
 
-        while node.out_nodes:
-            cur = node.out_nodes.pop()
-            node.remove_out_edge(cur)
-            if cur is self.stop:
-                cur = svgraph.PVGNode(
-                    seq=copy.copy(node.seq),
-                    variants=copy.copy(node.variants),
-                    frameshifts=copy.copy(node.frameshifts)
-                )
-                self.add_stop(cur)
+        downstreams = set()
+
+        for siblings in self.group_sibling_out_nodes(node):
+            for cur in siblings:
+                node.remove_out_edge(cur)
+                if cur is self.stop:
+                    cur = svgraph.PVGNode(
+                        seq=copy.copy(node.seq),
+                        variants=copy.copy(node.variants),
+                        frameshifts=copy.copy(node.frameshifts)
+                    )
+                    self.add_stop(cur)
+                else:
+                    cur.seq = node.seq + cur.seq
+
+                    variants = copy.copy(node.variants)
+                    for variant in cur.variants:
+                        variants.append(variant.shift(len(node.seq)))
+                    cur.variants = variants
+
+                frameshifts = copy.copy(node. frameshifts)
+                frameshifts.update(cur.frameshifts)
+                cur.frameshifts = frameshifts
+
+                upstream.add_out_edge(cur)
+                last = self.cleave_if_possible(cur)
+
+            if len(siblings) == 1:
+                downstreams.add(last)
             else:
-                cur.seq = node.seq + cur.seq
-
-                if not cur.variants:
-                    to_return = cur
-
-                variants = copy.copy(node.variants)
-                for variant in cur.variants:
-                    variants.append(variant.shift(len(cur.seq)))
-                cur.variants = variants
-
-            # only branches out if there is new frameshifts
-            frameshifts = copy.copy(node.frameshifts)
-            frameshifts_before = len(frameshifts)
-            frameshifts.update(cur.frameshifts)
-            frameshifts_after = len(frameshifts)
-
-            upstream.add_out_edge(cur)
-            last = self.cleave_if_possible(cur)
-            if to_return is cur:
-                to_return = last
-
-            if frameshifts_before != frameshifts_after:
-                branches.add(last)
+                if len(last.out_nodes) > 1:
+                    raise ValueError('Multiple out nodes found.')
+                downstreams.add(list(last.out_nodes)[0])
 
         upstream.remove_out_edge(node)
-        return to_return, branches
+        # return to_return, branches
+        return downstreams
 
     def expand_alignment_forward(self, node:svgraph.PVGNode
             ) -> svgraph.PVGNode:
@@ -187,7 +216,7 @@ class PeptideVariantGraph():
         return downstream
 
     def merge_join_alignments(self, node:svgraph.PVGNode
-            ) -> Tuple[svgraph.PVGNode, Set[svgraph.PVGNode]]:
+            ) -> Set[svgraph.PVGNode]:
         r""" For a given node, join all the inbond and outbond nodes with any
         combinations.
 
@@ -204,68 +233,79 @@ class PeptideVariantGraph():
         Args:
             node (svgraph.PVGNode): The node in the graph of target.
          """
-        branches = set()
-        to_return = self.stop
+        downstreams = set()
 
         primary_nodes = copy.copy(node.in_nodes)
-        secondary_nodes = copy.copy(node.out_nodes)
-        for first, second in itertools.product(primary_nodes, secondary_nodes):
-            variants = copy.copy(first.variants)
-            for variant in node.variants:
-                variants.append(variant.shift(len(first.seq)))
-            for variant in second.variants:
-                variants.append(variant.shift(len(first.seq) + len(node.seq)))
+        trash = {node}
 
-            if second is self.stop:
-                seq = first.seq + node.seq
+        for siblings in self.group_sibling_out_nodes(node):
+            if len(siblings) == 1:
+                sibling = siblings[0]
+                node.remove_out_edge(sibling)
+                for first in primary_nodes:
+                    seq = first.seq + node.seq
+                    variants = copy.copy(first.variants)
+                    for variant in node.variants:
+                        variants.append(variant.shift(len(first.seq)))
+                    frameshifts = copy.copy(first.frameshifts)
+                    frameshifts.update(node.frameshifts)
+
+                    new_node = svgraph.PVGNode(
+                        seq=seq, variants=variants, frameshifts=frameshifts
+                    )
+                    for upstream in first.in_nodes:
+                        upstream.add_out_edge(new_node)
+                    new_node.add_out_edge(sibling)
+                    trash.add(first)
+                downstreams.add(sibling)
             else:
-                seq = first.seq + node.seq + second.seq
+                for first, second in itertools.product(primary_nodes, siblings):
 
-            frameshifts = copy.copy(first.frameshifts)
-            frameshifts_before = len(frameshifts)
-            frameshifts.update(node.frameshifts)
-            frameshifts.update(second.frameshifts)
-            frameshifts_after = len(frameshifts)
+                    variants = copy.copy(first.variants)
+                    for variant in node.variants:
+                        variants.append(variant.shift(len(first.seq)))
+                    for variant in second.variants:
+                        variants.append(variant.shift(len(first.seq) + len(node.seq)))
 
-            new_node = svgraph.PVGNode(
-                seq=seq,
-                variants=variants,
-                frameshifts=frameshifts
-            )
-            for upstream in first.in_nodes:
-                upstream.add_out_edge(new_node)
+                    if second is self.stop:
+                        seq = first.seq + node.seq
+                    else:
+                        seq = first.seq + node.seq + second.seq
 
-            if second is self.stop:
-                self.add_stop(new_node)
-            else:
-                for downstream in second.out_nodes:
-                    new_node.add_out_edge(downstream)
+                    frameshifts = copy.copy(first.frameshifts)
+                    frameshifts.update(node.frameshifts)
+                    frameshifts.update(second.frameshifts)
 
-            if not new_node.variants:
-                to_return = new_node
+                    new_node = svgraph.PVGNode(
+                        seq=seq,
+                        variants=variants,
+                        frameshifts=frameshifts
+                    )
+                    for upstream in first.in_nodes:
+                        upstream.add_out_edge(new_node)
 
-            last_node = self.cleave_if_possible(new_node)
+                    if second is self.stop:
+                        self.add_stop(new_node)
+                    else:
+                        for downstream in second.out_nodes:
+                            new_node.add_out_edge(downstream)
 
-            # return the last cleaved
-            if to_return is new_node:
-                to_return = last_node
+                    last = self.cleave_if_possible(new_node)
 
-            # aslo add the last cleaved to branch
-            if frameshifts_before != frameshifts_after:
-                branches.add(new_node)
+                    trash.add(first)
+                    trash.add(second)
 
-        for first in primary_nodes:
-            self.remove_node(first)
+                if len(last.out_nodes) > 1:
+                    raise ValueError('Multiple out nodes found.')
+                downstreams.add(list(last.out_nodes)[0])
 
-        for second in secondary_nodes:
-            self.remove_node(second)
+        for x in trash:
+            self.remove_node(x)
 
-        self.remove_node(node)
-
-        return to_return, branches
+        return downstreams
 
     def cross_join_alignments(self, node:svgraph.PVGNode, site:int,
-            ) -> Tuple[svgraph.PVGNode, Set[svgraph.PVGNode]]:
+            ) -> List[svgraph.PVGNode]:
         r""" For a given node, split at the given position, expand inbound and
         outbound alignments, and join them with edges.
 
@@ -278,12 +318,12 @@ class PeptideVariantGraph():
         Args:
             node (svgraph.PVGNode): The node in the graph of target.
         """
-        to_return = self.stop
-        branches = set()
         left = node
         right = node.split_node(site)
         primary_nodes = copy.copy(left.in_nodes)
         secondary_nodes = copy.copy(right.out_nodes)
+
+        downstreams = set()
 
         primary_nodes2 = set()
         while primary_nodes:
@@ -301,27 +341,28 @@ class PeptideVariantGraph():
             primary_nodes2.add(last)
         primary_nodes = primary_nodes2
 
-        for second in secondary_nodes:
-            second.seq = right.seq + second.seq
+        for siblings in self.group_sibling_out_nodes(right):
+            for second in siblings:
+                second.seq = right.seq + second.seq
 
-            variants = copy.copy(right.variants)
-            for variant in second.variants:
-                variants.append(variant.shift(len(right.seq)))
-            second.variants = variants
-            second.frameshifts.update(right.frameshifts)
+                variants = copy.copy(right.variants)
+                for variant in second.variants:
+                    variants.append(variant.shift(len(right.seq)))
+                second.variants = variants
+                second.frameshifts.update(right.frameshifts)
 
-            while second.in_nodes:
-                in_node = second.in_nodes.pop()
-                in_node.remove_out_edge(second)
+                while second.in_nodes:
+                    in_node = second.in_nodes.pop()
+                    in_node.remove_out_edge(second)
 
-            # only branch out when there is new frameshifts
-            for frameshift in second.frameshifts:
-                if frameshift not in right.frameshifts:
-                    branches.add(second)
+                last = self.cleave_if_possible(second)
 
-            last = self.cleave_if_possible(second)
-            if not variants:
-                to_return = last
+            if len(siblings) == 1:
+                downstreams.add(last)
+            else:
+                if len(last.out_nodes) > 1:
+                    raise ValueError('Multiple out nodes found.')
+                downstreams.add(list(last.out_nodes)[0])
 
         self.remove_node(left)
         self.remove_node(right)
@@ -329,7 +370,7 @@ class PeptideVariantGraph():
         for first, second in itertools.product(primary_nodes, secondary_nodes):
             first.add_out_edge(second)
 
-        return to_return, branches
+        return downstreams
 
     def form_cleavage_graph(self, rule:str, exception:str=None) -> None:
         """ Form a cleavage graph from a variant graph. After calling this
@@ -348,55 +389,36 @@ class PeptideVariantGraph():
         while queue:
             cur = queue.pop()
 
-            # each is a branch
+            if cur is self.stop:
+                continue
+
             if cur.seq is None:
                 for out_node in cur.out_nodes:
                     queue.appendleft(out_node)
                 continue
 
-            site = cur.seq.find_first_enzymatic_cleave_site(rule=self.rule,
-                exception=self.exception)
-            while site > -1:
-                cur = cur.split_node(site)
+            if len(cur.in_nodes) == 1:
+
                 site = cur.seq.find_first_enzymatic_cleave_site(rule=self.rule,
                     exception=self.exception)
+                while site > -1:
+                    cur = cur.split_node(site)
+                    site = cur.seq.find_first_enzymatic_cleave_site(
+                        rule=self.rule, exception=self.exception)
 
-            if self.next_is_stop(cur):
-                if len(cur.out_nodes) > 1:
-                    # return branch
-                    cur, branches = self.expand_alignment_backward(cur)
-                    for branch in branches:
-                        queue.appendleft(branch)
-                continue
+                if self.next_is_stop(cur):
+                    if len(cur.out_nodes) > 1:
+                        # return branch
+                        branches = self.expand_alignment_backward(cur)
+                        for branch in branches:
+                            queue.appendleft(branch)
+                    continue
 
-            # expand the variant alignments to the left
-            # returns the new reference node in the alignment.
-            # This is when the node between to bubbles don't have any cleavages
-            if len(cur.in_nodes) == 1:
-                cur, branches = self.expand_alignment_backward(cur)
+                branches = self.expand_alignment_backward(cur)
                 for branch in branches:
                     queue.appendleft(branch)
-                if cur is self.stop:
-                    continue
-                if self.next_is_stop(cur):
-                    queue.append(cur)
-                    continue
-                next_is_stop = False
-                while len(cur.out_nodes) > 1:
-                    cur, branches = self.expand_alignment_backward(cur)
-                    for branch in branches:
-                        queue.appendleft(branch)
-                    if cur is self.stop:
-                        continue
-                    if self.next_is_stop(cur):
-                        queue.append(cur)
-                        next_is_stop = True
-                if next_is_stop:
-                    continue
-                cur = cur.find_reference_next()
+                continue
 
-            if cur is None:
-                raise ValueError()
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
                 exception=self.exception)
 
@@ -404,25 +426,25 @@ class PeptideVariantGraph():
                 if self.next_is_stop(cur):
                     self.expand_alignment_forward(cur)
                     continue
-                cur, branches = self.merge_join_alignments(cur)
-                if len(cur.out_nodes) == 1 and not self.next_is_stop(cur):
-                    cur = cur.find_reference_next()
+                branches = self.merge_join_alignments(cur)
+                for branch in branches:
+                    queue.appendleft(branch)
             elif len(sites) == 1:
                 if self.next_is_stop(cur):
                     cur.split_node(sites[0])
                     cur = self.expand_alignment_forward(cur)
                     queue.appendleft(cur)
                     continue
-                cur, branches = self.cross_join_alignments(cur, sites[0])
-                if not self.next_is_stop(cur):
-                    cur = cur.find_reference_next()
+                branches = self.cross_join_alignments(cur, sites[0])
+                for branch in branches:
+                    queue.appendleft(branch)
             else:
-                cur.split_node(sites[0])
+                right = cur.split_node(sites[0])
                 cur = self.expand_alignment_forward(cur)
-            for branch in branches:
-                queue.appendleft(branch)
-            if cur is not self.stop:
-                queue.appendleft(cur)
+                site = right.seq.find_first_enzymatic_cleave_site(
+                    rule=self.rule, exception=self.exception)
+                right = right.split_node(site)
+                queue.appendleft(right)
 
     def call_variant_peptides(self, miscleavage:int=2
             ) -> Set[aa.AminoAcidSeqRecord]:
