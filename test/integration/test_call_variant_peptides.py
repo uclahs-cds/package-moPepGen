@@ -93,7 +93,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ A test case with reported in issue #25, with 3 indel. """
         args = argparse.Namespace()
         args.input_variant = [
-            str(self.data_dir/'vep/ENST00000308182.9_CPCG0100_indel.tvf')
+            str(self.data_dir/'vep/CPCG0100_gencode_aa_indel_ENST00000308182.9.tvf')
         ]
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'

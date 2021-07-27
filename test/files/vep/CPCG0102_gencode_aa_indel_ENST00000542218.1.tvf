@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=/hot/users/czhu/private-moPepGen/private-moPepGen-py/test/files/gencode_34_index
+##genome_fasta=
+##annotation_gtf=
+##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Transcript's Gene ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENST00000542218.1	619	INDEL-618-C-CGAG	C	CGAG	.	.	GENE_ID=ENSG00000137310.12
+ENST00000542218.1	621	INDEL-620-A-AG	A	AG	.	.	GENE_ID=ENSG00000137310.12
+ENST00000542218.1	623	INDEL-622-A-AGC	A	AGC	.	.	GENE_ID=ENSG00000137310.12
