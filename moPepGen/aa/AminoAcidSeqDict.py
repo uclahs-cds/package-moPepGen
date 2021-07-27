@@ -43,8 +43,8 @@ class AminoAcidSeqDict(dict):
             if not source:
                 count += 1
                 infered.add(record.infer_ids(style=source))
-
-            record.infer_ids(source)
+            else:
+                record.infer_ids(source)
             if record.transcript_id in self.keys():
                 raise ValueError(
                     'Duplicated seqnames found in FASTA file: ' + path

@@ -151,12 +151,12 @@ class TVGNode():
 
         while queue:
             source, target = queue.pop()
-            if source in visited:
-                continue
             for edge in source.out_edges:
                 source_out_node = edge.out_node
+                visited_this = False
                 if source_out_node in visited:
                     new_out_node = visited[source_out_node]
+                    visited_this = True
                 else:
                     frameshifts = copy.copy(source_out_node.frameshifts)
                     if propagate_frameshifts:
@@ -171,7 +171,8 @@ class TVGNode():
                     _type=edge.type)
                 target.out_edges.add(new_edge)
                 new_out_node.in_edges.add(new_edge)
-                queue.appendleft((edge.out_node, new_out_node))
+                if not visited_this and edge.out_node.out_edges:
+                    queue.appendleft((edge.out_node, new_out_node))
 
         return new_node
 
@@ -236,3 +237,25 @@ class TVGNode():
                 continue
 
         return farthest
+
+    def stringify(self, k:int=None) -> None:
+        """ Get a str representation of a subgraph """
+        if not k:
+            k = float("inf")
+
+        _type = 'alt' if self.variants else 'ref'
+        if self.seq:
+            n = len(self.seq.seq)
+            seq_str = f'{str(self.seq.seq[:k])}...' if n >= k else self.seq.seq
+            node = f'{seq_str}|{_type}'
+        else:
+            node = 'root'
+
+        if not self.out_edges:
+            return {node: '$'}
+
+        downstream = {}
+        for edge in self.out_edges:
+            downstream.update(edge.out_node.stringify(k))
+
+        return {node: downstream}

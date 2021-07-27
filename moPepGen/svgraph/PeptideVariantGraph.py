@@ -50,7 +50,7 @@ class PeptideVariantGraph():
             node.remove_out_edge(out_node)
         del node
 
-    def cleave_if_posible(self, node:svgraph.PVGNode,
+    def cleave_if_possible(self, node:svgraph.PVGNode,
             return_first:bool=False) -> svgraph.PVGNode:
         """ For a given node, it checks whether there is any cleave site and
         split at each site.
@@ -109,8 +109,8 @@ class PeptideVariantGraph():
             node.remove_out_edge(cur)
             if cur is self.stop:
                 cur = svgraph.PVGNode(
-                    seq=node.seq,
-                    variants=node.variants,
+                    seq=copy.copy(node.seq),
+                    variants=copy.copy(node.variants),
                     frameshifts=copy.copy(node.frameshifts)
                 )
                 self.add_stop(cur)
@@ -120,9 +120,7 @@ class PeptideVariantGraph():
                 if not cur.variants:
                     to_return = cur
 
-                variants = []
-                for variant in node.variants:
-                    variants.append(variant)
+                variants = copy.copy(node.variants)
                 for variant in cur.variants:
                     variants.append(variant.shift(len(cur.seq)))
                 cur.variants = variants
@@ -134,7 +132,7 @@ class PeptideVariantGraph():
             frameshifts_after = len(frameshifts)
 
             upstream.add_out_edge(cur)
-            last = self.cleave_if_posible(cur)
+            last = self.cleave_if_possible(cur)
             if to_return is cur:
                 to_return = last
 
@@ -176,9 +174,14 @@ class PeptideVariantGraph():
         while node.in_nodes:
             cur = node.in_nodes.pop()
             cur.seq = cur.seq + node.seq
+
+            for variant in node.variants:
+                cur.variants.append(variant.shift(len(cur.seq)))
+            cur.frameshifts.update(node.frameshifts)
+
             cur.remove_out_edge(node)
             cur.add_out_edge(downstream)
-            self.cleave_if_posible(node=cur)
+            self.cleave_if_possible(node=cur)
 
         node.remove_out_edge(downstream)
         return downstream
@@ -203,14 +206,13 @@ class PeptideVariantGraph():
          """
         branches = set()
         to_return = self.stop
-        # prev_ref = node.find_reference_prev()
-        # if len(prev_ref.in_nodes) > 1:
-        #     raise ValueError('upstream has multiple')
-        # upstream = next(iter(prev_ref.in_nodes))
+
         primary_nodes = copy.copy(node.in_nodes)
         secondary_nodes = copy.copy(node.out_nodes)
         for first, second in itertools.product(primary_nodes, secondary_nodes):
             variants = copy.copy(first.variants)
+            for variant in node.variants:
+                variants.append(variant.shift(len(first.seq)))
             for variant in second.variants:
                 variants.append(variant.shift(len(first.seq) + len(node.seq)))
 
@@ -221,6 +223,7 @@ class PeptideVariantGraph():
 
             frameshifts = copy.copy(first.frameshifts)
             frameshifts_before = len(frameshifts)
+            frameshifts.update(node.frameshifts)
             frameshifts.update(second.frameshifts)
             frameshifts_after = len(frameshifts)
 
@@ -241,7 +244,7 @@ class PeptideVariantGraph():
             if not new_node.variants:
                 to_return = new_node
 
-            last_node = self.cleave_if_posible(new_node)
+            last_node = self.cleave_if_possible(new_node)
 
             # return the last cleaved
             if to_return is new_node:
@@ -286,22 +289,26 @@ class PeptideVariantGraph():
         while primary_nodes:
             first = primary_nodes.pop()
             first.seq = first.seq + left.seq
+
+            for variant in left.variants:
+                first.variants.append(variant.shift(len(first.seq)))
+            first.frameshifts.update(left.frameshifts)
+
             while first.out_nodes:
                 out_node = first.out_nodes.pop()
                 first.remove_out_edge(out_node)
-            last = self.cleave_if_posible(first)
+            last = self.cleave_if_possible(first)
             primary_nodes2.add(last)
         primary_nodes = primary_nodes2
 
         for second in secondary_nodes:
             second.seq = right.seq + second.seq
 
-            variants = []
-            for variant in right.variants:
-                variants.append(variant)
+            variants = copy.copy(right.variants)
             for variant in second.variants:
                 variants.append(variant.shift(len(right.seq)))
             second.variants = variants
+            second.frameshifts.update(right.frameshifts)
 
             while second.in_nodes:
                 in_node = second.in_nodes.pop()
@@ -312,7 +319,7 @@ class PeptideVariantGraph():
                 if frameshift not in right.frameshifts:
                     branches.add(second)
 
-            last = self.cleave_if_posible(second)
+            last = self.cleave_if_possible(second)
             if not variants:
                 to_return = last
 
@@ -369,13 +376,22 @@ class PeptideVariantGraph():
                 cur, branches = self.expand_alignment_backward(cur)
                 for branch in branches:
                     queue.appendleft(branch)
-
                 if cur is self.stop:
                     continue
-
                 if self.next_is_stop(cur):
-                    # leave it to the next iteration to handle
                     queue.append(cur)
+                    continue
+                next_is_stop = False
+                while len(cur.out_nodes) > 1:
+                    cur, branches = self.expand_alignment_backward(cur)
+                    for branch in branches:
+                        queue.appendleft(branch)
+                    if cur is self.stop:
+                        continue
+                    if self.next_is_stop(cur):
+                        queue.append(cur)
+                        next_is_stop = True
+                if next_is_stop:
                     continue
                 cur = cur.find_reference_next()
 
@@ -384,7 +400,6 @@ class PeptideVariantGraph():
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
                 exception=self.exception)
 
-            branches = set()
             if len(sites) == 0:
                 if self.next_is_stop(cur):
                     self.expand_alignment_forward(cur)
@@ -409,7 +424,7 @@ class PeptideVariantGraph():
             if cur is not self.stop:
                 queue.appendleft(cur)
 
-    def call_vaiant_peptides(self, miscleavage:int=2
+    def call_variant_peptides(self, miscleavage:int=2
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
@@ -442,51 +457,49 @@ class PeptideVariantGraph():
                 if out_node is not self.stop:
                     queue.appendleft(out_node)
 
-            node_paths:Deque[Deque[svgraph.PVGNode]]
-            node_paths = deque([deque([cur])])
+            node_paths:Deque[Deque[svgraph.PVGNode]] = deque([deque([cur])])
             i = 0
-            while i < miscleavage and node_paths:
+            while i <= miscleavage and node_paths:
                 i += 1
                 next_batch:Deque[Deque[svgraph.PVGNode]] = deque()
                 while node_paths:
                     nodes = node_paths.pop()
 
-                    variants = []
+                    variants = set()
                     seq = None
                     for node in nodes:
                         if seq is None:
                             seq = node.seq
                         else:
                             seq = seq + node.seq
-                        if node.variants:
-                            variants.extend(node.variants)
+                        for variant in node.variants:
+                            variants.add(variant.variant)
+                        variants.update(node.frameshifts)
 
-                    if not variants:
-                        continue
+                    if variants:
+                        variant_label = ''
+                        variant:seqvar.VariantRecordWithCoordinate
+                        for variant in variants:
+                            variant_label += ('|' + str(variant.id))
 
-                    variant_label = ''
-                    variant:seqvar.VariantRecordWithCoordinate
-                    for variant in variants:
-                        variant_label += ('|' + str(variant.variant.id))
+                        seq.id = seq.transcript_id
+                        seq.name = seq.transcript_id
+                        seq.description = seq.transcript_id + variant_label
 
-                    seq.id = seq.transcript_id
-                    seq.name = seq.transcript_id
-                    seq.description = seq.transcript_id + variant_label
+                        if seq.description not in peptide_ids:
+                            peptide_ids[seq.description] = 0
 
-                    if seq.description not in peptide_ids:
-                        peptide_ids[seq.description] = 0
+                        peptide_ids[seq.description] += 1
+                        seq.description += '|' + str(peptide_ids[seq.description])
 
-                    peptide_ids[seq.description] += 1
-                    seq.description += '|' + str(peptide_ids[seq.description])
+                        same_peptide = get_equivalent(variant_peptides, seq)
+                        if same_peptide:
+                            same_peptide:Seq
+                            same_peptide.description += '||' + seq.description
+                        else:
+                            variant_peptides.add(seq)
 
-                    same_peptide = get_equivalent(variant_peptides, seq)
-                    if same_peptide:
-                        same_peptide:Seq
-                        same_peptide.description += '||' + seq.description
-                    else:
-                        variant_peptides.add(seq)
-
-                    if i + 1 < miscleavage:
+                    if i <= miscleavage:
                     # create a new batch of node paths for the next iteration
                         last_node = nodes[-1]
                         for node in last_node.out_nodes:
