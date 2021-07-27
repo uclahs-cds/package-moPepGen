@@ -19,7 +19,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = None
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.location.start, 323)
@@ -39,7 +39,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = None
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.location.start, 870)
@@ -59,7 +59,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = None
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Deletion')
@@ -75,7 +75,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = None
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Insertion')
@@ -91,7 +91,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = None
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Deletion')
@@ -107,7 +107,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = None
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Insertion')
@@ -123,7 +123,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = None
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Substitution')
@@ -139,7 +139,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = None
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
         self.assertTrue(len(records), 2)
@@ -156,7 +156,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.retained_intron = self.data_dir/'alternative_splicing/rmats_ri_case_1.txt'
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
         self.assertTrue(len(records), 2)

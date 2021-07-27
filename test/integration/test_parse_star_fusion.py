@@ -13,7 +13,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.fusion = self.data_dir/'fusion/star_fusion.txt'
         args.index_dir = self.data_dir/'index'
         args.output_prefix = str(self.work_dir/'star_fusion')
-        args.verbose = True
+        args.verbose = False
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'star_fusion.tvf'}
