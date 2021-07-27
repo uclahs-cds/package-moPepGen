@@ -16,7 +16,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
     verbose = args.verbose
 
     if verbose:
-        logger('moPepGen parseREDItools started.')
+        logger('moPepGen parseSTARFusion started.')
 
     if index_dir:
         with open(f'{index_dir}/genome.pickle', 'rb') as handle:
