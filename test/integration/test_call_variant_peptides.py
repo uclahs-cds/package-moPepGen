@@ -1,7 +1,7 @@
 """ Test the command line interface """
 import argparse
-from Bio import SeqIO
 from test.integration import TestCaseIntegration
+from Bio import SeqIO
 from moPepGen import cli
 
 

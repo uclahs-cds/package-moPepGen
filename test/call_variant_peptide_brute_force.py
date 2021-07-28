@@ -1,10 +1,11 @@
+""" A brute forth algorithm for calling variant peptides from a TVF file. """
 import sys
 import argparse
 from typing import List, Dict, Tuple
 from pathlib import Path
 import pickle
-from moPepGen import seqvar, aa
 from itertools import combinations
+from moPepGen import seqvar, aa
 
 
 def parse_args():
@@ -108,10 +109,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = argparse.Namespace()
-    args.input_tvf = Path('test/files/vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.tvf')
-    args.index_dir = Path('test/files/downsampled_index/ENST00000314675.11')
-    args.exclusion = ['1213-TCCCGGCCCCA-T:1204-CGGTCCCGG-C,1219-CCCCAGTCCCGGTCCCGG-C']
-    # args = parse_args()
-    main(args)
-
+    _args = parse_args()
+    main(_args)

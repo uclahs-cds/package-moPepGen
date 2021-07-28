@@ -1,6 +1,5 @@
 """ Test the moPepGen parseRMATS """
 import argparse
-from pathlib import Path
 from test.integration import TestCaseIntegration
 from moPepGen import cli, seqvar
 

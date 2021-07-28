@@ -73,6 +73,14 @@ class TVGNode():
         or outbonding edge. """
         return (not self.in_edges) and (not self.out_edges)
 
+    def is_exclusively_outbond_of(self, other:svgraph.TVGNode) -> bool:
+        """ Checks if the node is exclusively outbond with the other.
+        Exclusive binding means the upstream node has only 1 outbond edge,
+        and the downstream node has only inbond edge."""
+        if not self.is_inbond_of(other):
+            return False
+        return len(self.out_edges) == 1 and len(other.in_edges) == 1
+
     def needs_branch_out(self, branch_out_size:int=100) -> bool:
         """ Checks if the node needs to branch out """
         for variant in self.variants:
@@ -186,7 +194,9 @@ class TVGNode():
             circular:bool=False) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
-        reference sequence.
+        reference sequence. If the farthest node found has an exclusive single
+        out node, it extends to. For circular graph, this extension won't
+        continue if the exclusive single node is root.
 
         For example, in a graph like below, the node ATGG's farthest node
         with overlap would be node 'CCCT'
@@ -216,7 +226,7 @@ class TVGNode():
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
                 if cur is farthest and cur is not self:
-                    # if the farthest has less than 5 neucleotides, continue
+                    # if the farthest has less than 6 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
                     if len(cur.seq) < min_size:
@@ -245,6 +255,7 @@ class TVGNode():
                 visited.remove(cur)
                 continue
 
+        # extending to the farthest exclusive outbond node.
         while True:
             if len(farthest.out_edges) != 1:
                 break
@@ -340,19 +351,22 @@ class TVGNode():
 
         return right_node
 
-    def append_left(self, node:TVGNode) -> None:
-        """ Combine to the left """
-        self.seq = node.seq + self.seq
+    def append_left(self, other:TVGNode) -> None:
+        """ Combine the other node the the left. """
+        self.seq = other.seq + self.seq
 
-        variants = copy.copy(node.variants)
+        variants = copy.copy(other.variants)
         for variant in self.variants:
-            variants.append(variant.shift(len(node.seq.seq)))
+            variants.append(variant.shift(len(other.seq.seq)))
         self.variants = variants
 
-        self.frameshifts.update(node.frameshifts)
+        self.frameshifts.update(other.frameshifts)
 
-    def append_right(self, node:TVGNode) -> None:
-        self.seq = self.seq + node.seq
+    def append_right(self, other:TVGNode) -> None:
+        """ Combine the other node the the right. """
+        self.seq = self.seq + other.seq
 
-        for variant in node.variants:
-            self.varia
+        for variant in other.variants:
+            self.variants.append(variant.shift(len(self.seq.seq)))
+
+        self.frameshifts.update(other.frameshifts)

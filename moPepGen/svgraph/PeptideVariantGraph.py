@@ -1,8 +1,7 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from moPepGen.svgraph.PVGNode import PVGNode
-from typing import Set, Tuple, Deque, Dict, List
+from typing import Set, Deque, Dict, List
 from collections import deque
 import itertools
 from Bio.Seq import Seq
@@ -74,9 +73,21 @@ class PeptideVariantGraph():
             )
         return first_node if return_first else node
 
-    def group_sibling_out_nodes(self, upstream:svgraph.PVGNode
+    def group_outbond_siblings(self, upstream:svgraph.PVGNode
             ) -> List[List[svgraph.PVGNode]]:
-        """ """
+        """ Group the downstream nodes with variant alignments if they are
+        connected to the same downstream node. Sibling nodes are the ones that
+        share the same upstream and downstream nodes.
+
+        Args:
+            upstream (svgraph.TVGNode): The upstream node of which the outbond
+                nodes are grouped.
+
+        Return:
+            A 2-dimensional list, that each child list contains nodes that are
+            sibling to each other (ie sharing the same upstream and downstream
+            node).
+        """
         out_nodes = copy.copy(upstream.out_nodes)
         groups:List[List[svgraph.PVGNode]] = []
         while out_nodes:
@@ -92,17 +103,6 @@ class PeptideVariantGraph():
                         out_nodes.remove(node)
             groups.append(group)
         return groups
-
-    def get_downstream_nodes(self, upstream:svgraph.PVGNode
-            ) -> List[List[svgraph.PVGNode]]:
-        """ """
-        downstreams = set()
-        for siblings in self.group_sibling_out_nodes(upstream):
-            if siblings[0] is self.stop:
-                continue
-            downstream = siblings[0].find_reference_next()
-            downstreams.add(downstream)
-        return downstreams
 
     def expand_alignment_backward(self, node:svgraph.PVGNode,
             ) -> Set[svgraph.PVGNode]:
@@ -135,7 +135,7 @@ class PeptideVariantGraph():
 
         downstreams = set()
 
-        for siblings in self.group_sibling_out_nodes(node):
+        for siblings in self.group_outbond_siblings(node):
             for cur in siblings:
                 node.remove_out_edge(cur)
                 if cur is self.stop:
@@ -238,7 +238,7 @@ class PeptideVariantGraph():
         primary_nodes = copy.copy(node.in_nodes)
         trash = {node}
 
-        for siblings in self.group_sibling_out_nodes(node):
+        for siblings in self.group_outbond_siblings(node):
             if len(siblings) == 1:
                 sibling = siblings[0]
                 node.remove_out_edge(sibling)
@@ -341,7 +341,7 @@ class PeptideVariantGraph():
             primary_nodes2.add(last)
         primary_nodes = primary_nodes2
 
-        for siblings in self.group_sibling_out_nodes(right):
+        for siblings in self.group_outbond_siblings(right):
             for second in siblings:
                 second.seq = right.seq + second.seq
 

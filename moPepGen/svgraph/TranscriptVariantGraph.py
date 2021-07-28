@@ -47,7 +47,7 @@ class TranscriptVariantGraph():
     @staticmethod
     def variants_are_adjacent(edge1:svgraph.TVGEdge, edge2:svgraph.TVGEdge
             ) -> bool:
-        """ Deprecated If two edges are both variants. """
+        """ [Deprecated] If two edges are both variants. """
         if edge1 is None:
             return False
         if edge2 is None:
@@ -532,7 +532,9 @@ class TranscriptVariantGraph():
     @staticmethod
     def find_additional_end_nodes(start:svgraph.TVGNode, end:svgraph.TVGNode
             ) -> List[svgraph.TVGNode]:
-        """ """
+        """ Find additional end node of active regions, e.g. Fusion. Because
+        Fusions are by default branches, so not processed during the variant
+        node alignment. """
         end_nodes = []
         cur = start
         if cur.variants:
@@ -551,7 +553,9 @@ class TranscriptVariantGraph():
 
     def branch_out_frameshifts_in_alignments(self, upstream:svgraph.TVGNode,
             branch_out_size:int=100) -> List[svgraph.TVGNode]:
-        """ """
+        """ Create a branch for any frameshifting mutation within the active
+        region. If the created branch also has frameshifting mutations within
+        its active region, they will be further branched out, too. """
         start_node = upstream
         main_end_node = upstream.find_farthest_node_with_overlap()
         node_to_branch = start_node.next_node_to_branch_out(
@@ -697,11 +701,10 @@ class TranscriptVariantGraph():
 
         return start_node
 
-    def _expand_alignments(self, node:svgraph.TVGNode
-            ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
+    def expand_alignments(self, node:svgraph.TVGNode) -> List[svgraph.TVGNode]:
         r""" Expand the aligned variants into the range of codons. For
         frameshifting mutations, a copy of each downstream node will be
-        created and branched out.
+        created and branched out. Exclusive nodes are merged.
 
         Sequence after stop codons are trimmed off. However for frameshifting
         mutations where no stop codon is found, no trimming will be done. So
@@ -709,133 +712,17 @@ class TranscriptVariantGraph():
 
         For example:
 
-             T-GCCCT                GTG-CCCT
+             T-GCCCT                GTGCCCT
             /                      /
         ATGG-TCTG-CCCT    ->    ATG-GTCTGC-CCT
             \    /                 \      /
              TCTA                   GTCTAC
+
+        Return:
+            A list of svgraph.TVGNode. For single sibling, the node after
+            expension is returned, and for siblings more than 1, the common
+            downstream node is returned.
         """
-        branches = []
-        # how many nt we should give to the mutation.
-        if node.seq:
-            left_index = len(node.seq) - len(node.seq) % 3
-            left_over = node.seq[left_index:]
-            node.seq = node.seq[:left_index]
-        else:
-            left_over = dna.DNASeqRecordWithCoordinates(Seq(''), [])
-
-        ref_node = node.get_reference_next()
-        # original_ref_seq_len = len(ref_node.seq)
-        end_node = ref_node.get_reference_next()
-
-        # calculate the number of nt carry over from the end node for the ref
-        # node
-        right_index = len(left_over) + len(ref_node.seq)
-        right_index = (3 - right_index % 3) % 3
-        if end_node:
-            right_over = end_node.seq[:right_index]
-
-        # Figure out whether should expand forward. The case that we don't need
-        # expand forward is when all variants are frameshifting (causing
-        # branches), for example, a fusion.
-        needs_expand_forward = False
-        if len(ref_node.seq.seq) + len(left_over) < 3:
-            needs_expand_forward = True
-        for edge in node.out_edges:
-            if needs_expand_forward:
-                break
-            for variant in edge.out_node.variants:
-                if not variant.variant.is_frameshifting():
-                    needs_expand_forward = True
-                    break
-
-        out_edges = copy.copy(node.out_edges)
-        for edge in out_edges:
-            out_node:svgraph.TVGNode = edge.out_node
-
-            out_node.seq = left_over + out_node.seq
-
-            if out_node is ref_node:
-                if end_node and needs_expand_forward:
-                    out_node.seq = out_node.seq + right_over
-                continue
-
-            variants = []
-            for variant in out_node.variants:
-                variants.append(variant.shift(len(left_over)))
-            out_node.variants = variants
-
-            # Look for stop codon. If stop codon is found, remove all
-            # downstream edges/nodes
-            stop_codon_index = out_node.seq.find_stop_codon()
-            if stop_codon_index > -1:
-                out_node.seq = out_node.seq[:stop_codon_index + 3]
-                # only keep the variants before the end of stop codon
-                out_node.variants = [variant for variant in variants if
-                    variant.location.start < stop_codon_index + 3]
-                while out_node.out_edges:
-                    out_edge = out_node.out_edges.pop()
-                    self.remove_edge(out_edge)
-                continue
-
-            need_branch_out = False
-            if not out_node.branch:
-                for variant in out_node.variants:
-                    if variant.variant.is_frameshifting():
-                        need_branch_out = True
-
-            # initialize the frameshift slot
-            if need_branch_out:
-                self.update_frameshifts(out_node)
-                out_node = self.create_branch(out_node)
-
-            if any(x.variant.type == 'Fusion' for x in out_node.variants):
-                branches.append(out_node)
-                continue
-
-            if out_node.branch:
-                self.expand_alignments_on_branch(self, out_node)
-                branch_next_node = out_node.get_reference_next()
-                if len(out_node.seq) % 3 > 0 and branch_next_node:
-                    branch_right_index = 3 - (len(out_node.seq) % 3)
-
-                    if len(branch_next_node.seq.seq) <= branch_right_index:
-                        if len(branch_next_node.out_edges) > 1:
-                            branch_next_node = self.align_variants(branch_next_node)
-                        downstreams = self.merge_with_outbonds(branch_next_node)
-                        # checks if any of the outbound nodes is still too short
-                        out_node_needs_merge_with_downstream = False
-                        if len(downstreams) > 1 or \
-                                len(downstreams[0].seq) <= branch_right_index:
-                            out_node_needs_merge_with_downstream = True
-
-                        if out_node_needs_merge_with_downstream:
-                            if len(downstreams) > 1:
-                                out_node = self.align_variants(out_node)
-                            new_out_nodes = self.merge_with_outbonds(out_node)
-                            branches.extend(new_out_nodes)
-                            continue
-                        branch_next_node = downstreams[0]
-                    out_node.seq = out_node.seq + \
-                        branch_next_node.seq[:branch_right_index]
-                    branch_next_node.seq = branch_next_node.seq[branch_right_index:]
-
-                if branch_next_node:
-                    branches.append(branch_next_node)
-                    continue
-
-            if end_node:
-                out_node.seq = out_node.seq + right_over
-
-        if needs_expand_forward:
-            if end_node:
-                end_node.seq = end_node.seq[right_index:]
-                return end_node, branches
-            return None, branches
-        return ref_node, branches
-
-    def expand_alignments(self, node:svgraph.TVGNode) -> List[svgraph.TVGNode]:
-        """ Expand the alignments """
         # number of NT to be carried over to the downstreams.
         if node.seq:
             left_index = len(node.seq) - len(node.seq) % 3
@@ -846,7 +733,8 @@ class TranscriptVariantGraph():
 
         end_nodes = []
 
-        for sibling_nodes in self.group_variant_alignment_siblings(node):
+        # The reason of grouping outbond nodes into siblings
+        for sibling_nodes in self.group_outbond_siblings(node):
 
             for sibling in sibling_nodes:
                 sibling.append_left(left_over)
@@ -914,11 +802,23 @@ class TranscriptVariantGraph():
         raise ValueError('Something went wrong with variant alignment.')
 
 
-    def group_variant_alignment_siblings(self, node:svgraph.TVGNode
+    @staticmethod
+    def group_outbond_siblings(upstream:svgraph.TVGNode
             ) -> List[List[svgraph.TVGNode]]:
         """ Group the downstream nodes with variant alignments if they are
-        connected to the same downstream node. """
-        out_nodes = {edge.out_node for edge in node.out_edges}
+        connected to the same downstream node. Sibling nodes are the ones that
+        share the same upstream and downstream nodes.
+
+        Args:
+            upstream (svgraph.TVGNode): The upstream node of which the outbond
+                nodes are grouped.
+
+        Return:
+            A 2-dimensional list, that each child list contains nodes that are
+            sibling to each other (ie sharing the same upstream and downstream
+            node).
+        """
+        out_nodes = {edge.out_node for edge in upstream.out_edges}
         groups:List[List[svgraph.TVGNode]] = []
         while out_nodes:
             out_node = out_nodes.pop()
