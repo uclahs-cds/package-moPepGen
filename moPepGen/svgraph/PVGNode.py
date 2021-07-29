@@ -15,13 +15,15 @@ class PVGNode():
             carried in the sequence.
         frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
         in_nodes (Set[PVGNode]): Inbound nodes.
-        ou_nodes (Set[PVGNode]): Outbound nodes
+        out_nodes (Set[PVGNode]): Outbound nodes
+        cleavage (bool): Whether the start of the node is a cleavage site.
     """
     def __init__(self, seq:aa.AminoAcidSeqRecord,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None,
             out_nodes:Set[PVGNode]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None):
+            frameshifts:Set[seqvar.VariantRecord]=None,
+            cleavage:bool=False):
         """ Construct a PVGNode object.
 
         Args:
@@ -31,12 +33,14 @@ class PVGNode():
             frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
             in_nodes (Set[PVGNode]): Inbound nodes.
             ou_nodes (Set[PVGNode]): Outbound nodes
+            cleavage (bool): Whether the start of the node is a cleavage site.
         """
         self.seq = seq
         self.variants = variants
         self.in_nodes = set() if in_nodes is None else in_nodes
         self.out_nodes = set() if out_nodes is None else out_nodes
         self.frameshifts = set() if frameshifts is None else frameshifts
+        self.cleavage = cleavage
 
     def add_out_edge(self, node:PVGNode) -> None:
         """ Add a outbound edge from this node.
@@ -81,7 +85,7 @@ class PVGNode():
                 return node
         raise ValueError('None of the in nodes is reference.')
 
-    def split_node(self, index:int) -> PVGNode:
+    def split_node(self, index:int, cleavage:bool=False) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
         as the outbound edge. Variants will also be adjusted. For example:
 
@@ -113,6 +117,9 @@ class PVGNode():
 
         new_node = PVGNode(seq=right_seq, variants=right_variants)
         new_node.frameshifts = copy.copy(self.frameshifts)
+
+        if cleavage:
+            new_node.cleavage = True
 
         # need to remove the frameshift variant if it is no longer ther after
         # splitting the node.

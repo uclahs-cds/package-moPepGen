@@ -66,7 +66,7 @@ class PeptideVariantGraph():
             exception=self.exception
         )
         while site > -1:
-            node = node.split_node(site)
+            node = node.split_node(site, cleavage=True)
             site = node.seq.find_first_enzymatic_cleave_site(
                 rule=self.rule,
                 exception=self.exception
@@ -316,7 +316,7 @@ class PeptideVariantGraph():
             node (svgraph.PVGNode): The node in the graph of target.
         """
         left = node
-        right = node.split_node(site)
+        right = node.split_node(site, cleavage=True)
         primary_nodes = copy.copy(left.in_nodes)
         secondary_nodes = copy.copy(right.out_nodes)
 
@@ -351,6 +351,8 @@ class PeptideVariantGraph():
                 while second.in_nodes:
                     in_node = second.in_nodes.pop()
                     in_node.remove_out_edge(second)
+
+                second.cleavage = True
 
                 last = self.cleave_if_possible(second)
 
@@ -399,7 +401,7 @@ class PeptideVariantGraph():
                 site = cur.seq.find_first_enzymatic_cleave_site(rule=self.rule,
                     exception=self.exception)
                 while site > -1:
-                    cur = cur.split_node(site)
+                    cur = cur.split_node(site, cleavage=True)
                     site = cur.seq.find_first_enzymatic_cleave_site(
                         rule=self.rule, exception=self.exception)
 
@@ -423,31 +425,27 @@ class PeptideVariantGraph():
                 if self.next_is_stop(cur):
                     self.expand_alignment_forward(cur)
                     continue
-                branches = self.merge_join_alignments(cur)
+                if cur.cleavage:
+                    branches = self.expand_alignment_backward(cur)
+                else:
+                    branches = self.merge_join_alignments(cur)
                 for branch in branches:
                     queue.appendleft(branch)
             elif len(sites) == 1:
                 if self.next_is_stop(cur):
-                    cur.split_node(sites[0])
+                    cur.split_node(sites[0], cleavage=True)
                     cur = self.expand_alignment_forward(cur)
                     queue.appendleft(cur)
                     continue
                 branches = self.cross_join_alignments(cur, sites[0])
                 for branch in branches:
-                    sites = branch.seq.find_all_enzymatic_cleave_sites(
-                        rule=self.rule, exception=self.exception)
-                    if len(sites) == 0 and len(branch.out_nodes) > 1:
-                        new_branches = self.expand_alignment_backward(branch)
-                        for new_branch in new_branches:
-                            queue.appendleft(new_branch)
-                    else:
-                        queue.appendleft(branch)
+                    queue.appendleft(branch)
             else:
-                right = cur.split_node(sites[0])
+                right = cur.split_node(sites[0], cleavage=True)
                 cur = self.expand_alignment_forward(cur)
                 site = right.seq.find_first_enzymatic_cleave_site(
                     rule=self.rule, exception=self.exception)
-                right = right.split_node(site)
+                right = right.split_node(site, cleavage=True)
                 queue.appendleft(right)
 
     def call_variant_peptides(self, miscleavage:int=2
