@@ -318,11 +318,11 @@ def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.input_variant = [
-        'test/files/CPCG0100_gencode_aa_indel_ENST00000558600.1.tvf'
+        'test/files/vep/CPCG0184_gencode_aa_indel_ENST00000314675.11_2.tvf'
     ]
-    test_args.index_dir = 'test/files/downsampled_index/ENST00000558600.1'
+    test_args.index_dir = 'test/files/downsampled_index/ENST00000314675.11'
     test_args.circ_rna_bed = None
-    test_args.output_fasta = 'test/files/CPCG0100_gencode_aa_indel_ENST00000558600.1.fasta'
+    test_args.output_fasta = 'test/files/vep/CPCG0184_gencode_aa_indel_ENST00000314675.11.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2

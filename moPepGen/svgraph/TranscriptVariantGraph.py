@@ -629,18 +629,6 @@ class TranscriptVariantGraph():
             if cur in end_nodes or not cur.out_edges:
                 continue
 
-            # still need this block?
-            done_with_this_branch = False
-            if len(cur.out_edges) == 1:
-                for end_node in end_nodes:
-                    if cur.is_inbond_of(end_node):
-                        done_with_this_branch = True
-                        break
-            if len(cur.out_edges) == 0:
-                done_with_this_branch = True
-            if done_with_this_branch:
-                continue
-
             # because the new node will be reconstructed and added back
             new_nodes.remove(cur)
 
@@ -677,12 +665,15 @@ class TranscriptVariantGraph():
                     frameshifts=frameshifts,
                     branch=cur.branch
                 )
+
                 edges = copy.copy(out_node.out_edges)
                 for edge in edges:
                     edge_type = 'variant_end' if new_node.variants \
                         else 'reference'
                     self.add_edge(new_node, edge.out_node, _type=edge_type)
-                queue.appendleft(new_node)
+
+                if out_node not in end_nodes:
+                    queue.appendleft(new_node)
 
                 new_nodes.add(new_node)
             # now remove the cur node from graph

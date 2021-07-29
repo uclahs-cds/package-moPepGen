@@ -255,3 +255,98 @@ class TestCallVariantPeptides(TestCaseIntegration):
             'SSPCPGPSPSPQ'
         }
         self.assertEqual(seqs, expected)
+
+    def test_call_varaint_peptide_case8(self):
+        """ A test case with reported in PR #36.
+        """
+        args = argparse.Namespace()
+        args.input_variant = [
+            str(self.data_dir/'vep/CPCG0184_gencode_aa_indel_ENST00000314675.11.tvf')
+        ]
+        args.circ_rna_bed = None
+        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.index_dir = self.data_dir/'downsampled_index/ENST00000314675.11'
+        args.cleavage_rule = 'trypsin'
+        args.miscleavage = '2'
+        args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
+        args.verbose = False
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+        peptides = list(SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'))
+        seqs = {str(seq.seq) for seq in peptides}
+        expected = {
+            'APAPSTR',
+            'APAPSTRCSAR',
+            'APAPSTRCSARLLGGPSR',
+            'APKSSLKFSPGPCPGPGPGPSPSR',
+            'APKSSLKFSPGPCPGPGPSPSR',
+            'APKSSLKFSPGPCPGPSPSPQ',
+            'AWDQLGQGGGGADPPLGNSSPGWR',
+            'AWLLGLCLLGSSFSQEGLSGSCEGR',
+            'CSARLLGGPSR',
+            'CSARLLGGPSRQAR',
+            'FSPGPCPGPGPGPSPSR',
+            'FSPGPCPGPGPGPSPSRPQSR',
+            'FSPGPCPGPGPGPSPSRPQSRSR',
+            'FSPGPCPGPGPSPSR',
+            'FSPGPCPGPGPSPSRPQSR',
+            'FSPGPCPGPGPSPSRPQSRSR',
+            'FSPGPCPGPSPSPQ',
+            'GLGPAGPGR',
+            'GLGPAGPGRGR',
+            'GLGPAGPGRGRCRPAPW',
+            'GRCRPAPW',
+            'HPPPQPAAPPGSWVGHLAR',
+            'HPPPQPAAPPGSWVGHLARHVGK',
+            'HRPTNSWGHFNTAQSHFATRPMPPN',
+            'KGLGPAGPGR',
+            'KGLGPAGPGRGR',
+            'LLGGPSR',
+            'LLGGPSRQAR',
+            'LLGGPSRQARR',
+            'LPAPVPVLDPVPAPNK',
+            'LPAPVPVLDPVPAPNKAPAPSTR',
+            'LQSLSWTQSQPPIK',
+            'RKGLGPAGPGR',
+            'SRPQSLSWTQSQPPIK',
+            'SRSRPQSLSWTQSQPPIK',
+            'SRSSPCPGPSPSPQ',
+            'SSLKFSPGPCPGPGPGPSPSR',
+            'SSLKFSPGPCPGPGPGPSPSRPQSR',
+            'SSLKFSPGPCPGPGPSPSR',
+            'SSLKFSPGPCPGPGPSPSRPQSR',
+            'SSLKFSPGPCPGPGPSPSRPQSRSR',
+            'SSLKFSPGPCPGPSPSPQ',
+            'SSPCPGPSPSPQ'
+        }
+        self.assertEqual(seqs, expected)
+
+    def test_call_varaint_peptide_case9(self):
+        """ A test case with reported in PR #36.
+        """
+        args = argparse.Namespace()
+        args.input_variant = [
+            str(self.data_dir/'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5.tvf')
+        ]
+        args.circ_rna_bed = None
+        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.index_dir = self.data_dir/'downsampled_index/ENST00000360004.5'
+        args.cleavage_rule = 'trypsin'
+        args.miscleavage = '2'
+        args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
+        args.verbose = False
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+        peptides = list(SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'))
+        seqs = {str(seq.seq) for seq in peptides}
+        with open(self.data_dir/'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5_expected.txt', 'rt') as handle:
+            expected = {line.strip() for line in handle}
+        self.assertEqual(seqs, expected)

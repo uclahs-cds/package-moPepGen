@@ -128,9 +128,6 @@ class PeptideVariantGraph():
             of the variant alignment bubble, and the second is a set of all
             branches with frameshifting variants.
         """
-        if len(node.in_nodes) > 1:
-            raise ValueError('Inbond node has multiple')
-
         upstream = next(iter(node.in_nodes))
 
         downstreams = set()
@@ -437,7 +434,14 @@ class PeptideVariantGraph():
                     continue
                 branches = self.cross_join_alignments(cur, sites[0])
                 for branch in branches:
-                    queue.appendleft(branch)
+                    sites = branch.seq.find_all_enzymatic_cleave_sites(
+                        rule=self.rule, exception=self.exception)
+                    if len(sites) == 0 and len(branch.out_nodes) > 1:
+                        new_branches = self.expand_alignment_backward(branch)
+                        for new_branch in new_branches:
+                            queue.appendleft(new_branch)
+                    else:
+                        queue.appendleft(branch)
             else:
                 right = cur.split_node(sites[0])
                 cur = self.expand_alignment_forward(cur)

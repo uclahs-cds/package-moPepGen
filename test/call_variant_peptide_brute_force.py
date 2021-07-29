@@ -78,6 +78,17 @@ def main(args):
     for i in range(len(variants)):
         for comb in combinations(variants, i + 1):
             skip = False
+
+            for j, left in enumerate(comb):
+                if j == len(comb) - 1:
+                    continue
+                for right in comb[j+1:]:
+                    if left.location.end > right.location.start:
+                        skip = True
+
+            if skip:
+                continue
+
             for variant in comb:
                 target = tuplify_variant(variant)
                 if target not in exclusion:
