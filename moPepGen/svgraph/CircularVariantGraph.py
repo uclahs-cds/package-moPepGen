@@ -107,7 +107,8 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         return new_node
 
     def find_orf_in_outbound_nodes(self, node:svgraph.TVGNode,
-            carry_over:dna.DNASeqRecordWithCoordinates
+            carry_over:dna.DNASeqRecordWithCoordinates,
+            min_size:int=6
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
         """ Look for potential start codon int the out bound nodes.
 
@@ -122,7 +123,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             branches created because of start codon.
         """
         branches = []
-        downstream = node.find_farthest_node_with_overlap(circular=True)
+        downstream = node.find_farthest_node_with_overlap(min_size=min_size)
 
         for edge in node.out_edges:
             seq = carry_over + edge.out_node.seq + downstream.seq[:2]

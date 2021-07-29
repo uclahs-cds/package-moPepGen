@@ -190,8 +190,7 @@ class TVGNode():
 
         return new_node
 
-    def find_farthest_node_with_overlap(self, min_size:int=6,
-            circular:bool=False) -> TVGNode:
+    def find_farthest_node_with_overlap(self, min_size:int=6) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
         reference sequence. If the farthest node found has an exclusive single
@@ -254,22 +253,6 @@ class TVGNode():
                 queue.append(cur)
                 visited.remove(cur)
                 continue
-
-        # # extending to the farthest exclusive outbond node.
-        # while True:
-        #     if len(farthest.out_edges) != 1:
-        #         break
-        #     downstream = list(farthest.out_edges)[0].out_node
-        #     if circular:
-        #         farthest_position = farthest.seq.locations[0].ref.start
-        #         downstream_position = downstream.seq.locations[0].ref.start
-        #         if farthest_position >= downstream_position:
-        #             break
-        #     if not downstream.out_edges:
-        #         break
-        #     if len(downstream.in_edges) > 1:
-        #         break
-        #     farthest = downstream
         return farthest
 
     def stringify(self, k:int=None) -> None:
