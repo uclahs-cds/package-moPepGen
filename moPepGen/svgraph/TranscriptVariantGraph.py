@@ -583,7 +583,7 @@ class TranscriptVariantGraph():
         return end_nodes
 
     def align_variants(self, node:svgraph.TVGNode, branch_out_size:int=100,
-            branch_out_frameshifting:bool=True, circular:bool=False
+            branch_out_frameshifting:bool=True
             ) -> svgraph.TVGNode:
         r""" Aligns all variants at that overlaps to the same start and end
         position. Frameshifting mutations will be brached out
