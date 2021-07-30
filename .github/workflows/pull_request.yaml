@@ -20,8 +20,17 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: test
-        uses: docker://python:3.8.5
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.8.5
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8.5
+      
+      - name: Install dependencies
         run: |
           pip install biopython==1.78 pytest
+
+      - name: test
+        run: |
           pytest
