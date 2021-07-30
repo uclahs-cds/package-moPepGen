@@ -180,8 +180,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             if len(node.out_edges) > 1:
                 self.align_variants(node, branch_out_frameshifting=False,
                     circular=True)
-                next_node = node.find_farthest_node_with_overlap(min_size = 0,
-                    circular=True)
+                next_node = node.find_farthest_node_with_overlap(min_size = 0)
             elif not node.out_edges:
                 print(node)
             else:

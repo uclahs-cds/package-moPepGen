@@ -161,7 +161,6 @@ class TestCallVariantPeptides(TestCaseIntegration):
         index = self.data_dir/'downsampled_index/ENST00000314675.11'
         self.default_test_case(tvf, index, expect)
 
-
     def test_call_varaint_peptide_case9(self):
         """ A test case with reported in PR #36.
         """
@@ -170,4 +169,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expect = self.data_dir \
             /'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5_expect.txt'
         index = self.data_dir/'downsampled_index/ENST00000360004.5'
+        self.default_test_case(tvf, index, expect)
+
+    def test_call_varaint_peptide_case10(self):
+        """ A test case with reported in PR #36.
+        """
+        tvf = self.data_dir \
+            /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2.tvf'
+        expect = self.data_dir \
+            /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2_expect.txt'
+        index = self.data_dir/'downsampled_index/ENST00000390283.2'
         self.default_test_case(tvf, index, expect)

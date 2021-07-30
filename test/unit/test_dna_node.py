@@ -242,5 +242,5 @@ class TestTVGNode(unittest.TestCase):
             6: ('CCCT', [4,5], [])
         }
         _, nodes = create_dgraph2(data, True)
-        node = nodes[1].find_farthest_node_with_overlap(circular=True)
+        node = nodes[1].find_farthest_node_with_overlap()
         self.assertIs(node, nodes[6])

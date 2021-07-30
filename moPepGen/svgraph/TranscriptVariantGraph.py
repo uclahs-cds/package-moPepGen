@@ -610,7 +610,7 @@ class TranscriptVariantGraph():
             end_nodes = self.branch_out_frameshifts_in_alignments(node,
                 branch_out_size)
         else:
-            end_nodes = [node.find_farthest_node_with_overlap(circular=circular)]
+            end_nodes = [node.find_farthest_node_with_overlap()]
 
         new_nodes = set()
         queue = deque()
@@ -740,6 +740,16 @@ class TranscriptVariantGraph():
 
         return end_nodes
 
+    def truncate_at_stop_codon_if_found(self, node:svgraph.TVGNode):
+        """ Look for stop codon in the given node. If a stop codon is found,
+        the node is then truncated at the stop codon position, and the
+        downstream nodes will be removed. """
+        stop_codon_index = node.seq.find_stop_codon()
+        if stop_codon_index > -1:
+            node.truncate_right(stop_codon_index)
+            while node.out_edges:
+                edge = node.out_edges.pop()
+                self.remove_edge(edge)
 
     def siblings_expand_to_codons(self, nodes:List[svgraph.TVGNode]
             ) -> svgraph.TVGNode:
@@ -756,22 +766,20 @@ class TranscriptVariantGraph():
 
         if len(ref_node.seq.seq) < right_index + 3:
             # shouldn't happen. Raising an  exception for now.
-            raise ValueError('Somthing went wrong with variant alignment.')
-
-        right_over = ref_node.truncate_left(right_index)
+            if len(ref_node.out_edges):
+                raise ValueError('Somthing went wrong with variant alignment.')
+            for node in nodes:
+                node.append_right(ref_node)
+                self.truncate_at_stop_codon_if_found(node)
+                self.remove_node(ref_node)
+                return None
 
         found_stop = []
+        right_over = ref_node.truncate_left(right_index)
         for node in nodes:
             node.append_right(right_over)
-            stop_codon_index = node.seq.find_stop_codon()
-            if stop_codon_index > -1:
-                found_stop.append(True)
-                node.truncate_right(stop_codon_index)
-                while node.out_edges:
-                    edge = node.out_edges.pop()
-                    self.remove_edge(edge)
-            else:
-                found_stop.append(False)
+            self.truncate_at_stop_codon_if_found(node)
+            found_stop.append(not node.out_edges)
         if all(found_stop):
             return None
         return ref_node
