@@ -1,5 +1,5 @@
 ---
-name: pull_request
+name: pull-request
 
 on:
   push:
@@ -8,6 +8,11 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      msg:
+        description: 'Run unit and integration test cases.'
+        default: 'This workflow run is triggered by workflow dispatch event'
 jobs:
   test:
     runs-on: ubuntu-latest
