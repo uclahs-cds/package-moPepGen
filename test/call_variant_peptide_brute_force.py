@@ -21,15 +21,6 @@ def parse_args():
         type=Path,
         help='Index directory'
     )
-    parser.add_argument(
-        '-x', '--exclusion',
-        type=str,
-        help='Variant exclusions. Format:'
-        '<variant1>:<exclusion-1>,<exclusion-2> '
-        '<variant2>:<exclusion-3>,<exclusion-4>. Variants are represented as '
-        '<start>-<ref>-<alt>',
-        nargs="*"
-    )
     return parser.parse_args()
 
 def _parse_exclusion(exclusion) -> Tuple:
@@ -48,17 +39,8 @@ def parse_variant_exclusion(exclusions:List[str]) -> Dict[Tuple,List[Tuple]]:
         groups[variant] = targets
     return groups
 
-def tuplify_variant(variant:seqvar.VariantRecord) -> str:
-    """ Convert a variant to a tuple """
-    return int(variant.location.start), variant.ref, variant.alt
-
 def main(args):
     """ main """
-    if args.exclusion:
-        exclusion = parse_variant_exclusion(args.exclusion)
-    else:
-        exclusion = {}
-
     with open(args.index_dir/'genome.pickle', 'rb') as handle:
         genome = pickle.load(handle)
     with open(args.index_dir/'annotation.pickle', 'rb') as handle:
@@ -88,17 +70,6 @@ def main(args):
 
             if skip:
                 continue
-
-            for variant in comb:
-                target = tuplify_variant(variant)
-                if target not in exclusion:
-                    continue
-                exclude_variants = exclusion[target]
-                for x in variants:
-                    if tuplify_variant(x) in exclude_variants:
-                        skip = True
-            if skip:
-                continue
             seq = tx_seq.seq
             offset = 0
             for variant in comb:
@@ -120,5 +91,8 @@ def main(args):
 
 
 if __name__ == '__main__':
-    _args = parse_args()
+    # _args = parse_args()
+    _args = argparse.Namespace()
+    _args.input_tvf = Path('test/files/vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.tvf')
+    _args.index_dir = Path('test/files/downsampled_index/ENST00000515757.5')
     main(_args)

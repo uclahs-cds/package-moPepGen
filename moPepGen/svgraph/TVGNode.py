@@ -91,6 +91,9 @@ class TVGNode():
             variant_len = location.end - location.start
             if variant_len >= branch_out_size:
                 return True
+        # For variants located in the end of the sequence.
+        if not self.out_edges:
+            return True
         return False
 
     def next_node_to_branch_out(self, to_node:svgraph.TVGNode,
@@ -215,6 +218,9 @@ class TVGNode():
         visited = {self}
         while queue:
             cur:TVGNode = queue.popleft()
+
+            if cur is None:
+                continue
 
             # if this is the start of a new branch, don't count it.
             if cur.branch:

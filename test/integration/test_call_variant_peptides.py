@@ -123,7 +123,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.assertEqual(files, expected)
 
     def test_call_varaint_peptide_case5(self):
-        """ A test case with reported in issue #25, with 3 indel. """
+        """ A test case reported in issue #25, with 3 indel. """
         tvf = self.data_dir \
             /'vep/CPCG0100_gencode_aa_indel_ENST00000308182.9.tvf'
         expect = self.data_dir \
@@ -132,7 +132,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(tvf, index, expect)
 
     def test_call_varaint_peptide_case6(self):
-        """ A test case with reported in issue #33, with 3 indel (insertion).
+        """ A test case reported in issue #33, with 3 indel (insertion).
         """
         tvf = self.data_dir \
             /'vep/CPCG0102_gencode_aa_indel_ENST00000542218.1.tvf'
@@ -142,7 +142,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(tvf, index, expect)
 
     def test_call_varaint_peptide_case7(self):
-        """ A test case with reported in issue #33, with 3 indel (insertion).
+        """ A test case reported in issue #33, with 3 indel (insertion).
         """
         tvf = self.data_dir \
             /'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.tvf'
@@ -152,7 +152,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(tvf, index, expect)
 
     def test_call_varaint_peptide_case8(self):
-        """ A test case with reported in PR #36.
+        """ A test case reported in PR #36.
         """
         tvf = self.data_dir \
             /'vep/CPCG0184_gencode_aa_indel_ENST00000314675.11.tvf'
@@ -162,7 +162,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(tvf, index, expect)
 
     def test_call_varaint_peptide_case9(self):
-        """ A test case with reported in PR #36.
+        """ A test case reported in PR #36.
         """
         tvf = self.data_dir \
             /'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5.tvf'
@@ -172,11 +172,22 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(tvf, index, expect)
 
     def test_call_varaint_peptide_case10(self):
-        """ A test case with reported in PR #36.
+        """ A test case reported in PR #36.
         """
         tvf = self.data_dir \
             /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2.tvf'
         expect = self.data_dir \
             /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2_expect.txt'
         index = self.data_dir/'downsampled_index/ENST00000390283.2'
+        self.default_test_case(tvf, index, expect)
+
+    def test_call_varaint_peptide_case11(self):
+        """ A test case reported in PR #36. Testing the variant in the end
+        of the sequence is included.
+        """
+        tvf = self.data_dir \
+            /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.tvf'
+        expect = self.data_dir \
+            /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5_expect.fasta'
+        index = self.data_dir/'downsampled_index/ENST00000515757.5'
         self.default_test_case(tvf, index, expect)

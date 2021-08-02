@@ -766,13 +766,13 @@ class TranscriptVariantGraph():
 
         if len(ref_node.seq.seq) < right_index + 3:
             # shouldn't happen. Raising an  exception for now.
-            if len(ref_node.out_edges):
+            if len(ref_node.out_edges) > 0:
                 raise ValueError('Somthing went wrong with variant alignment.')
             for node in nodes:
                 node.append_right(ref_node)
                 self.truncate_at_stop_codon_if_found(node)
-                self.remove_node(ref_node)
-                return None
+            self.remove_node(ref_node)
+            return None
 
         found_stop = []
         right_over = ref_node.truncate_left(right_index)
