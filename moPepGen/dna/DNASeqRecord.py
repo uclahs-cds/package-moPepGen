@@ -136,11 +136,8 @@ class DNASeqRecord(SeqRecord):
         cleave_sites = [0]
         cleave_sites.extend(self.find_all_enzymatic_cleave_sites(rule=rule,
             exception=exception, start=None, end=end))
-
         i = len(cleave_sites) - miscleavage
-        if i < 0:
-            i = 0
-        return i
+        return max(i, 0)
 
     def find_next_cleave_position(self, start:int, rule:str,
             exception:str=None, miscleavage:int=0) -> int:
