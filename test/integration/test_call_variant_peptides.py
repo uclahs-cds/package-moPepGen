@@ -25,6 +25,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.genome_fasta = reference/'genome.fasta'
         args.annotation_gtf = reference/'annotation.gtf'
         args.proteome_fasta = reference/'proteome.fasta'
@@ -50,7 +53,10 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.input_variant = [str(self.data_dir/'vep'/'vep.tvf')]
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
@@ -71,7 +77,10 @@ class TestCallVariantPeptides(TestCaseIntegration):
         ]
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
@@ -92,7 +101,10 @@ class TestCallVariantPeptides(TestCaseIntegration):
         ]
         args.circ_rna_bed = str(self.data_dir/'circRNA'/'circ_rna.tsv')
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
