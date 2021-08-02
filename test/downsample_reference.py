@@ -204,6 +204,7 @@ def downsample_proteins(path:Path, anno:gtf.GenomicAnnotation
 
 def shift_seq_feature(feature:SeqFeature, offset:int, seqname:str='chr1'):
     """ Shift SeqFeature with a given offset """
+    feature.chrom = seqname
     start = feature.location.start + offset
     end = feature.location.end + offset
     strand = feature.location.strand

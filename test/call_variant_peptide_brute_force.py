@@ -5,7 +5,7 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 import pickle
 from itertools import combinations
-from moPepGen import seqvar, aa
+from moPepGen import seqvar, aa, gtf, dna
 
 
 def parse_args():
@@ -17,9 +17,31 @@ def parse_args():
         help='TVF file'
     )
     parser.add_argument(
-        '-d', '--index-dir',
+        '-r', '--reference-dir',
         type=Path,
         help='Index directory'
+    )
+    parser.add_argument(
+        '-c', '--cleavage-rule',
+        type=str,
+        help='Cleavage rule. Defaults to trypsin.',
+        default='trypsin',
+        metavar=''
+    )
+    parser.add_argument(
+        '-m', '--miscleavage',
+        type=int,
+        help='Number of cleavages to allow. Defaults to 2.',
+        metavar='',
+        default=2
+    )
+    parser.add_argument(
+        '-w', '--min-mw',
+        type=float,
+        help='The minimal molecular weight of the non-canonical peptides.'
+        'Defaults to 500',
+        default=500.,
+        metavar=''
     )
     return parser.parse_args()
 
@@ -41,10 +63,22 @@ def parse_variant_exclusion(exclusions:List[str]) -> Dict[Tuple,List[Tuple]]:
 
 def main(args):
     """ main """
-    with open(args.index_dir/'genome.pickle', 'rb') as handle:
-        genome = pickle.load(handle)
-    with open(args.index_dir/'annotation.pickle', 'rb') as handle:
-        anno = pickle.load(handle)
+
+    anno = gtf.GenomicAnnotation()
+    anno.dump_gtf(args.reference_dir/'annotation.gtf')
+
+    genome = dna.DNASeqDict()
+    genome.dump_fasta(args.reference_dir/'genome.fasta')
+
+    proteome = aa.AminoAcidSeqDict()
+    proteome.dump_fasta(args.reference_dir/'proteome.fasta')
+
+    rule = args.cleavage_rule
+    exception = 'trypsin_exception' if rule == 'trypsin' else None
+    canonical_peptides = proteome.create_unique_peptide_pool(
+        rule=rule, exception=exception, miscleavage=args.miscleavage,
+        min_mw=args.min_mw
+    )
 
     variants = list(seqvar.io.parse(args.input_tvf))
     variants.sort()
@@ -91,8 +125,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    # _args = parse_args()
-    _args = argparse.Namespace()
-    _args.input_tvf = Path('test/files/vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.tvf')
-    _args.index_dir = Path('test/files/downsampled_index/ENST00000515757.5')
+    _args = parse_args()
     main(_args)
