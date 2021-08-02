@@ -3,7 +3,6 @@ import sys
 import argparse
 from typing import List, Dict, Tuple
 from pathlib import Path
-import pickle
 from itertools import combinations
 from moPepGen import seqvar, aa, gtf, dna
 
