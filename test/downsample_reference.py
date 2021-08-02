@@ -20,7 +20,6 @@ command line usage:
 import argparse
 from typing import List, Tuple, Iterable, Dict
 from pathlib import Path
-import pickle
 from Bio import SeqIO
 from moPepGen import gtf, dna, aa
 from moPepGen.gtf import GtfIO
@@ -226,6 +225,7 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
             genome[seqname] = seq
         else:
             genome[seqname] += seq
+    genome[seqname].id = seqname
 
     gene_start = 0
     for gene in anno.genes.values():
@@ -251,10 +251,6 @@ def main():
     gene_list:List[str] = args.gene_list
     tx_list:List[str] = args.tx_list
     output_dir:Path = args.output_dir
-    rule:str = args.cleavage_rule
-    miscleavage:int = int(args.miscleavage)
-    min_mw:float = float(args.min_mw)
-    exception = 'trypsin_exception' if rule == 'trypsin' else None
 
     output_dir.mkdir(exist_ok=True)
 
@@ -263,21 +259,15 @@ def main():
     genome, anno = shift_reference(gene_seqs, anno)
     proteins = downsample_proteins(protein_fasta, anno)
 
-    with open(output_dir/'annotation.pickle', 'wb') as handle:
-        pickle.dump(anno, handle)
+    GtfIO.write(output_dir/'annotation.gtf', anno)
 
-    with open(output_dir/'genome.pickle', 'wb') as handle:
-        pickle.dump(genome, handle)
+    with open(output_dir/'genome.fasta', 'wt') as handle:
+        writer = SeqIO.FastaIO.FastaWriter(handle, record2title=lambda x: x.id)
+        for record in genome.values():
+            writer.write_record(record)
 
-    with open(output_dir/'proteome.pickle', 'wb') as handle:
-        pickle.dump(proteins, handle)
-
-    canonical_peptides = proteins.create_unique_peptide_pool(
-        rule=rule, exception=exception, miscleavage=miscleavage, min_mw=min_mw
-    )
-
-    with open(output_dir/'canonical_peptides.pickle', 'wb') as handle:
-        pickle.dump(canonical_peptides, handle)
+    with open(output_dir/'proteome.fasta', 'wt') as handle:
+        SeqIO.write(proteins.values(), handle, 'fasta')
 
 
 if __name__ == '__main__':
