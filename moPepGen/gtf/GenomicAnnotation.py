@@ -24,6 +24,7 @@ class GenomicAnnotation():
         self.genes = genes
         self.transcripts = transcripts
         self.source = source
+        self.gene_id_version_mapper = None
 
     def __repr__(self) -> str:
         """ Return a string representation """
@@ -281,3 +282,34 @@ class GenomicAnnotation():
             _type=variant.type,
             _id=variant.id
         )
+
+    def create_gene_id_version_mapper(self) -> None:
+        """ Create the a dict that keys are the unversioned gene ID, and values
+        are the versioned. """
+        self.gene_id_version_mapper = {}
+        for versioned in self.genes.keys():
+            unversioned = versioned.split('.')[0]
+            if unversioned in self.gene_id_version_mapper:
+                raise ValueError('Unversioned gene ID collapsed.')
+            self.gene_id_version_mapper[unversioned] = versioned
+
+    def get_gene_model_from_unversioned_id(self, gene_id:str) -> GeneAnnotationModel:
+        """ Get the gene annotation model from an unversioned gene ID. In
+        general the source and version of the annotation GTF file used should
+        be consistent with the one used to call genomic variants (e.g. VEP &
+        fusion). But this is useful for FusionCatcher because it uses ENSEMBL
+        as default.
+
+        Args:
+            gene_id (str): The unversioned gene ID (ENSEMBL's style).
+
+        Returns:
+            The GeneAnnotationModel object of the gene.
+        """
+        if self.source == 'ENSEMBL':
+            return self.genes[gene_id]
+
+        if self.gene_id_version_mapper is None:
+            self.create_gene_id_version_mapper()
+
+        return self.gene_id_version_mapper[gene_id]
