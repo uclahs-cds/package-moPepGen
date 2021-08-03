@@ -24,7 +24,7 @@ class GenomicAnnotation():
         self.genes = genes
         self.transcripts = transcripts
         self.source = source
-        self.gene_id_version_mapper = None
+        self.gene_id_version_mapper:Dict[str, str] = None
 
     def __repr__(self) -> str:
         """ Return a string representation """
@@ -312,4 +312,6 @@ class GenomicAnnotation():
         if self.gene_id_version_mapper is None:
             self.create_gene_id_version_mapper()
 
-        return self.gene_id_version_mapper[gene_id]
+        versioned_gene_id = self.gene_id_version_mapper[gene_id]
+
+        return self.genes[versioned_gene_id]
