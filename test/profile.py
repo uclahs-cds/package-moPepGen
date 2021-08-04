@@ -68,7 +68,7 @@ def run_task():
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
     pgraph.form_cleavage_graph('trypsin')
-    peptides = pgraph.call_vaiant_peptides()
+    peptides = pgraph.call_variant_peptides()
     print(peptides)
 
 if __name__ == '__main__':

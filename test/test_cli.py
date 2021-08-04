@@ -3,6 +3,7 @@ import unittest
 import shutil
 from pathlib import Path
 import argparse
+from Bio import SeqIO
 from moPepGen import cli, seqvar
 
 
@@ -67,7 +68,7 @@ class TestCli(unittest.TestCase):
         args.fusion = DATA_DIR/'fusion/star_fusion.txt'
         args.index_dir = DATA_DIR/'index'
         args.output_prefix = str(WORK_DIR/'star_fusion')
-        args.verbose = True
+        args.verbose = False
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
         expected = {'star_fusion.tvf'}
@@ -95,6 +96,8 @@ class TestCli(unittest.TestCase):
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
         args.verbose = False
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
@@ -114,6 +117,8 @@ class TestCli(unittest.TestCase):
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
         args.verbose = False
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
@@ -133,6 +138,8 @@ class TestCli(unittest.TestCase):
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
         args.verbose = False
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
@@ -152,11 +159,60 @@ class TestCli(unittest.TestCase):
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
         args.verbose = False
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in WORK_DIR.glob('*')}
         expected = {'vep_moPepGen.fasta'}
         self.assertEqual(files, expected)
+
+    def test_call_varaint_peptide_case5(self):
+        """ A test case with reported in issue #25, with 3 indel. """
+        args = argparse.Namespace()
+        args.input_variant = [
+            str(DATA_DIR/'vep/ENST00000308182.9_CPCG0100_indel.tvf')
+        ]
+        args.circ_rna_bed = None
+        args.output_fasta = WORK_DIR/'vep_moPepGen.fasta'
+        args.index_dir = DATA_DIR/'downsampled_index/ENST00000308182.9'
+        args.cleavage_rule = 'trypsin'
+        args.miscleavage = '2'
+        args.min_mw = '500.'
+        args.min_length = 7
+        args.max_length = 25
+        args.verbose = False
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in WORK_DIR.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+        peptides = list(SeqIO.parse(WORK_DIR/'vep_moPepGen.fasta', 'fasta'))
+
+        seqs = {str(seq.seq) for seq in peptides}
+        expected = {
+            'EVVKGPGAPPPGK',
+            'EVVKGPGAPPPGKR',
+            'EVVKGPVLMPHFPPGK',
+            'EVVKGPVLMPHFPPGKR',
+            'EVVKGPVPHLER',
+            'EVVQGSSAPAASS',
+            'EVVQGSSAPAASSPTWK',
+            'EVVQGSSAPAASSPTWKEVVK',
+            'EVVQGSSAPAASVLLMPHFPPGK',
+            'EVVQGSSAPAASVLLMPHFPPGKR',
+            'EVVQGSSAPAASVLLMPHFPPGKRL',
+            'EVVQGSSAPAASVLPHLER',
+            'GCEGPWCSCCLIAHPER',
+            'GPGAPPPGK',
+            'GPGAPPPGKR',
+            'GPGAPPPGKRL',
+            'GPVLMPHFPPGK',
+            'GPVLMPHFPPGKR',
+            'GPVLMPHFPPGKRL',
+            'GPVPHLER',
+            'RGCEGPWCSCCLIAHPER'
+        }
+        self.assertEqual(seqs, expected)
 
     def test_parse_rmats_se_case_1(self):
         """ rMATS skipped exon when the retained version is annotated. This
@@ -169,7 +225,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.location.start, 323)
@@ -189,7 +245,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.location.start, 870)
@@ -209,7 +265,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Deletion')
@@ -225,7 +281,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Insertion')
@@ -241,7 +297,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Deletion')
@@ -257,7 +313,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Insertion')
@@ -273,7 +329,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.type, 'Substitution')
@@ -289,7 +345,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = None
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
         self.assertTrue(len(records), 2)
@@ -306,7 +362,7 @@ class TestCli(unittest.TestCase):
         args.retained_intron = Path('test/files/alternative_splicing/rmats_ri_case_1.txt')
         args.index_dir = Path('test/files/index')
         args.output_prefix = str(WORK_DIR/'rmats')
-        args.verbose = True
+        args.verbose = False
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
         self.assertTrue(len(records), 2)

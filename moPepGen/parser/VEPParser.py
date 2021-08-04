@@ -3,8 +3,9 @@
 from __future__ import annotations
 from typing import List, Tuple, Iterable
 import re
+from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import seqvar, dna
+from moPepGen import seqvar, dna, gtf
 
 
 def parse(path:str) -> Iterable[VEPRecord]:
@@ -109,17 +110,23 @@ class VEPRecord():
         consequences = '|'.join(self.consequences)
         return f"< {self.feature}, {consequences}, {self.location} >"
 
-    def convert_to_variant_record(self, seq:dna.DNASeqRecord
-            ) -> seqvar.VariantRecord:
+    def convert_to_variant_record(self, anno:gtf.GenomicAnnotation,
+            genome:dna.DNASeqDict) -> seqvar.VariantRecord:
         """ Convert a VepRecord to a generic VariantRecord object.
 
         Args:
             seq (dna.DNASeqRecord): The DNA sequence of the transcript.
         """
+        chrom_seqname = self.location.split(':')[0]
+        tx_model = anno.transcripts[self.feature]
+        strand = tx_model.transcript.strand
+        seq = tx_model.get_transcript_sequence(genome[chrom_seqname])
         alt_position = self.cdna_position.split('-')
         alt_start = int(alt_position[0]) - 1
 
         codon_ref, codon_alt = self.codons
+        cds_start_nf = 'tag' in tx_model.transcript.attributes and \
+            'cds_start_NF' in tx_model.transcript.attributes['tag']
 
         if codon_ref == '-':
             alt_end = alt_start + 1
@@ -127,10 +134,26 @@ class VEPRecord():
             alt = ref + codon_alt
             alt_end = alt_start + len(ref)
         elif codon_alt == '-':
-            alt_start -= 1
-            alt_end = alt_start + len(codon_ref) + 1
-            ref = seq.seq[alt_start:alt_end]
-            alt = seq.seq[alt_start:alt_start+1]
+            if alt_start > 0:
+                alt_start -= 1
+                alt_end = alt_start + len(codon_ref) + 1
+                ref = seq.seq[alt_start:alt_end]
+                alt = seq.seq[alt_start:alt_start+1]
+            # According to GNECODE, cds_start_NF means the translation start
+            # site can not be determined.
+            elif cds_start_nf:
+                alt_end = alt_start + len(codon_ref) + 1
+                ref = seq.seq[alt_start:alt_end]
+                alt = seq.seq[alt_end-1:alt_end]
+            else:
+                alt_end = alt_start + len(codon_ref)
+                ref = seq.seq[alt_start:alt_end]
+                tx_start = tx_model.get_transcript_start_genomic_coordinate()
+                if strand == 1:
+                    alt = str(genome[chrom_seqname][tx_start-2:tx_start].seq)
+                else:
+                    alt:Seq = genome[chrom_seqname][tx_start:tx_start+2].seq
+                    alt = str(alt.reverse_complement())
         else:
             pattern = re.compile('[ATCG]+')
             match_ref = pattern.search(codon_ref)
@@ -156,7 +179,7 @@ class VEPRecord():
                 raise ValueError('No alteration found in this VEP record')
 
         _type = 'SNV' if len(ref) == 1 and len(alt) == 1 else 'INDEL'
-        _id = f'{_type}-{alt_start}-{ref}-{alt}'
+        _id = f'{_type}-{alt_start + 1}-{ref}-{alt}'
 
         try:
             return seqvar.VariantRecord(

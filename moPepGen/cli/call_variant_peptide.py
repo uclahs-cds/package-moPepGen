@@ -21,6 +21,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     miscleavage:int = int(args.miscleavage)
     min_mw:float = float(args.min_mw)
     exception = 'trypsin_exception' if rule == 'trypsin' else None
+    min_length:int = args.min_length
+    max_length:int = args.max_length
 
     if verbose:
         logger('moPepGen callPeptide started.')
@@ -69,7 +71,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 variants[transcript_id] = [record]
             else:
                 variants[transcript_id].append(record)
-        logger(f'Variant file {file} loaded.')
+        if verbose:
+            logger(f'Variant file {file} loaded.')
 
     for records in variants.values():
         records.sort()
@@ -81,11 +84,17 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     i = 0
     for transcript_id in variants:
 
-        peptides = call_peptide_main(variants, transcript_id, annotation,
-            genome, rule, exception, miscleavage)
+        try:
+            peptides = call_peptide_main(variants, transcript_id, annotation,
+                genome, rule, exception, miscleavage)
+        except:
+            logger(f'Exception raised from {transcript_id}')
+            raise
 
         for peptide in peptides:
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
+                continue
+            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
                 continue
             if str(peptide.seq) in canonical_peptides:
                 continue
@@ -111,6 +120,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
         for peptide in peptides:
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
+                continue
+            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
                 continue
             if str(peptide.seq) in canonical_peptides:
                 continue
@@ -140,10 +151,13 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
     anno = annotation.transcripts[transcript_id]
     chrom = anno.transcript.location.seqname
     transcript_seq = anno.get_transcript_sequence(genome[chrom])
+    cds_start_nf = 'tag' in anno.transcript.attributes and \
+        'cds_start_NF' in anno.transcript.attributes['tag']
 
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
-        _id=transcript_id
+        _id=transcript_id,
+        cds_start_nf=cds_start_nf
     )
 
     ## Create transcript variant graph
@@ -227,6 +241,8 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
                 _id=variant.id,
                 attrs=variant.attrs
             )
+            variant = next(variant_iter, None)
+            continue
 
         cur = dgraph.apply_variant(cur, variant)
         if len(cur.in_edges) == 0:
@@ -238,7 +254,7 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
     pgraph = dgraph.translate()
 
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
-    return pgraph.call_vaiant_peptides(miscleavage=miscleavage)
+    return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 
 def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
@@ -277,7 +293,7 @@ def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
     tgraph.fit_into_codons()
     pgraph = tgraph.translate()
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
-    return pgraph.call_vaiant_peptides(miscleavage=miscleavage)
+    return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
         variants:Dict[str,seqvar.VariantRecord], start:int, end:int,
@@ -302,14 +318,15 @@ def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.input_variant = [
-        'test/files/vep/vep.tvf',
-        'test/files/fusion/fusion.tvf'
+        'test/files/CPCG0103_gencode_aa_indel_ENST00000314675.11.tvf'
     ]
-    test_args.index_dir = 'test/files/index'
-    test_args.circ_rna_bed = 'test/files/circRNA/circ_rna.bed'
-    test_args.output_fasta = 'test/files/vep/vep_moPepGen.fasta'
+    test_args.index_dir = 'test/files/downsampled_index/ENST00000314675.11'
+    test_args.circ_rna_bed = None
+    test_args.output_fasta = 'test/files/vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2
     test_args.min_mw = 500.
+    test_args.min_length = 7
+    test_args.max_length = 25
     call_variant_peptide(args=test_args)

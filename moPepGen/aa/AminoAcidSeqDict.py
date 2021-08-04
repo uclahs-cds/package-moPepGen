@@ -34,17 +34,17 @@ class AminoAcidSeqDict(dict):
         """
         if not source:
             count = 0
-            infered = set()
+            inferred = set()
         for record in SeqIO.parse(path, 'fasta'):
             record.__class__ = AminoAcidSeqRecord
             if count > 100 and not source:
-                source = infered.pop()
+                source = inferred.pop()
 
             if not source:
                 count += 1
-                infered.add(record.infer_ids(style=source))
-
-            record.infer_ids(source)
+                inferred.add(record.infer_ids(style=source))
+            else:
+                record.infer_ids(source)
             if record.transcript_id in self.keys():
                 raise ValueError(
                     'Duplicated seqnames found in FASTA file: ' + path

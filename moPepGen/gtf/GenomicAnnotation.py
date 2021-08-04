@@ -1,10 +1,11 @@
 """ This module defines the class logic for the GTF annotations.
 """
+import re
 from typing import List, Dict
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar
 from . import GtfIO
-from .TranscriptAnnotationModel import TranscriptAnnotationModel, _GTF_FEATURE_TYPES
+from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TYPES
 from .GeneAnnotationModel import GeneAnnotationModel
 
 class GenomicAnnotation():
@@ -13,7 +14,8 @@ class GenomicAnnotation():
     VEPRecord.
     """
     def __init__(self, genes:Dict[str,GeneAnnotationModel]=None,
-            transcripts:Dict[str, TranscriptAnnotationModel]=None):
+            transcripts:Dict[str, TranscriptAnnotationModel]=None,
+            source:str=None):
         """ Construct a GenomicAnnotation object """
         if genes is None:
             genes = {}
@@ -21,6 +23,8 @@ class GenomicAnnotation():
             transcripts = {}
         self.genes = genes
         self.transcripts = transcripts
+        self.source = source
+        self.gene_id_version_mapper:Dict[str, str] = None
 
     def __repr__(self) -> str:
         """ Return a string representation """
@@ -50,7 +54,59 @@ class GenomicAnnotation():
         result += f'\n{len(self.transcripts)} transcripts'
         return result
 
-    def dump_gtf(self, path:str, biotype:List[str]=None)->None:
+    def add_gene_record(self, record:SeqFeature) -> None:
+        """ Add a gene record """
+        gene_id = record.attributes['gene_id']
+        if gene_id in self.genes:
+            raise ValueError(f'Same gene has multiple records: {gene_id}')
+        record.__class__ = GeneAnnotationModel
+        record.transcripts = []
+        self.genes[gene_id] = record
+
+    def add_transcript_record(self, record:SeqFeature) -> None:
+        """ Add a transcript record """
+        feature = record.type.lower()
+        if feature not in GTF_FEATURE_TYPES:
+            return
+        transcript_id = record.attributes['transcript_id']
+        record.id = transcript_id
+        if transcript_id not in self.transcripts.keys():
+            self.transcripts[transcript_id] = TranscriptAnnotationModel()
+        self.transcripts[transcript_id].add_record(feature, record)
+
+        gene_id = record.attributes['gene_id']
+        if gene_id not in self.genes:
+            raise ValueError(f'Gene ID {gene_id} not found')
+        if transcript_id not in self.genes[gene_id].transcripts:
+            self.genes[gene_id].transcripts.append(transcript_id)
+
+    @staticmethod
+    def infer_annotation_source(record:SeqFeature) -> str:
+        """ Infer the annotation source from a GTF record. Returns GENCODE,
+        ENSEMBL, or None. """
+        pattern = re.compile('chr[0-9XYM]{1,2}')
+        if pattern.search(record.chrom):
+            return 'GENCODE'
+
+        pattern = re.compile(r'[A-Z]{2}[0-9]{6}\.[0-9]{1}')
+        if pattern.search(record.chrom):
+            return 'GENCODE'
+
+        pattern = re.compile('[0-9]{1,2}')
+        if pattern.search(record.chrom):
+            return 'ENSEMBL'
+
+        if record.chrom in ['X', 'Y', 'MT']:
+            return 'ENSEMBL'
+
+        pattern = re.compile('^CHR_H.+')
+        if pattern.search(record.chrom):
+            return 'ENSEMBL'
+
+        return None
+
+
+    def dump_gtf(self, path:str, biotype:List[str]=None, source:str=None)->None:
         """ Dump a GTF file into a GenomicAnnotation
 
         Args:
@@ -60,32 +116,33 @@ class GenomicAnnotation():
                 miRNA, etc.
         """
         record:SeqFeature
+        if not source:
+            count = 0
+            inferred = {}
         for record in GtfIO.parse(path):
             if biotype is not None and record.biotype not in biotype:
                 continue
+
+            if not source and count > 100:
+                inferred = sorted(inferred.items(), key=lambda x: x[1])
+                source = inferred[-1][0]
+
+            if not source:
+                count += 1
+                inferred_source = self.infer_annotation_source(record)
+                if inferred_source not in inferred:
+                    inferred[inferred_source] = 1
+                else:
+                    inferred[inferred_source] += 1
+
             feature = record.type.lower()
             if feature == 'gene':
-                gene_id = record.attributes['gene_id']
-                if gene_id in self.genes:
-                    raise ValueError(f'Same gene has multiple records: {gene_id}')
-                record.__class__ = GeneAnnotationModel
-                record.transcripts = []
-                self.genes[gene_id] = record
+                self.add_gene_record(record)
                 continue
 
-            if feature not in _GTF_FEATURE_TYPES:
-                continue
-            transcript_id = record.attributes['transcript_id']
-            record.id = transcript_id
-            if transcript_id not in self.transcripts.keys():
-                self.transcripts[transcript_id] = TranscriptAnnotationModel()
-            self.transcripts[transcript_id].add_record(feature, record)
+            self.add_transcript_record(record)
 
-            gene_id = record.attributes['gene_id']
-            if gene_id not in self.genes:
-                raise ValueError(f'Gene ID {gene_id} not found')
-            if transcript_id not in self.genes[gene_id].transcripts:
-                self.genes[gene_id].transcripts.append(transcript_id)
+        self.source = source
 
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()
@@ -225,3 +282,36 @@ class GenomicAnnotation():
             _type=variant.type,
             _id=variant.id
         )
+
+    def create_gene_id_version_mapper(self) -> None:
+        """ Create the a dict that keys are the unversioned gene ID, and values
+        are the versioned. """
+        self.gene_id_version_mapper = {}
+        for versioned in self.genes.keys():
+            unversioned = versioned.split('.')[0]
+            if unversioned in self.gene_id_version_mapper:
+                raise ValueError('Unversioned gene ID collapsed.')
+            self.gene_id_version_mapper[unversioned] = versioned
+
+    def get_gene_model_from_unversioned_id(self, gene_id:str) -> GeneAnnotationModel:
+        """ Get the gene annotation model from an unversioned gene ID. In
+        general the source and version of the annotation GTF file used should
+        be consistent with the one used to call genomic variants (e.g. VEP &
+        fusion). But this is useful for FusionCatcher because it uses ENSEMBL
+        as default.
+
+        Args:
+            gene_id (str): The unversioned gene ID (ENSEMBL's style).
+
+        Returns:
+            The GeneAnnotationModel object of the gene.
+        """
+        if self.source == 'ENSEMBL':
+            return self.genes[gene_id]
+
+        if self.gene_id_version_mapper is None:
+            self.create_gene_id_version_mapper()
+
+        versioned_gene_id = self.gene_id_version_mapper[gene_id]
+
+        return self.genes[versioned_gene_id]
