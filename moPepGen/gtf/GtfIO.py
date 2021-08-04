@@ -83,7 +83,7 @@ def to_gtf_record(record:SeqFeature) -> str:
             attrs += f" {key} {val};"
 
     record_data = [
-        record.chrom, '.', record.type, str(int(record.location.start)),
+        record.chrom, '.', record.type, str(int(record.location.start)+1),
         str(int(record.location.end)), '.', strand, '0', attrs
     ]
     return '\t'.join(record_data)

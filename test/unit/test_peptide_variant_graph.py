@@ -97,7 +97,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
 
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
-        _, branches = graph.expand_alignment_backward(nodes[2])
+        branches = graph.expand_alignment_backward(nodes[2])
 
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
         self.assertEqual(seqs, {'GCVVV', 'GCVVVC', 'GCVVDC'})
@@ -105,9 +105,9 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertEqual(len(nodes[2].out_nodes), 0)
         self.assertNotIn(nodes[2], nodes[1].out_nodes)
 
-        self.assertEqual(len(branches), 1)
-        branch = branches.pop()
-        self.assertEqual(str(branch.seq.seq), 'GCVVV')
+        self.assertEqual(len(branches), 2)
+        seqs = {str(branch.seq.seq) for branch in branches}
+        self.assertEqual(seqs, {'GCVVV', 'PRN'})
 
     def test_expand_forward(self):
         r""" > expand forward
@@ -188,13 +188,15 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
-        cur, _ = graph.merge_join_alignments(nodes[4])
+        branches = graph.merge_join_alignments(nodes[4])
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
         seqs_expect = {'NCWHSTQV', 'NCWVSTQV', 'NCWHSTQQ', 'NCWVSTQQ'}
         self.assertEqual(seqs, seqs_expect)
         self.assertEqual(len(nodes[4].in_nodes), 0)
         self.assertEqual(len(nodes[4].out_nodes), 0)
-        self.assertEqual(str(cur.seq.seq), 'NCWHSTQQ')
+        seqs = {str(node.seq.seq) for node in branches}
+        expected = {'PK'}
+        self.assertEqual(seqs, expected)
 
     def test_merge_join_with_cleave(self):
         r"""
@@ -217,13 +219,15 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
-        cur, _ = graph.merge_join_alignments(nodes[4])
+        branches = graph.merge_join_alignments(nodes[4])
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
         seqs_expect = {'NCWHSTQV', 'NCWR', 'NCWHSTQQ', 'NCWR'}
         self.assertEqual(seqs, seqs_expect)
         self.assertEqual(len(nodes[4].in_nodes), 0)
         self.assertEqual(len(nodes[4].out_nodes), 0)
-        self.assertEqual(str(cur.seq.seq), 'NCWHSTQQ')
+        seqs = {str(node.seq.seq) for node in branches}
+        expected = {'PK'}
+        self.assertEqual(seqs, expected)
         seqs = {str(node.seq.seq) for node in nodes[7].in_nodes}
         seqs_expect = {'NCWHSTQV', 'STQV', 'NCWHSTQQ', 'STQQ'}
         self.assertEqual(seqs, seqs_expect)
@@ -245,10 +249,11 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data)
         graph.rule = 'trypsin'
-        cur, branches = graph.cross_join_alignments(nodes[4], 5)
+        branches = graph.cross_join_alignments(nodes[4], 5)
 
-        self.assertEqual(str(cur.seq.seq), 'LPAQQ')
-        self.assertEqual(len(branches), 0)
+        seqs = {str(node.seq.seq) for node in branches}
+        expected = {'PK'}
+        self.assertEqual(seqs, expected)
 
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
         seqs_expected = {'NCWVSTEEK', 'NCWHSTEEK'}

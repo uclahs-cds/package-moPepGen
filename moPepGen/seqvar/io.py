@@ -81,21 +81,18 @@ def write(variants:Iterable[VariantRecord], output_path:str,
         handle (IO): The destination handle to write out.
         mode (str): If 'w', the header will be written, otherwise not.
     """
-    temp_file = tempfile.TemporaryFile(mode='w+t')
     headers = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
-    temp_file.write('#' + '\t'.join(headers) + '\n')
-    for record in variants:
-        line = record.to_tvf()
-        temp_file.write(line + '\n')
-        metadata.add_info(record.type)
 
-    out_file = open(output_path, 'w')
+    with tempfile.TemporaryFile(mode='w+t') as temp_file:
+        temp_file.write('#' + '\t'.join(headers) + '\n')
+        for record in variants:
+            line = record.to_tvf()
+            temp_file.write(line + '\n')
+            metadata.add_info(record.type)
+        with open(output_path, 'w') as out_file:
+            for line in metadata.to_strings():
+                out_file.write(line + '\n')
 
-    for line in metadata.to_strings():
-        out_file.write(line + '\n')
-
-    temp_file.seek(0)
-    for line in temp_file:
-        out_file.write(line)
-
-    out_file.close()
+            temp_file.seek(0)
+            for line in temp_file:
+                out_file.write(line)

@@ -1,6 +1,6 @@
 """ Test the VEP data model """
 import unittest
-from test import create_genomic_annotation, create_dna_record_dict
+from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
 
 

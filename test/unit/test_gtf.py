@@ -1,7 +1,7 @@
 """ Test the GTF files are loaded and handled properly
 """
 import unittest
-from test import create_transcript_model, create_variant
+from test.unit import create_transcript_model, create_variant
 from Bio import SeqIO
 from moPepGen import gtf
 from moPepGen.SeqFeature import FeatureLocation

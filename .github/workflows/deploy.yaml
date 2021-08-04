@@ -1,3 +1,4 @@
+---
 name: Deploy Docs
 
 on:
@@ -15,7 +16,7 @@ jobs:
     steps:
       - name: Checkout main
         uses: actions/checkout@v2
-      
+
       - name: Create a requirement.txt
         run: echo 'mkdocs' > requirements.txt
 

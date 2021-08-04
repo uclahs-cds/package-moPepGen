@@ -1,6 +1,6 @@
 """ Test module for DNA Node """
 import unittest
-from test import create_dgraph2
+from test.unit import create_dgraph2
 from moPepGen import svgraph
 
 
@@ -27,15 +27,22 @@ class TestTVGNode(unittest.TestCase):
             1: ('ATGTGGC', [], []),
             2: ('CA', [1], [(0, 'C', 'CA', 'INDEL', '')]),
             3: ('C', [1], []),
-            4: ('TGCTG', [2,3], [])
+            4: ('TGCTG', [2,3], []),
+            5: ('TCCGT', [4], [])
         }
         _, nodes = create_dgraph2(data)
         node_copy = nodes[2].deepcopy()
         self.assertEqual(node_copy.seq.seq, nodes[2].seq.seq)
         self.assertIsNot(node_copy, nodes[2])
-        out_node:svgraph.TVGNode = next(iter(node_copy.out_edges)).out_node
+
+        out_node:svgraph.TVGNode = list(node_copy.out_edges)[0].out_node
         self.assertEqual(out_node.seq.seq, nodes[4].seq.seq)
         self.assertIsNot(out_node, nodes[4])
+        self.assertEqual(len(out_node.frameshifts), 1)
+
+        out_node:svgraph.TVGNode = list(out_node.out_edges)[0].out_node
+        self.assertEqual(out_node.seq.seq, nodes[5].seq.seq)
+        self.assertIsNot(out_node, nodes[5])
         self.assertEqual(len(out_node.frameshifts), 1)
 
     def test_next_node_to_branch_out_cas1(self):
@@ -157,10 +164,10 @@ class TestTVGNode(unittest.TestCase):
         }
         _, nodes = create_dgraph2(data)
         node = nodes[1].find_farthest_node_with_overlap()
-        self.assertIs(node, None)
+        self.assertEqual(str(node.seq.seq), 'T')
 
     def test_find_farthest_node_with_overlap_case4_null_root(self):
-        """ For mutation at the first nucleotide.
+        r""" For mutation at the first nucleotide.
                  AA
                 /  \
             Null-A--TGG
@@ -197,5 +204,43 @@ class TestTVGNode(unittest.TestCase):
         node = nodes[1].find_farthest_node_with_overlap()
         self.assertIs(node, nodes[5])
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_find_farthest_node_with_exclusive_outbond(self):
+        r"""
+                 T--
+                /    \
+            ATGG-TCTC-G-CCCT-GTTGGCCC
+                     \ /
+                      A
+        """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('T', [1], [(0, 'TCTGAC', 'T', 'INDEL', '')], True),
+            3: ('TCTC', [1], []),
+            4: ('G', [2,3], []),
+            5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
+            6: ('CCCT', [4,5], []),
+            7: ('GTTGGCCC', [5,6], []),
+        }
+        _, nodes = create_dgraph2(data)
+        node = nodes[1].find_farthest_node_with_overlap()
+        self.assertIs(node, nodes[7])
+
+    def test_find_farthest_node_with_circular(self):
+        r"""
+                 T--
+                /    \
+            $-ATGG-TCTC-G-CCCT-^
+                     \ /
+                      A
+        """
+        data = {
+            1: ('ATGG', [6], []),
+            2: ('T', [1], [(0, 'TCTGAC', 'T', 'INDEL', '')], True),
+            3: ('TCTC', [1], []),
+            4: ('G', [2,3], []),
+            5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
+            6: ('CCCT', [4,5], [])
+        }
+        _, nodes = create_dgraph2(data, True)
+        node = nodes[1].find_farthest_node_with_overlap()
+        self.assertIs(node, nodes[6])

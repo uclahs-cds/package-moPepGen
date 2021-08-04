@@ -1,6 +1,6 @@
 """ Module for CircularVariantGraph """
 import unittest
-from test import create_variant, create_dgraph2
+from test.unit import create_variant, create_dgraph2
 from Bio.Seq import Seq
 from moPepGen import svgraph, dna
 
