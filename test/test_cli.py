@@ -74,6 +74,17 @@ class TestCli(unittest.TestCase):
         expected = {'star_fusion.tvf'}
         self.assertEqual(files, expected)
 
+    def test_parse_fusion_catcher(self):
+        """ Test parseFusionCatcher """
+        args = argparse.Namespace()
+        args.fusion = DATA_DIR/'fusion/fusion_catcher.txt'
+        args.index_dir = DATA_DIR/'index'
+        args.output_prefix = str(WORK_DIR/'fusion_catcher')
+        args.verbose = True
+        cli.parse_fusion_catcher(args)
+        files = {str(file.name) for file in WORK_DIR.glob('*')}
+        expected = {'fusion_catcher.tvf'}
+        self.assertEqual(files, expected)
 
     def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """
