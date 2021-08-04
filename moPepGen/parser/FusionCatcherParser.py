@@ -153,7 +153,7 @@ class FusionCatcherRecord():
                 'DONOR_GENE_ID': self.five_end_gene_id,
                 'DONOR_TRANSCRIPT_ID': donor_id,
                 'DONOR_SYMBOL': self.five_end_gene_symbol,
-                'DONOR_POS': donor_position,
+                'DONOR_POS': donor_position - 1,
                 'DONOR_GENOMIC_POSITION': donor_genome_position
             }
             record = seqvar.VariantRecord(
