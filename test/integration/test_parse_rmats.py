@@ -16,7 +16,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = None
         args.mutually_exclusive_exons = None
         args.retained_intron = None
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)
@@ -36,7 +39,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = None
         args.mutually_exclusive_exons = None
         args.retained_intron = None
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)
@@ -56,7 +62,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = None
         args.mutually_exclusive_exons = None
         args.retained_intron = None
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)
@@ -72,7 +81,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = None
         args.mutually_exclusive_exons = None
         args.retained_intron = None
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)
@@ -88,7 +100,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = self.data_dir/'alternative_splicing/rmats_a3ss_case_1.txt'
         args.mutually_exclusive_exons = None
         args.retained_intron = None
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)
@@ -104,7 +119,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = self.data_dir/'alternative_splicing/rmats_a3ss_case_2.txt'
         args.mutually_exclusive_exons = None
         args.retained_intron = None
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)
@@ -120,7 +138,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = None
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_1.txt'
         args.retained_intron = None
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)
@@ -136,7 +157,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = None
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_2.txt'
         args.retained_intron = None
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)
@@ -153,7 +177,10 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = None
         args.mutually_exclusive_exons = None
         args.retained_intron = self.data_dir/'alternative_splicing/rmats_ri_case_1.txt'
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
         args.verbose = False
         cli.parse_rmats(args)

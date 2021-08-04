@@ -125,7 +125,10 @@ class TestCallVariantPeptides(TestCaseIntegration):
         ]
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
