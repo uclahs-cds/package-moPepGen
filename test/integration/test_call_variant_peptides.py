@@ -125,7 +125,10 @@ class TestCallVariantPeptides(TestCaseIntegration):
         ]
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.cleavage_rule = 'trypsin'
         args.miscleavage = '2'
         args.min_mw = '500.'
@@ -203,6 +206,6 @@ class TestCallVariantPeptides(TestCaseIntegration):
         tvf = self.data_dir \
             /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.tvf'
         expect = self.data_dir \
-            /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5_expect.fasta'
+            /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000515757.5'
         self.default_test_case(tvf, reference, expect)

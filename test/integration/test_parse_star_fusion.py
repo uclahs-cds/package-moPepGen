@@ -11,7 +11,10 @@ class TestParseStarFusion(TestCaseIntegration):
         """ Test parseSTARFusion """
         args = argparse.Namespace()
         args.fusion = self.data_dir/'fusion/star_fusion.txt'
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'star_fusion')
         args.verbose = False
         cli.parse_star_fusion(args)

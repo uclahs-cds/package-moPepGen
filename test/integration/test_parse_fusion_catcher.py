@@ -10,9 +10,12 @@ class TestParseFusionCatcher(TestCaseIntegration):
         """ Test parseFusionCatcher """
         args = argparse.Namespace()
         args.fusion = self.data_dir/'fusion/fusion_catcher.txt'
-        args.index_dir = self.data_dir/'index'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'fusion_catcher')
-        args.verbose = True
+        args.verbose = False
         cli.parse_fusion_catcher(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'fusion_catcher.tvf'}
