@@ -1,12 +1,8 @@
 ---
-name: pull-request
+name: Pull Request Tests
 
 on:
   workflow_dispatch:
-    inputs:
-      msg:
-        description: 'Run unit and integration test cases.'
-        default: 'This workflow run is triggered by workflow dispatch event'
   push:
     branches:
       - main
@@ -22,15 +18,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Python 3.8.5
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8.5
+          python-version: 3.8
       
       - name: Install dependencies
         run: |
-          pip install biopython==1.78 pytest
+          python -m pip install --upgrade pip
+          pip install biopython pytest
 
-      - name: test
+      - name: Run Unit Tests
         run: |
-          pytest
+          pytest -v -s test/unit
+      
+      - name: Run Integration Tests
+        run: |
+          pytest -v -s test/integration
