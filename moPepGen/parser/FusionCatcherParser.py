@@ -1,12 +1,11 @@
 """ Module for FusionCatcher parser """
 from __future__ import annotations
+import re
 from typing import Iterable, List, Dict
 import itertools
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, gtf, dna
 
-
-GeneAnnotations = Dict[str, Dict[str, gtf.TranscriptAnnotationModel]]
 
 def parse(path:str) -> Iterable[FusionCatcherRecord]:
     """ Parse the FusionCatcher's output and returns an iterator.
@@ -15,6 +14,8 @@ def parse(path:str) -> Iterable[FusionCatcherRecord]:
         path (str): Path to the FusionCatcher's output file.
     """
     with open(path, 'r') as handle:
+        # first line is header
+        line = next(handle, None)
         line = next(handle, None)
         while line:
             if line.startswith('#'):
@@ -69,7 +70,7 @@ class FusionCatcherRecord():
         self.fusion_sequence = fusion_sequence
         self.predicted_effect = predicted_effect
 
-    def convert_to_variant_records(self, anno:GeneAnnotations,
+    def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         """ COnvert a FusionCatcher's record to VariantRecord.
 
@@ -81,47 +82,63 @@ class FusionCatcherRecord():
         Returns:
             List of VariantRecord
         """
-        acceptor_transcripts = anno[self.three_end_gene_id]
-        donor_transcripts = anno[self.five_end_gene_id]
+        pattern = re.compile(r'\.[0-9]+$')
+        if pattern.search(self.five_end_gene_id):
+            acceptor_gene_model = anno[self.five_end_gene_id]
+            donor_gene_model = anno[self.three_end_gene_id]
+        else:
+            acceptor_gene_model = anno.get_gene_model_from_unversioned_id(
+                self.five_end_gene_id)
+            donor_gene_model = anno.get_gene_model_from_unversioned_id(
+                self.three_end_gene_id)
+
+        # in case the ensembl ID does not match those in annotation
+        # and not the same gene is referered to
+        acceptor_gene_symbol = acceptor_gene_model.attributes['gene_name']
+        if acceptor_gene_symbol != self.five_end_gene_symbol:
+            raise ValueError(
+                'Annotation GTF version mismatch with FusionCatcher.'
+            )
+        donor_gene_symbol = donor_gene_model.attributes['gene_name']
+        if donor_gene_symbol != self.three_end_gene_symbol:
+            raise ValueError(
+                'Annotation GTF version mismatch with FusionCatcher.'
+            )
+
+        acceptor_transcripts:Dict[str, gtf.TranscriptAnnotationModel] = {
+            tx_id: anno.transcripts[tx_id] \
+            for tx_id in acceptor_gene_model.transcripts
+        }
+        donor_transcripts:Dict[str, gtf.TranscriptAnnotationModel] = {
+            tx_id: anno.transcripts[tx_id] \
+            for tx_id in donor_gene_model.transcripts
+        }
+
+        acceptor_chrom = acceptor_gene_model.chrom
+        donor_chrom = donor_gene_model.chrom
+
+        # fusion catcher uses 1-based coordinates
+        # left breakpoint is the first nucleotide in the fusion transcript
+        # after the breakpoint
+        left_breakpoint = int(self.five_end_breakpoint.split(':')[1])
+        right_breakpoint = int(self.three_end_breakpoint.split(':')[1])
+
         records = []
 
-        perms = itertools.product(acceptor_transcripts.keys(), donor_transcripts.keys())
-        for acceptor_id, donor_id in perms:
-            # fusion catcher outputs results without 'chr' prefix, align with genome
-            self.set_chrom_with_chr(genome.with_chr())
 
+        perms = itertools.product(acceptor_transcripts.keys(), \
+            donor_transcripts.keys())
+        for acceptor_id, donor_id in perms:
             acceptor_model = acceptor_transcripts[acceptor_id]
-            acceptor_gene_symbol = acceptor_model.transcript.attributes['gene_name']
-            # in case the ensembl ID does not match those in annotation
-            # and not the same gene is referered to
-            if acceptor_gene_symbol != self.three_end_gene_symbol:
-                raise ValueError(
-                    'Annotation GTF version mismatch with FusionCatcher.'
-                )
-            # fusion catcher uses 1-based coordinates
-            # left breakpoint is the first nucleotide in the fusion transcript
-            # after the breakpoint
-            left_breakpoint = int(self.three_end_breakpoint.split(':')[1])
-            # left_strand = self.three_end_breakpoint.split(':')[2]
-            acceptor_chrom = self.three_end_breakpoint.split(':')[0]
             acceptor_position = acceptor_model.get_transcript_index(left_breakpoint)
             seq = acceptor_model.get_transcript_sequence(genome[acceptor_chrom])
-            acceptor_genome_position = f'{acceptor_chrom}:{left_breakpoint}:{left_breakpoint}'
+            acceptor_genome_position = \
+                f'{acceptor_chrom}:{left_breakpoint}:{left_breakpoint}'
 
             donor_model = donor_transcripts[donor_id]
-            donor_gene_symbol = donor_model.transcript.attributes['gene_name']
-            # in case the ensembl ID does not match those in annotation
-            # and not the same gene is referered to
-            if donor_gene_symbol != self.five_end_gene_symbol:
-                raise ValueError(
-                    'Annotation GTF version mismatch with FusionCatcher.'
-                )
-            right_breakpoint = int(self.five_end_breakpoint.split(':')[1])
-            # right_strand = self.five_end_breakpoint.split(':')[2]
-
-            donor_chrom = self.five_end_breakpoint.split(':')[0]
             donor_position = donor_model.get_transcript_index(right_breakpoint)
-            donor_genome_position = f'{donor_chrom}:{right_breakpoint}:{right_breakpoint}'
+            donor_genome_position = \
+                f'{donor_chrom}:{right_breakpoint}:{right_breakpoint}'
 
             location = FeatureLocation(
                 seqname=acceptor_id,

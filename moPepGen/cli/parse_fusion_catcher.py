@@ -1,5 +1,5 @@
 """ Module for FusionCatcher parser """
-from typing import List, Dict
+from typing import List
 import pathlib
 import argparse
 import pickle
@@ -42,20 +42,10 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
         if verbose:
             logger('Genome assembly FASTA loaded.')
 
-    anno2:Dict[str, Dict[str, gtf.TranscriptAnnotationModel]] = {}
-    val:gtf.TranscriptAnnotationModel
-    for key, val in anno.transcripts.items():
-        # gene id as outputted by fusion catcher follows ensembl format
-        # and is without version number (dot number following ENSG)
-        gene_id = val.transcript.attributes['gene_id'].split('.')[0]
-        if gene_id not in anno2:
-            anno2[gene_id] = {}
-        anno2[gene_id][key] = val
-
     variants:List[seqvar.VariantRecord] = []
 
     for record in parser.FusionCatcherParser.parse(fusion):
-        var_records = record.convert_to_variant_records(anno2, genome)
+        var_records = record.convert_to_variant_records(anno, genome)
         variants.extend(var_records)
 
     if verbose:
