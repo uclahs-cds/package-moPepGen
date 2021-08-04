@@ -2,7 +2,7 @@
 import unittest
 import shutil
 from pathlib import Path
-from test import create_variant
+from test.unit import create_variant
 from moPepGen import seqvar
 
 

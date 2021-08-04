@@ -1,0 +1,27 @@
+---
+name: Deploy Docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**
+
+jobs:
+  build:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+
+      - name: Create a requirement.txt
+        run: echo 'mkdocs' > requirements.txt
+
+      - name: Deploy docs
+        uses: mhausenblas/mkdocs-deploy-gh-pages@nomaterial
+        env:
+          GITHUB_TOKEN: ${{ secrets.DEPLOY_DOCS }}
+          CONFIG_FILE: mkdocs.yml

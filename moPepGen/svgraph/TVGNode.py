@@ -73,6 +73,14 @@ class TVGNode():
         or outbonding edge. """
         return (not self.in_edges) and (not self.out_edges)
 
+    def is_exclusively_outbond_of(self, other:svgraph.TVGNode) -> bool:
+        """ Checks if the node is exclusively outbond with the other.
+        Exclusive binding means the upstream node has only 1 outbond edge,
+        and the downstream node has only inbond edge."""
+        if not self.is_inbond_of(other):
+            return False
+        return len(self.out_edges) == 1 and len(other.in_edges) == 1
+
     def needs_branch_out(self, branch_out_size:int=100) -> bool:
         """ Checks if the node needs to branch out """
         for variant in self.variants:
@@ -83,6 +91,9 @@ class TVGNode():
             variant_len = location.end - location.start
             if variant_len >= branch_out_size:
                 return True
+        # For variants located in the end of the sequence.
+        if not self.out_edges:
+            return True
         return False
 
     def next_node_to_branch_out(self, to_node:svgraph.TVGNode,
@@ -121,10 +132,16 @@ class TVGNode():
         or cleavage). """
         if not self.out_edges:
             return None
+        ref_node = None
         for edge in self.out_edges:
             if edge.type in ['reference', 'variant_end']:
-                return edge.out_node
-        raise ValueError('No reference edge was found.')
+                if ref_node is None:
+                    ref_node = edge.out_node
+                elif not ref_node.branch:
+                    ref_node = edge.out_node
+        if not ref_node:
+            raise ValueError('No reference edge was found.')
+        return ref_node
 
     def get_reference_prev(self) -> TVGNode:
         """ Get the previous node of which the edge is reference (not variant
@@ -160,7 +177,7 @@ class TVGNode():
                 else:
                     frameshifts = copy.copy(source_out_node.frameshifts)
                     if propagate_frameshifts:
-                        frameshifts.update(source.frameshifts)
+                        frameshifts.update(target.frameshifts)
                     new_out_node = self.__class__(
                         seq=source_out_node.seq,
                         variants=copy.copy(source_out_node.variants),
@@ -176,10 +193,12 @@ class TVGNode():
 
         return new_node
 
-    def find_farthest_node_with_overlap(self, min_size:int=5) -> TVGNode:
+    def find_farthest_node_with_overlap(self, min_size:int=6) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
-        reference sequence.
+        reference sequence. If the farthest node found has an exclusive single
+        out node, it extends to. For circular graph, this extension won't
+        continue if the exclusive single node is root.
 
         For example, in a graph like below, the node ATGG's farthest node
         with overlap would be node 'CCCT'
@@ -191,12 +210,17 @@ class TVGNode():
         """
          # find the range of overlaps
         farthest = None
+        if not self.get_reference_next():
+            return None
         if not self.get_reference_next().out_edges:
-            return farthest
+            return self.get_reference_next()
         queue = deque([edge.out_node for edge in self.out_edges])
-        visited = set([self])
+        visited = {self}
         while queue:
             cur:TVGNode = queue.popleft()
+
+            if cur is None:
+                continue
 
             # if this is the start of a new branch, don't count it.
             if cur.branch:
@@ -206,8 +230,8 @@ class TVGNode():
             visited.add(cur)
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
-                if not queue and cur is farthest and cur is not self:
-                    # if the farthest has less than 5 neucleotides, continue
+                if cur is farthest and cur is not self:
+                    # if the farthest has less than 6 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
                     if len(cur.seq) < min_size:
@@ -235,7 +259,6 @@ class TVGNode():
                 queue.append(cur)
                 visited.remove(cur)
                 continue
-
         return farthest
 
     def stringify(self, k:int=None) -> None:
@@ -259,3 +282,80 @@ class TVGNode():
             downstream.update(edge.out_node.stringify(k))
 
         return {node: downstream}
+
+    def truncate_left(self, i:int) -> TVGNode:
+        """ Truncate the left i nucleotides off """
+        left_seq = self.seq[:i]
+        left_variants = []
+        right_variants = []
+        left_frameshifts = copy.copy(self.frameshifts)
+
+        for variant in self.variants:
+            if variant.location.start < i:
+                left_variants.append(variant)
+            if variant.location.end > i:
+                right_variants.append(variant)
+                if variant.location.start >= i and \
+                        variant.variant.is_frameshifting():
+                    left_frameshifts.remove(variant.variant)
+
+        left_node = TVGNode(
+            seq=left_seq,
+            variants=left_variants,
+            frameshifts=left_frameshifts,
+            branch=self.branch
+        )
+
+        self.seq = self.seq[i:]
+        self.variants = right_variants
+        self.branch = False
+
+        return left_node
+
+    def truncate_right(self, i:int) -> TVGNode:
+        """ Truncate the right i nucltotide off """
+        right_seq = self.seq[i:]
+        left_variants = []
+        right_variants = []
+        right_frameshifts = copy.copy(self.frameshifts)
+
+        for variant in self.variants:
+            if variant.location.start < i:
+                left_variants.append(variant)
+            if variant.location.end > i:
+                right_variants.append(variant)
+                if variant.location.start >= i and \
+                        variant.variant.is_frameshifting():
+                    self.frameshifts.remove(variant.variant)
+
+        right_node = TVGNode(
+            seq=right_seq,
+            variants=right_variants,
+            frameshifts=right_frameshifts,
+            branch=False
+        )
+
+        self.seq = self.seq[:i]
+        self.variants = left_variants
+
+        return right_node
+
+    def append_left(self, other:TVGNode) -> None:
+        """ Combine the other node the the left. """
+        self.seq = other.seq + self.seq
+
+        variants = copy.copy(other.variants)
+        for variant in self.variants:
+            variants.append(variant.shift(len(other.seq.seq)))
+        self.variants = variants
+
+        self.frameshifts.update(other.frameshifts)
+
+    def append_right(self, other:TVGNode) -> None:
+        """ Combine the other node the the right. """
+        self.seq = self.seq + other.seq
+
+        for variant in other.variants:
+            self.variants.append(variant.shift(len(self.seq.seq)))
+
+        self.frameshifts.update(other.frameshifts)
