@@ -2,8 +2,8 @@
 
 <!-- badges: start -->
 
-[![Tests](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/pull_request.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/pull_request.yaml)
-[![Docs](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/deploy.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/deploy.yaml)
+[![Tests](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/tests.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/tests.yaml)
+[![Docs](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/docs.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/docs.yaml)
 
 <!-- badges: end -->
 
