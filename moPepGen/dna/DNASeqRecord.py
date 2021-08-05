@@ -47,7 +47,7 @@ class DNASeqRecord(SeqRecord):
         return seq
 
     def find_stop_codon(self, start:int=0) -> int:
-        """ Find and return teh stop codon.
+        """ Find and return the stop codon.
 
         Args:
             start (int): The start position to search. It only searches the
@@ -62,7 +62,7 @@ class DNASeqRecord(SeqRecord):
         stop_codons = ['TAA', 'TAG', 'TGA']
         n = len(self)
         for i in range(start, n - n % 3, 3):
-            if self.seq[i:i+3] in stop_codons:
+            if str(self.seq[i:i+3]) in stop_codons:
                 return i
         return -1
 
@@ -136,11 +136,8 @@ class DNASeqRecord(SeqRecord):
         cleave_sites = [0]
         cleave_sites.extend(self.find_all_enzymatic_cleave_sites(rule=rule,
             exception=exception, start=None, end=end))
-
         i = len(cleave_sites) - miscleavage
-        if i < 0:
-            i = 0
-        return i
+        return max(i, 0)
 
     def find_next_cleave_position(self, start:int, rule:str,
             exception:str=None, miscleavage:int=0) -> int:
@@ -400,4 +397,4 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
         for location in self.locations:
             if ref_index in location.ref:
                 return location.query.start + ref_index - location.ref.start
-        return None
+        return -1

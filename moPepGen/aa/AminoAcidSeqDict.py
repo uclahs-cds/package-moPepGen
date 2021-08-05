@@ -34,17 +34,17 @@ class AminoAcidSeqDict(dict):
         """
         if not source:
             count = 0
-            infered = set()
+            inferred = set()
         for record in SeqIO.parse(path, 'fasta'):
             record.__class__ = AminoAcidSeqRecord
             if count > 100 and not source:
-                source = infered.pop()
+                source = inferred.pop()
 
             if not source:
                 count += 1
-                infered.add(record.infer_ids(style=source))
-
-            record.infer_ids(source)
+                inferred.add(record.infer_ids(style=source))
+            else:
+                record.infer_ids(source)
             if record.transcript_id in self.keys():
                 raise ValueError(
                     'Duplicated seqnames found in FASTA file: ' + path
@@ -52,7 +52,8 @@ class AminoAcidSeqDict(dict):
             self[record.transcript_id] = record
 
     def create_unique_peptide_pool(self, rule:str, exception:str=None,
-            miscleavage:int=2, min_mw:float=500.)->Set[str]:
+            miscleavage:int=2, min_mw:float=500., min_length:int=7,
+            max_length:int=25)->Set[str]:
         """ Create a unique piptide pool. All peptides with I (isoleucine)
         replaced with L (leucine) are also added to the pool. This is used to
         filter variant peptides. For proteins that starts with X, the part of
@@ -65,6 +66,10 @@ class AminoAcidSeqDict(dict):
             start (int): Index to start searching.
             min_mw (float): Minimal molecular weight of the peptides to report.
                 Defaults to 500.
+            min_length (int): Minimal length of the peptides to report, inclusive.
+                Defaults to 7.
+            max_length (int): Maximum length of the peptides to report, inclusive.
+                Defaults to 25.
 
         Returns:
             A set of unique peptides as string.
@@ -81,7 +86,9 @@ class AminoAcidSeqDict(dict):
                     rule=rule,
                     exception=exception,
                     miscleavage=miscleavage,
-                    min_mw=min_mw
+                    min_mw=min_mw,
+                    min_length=min_length,
+                    max_length=max_length
                 )
             except ValueError as e:
                 msg = "'X' is not a valid unambiguous letter for protein"

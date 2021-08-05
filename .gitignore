@@ -17,3 +17,5 @@ __pycache__
 build
 
 test/files
+
+venv

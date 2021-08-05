@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseXXX
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##CHROM=<Description='Transcript ID'>
+##ALT=<ID=FUSION,Description="Fusion">
+##INFO=<ID=GENE_ID,Number=1,Type=String,Description="3' Junction (Acceptor) Transcript's Gene ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=DONOR_GENE_ID,Number=1,Type=String,Description="5' Junction (Donor) Transcript's Gene ID">
+##INFO=<ID=DONOR_TRANSCRIPT_ID,Number=1,Type=String,Description="5' Junction (Donor) Transcript's Transcript ID">
+##INFO=<ID=DONOR_POS,Number=1,Type=Integer,Description="Position of the break point of the donor transcript">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=DONOR_GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=DONOR_GENE_SYMBOL,Number=1,Type=String,Description="5' Junction (Donor) Gene Symbol">
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
+ENST00000614167.2	1000	FUSION_ENST00000614167.2:1000-ENST00000642151.1:50	A	<FUSION>	.	.	GENE_ID=ENSG00000128408.9;GENE_SYMBOL=RIBC2;DONOR_GENE_ID=ENSG00000099949.21;DONOR_TRANSCRIPT_ID=ENST00000642151.1;DONOR_POS=50;GENOMIC_POSITION=chr22:1000-1000;DONOR_GENOMIC_POSITION=chr22:5031-5031;DONOR_GENE_SYMBOL=LZTR1
+ENST00000624155.2	50	FUSION_ENST00000624155.2:50-ENST00000622235.5:800	A	<FUSION>	.	.	GENE_ID=ENSG00000279973.2;GENE_SYMBOL=CU104787.1;DONOR_GENE_ID=ENSG00000244486.9;DONOR_TRANSCRIPT_ID=ENST00000622235.5;DONOR_POS=50;GENOMIC_POSITION=chr22:5000-5000;DONOR_GENOMIC_POSITION=chr22:4000-4000;DONOR_GENE_SYMBOL=SCARF2

@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=/data/GRCh38_Gencodev34
+##genome_fasta=
+##annotation_gtf=
+##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Transcript's Gene ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENST00000515757.5	315	SNV-314-G-A	G	A	.	.	GENE_ID=ENSG00000173376.14
+ENST00000515757.5	558	SNV-557-C-T	C	T	.	.	GENE_ID=ENSG00000173376.14
+ENST00000515757.5	564	SNV-563-A-G	A	G	.	.	GENE_ID=ENSG00000173376.14

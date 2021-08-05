@@ -10,7 +10,7 @@ from moPepGen import seqvar, gtf
 
 def parse(path:str, transcript_id_column:int=16
         ) -> Iterable[REDItoolsRecord]:
-    """ Parse REDItools output table and returns an iterator. The input
+    """ Parse the REDItools output table and returns an iterator. The input
     table must be annotated using the AnnotateTable.py script from REDItools 1.
 
     Args:
@@ -89,9 +89,9 @@ class REDItoolsRecord():
         self.transcript_id = transcript_id
 
 
-    def convert_to_variant_records(self, anno:gtf.TranscriptGTFDict
+    def convert_to_variant_records(self, anno:gtf.GenomicAnnotation
             ) -> List[seqvar.VariantRecord]:
-        """ Convert to variant_records.
+        """ Convert to VariantRecord.
 
         Args:
             anno (gtf.TranscriptFTFDict): the reference genome annotations.
@@ -114,7 +114,7 @@ class REDItoolsRecord():
             except ValueError as e:
                 if e.args[0] == gtf.INDEX_IN_INTRON_ERROR:
                     continue
-            location=FeatureLocation(
+            location = FeatureLocation(
                 seqname=transcript_id,
                 start=position,
                 end=position + 1

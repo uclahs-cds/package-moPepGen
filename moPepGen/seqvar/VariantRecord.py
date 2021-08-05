@@ -4,7 +4,9 @@ from moPepGen.SeqFeature import FeatureLocation
 
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
-    'AlternativeSplicing']
+    'Insertion', 'Deletion', 'Substitution']
+SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL']
+ATTRS_START = ['START', 'DONOR_START', 'ACCEPTOR_START']
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
@@ -46,7 +48,7 @@ class VariantRecord():
         alt (str): Altered sequence
     """
     def __init__(self, location:FeatureLocation, ref:str, alt:str, _type:str,
-            _id:str):
+            _id:str, attrs:dict=None):
         """ Construct a VariantRecord object.
 
         Args:
@@ -56,7 +58,8 @@ class VariantRecord():
             _type (str): Variant type, must be one of 'SNV', 'INDEL', 'Fusion',
                 'RNAEditingSite', 'AlternativeSplicing'
         """
-        if len(location) != len(ref):
+        if _type not in ['Substitution', 'Deletion'] and \
+                len(location) != len(ref):
             raise ValueError("Length of ref must match with location.")
         if _type not in _VARIANT_TYPES:
             raise ValueError('Variant type not supported')
@@ -65,6 +68,7 @@ class VariantRecord():
         self.alt = alt
         self.type = _type
         self.id = _id
+        self.attrs = attrs if attrs else {}
 
     def __hash__(self):
         """ hash """
@@ -78,7 +82,9 @@ class VariantRecord():
 
     def __eq__(self, other:VariantRecord) -> bool:
         """ equal to """
-        return self.location == other.location
+        return self.location == other.location and \
+            self.ref == other.ref and \
+            self.type == other.type
 
     def __ne__(self, other:VariantRecord) -> bool:
         """ not equal to """
@@ -86,7 +92,14 @@ class VariantRecord():
 
     def __gt__(self, other:VariantRecord) -> bool:
         """ greater than """
-        return self.location > other.location
+        if self.location > other.location:
+            return True
+        if self.location == other.location:
+            if self.alt > other.alt:
+                return True
+            if self.ref == other.ref:
+                return self.type > other.type
+        return False
 
     def __ge__(self, other:VariantRecord) -> bool:
         """ greather or equal to """
@@ -100,18 +113,101 @@ class VariantRecord():
         """ less or equal to """
         return not self > other
 
+    def get_donor_start(self) -> int:
+        """ Get donor start position """
+        if self.type == 'Insertion':
+            return int(self.attrs['START'])
+        if self.type == 'Substitution':
+            return int(self.attrs['DONOR_START'])
+        raise ValueError(f"Don't know how to get donor start for variant type "
+            f"{self.type}")
+
+    def get_donor_end(self) -> int:
+        """ Get donor end position """
+        if self.type == 'Insertion':
+            return int(self.attrs['END'])
+        if self.type == 'Substitution':
+            return int(self.attrs['DONOR_END'])
+        raise ValueError(f"Don't know how to get donor start for variant type "
+            f"{self.type}")
+
+    def get_alt_len(self) -> int:
+        """ Get the length of the alt """
+        if not self.alt.startswith('<'):
+            return len(self.alt)
+        if self.type == 'Fusion':
+            return 1
+        if self.type == 'Deletion':
+            return 1
+        if self.type in ['Insertion', 'Deletion']:
+            return self.get_donor_end - self.get_donor_start()
+        raise ValueError(f"Don't know how to get alt len for variant type "
+            f"{self.type}")
+
+    def to_tvf(self) -> str:
+        """ Convert to a TVF record. """
+        chrom = self.location.seqname
+        # using 1-base position
+        pos = str(int(self.location.start) + 1)
+        _id = self.id
+        qual = '.'
+        _filter = '.'
+
+        if self.type in SINGLE_NUCLEOTIDE_SUBSTITUTION:
+            ref = str(self.ref)
+            alt = str(self.alt)
+        elif self.type == 'Fusion':
+            ref = str(self.ref[0])
+            alt = '<FUSION>'
+        elif self.type in ['Insertion', 'Deletion', 'Substitution']:
+            ref = str(self.ref[0])
+            alt = f'<{self.type.upper()[:3]}>'
+        else:
+            ref = str(self.ref[0])
+            alt = f'<{self.type.upper()}>'
+
+        info = self.info
+        return '\t'.join([chrom, pos, _id, ref, alt, qual, _filter, info])
+
+    @property
+    def info(self) -> str:
+        """ Get property of the INFO field """
+        out = ''
+        for key,val in self.attrs.items():
+            # using 1-base position
+            if key in ATTRS_START:
+                val = str(int(val) + 1)
+            out += f'{key.upper()}={val};'
+        return out.rstrip(';')
+
     def is_snv(self) -> bool:
         """ Checks if the variant is a single nucleotide variant. """
         return len(self.ref) == 1 and len(self.alt) == 1
 
     def is_insertion(self) -> bool:
         """ Checks if the variant is an insertion """
+        if self.type == 'Insertion':
+            return True
         return len(self.ref) == 1 and len(self.alt) > 1
 
     def is_deletion(self) -> bool:
         """ Checks if the variant is a deletion. """
+        if self.type == 'Deletion':
+            return True
         return len(self.ref) > 1 and len(self.alt) == 1
 
     def is_frameshifting(self) -> bool:
         """ Checks if the variant is frameshifting. """
+        if self.type == 'Fusion':
+            return True
+        if self.type == 'Insertion':
+            end = int(self.attrs['END'])
+            start = int(self.attrs['START'])
+            return abs(end - start) % 3 != 0
+        if self.type == 'Substritution':
+            end = int(self.attrs['DONOR_END'])
+            start = int(self.attrs['DONOR_START'])
+            return abs(end - start) % 3 != 0
+        if self.type == 'Deletion':
+            return (self.location.end - self.location.start - 1) % 3 != 0
         return abs(len(self.alt) - len(self.ref)) % 3 != 0
