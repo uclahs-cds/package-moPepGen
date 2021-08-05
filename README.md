@@ -21,4 +21,4 @@ pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
 
 ## Documentation
 
-See [here](https://uclahs-cds.github.io/private-moPepGen/)
+See [here](https://uclahs-cds.github.io/private-moPepGen/index.html)
