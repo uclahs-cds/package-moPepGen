@@ -5,4 +5,5 @@ site_author: Chenghao Zhu
 nav:
     - Home: index.md
     - Quick Start: quick-start.md
+    - File Format: file-format.md
 theme: readthedocs

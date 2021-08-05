@@ -1,17 +1,16 @@
 # File Structure Documentation
 	
 - [File Structure Documentation](#file-structure-documentation)
-	- [Transcript Variant Format](#transcript-variant-format)
-		- [File Metadata](#file-metadata)
-		- [Point Mutation](#point-mutation)
-		- [Fusion](#fusion)
-	- [Alternative Splicing Site](#alternative-splicing-site)
-	- [CircRNA TSV Format](#circrna-tsv-format)
-	- [Reference Index](#reference-index)
-	- [Variant Peptide FASTA](#variant-peptide-fasta)
+	- [1 Transcript Variant Format](#1-transcript-variant-format)
+		- [1.1 File Metadata](#11-file-metadata)
+		- [1.2 Point Mutation](#12-point-mutation)
+		- [1.3 Fusion](#13-fusion)
+		- [1.4 Alternative Splicing Site](#14-alternative-splicing-site)
+	- [2 CircRNA TSV Format](#2-circrna-tsv-format)
+	- [3 Variant Peptide FASTA](#3-variant-peptide-fasta)
 
 
-## Transcript Variant Format
+## 1 Transcript Variant Format
 
 In moPepGen we are interested in finding varianted peptide caused by combination of different types of variants, including single nucleotide substitution, INDEL, RNA editing site, gene fusion and alternative splicing. We are also interested in non-coding RNA and circRNA with unreported ORF, or start codon gained from mutation.
 
@@ -19,7 +18,7 @@ The different mutation events are called by different programs, and those files 
 
 In moPepGen, we define the TVF (Transcript Variant Format) file format, that extended and modified from the [VCF](https://samtools.github.io/hts-specs/VCFv4.2.pdf) file format. The a TVF file, each record represent a variant associated with a transcript. The `CHROM` column is used to hold the transcript_id, and the `POS` column is also representing the position of the corresponding transcript.
 
-### File Metadata
+### 1.1 File Metadata
 
 Each variant file should contain a metadata section that each line starts with a double hashtag. The first line of the metadta must be the 'fileformat' field for VCF, to be consistant with VCF's standards. The link should read:
 
@@ -51,7 +50,7 @@ After the moPepGen metadata section, there should be a section for field informa
 ##INFO=<ID=ID,Number=number,Type=type,Description="description">
 ```
 
-### Point Mutation
+### 1.2 Point Mutation
 
 Below is an example of a TVF file for point mutation, including single nucleotide substitution and small INDEL.
 
@@ -73,7 +72,7 @@ ENST0002    210 SNV_210-T-A T   A   .   .   GENE_ID=ENSG0002;GENE_SYMBOL=EGFR;GE
 
 The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene ID that the transcript belongs to. The `ID` column follows the pattern of '\<varant_type>_\<position>-\<ref>-\<alt>'. 
 
-### Fusion
+### 1.3 Fusion
 
 Below is an example of a TVF file for gene fusions.
 
@@ -115,7 +114,7 @@ The `Info` column must contain the following fields:
 
 In reality, gene fusion happens at the gene level. But in a TVF file, each line represents a transcript, so the same fusion events could appear multiple times, because both the acceptor and donor gene could have multiple transcript isoforms.
 
-## Alternative Splicing Site
+### 1.4 Alternative Splicing Site
 
 Alternative splicing site called by [rMATS](http://rnaseq-mats.sourceforge.net/) has five types, e.g. skipped exon (SE), alternative 5' splice site (A5SS), alternative 3' splice site (A3SS), mutually exclusive exons (MXE), and retained intron (RI). Each alternative splicing event can be represented as a deletion, insertion or a substitution.
 
@@ -177,7 +176,7 @@ ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_S
 
 This line above represents a MXE that the exon 447-582 (transcript ENST0004 position 277) is replaced with exon 1103-1228 of the gene.
 
-## CircRNA TSV Format
+## 2 CircRNA TSV Format
 
 Circular RNAs are derived from back-spliced exons. They exist as individual RNA molecules and have the potential to be translated to proteins. We are then interested in finding the possible peptide sequences translated from circRNAs with and without variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts than variants. Here we define a TSV file format to represent the circRNA molecules. In this TSV format, each row represent a circRNA, with the gene ID it is associated with, the start position at the gene, the offset and length of each segment, and IDs. Normally ach segment is an exon, but with intron retained alternative splicing, there could be introns.
 
@@ -207,10 +206,7 @@ The circRNA TSV file is defined here to represent all circRNAs to be passed to m
 + **`transcript_id`** The transcript IDs that are able to generate this circRNA (e.g. contains all exons and introns of the circRNA.)
 + **`gene_name`** The name of the gene.
 
-## Reference Index
-
-
-## Variant Peptide FASTA
+## 3 Variant Peptide FASTA
 
 In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the TVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. A integer index is thus always added to the end to resolve redundancies.
 
