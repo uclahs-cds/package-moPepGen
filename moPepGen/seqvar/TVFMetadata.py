@@ -86,6 +86,7 @@ class TVFMetadata():
             f'##reference_index={ref_index}',
             f'##genome_fasta={genome_fasta}',
             f'##annotation_gtf={annotation_gtf}',
+            "##CHROM=<Description='Transcript ID'>",
             *[f'##ALT=<ID={key},Description="{val}">' for key, val in self.alt],
             *info_lines,
         ]
