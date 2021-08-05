@@ -2,8 +2,8 @@
 
 <!-- badges: start -->
 
-[![Tests](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/pull_request.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/pull_request.yaml)
-[![Docs](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/deploy.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/deploy.yaml)
+[![Tests](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/tests.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/tests.yaml)
+[![Docs](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/docs.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/docs.yaml)
 
 <!-- badges: end -->
 
@@ -21,4 +21,4 @@ pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
 
 ## Documentation
 
-See [here](https://uclahs-cds.github.io/private-moPepGen/)
+See [here](https://uclahs-cds.github.io/private-moPepGen/index.html)
