@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##CHROM=<Description='Transcript ID'>
+##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Acceptor Transcript's Gene ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
+ENST0001    110 SNV_110-C-A C   A   .   .   GENE_ID=ENSG0001;GENE_SYMBOL=TP53;GENOMIC_POSITION="chr1:1000-1001"
+ENST0002    210 SNV_210-T-A T   A   .   .   GENE_ID=ENSG0002;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
