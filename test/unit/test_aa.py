@@ -1,21 +1,49 @@
 """ Test module for amino acids """
 import unittest
+from test.unit import create_genomic_annotation
 from Bio.Seq import Seq
 from moPepGen import aa
 
+
+ANNOTATION_ATTRS = [
+    {
+        'gene_id': 'ENSG0001'
+    },{
+        'transcript_id': 'ENST0001.1',
+        'gene_id': 'ENSG0001',
+        'protein_id': 'ENSP0001'
+    }
+]
+ANNOTATION_DATA = {
+    'genes': [{
+        'gene_id': ANNOTATION_ATTRS[0]['gene_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'gene': (0, 40, ANNOTATION_ATTRS[0]),
+        'transcripts': ['ENST0001']
+    }],
+    'transcripts': [{
+        'transcript_id': ANNOTATION_ATTRS[1]['transcript_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'transcript': (5, 35, ANNOTATION_ATTRS[1]),
+        'exon': []
+    }]
+}
 
 class TestAminoAcidSeqDict(unittest.TestCase):
     """ Test case for AminoAcidSeqDict"""
     def testcreate_unique_peptide_pool_by_length(self):
         """ Test that peptides kept are of correct length. """
-        sequence = 'MKKVTAEAISWNESTSETNNSMVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGN'+\
-            'LLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLH'+\
-            'FFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVTWGIGFLHSVSQLAFAVHLLF'+\
-            'CGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLD'+\
-            'KSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDM'+\
-            'KTAIRQLRKWDAHSSVKF'
-        header = 'ENSP00000493376.2|ENST00000641515.2|ENSG00000186092.6|OTTH'+\
-            'UMG00000001094.4|OTTHUMT00000003223.4|OR4F5-202|OR4F5|326'
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        # sequence = 'MKKVTAEAISWNESTSETNNSMVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGN'+\
+        #     'LLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLH'+\
+        #     'FFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVTWGIGFLHSVSQLAFAVHLLF'+\
+        #     'CGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLD'+\
+        #     'KSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDM'+\
+        #     'KTAIRQLRKWDAHSSVKF'
+        sequence = 'MKVTAEAISWNERSTSETNNSMVTEFIFLGLSDSQEKLQRTFLFMLFFVFYGGIVFGN'
+        header = 'ENSP0001|ENST0001.1|ENSG0001'
         seq = aa.AminoAcidSeqRecord(
             seq=sequence,
             _id=header,
@@ -25,20 +53,15 @@ class TestAminoAcidSeqDict(unittest.TestCase):
         seq.infer_ids()
         kwargs = {seq.transcript_id : seq}
         seqdict = aa.AminoAcidSeqDict(**kwargs)
-        pool = seqdict.create_unique_peptide_pool(rule='trypsin',
+        pool = seqdict.create_unique_peptide_pool(anno=anno, rule='trypsin',
             exception='trypsin_exception', miscleavage=2, min_mw=0.,
             min_length = 7, max_length = 25)
-        expected = {'TAIRQLR', 'WDAHSSVKF', 'MITDFFSQR',
-            'SLDKFLAVFYSVITPLLNPIIYTLR', 'NKDMKTAIR', 'MITDFFSQRK',
-            'TAIRQLRK', 'LACTDTYR', 'DMKTAIRQLR', 'QLRKWDAHSSVK', 'DMKTAIR',
-            'FLAVFYSVITPLLNPIIYTLRNK', 'MITDFFSQRKVISFK', 'WDAHSSVK',
-            'KWDAHSSVKF', 'VIKLACTDTYR', 'KWDAHSSVK', 'FLAVFYSVITPLLNPIIYTLR'}
-        itol = {'TALRQLR', 'MLTDFFSQR', 'SLDKFLAVFYSVLTPLLNPLLYTLR',
-            'NKDMKTALR', 'MLTDFFSQRK', 'TALRQLRK', 'DMKTALRQLR', 'DMKTALR',
-            'FLAVFYSVLTPLLNPLLYTLRNK', 'MLTDFFSQRKVLSFK',
-            'VLKLACTDTYR', 'FLAVFYSVLTPLLNPLLYTLR'}
-        expected_pool = expected.union(itol)
-        self.assertEqual(pool, expected_pool)
+        expected = {'MKVTAEAISWNER', 'KVTAEAISWNER', 'VTAEAISWNER',
+            'STSETNNSMVTEFIFLGLSDSQEK', 'LQRTFLFMLFFVFYGGIVFGN',
+            'TFLFMLFFVFYGGIVFGN', 'MKVTAEALSWNER', 'KVTAEALSWNER',
+            'VTAEALSWNER', 'STSETNNSMVTEFLFLGLSDSQEK', 'LQRTFLFMLFFVFYGGLVFGN',
+            'TFLFMLFFVFYGGLVFGN'}
+        self.assertEqual(pool, expected)
 
 class TestAminoAcidSeqRecord(unittest.TestCase):
     """ Test case for AminoAcidSeqRecord """

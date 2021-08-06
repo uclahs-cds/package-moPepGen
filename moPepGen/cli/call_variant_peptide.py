@@ -57,8 +57,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             logger('Proteome FASTA loaded.')
 
         canonical_peptides = proteome.create_unique_peptide_pool(
-            rule=rule, exception=exception, miscleavage=miscleavage,
-            min_mw=min_mw
+            anno=annotation, rule=rule, exception=exception,
+            miscleavage=miscleavage, min_mw=min_mw
         )
         if verbose:
             logger('canonical peptide pool generated.')

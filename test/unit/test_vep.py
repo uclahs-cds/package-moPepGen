@@ -16,7 +16,7 @@ ANNOTATION_ATTRS = [
         'protein_id': 'ENSP0001'
     }
 ]
-ANNOTTATION_DATA = {
+ANNOTATION_DATA = {
     'genes': [{
         'gene_id': ANNOTATION_ATTRS[0]['gene_id'],
         'chrom': 'chr1',
@@ -44,7 +44,7 @@ class TestVEPRecord(unittest.TestCase):
         """ Test convert vep to variant record for SNV Tcc/Acc
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
 
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
@@ -72,7 +72,7 @@ class TestVEPRecord(unittest.TestCase):
         """ Test convert vep to variant record for SNV tCc/tTc
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:11',
@@ -99,7 +99,7 @@ class TestVEPRecord(unittest.TestCase):
         """ Test convert vep to variant record for INDEL tCc/tc
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
 
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
@@ -129,7 +129,7 @@ class TestVEPRecord(unittest.TestCase):
         the T at position 10.
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
@@ -159,7 +159,7 @@ class TestVEPRecord(unittest.TestCase):
         from position 10 to 12.
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
@@ -189,7 +189,7 @@ class TestVEPRecord(unittest.TestCase):
         between position 10 to 11.
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
@@ -219,7 +219,7 @@ class TestVEPRecord(unittest.TestCase):
         insertion of GAG between position 10 to 11.
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
@@ -248,7 +248,7 @@ class TestVEPRecord(unittest.TestCase):
         of the transcript sequence.
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
@@ -277,7 +277,7 @@ class TestVEPRecord(unittest.TestCase):
         of the transcript sequence but the transcript is cds_start_NF.
         """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTTATION_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
         anno.transcripts['ENST0001.1'].transcript.attributes['tag'] = ['cds_start_NF']
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(

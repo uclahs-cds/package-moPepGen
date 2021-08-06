@@ -1,9 +1,13 @@
 """ Model for protein or peptide sequence data
 """
-from typing import Set
+from __future__ import annotations
+from typing import Set, TYPE_CHECKING
 from Bio import SeqIO
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 
+
+if TYPE_CHECKING:
+    from moPepGen.gtf import GenomicAnnotation
 
 class AminoAcidSeqDict(dict):
     """ AminoAcidSeqDict """
@@ -51,14 +55,22 @@ class AminoAcidSeqDict(dict):
                 )
             self[record.transcript_id] = record
 
-    def create_unique_peptide_pool(self, rule:str, exception:str=None,
-            miscleavage:int=2, min_mw:float=500., min_length:int=7,
-            max_length:int=25)->Set[str]:
-        """ Create a unique piptide pool. All peptides with I (isoleucine)
+    def create_unique_peptide_pool(self, anno:GenomicAnnotation,
+            rule:str, exception:str=None, miscleavage:int=2, min_mw:float=500.,
+            min_length:int=7, max_length:int=25)->Set[str]:
+        """ Create a unique piptide pool.
+
+        All peptides with I (isoleucine)
         replaced with L (leucine) are also added to the pool. This is used to
         filter variant peptides. For proteins that starts with X, the part of
         the sequence before the first cleave site is removed. Protein sequences
         that starts with X usually means that the 5' CDS is incomplete.
+
+        For a given gene, if the cds start is known (i.e. the gene model does not
+        have the cds_start_NF tag from the GTF file), the peptide with and
+        without the leading methionine will both be included. This is because
+        sometimes the start codon methionine is cleaved spontaneously inside the
+        cell.
 
         Args:
             rule (str): The rule for enzymatic cleavage, e.g., trypsin.
@@ -79,6 +91,10 @@ class AminoAcidSeqDict(dict):
         it = iter(self.values())
         protein = next(it, None)
         while protein:
+            tx_id = protein.transcript_id
+            tx_model = anno.transcripts[tx_id]
+            cds_start_nf = 'tag' in tx_model.transcript.attributes and \
+                'cds_start_NF' in tx_model.transcript.attributes['tag']
             if protein.seq.startswith('X'):
                 protein.seq = protein.seq.lstrip('X')
             try:
@@ -88,7 +104,8 @@ class AminoAcidSeqDict(dict):
                     miscleavage=miscleavage,
                     min_mw=min_mw,
                     min_length=min_length,
-                    max_length=max_length
+                    max_length=max_length,
+                    cds_start_nf=cds_start_nf
                 )
             except ValueError as e:
                 msg = "'X' is not a valid unambiguous letter for protein"

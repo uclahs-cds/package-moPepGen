@@ -170,7 +170,8 @@ class AminoAcidSeqRecord(SeqRecord):
 
     def enzymatic_cleave(self, rule:str, exception:str=None,
             miscleavage:int=2, min_mw:float=500.0, min_length:int=7,
-            max_length:int=25)->Set[AminoAcidSeqRecord]:
+            max_length:int=25, cds_start_nf:bool=False
+            )->Set[AminoAcidSeqRecord]:
         """ Performs enzymatic cleave """
         peptides = []
         sites = [0]
@@ -178,14 +179,22 @@ class AminoAcidSeqRecord(SeqRecord):
             rule=rule, exception=exception)
         sites.append(len(self))
         start = 0
+
+        def update_peptides(peptide):
+            mol_wt = SeqUtils.molecular_weight(peptide.seq, 'protein')
+            weight_flag = mol_wt > min_mw
+            length_flag = len(peptide.seq) >= min_length \
+                and len(peptide.seq) <= max_length
+            if weight_flag and length_flag:
+                peptides.append(peptide)
+
         while start < len(sites) - 1:
             end = start + 1
             while end - start - 1 <= miscleavage and end < len(sites):
                 peptide = self[sites[start]:sites[end]]
-                weight_flag = SeqUtils.molecular_weight(peptide.seq, 'protein') > min_mw
-                length_flag = len(peptide.seq) >= min_length and len(peptide.seq) <= max_length
-                if weight_flag and length_flag:
-                    peptides.append(peptide)
+                if start == 0 and not cds_start_nf and peptide.seq.startswith('M'):
+                    update_peptides(peptide[1:])
+                update_peptides(peptide)
                 end += 1
             start += 1
         return peptides
