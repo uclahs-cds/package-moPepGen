@@ -448,7 +448,7 @@ class PeptideVariantGraph():
                 right = right.split_node(site, cleavage=True)
                 queue.appendleft(right)
 
-    def call_variant_peptides(self, miscleavage:int=2, cds_start_nf:bool=False
+    def call_variant_peptides(self, miscleavage:int=2
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
@@ -528,8 +528,7 @@ class PeptideVariantGraph():
 
                         update_variant_peptides(seq)
 
-                        if cur in self.root.out_nodes and not cds_start_nf \
-                                and seq.seq.startswith('M'):
+                        if cur in self.root.out_nodes and seq.seq.startswith('M'):
                             update_variant_peptides(seq[1:])
 
                     if i <= miscleavage:

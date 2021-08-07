@@ -114,8 +114,7 @@ def main(args):
             aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
             peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
             for peptide in peptides:
-                if peptide is peptides[0] and not tx_model.is_cds_start_nf() \
-                        and peptide.seq.startswith('M'):
+                if peptide is peptides[0] and peptide.seq.startswith('M'):
                     if str(peptide.seq[1:]) not in canonical_peptides:
                         variant_peptides.add(str(peptide.seq[1:]))
                 if str(peptide.seq) not in canonical_peptides:
