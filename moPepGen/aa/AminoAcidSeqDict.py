@@ -6,6 +6,7 @@ from Bio import SeqIO
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 
 
+# To avoid circular import
 if TYPE_CHECKING:
     from moPepGen.gtf import GenomicAnnotation
 
@@ -73,6 +74,7 @@ class AminoAcidSeqDict(dict):
         cell.
 
         Args:
+            anno (GenomicAnnotation): Genomic annotation parsed from GTF.
             rule (str): The rule for enzymatic cleavage, e.g., trypsin.
             exception (str): The exception for cleavage rule.
             start (int): Index to start searching.
