@@ -254,8 +254,10 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
     pgraph = dgraph.translate()
 
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
-    return pgraph.call_variant_peptides(miscleavage=miscleavage)
-
+    return pgraph.call_variant_peptides(
+        miscleavage=miscleavage,
+        cds_start_nf=anno.is_cds_start_nf()
+    )
 
 def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,

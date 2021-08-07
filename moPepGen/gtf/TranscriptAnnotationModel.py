@@ -237,3 +237,8 @@ class TranscriptAnnotationModel():
         if self.transcript.location.strand == 1:
             return int(self.exon[0].location.start)
         return int(self.exon[-1].location.end)
+
+    def is_cds_start_nf(self) -> bool:
+        """ Returns if the transcript has the tag of cds_start_NF """
+        return 'tag' in self.transcript.attributes and \
+            'cds_start_NF' in self.transcript.attributes['tag']
