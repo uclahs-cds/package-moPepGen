@@ -45,7 +45,6 @@ def generate_index(args:argparse.Namespace):
         pickle.dump(anno, handle)
     if verbose:
         logger('Genome annotation GTF saved to disk.')
-    del anno
 
     proteome = aa.AminoAcidSeqDict()
     proteome.dump_fasta(parth_proteome)
@@ -57,8 +56,8 @@ def generate_index(args:argparse.Namespace):
         logger('Proteome FASTA saved to disk.')
 
     canonical_peptides = proteome.create_unique_peptide_pool(
-        rule=rule, exception=exception, miscleavage=miscleavage, min_mw=min_mw,
-            min_length = min_length, max_length = max_length
+        anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
+        min_mw=min_mw, min_length = min_length, max_length = max_length
     )
     if verbose:
         logger('canonical peptide pool generated.')

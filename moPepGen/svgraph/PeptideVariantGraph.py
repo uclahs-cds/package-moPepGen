@@ -461,7 +461,19 @@ class PeptideVariantGraph():
         queue:Deque[svgraph.PVGNode] = deque([self.root])
         visited:Set[svgraph.PVGNode] = set()
         variant_peptides:Set[aa.AminoAcidSeqRecord] = set()
+        # The peptide_ids is used to keep track on the number of peptides that
+        # share the same description. The number is then appended to the
+        # description in the FASTA.
         peptide_ids:Dict[str, int] = {}
+
+        def update_variant_peptides(_seq):
+            same_peptide = get_equivalent(variant_peptides, _seq)
+            if same_peptide:
+                same_peptide:aa.AminoAcidSeqRecord
+                same_peptide.description += '||' + seq.description
+            else:
+                variant_peptides.add(_seq)
+
         while queue:
             cur = queue.pop()
             if cur.seq is None:
@@ -489,8 +501,8 @@ class PeptideVariantGraph():
                 while node_paths:
                     nodes = node_paths.pop()
 
-                    variants = set()
-                    seq = None
+                    variants:Set[seqvar.VariantRecordWithCoordinate] = set()
+                    seq:aa.AminoAcidSeqRecord = None
                     for node in nodes:
                         if seq is None:
                             seq = node.seq
@@ -502,7 +514,6 @@ class PeptideVariantGraph():
 
                     if variants:
                         variant_label = ''
-                        variant:seqvar.VariantRecordWithCoordinate
                         for variant in variants:
                             variant_label += ('|' + str(variant.id))
 
@@ -516,12 +527,10 @@ class PeptideVariantGraph():
                         peptide_ids[seq.description] += 1
                         seq.description += '|' + str(peptide_ids[seq.description])
 
-                        same_peptide = get_equivalent(variant_peptides, seq)
-                        if same_peptide:
-                            same_peptide:Seq
-                            same_peptide.description += '||' + seq.description
-                        else:
-                            variant_peptides.add(seq)
+                        update_variant_peptides(seq)
+
+                        if cur in self.root.out_nodes and seq.seq.startswith('M'):
+                            update_variant_peptides(seq[1:])
 
                     if i <= miscleavage:
                     # create a new batch of node paths for the next iteration

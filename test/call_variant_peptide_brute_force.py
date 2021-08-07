@@ -75,8 +75,8 @@ def main(args):
     rule = args.cleavage_rule
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     canonical_peptides = proteome.create_unique_peptide_pool(
-        rule=rule, exception=exception, miscleavage=args.miscleavage,
-        min_mw=args.min_mw
+        anno=anno, rule=rule, exception=exception,
+        miscleavage=args.miscleavage, min_mw=args.min_mw
     )
 
     variants = list(seqvar.io.parse(args.input_tvf))
@@ -114,6 +114,9 @@ def main(args):
             aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
             peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
             for peptide in peptides:
+                if peptide is peptides[0] and peptide.seq.startswith('M'):
+                    if str(peptide.seq[1:]) not in canonical_peptides:
+                        variant_peptides.add(str(peptide.seq[1:]))
                 if str(peptide.seq) not in canonical_peptides:
                     variant_peptides.add(str(peptide.seq))
 

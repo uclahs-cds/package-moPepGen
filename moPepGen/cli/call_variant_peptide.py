@@ -57,8 +57,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             logger('Proteome FASTA loaded.')
 
         canonical_peptides = proteome.create_unique_peptide_pool(
-            rule=rule, exception=exception, miscleavage=miscleavage,
-            min_mw=min_mw
+            anno=annotation, rule=rule, exception=exception,
+            miscleavage=miscleavage, min_mw=min_mw
         )
         if verbose:
             logger('canonical peptide pool generated.')
@@ -255,7 +255,6 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
 
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
-
 
 def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
