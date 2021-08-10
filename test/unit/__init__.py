@@ -207,6 +207,7 @@ def create_dna_seq_with_coordinates(seq, start=None, end=None):
     return dna.DNASeqRecordWithCoordinates(seq=Seq(seq), locations=[location])
 
 def create_aa_record(seq:str, description:str):
+    """ Create a AminoAcidSeqRecord """
     seq = Seq(seq)
     return aa.AminoAcidSeqRecord(seq, _id=description, name=description,
         description=description)

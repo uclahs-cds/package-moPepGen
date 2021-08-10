@@ -1,10 +1,8 @@
 """ Test module for amino acids """
-from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
 import unittest
-from test.unit import create_genomic_annotation
+from test.unit import create_aa_record, create_genomic_annotation
 from Bio.Seq import Seq
-from moPepGen import aa, get_equivalent
-from test.unit import create_aa_record
+from moPepGen import aa
 
 
 ANNOTATION_ATTRS = [
@@ -134,7 +132,7 @@ class TestCaseVariantPeptidePool(unittest.TestCase):
             ('MFAEHTPK', 'ENSG0003|SNV-100-T-C|1')
         ]
         peptides = [create_aa_record(*x) for x in peptide_data]
-        pool = VariantPeptidePool(set(peptides[:2]))
+        pool = aa.VariantPeptidePool(set(peptides[:2]))
         canonical = {'ABCD'}
         # pool2 = {1,2,3}
         # get_equivalent(pool2, 2)

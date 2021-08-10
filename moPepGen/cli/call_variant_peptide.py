@@ -283,9 +283,6 @@ def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
     records.sort()
     return records
 
-def write_variant_peptide():
-    """"""
-
 if __name__ == '__main__':
     test_args = argparse.Namespace()
     test_args.input_variant = [
