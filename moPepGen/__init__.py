@@ -16,6 +16,7 @@ class _CaptureEq:
         result = (self.obj == other)
         if result:
             self.match = other
+        return result
 
     def __getattr__(self, name):  # support hash() or anything else needed by __contains__
         return getattr(self.obj, name)
