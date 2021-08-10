@@ -11,11 +11,12 @@ class _CaptureEq:
     def __init__(self, obj):
         self.obj = obj
         self.match = obj
+
     def __eq__(self, other):
         result = (self.obj == other)
         if result:
             self.match = other
-        return result
+
     def __getattr__(self, name):  # support hash() or anything else needed by __contains__
         return getattr(self.obj, name)
 
@@ -35,8 +36,13 @@ def get_equivalent(container, item, default=None):
     2
     >>> get_equivalent([1, 2, 3], 4, default=0)
     0
+
+    NOTE: Use this function with cautious because the direction of == can go
+    in different directions, and sometimes the _CaptureEq.__eq__ is not called.
+    moPepGen.aa.AminoAcidSeqRecord.__eq__ is an example of a work around.
     '''
     t = _CaptureEq(item)
+
     if t in container:
         return t.match
     return default
