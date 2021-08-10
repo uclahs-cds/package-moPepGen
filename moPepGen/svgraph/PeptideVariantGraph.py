@@ -470,7 +470,7 @@ class PeptideVariantGraph():
             same_peptide = get_equivalent(variant_peptides, _seq)
             if same_peptide:
                 same_peptide:aa.AminoAcidSeqRecord
-                same_peptide.description += '||' + seq.description
+                same_peptide.description += ' ' + seq.description
             else:
                 variant_peptides.add(_seq)
 

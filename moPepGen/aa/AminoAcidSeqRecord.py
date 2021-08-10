@@ -45,8 +45,13 @@ class AminoAcidSeqRecord(SeqRecord):
         return hash(str(self.seq))
 
     def __eq__(self, other:AminoAcidSeqRecord):
-        """ equal to """
-        return self.seq == other.seq
+        """ Equal to. It is implemented in this way, because the get_equivalent
+        calls this __eq__ instead of the other for reason that I don't
+        understand. """
+        result = (self.seq == other.seq)
+        if result and hasattr(other, 'match'):
+            other.match = self
+        return result
 
     def __ne__(self, other:AminoAcidSeqRecord) -> bool:
         """ not equal to """

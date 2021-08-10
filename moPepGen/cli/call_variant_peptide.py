@@ -3,10 +3,7 @@ from __future__ import annotations
 from typing import List, Dict, Set
 import argparse
 import pickle
-from Bio import SeqUtils
-from Bio.SeqIO import FastaIO
-from Bio.Seq import Seq
-from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, get_equivalent, CircRNA
+from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, CircRNA
 from moPepGen.SeqFeature import FeatureLocation
 
 
@@ -79,7 +76,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     if verbose:
         logger('Variant records sorted.')
 
-    variant_peptides = set()
+    variant_pool = aa.VariantPeptidePool()
 
     i = 0
     for transcript_id in variants:
@@ -92,21 +89,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             raise
 
         for peptide in peptides:
-            if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
-                continue
-            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
-                continue
-            if str(peptide.seq) in canonical_peptides:
-                continue
-            same_peptide = get_equivalent(variant_peptides, peptide)
-            if same_peptide:
-                same_peptide:Seq
-                new_label = peptide.id
-                same_peptide.id += ('||' + new_label)
-                same_peptide.name = same_peptide.id
-                same_peptide.description = same_peptide.id
-            else:
-                variant_peptides.add(peptide)
+            variant_pool.add_peptide(peptide, canonical_peptides, min_mw,
+                min_length, max_length)
 
         if verbose:    # for logging
             i += 1
@@ -119,25 +103,10 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 variants, rule, exception, miscleavage)
 
         for peptide in peptides:
-            if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
-                continue
-            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
-                continue
-            if str(peptide.seq) in canonical_peptides:
-                continue
-            same_peptide = get_equivalent(variant_peptides, peptide)
-            if same_peptide:
-                new_label = peptide.id
-                same_peptide.id += ('||' + new_label)
-                same_peptide.name = same_peptide.id
-                same_peptide.description = same_peptide.id
-            else:
-                variant_peptides.add(peptide)
+            variant_pool.add_peptide(peptide, canonical_peptides, min_mw,
+                min_length, max_length)
 
-    with open(output_fasta, 'w') as handle:
-        writer = FastaIO.FastaWriter(handle, record2title=lambda x: x.description)
-        for record in variant_peptides:
-            writer.write_record(record)
+    variant_pool.write(output_fasta)
 
     if verbose:
         logger('Variant peptide FASTA file written to disk.')

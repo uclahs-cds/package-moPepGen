@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple, Union
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
-from moPepGen import svgraph, dna, seqvar, gtf
+from moPepGen import svgraph, dna, seqvar, gtf, aa
 
 Type = Tuple[Union[svgraph.TranscriptVariantGraph, svgraph.CircularVariantGraph],
         Dict[int, svgraph.TVGNode]]
@@ -205,3 +205,9 @@ def create_dna_seq_with_coordinates(seq, start=None, end=None):
         ref=FeatureLocation(start=start, end=end)
     )
     return dna.DNASeqRecordWithCoordinates(seq=Seq(seq), locations=[location])
+
+def create_aa_record(seq:str, description:str):
+    """ Create a AminoAcidSeqRecord """
+    seq = Seq(seq)
+    return aa.AminoAcidSeqRecord(seq, _id=description, name=description,
+        description=description)

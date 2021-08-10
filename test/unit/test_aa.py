@@ -1,6 +1,6 @@
 """ Test module for amino acids """
 import unittest
-from test.unit import create_genomic_annotation
+from test.unit import create_aa_record, create_genomic_annotation
 from Bio.Seq import Seq
 from moPepGen import aa
 
@@ -120,3 +120,24 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             seq.infer_ids_gencode()
+
+
+class TestCaseVariantPeptidePool(unittest.TestCase):
+    """ Test case fro VariantPeptidePool """
+    def test_variant_peptide_add(self):
+        """ Test variant peptide is added to the pool """
+        peptide_data = [
+            ('MFAEHTPK', 'ENSG0001|SNV-100-T-C|1'),
+            ('GLAKER', 'ENSG0002|SNV-100-T-C|1'),
+            ('MFAEHTPK', 'ENSG0003|SNV-100-T-C|1')
+        ]
+        peptides = [create_aa_record(*x) for x in peptide_data]
+        pool = aa.VariantPeptidePool(set(peptides[:2]))
+        canonical = {'ABCD'}
+        # pool2 = {1,2,3}
+        # get_equivalent(pool2, 2)
+        pool.add_peptide(peptides[-1], canonical)
+        for seq in pool.peptides:
+            if str(seq.seq) == peptide_data[-1][0]:
+                expected = f'{peptide_data[0][1]} {peptide_data[-1][1]}'
+                self.assertEqual(seq.description, expected)
