@@ -2,6 +2,32 @@
 import argparse
 import pickle
 from moPepGen import dna, aa, gtf, logger
+from .common import add_args_cleavage, add_args_reference, add_args_verbose, \
+    print_help_if_missing_args
+
+
+# pylint: disable=W0212
+def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
+    """ CLI for moPepGen generateIndex """
+    p = subparsers.add_parser(
+        name='generateIndex',
+        help='Generate genome and proteome index files for moPepGen',
+        description='Generate genome and proteome index files for moPepGen'
+        'parsers and peptide caller.'
+    )
+    p.add_argument(
+        '-o', '--output-dir',
+        type=str,
+        help='Ouput directory for index files.',
+        metavar='',
+        dest='output_dir',
+        required=True
+    )
+    add_args_reference(p)
+    add_args_cleavage(p)
+    add_args_verbose(p)
+    p.set_defaults(func=generate_index)
+    print_help_if_missing_args(p)
 
 
 def generate_index(args:argparse.Namespace):

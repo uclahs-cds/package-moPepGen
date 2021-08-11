@@ -4,7 +4,38 @@ import pathlib
 import argparse
 import pickle
 from moPepGen import logger, gtf, seqvar, parser, dna
+from .common import add_args_reference, add_args_verbose, \
+    print_help_if_missing_args
 
+
+# pylint: disable=W0212
+def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
+    """ CLI for moPepGen parseFusionCatcher """
+
+    p = subparsers.add_parser(
+        name='parseFusionCatcher',
+        help='Parse FusionCatcher result for moPepGen to call variant peptides.',
+        description='Parse the FusionCatcher result to TVF format of variant'
+        'records for moPepGen to call variant peptides. The genome'
+    )
+    p.add_argument(
+        '-f', '--fusion',
+        type=str,
+        help="Path to the FusionCatcher's output file.",
+        metavar='',
+        required=True
+    )
+    p.add_argument(
+        '-o', '--output-prefix',
+        type=str,
+        help='Prefix to the output filename.',
+        metavar='',
+        required=True
+    )
+    add_args_reference(p)
+    add_args_verbose(p)
+    p.set_defaults(func=parse_fusion_catcher)
+    print_help_if_missing_args(p)
 
 def parse_fusion_catcher(args:argparse.Namespace) -> None:
     """ Parse FusionCatcher output and save it in TVF format. """

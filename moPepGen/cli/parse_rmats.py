@@ -5,7 +5,73 @@ import pickle
 from pathlib import Path
 from moPepGen import logger, dna, gtf, seqvar
 from moPepGen.parser import RMATSParser
+from .common import add_args_reference, add_args_verbose, \
+    print_help_if_missing_args
 
+
+# pylint: disable=W0212
+def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
+    """ CLI for moPepGen parseRMATs """
+    ## parser_rmats
+    p = subparsers.add_parser(
+        name='parseRMATS',
+        help='Parse rMATS result for moPepGen to call variant peptides.',
+        description='Parse the rMATS result to TVF format of variant'
+        'records for moPepGen to call variant peptides.'
+    )
+
+    p.add_argument(
+        '--skipped-exon',
+        type=Path,
+        help="Skipped exon junction count txt file.",
+        metavar='',
+        default=None,
+        dest='skipped_exon'
+    )
+    p.add_argument(
+        '--alternative-5-splicing',
+        type=Path,
+        help="Alternative 5' splicing junction count txt file.",
+        metavar='',
+        default=None,
+        dest='alternative_5_splicing'
+    )
+    p.add_argument(
+        '--alternative-3-splicing',
+        type=Path,
+        help="Alternative 3' splicing junction count txt file.",
+        metavar='',
+        default=None,
+        dest='alternative_3_splicing'
+    )
+    p.add_argument(
+        '--mutually-exclusive-exons',
+        type=Path,
+        help="Mutually exclusive junction count txt file.",
+        metavar='',
+        default=None,
+        dest='mutually_exclusive_exons'
+    )
+    p.add_argument(
+        '--retained-intron',
+        type=Path,
+        help="Retained intron junction count txt file.",
+        metavar='',
+        default=None,
+        dest='retained_intron'
+    )
+
+    p.add_argument(
+        '-o', '--output-prefix',
+        type=str,
+        help='Prefix to the output filename.',
+        metavar=''
+    )
+
+    add_args_reference(p)
+    add_args_verbose(p)
+    p.set_defaults(func=parse_rmats)
+    print_help_if_missing_args(p)
 
 def parse_rmats(args:argparse.Namespace) -> None:
     """ Parse rMATS results into TSV """
