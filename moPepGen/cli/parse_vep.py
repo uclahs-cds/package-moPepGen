@@ -5,7 +5,42 @@ import argparse
 import pickle
 from moPepGen.parser import VEPParser
 from moPepGen import gtf, dna, seqvar, logger
+from .common import add_args_reference, add_args_verbose, \
+    print_help_if_missing_args
 
+
+# pylint: disable=W0212
+def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
+    """ CLI for moPepGen parseVEP """
+
+    p = subparsers.add_parser(
+        name='parseVEP',
+        help='Parse VEP output for moPepGen to call variant peptides.',
+        description="Parse VEP output tsv to the TVF format of variant records"
+        "for moPepGen to call variant peptides. The genome assembly FASTA and"
+        "annotation GTF must come from the same GENCODE/ENSEMBL version, and"
+        "must the consistent with the VEP output."
+    )
+
+    p.add_argument(
+        '-i', '--vep-txt',
+        type=str,
+        nargs='+',
+        help='Path to VEP result txt file.',
+        metavar='',
+        required=True
+    )
+    p.add_argument(
+        '-o', '--output-prefix',
+        type=str,
+        help='Prefix to the output filename.',
+        metavar='',
+        required=True
+    )
+    add_args_reference(p)
+    add_args_verbose(p)
+    p.set_defaults(func=parse_vep)
+    print_help_if_missing_args(p)
 
 def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """

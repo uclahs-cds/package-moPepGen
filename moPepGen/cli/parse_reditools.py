@@ -4,7 +4,47 @@ import argparse
 import pickle
 import pathlib
 from moPepGen import logger, gtf, seqvar, parser
+from .common import add_args_reference, add_args_verbose, \
+    print_help_if_missing_args
 
+
+# pylint: disable=W0212
+def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
+    """ CLI for moPepGen parseREDItools """
+
+    p = subparsers.add_parser(
+        name='parseREDItools',
+        help='Parse REDItools result for moPepGen to call variant peptides.',
+        description='Parse the REDItools result to a TVF format of variant'
+        'records for moPepGen to call variant peptides. The genome'
+    )
+    p.add_argument(
+        '-t', '--reditools-table',
+        type=str,
+        help='Path to the REDItools output table.',
+        metavar='',
+        required=True
+    )
+    p.add_argument(
+        '--transcript-id-column',
+        type=int,
+        help='The column index for transcript ID. If your REDItools table does'
+        'not contains it, use the AnnotateTable.py from the REDItools'
+        'package. Defaults to 16',
+        default=16,
+        metavar=''
+    )
+    p.add_argument(
+        '-o', '--output-prefix',
+        type=str,
+        help='Prefix to the output filename.',
+        metavar='',
+        required=True
+    )
+    add_args_reference(p)
+    add_args_verbose(p)
+    p.set_defaults(func=parse_reditools)
+    print_help_if_missing_args(p)
 
 def parse_reditools(args:argparse.Namespace) -> None:
     """ Parse REDItools output and save it in the TVF format. """
