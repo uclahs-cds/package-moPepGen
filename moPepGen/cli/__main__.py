@@ -1,7 +1,6 @@
 """Main entry point"""
 import sys
 import argparse
-from pathlib import Path
 from moPepGen import cli
 
 
