@@ -331,17 +331,22 @@ class GenomicAnnotation():
     def get_all_exons_of_gene(self, gene_id) -> List[SeqFeature]:
         """ Get all exons of a gene """
         exons = set()
-        for tx_id in self.genes[gene_id].transcripts:
+        gene_model = self.genes[gene_id]
+        for tx_id in gene_model.transcripts:
             tx_model = self.transcripts[tx_id]
             exons.update(tx_model.exon)
         exons = list(exons)
         exons.sort()
-        return exons
+        gene_model.exons = exons
 
     def get_exon_index(self, gene_id:str, feature:SeqFeature,
             coordinate:str='gene') -> bool:
-        """ Returns if the given feature is an exon of the gene. """
-        exons = self.get_all_exons_of_gene(gene_id)
+        """ Find the index number of a given exon. """
+        gene_model = self.genes[gene_id]
+        if not gene_model.exons:
+            self.get_all_exons_of_gene(gene_id)
+        exons = gene_model.exons
+
         strand = self.genes[gene_id].strand
 
         if coordinate == 'gene':
@@ -369,7 +374,11 @@ class GenomicAnnotation():
     def get_intron_index(self, gene_id:str, feature:SeqFeature,
             coordinate:str="gene") -> bool:
         """ Returns if the given feature is an intron of the gene. """
-        exons = self.get_all_exons_of_gene(gene_id)
+        gene_model = self.genes[gene_id]
+        if not gene_model.exons:
+            self.get_all_exons_of_gene(gene_id)
+        exons = gene_model.exons
+
         strand = self.genes[gene_id].strand
 
         if coordinate == 'gene':

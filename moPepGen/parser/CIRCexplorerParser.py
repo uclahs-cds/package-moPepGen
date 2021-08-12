@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Iterable, List, Tuple
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import gtf
-from moPepGen.CircRNA import CircRNAModel
+from moPepGen.circ import CircRNAModel
 
 
 def parse(path:Path) -> Iterable[CIRCexplorerKnownRecord]:

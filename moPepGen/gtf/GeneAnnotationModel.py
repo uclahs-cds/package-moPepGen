@@ -14,6 +14,7 @@ class GeneAnnotationModel(SeqFeature):
         if transcripts is None:
             transcripts = []
         self.transcripts = transcripts
+        self.exons:List[SeqFeature] = []
 
     def get_gene_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:

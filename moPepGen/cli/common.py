@@ -17,21 +17,24 @@ def add_args_reference(parser:argparse.ArgumentParser):
         '-g', '--genome-fasta',
         type=str,
         help='Path to the genome assembly FASTA file.',
-        metavar=''
+        metavar='',
+        default=None
     )
     group.add_argument(
         '-a', '--annotation-gtf',
         type=str,
         help='Path to the annotation GTF file. Must come from ENSEMBL/GENCODE'
         ' with the same version of the genome and protein FASTA.',
-        metavar=''
+        metavar='',
+        default=None
     )
     group.add_argument(
         '-p', '--proteome-fasta',
         type=str,
         help='Path to the translated protein sequence FASTA file. Must come'
         'from ENSEMBL/GENCODE with the same version of the genome FASTA.',
-        metavar=''
+        metavar='',
+        default=None
     )
     group.add_argument(
         '--index-dir',

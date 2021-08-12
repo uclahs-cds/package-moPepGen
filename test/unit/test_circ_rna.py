@@ -1,13 +1,13 @@
 """ Module to test CircRNAModel """
 import unittest
-from moPepGen import CircRNA
+from moPepGen import circ
 
 
 class TestCircRNA(unittest.TestCase):
     """ Test case for circ RNA """
     def test_parse_circ_rna_bed(self):
         """ Test to parse circRNA bed file """
-        circs = list(CircRNA.parse('test/files/circRNA/circ_rna.tsv'))
-        for circ in circs:
-            self.assertIsInstance(circ, CircRNA.CircRNAModel)
-        self.assertEqual(len(circs[0].fragments), 2)
+        records = list(circ.io.parse('test/files/circRNA/circ_rna.tsv'))
+        for record in records:
+            self.assertIsInstance(record, circ.io.CircRNAModel)
+        self.assertEqual(len(records[0].fragments), 2)

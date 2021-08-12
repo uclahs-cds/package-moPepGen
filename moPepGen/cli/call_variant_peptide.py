@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Dict, Set
 import argparse
 import pickle
-from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, CircRNA
+from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, circ
 from moPepGen.SeqFeature import FeatureLocation
 from .common import add_args_cleavage, add_args_verbose, \
     print_help_if_missing_args, add_args_reference
@@ -143,8 +143,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 logger(f'{i} transcripts processed.')
 
     if circ_rna_bed:
-        for circ in CircRNA.parse(circ_rna_bed):
-            peptides = call_peptide_circ_rna(circ, annotation, genome,
+        for record in circ.io.parse(circ_rna_bed):
+            peptides = call_peptide_circ_rna(record, annotation, genome,
                 variants, rule, exception, miscleavage)
 
         for peptide in peptides:
@@ -270,35 +270,35 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
-def call_peptide_circ_rna(circ:CircRNA.CircRNAModel,
+def call_peptide_circ_rna(record:circ.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
         variants:Dict[str,List[seqvar.VariantRecord]], rule:str,
         exception:str, miscleavage:int)-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
-    gene_id = circ.gene_id
+    gene_id = record.gene_id
     gene_model = annotation.genes[gene_id]
     chrom = gene_model.location.seqname
     gene_seq = gene_model.get_gene_sequence(genome[chrom])
-    circ_seq = circ.get_circ_rna_sequence(gene_seq)
+    circ_seq = record.get_circ_rna_sequence(gene_seq)
 
     variant_records = set()
-    for transcript_id in circ.transcript_ids:
+    for transcript_id in record.transcript_ids:
         if transcript_id not in variants:
             continue
-        for record in variants[transcript_id]:
-            record = annotation.variant_coordinates_to_gene(record, gene_id)
+        for variant in variants[transcript_id]:
+            variant = annotation.variant_coordinates_to_gene(variant, gene_id)
             # Alternative splicing should not be included. Alternative splicing
             # are represented as Insertion, Deletion or Substitution.
-            if record.type in ['Insertion', 'Deletion', 'Substitution']:
+            if variant.type in ['Insertion', 'Deletion', 'Substitution']:
                 continue
-            for feature in circ.fragments:
-                if feature.location.is_superset(record.location):
-                    variant_records.add(record)
+            for fragment in record.fragments:
+                if fragment.location.is_superset(variant.location):
+                    variant_records.add(variant)
                     break
     variant_records = list(variant_records)
     variant_records.sort()
 
-    cgraph = svgraph.CircularVariantGraph(circ_seq, _id=circ.id)
+    cgraph = svgraph.CircularVariantGraph(circ_seq, _id=record.id)
 
     cgraph.create_variant_graph(variant_records)
     cgraph.align_all_variants()
