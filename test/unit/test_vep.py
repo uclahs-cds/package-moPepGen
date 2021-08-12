@@ -22,7 +22,7 @@ ANNOTATION_DATA = {
         'chrom': 'chr1',
         'strand': 1,
         'gene': (0, 40, ANNOTATION_ATTRS[0]),
-        'transcripts': ['ENST0001']
+        'transcripts': ['ENST0001.1']
     }],
     'transcripts': [{
         # seq: CTGGT CCCCT ATGGG TCCTT C

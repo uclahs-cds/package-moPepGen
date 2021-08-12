@@ -1,10 +1,12 @@
 """ Test the GTF files are loaded and handled properly
 """
 import unittest
-from test.unit import create_transcript_model, create_variant
+from test.unit import create_transcript_model, create_variant, \
+    create_genomic_annotation
 from Bio import SeqIO
 from moPepGen import gtf
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from .test_vep import ANNOTATION_DATA
 
 
 class TestAnnotationModel(unittest.TestCase):
@@ -202,6 +204,99 @@ class TestGTF(unittest.TestCase):
         var2 = anno.variant_coordinates_to_gene(var1, attributes['gene_id'])
         self.assertEqual(int(var2.location.start), 175)
         self.assertEqual(int(var2.location.end), 176)
+
+    def test_find_exon_index_case1(self):
+        """ Test finding exon index with strand + """
+        # pylint: disable=W0212
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx_id = 'ENST0001.1'
+        exon = anno.transcripts[tx_id].exon[1]
+        gene_id = 'ENSG0001'
+        ind = anno.find_exon_index(gene_id, exon, 'genomic')
+        self.assertEqual(ind, 1)
+
+        exon2 = exon._shift(-anno.genes[gene_id].location.start)
+        ind = anno.find_exon_index(gene_id, exon2, 'gene')
+        self.assertEqual(ind, 1)
+
+        exon = exon2._shift(10)
+        with self.assertRaises(ValueError):
+            anno.find_exon_index(gene_id, exon, 'gene')
+
+    def test_find_exon_index_case2(self):
+        """ Test finding exon index with strand - """
+        # pylint: disable=W0212
+
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        for gene in anno.genes.values():
+            gene.location.strand = -1
+        for tx in anno.transcripts.values():
+            for exon in tx.exon:
+                exon.location.strand = -1
+
+        tx_id = 'ENST0001.1'
+        exon = anno.transcripts[tx_id].exon[0]
+        gene_id = 'ENSG0001'
+        ind = anno.find_exon_index(gene_id, exon, 'genomic')
+        self.assertEqual(ind, 2)
+
+        exon2 = anno.feature_coordiante_genomic_to_gene(exon, gene_id)
+        ind = anno.find_exon_index(gene_id, exon2, 'gene')
+        self.assertEqual(ind, 2)
+
+        exon = exon2._shift(10)
+        with self.assertRaises(ValueError):
+            anno.find_exon_index(gene_id, exon, 'gene')
+
+    def test_find_intron_index_case1(self):
+        """ Test finding intron index with strand = 1 """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = 'ENSG0001'
+        tx_id = 'ENST0001.1'
+        start = anno.transcripts[tx_id].exon[0].location.end
+        end = anno.transcripts[tx_id].exon[1].location.start
+        strand = anno.genes[gene_id].location.strand
+        location = FeatureLocation(seqname=gene_id, start=start, end=end,
+            strand=strand)
+        intron = SeqFeature(chrom=gene_id, location=location, attributes={})
+        ind = anno.find_intron_index(gene_id, intron, 'genomic')
+        self.assertEqual(ind, 0)
+
+        intron2 = intron._shift(-anno.genes[gene_id].location.start)
+        ind = anno.find_intron_index(gene_id, intron2, 'gene')
+        self.assertEqual(ind, 0)
+
+        intron = intron2._shift(10)
+        with self.assertRaises(ValueError):
+            anno.find_exon_index(gene_id, intron, 'gene')
+
+    def test_find_intron_index_case2(self):
+        """ Test finding intron index with strand = -1 """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        for gene in anno.genes.values():
+            gene.location.strand = -1
+        for tx in anno.transcripts.values():
+            for exon in tx.exon:
+                exon.location.strand = -1
+
+        gene_id = 'ENSG0001'
+        tx_id = 'ENST0001.1'
+        start = anno.transcripts[tx_id].exon[0].location.end
+        end = anno.transcripts[tx_id].exon[1].location.start
+        strand = anno.genes[gene_id].location.strand
+        location = FeatureLocation(seqname=gene_id, start=start, end=end,
+            strand=strand)
+        intron = SeqFeature(chrom=gene_id, location=location, attributes={})
+        ind = anno.find_intron_index(gene_id, intron, 'genomic')
+        self.assertEqual(ind, 1)
+
+        intron2 = anno.feature_coordiante_genomic_to_gene(intron, gene_id)
+        ind = anno.find_intron_index(gene_id, intron2, 'gene')
+        self.assertEqual(ind, 1)
+
+        intron = intron2._shift(10)
+        with self.assertRaises(ValueError):
+            anno.find_exon_index(gene_id, intron, 'gene')
 
 
 if __name__ == '__main__':

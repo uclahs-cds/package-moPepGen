@@ -103,12 +103,12 @@ class CIRCexplorerKnownRecord():
             )
 
             if fragment_type == 'exon':
-                exon_index = anno.get_exon_index(fragment, gene_id)
-                circ_id += f"-E{exon_index}"
+                exon_index = anno.find_exon_index(fragment, gene_id)
+                circ_id += f"-E{exon_index + 1}"
 
             if fragment_type == 'intron':
-                intron_index = anno.get_intron_index(fragment, gene_id)
-                circ_id += f"-I{intron_index}"
+                intron_index = anno.find_intron_index(fragment, gene_id)
+                circ_id += f"-I{intron_index + 1}"
 
             fragments.append(fragment)
 

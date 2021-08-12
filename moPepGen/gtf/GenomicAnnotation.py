@@ -201,7 +201,7 @@ class GenomicAnnotation():
             return gene_location.end - index
         raise ValueError("Don't know how to handle unstranded gene.")
 
-    def coordinate_gene_to_coordinate(self, index:int, gene:str) -> int:
+    def coordinate_gene_to_genomic(self, index:int, gene:str) -> int:
         """ Get the genomic coordinate from gene coordinate """
         location = self.genes[gene].location
         if location.strand == 1:
@@ -295,6 +295,34 @@ class GenomicAnnotation():
             _id=variant.id
         )
 
+    def feature_coordinate_gene_to_genomic(self, feature:SeqFeature,
+            gene_id:str) -> SeqFeature:
+        """ For a given feature, converts the coordinate from gene to
+        genomic. """
+        gene_model = self.genes[gene_id]
+        start = self.coordinate_gene_to_genomic(feature.location.start, gene_id)
+        end = self.coordinate_gene_to_genomic(feature.location.end, gene_id)
+        strand = gene_model.location.strand
+        if strand == -1:
+            start, end = end, start
+        location = FeatureLocation(seqname=gene_id, start=start, end=end,
+            strand=strand)
+        return SeqFeature(chrom=gene_id, location=location, attributes={})
+
+    def feature_coordiante_genomic_to_gene(self, feature:SeqFeature,
+            gene_id:str) -> SeqFeature:
+        """ For a given feature, converts the coordinate from genomic to gene.
+        """
+        gene_model = self.genes[gene_id]
+        start = self.coordinate_genomic_to_gene(feature.location.start, gene_id)
+        end = self.coordinate_genomic_to_gene(feature.location.end, gene_id)
+        strand = gene_model.location.strand
+        if strand == -1:
+            start, end = end, start
+        location = FeatureLocation(seqname=gene_id, start=start, end=end,
+            strand=0)
+        return SeqFeature(chrom=gene_id, location=location, attributes={})
+
     def create_gene_id_version_mapper(self) -> None:
         """ Create the a dict that keys are the unversioned gene ID, and values
         are the versioned. """
@@ -339,9 +367,16 @@ class GenomicAnnotation():
         exons.sort()
         gene_model.exons = exons
 
-    def get_exon_index(self, gene_id:str, feature:SeqFeature,
-            coordinate:str='gene') -> bool:
-        """ Find the index number of a given exon. """
+    def find_exon_index(self, gene_id:str, feature:SeqFeature,
+            coordinate:str='gene') -> int:
+        """ Find the exon index of the gene.
+
+        Args:
+            gene_id (str): The gene ID.
+            feature (SeqFeature): The exon to look up.
+            coordinate (str): The coordinate type of the given feature. Can be
+                one of 'genomic' or 'gene'. Defaults to gene.
+        """
         gene_model = self.genes[gene_id]
         if not gene_model.exons:
             self.get_all_exons_of_gene(gene_id)
@@ -350,10 +385,7 @@ class GenomicAnnotation():
         strand = self.genes[gene_id].strand
 
         if coordinate == 'gene':
-            start = self.coordinate_genomic_to_gene(feature.location.start, gene_id)
-            end = self.coordinate_genomic_to_gene(feature.location.end, gene_id)
-            location = FeatureLocation(seqname=gene_id, start=start, end=end)
-            feature = SeqFeature(chrom=gene_id, location=location, attributes={})
+            feature = self.feature_coordinate_gene_to_genomic(feature, gene_id)
         elif coordinate != 'genomic':
             raise ValueError("Don't know how to handle the coordinate.")
 
@@ -371,9 +403,16 @@ class GenomicAnnotation():
                     break
         raise ValueError(self.FAILED_TO_FIND_EXON_ERROR)
 
-    def get_intron_index(self, gene_id:str, feature:SeqFeature,
-            coordinate:str="gene") -> bool:
-        """ Returns if the given feature is an intron of the gene. """
+    def find_intron_index(self, gene_id:str, feature:SeqFeature,
+            coordinate:str="gene") -> int:
+        """ Find the intron index of the gene.
+
+        Args:
+            gene_id (str): The gene ID.
+            feature (SeqFeature): The intron to look up.
+            coordinate (str): The coordinate type of the given feature. Can be
+                one of 'genomic' or 'gene'. Defaults to gene.
+        """
         gene_model = self.genes[gene_id]
         if not gene_model.exons:
             self.get_all_exons_of_gene(gene_id)
@@ -382,10 +421,8 @@ class GenomicAnnotation():
         strand = self.genes[gene_id].strand
 
         if coordinate == 'gene':
-            start = self.coordinate_genomic_to_gene(feature.location.start, gene_id)
-            end = self.coordinate_genomic_to_gene(feature.location.end, gene_id)
-            location = FeatureLocation(seqname=gene_id, start=start, end=end)
-            feature = SeqFeature(chrom=gene_id, location=location, attributes={})
+            feature = self.feature_coordinate_gene_to_genomic(feature, gene_id)
+
         elif coordinate != 'genomic':
             raise ValueError("Don't know how to handle the coordinate.")
 
@@ -399,27 +436,27 @@ class GenomicAnnotation():
                         break
                     exon = exons[i]
                     if exon.location.start == feature.location.end:
-                        return i
+                        return i - 1
                     break
                 if exon.location.start > feature.location.end:
                     break
                 i += 1
         elif strand == -1:
             i = 0
-            j = len(exons) - i
+            j = len(exons) - i - 1
             while i < len(exons):
                 exon = exons[j]
-                if exon.location.end == feature.location.start:
+                if exon.location.start == feature.location.end:
                     i += 1
                     if i >= len(exons):
                         break
-                    j = len(exons) - 1
+                    j = len(exons) - i - 1
                     exon = exons[j]
-                    if exon.location.start == feature.location.end:
-                        return i
+                    if exon.location.end == feature.location.start:
+                        return i - 1
                     break
                 if exon.location.end < feature.location.start:
                     break
                 i += 1
-                j = len(exons) - 1
+                j = len(exons) - i - 1
         raise ValueError(self.FAILED_TO_FIND_INTRON_ERROR)

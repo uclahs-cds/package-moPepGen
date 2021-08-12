@@ -46,6 +46,10 @@ class FeatureLocation(BioFeatureLocation):
         """ less or equal to """
         return not self > other
 
+    def __hash__(self):
+        """ hash """
+        return hash((self.start, self.end, self.strand))
+
     def overlaps(self, other:FeatureLocation) -> bool:
         """ Find whether the location overlaps with the other """
         return self.start in other or self.end in other or \
@@ -108,3 +112,7 @@ class SeqFeature(BioSeqFeature):
     def __le__(self, other:SeqFeature) -> bool:
         """ less or equal to """
         return not self > other
+
+    def __hash__(self):
+        """ hash """
+        return hash(self.location)
