@@ -63,13 +63,13 @@ class CircRNAModel():
     Attributes:
         gene_id (str)
         fragments (List[SeqFeature])
-        intron (int)
+        intron (List[int])
         id (str)
         transcript_ids (str)
         gene_name (str)
         gene_locations (List[SeqFeature])
     """
-    def __init__(self, gene_id:str, fragments:List[SeqFeature], intron:int,
+    def __init__(self, gene_id:str, fragments:List[SeqFeature], intron:List[int],
             _id:str, transcript_ids:str,  gene_name:str):
         """ Constructor """
         self.gene_id = gene_id
