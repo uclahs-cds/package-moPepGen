@@ -1,6 +1,5 @@
 """ Integration test for parseCIRCexplorer """
 import argparse
-import unittest
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 

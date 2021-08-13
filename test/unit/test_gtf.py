@@ -230,8 +230,8 @@ class TestGTF(unittest.TestCase):
         anno = create_genomic_annotation(ANNOTATION_DATA)
         for gene in anno.genes.values():
             gene.location.strand = -1
-        for tx in anno.transcripts.values():
-            for exon in tx.exon:
+        for transcript in anno.transcripts.values():
+            for exon in transcript.exon:
                 exon.location.strand = -1
 
         tx_id = 'ENST0001.1'
@@ -275,8 +275,8 @@ class TestGTF(unittest.TestCase):
         anno = create_genomic_annotation(ANNOTATION_DATA)
         for gene in anno.genes.values():
             gene.location.strand = -1
-        for tx in anno.transcripts.values():
-            for exon in tx.exon:
+        for transcript in anno.transcripts.values():
+            for exon in transcript.exon:
                 exon.location.strand = -1
 
         gene_id = 'ENSG0001'

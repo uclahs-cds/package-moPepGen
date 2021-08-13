@@ -71,4 +71,3 @@ def write(records:Iterable[CircRNAModel], metadata:TVFMetadata, path:Path):
         for record in records:
             line = record.to_tvf() + '\n'
             handle.write(line)
-
