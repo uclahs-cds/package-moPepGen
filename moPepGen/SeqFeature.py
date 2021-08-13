@@ -48,7 +48,7 @@ class FeatureLocation(BioFeatureLocation):
 
     def __hash__(self):
         """ hash """
-        return hash((self.start, self.end, self.strand))
+        return hash((self.seqname, self.start, self.end, self.strand))
 
     def overlaps(self, other:FeatureLocation) -> bool:
         """ Find whether the location overlaps with the other """
@@ -115,4 +115,4 @@ class SeqFeature(BioSeqFeature):
 
     def __hash__(self):
         """ hash """
-        return hash(self.location)
+        return hash((self.chrom, self.location))
