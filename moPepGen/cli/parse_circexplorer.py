@@ -48,9 +48,6 @@ def parse_circexplorer(args:argparse.Namespace):
     index_dir:Path = args.index_dir
     genome_fasta:Path = args.genome_fasta
     annotation_gtf:Path = args.annotation_gtf
-    proteome_fasta:Path = args.proteome_fasta
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
     verbose = args.verbose
 
     if verbose:
@@ -94,7 +91,6 @@ def parse_circexplorer(args:argparse.Namespace):
         parser='parseCIRCexplorer',
         reference_index=index_dir,
         genome_fasta=genome_fasta,
-        annotation_gtf=annotation_gtf,
-        proteome_fasta=proteome_fasta
+        annotation_gtf=annotation_gtf
     )
     circ.io.write(records, metadata, output_path)

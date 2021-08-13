@@ -63,7 +63,7 @@ def write(records:Iterable[CircRNAModel], metadata:TVFMetadata, path:Path):
     """ Write circRNA records to file. """
     headers = ['gene_id','start','offset','length','circ_id','gene_name']
     with open(path, 'wt') as handle:
-        for line in TVFMetadata.to_strings():
+        for line in metadata.to_strings():
             handle.write(line + '\n')
 
         handle.write('#' + ','.join(headers) + '\n')

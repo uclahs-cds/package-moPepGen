@@ -63,6 +63,7 @@ class GenomicAnnotation():
         if gene_id in self.genes:
             raise ValueError(f'Same gene has multiple records: {gene_id}')
         record.__class__ = GeneAnnotationModel
+        record.exons = []
         record.transcripts = []
         self.genes[gene_id] = record
 

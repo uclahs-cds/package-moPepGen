@@ -11,7 +11,7 @@ def parse(path:Path) -> Iterable[CIRCexplorerKnownRecord]:
     """ parse """
     with open(path, 'rt') as handle:
         for line in handle:
-            fields = line.rstip().split('\t')
+            fields = line.rstrip().split('\t')
             yield CIRCexplorerKnownRecord(
                 chrom=fields[0],
                 start=int(fields[1]),
@@ -71,8 +71,6 @@ class CIRCexplorerKnownRecord():
         gene_model = anno.genes[gene_id]
         transcript_ids = [self.isoform_name]
 
-        circ_start = anno.coordinate_genomic_to_gene(self.start, gene_id)
-
         fragments:SeqFeature = []
         intron:List[int] = []
 
@@ -81,8 +79,9 @@ class CIRCexplorerKnownRecord():
         for i, exon_size in enumerate(self.exon_sizes):
             exon_offset = self.exon_offsets[i]
             start = anno.coordinate_genomic_to_gene(
-                circ_start + exon_offset, gene_id)
-            end = anno.coordinate_genomic_to_gene(start + exon_size, gene_id)
+                self.start + exon_offset, gene_id)
+            end = anno.coordinate_genomic_to_gene(
+                self.start + exon_offset + exon_size, gene_id)
 
             if gene_model.strand == -1:
                 start, end = end, start
@@ -103,11 +102,11 @@ class CIRCexplorerKnownRecord():
             )
 
             if fragment_type == 'exon':
-                exon_index = anno.find_exon_index(fragment, gene_id)
+                exon_index = anno.find_exon_index(gene_id, fragment)
                 circ_id += f"-E{exon_index + 1}"
 
-            if fragment_type == 'intron':
-                intron_index = anno.find_intron_index(fragment, gene_id)
+            elif fragment_type == 'intron':
+                intron_index = anno.find_intron_index(gene_id, fragment)
                 circ_id += f"-I{intron_index + 1}"
 
             fragments.append(fragment)
