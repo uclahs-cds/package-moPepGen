@@ -21,20 +21,20 @@ TVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
         }
     },
     'Fusion': {
-        'DONOR_GENE_ID': {
+        'ACCEPTER_GENE_ID': {
             'Number': 1,
             'Type': 'String',
-            'Description': 'Donor Transcript\'s Gene ID'
+            'Description': "3' Accepter Transcript's Gene ID"
         },
-        'DONOR_TRANSCRIPT_ID': {
+        'ACCEPTER_TRANSCRIPT_ID': {
             'Number': 1,
             'Type': 'String',
-            'Description': 'Donor Transcript\'s Transcript ID'
+            'Description': "3' Accepter Transcript's Transcript ID"
         },
-        'DONOR_POS': {
+        'ACCEPTER_POSITION': {
             'Number': 1,
             'Type': 'Integer',
-            'Description': 'Position of the break point of the donor transcript'
+            'Description': "Position of the break point of the 3' accepter transcript"
         }
     },
     'Insertion': {
@@ -77,12 +77,12 @@ TVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
             'Type': 'Integer',
             'Description': 'End Position'
         },
-        'DONOR_START': {
+        'ACCEPTER_START': {
             'Number': 1,
             'Type': 'Integer',
             'Description': 'Donor Start Position'
         },
-        'DONOR_END': {
+        'ACCEPTER_END': {
             'Number': 1,
             'Type': 'Integer',
             'Description': 'Donor End Position'

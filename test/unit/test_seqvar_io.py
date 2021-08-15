@@ -33,7 +33,7 @@ class TestSeqvarIO(unittest.TestCase):
 
     def test_coordinate_base_io(self):
         """ Test the writer is using 1-base position """
-        attrs = {'GENE_ID': 'ENSG0001', 'START': '10', 'ACCEPTOR_START': '10',
+        attrs = {'GENE_ID': 'ENSG0001', 'START': '10', 'ACCEPTER_START': '10',
             'DONOR_START': '10'}
         variant = create_variant(10, 11, 'A', 'T', 'SNV', 'SNV-1', attrs)
         variant.location.seqname = 'ENST0001'

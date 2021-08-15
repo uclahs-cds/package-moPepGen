@@ -300,7 +300,7 @@ class TranscriptVariantGraph():
                 associated with the donor transcript. Variants before the
                 breakpoint won't be applied.
         """
-        break_point = int(variant.attrs['DONOR_POS'])
+        break_point = variant.get_accepter_position()
         branch = TranscriptVariantGraph(donor_seq, self.id)
         branch.root.seq = branch.root.seq[break_point:]
         branch.add_null_root()

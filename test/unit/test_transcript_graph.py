@@ -59,7 +59,7 @@ class TestTranscriptGraph(unittest.TestCase):
             4: ('TGGCGGTTC', [2,3], [])
         }
         graph, nodes = create_dgraph2(data)
-        attrs = {'DONOR_POS': 8}
+        attrs = {'ACCEPTER_POSITION': 8}
         var_fusion = create_variant(8, 9, 'C', '<FUSION>', 'Fusion',
             'FUSIONXXX', attrs=attrs)
         seq = 'GAATTCGATGGCCCTA'

@@ -190,7 +190,7 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
             continue
 
         if variant.type == 'Fusion':
-            donor_transcript_id = variant.attrs['DONOR_TRANSCRIPT_ID']
+            donor_transcript_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
             donor_anno = annotation.transcripts[donor_transcript_id]
             donor_chrom = donor_anno.transcript.location.seqname
             donor_seq = donor_anno.get_transcript_sequence(genome[donor_chrom])
@@ -203,7 +203,7 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
                     # together should be low.
                     if record.type == 'Fusion':
                         continue
-                    if record.location.start > int(variant.attrs['DONOR_POS']):
+                    if record.location.start > variant.get_accepter_position():
                         donor_variant_records.append(record)
 
             cur = dgraph.apply_fusion(cur, variant, donor_seq, donor_variant_records)
