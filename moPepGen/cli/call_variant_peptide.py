@@ -2,7 +2,6 @@
 from __future__ import annotations
 from typing import List, Dict, Set
 import argparse
-import pickle
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, CircRNA
 from moPepGen.SeqFeature import FeatureLocation
 from .common import add_args_cleavage, add_args_verbose, \

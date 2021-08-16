@@ -103,7 +103,8 @@ def add_args_verbose(parser:argparse.ArgumentParser):
 
 def load_references(args:argparse.Namespace, load_canonical_peptides:bool=True,
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, Set[str]]:
-    """"""
+    """ Load reference files. If index_dir is specified, data will be loaded
+    from pickles, otherwise, will read from FASTA and GTF. """
     index_dir:Path = args.index_dir
     genome_fasta:Path = args.genome_fasta
     annotation_gtf:Path = args.annotation_gtf

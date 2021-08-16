@@ -153,7 +153,7 @@ class GenomicAnnotation():
         if gene_model.location.strand == 1:
             return gene_model.location.start + index
 
-        elif gene_model.location.strand == -1:
+        if gene_model.location.strand == -1:
             return gene_model.location.end - 1 - index
 
         raise ValueError("Don't know how to handle unstranded gene.")
