@@ -243,9 +243,9 @@ class TestGTF(unittest.TestCase):
         x = anno.coordinate_gene_to_transcript(20, gene_id, tx_id)
         self.assertEqual(x, 10)
 
-        ANNOTATION_DATA2 = ANNOTATION_DATA
-        ANNOTATION_DATA2['genes'][0]['strand'] = -1
-        ANNOTATION_DATA2['transcripts'][0]['strand'] = -1
+        annotation_data2 = ANNOTATION_DATA
+        annotation_data2['genes'][0]['strand'] = -1
+        annotation_data2['transcripts'][0]['strand'] = -1
         anno = create_genomic_annotation(ANNOTATION_DATA)
         gene_id = ANNOTATION_ATTRS[0]['gene_id']
         tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
