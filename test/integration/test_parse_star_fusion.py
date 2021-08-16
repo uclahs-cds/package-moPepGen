@@ -1,7 +1,8 @@
 """ Test the command line interface """
 import argparse
 from test.integration import TestCaseIntegration
-from moPepGen import cli
+from moPepGen import cli, seqvar
+from moPepGen.cli.common import load_references
 
 
 class TestParseStarFusion(TestCaseIntegration):
@@ -21,3 +22,20 @@ class TestParseStarFusion(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'star_fusion.tvf'}
         self.assertEqual(files, expected)
+
+        genome, annotation, _ = load_references(args, False)
+
+        for record in seqvar.io.parse(self.work_dir/'star_fusion.tvf'):
+            tx_id = record.location.seqname
+            tx_model = annotation.transcripts[tx_id]
+            tx_chr = tx_model.transcript.chrom
+            tx_seq = tx_model.get_transcript_sequence(genome[tx_chr])
+            x = record.location.start
+            self.assertEqual(str(tx_seq.seq[x:x+2]), 'GT')
+
+            tx_id = record.attrs['ACCEPTER_TRANSCRIPT_ID']
+            tx_model = annotation.transcripts[tx_id]
+            tx_chr = tx_model.transcript.chrom
+            tx_seq = tx_model.get_transcript_sequence(genome[tx_chr])
+            x = record.get_accepter_position()
+            self.assertEqual(str(tx_seq.seq[x-2:x]), 'AG')

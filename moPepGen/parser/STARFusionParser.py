@@ -96,14 +96,14 @@ class STARFusionRecord():
         for donor_id, accepter_id in perms:
             donor_model = donor_transcripts[donor_id]
             donor_gene_symbol = donor_model.transcript.attributes['gene_name']
-            left_breakpoint = int(self.left_breakpoint.split(':')[1])
+            left_breakpoint = int(self.left_breakpoint.split(':')[1]) - 1
             donor_chrom = self.left_breakpoint.split(':')[0]
-            donor_position = donor_model.get_transcript_index(left_breakpoint)
+            donor_position = donor_model.get_transcript_index(left_breakpoint) + 1
             seq = donor_model.get_transcript_sequence(genome[donor_chrom])
             donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
 
             accepter_model = accepter_transcripts[accepter_id]
-            right_breakpoint = int(self.right_breakpoint.split(':')[1])
+            right_breakpoint = int(self.right_breakpoint.split(':')[1]) - 1
             accepter_position = accepter_model.get_transcript_index(right_breakpoint)
             accepter_gene_symbol = accepter_model.transcript.attributes['gene_name']
             accepter_chrom = self.right_breakpoint.split(':')[0]

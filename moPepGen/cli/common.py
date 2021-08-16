@@ -1,6 +1,10 @@
 """ Common functions for cli """
 import argparse
 import sys
+from typing import Tuple, Set
+from pathlib import Path
+import pickle
+from moPepGen import aa, dna, gtf, logger
 
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
@@ -95,3 +99,60 @@ def add_args_verbose(parser:argparse.ArgumentParser):
         metavar='',
         default=True
     )
+
+
+def load_references(args:argparse.Namespace, load_canonical_peptides:bool=True,
+        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, Set[str]]:
+    """"""
+    index_dir:Path = args.index_dir
+    genome_fasta:Path = args.genome_fasta
+    annotation_gtf:Path = args.annotation_gtf
+    proteome_fasta:Path = args.proteome_fasta
+    verbose:bool = args.verbose
+
+    if verbose:
+        logger('moPepGen callPeptide started.')
+
+    canonical_peptides = None
+    if index_dir:
+        with open(f'{index_dir}/genome.pickle', 'rb') as handle:
+            genome = pickle.load(handle)
+
+        with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
+            annotation = pickle.load(handle)
+
+        if load_canonical_peptides:
+            with open(f"{index_dir}/canonical_peptides.pickle", 'rb') as handle:
+                canonical_peptides = pickle.load(handle)
+    else:
+        annotation = gtf.GenomicAnnotation()
+        annotation.dump_gtf(annotation_gtf)
+        if verbose:
+            logger('Annotation GTF loaded.')
+
+        genome = dna.DNASeqDict()
+        genome.dump_fasta(genome_fasta)
+        if verbose:
+            logger('Genome assembly FASTA loaded.')
+
+        proteome = aa.AminoAcidSeqDict()
+        proteome.dump_fasta(proteome_fasta)
+        if verbose:
+            logger('Proteome FASTA loaded.')
+
+        if load_canonical_peptides:
+            rule:str = args.cleavage_rule
+            miscleavage:int = int(args.miscleavage)
+            min_mw:float = float(args.min_mw)
+            exception = 'trypsin_exception' if rule == 'trypsin' else None
+            min_length:int = args.min_length
+            max_length:int = args.max_length
+            canonical_peptides = proteome.create_unique_peptide_pool(
+                anno=annotation, rule=rule, exception=exception,
+                miscleavage=miscleavage, min_mw=min_mw, min_length=min_length,
+                max_length=max_length
+            )
+            if verbose:
+                logger('canonical peptide pool generated.')
+
+    return genome, annotation, canonical_peptides

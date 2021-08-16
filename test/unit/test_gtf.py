@@ -1,11 +1,43 @@
 """ Test the GTF files are loaded and handled properly
 """
 import unittest
-from test.unit import create_transcript_model, create_variant
+from test.unit import create_transcript_model, create_variant, \
+    create_genomic_annotation
 from Bio import SeqIO
 from moPepGen import gtf
 from moPepGen.SeqFeature import FeatureLocation
 
+
+ANNOTATION_ATTRS = [
+    {
+        'gene_id': 'ENSG0001'
+    },{
+        'transcript_id': 'ENST0001.1',
+        'gene_id': 'ENSG0001',
+        'protein_id': 'ENSP0001'
+    }
+]
+ANNOTATION_DATA = {
+    'genes': [{
+        'gene_id': ANNOTATION_ATTRS[0]['gene_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'gene': (0, 40, ANNOTATION_ATTRS[0]),
+        'transcripts': ['ENST0001.1']
+    }],
+    'transcripts': [{
+        # seq: CTGGT CCCCT ATGGG TCCTT C
+        'transcript_id': ANNOTATION_ATTRS[1]['transcript_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'transcript': (5, 35, ANNOTATION_ATTRS[1]),
+        'exon': [
+            (5, 12, ANNOTATION_ATTRS[1]),
+            (17, 23, ANNOTATION_ATTRS[1]),
+            (27, 35, ANNOTATION_ATTRS[1])
+        ]
+    }]
+}
 
 class TestAnnotationModel(unittest.TestCase):
     """ Test case for the annotation model """
@@ -98,9 +130,9 @@ class TestAnnotationModel(unittest.TestCase):
         }
         model = create_transcript_model(data)
         i = model.get_transcript_index(175)
-        self.assertEqual(i, 125)
+        self.assertEqual(i, 124)
         i = model.get_transcript_index(250)
-        self.assertEqual(i, 75)
+        self.assertEqual(i, 74)
 
         with self.assertRaises(ValueError):
             model.get_transcript_index(0)
@@ -202,6 +234,23 @@ class TestGTF(unittest.TestCase):
         var2 = anno.variant_coordinates_to_gene(var1, attributes['gene_id'])
         self.assertEqual(int(var2.location.start), 175)
         self.assertEqual(int(var2.location.end), 176)
+
+    def test_coordinate_convert(self):
+        """ Convert coodinates """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = ANNOTATION_ATTRS[0]['gene_id']
+        tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
+        x = anno.coordinate_gene_to_transcript(20, gene_id, tx_id)
+        self.assertEqual(x, 10)
+
+        ANNOTATION_DATA2 = ANNOTATION_DATA
+        ANNOTATION_DATA2['genes'][0]['strand'] = -1
+        ANNOTATION_DATA2['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = ANNOTATION_ATTRS[0]['gene_id']
+        tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
+        x = anno.coordinate_gene_to_transcript(19, gene_id, tx_id)
+        self.assertEqual(x, 10)
 
 
 if __name__ == '__main__':

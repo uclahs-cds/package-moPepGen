@@ -147,6 +147,17 @@ class GenomicAnnotation():
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()
 
+    def coordinate_gene_to_genomic(self, index:int, gene:str):
+        """ COnvert gene coordinate to genomic coordinate """
+        gene_model = self.genes[gene]
+        if gene_model.location.strand == 1:
+            return gene_model.location.start + index
+
+        elif gene_model.location.strand == -1:
+            return gene_model.location.end - 1 - index
+
+        raise ValueError("Don't know how to handle unstranded gene.")
+
     def coordinate_gene_to_transcript(self, index:int, gene:str,
             transcript:str) -> int:
         """ For a given gene position, find it the corresponding transcript
@@ -157,37 +168,14 @@ class GenomicAnnotation():
             gene (str): The gene ID.
             transcript (str): The transcript ID to map to.
         """
+        genomic_index = self.coordinate_gene_to_genomic(index, gene)
         gene_model = self.genes[gene]
         if transcript not in gene_model.transcripts:
             raise ValueError(f'The transcript {transcript} is not associated'
                 f'with the gene {gene}')
         transcript_model = self.transcripts[transcript]
 
-        if transcript_model.transcript.location.strand == 1:
-            index_genomic = gene_model.location.start + index
-            it = iter(transcript_model.exon)
-            exon = next(it, None)
-            index_transcript = 0
-            while exon:
-                if exon.location.end < index_genomic:
-                    index_transcript += exon.location.end - exon.location.start
-                    exon = next(it, None)
-                    continue
-                return index_transcript + index_genomic - exon.location.start
-
-        if transcript_model.transcript.location.strand == -1:
-            index_genomic = gene_model.location.end - index
-            it = reversed(transcript_model.exon)
-            exon = next(it, None)
-            index_transcript = 0
-            while exon:
-                if exon.location.start > index_genomic:
-                    index_transcript += exon.location.end - exon.location.start
-                    exon = next(it, None)
-                    continue
-                return index_transcript + exon.location.end - index_genomic
-
-        raise ValueError("Don't know how to handle unstranded gene.")
+        return transcript_model.get_transcript_index(genomic_index)
 
     def coordinate_genomic_to_gene(self, index:int, gene:str) -> int:
         """ Get the gene coordinate from genomic coordinate. """
@@ -195,7 +183,7 @@ class GenomicAnnotation():
         if gene_location.strand == 1:
             return index - gene_location.start
         if gene_location.strand == -1:
-            return gene_location.end - index
+            return gene_location.end - 1 - index
         raise ValueError("Don't know how to handle unstranded gene.")
 
     def variant_coordinates_to_gene(self, variant:seqvar.VariantRecord,

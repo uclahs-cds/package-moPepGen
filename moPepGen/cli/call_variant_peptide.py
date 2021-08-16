@@ -6,7 +6,7 @@ import pickle
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, CircRNA
 from moPepGen.SeqFeature import FeatureLocation
 from .common import add_args_cleavage, add_args_verbose, \
-    print_help_if_missing_args, add_args_reference
+    print_help_if_missing_args, add_args_reference, load_references
 
 
 # pylint: disable=W0212
@@ -57,7 +57,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     variant_files:List[str] = args.input_variant
     circ_rna_bed:str = args.circ_rna_bed
     output_fasta:str = args.output_fasta
-    index_dir:str = args.index_dir
     verbose:bool = args.verbose
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
@@ -66,44 +65,10 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     min_length:int = args.min_length
     max_length:int = args.max_length
 
-    if verbose:
-        logger('moPepGen callPeptide started.')
-
-    if index_dir:
-        with open(f'{index_dir}/genome.pickle', 'rb') as handle:
-            genome = pickle.load(handle)
-
-        with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
-            annotation = pickle.load(handle)
-
-        with open(f"{index_dir}/canonical_peptides.pickle", 'rb') as handle:
-            canonical_peptides = pickle.load(handle)
-    else:
-        genome_fasta:str = args.genome_fasta
-        proteome_fasta:str = args.proteome_fasta
-        annotation_gtf:str = args.annotation_gtf
-
-        annotation = gtf.GenomicAnnotation()
-        annotation.dump_gtf(annotation_gtf)
-        if verbose:
-            logger('Annotation GTF loaded.')
-
-        genome = dna.DNASeqDict()
-        genome.dump_fasta(genome_fasta)
-        if verbose:
-            logger('Genome assembly FASTA loaded.')
-
-        proteome = aa.AminoAcidSeqDict()
-        proteome.dump_fasta(proteome_fasta)
-        if verbose:
-            logger('Proteome FASTA loaded.')
-
-        canonical_peptides = proteome.create_unique_peptide_pool(
-            anno=annotation, rule=rule, exception=exception,
-            miscleavage=miscleavage, min_mw=min_mw
-        )
-        if verbose:
-            logger('canonical peptide pool generated.')
+    genome, annotation, canonical_peptides = load_references(
+        args=args,
+        load_canonical_peptides=True
+    )
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
     for file in variant_files:
