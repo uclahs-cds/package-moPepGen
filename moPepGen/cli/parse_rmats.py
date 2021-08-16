@@ -1,12 +1,11 @@
 """ Module for rMATS parser """
 from typing import Dict, Set
 import argparse
-import pickle
 from pathlib import Path
-from moPepGen import logger, dna, gtf, seqvar
+from moPepGen import logger, seqvar
 from moPepGen.parser import RMATSParser
-from .common import add_args_reference, add_args_verbose, \
-    print_help_if_missing_args
+from .common import add_args_reference, add_args_verbose, print_start_message,\
+    print_help_if_missing_args, load_references, generate_metadata
 
 
 # pylint: disable=W0212
@@ -80,37 +79,12 @@ def parse_rmats(args:argparse.Namespace) -> None:
     alternative_3 = args.alternative_3_splicing
     mutually_exclusive = args.mutually_exclusive_exons
     retained_intron = args.retained_intron
-    index_dir:Path = args.index_dir
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '.tvf'
-    verbose = args.verbose
 
-    if verbose:
-        logger('moPepGen parserRMATS started.')
+    print_start_message(args)
 
-    if index_dir:
-        with open(index_dir/'genome.pickle', 'rb') as handle:
-            genome:dna.DNASeqDict = pickle.load(handle)
-
-        with open(index_dir/'annotation.pickle', 'rb') as handle:
-            anno:gtf.GenomicAnnotation = pickle.load(handle)
-
-        if verbose:
-            logger('Indexed genome and annotation loaded.')
-
-    else:
-        genome_fasta:Path = args.genome_fasta
-        annotation_gtf:Path = args.annotation_gtf
-
-        anno = gtf.GenomicAnnotation()
-        anno.dump_gtf(annotation_gtf)
-        if verbose:
-            logger('Annotation GTF loaded.')
-
-        genome = dna.DNASeqDict()
-        genome.dump_fasta(genome_fasta)
-        if verbose:
-            logger('Genome assembly FASTA loaded.')
+    genome, anno, _ = load_references(args, load_canonical_peptides=False)
 
     variants:Dict[str,Set[seqvar.VariantRecord]] = {}
     rmats_outputs = [
@@ -133,22 +107,14 @@ def parse_rmats(args:argparse.Namespace) -> None:
         val.sort()
         variants_sorted.extend(val)
 
-    if index_dir:
-        reference_index = Path(index_dir).absolute()
-        genome_fasta = None
-        annotation_gtf = None
-    else:
-        reference_index = None
-        genome_fasta = Path(genome_fasta).absolute()
-        annotation_gtf = Path(annotation_gtf).absolute()
+    if args.verbose:
+        logger('Variants sorted.')
 
-    metadata = seqvar.TVFMetadata(
-        parser='parseRMATS',
-        reference_index=reference_index,
-        genome_fasta=genome_fasta,
-        annotation_gtf=annotation_gtf
-    )
+    metadata = generate_metadata(args)
     seqvar.io.write(variants_sorted, output_path, metadata)
+
+    if args.verbose:
+        logger("Variants written to disk.")
 
 
 if __name__ == '__main__':

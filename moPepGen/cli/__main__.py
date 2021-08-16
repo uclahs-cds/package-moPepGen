@@ -9,7 +9,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog='moPopGen'
     )
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest='command')
 
     cli.add_subparser_generate_index(subparsers)
     cli.add_subparser_parse_vep(subparsers)

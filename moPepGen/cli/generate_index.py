@@ -3,7 +3,7 @@ import argparse
 import pickle
 from moPepGen import dna, aa, gtf, logger
 from .common import add_args_cleavage, add_args_reference, add_args_verbose, \
-    print_help_if_missing_args
+    print_help_if_missing_args, print_start_message
 
 
 # pylint: disable=W0212
@@ -50,8 +50,7 @@ def generate_index(args:argparse.Namespace):
     output_anno = f"{output_dir}/annotation.pickle"
     output_peptides = f"{output_dir}/canonical_peptides.pickle"
 
-    if verbose:
-        logger('moPepGen generateIndex started')
+    print_start_message(args)
 
     genome = dna.DNASeqDict()
     genome.dump_fasta(path_genome)

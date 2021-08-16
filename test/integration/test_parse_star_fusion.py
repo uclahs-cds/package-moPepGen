@@ -23,7 +23,7 @@ class TestParseStarFusion(TestCaseIntegration):
         expected = {'star_fusion.tvf'}
         self.assertEqual(files, expected)
 
-        genome, annotation, _ = load_references(args, False)
+        genome, annotation, _ = load_references(args, load_canonical_peptides=False)
 
         for record in seqvar.io.parse(self.work_dir/'star_fusion.tvf'):
             tx_id = record.location.seqname

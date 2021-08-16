@@ -4,7 +4,7 @@ from typing import List, Dict, Set
 import argparse
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, CircRNA
 from moPepGen.SeqFeature import FeatureLocation
-from .common import add_args_cleavage, add_args_verbose, \
+from .common import add_args_cleavage, add_args_verbose, print_start_message, \
     print_help_if_missing_args, add_args_reference, load_references
 
 
@@ -64,10 +64,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     min_length:int = args.min_length
     max_length:int = args.max_length
 
-    genome, annotation, canonical_peptides = load_references(
-        args=args,
-        load_canonical_peptides=True
-    )
+    print_start_message(args)
+
+    genome, annotation, canonical_peptides = load_references(args=args)
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
     for file in variant_files:
