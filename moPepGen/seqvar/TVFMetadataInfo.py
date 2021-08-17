@@ -77,12 +77,12 @@ TVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
             'Type': 'Integer',
             'Description': 'End Position'
         },
-        'ACCEPTER_START': {
+        'DONOR_START': {
             'Number': 1,
             'Type': 'Integer',
             'Description': 'Donor Start Position'
         },
-        'ACCEPTER_END': {
+        'DONOR_END': {
             'Number': 1,
             'Type': 'Integer',
             'Description': 'Donor End Position'
