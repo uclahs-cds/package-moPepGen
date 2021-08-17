@@ -98,8 +98,8 @@ class TestREDItoolsParser(unittest.TestCase):
             transcript_id=[('ENST0001', 'transcript')]
         )
         variants = record.convert_to_variant_records(anno)
-        self.assertEqual(variants[0].location.start, 26)
-        self.assertEqual(variants[0].location.end, 27)
+        self.assertEqual(variants[0].location.start, 25)
+        self.assertEqual(variants[0].location.end, 26)
         self.assertEqual(variants[0].ref, 'G')
         self.assertEqual(variants[0].alt, 'A')
 
@@ -117,7 +117,7 @@ class TestREDItoolsParser(unittest.TestCase):
             transcript_id=[('ENST0001', 'transcript')]
         )
         variants = record.convert_to_variant_records(anno)
-        self.assertEqual(variants[0].location.start, 76)
-        self.assertEqual(variants[0].location.end, 77)
+        self.assertEqual(variants[0].location.start, 75)
+        self.assertEqual(variants[0].location.end, 76)
         self.assertEqual(variants[0].ref, 'G')
         self.assertEqual(variants[0].alt, 'A')

@@ -2,11 +2,10 @@
 from __future__ import annotations
 from typing import List, Dict, Set
 import argparse
-import pickle
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, CircRNA
 from moPepGen.SeqFeature import FeatureLocation
-from .common import add_args_cleavage, add_args_verbose, \
-    print_help_if_missing_args, add_args_reference
+from .common import add_args_cleavage, add_args_verbose, print_start_message, \
+    print_help_if_missing_args, add_args_reference, load_references
 
 
 # pylint: disable=W0212
@@ -57,7 +56,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     variant_files:List[str] = args.input_variant
     circ_rna_bed:str = args.circ_rna_bed
     output_fasta:str = args.output_fasta
-    index_dir:str = args.index_dir
     verbose:bool = args.verbose
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
@@ -66,44 +64,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     min_length:int = args.min_length
     max_length:int = args.max_length
 
-    if verbose:
-        logger('moPepGen callPeptide started.')
+    print_start_message(args)
 
-    if index_dir:
-        with open(f'{index_dir}/genome.pickle', 'rb') as handle:
-            genome = pickle.load(handle)
-
-        with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
-            annotation = pickle.load(handle)
-
-        with open(f"{index_dir}/canonical_peptides.pickle", 'rb') as handle:
-            canonical_peptides = pickle.load(handle)
-    else:
-        genome_fasta:str = args.genome_fasta
-        proteome_fasta:str = args.proteome_fasta
-        annotation_gtf:str = args.annotation_gtf
-
-        annotation = gtf.GenomicAnnotation()
-        annotation.dump_gtf(annotation_gtf)
-        if verbose:
-            logger('Annotation GTF loaded.')
-
-        genome = dna.DNASeqDict()
-        genome.dump_fasta(genome_fasta)
-        if verbose:
-            logger('Genome assembly FASTA loaded.')
-
-        proteome = aa.AminoAcidSeqDict()
-        proteome.dump_fasta(proteome_fasta)
-        if verbose:
-            logger('Proteome FASTA loaded.')
-
-        canonical_peptides = proteome.create_unique_peptide_pool(
-            anno=annotation, rule=rule, exception=exception,
-            miscleavage=miscleavage, min_mw=min_mw
-        )
-        if verbose:
-            logger('canonical peptide pool generated.')
+    genome, annotation, canonical_peptides = load_references(args=args)
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
     for file in variant_files:
@@ -190,23 +153,23 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
             continue
 
         if variant.type == 'Fusion':
-            donor_transcript_id = variant.attrs['DONOR_TRANSCRIPT_ID']
-            donor_anno = annotation.transcripts[donor_transcript_id]
-            donor_chrom = donor_anno.transcript.location.seqname
-            donor_seq = donor_anno.get_transcript_sequence(genome[donor_chrom])
+            accepter_transcript_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
+            accepter_anno = annotation.transcripts[accepter_transcript_id]
+            accepter_chrom = accepter_anno.transcript.location.seqname
+            accepter_seq = accepter_anno.get_transcript_sequence(genome[accepter_chrom])
 
-            donor_variant_records = []
-            if donor_transcript_id in variants:
-                for record in variants[donor_transcript_id]:
+            accepter_variant_records = []
+            if accepter_transcript_id in variants:
+                for record in variants[accepter_transcript_id]:
                     # If the donor sequence has another fusion event, it is not
                     # considered. The chance of two fusion events happened
                     # together should be low.
                     if record.type == 'Fusion':
                         continue
-                    if record.location.start > int(variant.attrs['DONOR_POS']):
-                        donor_variant_records.append(record)
+                    if record.location.start > variant.get_accepter_position():
+                        accepter_variant_records.append(record)
 
-            cur = dgraph.apply_fusion(cur, variant, donor_seq, donor_variant_records)
+            cur = dgraph.apply_fusion(cur, variant, accepter_seq, accepter_variant_records)
             variant = next(variant_iter, None)
             continue
 

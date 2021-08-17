@@ -6,7 +6,7 @@ from moPepGen.SeqFeature import FeatureLocation
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL']
-ATTRS_START = ['START', 'DONOR_START', 'ACCEPTOR_START']
+ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
@@ -131,6 +131,13 @@ class VariantRecord():
         raise ValueError(f"Don't know how to get donor start for variant type "
             f"{self.type}")
 
+    def get_accepter_position(self) -> int:
+        """ Get accepter position for fusion only """
+        if self.type != 'Fusion':
+            raise ValueError("Don't know how to get accetoer start for "
+                f"variant type {self.type}")
+        return int(self.attrs['ACCEPTER_POSITION'])
+
     def get_alt_len(self) -> int:
         """ Get the length of the alt """
         if not self.alt.startswith('<'):
@@ -175,7 +182,7 @@ class VariantRecord():
         out = ''
         for key,val in self.attrs.items():
             # using 1-base position
-            if key in ATTRS_START:
+            if key in ATTRS_POSITION:
                 val = str(int(val) + 1)
             out += f'{key.upper()}={val};'
         return out.rstrip(';')

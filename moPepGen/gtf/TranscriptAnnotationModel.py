@@ -199,8 +199,8 @@ class TranscriptAnnotationModel():
 
     def get_transcript_index(self, genomic_index:int) -> int:
         """ Get the transcript index from a genomic index. """
-        index = 0
         if self.transcript.strand == 1:
+            index = 0
             if genomic_index < self.exon[0].location.start \
                     or genomic_index > self.exon[-1].location.end:
                 raise ValueError(
@@ -215,6 +215,7 @@ class TranscriptAnnotationModel():
                 else:
                     raise ValueError(INDEX_IN_INTRON_ERROR)
         elif self.transcript.strand == -1:
+            index = -1
             if genomic_index < self.exon[0].location.start \
                     or genomic_index > self.exon[-1].location.end:
                 raise ValueError(
