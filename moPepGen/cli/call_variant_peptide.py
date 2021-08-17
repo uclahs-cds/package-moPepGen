@@ -153,23 +153,23 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
             continue
 
         if variant.type == 'Fusion':
-            donor_transcript_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
-            donor_anno = annotation.transcripts[donor_transcript_id]
-            donor_chrom = donor_anno.transcript.location.seqname
-            donor_seq = donor_anno.get_transcript_sequence(genome[donor_chrom])
+            accepter_transcript_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
+            accepter_anno = annotation.transcripts[accepter_transcript_id]
+            accepter_chrom = accepter_anno.transcript.location.seqname
+            accepter_seq = accepter_anno.get_transcript_sequence(genome[accepter_chrom])
 
-            donor_variant_records = []
-            if donor_transcript_id in variants:
-                for record in variants[donor_transcript_id]:
+            accepter_variant_records = []
+            if accepter_transcript_id in variants:
+                for record in variants[accepter_transcript_id]:
                     # If the donor sequence has another fusion event, it is not
                     # considered. The chance of two fusion events happened
                     # together should be low.
                     if record.type == 'Fusion':
                         continue
                     if record.location.start > variant.get_accepter_position():
-                        donor_variant_records.append(record)
+                        accepter_variant_records.append(record)
 
-            cur = dgraph.apply_fusion(cur, variant, donor_seq, donor_variant_records)
+            cur = dgraph.apply_fusion(cur, variant, accepter_seq, accepter_variant_records)
             variant = next(variant_iter, None)
             continue
 
