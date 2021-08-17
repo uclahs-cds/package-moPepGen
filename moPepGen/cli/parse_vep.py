@@ -1,12 +1,11 @@
 """ VEP2VariantPeptides module """
 from typing import Dict, List
-import pathlib
+from pathlib import Path
 import argparse
-import pickle
 from moPepGen.parser import VEPParser
-from moPepGen import gtf, dna, seqvar, logger
-from .common import add_args_reference, add_args_verbose, \
-    print_help_if_missing_args
+from moPepGen import seqvar, logger
+from .common import add_args_reference, add_args_verbose, print_start_message,\
+    print_help_if_missing_args, load_references, generate_metadata
 
 
 # pylint: disable=W0212
@@ -24,7 +23,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
 
     p.add_argument(
         '-i', '--vep-txt',
-        type=str,
+        type=Path,
         nargs='+',
         help='Path to VEP result txt file.',
         metavar='',
@@ -46,39 +45,12 @@ def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """
     # unpack args
     vep_files:List[str] = args.vep_txt
-    index_dir:str = args.index_dir
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '.tvf'
-    verbose = args.verbose
-    genome_fasta = None
-    annotation_gtf = None
 
-    if verbose:
-        logger('moPepGen parseVEP started.')
+    print_start_message(args)
 
-    # if indexed files are given, load directly
-    if index_dir:
-        with open(f'{index_dir}/genome.pickle', 'rb') as handle:
-            genome = pickle.load(handle)
-
-        with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
-            anno = pickle.load(handle)
-
-        if verbose:
-            logger('Indexed genome and annotation loaded.')
-    else:
-        genome_fasta:str = args.genome_fasta
-        annotation_gtf:str = args.annotation_gtf
-
-        anno = gtf.GenomicAnnotation()
-        anno.dump_gtf(annotation_gtf)
-        if verbose:
-            logger('Annotation GTF loaded.')
-
-        genome = dna.DNASeqDict()
-        genome.dump_fasta(genome_fasta)
-        if verbose:
-            logger('Genome assembly FASTA loaded.')
+    genome, anno, _ = load_references(args, load_canonical_peptides=False)
 
     vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
 
@@ -93,30 +65,16 @@ def parse_vep(args:argparse.Namespace) -> None:
 
             vep_records[transcript_id].append(record)
 
-        if verbose:
+        if args.verbose:
             logger(f'VEP file {vep_file} loaded.')
 
     for records in vep_records.values():
         records.sort()
 
-    if verbose:
+    if args.verbose:
         logger('VEP sorting done.')
 
-    if index_dir:
-        reference_index = pathlib.Path(index_dir).absolute()
-        genome_fasta = None
-        annotation_gtf = None
-    else:
-        reference_index = None
-        genome_fasta = pathlib.Path(genome_fasta).absolute()
-        annotation_gtf = pathlib.Path(annotation_gtf).absolute()
-
-    metadata = seqvar.TVFMetadata(
-        parser='parseVEP',
-        reference_index=reference_index,
-        genome_fasta=genome_fasta,
-        annotation_gtf=annotation_gtf
-    )
+    metadata = generate_metadata(args)
 
     all_records = []
     for records in vep_records.values():
@@ -124,7 +82,7 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     seqvar.io.write(all_records, output_path, metadata)
 
-    if verbose:
+    if args.verbose:
         logger('Variant info written to disk.')
 
 

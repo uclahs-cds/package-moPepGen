@@ -2,7 +2,7 @@
 from typing import Iterable
 import tempfile
 from moPepGen.seqvar.TVFMetadata import TVFMetadata
-from moPepGen.seqvar.VariantRecord import VariantRecord, ATTRS_START
+from moPepGen.seqvar.VariantRecord import VariantRecord, ATTRS_POSITION
 from moPepGen.SeqFeature import FeatureLocation
 
 
@@ -31,7 +31,7 @@ def parse(path:str) -> Iterable[VariantRecord]:
             for field in fields[7].split(';'):
                 key, val = field.split('=')
                 val = val.strip('"')
-                if key in ATTRS_START:
+                if key in ATTRS_POSITION:
                     val = str(int(val) - 1)
                 attrs[key] = val
 

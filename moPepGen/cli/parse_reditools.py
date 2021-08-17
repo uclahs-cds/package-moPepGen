@@ -1,11 +1,9 @@
 """ Module for REDItools parser """
 from typing import Dict, List
 import argparse
-import pickle
-import pathlib
-from moPepGen import logger, gtf, seqvar, parser
-from .common import add_args_reference, add_args_verbose, \
-    print_help_if_missing_args
+from moPepGen import logger, seqvar, parser
+from .common import add_args_reference, add_args_verbose, print_start_message,\
+    print_help_if_missing_args, load_references, generate_metadata
 
 
 # pylint: disable=W0212
@@ -51,28 +49,12 @@ def parse_reditools(args:argparse.Namespace) -> None:
     # unpack args
     table_file = args.reditools_table
     transcript_id_column = args.transcript_id_column
-    index_dir:str = args.index_dir
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '.tvf'
-    verbose = args.verbose
 
-    if verbose:
-        logger('moPepGen parseREDItools started.')
+    print_start_message(args)
 
-    if index_dir:
-        with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
-            anno = pickle.load(handle)
-
-        if verbose:
-            logger('Index annotation loaded')
-
-    else:
-        annotation_gtf:str = args.annotation_gtf
-
-        anno = gtf.GenomicAnnotation()
-        anno.dump_gtf(annotation_gtf)
-        if verbose:
-            logger('Annotation GTF loaded.')
+    _, anno, _ = load_references(args, load_genome=False, load_canonical_peptides=False)
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
 
@@ -84,28 +66,16 @@ def parse_reditools(args:argparse.Namespace) -> None:
                 variants[transcript_id] = []
             variants[transcript_id].append(variant)
 
-    if verbose:
+    if args.verbose:
         logger(f'REDItools table {table_file} loaded.')
 
     for records in variants.values():
         records.sort()
 
-    if verbose:
+    if args.verbose:
         logger('Variants sorted.')
 
-    if index_dir:
-        reference_index = pathlib.Path(index_dir).absolute()
-        annotation_gtf = None
-    else:
-        reference_index = None
-        annotation_gtf = pathlib.Path(annotation_gtf).absolute()
-
-    metadata = seqvar.TVFMetadata(
-        parser='parseREDITools',
-        reference_index=reference_index,
-        genome_fasta=None,
-        annotation_gtf=annotation_gtf
-    )
+    metadata = generate_metadata(args)
 
     all_records = []
     for records in variants.values():
@@ -113,7 +83,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     seqvar.io.write(all_records, output_path, metadata)
 
-    if verbose:
+    if args.verbose:
         logger("Variants written to disk.")
 
 

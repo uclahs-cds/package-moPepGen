@@ -88,46 +88,46 @@ class STARFusionRecord():
         Returns:
             List of VariantRecord
         """
-        acceptor_transcripts = anno[self.left_gene]
-        donor_transcripts = anno[self.right_gene]
+        donor_transcripts = anno[self.left_gene]
+        accepter_transcripts = anno[self.right_gene]
         records = []
 
-        perms = itertools.product(acceptor_transcripts.keys(), donor_transcripts.keys())
-        for acceptor_id, donor_id in perms:
-            acceptor_model = acceptor_transcripts[acceptor_id]
-            acceptor_gene_symbol = acceptor_model.transcript.attributes['gene_name']
-            left_breakpoint = int(self.left_breakpoint.split(':')[1])
-            acceptor_chrom = self.left_breakpoint.split(':')[0]
-            acceptor_position = acceptor_model.get_transcript_index(left_breakpoint)
-            seq = acceptor_model.get_transcript_sequence(genome[acceptor_chrom])
-            acceptor_genome_position = f'{acceptor_chrom}:{left_breakpoint}:{left_breakpoint}'
-
+        perms = itertools.product(donor_transcripts.keys(), accepter_transcripts.keys())
+        for donor_id, accepter_id in perms:
             donor_model = donor_transcripts[donor_id]
-            right_breakpoint = int(self.right_breakpoint.split(':')[1])
-            donor_position = donor_model.get_transcript_index(right_breakpoint)
             donor_gene_symbol = donor_model.transcript.attributes['gene_name']
-            donor_chrom = self.right_breakpoint.split(':')[0]
-            donor_genome_position = f'{donor_chrom}:{right_breakpoint}:{right_breakpoint}'
+            left_breakpoint = int(self.left_breakpoint.split(':')[1]) - 1
+            donor_chrom = self.left_breakpoint.split(':')[0]
+            donor_position = donor_model.get_transcript_index(left_breakpoint) + 1
+            seq = donor_model.get_transcript_sequence(genome[donor_chrom])
+            donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
+
+            accepter_model = accepter_transcripts[accepter_id]
+            right_breakpoint = int(self.right_breakpoint.split(':')[1]) - 1
+            accepter_position = accepter_model.get_transcript_index(right_breakpoint)
+            accepter_gene_symbol = accepter_model.transcript.attributes['gene_name']
+            accepter_chrom = self.right_breakpoint.split(':')[0]
+            accepter_genome_position = f'{accepter_chrom}:{right_breakpoint}:{right_breakpoint}'
 
             location = FeatureLocation(
-                seqname=acceptor_id,
-                start=acceptor_position,
-                end=acceptor_position + 1
+                seqname=donor_id,
+                start=donor_position,
+                end=donor_position + 1
             )
-            _id = f'FUSION_{acceptor_id}:{acceptor_position}-{donor_id}:{donor_position}'
+            _id = f'FUSION_{donor_id}:{donor_position}-{accepter_id}:{accepter_position}'
             attrs = {
                 'GENE_ID': self.left_gene,
-                'GENE_SYMBOL': acceptor_gene_symbol,
-                'GENOMIC_POSITION': acceptor_genome_position,
-                'DONOR_GENE_ID': self.right_gene,
-                'DONOR_TRANSCRIPT_ID': donor_id,
-                'DONOR_SYMBOL': donor_gene_symbol,
-                'DONOR_POS': donor_position,
-                'DONOR_GENOMIC_POSITION': donor_genome_position
+                'GENE_SYMBOL': donor_gene_symbol,
+                'GENOMIC_POSITION': donor_genome_position,
+                'ACCEPTER_GENE_ID': self.right_gene,
+                'ACCEPTER_TRANSCRIPT_ID': accepter_id,
+                'ACCEPTER_SYMBOL': accepter_gene_symbol,
+                'ACCEPTER_POSITION': accepter_position,
+                'ACCEPTER_GENOMIC_POSITION': accepter_genome_position
             }
             record = seqvar.VariantRecord(
                 location=location,
-                ref=seq[acceptor_position],
+                ref=seq[donor_position],
                 alt='<FUSION>',
                 _type='Fusion',
                 _id=_id,
