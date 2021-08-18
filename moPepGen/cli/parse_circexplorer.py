@@ -6,8 +6,8 @@ from pathlib import Path
 from moPepGen import logger, dna, gtf, circ
 from moPepGen.seqvar import TVFMetadata
 from moPepGen.parser import CIRCexplorerParser
-from .common import add_args_reference, add_args_verbose, \
-    print_help_if_missing_args
+from .common import add_args_reference, add_args_verbose, print_start_message,\
+    print_help_if_missing_args, load_references, generate_metadata
 
 
 # pylint: disable=W0212
@@ -45,34 +45,9 @@ def parse_circexplorer(args:argparse.Namespace):
     output_prefix = args.output_prefix
     output_path = output_prefix + '.tsv'
 
-    index_dir:Path = args.index_dir
-    genome_fasta:Path = args.genome_fasta
-    annotation_gtf:Path = args.annotation_gtf
-    verbose = args.verbose
+    print_start_message(args)
 
-    if verbose:
-        logger('moPepGen parseCIRCexplorer started.')
-
-    if index_dir:
-        with open(index_dir/'genome.pickle', 'rb') as handle:
-            genome:dna.DNASeqDict = pickle.load(handle)
-
-        with open(index_dir/'annotation.pickle', 'rb') as handle:
-            anno:gtf.GenomicAnnotation = pickle.load(handle)
-
-        if verbose:
-            logger('Indexed genome and annotation loaded.')
-
-    else:
-        anno = gtf.GenomicAnnotation()
-        anno.dump_gtf(annotation_gtf)
-        if verbose:
-            logger('Annotation GTF loaded.')
-
-        genome = dna.DNASeqDict()
-        genome.dump_fasta(genome_fasta)
-        if verbose:
-            logger('Genome assembly FASTA loaded.')
+    _, anno, _ = load_references(args, False, False)
 
     circ_records:Dict[str, List[circ.CircRNAModel]] = {}
 
@@ -87,10 +62,6 @@ def parse_circexplorer(args:argparse.Namespace):
     for val in circ_records.values():
         records.extend(val)
 
-    metadata = TVFMetadata(
-        parser='parseCIRCexplorer',
-        reference_index=index_dir,
-        genome_fasta=genome_fasta,
-        annotation_gtf=annotation_gtf
-    )
+    metadata = generate_metadata(args)
+
     circ.io.write(records, metadata, output_path)
