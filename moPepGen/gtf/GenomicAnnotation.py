@@ -10,9 +10,14 @@ from .GeneAnnotationModel import GeneAnnotationModel
 
 
 class GenomicAnnotation():
-    """ A VEPTranscripts object is a dict-like object that holds the GTF
-    results, that the keys are the transcript IDs and values are instances of
-    VEPRecord.
+    """ This defines the annotation of genes and transcripts of the genome,
+    reading from a GTF file.
+
+    Attributes:
+        genes (Dict[str,GeneAnnotationModel]): Keys are gene IDs and values are
+            gene annotation models.
+        transcripts (Dict[str, TranscriptAnnotationModel]): Keys are transcript
+            IDs and values are transcript annotation models.
     """
     FAILED_TO_FIND_EXON_ERROR = 'Failed to find the exon.'
     FAILED_TO_FIND_INTRON_ERROR = 'Failed to find the intron.'

@@ -65,4 +65,4 @@ def parse_circexplorer(args:argparse.Namespace):
     circ.io.write(records, metadata, output_path)
 
     if args.verbose:
-        logger("Variants written to disk.")
+        logger("CircRNA records written to disk.")
