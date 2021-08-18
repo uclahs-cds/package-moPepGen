@@ -151,17 +151,6 @@ class GenomicAnnotation():
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()
 
-    def coordinate_gene_to_genomic(self, index:int, gene:str):
-        """ COnvert gene coordinate to genomic coordinate """
-        gene_model = self.genes[gene]
-        if gene_model.location.strand == 1:
-            return gene_model.location.start + index
-
-        if gene_model.location.strand == -1:
-            return gene_model.location.end - 1 - index
-
-        raise ValueError("Don't know how to handle unstranded gene.")
-
     def coordinate_gene_to_transcript(self, index:int, gene:str,
             transcript:str) -> int:
         """ For a given gene position, find it the corresponding transcript
@@ -196,7 +185,7 @@ class GenomicAnnotation():
         if location.strand == 1:
             return location.start + index
         if location.strand == -1:
-            return location.end - index
+            return location.end - 1 - index
         raise ValueError("Don't know how to handle unstranded gene.")
 
     def variant_coordinates_to_gene(self, variant:seqvar.VariantRecord,
@@ -298,7 +287,7 @@ class GenomicAnnotation():
             strand=strand)
         return SeqFeature(chrom=gene_id, location=location, attributes={})
 
-    def feature_coordiante_genomic_to_gene(self, feature:SeqFeature,
+    def feature_coordinate_genomic_to_gene(self, feature:SeqFeature,
             gene_id:str) -> SeqFeature:
         """ For a given feature, converts the coordinate from genomic to gene.
         """

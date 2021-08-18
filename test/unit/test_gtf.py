@@ -1,5 +1,6 @@
 """ Test the GTF files are loaded and handled properly
 """
+import copy
 import unittest
 from test.unit import create_transcript_model, create_variant, \
     create_genomic_annotation
@@ -271,7 +272,7 @@ class TestGTF(unittest.TestCase):
         ind = anno.find_exon_index(gene_id, exon, 'genomic')
         self.assertEqual(ind, 2)
 
-        exon2 = anno.feature_coordiante_genomic_to_gene(exon, gene_id)
+        exon2 = anno.feature_coordinate_genomic_to_gene(exon, gene_id)
         ind = anno.find_exon_index(gene_id, exon2, 'gene')
         self.assertEqual(ind, 2)
 
@@ -321,7 +322,7 @@ class TestGTF(unittest.TestCase):
         ind = anno.find_intron_index(gene_id, intron, 'genomic')
         self.assertEqual(ind, 1)
 
-        intron2 = anno.feature_coordiante_genomic_to_gene(intron, gene_id)
+        intron2 = anno.feature_coordinate_genomic_to_gene(intron, gene_id)
         ind = anno.find_intron_index(gene_id, intron2, 'gene')
         self.assertEqual(ind, 1)
 
@@ -336,10 +337,10 @@ class TestGTF(unittest.TestCase):
         x = anno.coordinate_gene_to_transcript(20, gene_id, tx_id)
         self.assertEqual(x, 10)
 
-        annotation_data2 = ANNOTATION_DATA
+        annotation_data2 = copy.deepcopy(ANNOTATION_DATA)
         annotation_data2['genes'][0]['strand'] = -1
         annotation_data2['transcripts'][0]['strand'] = -1
-        anno = create_genomic_annotation(ANNOTATION_DATA)
+        anno = create_genomic_annotation(annotation_data2)
         gene_id = ANNOTATION_ATTRS[0]['gene_id']
         tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
         x = anno.coordinate_gene_to_transcript(19, gene_id, tx_id)
