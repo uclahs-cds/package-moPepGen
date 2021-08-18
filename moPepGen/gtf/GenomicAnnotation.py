@@ -8,11 +8,19 @@ from . import GtfIO
 from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TYPES
 from .GeneAnnotationModel import GeneAnnotationModel
 
+
 class GenomicAnnotation():
-    """ A VEPTranscripts object is a dict-like object that holds the GTF
-    results, that the keys are the transcript IDs and values are instances of
-    VEPRecord.
+    """ This defines the annotation of genes and transcripts of the genome,
+    reading from a GTF file.
+
+    Attributes:
+        genes (Dict[str,GeneAnnotationModel]): Keys are gene IDs and values are
+            gene annotation models.
+        transcripts (Dict[str, TranscriptAnnotationModel]): Keys are transcript
+            IDs and values are transcript annotation models.
     """
+    FAILED_TO_FIND_EXON_ERROR = 'Failed to find the exon.'
+    FAILED_TO_FIND_INTRON_ERROR = 'Failed to find the intron.'
     def __init__(self, genes:Dict[str,GeneAnnotationModel]=None,
             transcripts:Dict[str, TranscriptAnnotationModel]=None,
             source:str=None):
@@ -60,6 +68,7 @@ class GenomicAnnotation():
         if gene_id in self.genes:
             raise ValueError(f'Same gene has multiple records: {gene_id}')
         record.__class__ = GeneAnnotationModel
+        record.exons = []
         record.transcripts = []
         self.genes[gene_id] = record
 
@@ -147,17 +156,6 @@ class GenomicAnnotation():
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()
 
-    def coordinate_gene_to_genomic(self, index:int, gene:str):
-        """ COnvert gene coordinate to genomic coordinate """
-        gene_model = self.genes[gene]
-        if gene_model.location.strand == 1:
-            return gene_model.location.start + index
-
-        if gene_model.location.strand == -1:
-            return gene_model.location.end - 1 - index
-
-        raise ValueError("Don't know how to handle unstranded gene.")
-
     def coordinate_gene_to_transcript(self, index:int, gene:str,
             transcript:str) -> int:
         """ For a given gene position, find it the corresponding transcript
@@ -184,6 +182,15 @@ class GenomicAnnotation():
             return index - gene_location.start
         if gene_location.strand == -1:
             return gene_location.end - 1 - index
+        raise ValueError("Don't know how to handle unstranded gene.")
+
+    def coordinate_gene_to_genomic(self, index:int, gene:str) -> int:
+        """ Get the genomic coordinate from gene coordinate """
+        location = self.genes[gene].location
+        if location.strand == 1:
+            return location.start + index
+        if location.strand == -1:
+            return location.end - 1 - index
         raise ValueError("Don't know how to handle unstranded gene.")
 
     def variant_coordinates_to_gene(self, variant:seqvar.VariantRecord,
@@ -271,6 +278,34 @@ class GenomicAnnotation():
             _id=variant.id
         )
 
+    def feature_coordinate_gene_to_genomic(self, feature:SeqFeature,
+            gene_id:str) -> SeqFeature:
+        """ For a given feature, converts the coordinate from gene to
+        genomic. """
+        gene_model = self.genes[gene_id]
+        start = self.coordinate_gene_to_genomic(feature.location.start, gene_id)
+        end = self.coordinate_gene_to_genomic(feature.location.end, gene_id)
+        strand = gene_model.location.strand
+        if strand == -1:
+            start, end = end, start
+        location = FeatureLocation(seqname=gene_id, start=start, end=end,
+            strand=strand)
+        return SeqFeature(chrom=gene_id, location=location, attributes={})
+
+    def feature_coordinate_genomic_to_gene(self, feature:SeqFeature,
+            gene_id:str) -> SeqFeature:
+        """ For a given feature, converts the coordinate from genomic to gene.
+        """
+        gene_model = self.genes[gene_id]
+        start = self.coordinate_genomic_to_gene(feature.location.start, gene_id)
+        end = self.coordinate_genomic_to_gene(feature.location.end, gene_id)
+        strand = gene_model.location.strand
+        if strand == -1:
+            start, end = end, start
+        location = FeatureLocation(seqname=gene_id, start=start, end=end,
+            strand=0)
+        return SeqFeature(chrom=gene_id, location=location, attributes={})
+
     def create_gene_id_version_mapper(self) -> None:
         """ Create the a dict that keys are the unversioned gene ID, and values
         are the versioned. """
@@ -303,3 +338,108 @@ class GenomicAnnotation():
         versioned_gene_id = self.gene_id_version_mapper[gene_id]
 
         return self.genes[versioned_gene_id]
+
+    def get_all_exons_of_gene(self, gene_id) -> List[SeqFeature]:
+        """ Get all exons of a gene """
+        exons = set()
+        gene_model = self.genes[gene_id]
+        for tx_id in gene_model.transcripts:
+            tx_model = self.transcripts[tx_id]
+            exons.update(tx_model.exon)
+        exons = list(exons)
+        exons.sort()
+        gene_model.exons = exons
+
+    def find_exon_index(self, gene_id:str, feature:SeqFeature,
+            coordinate:str='gene') -> int:
+        """ Find the exon index of the gene.
+
+        Args:
+            gene_id (str): The gene ID.
+            feature (SeqFeature): The exon to look up.
+            coordinate (str): The coordinate type of the given feature. Can be
+                one of 'genomic' or 'gene'. Defaults to gene.
+        """
+        gene_model = self.genes[gene_id]
+        if not gene_model.exons:
+            self.get_all_exons_of_gene(gene_id)
+        exons = gene_model.exons
+
+        strand = self.genes[gene_id].strand
+
+        if coordinate == 'gene':
+            feature = self.feature_coordinate_gene_to_genomic(feature, gene_id)
+        elif coordinate != 'genomic':
+            raise ValueError("Don't know how to handle the coordinate.")
+
+        if strand == 1:
+            for i, exon in enumerate(exons):
+                if exon == feature:
+                    return i
+                if exon > feature:
+                    break
+        elif strand == -1:
+            for i, exon in enumerate(reversed(exons)):
+                if exon == feature:
+                    return i
+                if exon < feature:
+                    break
+        raise ValueError(self.FAILED_TO_FIND_EXON_ERROR)
+
+    def find_intron_index(self, gene_id:str, feature:SeqFeature,
+            coordinate:str="gene") -> int:
+        """ Find the intron index of the gene.
+
+        Args:
+            gene_id (str): The gene ID.
+            feature (SeqFeature): The intron to look up.
+            coordinate (str): The coordinate type of the given feature. Can be
+                one of 'genomic' or 'gene'. Defaults to gene.
+        """
+        gene_model = self.genes[gene_id]
+        if not gene_model.exons:
+            self.get_all_exons_of_gene(gene_id)
+        exons = gene_model.exons
+
+        strand = self.genes[gene_id].strand
+
+        if coordinate == 'gene':
+            feature = self.feature_coordinate_gene_to_genomic(feature, gene_id)
+
+        elif coordinate != 'genomic':
+            raise ValueError("Don't know how to handle the coordinate.")
+
+        if strand == 1:
+            i = 0
+            while i < len(exons):
+                exon = exons[i]
+                if exon.location.end == feature.location.start:
+                    i += 1
+                    if i >= len(exons):
+                        break
+                    exon = exons[i]
+                    if exon.location.start == feature.location.end:
+                        return i - 1
+                    break
+                if exon.location.start > feature.location.end:
+                    break
+                i += 1
+        elif strand == -1:
+            i = 0
+            j = len(exons) - i - 1
+            while i < len(exons):
+                exon = exons[j]
+                if exon.location.start == feature.location.end:
+                    i += 1
+                    if i >= len(exons):
+                        break
+                    j = len(exons) - i - 1
+                    exon = exons[j]
+                    if exon.location.end == feature.location.start:
+                        return i - 1
+                    break
+                if exon.location.end < feature.location.start:
+                    break
+                i += 1
+                j = len(exons) - i - 1
+        raise ValueError(self.FAILED_TO_FIND_INTRON_ERROR)

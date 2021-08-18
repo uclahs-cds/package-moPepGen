@@ -18,6 +18,7 @@ def main():
     cli.add_subparser_parse_fusion_catcher(subparsers)
     cli.add_subparser_parse_rmats(subparsers)
     cli.add_subparser_call_peptides(subparsers)
+    cli.add_subparser_parse_circexplorer(subparsers)
 
     args = parser.parse_args()
 
