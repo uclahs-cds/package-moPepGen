@@ -1,10 +1,8 @@
 """ Module for CIRCexplorer parser """
 import argparse
 from typing import List, Dict
-import pickle
 from pathlib import Path
-from moPepGen import logger, dna, gtf, circ
-from moPepGen.seqvar import TVFMetadata
+from moPepGen import logger, circ
 from moPepGen.parser import CIRCexplorerParser
 from .common import add_args_reference, add_args_verbose, print_start_message,\
     print_help_if_missing_args, load_references, generate_metadata
@@ -65,3 +63,6 @@ def parse_circexplorer(args:argparse.Namespace):
     metadata = generate_metadata(args)
 
     circ.io.write(records, metadata, output_path)
+
+    if args.verbose:
+        logger("Variants written to disk.")
