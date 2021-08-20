@@ -69,5 +69,5 @@ def write(records:Iterable[CircRNAModel], metadata:TVFMetadata, path:Path):
         handle.write('#' + ','.join(headers) + '\n')
 
         for record in records:
-            line = record.to_tvf() + '\n'
+            line = record.to_string() + '\n'
             handle.write(line)

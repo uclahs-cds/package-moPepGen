@@ -193,6 +193,27 @@ class GenomicAnnotation():
             return location.end - 1 - index
         raise ValueError("Don't know how to handle unstranded gene.")
 
+    def coordinate_transcript_to_genomic(self, index:int, transcript:str) -> int:
+        """ Get the genomic coordinate from transcript coordinate """
+        tx_model = self.transcripts[transcript]
+        tx_size = tx_model.transcript.location.end - tx_model.transcript.location.start
+        if tx_size < index:
+            raise ValueError('Index out of range.')
+
+        if tx_model.transcript.strand == 1:
+            for exon in tx_model.exon:
+                size = exon.location.end - exon.location.start
+                if index < size:
+                    return index + exon.location.start
+                index -= size
+        if tx_model.transcript.strand == -1:
+            for exon in reversed(tx_model.exon):
+                size = exon.location.end - exon.location.start
+                if index < size:
+                    return exon.location.end - 1 - index
+                index -= size
+        raise ValueError("Don't know how to handle unstranded transcript.")
+
     def variant_coordinates_to_gene(self, variant:seqvar.VariantRecord,
             gene_id:str) -> seqvar.VariantRecord:
         """ Convert the coordinates of variant from transcript to gene """

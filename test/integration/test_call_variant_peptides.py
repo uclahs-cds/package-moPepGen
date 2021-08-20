@@ -143,7 +143,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_varaint_peptide_case5(self):
         """ A test case reported in issue #25, with 3 indel. """
         tvf = self.data_dir \
-            /'vep/CPCG0100_gencode_aa_indel_ENST00000308182.9.tvf'
+            /'vep/CPCG0100_gencode_aa_indel_ENST00000308182.9.gvf'
         expect = self.data_dir \
             /'vep/CPCG0100_gencode_aa_indel_ENST00000308182.9_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000308182.9'
@@ -153,7 +153,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ A test case reported in issue #33, with 3 indel (insertion).
         """
         tvf = self.data_dir \
-            /'vep/CPCG0102_gencode_aa_indel_ENST00000542218.1.tvf'
+            /'vep/CPCG0102_gencode_aa_indel_ENST00000542218.1.gvf'
         expect = self.data_dir \
             /'vep/CPCG0102_gencode_aa_indel_ENST00000542218.1_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000542218.1'
@@ -163,7 +163,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ A test case reported in issue #33, with 3 indel (insertion).
         """
         tvf = self.data_dir \
-            /'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.tvf'
+            /'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.gvf'
         expect = self.data_dir \
             /'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
@@ -173,7 +173,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ A test case reported in PR #36.
         """
         tvf = self.data_dir \
-            /'vep/CPCG0184_gencode_aa_indel_ENST00000314675.11.tvf'
+            /'vep/CPCG0184_gencode_aa_indel_ENST00000314675.11.gvf'
         expect = self.data_dir \
             /'vep/CPCG0184_gencode_aa_indel_ENST00000314675.11_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
@@ -183,7 +183,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ A test case reported in PR #36.
         """
         tvf = self.data_dir \
-            /'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5.tvf'
+            /'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5.gvf'
         expect = self.data_dir \
             /'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000360004.5'
@@ -193,7 +193,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ A test case reported in PR #36.
         """
         tvf = self.data_dir \
-            /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2.tvf'
+            /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2.gvf'
         expect = self.data_dir \
             /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000390283.2'

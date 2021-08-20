@@ -110,7 +110,7 @@ def add_args_verbose(parser:argparse.ArgumentParser):
 
 
 def load_references(args:argparse.Namespace, load_genome:bool=True,
-        load_canonical_peptides:bool=True,
+        load_canonical_peptides:bool=True
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, Set[str]]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
@@ -145,12 +145,11 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             if verbose:
                 logger('Genome assembly FASTA loaded.')
 
-        proteome = aa.AminoAcidSeqDict()
-        proteome.dump_fasta(proteome_fasta)
-        if verbose:
-            logger('Proteome FASTA loaded.')
-
         if load_canonical_peptides:
+            proteome = aa.AminoAcidSeqDict()
+            proteome.dump_fasta(proteome_fasta)
+            if verbose:
+                logger('Proteome FASTA loaded.')
             rule:str = args.cleavage_rule
             miscleavage:int = int(args.miscleavage)
             min_mw:float = float(args.min_mw)

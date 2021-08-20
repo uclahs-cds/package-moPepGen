@@ -2,7 +2,6 @@
 """
 from __future__ import annotations
 from typing import List, Tuple, Iterable
-import re
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, dna, gtf
@@ -117,74 +116,62 @@ class VEPRecord():
         Args:
             seq (dna.DNASeqRecord): The DNA sequence of the transcript.
         """
-        chrom_seqname = self.location.split(':')[0]
-        tx_model = anno.transcripts[self.feature]
-        strand = tx_model.transcript.strand
-        seq = tx_model.get_transcript_sequence(genome[chrom_seqname])
-        alt_position = self.cdna_position.split('-')
-        alt_start = int(alt_position[0]) - 1
-
-        codon_ref, codon_alt = self.codons
-        cds_start_nf = 'tag' in tx_model.transcript.attributes and \
-            'cds_start_NF' in tx_model.transcript.attributes['tag']
-
-        if codon_ref == '-':
-            alt_end = alt_start + 1
-            ref = seq.seq[alt_start:alt_end]
-            alt = ref + codon_alt
-            alt_end = alt_start + len(ref)
-        elif codon_alt == '-':
-            if alt_start > 0:
-                alt_start -= 1
-                alt_end = alt_start + len(codon_ref) + 1
-                ref = seq.seq[alt_start:alt_end]
-                alt = seq.seq[alt_start:alt_start+1]
-            # According to GNECODE, cds_start_NF means the translation start
-            # site can not be determined.
-            elif cds_start_nf:
-                alt_end = alt_start + len(codon_ref) + 1
-                ref = seq.seq[alt_start:alt_end]
-                alt = seq.seq[alt_end-1:alt_end]
-            else:
-                alt_end = alt_start + len(codon_ref)
-                ref = seq.seq[alt_start:alt_end]
-                tx_start = tx_model.get_transcript_start_genomic_coordinate()
-                if strand == 1:
-                    alt = str(genome[chrom_seqname][tx_start-2:tx_start].seq)
-                else:
-                    alt:Seq = genome[chrom_seqname][tx_start:tx_start+2].seq
-                    alt = str(alt.reverse_complement())
+        chrom_seqname, alt_position = self.location.split(':')
+        if alt_position.find('-') > -1:
+            alt_start_genomic, alt_end_genomic = \
+                [int(x) for x in alt_position.split('-')]
         else:
-            pattern = re.compile('[ATCG]+')
-            match_ref = pattern.search(codon_ref)
-            match_alt = pattern.search(codon_alt)
-            if match_ref is not None:
-                if match_alt is not None:
-                    ref = match_ref.group()
-                    alt_end = alt_start + len(ref)
-                    alt = match_alt.group()
-                else:
-                    ref = match_ref.group()
-                    alt_start -= 1
-                    ref = seq.seq[alt_start] + ref
-                    alt_end = alt_start + len(ref)
-                    alt = seq.seq[alt_start:alt_start+1]
-            elif match_alt is not None:
-                alt = match_alt.group()
-                # alt_start -= 1
-                alt_end = alt_start + 1
-                ref = seq.seq[alt_start:alt_end]
-                alt = ref + alt
+            alt_start_genomic = int(alt_position)
+            alt_end_genomic = alt_start_genomic
+        alt_start_genomic -= 1
+
+        gene_model = anno.genes[self.gene]
+        strand = gene_model.strand
+        seq = gene_model.get_gene_sequence(genome[chrom_seqname])
+
+        alt_start = anno.coordinate_genomic_to_gene(alt_start_genomic, self.gene)
+        alt_end = anno.coordinate_genomic_to_gene(alt_end_genomic - 1, self.gene)
+        if strand == -1:
+            alt_start, alt_end = alt_end, alt_start
+        alt_end += 1
+
+        if self.allele == '-':
+            if alt_start == 0:
+                ref = str(seq.seq[alt_start:alt_end])
+                alt = str(genome[chrom_seqname].seq[alt_start_genomic - 1])
             else:
-                raise ValueError('No alteration found in this VEP record')
+                alt_start -= 1
+                ref = str(seq.seq[alt_start:alt_end])
+                alt = str(seq.seq[alt_start])
+        else:
+            allele = self.allele
+            if strand == -1:
+                allele = str(Seq(allele).reverse_complement())
+            if alt_end - alt_start == 1:
+                if len(allele) > 1:
+                    raise ValueError('Could not recognize the VEP record')
+                ref = str(seq.seq[alt_start])
+                alt = allele
+            elif alt_end - alt_start == 2:
+                alt_end -= 1
+                ref = str(seq.seq[alt_start])
+                alt = ref + allele
+            else:
+                raise ValueError('Could not recognize the VEP record')
 
         _type = 'SNV' if len(ref) == 1 and len(alt) == 1 else 'INDEL'
         _id = f'{_type}-{alt_start + 1}-{ref}-{alt}'
 
+        attrs = {
+            'TRANSCRIPTS': [self.feature],
+            'GENOMIC_POSITION': self.location,
+            'GENE_SYMBOL': gene_model.attributes['gene_name']
+        }
+
         try:
             return seqvar.VariantRecord(
                 location=FeatureLocation(
-                    seqname=self.feature,
+                    seqname=self.gene,
                     start=alt_start,
                     end=alt_end
                 ),
@@ -192,7 +179,7 @@ class VEPRecord():
                 alt=alt,
                 _type=_type,
                 _id=_id,
-                attrs={'GENE_ID': self.gene}
+                attrs=attrs
             )
         except ValueError as e:
             raise ValueError(e.args[0] + f' [{self.feature}]') from e

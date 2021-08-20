@@ -46,7 +46,7 @@ def parse_vep(args:argparse.Namespace) -> None:
     # unpack args
     vep_files:List[str] = args.vep_txt
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 

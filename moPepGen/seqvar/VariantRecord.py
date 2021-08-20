@@ -1,7 +1,15 @@
 """ Module for generic variant record """
 from __future__ import annotations
+import copy
+from typing import List, TYPE_CHECKING
+from moPepGen import ERROR_NO_TX_AVAILABLE
 from moPepGen.SeqFeature import FeatureLocation
 
+
+# To avoid circular import
+if TYPE_CHECKING:
+    from moPepGen.gtf import GenomicAnnotation
+    from moPepGen.dna import DNASeqDict
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution']
@@ -151,7 +159,7 @@ class VariantRecord():
         raise ValueError(f"Don't know how to get alt len for variant type "
             f"{self.type}")
 
-    def to_tvf(self) -> str:
+    def to_string(self) -> str:
         """ Convert to a TVF record. """
         chrom = self.location.seqname
         # using 1-base position
@@ -184,6 +192,8 @@ class VariantRecord():
             # using 1-base position
             if key in ATTRS_POSITION:
                 val = str(int(val) + 1)
+            elif isinstance(val, list):
+                val = ','.join([str(x) for x in val])
             out += f'{key.upper()}={val};'
         return out.rstrip(';')
 
@@ -218,3 +228,62 @@ class VariantRecord():
         if self.type == 'Deletion':
             return (self.location.end - self.location.start - 1) % 3 != 0
         return abs(len(self.alt) - len(self.ref)) % 3 != 0
+
+    def to_transcript_variants(self, anno:GenomicAnnotation, genome:DNASeqDict,
+            tx_ids:List[str]=None) -> List[VariantRecord]:
+        """ Get variant records with transcription coordinates """
+        if not tx_ids:
+            tx_ids = self.attrs['TRANSCRIPTS']
+        if not tx_ids:
+            raise ValueError(ERROR_NO_TX_AVAILABLE)
+        variants = []
+        for tx_id in tx_ids:
+            tx_model = anno.transcripts[tx_id]
+            chrom = tx_model.transcript.chrom
+            tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+            tx_start = tx_model.transcript.location.start
+            start_genomic = anno.coordinate_gene_to_genomic(
+                self.location.start, self.location.seqname
+            )
+            end_genomic = anno.coordinate_gene_to_genomic(
+                self.location.end, self.location.seqname
+            )
+            if start_genomic < tx_start:
+                if end_genomic < tx_start:
+                    continue
+                if not tx_model.is_cds_start_nf():
+                    continue
+                start = 0
+                end = anno.coordinate_gene_to_transcript(
+                    self.location.end + 1, self.location.seqname, tx_id
+                )
+                ref = str(tx_seq.seq[0:end])
+                alt = str(self.alt[1:] + ref[-1])
+            else:
+                start = anno.coordinate_gene_to_transcript(
+                    self.location.start, self.location.seqname, tx_id
+                )
+                end = anno.coordinate_gene_to_transcript(
+                    self.location.end, self.location.seqname, tx_id
+                )
+                ref = self.ref
+                alt = self.alt
+            location = FeatureLocation(seqname=tx_id, start=start, end=end)
+            attrs = copy.deepcopy(self.attrs)
+            del attrs['TRANSCRIPTS']
+            attrs['GENE_ID'] = self.location.seqname
+            variant = VariantRecord(
+                location=location,
+                ref=ref,
+                alt=alt,
+                _type=self.type,
+                _id=self.id,
+                attrs=attrs
+            )
+            variants.append(variant)
+        variants.sort()
+        return variants
+
+    def has_transcripts(self):
+        """ Checks if the variant has any transcript IDs annotated """
+        return 'TRANSCRIPTS' in self.attrs and len(self.attrs['TRANSCRIPTS']) > 0

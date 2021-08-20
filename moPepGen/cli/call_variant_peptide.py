@@ -68,39 +68,26 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     genome, annotation, canonical_peptides = load_references(args=args)
 
-    variants:Dict[str, List[seqvar.VariantRecord]] = {}
-    for file in variant_files:
-        for record in seqvar.io.parse(file):
-            transcript_id = record.location.seqname
-            if transcript_id not in variants:
-                variants[transcript_id] = [record]
-            else:
-                variants[transcript_id].append(record)
-        if verbose:
-            logger(f'Variant file {file} loaded.')
-
-    for records in variants.values():
-        records.sort()
-    if verbose:
-        logger('Variant records sorted.')
+    variants = seqvar.VariantRecordPool.load_variants(variant_files,
+        annotation, genome, verbose)
 
     variant_pool = aa.VariantPeptidePool()
 
     i = 0
-    for transcript_id in variants:
+    for tx_id in variants.transcriptional:
 
         try:
-            peptides = call_peptide_main(variants, transcript_id, annotation,
+            peptides = call_peptide_main(variants, tx_id, annotation,
                 genome, rule, exception, miscleavage)
         except:
-            logger(f'Exception raised from {transcript_id}')
+            logger(f'Exception raised from {tx_id}')
             raise
 
         for peptide in peptides:
             variant_pool.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
 
-        if verbose:    # for logging
+        if verbose:
             i += 1
             if i % 1000 == 0:
                 logger(f'{i} transcripts processed.')
@@ -119,13 +106,13 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     if verbose:
         logger('Variant peptide FASTA file written to disk.')
 
-def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
-        transcript_id:str, annotation:gtf.GenomicAnnotation,
+def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
+        tx_id:str, annotation:gtf.GenomicAnnotation,
         genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
-    variant_records = variants[transcript_id]
-    anno = annotation.transcripts[transcript_id]
+    tx_variants = variant_pool.transcriptional[tx_id]
+    anno = annotation.transcripts[tx_id]
     chrom = anno.transcript.location.seqname
     transcript_seq = anno.get_transcript_sequence(genome[chrom])
     cds_start_nf = 'tag' in anno.transcript.attributes and \
@@ -133,14 +120,14 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
 
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
-        _id=transcript_id,
+        _id=tx_id,
         cds_start_nf=cds_start_nf
     )
 
     ## Create transcript variant graph
     # dgraph.create_variant_graph(variant_records)
     dgraph.add_null_root()
-    variant_iter = iter(variant_records)
+    variant_iter = iter(tx_variants)
     variant = next(variant_iter, None)
     cur = dgraph.root.get_reference_next()
     while variant:
@@ -159,8 +146,8 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
             accepter_seq = accepter_anno.get_transcript_sequence(genome[accepter_chrom])
 
             accepter_variant_records = []
-            if accepter_transcript_id in variants:
-                for record in variants[accepter_transcript_id]:
+            if accepter_transcript_id in variant_pool.transcriptional:
+                for record in variant_pool.transcriptional[accepter_transcript_id]:
                     # If the donor sequence has another fusion event, it is not
                     # considered. The chance of two fusion events happened
                     # together should be low.
@@ -184,7 +171,7 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
                 insert_seq = gene_seq[donor_start:donor_end]
                 exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
                 insert_variants = find_gene_variants(gene_id, annotation,
-                    variants, donor_start, donor_end, exclude_type)
+                    variant_pool, donor_start, donor_end, exclude_type)
                 cur = dgraph.apply_insertion(cur, variant, insert_seq, insert_variants)
                 variant = next(variant_iter, None)
                 continue
@@ -200,7 +187,7 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
                 sub_seq = gene_seq[donor_start:donor_end]
                 exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
                 sub_variants = find_gene_variants(gene_id, annotation,
-                    variants, donor_start, donor_end, exclude_type)
+                    variant_pool, donor_start, donor_end, exclude_type)
                 cur = dgraph.apply_substitution(cur, variant, sub_seq, sub_variants)
                 variant = next(variant_iter, None)
                 continue
@@ -272,16 +259,16 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
-        variants:Dict[str,seqvar.VariantRecord], start:int, end:int,
+        variant_pool:seqvar.VariantRecordPool, start:int, end:int,
         exclude_type:List[str]) -> List[seqvar.VariantRecord]:
     """ Find all unique variants of a gene within a given range. Fusions
     are skipped. """
     records = set()
     for transcript_id in annotation.genes[gene_id].transcripts:
-        if transcript_id not in variants:
+        if transcript_id not in variant_pool.transcriptional:
             continue
         record:seqvar.VariantRecord
-        for record in variants[transcript_id]:
+        for record in variant_pool.transcriptional[transcript_id]:
             if record.type in exclude_type:
                 continue
             record = annotation.variant_coordinates_to_gene(record, gene_id)

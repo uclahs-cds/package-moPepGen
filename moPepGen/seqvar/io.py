@@ -7,7 +7,7 @@ from moPepGen.SeqFeature import FeatureLocation
 
 
 def parse(path:str) -> Iterable[VariantRecord]:
-    """ Parse a TVF file.
+    """ Parse a GVF file.
 
     Args:
         path (str): Path to the moPepGen variant file.
@@ -23,7 +23,7 @@ def parse(path:str) -> Iterable[VariantRecord]:
                 continue
 
             fields = line.rstrip().split('\t')
-            transcript_id = fields[0]
+            gene_id = fields[0]
             start=int(fields[1]) - 1
             ref = fields[3]
             alt = fields[4]
@@ -33,6 +33,8 @@ def parse(path:str) -> Iterable[VariantRecord]:
                 val = val.strip('"')
                 if key in ATTRS_POSITION:
                     val = str(int(val) - 1)
+                elif key == 'TRANSCRIPTS':
+                    val = val.split(',')
                 attrs[key] = val
 
             if not alt.startswith('<'):
@@ -57,7 +59,7 @@ def parse(path:str) -> Iterable[VariantRecord]:
 
             record = VariantRecord(
                 location=FeatureLocation(
-                    seqname=transcript_id,
+                    seqname=gene_id,
                     start=start,
                     end=end
                 ),
@@ -86,7 +88,7 @@ def write(variants:Iterable[VariantRecord], output_path:str,
     with tempfile.TemporaryFile(mode='w+t') as temp_file:
         temp_file.write('#' + '\t'.join(headers) + '\n')
         for record in variants:
-            line = record.to_tvf()
+            line = record.to_string()
             temp_file.write(line + '\n')
             metadata.add_info(record.type)
         with open(output_path, 'w') as out_file:

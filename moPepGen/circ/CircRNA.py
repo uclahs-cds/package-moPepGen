@@ -56,7 +56,7 @@ class CircRNAModel():
             circ = circ + new_seq if circ else new_seq
         return circ
 
-    def to_tvf(self) -> str:
+    def to_string(self) -> str:
         """ Convert to a TVF record """
         gene_id = self.gene_id
         start = int(self.fragments[0].location.start)
