@@ -222,7 +222,7 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
-        variants:Dict[str,List[seqvar.VariantRecord]], rule:str,
+        variant_pool:seqvar.VariantRecordPool, rule:str,
         exception:str, miscleavage:int)-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
@@ -232,10 +232,10 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     circ_seq = record.get_circ_rna_sequence(gene_seq)
 
     variant_records = set()
-    for transcript_id in record.transcript_ids:
-        if transcript_id not in variants:
+    for tx_id in record.transcript_ids:
+        if tx_id not in variant_pool.transcriptional:
             continue
-        for variant in variants[transcript_id]:
+        for variant in variant_pool.transcriptional[tx_id]:
             variant = annotation.variant_coordinates_to_gene(variant, gene_id)
             # Alternative splicing should not be included. Alternative splicing
             # are represented as Insertion, Deletion or Substitution.
@@ -248,7 +248,9 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     variant_records = list(variant_records)
     variant_records.sort()
 
-    cgraph = svgraph.CircularVariantGraph(circ_seq, _id=record.id)
+    cgraph = svgraph.CircularVariantGraph(
+        circ_seq, _id=record.id, circ_record=record
+    )
 
     cgraph.create_variant_graph(variant_records)
     cgraph.align_all_variants()

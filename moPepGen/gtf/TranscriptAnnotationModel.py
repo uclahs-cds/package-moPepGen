@@ -212,7 +212,7 @@ class TranscriptAnnotationModel():
                     index += genomic_index - exon.location.start
                     break
                 else:
-                    raise ValueError(INDEX_IN_INTRON_ERROR)
+                    raise ValueError(ERROR_INDEX_IN_INTRON)
         elif self.transcript.strand == -1:
             index = -1
             if genomic_index < self.exon[0].location.start \

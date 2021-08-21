@@ -6,8 +6,6 @@ from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, gtf, dna
 
 
-GeneAnnotations = Dict[str, Dict[str, gtf.TranscriptAnnotationModel]]
-
 def parse(path:str) -> Iterable[STARFusionRecord]:
     """ Parse the STAR-Fusion's output and returns an iterator.
 
@@ -76,7 +74,7 @@ class STARFusionRecord():
         self.right_break_entropy = right_break_entropy
         self.annots = annots
 
-    def convert_to_variant_records(self, anno:GeneAnnotations,
+    def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         """ COnvert a STAR-Fusion's record to VariantRecord.
 
@@ -88,39 +86,41 @@ class STARFusionRecord():
         Returns:
             List of VariantRecord
         """
-        donor_transcripts = anno[self.left_gene]
-        accepter_transcripts = anno[self.right_gene]
+        donor_model = anno.genes[self.left_gene]
+        donor_gene_symbol = donor_model.attributes['gene_name']
+        donor_chrom = self.left_breakpoint.split(':')[0]
+        left_breakpoint = int(self.left_breakpoint.split(':')[1]) - 1
+        donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
+        donor_position = anno.coordinate_genomic_to_gene(left_breakpoint, self.left_gene) + 1
+        seq = donor_model.get_gene_sequence(genome[donor_chrom])
+        donor_transcripts = donor_model.transcripts
+
+        accepter_model = anno.genes[self.right_gene]
+        accepter_gene_symbol = accepter_model.attributes['gene_name']
+        accepter_chrom = self.right_breakpoint.split(':')[0]
+        right_breakpoint = int(self.right_breakpoint.split(':')[1]) - 1
+        accepter_genome_position = f'{accepter_chrom}:{right_breakpoint}:{right_breakpoint}'
+        accepter_position = anno.coordinate_genomic_to_gene(right_breakpoint, self.right_gene)
+        accepter_transcripts = accepter_model.transcripts
         records = []
 
-        perms = itertools.product(donor_transcripts.keys(), accepter_transcripts.keys())
-        for donor_id, accepter_id in perms:
-            donor_model = donor_transcripts[donor_id]
-            donor_gene_symbol = donor_model.transcript.attributes['gene_name']
-            left_breakpoint = int(self.left_breakpoint.split(':')[1]) - 1
-            donor_chrom = self.left_breakpoint.split(':')[0]
-            donor_position = donor_model.get_transcript_index(left_breakpoint) + 1
-            seq = donor_model.get_transcript_sequence(genome[donor_chrom])
-            donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
+        fusion_id = f'FUSION_{self.left_gene}:{donor_position}'\
+            f'-{self.right_gene}:{accepter_position}'
 
-            accepter_model = accepter_transcripts[accepter_id]
-            right_breakpoint = int(self.right_breakpoint.split(':')[1]) - 1
-            accepter_position = accepter_model.get_transcript_index(right_breakpoint)
-            accepter_gene_symbol = accepter_model.transcript.attributes['gene_name']
-            accepter_chrom = self.right_breakpoint.split(':')[0]
-            accepter_genome_position = f'{accepter_chrom}:{right_breakpoint}:{right_breakpoint}'
+        perms = itertools.product(donor_transcripts, accepter_transcripts)
+        for donor_tx, accepter_tx in perms:
 
             location = FeatureLocation(
-                seqname=donor_id,
+                seqname=self.left_gene,
                 start=donor_position,
                 end=donor_position + 1
             )
-            _id = f'FUSION_{donor_id}:{donor_position}-{accepter_id}:{accepter_position}'
             attrs = {
-                'GENE_ID': self.left_gene,
+                'TRANSCRIPTS': [donor_tx],
                 'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
                 'ACCEPTER_GENE_ID': self.right_gene,
-                'ACCEPTER_TRANSCRIPT_ID': accepter_id,
+                'ACCEPTER_TRANSCRIPT_ID': accepter_tx,
                 'ACCEPTER_SYMBOL': accepter_gene_symbol,
                 'ACCEPTER_POSITION': accepter_position,
                 'ACCEPTER_GENOMIC_POSITION': accepter_genome_position
@@ -130,7 +130,7 @@ class STARFusionRecord():
                 ref=seq[donor_position],
                 alt='<FUSION>',
                 _type='Fusion',
-                _id=_id,
+                _id=fusion_id,
                 attrs=attrs
             )
             records.append(record)

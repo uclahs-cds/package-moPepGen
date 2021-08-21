@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from moPepGen.dna import DNASeqDict
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
-    'Insertion', 'Deletion', 'Substitution']
+    'Insertion', 'Deletion', 'Substitution', 'circRNA']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL']
 ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
 

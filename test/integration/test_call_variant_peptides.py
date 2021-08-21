@@ -72,8 +72,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion """
         args = argparse.Namespace()
         args.input_variant = [
-            str(self.data_dir/'vep'/'vep.tvf'),
-            str(self.data_dir/'fusion'/'fusion.tvf')
+            str(self.data_dir/'vep'/'vep.gvf'),
+            str(self.data_dir/'fusion'/'fusion.gvf')
         ]
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
@@ -96,7 +96,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion and circRNA """
         args = argparse.Namespace()
         args.input_variant = [
-            str(self.data_dir/'vep'/'vep.tvf'),
+            str(self.data_dir/'vep'/'vep.gvf'),
             str(self.data_dir/'fusion'/'fusion.tvf')
         ]
         args.circ_rna_bed = str(self.data_dir/'circRNA'/'circ_rna.tsv')
@@ -121,7 +121,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args = argparse.Namespace()
         args.input_variant = [
             str(self.data_dir/'vep/vep.tvf'),
-            str(self.data_dir/'alternative_splicing/alternative_splicing.tvf')
+            str(self.data_dir/'alternative_splicing/alternative_splicing.gvf')
         ]
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'

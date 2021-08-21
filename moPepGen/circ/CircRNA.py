@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import List
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
-from moPepGen import dna, gtf
+from moPepGen import dna, gtf, seqvar
 
 
 class CircRNAModel():
@@ -12,12 +12,12 @@ class CircRNAModel():
         fragments (List[SeqFeature])
         intron (List[int])
         id (str)
-        transcript_ids (str)
+        transcript_ids (List[str])
         gene_name (str)
         gene_locations (List[SeqFeature])
     """
     def __init__(self, gene_id:str, fragments:List[SeqFeature], intron:List[int],
-            _id:str, transcript_ids:str,  gene_name:str):
+            _id:str, transcript_ids:List[str],  gene_name:str):
         """ Constructor """
         self.gene_id = gene_id
         self.fragments = fragments
