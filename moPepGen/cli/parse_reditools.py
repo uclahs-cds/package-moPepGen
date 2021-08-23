@@ -50,7 +50,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
     table_file = args.reditools_table
     transcript_id_column = args.transcript_id_column
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 

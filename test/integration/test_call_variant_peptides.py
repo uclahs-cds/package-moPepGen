@@ -50,7 +50,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """
         args = argparse.Namespace()
-        args.input_variant = [str(self.data_dir/'vep'/'vep.tvf')]
+        args.input_variant = [str(self.data_dir/'vep'/'vep.gvf')]
         args.circ_rna_bed = None
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.index_dir = None
@@ -120,7 +120,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with alternative splicing """
         args = argparse.Namespace()
         args.input_variant = [
-            str(self.data_dir/'vep/vep.tvf'),
+            str(self.data_dir/'vep/vep.gvf'),
             str(self.data_dir/'alternative_splicing/alternative_splicing.gvf')
         ]
         args.circ_rna_bed = None
@@ -204,7 +204,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         of the sequence is included.
         """
         tvf = self.data_dir \
-            /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.tvf'
+            /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.gvf'
         expect = self.data_dir \
             /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000515757.5'

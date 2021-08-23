@@ -23,6 +23,7 @@ def parse(path:str, transcript_id_column:int=16
     """
     with open(path, 'r') as handle:
         line = next(handle, None)
+        line = next(handle, None)
         while line:
             line = line.rstrip()
             line = re.sub('[,&$]$', '', line)
@@ -102,36 +103,43 @@ class REDItoolsRecord():
             with different splicing.
         """
         _ids = []
-        for transcript_id, feature in self.transcript_id:
+        for tx_id, feature in self.transcript_id:
             if feature == 'transcript':
-                _ids.append(transcript_id)
+                _ids.append(tx_id)
 
         records = []
-        for transcript_id in _ids:
-            model:gtf.TranscriptAnnotationModel = anno[transcript_id]
+        for tx_id in _ids:
+            tx_model:gtf.TranscriptAnnotationModel = anno.transcripts[tx_id]
             try:
-                position = model.get_transcript_index(self.position - 1)
+                position = tx_model.get_transcript_index(self.position - 1)
             except ValueError as e:
                 if e.args[0] == ERROR_INDEX_IN_INTRON:
                     continue
+            gene_id = tx_model.transcript.attributes['gene_id']
+            gene_model = anno.genes[gene_id]
+            position = anno.coordinate_genomic_to_gene(self.position - 1, gene_id)
             location = FeatureLocation(
-                seqname=transcript_id,
+                seqname=tx_id,
                 start=position,
                 end=position + 1
             )
             for sub in self.all_subs:
                 ref = sub[0]
                 alt = sub[1]
-                if model.transcript.strand == -1:
+                if gene_model.strand == -1:
                     ref = str(Seq(ref).complement())
                     alt = str(Seq(alt).complement())
                 _id = f'RNA_editing_site-{ref}-{alt}'
+                attrs = {
+                    'TRANSCRIPTS': [tx_id]
+                }
                 record = VariantRecord(
                     location=location,
                     ref=ref,
                     alt=alt,
                     _type='RNAEditingSite',
-                    _id=_id
+                    _id=_id,
+                    attrs=attrs
                 )
                 records.append(record)
         return records

@@ -23,7 +23,7 @@ class TestSeqvarIO(unittest.TestCase):
         shutil.rmtree(WORK_DIR, ignore_errors=True)
     def test_seqvar_parse(self):
         """ Test parsing seqvar files. """
-        mop_path = 'test/files/vep/vep.tvf'
+        mop_path = 'test/files/vep/vep.gvf'
         i = 0
         for record in seqvar.io.parse(mop_path):
             i += 1

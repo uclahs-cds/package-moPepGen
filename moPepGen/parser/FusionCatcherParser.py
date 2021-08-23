@@ -153,7 +153,7 @@ class FusionCatcherRecord():
                 end=left_breakpoint_genetic + 1
             )
             attrs = {
-                'TRANSCRIPTS': donor_id,
+                'TRANSCRIPTS': [donor_id],
                 'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
                 'ACCEPTER_GENE_ID': accepter_gene_id,
