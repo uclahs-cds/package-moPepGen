@@ -97,7 +97,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args = argparse.Namespace()
         args.input_variant = [
             str(self.data_dir/'vep'/'vep.gvf'),
-            str(self.data_dir/'fusion'/'fusion.tvf')
+            str(self.data_dir/'fusion'/'fusion.gvf')
         ]
         args.circ_rna_bed = str(self.data_dir/'circRNA'/'circ_rna.tsv')
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'

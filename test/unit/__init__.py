@@ -1,9 +1,22 @@
 """ Test module for moPepGen """
 from typing import Dict, List, Tuple, Union
 import copy
+from pathlib import Path
+import pickle
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import svgraph, dna, seqvar, gtf, aa
+
+
+def load_references(base_dir:Path=None) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation]:
+    """ Load reference files """
+    genome, anno = None, None
+    with open(base_dir/'genome.pickle', 'rb') as handle:
+        genome = pickle.load(handle)
+    with open(base_dir/'annotation.pickle', 'rb') as handle:
+        anno = pickle.load(handle)
+    return genome, anno
+
 
 Type = Tuple[Union[svgraph.TranscriptVariantGraph, svgraph.CircularVariantGraph],
         Dict[int, svgraph.TVGNode]]

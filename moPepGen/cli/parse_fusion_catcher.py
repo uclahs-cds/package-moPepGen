@@ -41,7 +41,7 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
     # unpack args
     fusion = args.fusion
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 
