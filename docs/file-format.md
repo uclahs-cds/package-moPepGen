@@ -139,21 +139,20 @@ RI is represented as an insertion or the intron sequence.
 ##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
 ##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
 ##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
-##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
-ENST0001	110	SE-300	C	<INS>	.	.	GENE_ID=ENSG0001;START=300;END=400;COORDINATE=gene;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
+ENST0001	110	SE-300	C	<INS>	.	.	GENE_ID=ENSG0001;START=300;END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
 ENST0002	210	A5SS-210	T	<DEL>	.	.	GENE_ID=ENSG0002;START=210;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
-ENST0003	115	A3SS-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
-ENST0003	115	MXE-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
-ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENST0003	115	A3SS-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENST0003	115	MXE-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 **Examples:**
 
 ```
-ENST0001	110	SE-300	C	<INS>	.	.	GENE_ID=ENSG0001;START=300;END=400;COORDINATE=gene;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
+ENST0001	110	SE-300	C	<INS>	.	.	GENE_ID=ENSG0001;START=300;END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 The line above represents an SE (skipped exon), that the sequence of 300-400 of the gene ENSG0001 is inserted to the t ranscript of ENST0001 at position 110. In this case, all transcripts of the gene in the annotation GTF don't contain this exon.
@@ -165,13 +164,13 @@ ENST0002	210	A5SS-210	T	<DEL>	.	.	GENE_ID=ENSG0002;START=210;END=400;GENE_SYMBOL
 The line above represents a A5SS (alternative 5' splicing site), that the sequence from 210 to 400 of the transcript ENST0002 is deleted. In this case, all transcripts of the gene in the annotation GTF have the longer version of the exon.
 
 ```
-ENST0003	115	MXE-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENST0003	115	MXE-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 The line above represents a MXE (mutually exclusive exon), that the exon of 320-380 of the gene ENSG0003 is retained in the transcript ENST0003 and resulted as an insertion at position 115 of the transcript. In this case, none of the transcripts of this gene has the first exon retained and second spliced at the same time. And this transcript has both exons retained.
 
 ```
-ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;COORDINATE=gene;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 This line above represents a MXE that the exon 447-582 (transcript ENST0004 position 277) is replaced with exon 1103-1228 of the gene.

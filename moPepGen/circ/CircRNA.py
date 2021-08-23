@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import List
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
-from moPepGen import dna, gtf, seqvar
+from moPepGen import dna, gtf
 
 
 class CircRNAModel():

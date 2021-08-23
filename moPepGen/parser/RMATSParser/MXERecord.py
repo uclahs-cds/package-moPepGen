@@ -1,6 +1,6 @@
 """ Module fro Mutually Exclusive Exons """
 from __future__ import annotations
-from typing import List, Tuple
+from typing import List
 from moPepGen import seqvar, gtf, dna
 from moPepGen.SeqFeature import FeatureLocation
 from .RMATSRecord import RMATSRecord
@@ -44,16 +44,18 @@ class MXERecord(RMATSRecord):
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         variants = []
-        transcript_ids = anno.genes[self.gene_id].transcripts
-        chrom = anno.genes[self.gene_id].location.seqname
-        strand = anno.genes[self.gene_id].location.strand
+        gene_model = anno.genes[self.gene_id]
+        tx_ids = gene_model.transcripts
+        chrom = gene_model.location.seqname
+        strand = gene_model.location.strand
+        gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        have_both:List[Tuple[str, gtf.TranscriptAnnotationModel]] = []
-        have_first:List[Tuple[str, gtf.TranscriptAnnotationModel]] = []
-        have_second:List[Tuple[str, gtf.TranscriptAnnotationModel]] = []
+        have_both:List[str] = []
+        have_first:List[str] = []
+        have_second:List[str] = []
 
-        for transcript_id in transcript_ids:
-            model = anno.transcripts[transcript_id]
+        for tx_id in tx_ids:
+            model = anno.transcripts[tx_id]
             it = iter(model.exon)
             exon = next(it, None)
             while exon:
@@ -70,16 +72,16 @@ class MXERecord(RMATSRecord):
                         break
                     if int(exon.location.start) == self.downstream_exon_start:
                         if strand == 1:
-                            have_first.append((transcript_id, model))
+                            have_first.append(tx_id)
                         else:
-                            have_second.append((transcript_id, model))
+                            have_second.append(tx_id)
                     elif int(exon.location.start) == self.second_exon_start and \
                             int(exon.location.end) == self.second_exon_end:
                         exon = next(it, None)
                         if not exon:
                             break
                         if int(exon.location.start) == self.downstream_exon_start:
-                            have_both.append((transcript_id, model))
+                            have_both.append(tx_id)
                 elif int(exon.location.start) == self.second_exon_start and \
                         int(exon.location.end) == self.second_exon_end:
                     exon = next(it, None)
@@ -87,48 +89,48 @@ class MXERecord(RMATSRecord):
                         break
                     if int(exon.location.start) == self.downstream_exon_start:
                         if strand == 1:
-                            have_second.append((transcript_id, model))
+                            have_second.append(tx_id)
                         else:
-                            have_first.append((transcript_id, model))
+                            have_first.append(tx_id)
 
         if (have_first and have_second) or \
                 (not have_first and not have_second and not have_both):
             return variants
 
-        if anno.genes[self.gene_id].location.strand == 1:
-            first_start_gene = anno.coordinate_genomic_to_gene(
+        if strand == 1:
+            first_start = anno.coordinate_genomic_to_gene(
                 self.first_exon_start, self.gene_id)
-            first_end_gene = anno.coordinate_genomic_to_gene(
+            first_end = anno.coordinate_genomic_to_gene(
                 self.first_exon_end, self.gene_id)
-            second_start_gene = anno.coordinate_genomic_to_gene(
+            second_start = anno.coordinate_genomic_to_gene(
                 self.second_exon_start, self.gene_id)
-            second_end_gene = anno.coordinate_genomic_to_gene(
+            second_end = anno.coordinate_genomic_to_gene(
                 self.second_exon_end, self.gene_id)
-            first_genomic_position = f'{chrom}:{self.first_exon_start + 1}-{self.first_exon_end}'
-            second_genomic_position = f'{chrom}:{self.second_exon_start + 1}-{self.second_exon_end}'
+            first_genomic_position = f'{chrom}:{self.first_exon_start + 1}'+\
+                f'-{self.first_exon_end}'
+            second_genomic_position = f'{chrom}:{self.second_exon_start + 1}'+\
+                f'-{self.second_exon_end}'
         else:
-            first_start_gene = anno.coordinate_genomic_to_gene(
+            first_start = anno.coordinate_genomic_to_gene(
                 self.second_exon_end, self.gene_id)
-            first_end_gene = anno.coordinate_genomic_to_gene(
+            first_end = anno.coordinate_genomic_to_gene(
                 self.second_exon_start, self.gene_id)
-            second_start_gene = anno.coordinate_genomic_to_gene(
+            second_start = anno.coordinate_genomic_to_gene(
                 self.first_exon_end, self.gene_id)
-            second_end_gene = anno.coordinate_genomic_to_gene(
+            second_end = anno.coordinate_genomic_to_gene(
                 self.first_exon_start, self.gene_id)
-            second_genomic_position = f'{chrom}:{self.first_exon_start + 1}-{self.first_exon_end}'
-            first_genomic_position = f'{chrom}:{self.second_exon_end + 1}-{self.second_exon_end}'
+            second_genomic_position = f'{chrom}:{self.first_exon_start + 1}'+\
+                f'-{self.first_exon_end}'
+            first_genomic_position = f'{chrom}:{self.second_exon_end + 1}'+\
+                f'-{self.second_exon_end}'
 
-        _id = f'MXE_{first_start_gene + 1}-{first_end_gene}:' +\
-            f'{second_start_gene}-{second_end_gene}'
+        _id = f'MXE_{first_start + 1}-{first_end}:' +\
+            f'{second_start}-{second_end}'
 
         if not have_second:
-            for transcript_id, model in have_first:
-                first_start = anno.coordinate_gene_to_transcript(
-                    first_start_gene, self.gene_id, transcript_id)
-                first_end = anno.coordinate_gene_to_transcript(
-                    first_end_gene, self.gene_id, transcript_id)
-                location = FeatureLocation(seqname=transcript_id,
-                     start=first_start, end=first_end)
+            for tx_id in have_first:
+                location = FeatureLocation(seqname=tx_id, start=first_start,
+                    end=first_end)
                 seq = model.get_transcript_sequence(genome[chrom])
                 ref = str(seq.seq[first_start])
                 alt = '<SUB>'
@@ -136,32 +138,27 @@ class MXERecord(RMATSRecord):
                     'GENE_ID': self.gene_id,
                     'START': first_start,
                     'END': first_end,
-                    'DONOR_START': second_start_gene,
-                    'DONOR_END': second_end_gene,
+                    'DONOR_START': second_start,
+                    'DONOR_END': second_end,
                     'COORDINATE': 'gene',
                     'GENE_SYMBOL': model.transcript.attributes['gene_name'],
-                    'GENOMIC_POSITION': f'{chrom}-{first_start_gene + 1}:{first_end_gene}-'
-                    f'{second_start_gene + 1}:{second_end_gene}'
+                    'GENOMIC_POSITION': f'{chrom}-{first_start + 1}:{first_end}-'
+                    f'{second_start + 1}:{second_end}'
                 }
                 _type = 'Substitution'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
-            for transcript_id, model in have_both:
-                start = anno.coordinate_gene_to_transcript(
-                    first_start_gene, self.gene_id, transcript_id)
-                end = anno.coordinate_gene_to_transcript(
-                    first_end_gene, self.gene_id, transcript_id)
-                location = FeatureLocation(seqname=transcript_id, start=start,
-                    end=end)
-                seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[start])
+            for tx_id in have_both:
+                location = FeatureLocation(seqname=tx_id, start=first_start,
+                    end=first_end)
+                ref = str(gene_seq.seq[first_start])
                 alt = '<DEL>'
                 attrs = {
-                    'GENE_ID': self.gene_id,
-                    'START': start,
-                    'END': end,
-                    'GENE_SYMBOL': model.transcript.attributes['gene_name'],
+                    'TRANSCRIPTS': tx_id,
+                    'START': first_start,
+                    'END': first_end,
+                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': first_genomic_position
                 }
                 _type = 'Deletion'
@@ -169,46 +166,35 @@ class MXERecord(RMATSRecord):
                 variants.append(record)
 
         if not have_first:
-            for transcript_id, model in have_second:
-                second_start = anno.coordinate_gene_to_transcript(
-                    second_start_gene, self.gene_id, transcript_id)
-                second_end = anno.coordinate_gene_to_transcript(
-                    second_end_gene, self.gene_id, transcript_id)
-                location = FeatureLocation(seqname=transcript_id,
-                     start=second_start, end=second_end)
-                seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[second_start])
+            for tx_id in have_second:
+                location = FeatureLocation(seqname=tx_id, start=second_start,
+                    end=second_end)
+                ref = str(gene_seq.seq[second_start])
                 alt = '<SUB>'
                 attrs = {
-                    'GENE_ID': self.gene_id,
+                    'TRANSCRIPTS': tx_id,
                     'START': second_start,
                     'END': second_end,
-                    'DONOR_START': first_start_gene,
-                    'DONOR_END': first_end_gene,
-                    'COORDINATE': 'gene',
-                    'GENE_SYMBOL': model.transcript.attributes['gene_name'],
-                    'GENOMIC_POSITION': f'{chrom}-{second_start_gene + 1}:{second_end_gene}-'
-                    f'{first_start_gene + 1}:{first_end_gene}'
+                    'DONOR_START': first_start,
+                    'DONOR_END': first_end,
+                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                    'GENOMIC_POSITION': f'{chrom}-{second_start + 1}:{second_end}-'
+                    f'{first_start + 1}:{first_end}'
                 }
                 _type = 'Substitution'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
-            for transcript_id, model in have_both:
-                start = anno.coordinate_gene_to_transcript(
-                    second_start_gene, self.gene_id, transcript_id)
-                end = anno.coordinate_gene_to_transcript(
-                    second_end_gene, self.gene_id, transcript_id)
-                location = FeatureLocation(seqname=transcript_id, start=start,
-                    end=end)
-                seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[start])
+            for tx_id in have_both:
+                location = FeatureLocation(seqname=tx_id, start=second_start,
+                    end=second_end)
+                ref = str(gene_seq.seq[second_start])
                 alt = '<DEL>'
                 attrs = {
-                    'GENE_ID': self.gene_id,
-                    'START': start,
-                    'END': end,
-                    'GENE_SYMBOL': model.transcript.attributes['gene_name'],
+                    'TRANSCRIPTS': tx_id,
+                    'START': second_start,
+                    'END': second_end,
+                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': second_genomic_position
                 }
                 _type = 'Deletion'

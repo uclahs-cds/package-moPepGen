@@ -1,6 +1,6 @@
 """ Module for call variant paptide """
 from __future__ import annotations
-from typing import List, Dict, Set
+from typing import List, Set
 import argparse
 from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, circ
 from moPepGen.SeqFeature import FeatureLocation

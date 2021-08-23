@@ -1,6 +1,6 @@
 """ Module for STAR-Fusion parser """
 from __future__ import annotations
-from typing import Iterable, List, Dict
+from typing import Iterable, List
 import itertools
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, gtf, dna

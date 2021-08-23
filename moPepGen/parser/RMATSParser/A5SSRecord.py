@@ -1,6 +1,6 @@
 """ Module for Altervative 5' Splicing Site """
 from __future__ import annotations
-from typing import List, Tuple
+from typing import List
 from moPepGen import seqvar, gtf, dna
 from moPepGen.SeqFeature import FeatureLocation
 from .RMATSRecord import RMATSRecord
@@ -39,15 +39,17 @@ class A5SSRecord(RMATSRecord):
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         variants = []
-        transcript_ids = anno.genes[self.gene_id].transcripts
-        chrom = anno.genes[self.gene_id].location.seqname
+        gene_model = anno.genes[self.gene_id]
+        tx_ids = gene_model.transcripts
+        chrom = gene_model.location.seqname
+        gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        short:List[Tuple[str, gtf.TranscriptAnnotationModel]] = []
-        long:List[Tuple[str, gtf.TranscriptAnnotationModel]] = []
+        short:List[str] = []
+        long:List[str] = []
 
-        for transcript_id in transcript_ids:
-            model = anno.transcripts[transcript_id]
-            if anno.genes[self.gene_id].location.strand == 1:
+        for tx_id in tx_ids:
+            model = anno.transcripts[tx_id]
+            if gene_model.location.strand == 1:
                 it = iter(model.exon)
             else:
                 it = reversed(model.exon)
@@ -58,13 +60,13 @@ class A5SSRecord(RMATSRecord):
                     int(exon.location.end) == self.long_exon_end:
                     exon = next(it, None)
                     if exon and exon.location.start == self.flanking_exon_start:
-                        long.append((transcript_id, model))
+                        long.append(tx_id)
                     break
                 if int(exon.location.start) == self.short_exon_start and \
                         int(exon.location.end) == self.short_exon_end:
                     exon = next(it, None)
                     if exon and exon.location.start == self.flanking_exon_start:
-                        short.append((transcript_id, model))
+                        short.append(tx_id)
                     break
                 exon = next(it, None)
 
@@ -85,21 +87,16 @@ class A5SSRecord(RMATSRecord):
             genomic_position = f'{chrom}:{self.long_exon_start+1}-{self.short_exon_end}'
 
         if not short:
-            for transcript_id, model in long:
-                start = anno.coordinate_gene_to_transcript(start_gene,
-                    self.gene_id, transcript_id)
-                end = anno.coordinate_gene_to_transcript(end_gene,
-                    self.gene_id, transcript_id)
-                location = FeatureLocation(seqname=transcript_id, start=start,
-                    end=end)
-                seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[start])
+            for tx_id in long:
+                location = FeatureLocation(seqname=tx_id, start=start_gene,
+                    end=end_gene)
+                ref = str(gene_seq.seq[start_gene])
                 alt = '<DEL>'
                 attrs = {
-                    'GENE_ID': self.gene_id,
-                    'START': start,
-                    'END': end,
-                    'GENE_SYMBOL': model.transcript.attributes['gene_name'],
+                    'TRANSCRIPTS': tx_id,
+                    'START': start_gene,
+                    'END': end_gene,
+                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Deletion'
@@ -109,31 +106,26 @@ class A5SSRecord(RMATSRecord):
 
         if not long:
             if model.transcript.location.strand == 1:
-                insert_position_gene = anno.coordinate_genomic_to_gene(
+                insert_position = anno.coordinate_genomic_to_gene(
                     self.short_exon_end, self.gene_id
                 )
             else:
-                insert_position_gene = anno.coordinate_genomic_to_gene(
+                insert_position = anno.coordinate_genomic_to_gene(
                     self.short_exon_start, self.gene_id
                 )
-            for transcript_id, model in short:
-                insert_position = anno.coordinate_gene_to_transcript(
-                    insert_position_gene, self.gene_id, transcript_id
-                )
+            for tx_id in short:
                 location = FeatureLocation(
-                    seqname=transcript_id,
+                    seqname=tx_id,
                     start=insert_position,
                     end=insert_position+1
                 )
-                seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[insert_position])
+                ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {
-                    'GENE_ID': self.gene_id,
+                    'TRANSCRIPTS': tx_id,
                     'START': start_gene,
                     'END': end_gene,
-                    'COORDINATE': 'gene',
-                    'GENE_SYMBOL': model.transcript.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Insertion'

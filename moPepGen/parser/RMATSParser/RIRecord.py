@@ -1,6 +1,6 @@
 """ Module for Retained Intron """
 from __future__ import annotations
-from typing import List, Tuple
+from typing import List
 from moPepGen import seqvar, gtf, dna
 from moPepGen.SeqFeature import FeatureLocation
 from .RMATSRecord import RMATSRecord
@@ -41,13 +41,15 @@ class RIRecord(RMATSRecord):
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         """ Convert to list of VariantRecord """
         variants = []
-        transcript_ids = anno.genes[self.gene_id].transcripts
-        chrom = anno.genes[self.gene_id].location.seqname
+        gene_model = anno.genes[self.gene_id]
+        transcript_ids = gene_model.transcripts
+        chrom = gene_model.location.seqname
+        gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        have_adjacent:List[Tuple[str, gtf.TranscriptAnnotationModel]] = []
+        have_adjacent:List[str] = []
 
-        for transcript_id in transcript_ids:
-            model = anno.transcripts[transcript_id]
+        for tx_id in transcript_ids:
+            model = anno.transcripts[tx_id]
             it = iter(model.exon)
             exon = next(it, None)
 
@@ -58,7 +60,7 @@ class RIRecord(RMATSRecord):
                     if exon and \
                             exon.location.start == self.downstream_exon_start and \
                             exon.location.end == self.downstream_exon_end:
-                        have_adjacent.append((transcript_id, model))
+                        have_adjacent.append(tx_id)
                         break
                 exon = next(it, None)
 
@@ -67,26 +69,22 @@ class RIRecord(RMATSRecord):
         end_gene = anno.coordinate_genomic_to_gene(
             self.downstream_exon_start, self.gene_id)
 
-        if anno.genes[self.gene_id].location.strand == -1:
+        if gene_model.location.strand == -1:
             start_gene, end_gene = end_gene, start_gene
 
         genomic_position = f'{chrom}:{self.upstream_exon_end}-{self.downstream_exon_start}'
 
-        for transcript_id, model in have_adjacent:
-            position = anno.coordinate_gene_to_transcript(start_gene,
-                self.gene_id, transcript_id)
-
-            location = FeatureLocation(seqname=transcript_id, start=position,
-                end=position + 1)
-            seq = model.get_transcript_sequence(genome[chrom])
-            ref = str(seq.seq[position])
+        for tx_id in have_adjacent:
+            location = FeatureLocation(seqname=tx_id, start=start_gene,
+                end=start_gene + 1)
+            ref = str(gene_seq.seq[start_gene])
             alt = '<INS>'
             attrs = {
-                'GENE_ID': self.gene_id,
+                'TRANSCRIPTS': tx_id,
                 'START': start_gene,
                 'END': end_gene,
                 'COORDINATE': 'gene',
-                'GENE_SYMBOL': model.transcript.attributes['gene_name'],
+                'GENE_SYMBOL': gene_model.attributes['gene_name'],
                 'GENOMIC_POSITION': genomic_position
             }
             _type = 'Insertion'

@@ -5,7 +5,7 @@ import re
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
-from moPepGen import seqvar, gtf
+from moPepGen import seqvar, gtf, ERROR_INDEX_IN_INTRON
 
 
 def parse(path:str, transcript_id_column:int=16
@@ -112,7 +112,7 @@ class REDItoolsRecord():
             try:
                 position = model.get_transcript_index(self.position - 1)
             except ValueError as e:
-                if e.args[0] == gtf.INDEX_IN_INTRON_ERROR:
+                if e.args[0] == ERROR_INDEX_IN_INTRON:
                     continue
             location = FeatureLocation(
                 seqname=transcript_id,

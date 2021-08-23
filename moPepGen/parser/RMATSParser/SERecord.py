@@ -1,6 +1,6 @@
 """ Module for rMATS parser """
 from __future__ import annotations
-from typing import List, Tuple
+from typing import List
 from moPepGen import gtf, dna, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 from .RMATSRecord import RMATSRecord
@@ -39,14 +39,16 @@ class SERecord(RMATSRecord):
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         """ Convert to variant records """
         variants = []
-        transcript_ids = anno.genes[self.gene_id].transcripts
-        chrom = anno.genes[self.gene_id].location.seqname
+        gene_model = anno.genes[self.gene_id]
+        transcript_ids = gene_model.transcripts
+        chrom = gene_model.location.seqname
+        gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        skipped:List[Tuple[str, gtf.TranscriptAnnotationModel]] = []
-        retained:List[Tuple[str, gtf.TranscriptAnnotationModel]] = []
+        skipped:List[str] = []
+        retained:List[str] = []
 
-        for transcript_id in transcript_ids:
-            model = anno.transcripts[transcript_id]
+        for tx_id in transcript_ids:
+            model = anno.transcripts[tx_id]
             it = iter(model.exon)
             exon = next(it, None)
 
@@ -60,7 +62,7 @@ class SERecord(RMATSRecord):
                     continue
 
                 if int(exon.location.start) == self.downstream_exon_start:
-                    skipped.append((transcript_id, model))
+                    skipped.append(tx_id)
                     break
                 if exon.location.start == self.exon_start and \
                         exon.location.end == self.exon_end:
@@ -68,7 +70,7 @@ class SERecord(RMATSRecord):
                     if not exon:
                         continue
                     if int(exon.location.start) == self.downstream_exon_start:
-                        retained.append((transcript_id, model))
+                        retained.append(tx_id)
                         break
 
         if skipped and retained:
@@ -77,70 +79,57 @@ class SERecord(RMATSRecord):
         if not skipped and not retained:
             return variants
 
-        start_gene = anno.coordinate_genomic_to_gene(self.exon_start, self.gene_id)
-        end_gene = anno.coordinate_genomic_to_gene(self.exon_end, self.gene_id)
+        start = anno.coordinate_genomic_to_gene(self.exon_start, self.gene_id)
+        end = anno.coordinate_genomic_to_gene(self.exon_end, self.gene_id)
+        location = FeatureLocation(seqname=self.gene_id, start=start, end=end)
+        ref = str(gene_seq.seq[start])
 
         if anno.genes[self.gene_id].location.strand == -1:
-            start_gene, end_gene = end_gene, start_gene
+            start, end = end, start
 
         genomic_position = f'{chrom}:{self.exon_start+1}:{self.exon_end}'
 
         if not skipped:
-            for transcript_id, model in retained:
-                start = anno.coordinate_gene_to_transcript(start_gene,
-                    self.gene_id, transcript_id)
-                end = anno.coordinate_gene_to_transcript(end_gene,
-                    self.gene_id, transcript_id)
-                location = FeatureLocation(
-                    seqname=transcript_id,
-                    start=start, end=end
-                )
-                seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[start])
+            for tx_id in retained:
                 alt = '<DEL>'
                 attrs = {
-                    'GENE_ID': self.gene_id,
+                    'TRANSCRIPTS': tx_id,
                     'START': start,
                     'END': end,
-                    'GENE_SYMBOL': model.transcript.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Deletion'
-                _id = f'SE_{start_gene}'
+                _id = f'SE_{start}'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
         if not retained:
-            if model.transcript.location.strand == 1:
-                insert_position_gene = anno.coordinate_genomic_to_gene(
+            if gene_model.location.strand == 1:
+                insert_position = anno.coordinate_genomic_to_gene(
                     self.upstream_exon_end, self.gene_id
                 )
             else:
-                insert_position_gene = anno.coordinate_genomic_to_gene(
+                insert_position = anno.coordinate_genomic_to_gene(
                     self.downstream_exon_start, self.gene_id
                 )
-            for transcript_id, model in skipped:
-                insert_position = anno.coordinate_gene_to_transcript(
-                    insert_position_gene, self.gene_id, transcript_id
-                )
+            for tx_id in skipped:
                 location = FeatureLocation(
-                    seqname=transcript_id,
+                    seqname=tx_id,
                     start=insert_position,
                     end=insert_position + 1
                 )
-                seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[insert_position])
+                ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {
-                    'GENE_ID': self.gene_id,
-                    'START': start_gene,
-                    'END': end_gene,
-                    'COORDINATE': 'gene',
-                    'GENE_SYMBOL': model.transcript.attributes['gene_name'],
+                    'TRANSCRIPTS': tx_id,
+                    'START': start,
+                    'END': end,
+                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Insertion'
-                _id = f'SE_{start_gene}'
+                _id = f'SE_{start}'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
         return variants
