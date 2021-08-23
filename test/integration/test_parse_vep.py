@@ -23,5 +23,5 @@ class TestParseVEP(TestCaseIntegration):
         args.verbose = False
         cli.parse_vep(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep.tvf'}
+        expected = {'vep.gvf'}
         self.assertEqual(files, expected)

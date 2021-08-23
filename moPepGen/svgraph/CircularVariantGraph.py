@@ -24,7 +24,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         attrs (dict): additional attributes
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
-            _id:str, circ_record:circ.CircRNAModel, attrs:dict=None):
+            _id:str, circ_record:circ.CircRNAModel=None, attrs:dict=None):
         """ Construct a CircularVariantGraph
 
         Args:

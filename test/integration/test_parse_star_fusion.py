@@ -20,12 +20,12 @@ class TestParseStarFusion(TestCaseIntegration):
         args.verbose = False
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'star_fusion.tvf'}
+        expected = {'star_fusion.gvf'}
         self.assertEqual(files, expected)
 
         genome, anno, _ = load_references(args, load_canonical_peptides=False)
 
-        for record in seqvar.io.parse(self.work_dir/'star_fusion.tvf'):
+        for record in seqvar.io.parse(self.work_dir/'star_fusion.gvf'):
             gene_id = record.location.seqname
             gene_model = anno.genes[gene_id]
             gene_chr = gene_model.chrom

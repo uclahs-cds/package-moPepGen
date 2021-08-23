@@ -161,50 +161,32 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
             continue
 
         if variant.type in 'Insertion':
-            if variant.attrs['COORDINATE'] == 'gene':
-                gene_id = variant.attrs['GENE_ID']
-                gene_model = annotation.genes[gene_id]
-                chrom = gene_model.chrom
-                donor_start = variant.get_donor_start()
-                donor_end = variant.get_donor_end()
-                gene_seq = gene_model.get_gene_sequence(genome[chrom])
-                insert_seq = gene_seq[donor_start:donor_end]
-                exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-                insert_variants = find_gene_variants(gene_id, annotation,
-                    variant_pool, donor_start, donor_end, exclude_type)
-                cur = dgraph.apply_insertion(cur, variant, insert_seq, insert_variants)
-                variant = next(variant_iter, None)
-                continue
+            gene_id = variant.attrs['GENE_ID']
+            gene_model = annotation.genes[gene_id]
+            chrom = gene_model.chrom
+            donor_start = variant.get_donor_start()
+            donor_end = variant.get_donor_end()
+            gene_seq = gene_model.get_gene_sequence(genome[chrom])
+            insert_seq = gene_seq[donor_start:donor_end]
+            exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
+            insert_variants = find_gene_variants(gene_id, annotation,
+                variant_pool, donor_start, donor_end, exclude_type)
+            cur = dgraph.apply_insertion(cur, variant, insert_seq, insert_variants)
+            variant = next(variant_iter, None)
+            continue
 
         if variant.type == 'Substitution':
-            if variant.attrs['COORDINATE'] == 'gene':
-                gene_id = variant.attrs['GENE_ID']
-                gene_model = annotation.genes[gene_id]
-                chrom = gene_model.chrom
-                donor_start = variant.get_donor_start()
-                donor_end = variant.get_donor_end()
-                gene_seq = gene_model.get_gene_sequence(genome[chrom])
-                sub_seq = gene_seq[donor_start:donor_end]
-                exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-                sub_variants = find_gene_variants(gene_id, annotation,
-                    variant_pool, donor_start, donor_end, exclude_type)
-                cur = dgraph.apply_substitution(cur, variant, sub_seq, sub_variants)
-                variant = next(variant_iter, None)
-                continue
-
-        if variant.type == 'Deletion':
-            variant = seqvar.VariantRecord(
-                location=FeatureLocation(
-                    seqname=variant.location.seqname,
-                    start=variant.location.start,
-                    end=int(variant.attrs['END'])
-                ),
-                ref=variant.ref,
-                alt=variant.alt,
-                _type=variant.type,
-                _id=variant.id,
-                attrs=variant.attrs
-            )
+            gene_id = variant.attrs['GENE_ID']
+            gene_model = annotation.genes[gene_id]
+            chrom = gene_model.chrom
+            donor_start = variant.get_donor_start()
+            donor_end = variant.get_donor_end()
+            gene_seq = gene_model.get_gene_sequence(genome[chrom])
+            sub_seq = gene_seq[donor_start:donor_end]
+            exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
+            sub_variants = find_gene_variants(gene_id, annotation,
+                variant_pool, donor_start, donor_end, exclude_type)
+            cur = dgraph.apply_substitution(cur, variant, sub_seq, sub_variants)
             variant = next(variant_iter, None)
             continue
 
