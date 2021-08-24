@@ -1,12 +1,15 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import List, Tuple, Set, Deque, Union
+from typing import List, Tuple, Set, Deque, Union, TYPE_CHECKING
 from collections import deque
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import dna, seqvar, svgraph
 
+
+if TYPE_CHECKING:
+    from moPepGen import gtf
 
 class TranscriptVariantGraph():
     """ Defines the DAG data structure for the transcript and its variants.
@@ -281,8 +284,8 @@ class TranscriptVariantGraph():
         return body
 
     def apply_fusion(self, node:svgraph.TVGNode, variant:seqvar.VariantRecord,
-            donor_seq:dna.DNASeqRecordWithCoordinates,
-            donor_variants:List[seqvar.VariantRecord]) -> svgraph.TVGNode:
+            variant_pool:seqvar.VariantRecordPool, genome:dna.DNASeqDict,
+            anno:gtf.GenomicAnnotation) -> svgraph.TVGNode:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
 
@@ -300,11 +303,23 @@ class TranscriptVariantGraph():
                 associated with the donor transcript. Variants before the
                 breakpoint won't be applied.
         """
-        break_point = variant.get_accepter_position()
-        branch = TranscriptVariantGraph(donor_seq, self.id)
-        branch.root.seq = branch.root.seq[break_point:]
+        accepter_gene_id = variant.attrs['ACCEPTER_GENE_ID']
+        accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
+        accepter_tx_model = anno.transcripts[accepter_tx_id]
+        accepter_chrom = accepter_tx_model.transcript.location.seqname
+        accepter_tx_seq = accepter_tx_model.get_transcript_sequence(genome[accepter_chrom])
+        breakpoint_gene = variant.get_accepter_position()
+        breakpoint_tx = anno.coordinate_gene_to_transcript(breakpoint_gene,
+            accepter_gene_id, accepter_tx_id)
+
+        accepter_variant_records = variant_pool.filter_variants(
+            accepter_gene_id, anno, exclude_type=['Fusion'], start=breakpoint_tx
+        )
+
+        branch = TranscriptVariantGraph(accepter_tx_seq, self.id)
+        branch.root.seq = branch.root.seq[breakpoint_tx:]
         branch.add_null_root()
-        branch.create_variant_graph(donor_variants)
+        branch.create_variant_graph(accepter_variant_records)
         var_node = branch.root.get_reference_next()
         while var_node.in_edges:
             edge = var_node.in_edges.pop()
@@ -398,9 +413,20 @@ class TranscriptVariantGraph():
 
     def apply_insertion(self, node:svgraph.TVGNode,
             variant:seqvar.VariantRecord,
-            insert_seq:dna.DNASeqRecordWithCoordinates,
-            insert_variants:List[seqvar.VariantRecord]) -> svgraph.TVGNode:
+            variant_pool:seqvar.VariantRecordPool,
+            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation
+            ) -> svgraph.TVGNode:
         """ Apply an insertion into the the TVG graph. """
+        gene_id = variant.attrs['GENE_ID']
+        gene_model = anno.genes[gene_id]
+        chrom = gene_model.chrom
+        donor_start = variant.get_donor_start()
+        donor_end = variant.get_donor_end()
+        gene_seq = gene_model.get_gene_sequence(genome[chrom])
+        insert_seq = gene_seq[donor_start:donor_end]
+        exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
+        insert_variants = variant_pool.filter_variants(gene_id, anno,
+            exclude_type, start=donor_start, end=donor_end)
         # add the reference sequence to the insertion sequence.
         ref_seq_location = dna.MatchedLocation(
             query=FeatureLocation(start=0, end=1),
@@ -423,9 +449,20 @@ class TranscriptVariantGraph():
 
     def apply_substitution(self, node:svgraph.TVGNode,
             variant:seqvar.VariantRecord,
-            sub_seq:dna.DNASeqRecordWithCoordinates,
-            sub_variants:List[seqvar.VariantRecord]) -> svgraph.TVGNode:
+            variant_pool:seqvar.VariantRecordPool,
+            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation
+            ) -> svgraph.TVGNode:
         """ Apply a substitution variant into the graph """
+        gene_id = variant.attrs['GENE_ID']
+        gene_model = anno.genes[gene_id]
+        chrom = gene_model.chrom
+        donor_start = variant.get_donor_start()
+        donor_end = variant.get_donor_end()
+        gene_seq = gene_model.get_gene_sequence(genome[chrom])
+        sub_seq = gene_seq[donor_start:donor_end]
+        exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
+        sub_variants = variant_pool.filter_variants(gene_id, anno, exclude_type,
+            start=donor_start, end=donor_end)
         var = seqvar.VariantRecordWithCoordinate(
             variant=variant,
             location=FeatureLocation(start=0, end=len(sub_seq.seq))

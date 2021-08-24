@@ -163,11 +163,12 @@ class TestTranscriptGraph(unittest.TestCase):
             (3,8,'C','<SUB>','Substitution','')
         ]
         varaints = create_variants(var_data)
+        variant_pool = seqvar.VariantRecordPool(transcriptional=variants)
         insert_var = varaints.pop(-1)
         graph = create_dgraph1(seq, [])
         graph.add_null_root()
         node = graph.root.get_reference_next()
-        node = graph.apply_substitution(node, insert_var, sub_seq, [])
+        node = graph.apply_substitution(node, insert_var,  sub_seq, [])
         self.assertEqual(str(node.seq.seq), 'AAC')
         self.assertEqual(len(node.out_edges), 2)
         for edge in node.out_edges:

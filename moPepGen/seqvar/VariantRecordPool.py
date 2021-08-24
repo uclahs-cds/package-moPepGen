@@ -99,3 +99,54 @@ class VariantRecordPool():
             logger('Variant records sorted.')
 
         return variants
+
+    def filter_variants(self, gene_id:str, anno:GenomicAnnotation,
+            exclude_type:List[str], start:int=None, end:int=None,
+            intron:bool=True, segments:Iterable[VariantRecord]=None
+            ) -> List[VariantRecord]:
+        """ Filter variants of located at a given position (start and end) of
+        a gene.
+
+        Arguments:
+            gene_id (str): Gene ID
+            start (int): Start position with genetic coordinates.
+            end (int): End position with genetic coordinates. If
+            exclude_type (List[str]): Variant types that should be excluded.
+            anno (GenomicAnnotation): The genomic annotation object.
+        """
+        if segments:
+            def _filter(x):
+                for segment in segments:
+                    if segment.location.is_superset(x.location):
+                        return True
+                return False
+        elif start and end:
+            _filter = lambda x: x.location.start > start and x.location.end < end
+        elif start:
+            _filter = lambda x: x.location.start > start
+        elif end:
+            _filter = lambda x: x.location.end < end
+        else:
+            raise ValueError('Arguments provided do not match requriement.')
+
+        records = set()
+        for tx_id in anno.genes[gene_id].transcripts:
+            if tx_id in self.transcriptional:
+                for record in self.transcriptional[tx_id]:
+                    if record.type in exclude_type:
+                        continue
+                    record = anno.variant_coordinates_to_gene(record, gene_id)
+                    if _filter(record):
+                        records.add(record)
+            if not intron:
+                continue
+            if tx_id in self.intronic:
+                for record in self.intronic[tx_id]:
+                    if record.type in exclude_type:
+                        continue
+                    if _filter(record):
+                        records.add(record)
+        records = list(records)
+        records.sort()
+        return records
+
