@@ -79,7 +79,8 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                     break
         return super().create_variant_graph(filtered_variants)
 
-    def create_branch_and_expand(self, node:svgraph.TVGNode, n_rounds:int=4
+    @staticmethod
+    def create_branch_and_expand(node:svgraph.TVGNode, n_rounds:int=4
             ) -> svgraph.TVGNode:
         """ Create a branch of a given node and all its downstream nodes. The
         returned node is a leading node of a directed acyclic graph, and can be

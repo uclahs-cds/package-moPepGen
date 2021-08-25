@@ -8,13 +8,20 @@ from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import svgraph, dna, seqvar, gtf, aa
 
 
-def load_references(base_dir:Path=None) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation]:
+def load_references(base_dir:Path=None, index:bool=False
+        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation]:
     """ Load reference files """
     genome, anno = None, None
-    with open(base_dir/'genome.pickle', 'rb') as handle:
-        genome = pickle.load(handle)
-    with open(base_dir/'annotation.pickle', 'rb') as handle:
-        anno = pickle.load(handle)
+    if index:
+        with open(base_dir/'genome.pickle', 'rb') as handle:
+            genome = pickle.load(handle)
+        with open(base_dir/'annotation.pickle', 'rb') as handle:
+            anno = pickle.load(handle)
+    else:
+        genome = dna.DNASeqDict()
+        genome.dump_fasta(base_dir/'genome.fasta')
+        anno = gtf.GenomicAnnotation()
+        anno.dump_gtf(base_dir/'annotation.gtf')
     return genome, anno
 
 

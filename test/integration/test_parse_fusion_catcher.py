@@ -10,7 +10,7 @@ class TestParseFusionCatcher(TestCaseIntegration):
     """ Test cases for moPepGen parseSTARFusion """
     def test_fusioncatcher_parser(self):
         """ Test FusionCatcherParser """
-        genome, anno = load_references(Path('test/files/index'))
+        genome, anno = load_references(Path('test/files'))
         parse = parser.FusionCatcherParser.parse
         for record in parse(self.data_dir/'fusion/fusion_catcher.txt'):
             fusion_seq = record.fusion_sequence
