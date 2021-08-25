@@ -52,7 +52,7 @@ After the moPepGen metadata section, there should be a section for field informa
 
 ### 1.2 Point Mutation
 
-Below is an example of a TVF file for point mutation, including single nucleotide substitution and small INDEL.
+Below is an example of a GVF file for point mutation, including single nucleotide substitution and small INDEL.
 
 ```
 ##fileformat=VCFv4.2
@@ -74,7 +74,7 @@ The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene 
 
 ### 1.3 Fusion
 
-Below is an example of a TVF file for gene fusions.
+Below is an example of a GVF file for gene fusions.
 
 ```
 ##fileformat=VCFv4.2
@@ -178,13 +178,13 @@ Circular RNAs are derived from back-spliced exons. They exist as individual RNA 
 ##reference_index=/path/to/reference-index
 ##genome_fasta=/path/to/genome.fasta
 ##annotation_gtf=/path/to/annotation.gtf
-#gene_id	start	offset	length	intron	circ_id	transcript_id	gene_name
-ENSG0001	413	0,211,398	72,85,63	.	CIRC-ENSG0001-E2-E3-E4	ENST0001,ENST0002	SYMB1
-ENSG0002	112	0,175 	72,85	.	CIRC-ENSG0001-E3-E4	ENST0011,ENST0012	SYMB2
-ENSG0002	112	0,73,175 	72,103,85	2	CIRC-ENSG0001-E3-I3-E4	ENST0011,ENST0012	SYMB2
-ENSG0003	77	0,181,424	100,175,85	.	CIRC-ENSG0003-E2-E3-E4	ENST0021	SYMB3
-ENSG0003	77	0,101,181,357,424	100,80,175,67,85	2,4	CIRC-ENSG0003-E2-I2-E3-I3-E4	ENST0021	SYMB3
-ENSG0004	789	0	112	1	CI-ENSG0004-I3	ENST0041	SYMB4
+#gene_id  start  offset             length            intron  circ_id                       transcript_id      gene_name
+ENSG0001  413    0,211,398          72,85,63          .       CIRC-ENSG0001-E2-E3-E4        ENST0001,ENST0002  SYMB1
+ENSG0002  112    0,175              72,85             .       CIRC-ENSG0001-E3-E4           ENST0011,ENST0012  SYMB2
+ENSG0002  112    0,73,175           72,103,85         2       CIRC-ENSG0001-E3-I3-E4        ENST0011,ENST0012  SYMB2
+ENSG0003  77     0,181,424          100,175,85        .       CIRC-ENSG0003-E2-E3-E4        ENST0021           SYMB3
+ENSG0003  77     0,101,181,357,424  100,80,175,67,85  2,4     CIRC-ENSG0003-E2-I2-E3-I3-E4  ENST0021           SYMB3
+ENSG0004  789    0                  112               1       CI-ENSG0004-I3                ENST0041           SYMB4
 ```
 
 The circRNA TSV file is defined here to represent all circRNAs to be passed to moPepGen to call for variant peptides. In the TSV file, each row represents a circRNA. The TSV file has the columns below:
@@ -200,16 +200,16 @@ The circRNA TSV file is defined here to represent all circRNAs to be passed to m
 
 ## 3 Variant Peptide FASTA
 
-In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the TVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. A integer index is thus always added to the end to resolve redundancies.
+In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the GVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. A integer index is thus always added to the end to resolve redundancies.
 
-If the same peptide is found in multiple transcripts, the annotation is separated by ';'.
+If the same peptide is found in multiple transcripts, the annotation is separated by space.
 
 ```
 >ENST0001|ENSG0001|SYMB1|SNV_110-C-A|1
 XXXXXXXXXXXXXXXXXX
 >ENST0002|ENSG0002|SYMB2|SNV_210-T-A|SNV_220-G-C|1
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXX
->ENST0003|ENSG0003|SYMB3|INDEL_350-T-TACT|1||ENST0004|ENSG0004|SYMB4|SNV-55-C-G|1
+>ENST0003|ENSG0003|SYMB3|INDEL_350-T-TACT|1 ENST0004|ENSG0004|SYMB4|SNV-55-C-G|1
 XXXXXXXXXXXXXXXX
 >ENST0005|ENSG0005|SYMB5|INDEL_110-CAA-A|1
 XXXXXXXXXXXXXXXXXX
