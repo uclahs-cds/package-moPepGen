@@ -1,10 +1,14 @@
 """ Module for the moPepGen generateIndex subcommand """
-import argparse
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import pickle
 from moPepGen import dna, aa, gtf, logger
 from .common import add_args_cleavage, add_args_reference, add_args_verbose, \
     print_help_if_missing_args, print_start_message
 
+
+if TYPE_CHECKING:
+    import argparse
 
 # pylint: disable=W0212
 def add_subparser_generate_index(subparsers:argparse._SubParsersAction):

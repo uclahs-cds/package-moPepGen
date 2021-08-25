@@ -3,7 +3,7 @@ import unittest
 from typing import Deque
 from collections import deque
 from test.unit import create_dgraph2, create_dgraph1, create_dna_record_dict, \
-    create_dna_seq_with_coordinates, create_genomic_annotation, \
+    create_genomic_annotation, \
     create_variant, create_variants
 from moPepGen import svgraph, seqvar
 from moPepGen.SeqFeature import FeatureLocation

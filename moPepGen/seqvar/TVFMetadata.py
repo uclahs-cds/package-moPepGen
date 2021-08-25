@@ -1,9 +1,9 @@
-""" Module for TVF metadata """
+""" Module for GVF metadata """
 from __future__ import annotations
 from typing import List
 from moPepGen import __version__
 from moPepGen.seqvar import SINGLE_NUCLEOTIDE_SUBSTITUTION
-from .TVFMetadataInfo import TVF_METADATA_INFO
+from .TVFMetadataInfo import GVF_METADATA_INFO
 
 
 ALT_DESCRIPTION = {
@@ -17,9 +17,9 @@ ALT_DESCRIPTION = {
     'FUSION': 'Gene fusion'
 }
 
-class TVFMetadata():
-    """ A TVFMetadata object contains the metadata section to be written into
-    a TVF file.
+class GVFMetadata():
+    """ A GVFMetadata object contains the metadata section to be written into
+    a GVF file.
 
     Attributes:
         parser (str): The moPepGen parser
@@ -37,7 +37,7 @@ class TVFMetadata():
         self.genome_fasta = genome_fasta
         self.annotation_gtf = annotation_gtf
         self.alt = {}
-        self.info = TVF_METADATA_INFO['Base']
+        self.info = GVF_METADATA_INFO['Base']
         self.added_types = []
 
     def add_info(self, variant_type:str) -> None:
@@ -48,16 +48,16 @@ class TVFMetadata():
         if variant_type in SINGLE_NUCLEOTIDE_SUBSTITUTION:
             return
         if variant_type == 'Fusion':
-            self.info.update(TVF_METADATA_INFO['Fusion'])
+            self.info.update(GVF_METADATA_INFO['Fusion'])
             self.added_types.append('Fusion')
         elif variant_type == 'Insertion':
-            self.info.update(TVF_METADATA_INFO['Insertion'])
+            self.info.update(GVF_METADATA_INFO['Insertion'])
             self.added_types.append('Insertion')
         elif variant_type == 'Deletion':
-            self.info.update(TVF_METADATA_INFO['Deletion'])
+            self.info.update(GVF_METADATA_INFO['Deletion'])
             self.added_types.append('Deletion')
         elif variant_type == 'Substitution':
-            self.info.update(TVF_METADATA_INFO['Substitution'])
+            self.info.update(GVF_METADATA_INFO['Substitution'])
             self.added_types.append('Substitution')
         else:
             raise ValueError(f'Unknown variant type: {variant_type}')
@@ -68,7 +68,7 @@ class TVFMetadata():
             self.alt[variant_type] = ALT_DESCRIPTION[variant_type]
 
     def to_strings(self) -> List[str]:
-        """ Convert metadata to a list of strings to be written to a TVF file. """
+        """ Convert metadata to a list of strings to be written to a GVF file. """
         info_lines = []
         for key,val in self.info.items():
             number = val['Number']

@@ -57,7 +57,7 @@ class CircRNAModel():
         return circ
 
     def to_string(self) -> str:
-        """ Convert to a TVF record """
+        """ Convert to a string """
         gene_id = self.gene_id
         start = int(self.fragments[0].location.start)
         offset, length = [], []

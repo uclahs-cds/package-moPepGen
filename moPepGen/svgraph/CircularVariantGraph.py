@@ -128,8 +128,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         return new_node
 
     def find_orf_in_outbound_nodes(self, node:svgraph.TVGNode,
-            carry_over:dna.DNASeqRecordWithCoordinates,
-            min_size:int=6
+            carry_over:dna.DNASeqRecordWithCoordinates
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
         """ Look for potential start codon int the out bound nodes.
 

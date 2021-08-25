@@ -1,4 +1,4 @@
-""" A brute forth algorithm for calling variant peptides from a TVF file. """
+""" A brute forth algorithm for calling variant peptides from a GVF file. """
 import sys
 import argparse
 from typing import List, Dict, Tuple
@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument(
         '-i', '--input-gvf',
         type=Path,
-        help='TVF file'
+        help='GVF file'
     )
     parser.add_argument(
         '-r', '--reference-dir',

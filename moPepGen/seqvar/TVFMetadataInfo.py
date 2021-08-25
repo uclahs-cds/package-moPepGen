@@ -1,8 +1,8 @@
-""" TVF Metadata Info """
+""" GVF Metadata Info """
 from typing import Dict, Union
 
 
-TVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
+GVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
     'Base': {
         'TRANSCRIPT_ID': {
             'Number': 1,

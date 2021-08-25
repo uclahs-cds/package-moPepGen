@@ -14,7 +14,19 @@ if TYPE_CHECKING:
 T = Dict[str, List[VariantRecord]]
 
 class VariantRecordPool():
-    """ Variant Record Pool """
+    """ This is used to store all variant records read in from GVF files.
+    Variant records (VariantRecord) are first filtered based on their location
+    and put into different buckets of the pool.
+
+    Attributes:
+        transcriptional (Dict[str, List[VariantRecord]]): Variant records
+            located in the transcript regions (exons), in transcriptional
+            coordinates.
+        intronic (Dict[str, List[VariantRecord]]): Variant records located in
+            the intronic regions. In gene coordinates.
+        genetic (Dict[str, List[VariantRecord]]): Variant records without a
+            transcript ID (e.g., UTR). In gene coordinates.
+    """
     def __init__(self, transcriptional:T=None, intronic:T=None, genetic:T=None):
         """ Constructor """
         self.transcriptional = transcriptional or {}
@@ -151,4 +163,3 @@ class VariantRecordPool():
         records = list(records)
         records.sort()
         return records
-

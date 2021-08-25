@@ -1,12 +1,15 @@
 """ Module for CIRCexplorer parser """
-import argparse
-from typing import List, Dict
+from __future__ import annotations
+from typing import List, Dict, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import logger, circ
 from moPepGen.parser import CIRCexplorerParser
 from .common import add_args_reference, add_args_verbose, print_start_message,\
     print_help_if_missing_args, load_references, generate_metadata
 
+
+if TYPE_CHECKING:
+    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):

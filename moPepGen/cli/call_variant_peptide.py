@@ -1,12 +1,14 @@
 """ Module for call variant paptide """
 from __future__ import annotations
-from typing import List, Set
-import argparse
-from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, circ
-from moPepGen.SeqFeature import FeatureLocation
+from typing import List, Set, TYPE_CHECKING
+from moPepGen import svgraph, aa, seqvar, logger, circ
 from .common import add_args_cleavage, add_args_verbose, print_start_message, \
     print_help_if_missing_args, add_args_reference, load_references
 
+
+if TYPE_CHECKING:
+    import argparse
+    from moPepGen import dna, gtf
 
 # pylint: disable=W0212
 def add_subparser_call_peptides(subparsers:argparse._SubParsersAction):

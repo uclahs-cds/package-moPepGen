@@ -166,7 +166,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
 
     return genome, annotation, canonical_peptides
 
-def generate_metadata(args:argparse.Namespace) -> seqvar.TVFMetadata:
+def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
     """ Generate metadata """
     if args.index_dir:
         reference_index = args.index_dir.absolute()
@@ -179,7 +179,7 @@ def generate_metadata(args:argparse.Namespace) -> seqvar.TVFMetadata:
         annotation_gtf = args.annotation_gtf.absolute() if \
             hasattr(args, 'annotation_gtf') else None
 
-    return seqvar.TVFMetadata(
+    return seqvar.GVFMetadata(
         parser='parseVEP',
         reference_index=reference_index,
         genome_fasta=genome_fasta,

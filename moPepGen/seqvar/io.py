@@ -1,7 +1,7 @@
 """ Module for moPepGen seqvar IO """
 from typing import Iterable
 import tempfile
-from moPepGen.seqvar.TVFMetadata import TVFMetadata
+from moPepGen.seqvar.TVFMetadata import GVFMetadata
 from moPepGen.seqvar.VariantRecord import VariantRecord, ATTRS_POSITION
 from moPepGen.SeqFeature import FeatureLocation
 
@@ -72,7 +72,7 @@ def parse(path:str) -> Iterable[VariantRecord]:
 
 
 def write(variants:Iterable[VariantRecord], output_path:str,
-        metadata:TVFMetadata):
+        metadata:GVFMetadata):
     """ Write variants to an out handle.
 
     Args:

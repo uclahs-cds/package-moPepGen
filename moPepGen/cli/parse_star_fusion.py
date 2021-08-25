@@ -1,10 +1,13 @@
 """ Module for STAR-Fusion parser """
-from typing import List
-import argparse
-from moPepGen import logger, gtf, seqvar, parser
+from __future__ import annotations
+from typing import List, TYPE_CHECKING
+from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_verbose, print_start_message,\
     print_help_if_missing_args, load_references, generate_metadata
 
+
+if TYPE_CHECKING:
+    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
@@ -13,7 +16,7 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     p = subparsers.add_parser(
         name='parseSTARFusion',
         help='Parse STAR-Fusion result for moPepGen to call variant peptides.',
-        description='Parse the STAR-Fusion result to TVF format of variant'
+        description='Parse the STAR-Fusion result to GVF format of variant'
         'records for moPepGen to call variant peptides.'
     )
 
@@ -37,7 +40,7 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     print_help_if_missing_args(p)
 
 def parse_star_fusion(args:argparse.Namespace) -> None:
-    """ Parse the STAR-Fusion's output and save it in TVF format. """
+    """ Parse the STAR-Fusion's output and save it in GVF format. """
     # unpack args
     fusion = args.fusion
     output_prefix:str = args.output_prefix

@@ -1,7 +1,7 @@
 """ Module for generic variant record """
 from __future__ import annotations
 import copy
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from moPepGen import ERROR_NO_TX_AVAILABLE
 from moPepGen.SeqFeature import FeatureLocation
 
@@ -156,7 +156,7 @@ class VariantRecord():
             f"{self.type}")
 
     def to_string(self) -> str:
-        """ Convert to a TVF record. """
+        """ Convert to a GVF record. """
         chrom = self.location.seqname
         # using 1-base position
         pos = str(int(self.location.start) + 1)
