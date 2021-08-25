@@ -6,11 +6,12 @@ import copy
 import re
 from collections import deque
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import svgraph, dna, seqvar
+from moPepGen import svgraph, seqvar
 
 
 if TYPE_CHECKING:
     from moPepGen import circ
+    from moPepGen.dna import DNASeqRecordWithCoordinates
 
 class CircularVariantGraph(svgraph.TranscriptVariantGraph):
     """ Defines a directed cyclic graph for circular nucleotide molecules such
@@ -23,7 +24,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             with
         attrs (dict): additional attributes
     """
-    def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
+    def __init__(self, seq:Union[DNASeqRecordWithCoordinates,None],
             _id:str, circ_record:circ.CircRNAModel=None, attrs:dict=None):
         """ Construct a CircularVariantGraph
 
@@ -40,6 +41,26 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         self.add_edge(self.root, self.root, _type='reference')
         self.attrs = attrs
         self.circ = circ_record
+        if self.circ:
+            self.as_frameshifting()
+
+    def as_frameshifting(self):
+        """ Add a variant record to the frameshifting of the root node. This
+        will treat all peptides as variant peptide in the later steps. """
+        circ_start = self.seq.locations[0].ref.start
+        location = FeatureLocation(
+            seqname=self.circ.gene_id,
+            start=circ_start,
+            end=circ_start + 1
+        )
+        variant = seqvar.VariantRecord(
+            location=location,
+            ref=self.seq.seq[0],
+            alt='<circRNA>',
+            _type='circRNA',
+            _id=self.id
+        )
+        self.root.frameshifts.add(variant)
 
     def create_variant_graph(self, variants: List[seqvar.VariantRecord]):
         """ Apply a list of variants to the graph. Variants not in the
@@ -99,21 +120,6 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                 else:
                     frameshifts = copy.copy(source_out_node.frameshifts)
                     frameshifts.update(target.frameshifts)
-                    if source_out_node is self.root:
-                        circ_start = self.circ.fragments[0].location.start
-                        location = FeatureLocation(
-                            seqname=self.circ.gene_id,
-                            start=circ_start,
-                            end=circ_start + 1
-                        )
-                        circ_variant = seqvar.VariantRecord(
-                            location=location,
-                            ref=source_out_node.seq.seq[0],
-                            alt='<circRNA>',
-                            _type='circRNA',
-                            _id=self.id
-                        )
-                        frameshifts.add(circ_variant)
                     new_out_node = svgraph.TVGNode(
                         seq=source_out_node.seq,
                         variants=copy.copy(source_out_node.variants),
@@ -128,13 +134,13 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         return new_node
 
     def find_orf_in_outbound_nodes(self, node:svgraph.TVGNode,
-            carry_over:dna.DNASeqRecordWithCoordinates
+            carry_over:DNASeqRecordWithCoordinates
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
         """ Look for potential start codon int the out bound nodes.
 
         Args:
             node (svgraph.TVGNode): The target node.
-            carry_over (dna.DNASeqRecordWithCoordinates): The sequence to be
+            carry_over (DNASeqRecordWithCoordinates): The sequence to be
                 carried over to the outbound nodes. Usually 2 last nucleotides
                 should be carried over, to see whether there a start codon is
                 splitted by the edge.

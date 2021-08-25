@@ -1,9 +1,12 @@
 """ Moduel for CircRNA """
 from __future__ import annotations
-from typing import List
+from typing import List, TYPE_CHECKING
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
-from moPepGen import dna, gtf
 
+
+if TYPE_CHECKING:
+    from moPepGen.dna import DNASeqRecordWithCoordinates
+    from moPepGen.gtf import GeneAnnotationModel
 
 class CircRNAModel():
     """
@@ -27,7 +30,7 @@ class CircRNAModel():
         self.gene_name = gene_name
         self.gene_locations = []
 
-    def get_gene_coordinates(self, gene:gtf.GeneAnnotationModel) -> None:
+    def get_gene_coordinates(self, gene:GeneAnnotationModel) -> None:
         """ Get the coordinates of the gene """
         features:List[SeqFeature] = []
         for i,fragment in enumerate(self.fragments):
@@ -43,11 +46,11 @@ class CircRNAModel():
             features.append(feature)
         self.gene_locations = features
 
-    def get_circ_rna_sequence(self, seq:dna.DNASeqRecordWithCoordinates):
+    def get_circ_rna_sequence(self, seq:DNASeqRecordWithCoordinates):
         """ Get the DNA sequence of the circRNA.
 
         Args:
-            seq (dna.DNASeqRecordWithCoordinates): The DNA sequence of the
+            seq (DNASeqRecordWithCoordinates): The DNA sequence of the
                 transcript where the circRNA comes from.
         """
         circ = None
