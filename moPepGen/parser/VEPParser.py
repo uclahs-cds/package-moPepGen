@@ -138,7 +138,8 @@ class VEPRecord():
         if self.allele == '-':
             if alt_start == 0:
                 ref = str(seq.seq[alt_start:alt_end])
-                alt = str(genome[chrom_seqname].seq[alt_start_genomic - 1])
+                i = alt_start_genomic - 1
+                alt = str(genome[chrom_seqname].seq[i:i+1])
             else:
                 alt_start -= 1
                 ref = str(seq.seq[alt_start:alt_end])
