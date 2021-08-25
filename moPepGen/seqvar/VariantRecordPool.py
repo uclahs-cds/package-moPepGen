@@ -101,8 +101,9 @@ class VariantRecordPool():
         return variants
 
     def filter_variants(self, gene_id:str, anno:GenomicAnnotation,
-            exclude_type:List[str], start:int=None, end:int=None,
-            intron:bool=True, segments:Iterable[VariantRecord]=None
+            genome:DNASeqDict, exclude_type:List[str], start:int=None,
+            end:int=None, intron:bool=True,
+            segments:Iterable[VariantRecord]=None, return_coord:str='gene'
             ) -> List[VariantRecord]:
         """ Filter variants of located at a given position (start and end) of
         a gene.
@@ -114,6 +115,12 @@ class VariantRecordPool():
             exclude_type (List[str]): Variant types that should be excluded.
             anno (GenomicAnnotation): The genomic annotation object.
         """
+        if return_coord not in ['gene', 'transcript']:
+            raise ValueError(
+                "Don't know how to return variants in coordinate of "
+                f"{return_coord}. return_coord must be either 'gene' or "
+                "'transcript'"
+            )
         if segments:
             def _filter(x):
                 for segment in segments:
@@ -135,9 +142,12 @@ class VariantRecordPool():
                 for record in self.transcriptional[tx_id]:
                     if record.type in exclude_type:
                         continue
-                    record = anno.variant_coordinates_to_gene(record, gene_id)
-                    if _filter(record):
-                        records.add(record)
+                    record_gene = anno.variant_coordinates_to_gene(record, gene_id)
+                    if _filter(record_gene):
+                        if return_coord == 'gene':
+                            records.add(record_gene)
+                        else:
+                            records.add(record)
             if not intron:
                 continue
             if tx_id in self.intronic:
@@ -145,7 +155,10 @@ class VariantRecordPool():
                     if record.type in exclude_type:
                         continue
                     if _filter(record):
-                        records.add(record)
+                        if return_coord == 'gene':
+                            records.add(record)
+                        else:
+                            records.add(record.to_transcript_variants(anno, genome))
         records = list(records)
         records.sort()
         return records

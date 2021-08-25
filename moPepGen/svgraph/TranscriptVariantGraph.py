@@ -313,7 +313,8 @@ class TranscriptVariantGraph():
             accepter_gene_id, accepter_tx_id)
 
         accepter_variant_records = variant_pool.filter_variants(
-            accepter_gene_id, anno, exclude_type=['Fusion'], start=breakpoint_tx
+            accepter_gene_id, anno, genome, exclude_type=['Fusion'],
+            start=breakpoint_tx, return_coord='transcript'
         )
 
         branch = TranscriptVariantGraph(accepter_tx_seq, self.id)
@@ -417,7 +418,7 @@ class TranscriptVariantGraph():
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation
             ) -> svgraph.TVGNode:
         """ Apply an insertion into the the TVG graph. """
-        gene_id = variant.attrs['GENE_ID']
+        gene_id = variant.attrs['DONOR_GENE_ID']
         gene_model = anno.genes[gene_id]
         chrom = gene_model.chrom
         donor_start = variant.get_donor_start()
@@ -425,7 +426,7 @@ class TranscriptVariantGraph():
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
         insert_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-        insert_variants = variant_pool.filter_variants(gene_id, anno,
+        insert_variants = variant_pool.filter_variants(gene_id, anno, genome,
             exclude_type, start=donor_start, end=donor_end)
         # add the reference sequence to the insertion sequence.
         ref_seq_location = dna.MatchedLocation(
@@ -453,7 +454,7 @@ class TranscriptVariantGraph():
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation
             ) -> svgraph.TVGNode:
         """ Apply a substitution variant into the graph """
-        gene_id = variant.attrs['GENE_ID']
+        gene_id = variant.attrs['DONOR_GENE_ID']
         gene_model = anno.genes[gene_id]
         chrom = gene_model.chrom
         donor_start = variant.get_donor_start()
@@ -461,8 +462,8 @@ class TranscriptVariantGraph():
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
         sub_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-        sub_variants = variant_pool.filter_variants(gene_id, anno, exclude_type,
-            start=donor_start, end=donor_end)
+        sub_variants = variant_pool.filter_variants(gene_id, anno, genome,
+            exclude_type, start=donor_start, end=donor_end)
         var = seqvar.VariantRecordWithCoordinate(
             variant=variant,
             location=FeatureLocation(start=0, end=len(sub_seq.seq))

@@ -129,17 +129,18 @@ class MXERecord(RMATSRecord):
 
         if not have_second:
             for tx_id in have_first:
-                location = FeatureLocation(seqname=tx_id, start=first_start,
+                location = FeatureLocation(seqname=self.gene_id, start=first_start,
                     end=first_end)
                 seq = model.get_transcript_sequence(genome[chrom])
                 ref = str(seq.seq[first_start])
                 alt = '<SUB>'
                 attrs = {
-                    'GENE_ID': self.gene_id,
+                    'GENE_ID': tx_id,
                     'START': first_start,
                     'END': first_end,
                     'DONOR_START': second_start,
                     'DONOR_END': second_end,
+                    'DONOR_GENE_ID': self.gene_id,
                     'COORDINATE': 'gene',
                     'GENE_SYMBOL': model.transcript.attributes['gene_name'],
                     'GENOMIC_POSITION': f'{chrom}-{first_start + 1}:{first_end}-'
@@ -150,7 +151,7 @@ class MXERecord(RMATSRecord):
                 variants.append(record)
 
             for tx_id in have_both:
-                location = FeatureLocation(seqname=tx_id, start=first_start,
+                location = FeatureLocation(seqname=self.gene_id, start=first_start,
                     end=first_end)
                 ref = str(gene_seq.seq[first_start])
                 alt = '<DEL>'
@@ -167,7 +168,7 @@ class MXERecord(RMATSRecord):
 
         if not have_first:
             for tx_id in have_second:
-                location = FeatureLocation(seqname=tx_id, start=second_start,
+                location = FeatureLocation(seqname=self.gene_id, start=second_start,
                     end=second_end)
                 ref = str(gene_seq.seq[second_start])
                 alt = '<SUB>'
@@ -177,6 +178,7 @@ class MXERecord(RMATSRecord):
                     'END': second_end,
                     'DONOR_START': first_start,
                     'DONOR_END': first_end,
+                    'DONOR_GENE_ID': self.gene_id,
                     'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': f'{chrom}-{second_start + 1}:{second_end}-'
                     f'{first_start + 1}:{first_end}'
@@ -186,7 +188,7 @@ class MXERecord(RMATSRecord):
                 variants.append(record)
 
             for tx_id in have_both:
-                location = FeatureLocation(seqname=tx_id, start=second_start,
+                location = FeatureLocation(seqname=self.gene_id, start=second_start,
                     end=second_end)
                 ref = str(gene_seq.seq[second_start])
                 alt = '<DEL>'

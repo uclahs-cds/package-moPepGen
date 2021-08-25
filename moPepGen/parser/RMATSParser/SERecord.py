@@ -123,8 +123,9 @@ class SERecord(RMATSRecord):
                 alt = '<INS>'
                 attrs = {
                     'TRANSCRIPTS': tx_id,
-                    'START': start,
-                    'END': end,
+                    'DONOR_START': start,
+                    'DONOR_END': end,
+                    'DONOR_GENE_ID': self.gene_id,
                     'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': genomic_position
                 }

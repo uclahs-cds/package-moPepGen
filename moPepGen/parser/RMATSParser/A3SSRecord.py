@@ -88,7 +88,7 @@ class A3SSRecord(RMATSRecord):
 
         if not short:
             for tx_id in long:
-                location = FeatureLocation(seqname=tx_id,
+                location = FeatureLocation(seqname=self.gene_id,
                     start=start_gene, end=end_gene)
                 ref = str(gene_seq.seq[start_gene])
                 alt = '<DEL>'
@@ -115,16 +115,17 @@ class A3SSRecord(RMATSRecord):
                 )
             for tx_id in short:
                 location = FeatureLocation(
-                    seqname=tx_id,
+                    seqname=self.gene_id,
                     start=insert_position,
                     end=insert_position + 1
                 )
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {
-                    'TRANSCRIPTS': self.gene_id,
-                    'START': start_gene,
-                    'END': end_gene,
+                    'TRANSCRIPTS': tx_id,
+                    'DONOR_START': start_gene,
+                    'DONOR_END': end_gene,
+                    'DONOR_GENE_ID': self.gene_id,
                     'GENE_SYMBOL': gene_model.attributes['gene_name'],
                     'GENOMIC_POSITION': genomic_position
                 }

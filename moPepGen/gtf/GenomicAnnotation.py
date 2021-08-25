@@ -249,6 +249,9 @@ class GenomicAnnotation():
                 end_genomic = end - left + exon.location.start
                 break
 
+            if start_genomic is None or end_genomic is None:
+                raise ValueError('The variant is not is the range of the gene.')
+
             start_gene = start_genomic - self.genes[gene_id].location.start
             end_gene = end_genomic - self.genes[gene_id].location.start
 

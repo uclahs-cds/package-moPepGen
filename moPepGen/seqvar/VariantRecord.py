@@ -123,18 +123,14 @@ class VariantRecord():
 
     def get_donor_start(self) -> int:
         """ Get donor start position """
-        if self.type == 'Insertion':
-            return int(self.attrs['START'])
-        if self.type == 'Substitution':
+        if self.type in ['Insertion', 'Substitution']:
             return int(self.attrs['DONOR_START'])
         raise ValueError(f"Don't know how to get donor start for variant type "
             f"{self.type}")
 
     def get_donor_end(self) -> int:
         """ Get donor end position """
-        if self.type == 'Insertion':
-            return int(self.attrs['END'])
-        if self.type == 'Substitution':
+        if self.type in ['Insertion', 'Substitution']:
             return int(self.attrs['DONOR_END'])
         raise ValueError(f"Don't know how to get donor start for variant type "
             f"{self.type}")
@@ -217,11 +213,7 @@ class VariantRecord():
         """ Checks if the variant is frameshifting. """
         if self.type == 'Fusion':
             return True
-        if self.type == 'Insertion':
-            end = int(self.attrs['END'])
-            start = int(self.attrs['START'])
-            return abs(end - start) % 3 != 0
-        if self.type == 'Substritution':
+        if self.type in ['Insertion', 'Substritution']:
             end = int(self.attrs['DONOR_END'])
             start = int(self.attrs['DONOR_START'])
             return abs(end - start) % 3 != 0

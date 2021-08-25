@@ -183,7 +183,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     # represented as Insertion, Deletion or Substitution.
     exclusion_variant_types = ['Insertion', 'Deletion', 'Substitution']
 
-    variant_records = variant_pool.filter_variants(gene_id, annotation,
+    variant_records = variant_pool.filter_variants(gene_id, annotation, genome,
         exclusion_variant_types, intron=False, segments=record.fragments)
 
     cgraph = svgraph.CircularVariantGraph(

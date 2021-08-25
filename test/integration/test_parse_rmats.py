@@ -49,8 +49,8 @@ class TestParseRMATS(TestCaseIntegration):
         record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
         self.assertTrue(record.location.start, 870)
         self.assertTrue(record.id, 'SE_870')
-        self.assertTrue(int(record.attrs['START']), 870)
-        self.assertTrue(int(record.attrs['END']), 1097)
+        self.assertTrue(int(record.attrs['DONOR_START']), 870)
+        self.assertTrue(int(record.attrs['DONOR_END']), 1097)
         self.assertTrue(record.type, 'Insertion')
 
     def test_parse_rmats_a5ss_case_1(self):

@@ -131,9 +131,9 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
 
 
 def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str,
-        attrs:dict=None) -> seqvar.VariantRecord:
+        attrs:dict=None, seqname:str=None) -> seqvar.VariantRecord:
     """ Helper function to create a VariantRecord """
-    location = FeatureLocation(start=start, end=end)
+    location = FeatureLocation(start=start, end=end, seqname=seqname)
     return seqvar.VariantRecord(
         location=location, ref=ref, alt=alt,
         _type=_type, _id=_id, attrs=attrs
@@ -165,7 +165,7 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
     chrom = data['chrom']
     strand = data['strand']
     entry = data['transcript']
-    location = FeatureLocation(start=entry[0], end=entry[1])
+    location = FeatureLocation(start=entry[0], end=entry[1], seqname=chrom)
     transcript = SeqFeature(chrom=chrom, location=location,
         attributes=entry[2], strand=strand)
     exons = []
