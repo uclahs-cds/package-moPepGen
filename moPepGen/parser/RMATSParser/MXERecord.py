@@ -156,7 +156,7 @@ class MXERecord(RMATSRecord):
                 ref = str(gene_seq.seq[first_start])
                 alt = '<DEL>'
                 attrs = {
-                    'TRANSCRIPTS': tx_id,
+                    'TRANSCRIPT_ID': tx_id,
                     'START': first_start,
                     'END': first_end,
                     'GENE_SYMBOL': gene_model.attributes['gene_name'],
@@ -173,7 +173,7 @@ class MXERecord(RMATSRecord):
                 ref = str(gene_seq.seq[second_start])
                 alt = '<SUB>'
                 attrs = {
-                    'TRANSCRIPTS': tx_id,
+                    'TRANSCRIPT_ID': tx_id,
                     'START': second_start,
                     'END': second_end,
                     'DONOR_START': first_start,
@@ -193,7 +193,7 @@ class MXERecord(RMATSRecord):
                 ref = str(gene_seq.seq[second_start])
                 alt = '<DEL>'
                 attrs = {
-                    'TRANSCRIPTS': tx_id,
+                    'TRANSCRIPT_ID': tx_id,
                     'START': second_start,
                     'END': second_end,
                     'GENE_SYMBOL': gene_model.attributes['gene_name'],

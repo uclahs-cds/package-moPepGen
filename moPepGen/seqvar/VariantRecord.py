@@ -221,61 +221,60 @@ class VariantRecord():
             return (self.location.end - self.location.start - 1) % 3 != 0
         return abs(len(self.alt) - len(self.ref)) % 3 != 0
 
-    def to_transcript_variants(self, anno:GenomicAnnotation, genome:DNASeqDict,
-            tx_ids:List[str]=None) -> List[VariantRecord]:
+    def to_transcript_variant(self, anno:GenomicAnnotation, genome:DNASeqDict,
+            tx_id:str=None) -> VariantRecord:
         """ Get variant records with transcription coordinates """
-        if not tx_ids:
-            tx_ids = self.attrs['TRANSCRIPTS']
-        if not tx_ids:
+        if not tx_id:
+            tx_id = self.attrs['TRANSCRIPT_ID']
+        if not tx_id:
             raise ValueError(ERROR_NO_TX_AVAILABLE)
-        variants = []
-        for tx_id in tx_ids:
-            tx_model = anno.transcripts[tx_id]
-            chrom = tx_model.transcript.chrom
-            tx_seq = tx_model.get_transcript_sequence(genome[chrom])
-            tx_start = tx_model.transcript.location.start
-            start_genomic = anno.coordinate_gene_to_genomic(
-                self.location.start, self.location.seqname
-            )
-            end_genomic = anno.coordinate_gene_to_genomic(
-                self.location.end, self.location.seqname
-            )
-            if start_genomic < tx_start:
-                if end_genomic < tx_start:
-                    continue
-                if not tx_model.is_cds_start_nf():
-                    continue
-                start = 0
-                end = anno.coordinate_gene_to_transcript(
-                    self.location.end + 1, self.location.seqname, tx_id
+        tx_model = anno.transcripts[tx_id]
+        chrom = tx_model.transcript.chrom
+        tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+        tx_start = tx_model.transcript.location.start
+        start_genomic = anno.coordinate_gene_to_genomic(
+            self.location.start, self.location.seqname
+        )
+        end_genomic = anno.coordinate_gene_to_genomic(
+            self.location.end, self.location.seqname
+        )
+        if start_genomic < tx_start:
+            if end_genomic < tx_start:
+                raise ValueError(
+                    'Variant not associated with the given transcript'
                 )
-                ref = str(tx_seq.seq[0:end])
-                alt = str(self.alt[1:] + ref[-1])
-            else:
-                start = anno.coordinate_gene_to_transcript(
-                    self.location.start, self.location.seqname, tx_id
+            if not tx_model.is_cds_start_nf():
+                raise ValueError(
+                    'Variant not associated with the given transcript'
                 )
-                end = anno.coordinate_gene_to_transcript(
-                    self.location.end, self.location.seqname, tx_id
-                )
-                ref = self.ref
-                alt = self.alt
-            location = FeatureLocation(seqname=tx_id, start=start, end=end)
-            attrs = copy.deepcopy(self.attrs)
-            del attrs['TRANSCRIPTS']
-            attrs['GENE_ID'] = self.location.seqname
-            variant = VariantRecord(
-                location=location,
-                ref=ref,
-                alt=alt,
-                _type=self.type,
-                _id=self.id,
-                attrs=attrs
+            start = 0
+            end = anno.coordinate_gene_to_transcript(
+                self.location.end + 1, self.location.seqname, tx_id
             )
-            variants.append(variant)
-        variants.sort()
-        return variants
+            ref = str(tx_seq.seq[0:end])
+            alt = str(self.alt[1:] + ref[-1])
+        else:
+            start = anno.coordinate_gene_to_transcript(
+                self.location.start, self.location.seqname, tx_id
+            )
+            end = anno.coordinate_gene_to_transcript(
+                self.location.end, self.location.seqname, tx_id
+            )
+            ref = self.ref
+            alt = self.alt
+        location = FeatureLocation(seqname=tx_id, start=start, end=end)
+        attrs = copy.deepcopy(self.attrs)
+        del attrs['TRANSCRIPT_ID']
+        attrs['GENE_ID'] = self.location.seqname
+        return VariantRecord(
+            location=location,
+            ref=ref,
+            alt=alt,
+            _type=self.type,
+            _id=self.id,
+            attrs=attrs
+        )
 
-    def has_transcripts(self):
+    def has_transcript(self):
         """ Checks if the variant has any transcript IDs annotated """
-        return 'TRANSCRIPTS' in self.attrs and len(self.attrs['TRANSCRIPTS']) > 0
+        return 'TRANSCRIPT_ID' in self.attrs

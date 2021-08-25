@@ -80,7 +80,7 @@ class RIRecord(RMATSRecord):
             ref = str(gene_seq.seq[start_gene])
             alt = '<INS>'
             attrs = {
-                'TRANSCRIPTS': tx_id,
+                'TRANSCRIPT_ID': tx_id,
                 'DONOR_START': start_gene,
                 'DONOR_END': end_gene,
                 'DONOR_GENE_ID': self.gene_id,

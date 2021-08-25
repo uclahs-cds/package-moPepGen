@@ -33,8 +33,6 @@ def parse(path:str) -> Iterable[VariantRecord]:
                 val = val.strip('"')
                 if key in ATTRS_POSITION:
                     val = str(int(val) - 1)
-                elif key == 'TRANSCRIPTS':
-                    val = val.split(',')
                 attrs[key] = val
 
             if not alt.startswith('<'):

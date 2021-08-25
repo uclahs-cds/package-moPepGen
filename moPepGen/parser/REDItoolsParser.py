@@ -131,7 +131,7 @@ class REDItoolsRecord():
                     alt = str(Seq(alt).complement())
                 _id = f'RNA_editing_site-{ref}-{alt}'
                 attrs = {
-                    'TRANSCRIPTS': [tx_id]
+                    'TRANSCRIPT_ID': tx_id
                 }
                 record = VariantRecord(
                     location=location,

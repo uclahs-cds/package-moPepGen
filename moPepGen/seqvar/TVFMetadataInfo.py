@@ -4,10 +4,10 @@ from typing import Dict, Union
 
 TVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
     'Base': {
-        'GENE_ID': {
+        'TRANSCRIPT_ID': {
             'Number': 1,
             'Type': 'String',
-            'Description': 'Transcript\'s Gene ID'
+            'Description': 'Transcript ID'
         },
         'GENE_SYMBOL': {
             'Number': 1,
@@ -38,20 +38,15 @@ TVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
         }
     },
     'Insertion': {
-        'START': {
+        'DONOR_START': {
             'Number': 1,
             'Type': 'Integer',
-            'Description': 'Start Position'
+            'Description': 'Donor Start Position'
         },
-        'END': {
+        'DONOR_END': {
             'Number': 1,
             'Type': 'Integer',
-            'Description': 'End Position'
-        },
-        'COORDINATE': {
-            'Number': 1,
-            'Type': 'String',
-            'Description': 'Coordinate for Insertion or Substitution'
+            'Description': 'Donor End Position'
         }
     },
     'Deletion': {

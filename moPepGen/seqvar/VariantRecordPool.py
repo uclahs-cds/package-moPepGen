@@ -31,11 +31,6 @@ class VariantRecordPool():
         else:
             self.genetic[gene_id].append(record)
 
-    def add_genetic_variants(self, records:Iterable[VariantRecord], gene_id:str=None):
-        """ Add multiple VariantRecord with genetic coordinate  """
-        for record in records:
-            self.add_genetic_variant(record=record, gene_id=gene_id)
-
     def add_intronic_variant(self, record:VariantRecord, tx_id:str):
         """ Add a variant with genetic coordinate that is in the intron of
         a transcript """
@@ -59,12 +54,6 @@ class VariantRecordPool():
         else:
             self.transcriptional[tx_id].append(record)
 
-    def add_transcriptional_variants(self, records:Iterable[VariantRecord],
-            tx_id:str=None):
-        """ Add multiple VariantRecords with transcriptional coordinates """
-        for record in records:
-            self.add_transcriptional_variant(record, tx_id)
-
     @staticmethod
     def load_variants(files:Path, anno:GenomicAnnotation,
             genome:DNASeqDict, verbose:bool) -> VariantRecordPool:
@@ -72,19 +61,19 @@ class VariantRecordPool():
         variants = VariantRecordPool()
         for file in files:
             for record in io.parse(file):
-                if not record.has_transcripts():
+                if not record.has_transcript():
                     gene_id = record.location.seqname
                     variants.add_genetic_variant(record, gene_id)
                     continue
 
-                for tx_id in record.attrs['TRANSCRIPTS']:
-                    try:
-                        tx_records = record.to_transcript_variants(anno, genome, [tx_id])
-                    except ValueError as e:
-                        if e.args[0] == ERROR_INDEX_IN_INTRON:
-                            variants.add_intronic_variant(record, tx_id)
-                            continue
-                    variants.add_transcriptional_variants(tx_records, tx_id)
+                tx_id = record.attrs['TRANSCRIPT_ID']
+                try:
+                    tx_record = record.to_transcript_variant(anno, genome, tx_id)
+                except ValueError as e:
+                    if e.args[0] == ERROR_INDEX_IN_INTRON:
+                        variants.add_intronic_variant(record, tx_id)
+                        continue
+                variants.add_transcriptional_variant(tx_record, tx_id)
             if verbose:
                 logger(f'Variant file {file} loaded.')
 
@@ -158,7 +147,7 @@ class VariantRecordPool():
                         if return_coord == 'gene':
                             records.add(record)
                         else:
-                            records.add(record.to_transcript_variants(anno, genome))
+                            records.add(record.to_transcript_variant(anno, genome))
         records = list(records)
         records.sort()
         return records

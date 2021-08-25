@@ -116,7 +116,7 @@ class STARFusionRecord():
                 end=donor_position + 1
             )
             attrs = {
-                'TRANSCRIPTS': [donor_tx],
+                'TRANSCRIPT_ID': donor_tx,
                 'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
                 'ACCEPTER_GENE_ID': self.right_gene,

@@ -66,12 +66,11 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        tx_variants = variant.to_transcript_variants(anno, genome)
-        self.assertEqual(len(tx_variants), 1)
-        self.assertEqual(int(tx_variants[0].location.start), 10)
-        self.assertEqual(int(tx_variants[0].location.end), 11)
-        self.assertEqual(str(tx_variants[0].ref), 'A')
-        self.assertEqual(str(tx_variants[0].alt), 'C')
+        tx_variant = variant.to_transcript_variant(anno, genome)
+        self.assertEqual(int(tx_variant.location.start), 10)
+        self.assertEqual(int(tx_variant.location.end), 11)
+        self.assertEqual(str(tx_variant.ref), 'A')
+        self.assertEqual(str(tx_variant.alt), 'C')
 
     def test_vep_to_variant_record_case2(self):
         """ Test convert vep to variant record for SNV tCc/tTc
@@ -95,7 +94,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        variant = variant.to_transcript_variants(anno, genome)[0]
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 11)
         self.assertEqual(int(variant.location.end), 12)
         self.assertEqual(str(variant.ref), 'T')
@@ -124,7 +123,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        variant = variant.to_transcript_variants(anno, genome)[0]
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 9)
         self.assertEqual(int(variant.location.end), 11)
         self.assertEqual(str(variant.ref), 'TA')
@@ -155,7 +154,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        variant = variant.to_transcript_variants(anno, genome)[0]
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 9)
         self.assertEqual(int(variant.location.end), 10)
         self.assertEqual(str(variant.ref), 'T')
@@ -186,7 +185,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        variant = variant.to_transcript_variants(anno, genome)[0]
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 8)
         self.assertEqual(int(variant.location.end), 12)
         self.assertEqual(str(variant.ref), 'CTAT')
@@ -217,7 +216,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        variant = variant.to_transcript_variants(anno, genome)[0]
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 9)
         self.assertEqual(int(variant.location.end), 10)
         self.assertEqual(str(variant.ref), 'T')
@@ -248,7 +247,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        variant = variant.to_transcript_variants(anno, genome)[0]
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 9)
         self.assertEqual(int(variant.location.end), 10)
         self.assertEqual(str(variant.ref), 'T')
@@ -279,8 +278,8 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        tx_variants = variant.to_transcript_variants(anno, genome)
-        self.assertEqual(len(tx_variants), 0)
+        with self.assertRaises(ValueError):
+            variant.to_transcript_variant(anno, genome)
 
     def test_vep_to_variant_record_case9(self):
         """ Test convert vep to variant record with a deletion at the begining
@@ -307,7 +306,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        variant = variant.to_transcript_variants(anno, genome)[0]
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 0)
         self.assertEqual(int(variant.location.end), 4)
         self.assertEqual(str(variant.ref), 'CTGG')
@@ -339,12 +338,11 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        tx_variants = variant.to_transcript_variants(anno, genome)
-        self.assertEqual(len(tx_variants), 1)
-        self.assertEqual(int(tx_variants[0].location.start), 10)
-        self.assertEqual(int(tx_variants[0].location.end), 11)
-        self.assertEqual(str(tx_variants[0].ref), 'T')
-        self.assertEqual(str(tx_variants[0].alt), 'G')
+        tx_variant = variant.to_transcript_variant(anno, genome)
+        self.assertEqual(int(tx_variant.location.start), 10)
+        self.assertEqual(int(tx_variant.location.end), 11)
+        self.assertEqual(str(tx_variant.ref), 'T')
+        self.assertEqual(str(tx_variant.alt), 'G')
 
 
 if __name__ == '__main__':

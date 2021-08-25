@@ -93,7 +93,7 @@ class A3SSRecord(RMATSRecord):
                 ref = str(gene_seq.seq[start_gene])
                 alt = '<DEL>'
                 attrs = {
-                    'TRANSCRIPTS': tx_id,
+                    'TRANSCRIPT_ID': tx_id,
                     'START': start_gene,
                     'END': end_gene,
                     'GENE_SYMBOL': gene_model.attributes['gene_name'],
@@ -122,7 +122,7 @@ class A3SSRecord(RMATSRecord):
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {
-                    'TRANSCRIPTS': tx_id,
+                    'TRANSCRIPT_ID': tx_id,
                     'DONOR_START': start_gene,
                     'DONOR_END': end_gene,
                     'DONOR_GENE_ID': self.gene_id,

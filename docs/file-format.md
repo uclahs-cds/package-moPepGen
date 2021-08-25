@@ -1,7 +1,7 @@
 # File Structure Documentation
 	
 - [File Structure Documentation](#file-structure-documentation)
-	- [1 Transcript Variant Format](#1-transcript-variant-format)
+	- [1 Gene Variant Format](#1-gene-variant-format)
 		- [1.1 File Metadata](#11-file-metadata)
 		- [1.2 Point Mutation](#12-point-mutation)
 		- [1.3 Fusion](#13-fusion)
@@ -10,13 +10,13 @@
 	- [3 Variant Peptide FASTA](#3-variant-peptide-fasta)
 
 
-## 1 Transcript Variant Format
+## 1 Gene Variant Format
 
 In moPepGen we are interested in finding varianted peptide caused by combination of different types of variants, including single nucleotide substitution, INDEL, RNA editing site, gene fusion and alternative splicing. We are also interested in non-coding RNA and circRNA with unreported ORF, or start codon gained from mutation.
 
 The different mutation events are called by different programs, and those files have different format. In moPepGen, for each type of data, we use data type and tool specific parsers to convert variant data from different sources to a standardized VCF-like format that moPepGen can use to create the transcript variant graph. They are then collected by `moPepGen callPeptide` command to call variant peptides.
 
-In moPepGen, we define the TVF (Transcript Variant Format) file format, that extended and modified from the [VCF](https://samtools.github.io/hts-specs/VCFv4.2.pdf) file format. The a TVF file, each record represent a variant associated with a transcript. The `CHROM` column is used to hold the transcript_id, and the `POS` column is also representing the position of the corresponding transcript.
+In moPepGen, we define the GVF (Gene Variant Format) file format, that extended and modified from the [VCF](https://samtools.github.io/hts-specs/VCFv4.2.pdf) file format to represent the variant records. In a GVF file, each entry represents a variant associated with a transcript. The `CHROM` column is used to hold the gene ID, and the `POS` column indicates the position of the corresponding transcript.
 
 ### 1.1 File Metadata
 
@@ -58,16 +58,16 @@ Below is an example of a TVF file for point mutation, including single nucleotid
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
 ##parser=parseVEP
-##reference_index=/path/to/reference-index
-##genome_fasta=/path/to/genome.fasta
-##annotation_gtf=/path/to/annotation.gtf
-##CHROM=<Description='Transcript ID'>
-##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Acceptor Transcript's Gene ID">
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
-#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
-ENST0001    110 SNV_110-C-A C   A   .   .   GENE_ID=ENSG0001;GENE_SYMBOL=TP53;GENOMIC_POSITION="chr1:1000-1001"
-ENST0002    210 SNV_210-T-A T   A   .   .   GENE_ID=ENSG0002;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
+#CHROM    POS  ID           REF  ALT  QUAL  FILTER  INFO
+ENSG0001  110  SNV_110-C-A  C    A    .     .       TRANSCRIPT_ID=ENST00011,ENST00012;GENE_SYMBOL=TP53;GENOMIC_POSITION="chr1:1000-1001"
+ENSG0002  210  SNV_210-T-A  T    A    .     .       TRANSCRIPT_ID=ENST00021,ENST00022;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
 ```
 
 The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene ID that the transcript belongs to. The `ID` column follows the pattern of '\<varant_type>_\<position>-\<ref>-\<alt>'. 
@@ -80,39 +80,33 @@ Below is an example of a TVF file for gene fusions.
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
 ##parser=parseXXX
-##reference_index=/path/to/reference-index
-##genome_fasta=/path/to/genome.fasta
-##annotation_gtf=/path/to/annotation.gtf
-##CHROM=<Description='Transcript ID'>
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##CHROM=<Description='Gene ID'>
 ##ALT=<ID=FUSION,Description="Fusion">
-##INFO=<ID=GENE_ID,Number=1,Type=String,Description="3' Junction (Acceptor) Transcript's Gene ID">
+##INFO=<ID=TRANSCRIP_ID,Number="+",Type=String,Description="5' Junction (Donor) Transcript ID">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
-##INFO=<ID=DONOR_GENE_ID,Number=1,Type=String,Description="5' Junction (Donor) Transcript's Gene ID">
-##INFO=<ID=DONOR_TRANSCRIPT_ID,Number=1,Type=String,Description="5' Junction (Donor) Transcript's Transcript ID">
-##INFO=<ID=DONOR_POS,Number=1,Type=Integer,Description="Position of the break point of the donor transcript">
+##INFO=<ID=ACCEPTER_GENE_ID,Number=1,Type=String,Description="3' Junction (Accepter) Transcript's Gene ID">
+##INFO=<ID=ACCEPTER_TRANSCRIPT_ID,Number=1,Type=String,Description="3' Junction (Accepter) Transcript's Transcript ID">
+##INFO=<ID=ACCEPTER_POS,Number=1,Type=Integer,Description="Position of the break point of the accepter transcript">
 ##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
 ##INFO=<ID=DONOR_GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
 ##INFO=<ID=DONOR_GENE_SYMBOL,Number=1,Type=String,Description="5' Junction (Donor) Gene Symbol">
-#CHROM  POS ID  REF ALT QUAL    FILTER  INFO
-ENST0001    500 FUSION_ENST0001:500-ENST0011:1000    A   <FUSION>   .   .   GENE_ID=ENSG0000;GENE_SYMBOL=SYMB1;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0011;DONOR_POS=1000;GENOMIC_POSITION=chr1:1000-1000;DONOR_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
-ENST0001    500 FUSION_ENST0001:500-ENST0012:1500    A   <FUSION>   .   .   GENE_ID=ENSG0000;GENE_SYMBOL=SYMB1;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0012;DONOR_POS=1500;GENOMIC_POSITION=chr1:1000-1000;DONOR_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
-ENST0002    500 FUSION_ENST0002:500-ENST0011:1000    A   <FUSION>   .   .   GENE_ID=ENSG0000;GENE_SYMBOL=SYMB1;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0011;DONOR_POS=1000;GENOMIC_POSITION=chr1:1000-1000;DONOR_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
-ENST0002    500 FUSION_ENST0002:500-ENST0012:1500    A   <FUSION>   .   .   GENE_ID=ENSG0000;GENE_SYMBOL=SYMB1;DONOR_GENE_ID=ENSG0010;DONOR_TRANSCRIPT_ID=ENST0012;DONOR_POS=1500;GENOMIC_POSITION=chr1:1000-1000;DONOR_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
-ENST0021    500 FUSION_ENST0021:500-ENST0031:1000    C   <FUSION>   .   .   GENE_ID=ENSG0021;GENE_SYMBOL=SYMB2;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0031;DONOR_POS=1000;GENOMIC_POSITION=chr3:1000-1000;DONOR_GENOMIC_POSITION=chr4:2000-2000;DONOR_GENE_SYMBOL=SYMB4
-ENST0021    500 FUSION_ENST0021:500-ENST0032:1500    C   <FUSION>   .   .   GENE_ID=ENSG0021;GENE_SYMBOL=SYMB2;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0032;DONOR_POS=1500;GENOMIC_POSITION=chr3:1000-1000;DONOR_GENOMIC_POSITION=chr4:2000-2000;DONOR_GENE_SYMBOL=SYMB4
-ENST0022    500 FUSION_ENST0022:500-ENST0031:1000    C   <FUSION>   .   .   GENE_ID=ENSG0021;GENE_SYMBOL=SYMB2;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0031;DONOR_POS=1000;GENOMIC_POSITION=chr3:1000-1000;DONOR_GENOMIC_POSITION=chr4:2000-2000;DONOR_GENE_SYMBOL=SYMB4
-ENST0022    500 FUSION_ENST0022:500-ENST0032:1500    C   <FUSION>   .   .   GENE_ID=ENSG0021;GENE_SYMBOL=SYMB2;DONOR_GENE_ID=ENSG0030;DONOR_TRANSCRIPT_ID=ENST0032;DONOR_POS=1500;GENOMIC_POSITION=chr3:1000-1000;DONOR_GENOMIC_POSITION=chr4:2000-2000;DONOR_GENE_SYMBOL=SYMB4
+#CHROM    POS  ID                                 REF  ALT       QUAL  FILTER  INFO
+ENSG0001  500  FUSION_ENST0001:500-ENST0011:1000  A    <FUSION>  .     .       TRANSCRIPT_ID=ENST0000;GENE_SYMBOL=SYMB1;ACCEPTER_GENE_ID=ENSG0010;ACCEPTER_TRANSCRIPT_ID=ENST0011;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr1:1000-1000;ACCEPTER_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
+ENSG0002  500  FUSION_ENST0002:500-ENST0011:1000  A    <FUSION>  .     .       TRANSCRIPT_ID=ENST0000;GENE_SYMBOL=SYMB1;ACCEPTER_GENE_ID=ENSG0010;ACCEPTER_TRANSCRIPT_ID=ENST0011;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr1:1000-1000;ACCEPTER_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
+ENSG0021  500  FUSION_ENST0021:500-ENST0031:1000  C    <FUSION>  .     .       TRANSCRIPT_ID=ENST0021;GENE_SYMBOL=SYMB2;ACCEPTER_GENE_ID=ENSG0030;ACCEPTER_TRANSCRIPT_ID=ENST0031;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr3:1000-1000;ACCEPTER_GENOMIC_POSITION=chr4:2000-2000;DONOR_GENE_SYMBOL=SYMB4
 ```
 
 The `Info` column must contain the following fields:
-+ `GENE_ID`: the gene ID of the acceptor transcript.
-+ `DONOR_GENE_ID`: the donor transcript's gene ID.
-+ `DONOR_TRANSCRIPT_ID`: the donor transcript's transcript ID.
-+ `DONOR_POS`: the position of the break poitn of the donor transcript. 
-+ `GENOMIC_POSITION`: the genomic position, in the format of `<chrom name>:<breakpoint>:<breakpoint>`.
-+ `DONOR_GENOMIC_POSITION`: the genomic position of the donor, in the format of `<chrom name>:<breakpoint>-<breakpoint>`.
++ `TRANSCRIPT_ID`: the transcript ID of the donor (upstream) transcript.
++ `ACCEPTER_GENE_ID`: the accepter (downstream) transcript's gene ID.
++ `ACCEPTER_TRANSCRIPT_ID`: the accepter (downstream) transcript's transcript ID.
++ `ACCEPTER_POSITION`: the position of the break point of the ACCEPTER (downstream) transcript. 
++ `GENOMIC_POSITION`: the genomic position of the donor (upstream) transcript, in the format of `<chrom name>:<breakpoint>:<breakpoint>`.
++ `ACCEPTER_GENOMIC_POSITION`: the genomic position of the accepter (downstream) transcript, in the format of `<chrom name>:<breakpoint>-<breakpoint>`.
 
-In reality, gene fusion happens at the gene level. But in a TVF file, each line represents a transcript, so the same fusion events could appear multiple times, because both the acceptor and donor gene could have multiple transcript isoforms.
 
 ### 1.4 Alternative Splicing Site
 
@@ -133,44 +127,43 @@ RI is represented as an insertion or the intron sequence.
 ##reference_index=/path/to/reference/index
 ##genome_fasta=/path/to/genome.fasta
 ##annotation_gtf=/path/to/annotaion.gtf
-##CHROM=<Description='Transcript ID'>
-##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Acceptor Transcript's Gene ID">
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
 ##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
 ##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
 ##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
 ##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
-ENST0001	110	SE-300	C	<INS>	.	.	GENE_ID=ENSG0001;START=300;END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
-ENST0002	210	A5SS-210	T	<DEL>	.	.	GENE_ID=ENSG0002;START=210;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
-ENST0003	115	A3SS-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
-ENST0003	115	MXE-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
-ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+#CHROM    POS  ID            REF  ALT    QUAL  FILTER  INFO
+ENSG0001  110  SE-300        C    <INS>  .     .       TRANSCRIPT_ID=ENST00011;DONOR_GENE_ID=ENSG0005;DONOR_START=300;DONOR_END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
+ENSG0002  210  A5SS-210      T    <DEL>  .     .       TRANSCRIPT_ID=ENST00021;DONOR_GENE_ID=ENSG0006;DONOR_START=210;DONOR_END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENSG0003  115  A3SS-320      T    <INS>  .     .       TRANSCRIPT_ID=ENST00031;DONOR_GENE_ID=ENSG0007;DONOR_START=320;DONOR_END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENSG0004  277  MXE-477-1103  T    <SUB>  .     .       TRANSCRIPT_ID=ENST00041;DONOR_GENE_ID=ENSG0008;DONOR_START=477;DONOREND=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 **Examples:**
 
 ```
-ENST0001	110	SE-300	C	<INS>	.	.	GENE_ID=ENSG0001;START=300;END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
+ENSG0001	110	SE-300	C	<INS>	.	.	TRANSCRIPT_ID=ENST0001;DONOR_START=300;DONOR_END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 The line above represents an SE (skipped exon), that the sequence of 300-400 of the gene ENSG0001 is inserted to the t ranscript of ENST0001 at position 110. In this case, all transcripts of the gene in the annotation GTF don't contain this exon.
 
 ```
-ENST0002	210	A5SS-210	T	<DEL>	.	.	GENE_ID=ENSG0002;START=210;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENSG0002	210	A5SS-210	T	<DEL>	.	.	TRANSCRIPT_ID=ENST0002;START=210;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 The line above represents a A5SS (alternative 5' splicing site), that the sequence from 210 to 400 of the transcript ENST0002 is deleted. In this case, all transcripts of the gene in the annotation GTF have the longer version of the exon.
 
 ```
-ENST0003	115	MXE-320	T	<INS>	.	.	GENE_ID=ENSG0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENSG0003	115	MXE-320	T	<INS>	.	.	TRANSCRIPT_ID=ENST0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 The line above represents a MXE (mutually exclusive exon), that the exon of 320-380 of the gene ENSG0003 is retained in the transcript ENST0003 and resulted as an insertion at position 115 of the transcript. In this case, none of the transcripts of this gene has the first exon retained and second spliced at the same time. And this transcript has both exons retained.
 
 ```
-ENST0004	277	MXE-477-1103	T	<SUB>	.	.	GENE_ID=ENSG0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENSG0004	277	MXE-477-1103	T	<SUB>	.	.	TRANSCRIPT_ID=ENST0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 This line above represents a MXE that the exon 447-582 (transcript ENST0004 position 277) is replaced with exon 1103-1228 of the gene.

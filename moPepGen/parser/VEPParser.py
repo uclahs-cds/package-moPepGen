@@ -163,7 +163,7 @@ class VEPRecord():
         _id = f'{_type}-{alt_start + 1}-{ref}-{alt}'
 
         attrs = {
-            'TRANSCRIPTS': [self.feature],
+            'TRANSCRIPT_ID': self.feature,
             'GENOMIC_POSITION': self.location,
             'GENE_SYMBOL': gene_model.attributes['gene_name']
         }

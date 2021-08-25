@@ -93,7 +93,7 @@ class SERecord(RMATSRecord):
             for tx_id in retained:
                 alt = '<DEL>'
                 attrs = {
-                    'TRANSCRIPTS': tx_id,
+                    'TRANSCRIPT_ID': tx_id,
                     'START': start,
                     'END': end,
                     'GENE_SYMBOL': gene_model.attributes['gene_name'],
@@ -122,7 +122,7 @@ class SERecord(RMATSRecord):
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {
-                    'TRANSCRIPTS': tx_id,
+                    'TRANSCRIPT_ID': tx_id,
                     'DONOR_START': start,
                     'DONOR_END': end,
                     'DONOR_GENE_ID': self.gene_id,
