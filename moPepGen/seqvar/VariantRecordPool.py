@@ -85,6 +85,8 @@ class VariantRecordPool():
                 except ValueError as e:
                     if e.args[0] == ERROR_INDEX_IN_INTRON:
                         variants.add_intronic_variant(record, tx_id)
+                    else:
+                        raise e
 
             if verbose:
                 logger(f'Variant file {file} loaded.')
