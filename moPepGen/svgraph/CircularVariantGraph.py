@@ -1,11 +1,17 @@
 """ Module for CircularVariantGraph, a directed cyclic graph, for circRNA etc.
 """
-from typing import Union, List, Deque, Tuple, Dict
+from __future__ import annotations
+from typing import Union, List, Deque, Tuple, Dict, TYPE_CHECKING
 import copy
 import re
 from collections import deque
-from moPepGen import svgraph, dna, seqvar
+from moPepGen.SeqFeature import FeatureLocation
+from moPepGen import svgraph, seqvar
 
+
+if TYPE_CHECKING:
+    from moPepGen import circ
+    from moPepGen.dna import DNASeqRecordWithCoordinates
 
 class CircularVariantGraph(svgraph.TranscriptVariantGraph):
     """ Defines a directed cyclic graph for circular nucleotide molecules such
@@ -18,8 +24,8 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             with
         attrs (dict): additional attributes
     """
-    def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
-            _id:str, attrs:dict=None):
+    def __init__(self, seq:Union[DNASeqRecordWithCoordinates,None],
+            _id:str, circ_record:circ.CircRNAModel=None, attrs:dict=None):
         """ Construct a CircularVariantGraph
 
         Args:
@@ -27,12 +33,34 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                     transcript (reference).
             transcript_id (str): The transcript ID that the circRNA is
                 associated with.
+            circ (CircRNAodel): The circRNA model.
             attrs (dict): additional attributes
 
         """
         super().__init__(seq, _id)
         self.add_edge(self.root, self.root, _type='reference')
         self.attrs = attrs
+        self.circ = circ_record
+        if self.circ:
+            self.as_frameshifting()
+
+    def as_frameshifting(self):
+        """ Add a variant record to the frameshifting of the root node. This
+        will treat all peptides as variant peptide in the later steps. """
+        circ_start = self.seq.locations[0].ref.start
+        location = FeatureLocation(
+            seqname=self.circ.gene_id,
+            start=circ_start,
+            end=circ_start + 1
+        )
+        variant = seqvar.VariantRecord(
+            location=location,
+            ref=self.seq.seq[0],
+            alt='<circRNA>',
+            _type='circRNA',
+            _id=self.id
+        )
+        self.root.frameshifts.add(variant)
 
     def create_variant_graph(self, variants: List[seqvar.VariantRecord]):
         """ Apply a list of variants to the graph. Variants not in the
@@ -107,14 +135,13 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         return new_node
 
     def find_orf_in_outbound_nodes(self, node:svgraph.TVGNode,
-            carry_over:dna.DNASeqRecordWithCoordinates,
-            min_size:int=6
+            carry_over:DNASeqRecordWithCoordinates
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
         """ Look for potential start codon int the out bound nodes.
 
         Args:
             node (svgraph.TVGNode): The target node.
-            carry_over (dna.DNASeqRecordWithCoordinates): The sequence to be
+            carry_over (DNASeqRecordWithCoordinates): The sequence to be
                 carried over to the outbound nodes. Usually 2 last nucleotides
                 should be carried over, to see whether there a start codon is
                 splitted by the edge.
@@ -123,21 +150,43 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             branches created because of start codon.
         """
         branches = []
-        downstream = node.find_farthest_node_with_overlap(min_size=min_size)
 
-        for edge in node.out_edges:
-            seq = carry_over + edge.out_node.seq + downstream.seq[:2]
+        siblings_groups = self.group_outbond_siblings(node)
+
+        if len(siblings_groups) > 1:
+            raise ValueError('All outbond nodes should be aligned')
+
+        siblings = siblings_groups[0]
+
+        if len(siblings) == 1:
+            downstream = siblings[0]
+            seq = carry_over + downstream.seq[:2]
             indices = [m.start() for m in re.finditer('ATG', str(seq.seq))]
             for index in indices:
-                branch = self.create_branch_and_expand(edge.out_node)
-                branch.seq = (carry_over + edge.out_node.seq)[index:]
+                branch = self.create_branch_and_expand(downstream)
+                branch.seq = (carry_over + downstream.seq)[index:]
                 filtered_variants = []
                 for variant in branch.variants:
                     if int(variant.location.start) + len(carry_over.seq) - index > 0:
                         filtered_variants.append(variant)
                 branch.variants = filtered_variants
-                branch.branch = edge.type != 'reference'
+                branch.branch = len(downstream.variants) > 0
                 branches.append(branch)
+        else:
+            downstream = siblings[0].get_reference_next()
+            for sibling in siblings:
+                seq = carry_over + sibling.seq + downstream.seq[:2]
+                indices = [m.start() for m in re.finditer('ATG', str(seq.seq))]
+                for index in indices:
+                    branch = self.create_branch_and_expand(sibling)
+                    branch.seq = (carry_over + sibling.seq)[index:]
+                    filtered_variants = []
+                    for variant in branch.variants:
+                        if int(variant.location.start) + len(carry_over.seq) - index > 0:
+                            filtered_variants.append(variant)
+                    branch.variants = filtered_variants
+                    branch.branch = len(sibling.variants) > 0
+                    branches.append(branch)
         return downstream, branches
 
 
@@ -180,10 +229,8 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
             if len(node.out_edges) > 1:
                 self.align_variants(node, branch_out_frameshifting=False)
                 next_node = node.find_farthest_node_with_overlap(min_size = 0)
-            elif not node.out_edges:
-                print(node)
             else:
                 next_node = list(node.out_edges)[0].out_node
-            if next_node.seq.locations[0].ref.start < node.seq.locations[0].ref.start:
+            if next_node.seq.locations[0].ref.start <= node.seq.locations[0].ref.start:
                 return
             node = next_node

@@ -1,11 +1,10 @@
 """ Module for Transcript Annotation model """
 from typing import List
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
-from moPepGen import dna
+from moPepGen import dna, ERROR_INDEX_IN_INTRON
 
 
 GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon']
-INDEX_IN_INTRON_ERROR = 'The genomic index seems to be in an intron'
 
 class TranscriptAnnotationModel():
     """ A TranscriptAnnotationModel holds all the annotations associated with
@@ -213,7 +212,7 @@ class TranscriptAnnotationModel():
                     index += genomic_index - exon.location.start
                     break
                 else:
-                    raise ValueError(INDEX_IN_INTRON_ERROR)
+                    raise ValueError(ERROR_INDEX_IN_INTRON)
         elif self.transcript.strand == -1:
             index = -1
             if genomic_index < self.exon[0].location.start \

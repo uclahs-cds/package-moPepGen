@@ -1,12 +1,15 @@
 """ VEP2VariantPeptides module """
-from typing import Dict, List
+from __future__ import annotations
+from typing import Dict, List, TYPE_CHECKING
 from pathlib import Path
-import argparse
 from moPepGen.parser import VEPParser
 from moPepGen import seqvar, logger
 from .common import add_args_reference, add_args_verbose, print_start_message,\
     print_help_if_missing_args, load_references, generate_metadata
 
+
+if TYPE_CHECKING:
+    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
@@ -15,7 +18,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     p = subparsers.add_parser(
         name='parseVEP',
         help='Parse VEP output for moPepGen to call variant peptides.',
-        description="Parse VEP output tsv to the TVF format of variant records"
+        description="Parse VEP output tsv to the GVF format of variant records"
         "for moPepGen to call variant peptides. The genome assembly FASTA and"
         "annotation GTF must come from the same GENCODE/ENSEMBL version, and"
         "must the consistent with the VEP output."
@@ -46,7 +49,7 @@ def parse_vep(args:argparse.Namespace) -> None:
     # unpack args
     vep_files:List[str] = args.vep_txt
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 

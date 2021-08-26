@@ -2,7 +2,7 @@
 from typing import Iterable, List
 from pathlib import Path
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
-from moPepGen.seqvar import TVFMetadata
+from moPepGen.seqvar import GVFMetadata
 from .CircRNA import CircRNAModel
 
 
@@ -59,7 +59,7 @@ def parse(path:Path) -> Iterable[CircRNAModel]:
             line = next(handle, None)
 
 
-def write(records:Iterable[CircRNAModel], metadata:TVFMetadata, path:Path):
+def write(records:Iterable[CircRNAModel], metadata:GVFMetadata, path:Path):
     """ Write circRNA records to file. """
     headers = ['gene_id','start','offset','length','circ_id','gene_name']
     with open(path, 'wt') as handle:
@@ -69,5 +69,5 @@ def write(records:Iterable[CircRNAModel], metadata:TVFMetadata, path:Path):
         handle.write('#' + ','.join(headers) + '\n')
 
         for record in records:
-            line = record.to_tvf() + '\n'
+            line = record.to_string() + '\n'
             handle.write(line)

@@ -14,7 +14,7 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
     p = subparsers.add_parser(
         name='parseFusionCatcher',
         help='Parse FusionCatcher result for moPepGen to call variant peptides.',
-        description='Parse the FusionCatcher result to TVF format of variant'
+        description='Parse the FusionCatcher result to GVF format of variant'
         'records for moPepGen to call variant peptides. The genome'
     )
     p.add_argument(
@@ -37,11 +37,11 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
     print_help_if_missing_args(p)
 
 def parse_fusion_catcher(args:argparse.Namespace) -> None:
-    """ Parse FusionCatcher output and save it in TVF format. """
+    """ Parse FusionCatcher output and save it in GVF format. """
     # unpack args
     fusion = args.fusion
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 

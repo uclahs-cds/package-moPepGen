@@ -20,22 +20,22 @@ class TestParseStarFusion(TestCaseIntegration):
         args.verbose = False
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'star_fusion.tvf'}
+        expected = {'star_fusion.gvf'}
         self.assertEqual(files, expected)
 
-        genome, annotation, _ = load_references(args, load_canonical_peptides=False)
+        genome, anno, _ = load_references(args, load_canonical_peptides=False)
 
-        for record in seqvar.io.parse(self.work_dir/'star_fusion.tvf'):
-            tx_id = record.location.seqname
-            tx_model = annotation.transcripts[tx_id]
-            tx_chr = tx_model.transcript.chrom
-            tx_seq = tx_model.get_transcript_sequence(genome[tx_chr])
+        for record in seqvar.io.parse(self.work_dir/'star_fusion.gvf'):
+            gene_id = record.location.seqname
+            gene_model = anno.genes[gene_id]
+            gene_chr = gene_model.chrom
+            gene_seq = gene_model.get_gene_sequence(genome[gene_chr])
             x = record.location.start
-            self.assertEqual(str(tx_seq.seq[x:x+2]), 'GT')
+            self.assertEqual(str(gene_seq.seq[x:x+2]), 'GT')
 
-            tx_id = record.attrs['ACCEPTER_TRANSCRIPT_ID']
-            tx_model = annotation.transcripts[tx_id]
-            tx_chr = tx_model.transcript.chrom
-            tx_seq = tx_model.get_transcript_sequence(genome[tx_chr])
+            gene_id = record.attrs['ACCEPTER_TRANSCRIPT_ID']
+            gene_model = anno.transcripts[gene_id]
+            gene_chr = gene_model.transcript.chrom
+            gene_seq = gene_model.get_transcript_sequence(genome[gene_chr])
             x = record.get_accepter_position()
-            self.assertEqual(str(tx_seq.seq[x-2:x]), 'AG')
+            self.assertEqual(str(gene_seq.seq[x-2:x]), 'AG')

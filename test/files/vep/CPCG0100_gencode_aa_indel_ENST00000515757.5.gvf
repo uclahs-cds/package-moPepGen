@@ -1,11 +1,11 @@
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
 ##parser=parseVEP
-##reference_index=/data/GRCh38_Gencodev34
+##reference_index=/hot/users/czhu/private-moPepGen/private-moPepGen-py/test/files/gencode_34_index
 ##genome_fasta=
 ##annotation_gtf=
-##INFO=<ID=GENE_ID,Number=1,Type=String,Description="Transcript's Gene ID">
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
-ENST00000390283.2	413	INDEL-412-T-TGGATGTTCGGCGGAGGGA	T	TGGATGTTCGGCGGAGGGA	.	.	GENE_ID=ENSG00000211638.2

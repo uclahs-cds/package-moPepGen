@@ -1,12 +1,14 @@
 """ Module for call variant paptide """
 from __future__ import annotations
-from typing import List, Dict, Set
-import argparse
-from moPepGen import svgraph, dna, gtf, aa, seqvar, logger, circ
-from moPepGen.SeqFeature import FeatureLocation
+from typing import List, Set, TYPE_CHECKING
+from moPepGen import svgraph, aa, seqvar, logger, circ
 from .common import add_args_cleavage, add_args_verbose, print_start_message, \
     print_help_if_missing_args, add_args_reference, load_references
 
+
+if TYPE_CHECKING:
+    import argparse
+    from moPepGen import dna, gtf
 
 # pylint: disable=W0212
 def add_subparser_call_peptides(subparsers:argparse._SubParsersAction):
@@ -68,39 +70,26 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     genome, annotation, canonical_peptides = load_references(args=args)
 
-    variants:Dict[str, List[seqvar.VariantRecord]] = {}
-    for file in variant_files:
-        for record in seqvar.io.parse(file):
-            transcript_id = record.location.seqname
-            if transcript_id not in variants:
-                variants[transcript_id] = [record]
-            else:
-                variants[transcript_id].append(record)
-        if verbose:
-            logger(f'Variant file {file} loaded.')
-
-    for records in variants.values():
-        records.sort()
-    if verbose:
-        logger('Variant records sorted.')
+    variants = seqvar.VariantRecordPool.load_variants(variant_files,
+        annotation, genome, verbose)
 
     variant_pool = aa.VariantPeptidePool()
 
     i = 0
-    for transcript_id in variants:
+    for tx_id in variants.transcriptional:
 
         try:
-            peptides = call_peptide_main(variants, transcript_id, annotation,
+            peptides = call_peptide_main(variants, tx_id, annotation,
                 genome, rule, exception, miscleavage)
         except:
-            logger(f'Exception raised from {transcript_id}')
+            logger(f'Exception raised from {tx_id}')
             raise
 
         for peptide in peptides:
             variant_pool.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
 
-        if verbose:    # for logging
+        if verbose:
             i += 1
             if i % 1000 == 0:
                 logger(f'{i} transcripts processed.')
@@ -119,28 +108,28 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     if verbose:
         logger('Variant peptide FASTA file written to disk.')
 
-def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
-        transcript_id:str, annotation:gtf.GenomicAnnotation,
+def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
+        tx_id:str, anno:gtf.GenomicAnnotation,
         genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
-    variant_records = variants[transcript_id]
-    anno = annotation.transcripts[transcript_id]
-    chrom = anno.transcript.location.seqname
-    transcript_seq = anno.get_transcript_sequence(genome[chrom])
-    cds_start_nf = 'tag' in anno.transcript.attributes and \
-        'cds_start_NF' in anno.transcript.attributes['tag']
+    tx_variants = variant_pool.transcriptional[tx_id]
+    tx_model = anno.transcripts[tx_id]
+    chrom = tx_model.transcript.location.seqname
+    transcript_seq = tx_model.get_transcript_sequence(genome[chrom])
+    cds_start_nf = 'tag' in tx_model.transcript.attributes and \
+        'cds_start_NF' in tx_model.transcript.attributes['tag']
 
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
-        _id=transcript_id,
+        _id=tx_id,
         cds_start_nf=cds_start_nf
     )
 
     ## Create transcript variant graph
     # dgraph.create_variant_graph(variant_records)
     dgraph.add_null_root()
-    variant_iter = iter(variant_records)
+    variant_iter = iter(tx_variants)
     variant = next(variant_iter, None)
     cur = dgraph.root.get_reference_next()
     while variant:
@@ -153,71 +142,19 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
             continue
 
         if variant.type == 'Fusion':
-            accepter_transcript_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
-            accepter_anno = annotation.transcripts[accepter_transcript_id]
-            accepter_chrom = accepter_anno.transcript.location.seqname
-            accepter_seq = accepter_anno.get_transcript_sequence(genome[accepter_chrom])
-
-            accepter_variant_records = []
-            if accepter_transcript_id in variants:
-                for record in variants[accepter_transcript_id]:
-                    # If the donor sequence has another fusion event, it is not
-                    # considered. The chance of two fusion events happened
-                    # together should be low.
-                    if record.type == 'Fusion':
-                        continue
-                    if record.location.start > variant.get_accepter_position():
-                        accepter_variant_records.append(record)
-
-            cur = dgraph.apply_fusion(cur, variant, accepter_seq, accepter_variant_records)
+            cur = dgraph.apply_fusion(cur, variant, variant_pool, genome, anno)
             variant = next(variant_iter, None)
             continue
 
         if variant.type in 'Insertion':
-            if variant.attrs['COORDINATE'] == 'gene':
-                gene_id = variant.attrs['GENE_ID']
-                gene_model = annotation.genes[gene_id]
-                chrom = gene_model.chrom
-                donor_start = variant.get_donor_start()
-                donor_end = variant.get_donor_end()
-                gene_seq = gene_model.get_gene_sequence(genome[chrom])
-                insert_seq = gene_seq[donor_start:donor_end]
-                exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-                insert_variants = find_gene_variants(gene_id, annotation,
-                    variants, donor_start, donor_end, exclude_type)
-                cur = dgraph.apply_insertion(cur, variant, insert_seq, insert_variants)
-                variant = next(variant_iter, None)
-                continue
+            cur = dgraph.apply_insertion(cur, variant, variant_pool, genome,
+                anno)
+            variant = next(variant_iter, None)
+            continue
 
         if variant.type == 'Substitution':
-            if variant.attrs['COORDINATE'] == 'gene':
-                gene_id = variant.attrs['GENE_ID']
-                gene_model = annotation.genes[gene_id]
-                chrom = gene_model.chrom
-                donor_start = variant.get_donor_start()
-                donor_end = variant.get_donor_end()
-                gene_seq = gene_model.get_gene_sequence(genome[chrom])
-                sub_seq = gene_seq[donor_start:donor_end]
-                exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-                sub_variants = find_gene_variants(gene_id, annotation,
-                    variants, donor_start, donor_end, exclude_type)
-                cur = dgraph.apply_substitution(cur, variant, sub_seq, sub_variants)
-                variant = next(variant_iter, None)
-                continue
-
-        if variant.type == 'Deletion':
-            variant = seqvar.VariantRecord(
-                location=FeatureLocation(
-                    seqname=variant.location.seqname,
-                    start=variant.location.start,
-                    end=int(variant.attrs['END'])
-                ),
-                ref=variant.ref,
-                alt=variant.alt,
-                _type=variant.type,
-                _id=variant.id,
-                attrs=variant.attrs
-            )
+            cur = dgraph.apply_substitution(cur, variant, variant_pool,
+                genome, anno)
             variant = next(variant_iter, None)
             continue
 
@@ -235,7 +172,7 @@ def call_peptide_main(variants:Dict[str, List[seqvar.VariantRecord]],
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
-        variants:Dict[str,List[seqvar.VariantRecord]], rule:str,
+        variant_pool:seqvar.VariantRecordPool, rule:str,
         exception:str, miscleavage:int)-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
@@ -244,24 +181,16 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     gene_seq = gene_model.get_gene_sequence(genome[chrom])
     circ_seq = record.get_circ_rna_sequence(gene_seq)
 
-    variant_records = set()
-    for transcript_id in record.transcript_ids:
-        if transcript_id not in variants:
-            continue
-        for variant in variants[transcript_id]:
-            variant = annotation.variant_coordinates_to_gene(variant, gene_id)
-            # Alternative splicing should not be included. Alternative splicing
-            # are represented as Insertion, Deletion or Substitution.
-            if variant.type in ['Insertion', 'Deletion', 'Substitution']:
-                continue
-            for fragment in record.fragments:
-                if fragment.location.is_superset(variant.location):
-                    variant_records.add(variant)
-                    break
-    variant_records = list(variant_records)
-    variant_records.sort()
+    # Alternative splicing should not be included. Alternative splicing
+    # represented as Insertion, Deletion or Substitution.
+    exclusion_variant_types = ['Insertion', 'Deletion', 'Substitution']
 
-    cgraph = svgraph.CircularVariantGraph(circ_seq, _id=record.id)
+    variant_records = variant_pool.filter_variants(gene_id, annotation, genome,
+        exclusion_variant_types, intron=False, segments=record.fragments)
+
+    cgraph = svgraph.CircularVariantGraph(
+        circ_seq, _id=record.id, circ_record=record
+    )
 
     cgraph.create_variant_graph(variant_records)
     cgraph.align_all_variants()
@@ -270,26 +199,6 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     pgraph = tgraph.translate()
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
-
-def find_gene_variants(gene_id:str, annotation:gtf.GenomicAnnotation,
-        variants:Dict[str,seqvar.VariantRecord], start:int, end:int,
-        exclude_type:List[str]) -> List[seqvar.VariantRecord]:
-    """ Find all unique variants of a gene within a given range. Fusions
-    are skipped. """
-    records = set()
-    for transcript_id in annotation.genes[gene_id].transcripts:
-        if transcript_id not in variants:
-            continue
-        record:seqvar.VariantRecord
-        for record in variants[transcript_id]:
-            if record.type in exclude_type:
-                continue
-            record = annotation.variant_coordinates_to_gene(record, gene_id)
-            if record.location.start > start and record.location.end < end:
-                records.add(record)
-    records = list(records)
-    records.sort()
-    return records
 
 if __name__ == '__main__':
     test_args = argparse.Namespace()

@@ -24,10 +24,6 @@ class DNASeqDict(dict):
     def __setitem__(self, k:str, v:DNASeqRecord) -> None:
         """ Set items. Only allow DNASeqRecord in values. """
         self._validate(v)
-        # Sometimes v.seq._data becomes bytes after unpickling. Haven't figured
-        # out why, but this solves it.
-        if isinstance(v.seq._data, bytes):
-            v.seq._data = v.seq._data.decode('utf-8')
         super().__setitem__(k, v)
 
     def dump_fasta(self, path:str) -> None:

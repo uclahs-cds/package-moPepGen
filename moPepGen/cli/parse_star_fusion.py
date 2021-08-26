@@ -1,10 +1,13 @@
 """ Module for STAR-Fusion parser """
-from typing import List, Dict
-import argparse
-from moPepGen import logger, gtf, seqvar, parser
+from __future__ import annotations
+from typing import List, TYPE_CHECKING
+from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_verbose, print_start_message,\
     print_help_if_missing_args, load_references, generate_metadata
 
+
+if TYPE_CHECKING:
+    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
@@ -13,7 +16,7 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     p = subparsers.add_parser(
         name='parseSTARFusion',
         help='Parse STAR-Fusion result for moPepGen to call variant peptides.',
-        description='Parse the STAR-Fusion result to TVF format of variant'
+        description='Parse the STAR-Fusion result to GVF format of variant'
         'records for moPepGen to call variant peptides.'
     )
 
@@ -37,28 +40,20 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     print_help_if_missing_args(p)
 
 def parse_star_fusion(args:argparse.Namespace) -> None:
-    """ Parse the STAR-Fusion's output and save it in TVF format. """
+    """ Parse the STAR-Fusion's output and save it in GVF format. """
     # unpack args
     fusion = args.fusion
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 
     genome, anno, _ = load_references(args, load_canonical_peptides=False)
 
-    anno2:Dict[str, Dict[str, gtf.TranscriptAnnotationModel]] = {}
-    val:gtf.TranscriptAnnotationModel
-    for key, val in anno.transcripts.items():
-        gene_id = val.transcript.attributes['gene_id']
-        if gene_id not in anno2:
-            anno2[gene_id] = {}
-        anno2[gene_id][key] = val
-
     variants:List[seqvar.VariantRecord] = []
 
     for record in parser.STARFusionParser.parse(fusion):
-        var_records = record.convert_to_variant_records(anno2, genome)
+        var_records = record.convert_to_variant_records(anno, genome)
         variants.extend(var_records)
 
     if args.verbose:

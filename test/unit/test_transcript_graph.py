@@ -2,11 +2,47 @@
 import unittest
 from typing import Deque
 from collections import deque
-from test.unit import create_dgraph2, create_dgraph1, \
-    create_dna_seq_with_coordinates, create_variant, create_variants
+from test.unit import create_dgraph2, create_dgraph1, create_dna_record_dict, \
+    create_genomic_annotation, \
+    create_variant, create_variants
 from moPepGen import svgraph, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 
+GENOME_DATA = {
+    'chr1': 'ATGTACTGGTCCTTCTGCCTATGTACTGGTCCTTCTGCCTATGTACTGGTCCTTCTGCCT'
+}
+ANNOTATION_ATTRS = [
+    {
+        'gene_id': 'ENSG0001',
+        'gene_name': 'SYMBO'
+    },{
+        'transcript_id': 'ENST0001.1',
+        'gene_id': 'ENSG0001',
+        'protein_id': 'ENSP0001',
+        'gene_name': 'SYMBO'
+    }
+]
+ANNOTATION_DATA = {
+    'genes': [{
+        'gene_id': ANNOTATION_ATTRS[0]['gene_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'gene': (0, 40, ANNOTATION_ATTRS[0]),
+        'transcripts': ['ENST0001.1']
+    }],
+    'transcripts': [{
+        # seq: CTGGT CCCCT ATGGG TCCTT C
+        'transcript_id': ANNOTATION_ATTRS[1]['transcript_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'transcript': (5, 35, ANNOTATION_ATTRS[1]),
+        'exon': [
+            (5, 12, ANNOTATION_ATTRS[1]),
+            (17, 23, ANNOTATION_ATTRS[1]),
+            (27, 35, ANNOTATION_ATTRS[1])
+        ]
+    }]
+}
 
 class TestTranscriptGraph(unittest.TestCase):
     """ Test case for the transcript graph """
@@ -48,10 +84,12 @@ class TestTranscriptGraph(unittest.TestCase):
 
     def test_apply_fusion_case1(self):
         r""" Fusion breakpoint: acceptor 8, donor 8
-             C                   A         A
-            / \                 / \       / \
-        AACC-T-TGGCGGTTC    GAAT-T-CGATGGC-C-CTA
+             C                    A     A
+            / \                  / \   / \
+        AACC-T-TGGCGGTTC      TGG-G-TCC-T-TC
         """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        genome = create_dna_record_dict(GENOME_DATA)
         data = {
             1: ('AACC', [], []),
             2: ('T', [1], []),
@@ -59,125 +97,164 @@ class TestTranscriptGraph(unittest.TestCase):
             4: ('TGGCGGTTC', [2,3], [])
         }
         graph, nodes = create_dgraph2(data)
-        attrs = {'ACCEPTER_POSITION': 8}
+
+        attrs = {
+            'ACCEPTER_GENE_ID': 'ENSG0001',
+            'ACCEPTER_TRANSCRIPT_ID': 'ENST0001.1',
+            'ACCEPTER_POSITION': 20,
+            'ACCEPTER_CHROM': 'chr1'
+        }
         var_fusion = create_variant(8, 9, 'C', '<FUSION>', 'Fusion',
             'FUSIONXXX', attrs=attrs)
-        seq = 'GAATTCGATGGCCCTA'
-        donor_seq = create_dna_seq_with_coordinates(seq)
-        donor_var_data = {
-            (3, 4, 'T', 'A', 'SNV', ''),
-            (12, 13, 'C', 'A', 'SNV', '')
+        var_data = {
+            ( 3,  4, 'T', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
         }
-        donor_vars = create_variants(donor_var_data)
+        variants = {'ENST0001.1': create_variants(var_data)}
+        variant_pool = seqvar.VariantRecordPool(transcriptional=variants)
+
         acceptor_tail = graph.apply_fusion(nodes[4], var_fusion,
-            donor_seq, donor_vars)
+            variant_pool, genome, anno)
 
         self.assertEqual(len(acceptor_tail.out_edges), 2)
         self.assertEqual(str(acceptor_tail.seq.seq), 'TGG')
         for edge in acceptor_tail.out_edges:
             if edge.type != 'reference':
-                root_donor = edge.out_node
-        self.assertEqual(str(root_donor.seq.seq), 'TGGC')
-        self.assertEqual(len(root_donor.in_edges), 1)
+                accepter_root = edge.out_node
+        self.assertEqual(str(accepter_root.seq.seq), 'ATGG')
+        self.assertEqual(len(accepter_root.in_edges), 1)
 
         # also test alignment will treat the first fusioned node as reference
         graph.align_variants(acceptor_tail)
-        self.assertEqual(str(root_donor.seq.seq), 'TGGC')
+        self.assertEqual(str(accepter_root.seq.seq), 'ATGG')
 
     def test_apply_insertion_case1(self):
         r"""
-                                    CTGCCGTTG
-                                   /         \
-        AACCTGGCGGTTC     ->    AAC-C---------TGGCGGTTC
+                                    CCCTATG
+                                   /       \
+        AACCTGGCGGTTC     ->    AAC-C-------TGGCGGTTC
         """
-        seq = 'AACCTGGCGGTTC'
-        insert_seq_str = 'TGCCGTTG'
-        insert_seq = create_dna_seq_with_coordinates(insert_seq_str, 10, 18)
-        var_data = [
-            (3,4,'C','<INS>','Insertion','')
-        ]
-        varaints = create_variants(var_data)
-        insert_var = varaints.pop(-1)
-        graph = create_dgraph1(seq, [])
-        graph.add_null_root()
-        node = graph.root.get_reference_next()
-        node = graph.apply_insertion(node, insert_var, insert_seq, [])
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        genome = create_dna_record_dict(GENOME_DATA)
+        data = {
+            1: ('AACCTGGCGGTTC', [], [])
+        }
+        graph, nodes = create_dgraph2(data)
+
+        attrs = {
+            'GENE_ID': 'ENSG0001',
+            'DONOR_GENE_ID': 'ENSG0001',
+            'DONOR_START': 17,
+            'DONOR_END': 23
+        }
+        var_insertion = create_variant(3,4,'C','<INS>','Insertion','', attrs)
+
+        var_data = {
+            ( 3,  4, 'T', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (19, 20, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
+        }
+        variants = {'ENST0001.1': create_variants(var_data)}
+        variant_pool = seqvar.VariantRecordPool(transcriptional=variants)
+
+        node = graph.apply_insertion(nodes[1], var_insertion,
+            variant_pool, genome, anno)
         self.assertEqual(str(node.seq.seq), 'AAC')
-        self.assertEqual(len(node.out_edges), 2)
-        node1 = node.get_reference_next()
-        for edge in node.out_edges:
-            x = edge.out_node
-            if x is node1:
-                self.assertEqual(str(x.seq.seq), 'C')
-            else:
-                self.assertEqual(str(x.seq.seq), 'C' + insert_seq_str)
-                self.assertEqual(len(x.in_edges), 1)
-                self.assertEqual(len(x.out_edges), 1)
+        node_seqs = {str(edge.out_node.seq.seq) for edge in node.out_edges}
+        self.assertEqual(node_seqs, {'C', 'CCCTATG'})
+
 
     def test_apply_insertion_case2(self):
         r"""
-                                         T
-                                        / \
-                                    CTGC-C-GTTG
+                                       T    A
+                                      / \  / \
+                                    CC-C-TA-T-G
                                    /           \
         AACCTGGCGGTTC     ->    AAC-C-----------TGGCGGTTC
         """
-        seq = 'AACCTGGCGGTTC'
-        insert_seq_str = 'TGCCGTTG'
-        insert_seq = create_dna_seq_with_coordinates(insert_seq_str, 10, 18)
-        var_data = [
-            (3,4,'C','<INS>','Insertion',''),
-            (13,14,'C',"T",'SNV','')
-        ]
-        variants = create_variants(var_data)
-        insert_var = variants.pop(0)
-        graph = create_dgraph1(seq, [])
-        graph.add_null_root()
-        node = graph.root.get_reference_next()
-        node = graph.apply_insertion(node, insert_var, insert_seq, variants)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        genome = create_dna_record_dict(GENOME_DATA)
+        data = {
+            1: ('AACCTGGCGGTTC', [], [])
+        }
+        graph, nodes = create_dgraph2(data)
+
+        attrs = {
+            'GENE_ID': 'ENSG0001',
+            'DONOR_GENE_ID': 'ENSG0001',
+            'DONOR_START': 17,
+            'DONOR_END': 23
+        }
+        var_insertion = create_variant(3,4,'C','<INS>','Insertion','', attrs)
+
+        var_data = {
+            ( 3,  4, 'T', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (8, 9, 'C', 'T', 'SNV', '', None, 'ENST0001.1'),
+            (11, 12, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
+        }
+        variants = {'ENST0001.1': create_variants(var_data)}
+        variant_pool = seqvar.VariantRecordPool(transcriptional=variants)
+
+        node = graph.apply_insertion(nodes[1], var_insertion,
+            variant_pool, genome, anno)
+
         self.assertEqual(str(node.seq.seq), 'AAC')
-        self.assertEqual(len(node.out_edges), 2)
-        node1 = node.get_reference_next()
-        for edge in node.out_edges:
-            x = edge.out_node
-            if x is node1:
-                self.assertEqual(str(x.seq.seq), 'C')
-            else:
-                self.assertEqual(str(x.seq.seq), 'CTGC')
-                for edge2 in x.out_edges:
-                    if edge2.type == 'reference':
-                        self.assertEqual(str(edge2.out_node.seq.seq), 'C')
-                    else:
-                        self.assertEqual(str(edge2.out_node.seq.seq), 'T')
+        node_seqs = {str(edge.out_node.seq.seq) for edge in node.out_edges}
+        self.assertEqual(node_seqs, {'C', 'CC'})
+
+        node = list(filter(lambda x:str(x.out_node.seq.seq) == 'CC', node.out_edges))[0].out_node
+        node_seqs = {str(edge.out_node.seq.seq) for edge in node.out_edges}
+        self.assertEqual(node_seqs, {'C', 'T'})
+
+        node = list(filter(lambda x:str(x.out_node.seq.seq) == 'C', node.out_edges))[0].out_node
+        node = list(node.out_edges)[0].out_node
+        node_seqs = {str(edge.out_node.seq.seq) for edge in node.out_edges}
+        self.assertEqual(node_seqs, {'T', 'A'})
 
     def test_apply_substitution_case1(self):
-        r"""
-                                   TGCCGTTG
-                                  /        \
-        AACCTGGCGGTTC    ->    AAC-CTGGC----GGTTC
+        r"""                         T
+                                    / \
+                                   C-C-TATG
+                                  /         \
+        AACCTGGCGGTTC    ->    AAC-CTGGC-----GGTTC
         """
-        seq = 'AACCTGGCGGTTC'
-        sub_seq_str = 'TGCCGTTG'
-        sub_seq = create_dna_seq_with_coordinates(sub_seq_str, 10, 18)
-        var_data = [
-            (3,8,'C','<SUB>','Substitution','')
-        ]
-        varaints = create_variants(var_data)
-        insert_var = varaints.pop(-1)
-        graph = create_dgraph1(seq, [])
-        graph.add_null_root()
-        node = graph.root.get_reference_next()
-        node = graph.apply_substitution(node, insert_var, sub_seq, [])
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        genome = create_dna_record_dict(GENOME_DATA)
+        data = {
+            1: ('AACCTGGCGGTTC', [], [])
+        }
+        graph, nodes = create_dgraph2(data)
+
+        attrs = {
+            'GENE_ID': 'ENSG0001',
+            'START': 3,
+            'END': 8,
+            'DONOR_GENE_ID': 'ENSG0001',
+            'DONOR_START': 17,
+            'DONOR_END': 23
+        }
+        var_sub = create_variant(3,8,'C','<SUB>','Substitution','', attrs)
+
+        var_data = {
+            ( 3,  4, 'T', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (8, 9, 'C', 'T', 'SNV', '', None, 'ENST0001.1'),
+            (19, 20, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
+        }
+
+        variants = {'ENST0001.1': create_variants(var_data)}
+        variant_pool = seqvar.VariantRecordPool(transcriptional=variants)
+
+        node = graph.apply_substitution(nodes[1], var_sub, variant_pool,
+            genome, anno)
+
         self.assertEqual(str(node.seq.seq), 'AAC')
-        self.assertEqual(len(node.out_edges), 2)
-        for edge in node.out_edges:
-            x = edge.out_node
-            if edge.type == 'reference':
-                self.assertEqual(str(x.seq.seq), 'CTGGC')
-            else:
-                self.assertEqual(str(x.seq.seq), sub_seq_str)
-                self.assertEqual(len(x.in_edges), 1)
-                self.assertEqual(len(x.out_edges), 1)
+        node_seqs = {str(edge.out_node.seq.seq) for edge in node.out_edges}
+        self.assertEqual(node_seqs, {'CTGGC', 'C'})
+
+        node = list(filter(lambda x:str(x.out_node.seq.seq) == 'C', node.out_edges))[0].out_node
+        node_seqs = {str(edge.out_node.seq.seq) for edge in node.out_edges}
+        self.assertEqual(node_seqs, {'C', 'T'})
+
 
     def test_apply_deletion_case1(self):
         r"""

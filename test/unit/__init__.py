@@ -1,9 +1,29 @@
 """ Test module for moPepGen """
 from typing import Dict, List, Tuple, Union
 import copy
+from pathlib import Path
+import pickle
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import svgraph, dna, seqvar, gtf, aa
+
+
+def load_references(base_dir:Path=None, index:bool=False
+        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation]:
+    """ Load reference files """
+    genome, anno = None, None
+    if index:
+        with open(base_dir/'genome.pickle', 'rb') as handle:
+            genome = pickle.load(handle)
+        with open(base_dir/'annotation.pickle', 'rb') as handle:
+            anno = pickle.load(handle)
+    else:
+        genome = dna.DNASeqDict()
+        genome.dump_fasta(base_dir/'genome.fasta')
+        anno = gtf.GenomicAnnotation()
+        anno.dump_gtf(base_dir/'annotation.gtf')
+    return genome, anno
+
 
 Type = Tuple[Union[svgraph.TranscriptVariantGraph, svgraph.CircularVariantGraph],
         Dict[int, svgraph.TVGNode]]
@@ -118,9 +138,9 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
 
 
 def create_variant(start:int, end:int, ref:str, alt:str, _type:str, _id:str,
-        attrs:dict=None) -> seqvar.VariantRecord:
+        attrs:dict=None, seqname:str=None) -> seqvar.VariantRecord:
     """ Helper function to create a VariantRecord """
-    location = FeatureLocation(start=start, end=end)
+    location = FeatureLocation(start=start, end=end, seqname=seqname)
     return seqvar.VariantRecord(
         location=location, ref=ref, alt=alt,
         _type=_type, _id=_id, attrs=attrs
@@ -152,7 +172,7 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
     chrom = data['chrom']
     strand = data['strand']
     entry = data['transcript']
-    location = FeatureLocation(start=entry[0], end=entry[1])
+    location = FeatureLocation(start=entry[0], end=entry[1], seqname=chrom)
     transcript = SeqFeature(chrom=chrom, location=location,
         attributes=entry[2], strand=strand)
     exons = []

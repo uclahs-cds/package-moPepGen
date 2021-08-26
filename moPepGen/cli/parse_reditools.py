@@ -1,10 +1,13 @@
 """ Module for REDItools parser """
-from typing import Dict, List
-import argparse
+from __future__ import annotations
+from typing import Dict, List, TYPE_CHECKING
 from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_verbose, print_start_message,\
     print_help_if_missing_args, load_references, generate_metadata
 
+
+if TYPE_CHECKING:
+    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
@@ -13,7 +16,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
     p = subparsers.add_parser(
         name='parseREDItools',
         help='Parse REDItools result for moPepGen to call variant peptides.',
-        description='Parse the REDItools result to a TVF format of variant'
+        description='Parse the REDItools result to a GVF format of variant'
         'records for moPepGen to call variant peptides. The genome'
     )
     p.add_argument(
@@ -45,12 +48,12 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
     print_help_if_missing_args(p)
 
 def parse_reditools(args:argparse.Namespace) -> None:
-    """ Parse REDItools output and save it in the TVF format. """
+    """ Parse REDItools output and save it in the GVF format. """
     # unpack args
     table_file = args.reditools_table
     transcript_id_column = args.transcript_id_column
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 

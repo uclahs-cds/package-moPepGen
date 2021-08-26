@@ -1,9 +1,12 @@
 """ Moduel for CircRNA """
 from __future__ import annotations
-from typing import List
+from typing import List, TYPE_CHECKING
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
-from moPepGen import dna, gtf
 
+
+if TYPE_CHECKING:
+    from moPepGen.dna import DNASeqRecordWithCoordinates
+    from moPepGen.gtf import GeneAnnotationModel
 
 class CircRNAModel():
     """
@@ -12,12 +15,12 @@ class CircRNAModel():
         fragments (List[SeqFeature])
         intron (List[int])
         id (str)
-        transcript_ids (str)
+        transcript_ids (List[str])
         gene_name (str)
         gene_locations (List[SeqFeature])
     """
     def __init__(self, gene_id:str, fragments:List[SeqFeature], intron:List[int],
-            _id:str, transcript_ids:str,  gene_name:str):
+            _id:str, transcript_ids:List[str],  gene_name:str):
         """ Constructor """
         self.gene_id = gene_id
         self.fragments = fragments
@@ -27,7 +30,7 @@ class CircRNAModel():
         self.gene_name = gene_name
         self.gene_locations = []
 
-    def get_gene_coordinates(self, gene:gtf.GeneAnnotationModel) -> None:
+    def get_gene_coordinates(self, gene:GeneAnnotationModel) -> None:
         """ Get the coordinates of the gene """
         features:List[SeqFeature] = []
         for i,fragment in enumerate(self.fragments):
@@ -43,11 +46,11 @@ class CircRNAModel():
             features.append(feature)
         self.gene_locations = features
 
-    def get_circ_rna_sequence(self, seq:dna.DNASeqRecordWithCoordinates):
+    def get_circ_rna_sequence(self, seq:DNASeqRecordWithCoordinates):
         """ Get the DNA sequence of the circRNA.
 
         Args:
-            seq (dna.DNASeqRecordWithCoordinates): The DNA sequence of the
+            seq (DNASeqRecordWithCoordinates): The DNA sequence of the
                 transcript where the circRNA comes from.
         """
         circ = None
@@ -56,8 +59,8 @@ class CircRNAModel():
             circ = circ + new_seq if circ else new_seq
         return circ
 
-    def to_tvf(self) -> str:
-        """ Convert to a TVF record """
+    def to_string(self) -> str:
+        """ Convert to a string """
         gene_id = self.gene_id
         start = int(self.fragments[0].location.start)
         offset, length = [], []

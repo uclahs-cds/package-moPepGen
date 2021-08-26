@@ -1,0 +1,18 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseRMATS
+##reference_index=/path/to/reference/index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotaion.gtf
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000128408.9	405	SE-1	C	<DEL>	.	.	TRANSCRIPT_ID=ENST00000614167.2;START=405;END=750;GENE_SYMBOL=RIBC2;GENOMIC_POSITION="chr1:1000-1001"
+ENSG00000128408.9	405	SE-1	C	<INS>	.	.	TRANSCRIPT_ID=ENST00000614168.2;DONOR_GENE_ID=ENSG00000128408.9;DONOR_START=405;DONOR_END=750;GENE_SYMBOL=RIBC2;GENOMIC_POSITION="chr1:1000-1001"
+ENSG00000128408.9	524	SE-1	C	<SUB>	.	.	TRANSCRIPT_ID=ENST00000614168.2;START=524;END=752;DONOR_START=1097;DONOR_GENE_ID=ENSG00000128408.9;DONOR_END=1264;COORDINATE=gene;GENE_SYMBOL=RIBC2;GENOMIC_POSITION="chr1:1000-1001"

@@ -23,7 +23,7 @@ class TestSeqvarIO(unittest.TestCase):
         shutil.rmtree(WORK_DIR, ignore_errors=True)
     def test_seqvar_parse(self):
         """ Test parsing seqvar files. """
-        mop_path = 'test/files/vep/vep.tvf'
+        mop_path = 'test/files/vep/vep.gvf'
         i = 0
         for record in seqvar.io.parse(mop_path):
             i += 1
@@ -38,7 +38,7 @@ class TestSeqvarIO(unittest.TestCase):
         variant = create_variant(10, 11, 'A', 'T', 'SNV', 'SNV-1', attrs)
         variant.location.seqname = 'ENST0001'
         output_file = WORK_DIR/'test.tvf'
-        metadata = seqvar.TVFMetadata('parseXXX')
+        metadata = seqvar.GVFMetadata('parseXXX')
         seqvar.io.write([variant], output_file, metadata)
         with open(output_file, 'rt') as handle:
             for line in handle:

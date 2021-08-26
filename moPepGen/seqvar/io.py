@@ -1,13 +1,13 @@
 """ Module for moPepGen seqvar IO """
 from typing import Iterable
 import tempfile
-from moPepGen.seqvar.TVFMetadata import TVFMetadata
+from moPepGen.seqvar.TVFMetadata import GVFMetadata
 from moPepGen.seqvar.VariantRecord import VariantRecord, ATTRS_POSITION
 from moPepGen.SeqFeature import FeatureLocation
 
 
 def parse(path:str) -> Iterable[VariantRecord]:
-    """ Parse a TVF file.
+    """ Parse a GVF file.
 
     Args:
         path (str): Path to the moPepGen variant file.
@@ -23,7 +23,7 @@ def parse(path:str) -> Iterable[VariantRecord]:
                 continue
 
             fields = line.rstrip().split('\t')
-            transcript_id = fields[0]
+            gene_id = fields[0]
             start=int(fields[1]) - 1
             ref = fields[3]
             alt = fields[4]
@@ -57,7 +57,7 @@ def parse(path:str) -> Iterable[VariantRecord]:
 
             record = VariantRecord(
                 location=FeatureLocation(
-                    seqname=transcript_id,
+                    seqname=gene_id,
                     start=start,
                     end=end
                 ),
@@ -72,7 +72,7 @@ def parse(path:str) -> Iterable[VariantRecord]:
 
 
 def write(variants:Iterable[VariantRecord], output_path:str,
-        metadata:TVFMetadata):
+        metadata:GVFMetadata):
     """ Write variants to an out handle.
 
     Args:
@@ -86,7 +86,7 @@ def write(variants:Iterable[VariantRecord], output_path:str,
     with tempfile.TemporaryFile(mode='w+t') as temp_file:
         temp_file.write('#' + '\t'.join(headers) + '\n')
         for record in variants:
-            line = record.to_tvf()
+            line = record.to_string()
             temp_file.write(line + '\n')
             metadata.add_info(record.type)
         with open(output_path, 'w') as out_file:

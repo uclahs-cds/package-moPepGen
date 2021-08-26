@@ -1,4 +1,5 @@
 """ Test the VEP data model """
+import copy
 import unittest
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
@@ -9,11 +10,13 @@ GENOME_DATA = {
 }
 ANNOTATION_ATTRS = [
     {
-        'gene_id': 'ENSG0001'
+        'gene_id': 'ENSG0001',
+        'gene_name': 'SYMBO'
     },{
         'transcript_id': 'ENST0001.1',
         'gene_id': 'ENSG0001',
-        'protein_id': 'ENSP0001'
+        'protein_id': 'ENSP0001',
+        'gene_name': 'SYMBO'
     }
 ]
 ANNOTATION_DATA = {
@@ -48,35 +51,8 @@ class TestVEPRecord(unittest.TestCase):
 
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:10',
-            allele='A',
-            gene='ENSG0001',
-            feature='ENST0001.1',
-            feature_type='Transcript',
-            consequences=['missense_variant'],
-            cdna_position='10',
-            cds_position='10',
-            protein_position=3,
-            amino_acids=('S', 'T'),
-            codons=('Atg', 'Ctg'),
-            existing_variation='-',
-            extra={}
-        )
-        variant = vep_record.convert_to_variant_record(anno, genome)
-        self.assertEqual(int(variant.location.start), 9)
-        self.assertEqual(int(variant.location.end), 10)
-        self.assertEqual(str(variant.ref), 'A')
-        self.assertEqual(str(variant.alt), 'C')
-
-    def test_vep_to_variant_record_case2(self):
-        """ Test convert vep to variant record for SNV tCc/tTc
-        """
-        genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTATION_DATA)
-        vep_record = VEPParser.VEPRecord(
-            uploaded_variation='rs55971985',
-            location='chr1:11',
-            allele='T',
+            location='chr1:21',
+            allele='C',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
@@ -85,13 +61,42 @@ class TestVEPRecord(unittest.TestCase):
             cds_position='11',
             protein_position=3,
             amino_acids=('S', 'T'),
+            codons=('Atg', 'Ctg'),
+            existing_variation='-',
+            extra={}
+        )
+        variant = vep_record.convert_to_variant_record(anno, genome)
+        tx_variant = variant.to_transcript_variant(anno, genome)
+        self.assertEqual(int(tx_variant.location.start), 10)
+        self.assertEqual(int(tx_variant.location.end), 11)
+        self.assertEqual(str(tx_variant.ref), 'A')
+        self.assertEqual(str(tx_variant.alt), 'C')
+
+    def test_vep_to_variant_record_case2(self):
+        """ Test convert vep to variant record for SNV tCc/tTc
+        """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:22',
+            allele='C',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='12',
+            cds_position='12',
+            protein_position=3,
+            amino_acids=('S', 'T'),
             codons=('aTg', 'aCg'),
             existing_variation='-',
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        self.assertEqual(int(variant.location.start), 10)
-        self.assertEqual(int(variant.location.end), 11)
+        variant = variant.to_transcript_variant(anno, genome)
+        self.assertEqual(int(variant.location.start), 11)
+        self.assertEqual(int(variant.location.end), 12)
         self.assertEqual(str(variant.ref), 'T')
         self.assertEqual(str(variant.alt), 'C')
 
@@ -103,8 +108,8 @@ class TestVEPRecord(unittest.TestCase):
 
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:11',
-            allele='T',
+            location='chr1:21',
+            allele='-',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
@@ -118,6 +123,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 9)
         self.assertEqual(int(variant.location.end), 11)
         self.assertEqual(str(variant.ref), 'TA')
@@ -133,14 +139,14 @@ class TestVEPRecord(unittest.TestCase):
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:11',
-            allele='T',
+            location='chr1:20-21',
+            allele='G',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
             consequences=['missense_variant'],
-            cdna_position='10',
-            cds_position='10',
+            cdna_position='10-11',
+            cds_position='10-11',
             protein_position=3,
             amino_acids=('S', 'T'),
             codons=('tat', 'tGat'),
@@ -148,6 +154,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 9)
         self.assertEqual(int(variant.location.end), 10)
         self.assertEqual(str(variant.ref), 'T')
@@ -163,8 +170,8 @@ class TestVEPRecord(unittest.TestCase):
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:11',
-            allele='T',
+            location='chr1:20-22',
+            allele='-',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
@@ -178,6 +185,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 8)
         self.assertEqual(int(variant.location.end), 12)
         self.assertEqual(str(variant.ref), 'CTAT')
@@ -193,8 +201,8 @@ class TestVEPRecord(unittest.TestCase):
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:11',
-            allele='T',
+            location='chr1:20-21',
+            allele='GAG',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
@@ -208,6 +216,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 9)
         self.assertEqual(int(variant.location.end), 10)
         self.assertEqual(str(variant.ref), 'T')
@@ -223,8 +232,8 @@ class TestVEPRecord(unittest.TestCase):
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:11',
-            allele='T',
+            location='chr1:20-21',
+            allele='GAG',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
@@ -238,6 +247,7 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 9)
         self.assertEqual(int(variant.location.end), 10)
         self.assertEqual(str(variant.ref), 'T')
@@ -247,13 +257,14 @@ class TestVEPRecord(unittest.TestCase):
         """ Test convert vep to variant record with a deletion at the begining
         of the transcript sequence.
         """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTATION_DATA)
+        anno = create_genomic_annotation(anno_data)
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:11',
-            allele='T',
+            location='chr1:6-8',
+            allele='-',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
@@ -267,10 +278,8 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
-        self.assertEqual(int(variant.location.start), 0)
-        self.assertEqual(int(variant.location.end), 3)
-        self.assertEqual(str(variant.ref), 'CTG')
-        self.assertEqual(str(variant.alt), 'TA')
+        with self.assertRaises(ValueError):
+            variant.to_transcript_variant(anno, genome)
 
     def test_vep_to_variant_record_case9(self):
         """ Test convert vep to variant record with a deletion at the begining
@@ -282,8 +291,8 @@ class TestVEPRecord(unittest.TestCase):
         # seq: CTGGT CCCCT ATGGG TCCTT C
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:11',
-            allele='T',
+            location='chr1:6-8',
+            allele='-',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
@@ -297,10 +306,43 @@ class TestVEPRecord(unittest.TestCase):
             extra={}
         )
         variant = vep_record.convert_to_variant_record(anno, genome)
+        variant = variant.to_transcript_variant(anno, genome)
         self.assertEqual(int(variant.location.start), 0)
         self.assertEqual(int(variant.location.end), 4)
         self.assertEqual(str(variant.ref), 'CTGG')
         self.assertEqual(str(variant.alt), 'G')
+
+    def test_vep_to_variant_record_case10(self):
+        """ Test convert vep to variant record with - strand
+        """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(anno_data)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:21',
+            allele='C',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('aTa', 'aCa'),
+            existing_variation='-',
+            extra={}
+        )
+        variant = vep_record.convert_to_variant_record(anno, genome)
+        tx_variant = variant.to_transcript_variant(anno, genome)
+        self.assertEqual(int(tx_variant.location.start), 10)
+        self.assertEqual(int(tx_variant.location.end), 11)
+        self.assertEqual(str(tx_variant.ref), 'T')
+        self.assertEqual(str(tx_variant.alt), 'G')
 
 
 if __name__ == '__main__':

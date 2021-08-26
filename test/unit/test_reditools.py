@@ -1,30 +1,48 @@
 """ Test module for reditools parser """
+import copy
 import unittest
-from test.unit import create_transcript_model
+from test.unit.test_vep import ANNOTATION_ATTRS
+from test.unit import create_genomic_annotation
 from moPepGen import parser
 
+
+ANNOTATION_ATTRS = [
+    {
+        'gene_id': 'ENSG0001',
+        'gene_name': 'SYMBO'
+    }, {
+        'transcript_id': 'ENST0001',
+        'gene_id': 'ENSG0001',
+        'protein_id': 'ENSP0001',
+        'gene_name': 'SYMBO'
+    }
+]
+ANNOTATION_DATA = {
+    'genes': [{
+        'gene_id': ANNOTATION_ATTRS[0]['gene_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'gene': (0, 400, ANNOTATION_ATTRS[0]),
+        'transcripts': ['ENST0001']
+    }],
+    'transcripts': [{
+        'transcript_id': ANNOTATION_ATTRS[1]['transcript_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'transcript': (150, 350, ANNOTATION_ATTRS[1]),
+        'exon': [
+            (150, 200, ANNOTATION_ATTRS[1]),
+            (225, 275, ANNOTATION_ATTRS[1]),
+            (300, 350, ANNOTATION_ATTRS[1])
+        ]
+    }]
+}
 
 class TestREDItoolsParser(unittest.TestCase):
     """ Test case for REDItoolsParser """
     def test_reditools_record_to_variant_case1(self):
         """ strand positive """
-        attributes = {
-            'transcript_id': 'ENST0002',
-            'gene_id': 'ENSG0002',
-            'protein_id': 'ENSP0002'
-        }
-        data = {
-            'chrom': 'chr22',
-            'strand': 1,
-            'transcript': (150, 350, attributes),
-            'exon': [
-                (150,200,attributes),
-                (225, 275, attributes),
-                (300, 350, attributes)
-            ]
-        }
-        model = create_transcript_model(data)
-        anno = {'ENST0001': model}
+        anno = create_genomic_annotation(ANNOTATION_DATA)
 
         # first exon
         record = parser.REDItoolsRecord(
@@ -40,8 +58,8 @@ class TestREDItoolsParser(unittest.TestCase):
             transcript_id=[('ENST0001', 'transcript')]
         )
         variants = record.convert_to_variant_records(anno)
-        self.assertEqual(variants[0].location.start, 24)
-        self.assertEqual(variants[0].location.end, 25)
+        self.assertEqual(variants[0].location.start, 174)
+        self.assertEqual(variants[0].location.end, 175)
         self.assertEqual(variants[0].ref, 'C')
         self.assertEqual(variants[0].alt, 'T')
 
@@ -59,30 +77,17 @@ class TestREDItoolsParser(unittest.TestCase):
             transcript_id=[('ENST0001', 'transcript')]
         )
         variants = record.convert_to_variant_records(anno)
-        self.assertEqual(variants[0].location.start, 74)
-        self.assertEqual(variants[0].location.end, 75)
+        self.assertEqual(variants[0].location.start, 249)
+        self.assertEqual(variants[0].location.end, 250)
         self.assertEqual(variants[0].ref, 'C')
         self.assertEqual(variants[0].alt, 'T')
 
     def test_reditools_record_to_variant_case2(self):
         """ strand negative """
-        attributes = {
-            'transcript_id': 'ENST0002',
-            'gene_id': 'ENSG0002',
-            'protein_id': 'ENSP0002'
-        }
-        data = {
-            'chrom': 'chr22',
-            'strand': -1,
-            'transcript': (150, 350, attributes),
-            'exon': [
-                (150,200,attributes),
-                (225, 275, attributes),
-                (300, 350, attributes)
-            ]
-        }
-        model = create_transcript_model(data)
-        anno = {'ENST0001': model}
+        annotation_data = copy.deepcopy(ANNOTATION_DATA)
+        annotation_data['genes'][0]['strand'] = -1
+        annotation_data['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(annotation_data)
 
         # first exon
         record = parser.REDItoolsRecord(
@@ -98,8 +103,8 @@ class TestREDItoolsParser(unittest.TestCase):
             transcript_id=[('ENST0001', 'transcript')]
         )
         variants = record.convert_to_variant_records(anno)
-        self.assertEqual(variants[0].location.start, 25)
-        self.assertEqual(variants[0].location.end, 26)
+        self.assertEqual(variants[0].location.start, 75)
+        self.assertEqual(variants[0].location.end, 76)
         self.assertEqual(variants[0].ref, 'G')
         self.assertEqual(variants[0].alt, 'A')
 
@@ -117,7 +122,7 @@ class TestREDItoolsParser(unittest.TestCase):
             transcript_id=[('ENST0001', 'transcript')]
         )
         variants = record.convert_to_variant_records(anno)
-        self.assertEqual(variants[0].location.start, 75)
-        self.assertEqual(variants[0].location.end, 76)
+        self.assertEqual(variants[0].location.start, 150)
+        self.assertEqual(variants[0].location.end, 151)
         self.assertEqual(variants[0].ref, 'G')
         self.assertEqual(variants[0].alt, 'A')

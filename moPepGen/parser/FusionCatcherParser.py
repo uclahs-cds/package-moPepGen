@@ -1,7 +1,7 @@
 """ Module for FusionCatcher parser """
 from __future__ import annotations
 import re
-from typing import Iterable, List, Dict
+from typing import Iterable, List, Dict, Tuple
 import itertools
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, gtf, dna
@@ -37,7 +37,7 @@ def parse(path:str) -> Iterable[FusionCatcherRecord]:
                 three_end_gene_id = fields[11],
                 five_end_exon_id = fields[12],
                 three_end_exon_id = fields[13],
-                fusion_sequence = fields[14],
+                fusion_sequence = tuple(fields[14].split('*')),
                 predicted_effect = fields[15]
             )
             line = next(handle, None)
@@ -50,7 +50,7 @@ class FusionCatcherRecord():
             junction_pair_count:int, junction_read_count:int, longest_anchor: int,
             methods:List[str], five_end_breakpoint:str, three_end_breakpoint:str,
             five_end_gene_id:str, three_end_gene_id:str, five_end_exon_id:str,
-            three_end_exon_id:str, fusion_sequence:str, predicted_effect:str
+            three_end_exon_id:str, fusion_sequence:Tuple[str, str], predicted_effect:str
             ):
         """"""
         self.five_end_gene_symbol = five_end_gene_symbol
@@ -84,13 +84,17 @@ class FusionCatcherRecord():
         """
         pattern = re.compile(r'\.[0-9]+$')
         if pattern.search(self.five_end_gene_id):
-            donor_gene_model = anno[self.five_end_gene_id]
-            accepter_gene_model = anno[self.three_end_gene_id]
+            donor_gene_id = self.five_end_gene_id
+            accepter_gene_id = self.three_end_gene_id
+            donor_gene_model = anno.genes[self.five_end_gene_id]
+            accepter_gene_model = anno.genes[self.three_end_gene_id]
         else:
             donor_gene_model = anno.get_gene_model_from_unversioned_id(
                 self.five_end_gene_id)
             accepter_gene_model = anno.get_gene_model_from_unversioned_id(
                 self.three_end_gene_id)
+            donor_gene_id = donor_gene_model.attributes['gene_id']
+            accepter_gene_id = accepter_gene_model.attributes['gene_id']
 
         # in case the ensembl ID does not match those in annotation
         # and not the same gene is referered to
@@ -120,8 +124,20 @@ class FusionCatcherRecord():
         # fusion catcher uses 1-based coordinates
         # left breakpoint is the first nucleotide in the fusion transcript
         # after the breakpoint
-        left_breakpoint = int(self.five_end_breakpoint.split(':')[1])
-        right_breakpoint = int(self.three_end_breakpoint.split(':')[1])
+        left_breakpoint_genomic = int(self.five_end_breakpoint.split(':')[1]) - 1
+        right_breakpoint_genomic = int(self.three_end_breakpoint.split(':')[1]) - 1
+        donor_genome_position = \
+            f'{donor_chrom}:{left_breakpoint_genomic}:{left_breakpoint_genomic}'
+        accepter_genome_position = \
+            f'{accepter_chrom}:{right_breakpoint_genomic}:{right_breakpoint_genomic}'
+        left_breakpoint_genetic = anno.coordinate_genomic_to_gene(
+            index=left_breakpoint_genomic, gene=donor_gene_id
+        ) + 1
+        right_breakpoint_genetic = anno.coordinate_genomic_to_gene(
+            index=right_breakpoint_genomic, gene=accepter_gene_id
+        )
+        fusion_id = f'FUSION_{donor_gene_id}:{left_breakpoint_genetic}'+\
+            f'-{accepter_gene_id}:{right_breakpoint_genetic}'
 
         records = []
 
@@ -129,39 +145,29 @@ class FusionCatcherRecord():
         perms = itertools.product(donor_transcripts.keys(), \
             accepter_transcripts.keys())
         for donor_id, accepter_id in perms:
-            donor_model = donor_transcripts[donor_id]
-            donor_position = donor_model.get_transcript_index(left_breakpoint)
-            seq = donor_model.get_transcript_sequence(genome[donor_chrom])
-            donor_genome_position = \
-                f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
-
-            accepter_model = accepter_transcripts[accepter_id]
-            accepter_position = accepter_model.get_transcript_index(right_breakpoint)
-            accepter_genome_position = \
-                f'{accepter_chrom}:{right_breakpoint}:{right_breakpoint}'
+            seq = donor_gene_model.get_gene_sequence(genome[donor_chrom])
 
             location = FeatureLocation(
-                seqname=donor_id,
-                start=donor_position,
-                end=donor_position + 1
+                seqname=donor_gene_id,
+                start=left_breakpoint_genetic,
+                end=left_breakpoint_genetic + 1
             )
-            _id = f'FUSION_{donor_id}:{donor_position}-{accepter_id}:{accepter_position}'
             attrs = {
-                'GENE_ID': self.five_end_gene_id,
-                'GENE_SYMBOL': self.five_end_gene_symbol,
+                'TRANSCRIPT_ID': donor_id,
+                'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
-                'ACCEPTER_GENE_ID': self.three_end_gene_id,
+                'ACCEPTER_GENE_ID': accepter_gene_id,
                 'ACCEPTER_TRANSCRIPT_ID': accepter_id,
-                'ACCEPTER_SYMBOL': self.three_end_gene_symbol,
-                'ACCEPTER_POSITION': accepter_position - 1,
+                'ACCEPTER_SYMBOL': accepter_gene_symbol,
+                'ACCEPTER_POSITION': right_breakpoint_genetic,
                 'ACCEPTER_GENOMIC_POSITION': accepter_genome_position
             }
             record = seqvar.VariantRecord(
                 location=location,
-                ref=seq[donor_position],
+                ref=seq[left_breakpoint_genetic],
                 alt='<FUSION>',
                 _type='Fusion',
-                _id=_id,
+                _id=fusion_id,
                 attrs=attrs
             )
             records.append(record)

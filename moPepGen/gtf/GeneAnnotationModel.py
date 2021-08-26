@@ -31,3 +31,13 @@ class GeneAnnotationModel(SeqFeature):
         location = FeatureLocation(seqname=gene_id, start=0, end=len(seq))
         location = dna.MatchedLocation(query=location, ref=location)
         return dna.DNASeqRecordWithCoordinates(seq=seq, locations=[location])
+
+    def is_mrna_start_nf(self) -> bool:
+        """ Whether the gene annotation has the mRNA_start_NF tag """
+        return 'tag' in self.attributes and \
+            'mRNA_start_NF' in self.attributes['self.attributes']
+
+    def is_cds_start_nf(self) -> bool:
+        """ Whether the gene annotation has the cds_start_NF tag """
+        return 'tag' in self.attributes and \
+            'cds_start_NF' in self.attributes['self.attributes']

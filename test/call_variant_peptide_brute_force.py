@@ -1,4 +1,4 @@
-""" A brute forth algorithm for calling variant peptides from a TVF file. """
+""" A brute forth algorithm for calling variant peptides from a GVF file. """
 import sys
 import argparse
 from typing import List, Dict, Tuple
@@ -11,9 +11,9 @@ def parse_args():
     """ parse command line argments """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-i', '--input-tvf',
+        '-i', '--input-gvf',
         type=Path,
-        help='TVF file'
+        help='GVF file'
     )
     parser.add_argument(
         '-r', '--reference-dir',
@@ -79,9 +79,11 @@ def main(args):
         miscleavage=args.miscleavage, min_mw=args.min_mw
     )
 
-    variants = list(seqvar.io.parse(args.input_tvf))
-    variants.sort()
-    tx_id = variants[0].location.seqname
+    variant_pool = seqvar.VariantRecordPool.load_variants([args.input_gvf], anno, genome, False)
+
+    tx_id = list(variant_pool.transcriptional.keys())[0]
+    variants = variant_pool.transcriptional[tx_id]
+
     tx_model = anno.transcripts[tx_id]
     tx_seq = tx_model.get_transcript_sequence(genome['chr1'])
 
