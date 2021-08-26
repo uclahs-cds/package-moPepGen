@@ -81,11 +81,11 @@ class VariantRecordPool():
                 tx_id = record.attrs['TRANSCRIPT_ID']
                 try:
                     tx_record = record.to_transcript_variant(anno, genome, tx_id)
+                    variants.add_transcriptional_variant(tx_record, tx_id)
                 except ValueError as e:
                     if e.args[0] == ERROR_INDEX_IN_INTRON:
                         variants.add_intronic_variant(record, tx_id)
-                        continue
-                variants.add_transcriptional_variant(tx_record, tx_id)
+
             if verbose:
                 logger(f'Variant file {file} loaded.')
 
