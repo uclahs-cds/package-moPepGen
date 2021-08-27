@@ -27,7 +27,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
         dest='output_dir',
         required=True
     )
-    add_args_reference(p)
+    add_args_reference(p, index=False)
     add_args_cleavage(p)
     add_args_verbose(p)
     p.set_defaults(func=generate_index)

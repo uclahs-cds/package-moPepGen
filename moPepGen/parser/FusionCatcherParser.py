@@ -23,22 +23,22 @@ def parse(path:str) -> Iterable[FusionCatcherRecord]:
                 continue
             fields = line.rstrip().split('\t')
             yield FusionCatcherRecord(
-                five_end_gene_symbol = fields[0],
-                three_end_gene_symbol = fields[1],
-                fusion_descriptions = fields[2].split(','),
-                multimapping_read_count = int(fields[3]),
-                junction_pair_count = int(fields[4]),
-                junction_read_count = int(fields[5]),
-                longest_anchor = int(fields[6]),
-                methods = fields[7].split(';'),
-                five_end_breakpoint = fields[8],
-                three_end_breakpoint = fields[9],
-                five_end_gene_id = fields[10],
-                three_end_gene_id = fields[11],
-                five_end_exon_id = fields[12],
-                three_end_exon_id = fields[13],
-                fusion_sequence = tuple(fields[14].split('*')),
-                predicted_effect = fields[15]
+                five_end_gene_symbol=fields[0],
+                three_end_gene_symbol=fields[1],
+                fusion_descriptions=fields[2].split(','),
+                counts_of_common_mapping_reads=int(fields[3]),
+                spanning_pairs=int(fields[4]),
+                spanning_unique_reads=int(fields[5]),
+                longest_anchor_found=int(fields[6]),
+                fusion_finding_method=fields[7].split(';'),
+                five_end_breakpoint=fields[8],
+                three_end_breakpoint=fields[9],
+                five_end_gene_id=fields[10],
+                three_end_gene_id=fields[11],
+                five_end_exon_id=fields[12],
+                three_end_exon_id=fields[13],
+                fusion_sequence=tuple(fields[14].split('*')),
+                predicted_effect=fields[15]
             )
             line = next(handle, None)
 
@@ -46,21 +46,23 @@ def parse(path:str) -> Iterable[FusionCatcherRecord]:
 class FusionCatcherRecord():
     """ Defines a record of FusionCatcher's output. """
     def __init__(self, five_end_gene_symbol:str, three_end_gene_symbol:int,
-            fusion_descriptions:List[str], multimapping_read_count:int,
-            junction_pair_count:int, junction_read_count:int, longest_anchor: int,
-            methods:List[str], five_end_breakpoint:str, three_end_breakpoint:str,
+            fusion_descriptions:List[str], counts_of_common_mapping_reads:int,
+            spanning_pairs:int, spanning_unique_reads:int,
+            longest_anchor_found:int, fusion_finding_method:List[str],
+            five_end_breakpoint:str, three_end_breakpoint:str,
             five_end_gene_id:str, three_end_gene_id:str, five_end_exon_id:str,
-            three_end_exon_id:str, fusion_sequence:Tuple[str, str], predicted_effect:str
+            three_end_exon_id:str, fusion_sequence:Tuple[str, str],
+            predicted_effect:str
             ):
         """"""
         self.five_end_gene_symbol = five_end_gene_symbol
         self.three_end_gene_symbol = three_end_gene_symbol
         self.fusion_descriptions = fusion_descriptions
-        self.multimapping_read_count = multimapping_read_count
-        self.junction_pair_count = junction_pair_count
-        self.junction_read_count = junction_read_count
-        self.longest_anchor = longest_anchor
-        self.methods = methods
+        self.counts_of_common_mapping_reads = counts_of_common_mapping_reads
+        self.spanning_pairs = spanning_pairs
+        self.spanning_unique_reads = spanning_unique_reads
+        self.longest_anchor_found = longest_anchor_found
+        self.fusion_finding_method = fusion_finding_method
         self.five_end_breakpoint = five_end_breakpoint
         self.three_end_breakpoint = three_end_breakpoint
         self.five_end_gene_id = five_end_gene_id

@@ -39,7 +39,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         metavar='',
         required=True
     )
-    add_args_reference(p)
+    add_args_reference(p, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_vep)
     print_help_if_missing_args(p)

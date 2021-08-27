@@ -42,7 +42,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         metavar='',
         required=True
     )
-    add_args_reference(p)
+    add_args_reference(p, genome=False, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_reditools)
     print_help_if_missing_args(p)

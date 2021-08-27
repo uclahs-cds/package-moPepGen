@@ -18,7 +18,6 @@ class TestParseVEP(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'vep')
         args.verbose = False
         cli.parse_vep(args)

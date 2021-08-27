@@ -6,7 +6,7 @@ from moPepGen.dna import DNASeqRecord
 
 class DNASeqDict(dict):
     """ A DNASeqDict object is a dict-like object that the values are
-    DNASeqRecord onbjects.
+    DNASeqRecord objects.
     """
     def __init__(self, *args, **kwargs) -> None:
         for val in kwargs.values():

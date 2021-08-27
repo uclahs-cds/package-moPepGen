@@ -12,9 +12,7 @@ class TestParseREDItools(TestCaseIntegration):
         args.reditools_table = self.data_dir/'reditools/reditools_annotated.txt'
         args.transcript_id_column = 16
         args.index_dir = None
-        args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'reditools')
         args.verbose = False
         cli.parse_reditools(args)

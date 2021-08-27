@@ -35,7 +35,14 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         required=True,
         metavar=''
     )
-    add_args_reference(p)
+    p.add_argument(
+        '--min-read-number',
+        type=int,
+        help='Minimal number of junction read counts. Defaults to 1',
+        default=1,
+        metavar=''
+    )
+    add_args_reference(p, genome=False, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_circexplorer)
     print_help_if_missing_args(p)
@@ -53,6 +60,8 @@ def parse_circexplorer(args:argparse.Namespace):
     circ_records:Dict[str, List[circ.CircRNAModel]] = {}
 
     for record in CIRCexplorerParser.parse(input_path):
+        if record.read_number < args.min_read_number:
+            continue
         circ_record = record.convert_to_circ_rna(anno)
         gene_id = circ_record.gene_id
         if gene_id not in circ_records:
