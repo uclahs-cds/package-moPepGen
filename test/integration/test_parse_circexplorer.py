@@ -15,6 +15,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.min_read_number = 1
         args.verbose = False
         cli.parse_circexplorer(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}

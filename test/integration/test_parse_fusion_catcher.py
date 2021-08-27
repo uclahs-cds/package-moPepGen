@@ -41,8 +41,9 @@ class TestParseFusionCatcher(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'fusion_catcher')
+        args.max_common_mapping = 0
+        args.min_spanning_unique = 5
         args.verbose = False
         cli.parse_fusion_catcher(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}

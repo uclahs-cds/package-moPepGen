@@ -70,7 +70,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         metavar=''
     )
 
-    add_args_reference(p)
+    add_args_reference(p, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_rmats)
     print_help_if_missing_args(p)

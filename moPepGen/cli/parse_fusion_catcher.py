@@ -31,7 +31,21 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
         metavar='',
         required=True
     )
-    add_args_reference(p)
+    p.add_argument(
+        '--max-common-mapping',
+        type=int,
+        help='Maximal number of common mapping reads. Defaults to 0',
+        metavar='',
+        default=0
+    )
+    p.add_argument(
+        '--min-spanning-unique',
+        help='Minimal spanning unique reads. Defaults to 5',
+        type=int,
+        default=5,
+        metavar=''
+    )
+    add_args_reference(p, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_fusion_catcher)
     print_help_if_missing_args(p)
@@ -50,6 +64,10 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
     variants:List[seqvar.VariantRecord] = []
 
     for record in parser.FusionCatcherParser.parse(fusion):
+        if record.counts_of_common_mapping_reads > args.max_common_mapping:
+            continue
+        if record.spanning_unique_reads < args.min_spanning_unique:
+            continue
         var_records = record.convert_to_variant_records(anno, genome)
         variants.extend(var_records)
 

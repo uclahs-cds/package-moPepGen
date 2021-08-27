@@ -137,7 +137,7 @@ class VariantRecordPool():
         elif end:
             _filter = lambda x: x.location.end < end
         else:
-            raise ValueError('Arguments provided do not match requriement.')
+            raise ValueError('Arguments provided do not match requirement.')
 
         records = set()
         for tx_id in anno.genes[gene_id].transcripts:

@@ -34,7 +34,14 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
         metavar='',
         required=True
     )
-    add_args_reference(p)
+    p.add_argument(
+        '--min-est-j',
+        help='Minimal estimated junction reads. Defaults to 5.0',
+        type=float,
+        default=5.0,
+        metavar=''
+    )
+    add_args_reference(p, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_star_fusion)
     print_help_if_missing_args(p)
@@ -53,6 +60,8 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
     variants:List[seqvar.VariantRecord] = []
 
     for record in parser.STARFusionParser.parse(fusion):
+        if record.est_j < args.min_est_j:
+            continue
         var_records = record.convert_to_variant_records(anno, genome)
         variants.extend(var_records)
 
