@@ -55,7 +55,7 @@ def parse_circexplorer(args:argparse.Namespace):
 
     print_start_message(args)
 
-    _, anno, _ = load_references(args, False, False)
+    _, anno, *_ = load_references(args, False, False)
 
     circ_records:Dict[str, List[circ.CircRNAModel]] = {}
 

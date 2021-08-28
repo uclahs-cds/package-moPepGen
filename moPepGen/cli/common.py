@@ -114,7 +114,7 @@ def add_args_verbose(parser:argparse.ArgumentParser):
 
 
 def load_references(args:argparse.Namespace, load_genome:bool=True,
-        load_canonical_peptides:bool=True
+        load_canonical_peptides:bool=True, load_proteome:bool=False
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, Set[str]]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
@@ -122,6 +122,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
     verbose:bool = args.verbose
 
     genome = None
+    annotation = None
     canonical_peptides = None
 
     if index_dir:
@@ -131,6 +132,10 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
 
         with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
             annotation = pickle.load(handle)
+
+        if load_proteome:
+            with open(f'{index_dir}/proteome.pickle', 'rb') as handle:
+                proteome = pickle.load(handle)
 
         if load_canonical_peptides:
             with open(f"{index_dir}/canonical_peptides.pickle", 'rb') as handle:
@@ -166,7 +171,10 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             if verbose:
                 logger('canonical peptide pool generated.')
 
-    return genome, annotation, canonical_peptides
+    if not load_proteome:
+        proteome = None
+
+    return genome, annotation, proteome, canonical_peptides
 
 def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
     """ Generate metadata """

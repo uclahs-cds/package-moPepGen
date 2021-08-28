@@ -55,7 +55,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
 
     print_start_message(args)
 
-    genome, anno, _ = load_references(args, load_canonical_peptides=False)
+    genome, anno, *_ = load_references(args, load_canonical_peptides=False)
 
     variants:List[seqvar.VariantRecord] = []
 

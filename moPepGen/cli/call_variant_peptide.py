@@ -1,4 +1,4 @@
-""" Module for call variant paptide """
+""" Module for calling variant paptide """
 from __future__ import annotations
 from typing import List, Set, TYPE_CHECKING
 from moPepGen import svgraph, aa, seqvar, logger, circ
@@ -68,7 +68,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     print_start_message(args)
 
-    genome, annotation, canonical_peptides = load_references(args=args)
+    genome, annotation, _, canonical_peptides = load_references(args=args)
 
     variants = seqvar.VariantRecordPool.load_variants(variant_files,
         annotation, genome, verbose)
