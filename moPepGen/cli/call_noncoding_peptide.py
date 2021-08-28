@@ -1,8 +1,8 @@
 """ Module for calling noncoding peptide """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-import pkg_resources
 from pathlib import Path
+import pkg_resources
 from moPepGen import svgraph, aa, logger
 from .common import add_args_cleavage, add_args_verbose, add_args_reference, \
     print_start_message, print_help_if_missing_args, load_references

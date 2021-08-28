@@ -1,3 +1,4 @@
+protein_coding
 Mt_rRNA
 Mt_tRNA
 miRNA
