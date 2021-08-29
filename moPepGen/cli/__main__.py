@@ -1,7 +1,7 @@
 """Main entry point"""
 import sys
 import argparse
-from moPepGen import cli
+from moPepGen import cli, __version__
 
 CLI_MAIN_USAGE = "moPopGen [-h] [-V] <command> [options]"
 CLI_MAIN_DESCRIPTION = """
@@ -57,7 +57,6 @@ def main():
         sys.exit(1)
 
     if args.version:
-        from moPepGen import __version__
         print(f'moPepGen {__version__}', file=sys.stdout, flush=True)
         sys.exit()
 
