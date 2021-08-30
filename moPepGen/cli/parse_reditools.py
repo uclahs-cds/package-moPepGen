@@ -57,7 +57,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     print_start_message(args)
 
-    _, anno, _ = load_references(args, load_genome=False, load_canonical_peptides=False)
+    _, anno, *_ = load_references(args, load_genome=False, load_canonical_peptides=False)
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
 

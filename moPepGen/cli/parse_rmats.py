@@ -87,7 +87,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
 
     print_start_message(args)
 
-    genome, anno, _ = load_references(args, load_canonical_peptides=False)
+    genome, anno, *_ = load_references(args, load_canonical_peptides=False)
 
     variants:Dict[str,Set[seqvar.VariantRecord]] = {}
     rmats_outputs = [

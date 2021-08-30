@@ -448,35 +448,30 @@ class PeptideVariantGraph():
                 right = right.split_node(site, cleavage=True)
                 queue.appendleft(right)
 
-    def call_variant_peptides(self, miscleavage:int=2
+    def call_variant_peptides(self, miscleavage:int=2, check_variants:bool=True
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
         Args:
             miscleavage (int): Number of miscleavages allowed.
+            check_variants (bool): When true, only peptides that carries at
+                least 1 variant are kept. And when false, all unique peptides
+                are reported.
 
         Return:
             A set of aa.AminoAcidSeqRecord.
         """
         queue:Deque[svgraph.PVGNode] = deque([self.root])
         visited:Set[svgraph.PVGNode] = set()
-        variant_peptides:Set[aa.AminoAcidSeqRecord] = set()
-        # The peptide_ids is used to keep track on the number of peptides that
+        peptide_pool:Set[aa.AminoAcidSeqRecord] = set()
+        # The id_counter is used to keep track on the number of peptides that
         # share the same description. The number is then appended to the
         # description in the FASTA.
-        peptide_ids:Dict[str, int] = {}
-
-        def update_variant_peptides(_seq):
-            same_peptide = get_equivalent(variant_peptides, _seq)
-            if same_peptide:
-                same_peptide:aa.AminoAcidSeqRecord
-                same_peptide.description += ' ' + seq.description
-            else:
-                variant_peptides.add(_seq)
+        label_counter:Dict[str, int] = {}
 
         while queue:
             cur = queue.pop()
-            if cur.seq is None:
+            if cur is self.root and cur.seq is None:
                 for out_node in cur.out_nodes:
                     queue.appendleft(out_node)
                 continue
@@ -501,36 +496,51 @@ class PeptideVariantGraph():
                 while node_paths:
                     nodes = node_paths.pop()
 
-                    variants:Set[seqvar.VariantRecordWithCoordinate] = set()
+                    if check_variants:
+                        variants:Set[seqvar.VariantRecordWithCoordinate] = set()
                     seq:aa.AminoAcidSeqRecord = None
                     for node in nodes:
                         if seq is None:
                             seq = node.seq
                         else:
                             seq = seq + node.seq
-                        for variant in node.variants:
-                            variants.add(variant.variant)
-                        variants.update(node.frameshifts)
+                        if check_variants:
+                            for variant in node.variants:
+                                variants.add(variant.variant)
+                            variants.update(node.frameshifts)
 
-                    if variants:
+                    if check_variants and variants:
                         variant_label = ''
                         for variant in variants:
                             variant_label += ('|' + str(variant.id))
-
                         seq.id = seq.transcript_id
                         seq.name = seq.transcript_id
                         seq.description = seq.transcript_id + variant_label
 
-                        if seq.description not in peptide_ids:
-                            peptide_ids[seq.description] = 0
-
-                        peptide_ids[seq.description] += 1
-                        seq.description += '|' + str(peptide_ids[seq.description])
-
-                        update_variant_peptides(seq)
+                        label = seq.description
+                        update_peptide_pool(seq, peptide_pool, label_counter,
+                            label, True)
 
                         if cur in self.root.out_nodes and seq.seq.startswith('M'):
-                            update_variant_peptides(seq[1:])
+                            update_peptide_pool(seq[1:], peptide_pool,
+                                label_counter, label, True)
+                    elif not check_variants:
+                        seq.id = seq.transcript_id
+                        seq.name = seq.transcript_id
+                        seq.description = seq.transcript_id
+
+                        label = seq.description
+
+                        if seq not in peptide_pool:
+                            update_peptide_pool(seq, peptide_pool,
+                                label_counter, label)
+
+                        if cur in self.root.out_nodes \
+                                and seq.seq.startswith('M') \
+                                and seq[1:] not in peptide_pool:
+                            seq = seq[1:]
+                            update_peptide_pool(seq, peptide_pool,
+                                label_counter, label)
 
                     if i <= miscleavage:
                     # create a new batch of node paths for the next iteration
@@ -544,4 +554,29 @@ class PeptideVariantGraph():
 
                 node_paths = next_batch
 
-        return variant_peptides
+        return peptide_pool
+
+
+def update_peptide_pool(seq, peptide_pool:Set[aa.AminoAcidSeqDict],
+        label_counter:Set[aa.AminoAcidSeqRecord], label:str,
+        update_label:bool=True) -> None:
+    """ Add a peptide sequence to a peptide pool if not already exists,
+    otherwise update the same peptide's description """
+    if update_label:
+        if label not in label_counter:
+            label_counter[label] = 0
+        label_counter[label] += 1
+        seq.description = label + '|' + str(label_counter[label])
+        same_peptide = get_equivalent(peptide_pool, seq)
+        if same_peptide:
+            same_peptide:aa.AminoAcidSeqRecord
+            same_peptide.description += ' ' + seq.description
+        else:
+            peptide_pool.add(seq)
+    else:
+        if label not in label_counter:
+            label_counter[label] = 0
+        label_counter[label] += 1
+        seq.description = label + '|'\
+            + str(label_counter[label])
+        peptide_pool.add(seq)

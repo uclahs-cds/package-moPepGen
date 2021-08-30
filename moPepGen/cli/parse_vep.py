@@ -53,7 +53,7 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     print_start_message(args)
 
-    genome, anno, _ = load_references(args, load_canonical_peptides=False)
+    genome, anno, *_ = load_references(args, load_canonical_peptides=False)
 
     vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
 

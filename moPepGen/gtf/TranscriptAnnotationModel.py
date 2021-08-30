@@ -242,3 +242,10 @@ class TranscriptAnnotationModel():
         """ Returns if the transcript has the tag of cds_start_NF """
         return 'tag' in self.transcript.attributes and \
             'cds_start_NF' in self.transcript.attributes['tag']
+
+    def transcript_len(self) -> int:
+        """ Get the transcript length minus introns """
+        length = 0
+        for exon in self.exon:
+            length += exon.location.end - exon.location.start
+        return length
