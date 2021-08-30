@@ -1,6 +1,7 @@
 """ Module for calling variant paptide """
 from __future__ import annotations
 from typing import List, Set, TYPE_CHECKING
+from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
 from .common import add_args_cleavage, add_args_verbose, print_start_message, \
     print_help_if_missing_args, add_args_reference, load_references
@@ -40,7 +41,7 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     )
     p.add_argument(
         '-o', '--output-fasta',
-        type=str,
+        type=Path,
         help='Filename for the output FASTA.',
         metavar='',
         required=True

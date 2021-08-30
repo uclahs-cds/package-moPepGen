@@ -33,7 +33,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         default=None
     )
     p.add_argument(
-        '-e', '--exclusive-biotypes',
+        '-e', '--exclusion-biotypes',
         type=Path,
         help='Exclusion biotype list.',
         metavar='',
@@ -41,7 +41,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     )
     p.add_argument(
         '-o', '--output-fasta',
-        type=str,
+        type=Path,
         help='Filename for the output FASTA.',
         metavar='',
         required=True
