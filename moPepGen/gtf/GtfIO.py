@@ -33,7 +33,7 @@ class GtfIterator(SequenceIterator):
                 strand=None
 
             attributes = {}
-            attribute_list = [field.strip().split(' ') for field in \
+            attribute_list = [field.strip().split(' ', 1) for field in \
                 fields[8].rstrip(';').split(';')]
             for key,val in attribute_list:
                 val = val.strip('"')
