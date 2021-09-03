@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 import pkg_resources
 from moPepGen import svgraph, aa, logger
-from .common import add_args_cleavage, add_args_verbose, add_args_reference, \
+from moPepGen.cli.common import add_args_cleavage, add_args_verbose, add_args_reference, \
     print_start_message, print_help_if_missing_args, load_references
 
 
@@ -112,6 +112,8 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
         )
         dgraph.add_null_root()
         dgraph.find_all_orfs()
+        if not dgraph.root.out_edges:
+            continue
         pgraph = dgraph.translate()
         pgraph.form_cleavage_graph(rule=rule, exception=exception)
         peptides = pgraph.call_variant_peptides(
