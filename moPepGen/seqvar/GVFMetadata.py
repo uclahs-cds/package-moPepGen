@@ -1,6 +1,6 @@
 """ Module for GVF metadata """
 from __future__ import annotations
-from typing import List
+from typing import List, IO
 from moPepGen import __version__
 from moPepGen.seqvar import SINGLE_NUCLEOTIDE_SUBSTITUTION
 from .GVFMetadataInfo import GVF_METADATA_INFO
@@ -29,17 +29,20 @@ class GVFMetadata():
         alt (dict): Alternative allele fields.
         info (dict): Information fields.
     """
-    def __init__(self, parser:str, source:str, reference_index:str=None,
-            genome_fasta:str=None, annotation_gtf:str=None):
+    def __init__(self, parser:str, source:str, chrom:str,
+            reference_index:str=None, genome_fasta:str=None,
+            annotation_gtf:str=None, version:str=None, info=None):
         """ Construct a TVFMetadata object. """
         self.parser = parser
         self.source = source
+        self.chrom = chrom
         self.reference_index = reference_index
         self.genome_fasta = genome_fasta
         self.annotation_gtf = annotation_gtf
         self.alt = {}
-        self.info = GVF_METADATA_INFO['Base']
+        self.info = info or GVF_METADATA_INFO['Base']
         self.added_types = []
+        self.version = version or __version__
 
     def add_info(self, variant_type:str) -> None:
         """ Add a INFO field to the metadata. """
@@ -82,13 +85,49 @@ class GVFMetadata():
         annotation_gtf = self.annotation_gtf if self.annotation_gtf else ''
         return [
             '##fileformat=VCFv4.2',
-            f'##mopepgen_version={__version__}',
+            f'##mopepgen_version={self.version}',
             f'##parser={self.parser}',
             f'##reference_index={ref_index}',
             f'##genome_fasta={genome_fasta}',
             f'##annotation_gtf={annotation_gtf}',
             f'##source={self.source}',
-            "##CHROM=<Description='Transcript ID'>",
+            f"##CHROM=<Description='{self.chrom}'>",
             *[f'##ALT=<ID={key},Description="{val}">' for key, val in self.alt],
             *info_lines,
         ]
+
+    @classmethod
+    def parse(cls, handle:IO) -> GVFMetadata:
+        """ Parse the metadata from a GVF file """
+        pos = handle.tell()
+        it = handle.readline()
+        metadata = {}
+        while it and it.startswith('##'):
+            key, val = it.lstrip('##').rstrip().split('=', 1)
+            if val == '':
+                val = None
+            if key == 'CHROM':
+                key = key.lower()
+                metadata[key] = {}
+                for it in val.strip('<>').split(','):
+                    k,v = it.split('=')
+                    v = v.strip('"')
+                    metadata[key][k] = v
+            elif key == 'INFO':
+                key = key.lower()
+                if key not in metadata:
+                    metadata[key] = [{}]
+                else:
+                    metadata[key].append({})
+                for it in val.strip('<>').split(','):
+                    k,v = it.split('=')
+                    v = v.strip('"')
+                    metadata[key][-1][k] = v
+            elif key == 'mopepgen_version':
+                metadata['version'] = val
+            elif key != 'fileformat':
+                metadata[key] = val
+            pos = handle.tell()
+            it = handle.readline()
+        handle.seek(pos)
+        return cls(**metadata)

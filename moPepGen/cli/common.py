@@ -200,6 +200,7 @@ def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
     return seqvar.GVFMetadata(
         parser='parseVEP',
         source=args.source,
+        chrom='Gene ID',
         reference_index=reference_index,
         genome_fasta=genome_fasta,
         annotation_gtf=annotation_gtf

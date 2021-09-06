@@ -4,6 +4,8 @@
 ##reference_index=
 ##genome_fasta=/hot/users/czhu/private-moPepGen/private-moPepGen-py/test/files/vep_test_files/genome.fasta
 ##annotation_gtf=/hot/users/czhu/private-moPepGen/private-moPepGen-py/test/files/vep_test_files/annotation.gtf
+##source=SNP
+##CHROM=<Description="Gene ID">
 ##INFO=<ID=TRANSCRIPTS,Number=1,Type=String,Description="Transcript's Gene ID">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
 ENSG00000128408.9	400	INDEL-400-C-CC	C	CC	.	.	TRANSCRIPTS=ENST00000614167.2
