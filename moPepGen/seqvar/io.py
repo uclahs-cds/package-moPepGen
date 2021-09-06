@@ -1,7 +1,7 @@
 """ Module for moPepGen seqvar IO """
 from typing import Iterable
 import tempfile
-from moPepGen.seqvar.TVFMetadata import GVFMetadata
+from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.seqvar.VariantRecord import VariantRecord, ATTRS_POSITION
 from moPepGen.SeqFeature import FeatureLocation
 

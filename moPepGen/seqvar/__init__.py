@@ -4,5 +4,5 @@ from moPepGen.seqvar.VariantRecord import VariantRecord, \
 from moPepGen.seqvar.VariantRecordWithCoordinate import \
     VariantRecordWithCoordinate
 from moPepGen.seqvar import io
-from moPepGen.seqvar.TVFMetadata import GVFMetadata
+from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.seqvar.VariantRecordPool import VariantRecordPool

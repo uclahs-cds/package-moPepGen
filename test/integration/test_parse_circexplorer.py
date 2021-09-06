@@ -11,6 +11,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args = argparse.Namespace()
         args.input_path = self.data_dir/'circRNA/CIRCexplorer_circularRNA_known.txt'
         args.output_prefix = str(self.work_dir/'circ')
+        args.source = 'circRNA'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'

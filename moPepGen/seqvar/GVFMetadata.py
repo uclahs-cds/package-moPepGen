@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 from moPepGen import __version__
 from moPepGen.seqvar import SINGLE_NUCLEOTIDE_SUBSTITUTION
-from .TVFMetadataInfo import GVF_METADATA_INFO
+from .GVFMetadataInfo import GVF_METADATA_INFO
 
 
 ALT_DESCRIPTION = {
@@ -29,10 +29,11 @@ class GVFMetadata():
         alt (dict): Alternative allele fields.
         info (dict): Information fields.
     """
-    def __init__(self, parser:str, reference_index:str=None,
+    def __init__(self, parser:str, source:str, reference_index:str=None,
             genome_fasta:str=None, annotation_gtf:str=None):
         """ Construct a TVFMetadata object. """
         self.parser = parser
+        self.source = source
         self.reference_index = reference_index
         self.genome_fasta = genome_fasta
         self.annotation_gtf = annotation_gtf
@@ -86,6 +87,7 @@ class GVFMetadata():
             f'##reference_index={ref_index}',
             f'##genome_fasta={genome_fasta}',
             f'##annotation_gtf={annotation_gtf}',
+            f'##source={self.source}',
             "##CHROM=<Description='Transcript ID'>",
             *[f'##ALT=<ID={key},Description="{val}">' for key, val in self.alt],
             *info_lines,

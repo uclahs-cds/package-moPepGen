@@ -38,7 +38,7 @@ class TestSeqvarIO(unittest.TestCase):
         variant = create_variant(10, 11, 'A', 'T', 'SNV', 'SNV-1', attrs)
         variant.location.seqname = 'ENST0001'
         output_file = WORK_DIR/'test.tvf'
-        metadata = seqvar.GVFMetadata('parseXXX')
+        metadata = seqvar.GVFMetadata('parseXXX', source='XXX')
         seqvar.io.write([variant], output_file, metadata)
         with open(output_file, 'rt') as handle:
             for line in handle:

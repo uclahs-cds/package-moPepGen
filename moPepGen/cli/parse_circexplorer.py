@@ -4,8 +4,9 @@ from typing import List, Dict, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import logger, circ
 from moPepGen.parser import CIRCexplorerParser
-from .common import add_args_reference, add_args_verbose, print_start_message,\
-    print_help_if_missing_args, load_references, generate_metadata
+from .common import add_args_reference, add_args_verbose, add_args_source,\
+    print_start_message,print_help_if_missing_args, load_references, \
+    generate_metadata
 
 
 if TYPE_CHECKING:
@@ -42,6 +43,7 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         default=2,
         metavar=''
     )
+    add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_circexplorer)

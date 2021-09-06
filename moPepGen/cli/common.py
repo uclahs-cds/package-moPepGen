@@ -9,7 +9,7 @@ from moPepGen import aa, dna, gtf, logger, seqvar
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
     """ If no args are provided, print help and exit """
-    if len(sys.argv) == 2 and sys.argv[1] == parser.prog.split(' ')[1]:
+    if len(sys.argv) == 2 and sys.argv[1] == parser.prog.split(' ')[-1]:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
@@ -112,6 +112,14 @@ def add_args_verbose(parser:argparse.ArgumentParser):
         default=True
     )
 
+def add_args_source(parser:argparse.ArgumentParser):
+    """ Add source """
+    parser.add_argument(
+        '--source',
+        type=str,
+        help='Variant source (e.g. gSNP, sSNV, Fusion)',
+        required=True
+    )
 
 def load_references(args:argparse.Namespace, load_genome:bool=True,
         load_canonical_peptides:bool=True, load_proteome:bool=False
@@ -191,6 +199,7 @@ def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
 
     return seqvar.GVFMetadata(
         parser='parseVEP',
+        source=args.source,
         reference_index=reference_index,
         genome_fasta=genome_fasta,
         annotation_gtf=annotation_gtf
