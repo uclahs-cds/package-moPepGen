@@ -1,6 +1,6 @@
 """ Module for calling noncoding peptide """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING
 from pathlib import Path
 import pkg_resources
 from moPepGen import svgraph, aa, logger
@@ -10,8 +10,6 @@ from moPepGen.cli.common import add_args_cleavage, add_args_verbose, add_args_re
 
 if TYPE_CHECKING:
     import argparse
-    from moPepGen.gtf import TranscriptAnnotationModel
-    from moPepGen.dna import DNASeqDict
 
 # pylint: disable=W0212
 def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
@@ -101,18 +99,27 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             continue
         if tx_id in proteome:
             continue
-        if tx_model.transcript_len() < args.min_tx_length:
+        if tx_model.transcript_len() < args.min_length:
             continue
 
-        try:
-            peptides = call_noncoding_peptide_main(tx_id, tx_model, genome,
-                rule, exception, miscleavage)
-        except:
-            logger(f'Exception raised from {tx_id}')
-            raise
+        chrom = tx_model.transcript.location.seqname
+        tx_seq = tx_model.get_transcript_sequence(genome[chrom])
 
-        if not peptides:
+        dgraph = svgraph.TranscriptVariantGraph(
+            seq=tx_seq,
+            _id=tx_id,
+            cds_start_nf=True
+        )
+        dgraph.add_null_root()
+        dgraph.find_all_orfs()
+        if not dgraph.root.out_edges:
             continue
+        pgraph = dgraph.translate()
+        pgraph.form_cleavage_graph(rule=rule, exception=exception)
+        peptides = pgraph.call_variant_peptides(
+            miscleavage=miscleavage,
+            check_variants=False
+        )
 
         for peptide in peptides:
             noncanonical_pool.add_peptide(peptide, canonical_peptides,
@@ -127,27 +134,3 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
     if args.verbose:
         logger('Noncanonical peptide FASTA file written to disk.')
-
-
-def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
-        genome:DNASeqDict, rule:str, exception:str, miscleavage:int
-        ) -> Set[aa.AminoAcidSeqRecord]:
-    """ Call noncoding peptides """
-    chrom = tx_model.transcript.location.seqname
-    tx_seq = tx_model.get_transcript_sequence(genome[chrom])
-
-    dgraph = svgraph.TranscriptVariantGraph(
-        seq=tx_seq,
-        _id=tx_id,
-        cds_start_nf=True
-    )
-    dgraph.add_null_root()
-    dgraph.find_all_orfs()
-    if not dgraph.root.out_edges:
-        return
-    pgraph = dgraph.translate()
-    pgraph.form_cleavage_graph(rule=rule, exception=exception)
-    return pgraph.call_variant_peptides(
-        miscleavage=miscleavage,
-        check_variants=False
-    )
