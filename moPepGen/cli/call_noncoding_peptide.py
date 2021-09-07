@@ -144,7 +144,7 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     dgraph.add_null_root()
     dgraph.find_all_orfs()
     if not dgraph.root.out_edges:
-        return
+        return None
     pgraph = dgraph.translate()
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(
