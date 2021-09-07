@@ -24,7 +24,7 @@ class TestSeqvarIO(unittest.TestCase):
 
     def test_seqvar_parse(self):
         """ Test parsing seqvar files. """
-        gvf_path = 'test/files/vep/vep.gvf'
+        gvf_path = 'test/files/vep/vep_gSNP.gvf'
         i = 0
         for record in seqvar.io.parse(gvf_path):
             i += 1
@@ -60,11 +60,11 @@ class TestSeqvarIO(unittest.TestCase):
 
     def test_parse_metadata(self):
         """ Test the metadata header is parsed correctly """
-        gvf_path = 'test/files/vep/vep.gvf'
+        gvf_path = 'test/files/vep/vep_gSNP.gvf'
         with open(gvf_path, 'rt') as handle:
             metadata = seqvar.GVFMetadata.parse(handle)
             records = list(seqvar.io.parse(handle))
-        self.assertEqual(metadata.source, 'SNP')
+        self.assertEqual(metadata.source, 'gSNP')
         self.assertEqual(metadata.parser, 'parseVEP')
-        self.assertEqual(metadata.info[0]['ID'], 'TRANSCRIPTS')
+        self.assertEqual(metadata.info[0]['ID'], 'TRANSCRIPT_ID')
         self.assertEqual(len(records), 8)

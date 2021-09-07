@@ -28,7 +28,7 @@ def create_base_args() -> argparse.Namespace:
 class TestCallVariantPeptides(TestCaseIntegration):
     """ Test cases for moPepGen callPeptides """
 
-    def default_test_case(self, tvf:Path, reference:Path, expect:Path):
+    def default_test_case(self, gvf:Path, reference:Path, expect:Path):
         """ Wrapper function to test actual cases.
 
         Args:
@@ -40,7 +40,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
                 test/call_variant_peptide_brute_force.py script.
         """
         args = create_base_args()
-        args.input_variant = [str(tvf)]
+        args.input_variant = [str(gvf)]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = reference/'genome.fasta'
         args.annotation_gtf = reference/'annotation.gtf'
@@ -58,7 +58,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """
         args = create_base_args()
-        args.input_variant = [str(self.data_dir/'vep'/'vep.gvf')]
+        args.input_variant = [str(self.data_dir/'vep'/'vep_gSNP.gvf')]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
@@ -72,7 +72,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep'/'vep.gvf'),
+            str(self.data_dir/'vep'/'vep_gSNP.gvf'),
             str(self.data_dir/'fusion'/'fusion.gvf')
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
@@ -88,7 +88,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion and circRNA """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep'/'vep.gvf'),
+            str(self.data_dir/'vep'/'vep_gSNP.gvf'),
             str(self.data_dir/'fusion'/'fusion.gvf')
         ]
         args.circ_rna_bed = str(self.data_dir/'circRNA'/'circ_rna.tsv')
@@ -105,7 +105,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with alternative splicing """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep/vep.gvf'),
+            str(self.data_dir/'vep/vep_gSNP.gvf'),
             str(self.data_dir/'alternative_splicing/alternative_splicing.gvf')
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'

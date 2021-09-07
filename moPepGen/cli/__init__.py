@@ -8,3 +8,4 @@ from .parse_star_fusion import add_subparser_parse_star_fusion, parse_star_fusio
 from .parse_fusion_catcher import add_subparser_parse_fusion_catcher, parse_fusion_catcher
 from .parse_rmats import add_subparser_parse_rmats, parse_rmats
 from .parse_circexplorer import add_subparser_parse_circexplorer, parse_circexplorer
+from .split_database import add_subparser_split_database, split_database

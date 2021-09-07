@@ -8,6 +8,9 @@ __version__ = '0.0.1'
 ERROR_INDEX_IN_INTRON = 'The genomic index seems to be in an intron'
 ERROR_NO_TX_AVAILABLE = 'No transcripts available'
 
+# global variables
+VARIANT_PEPTIDE_DELIMITER = ' '
+
 class _CaptureEq:
     """Object wrapper that remembers "other" for successful equality tests.
     Adopted from https://code.activestate.com/recipes/499299/

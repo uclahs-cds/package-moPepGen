@@ -256,7 +256,7 @@ class GenomicAnnotation():
             end_gene = end_genomic - self.genes[gene_id].location.start
 
         elif transcript_model.transcript.location.strand == -1:
-            it = reversed(transcript_model)
+            it = reversed(transcript_model.exon)
             exon = next(it, None)
             right = 0
             while exon:
