@@ -18,6 +18,8 @@ class GenomicAnnotation():
             gene annotation models.
         transcripts (Dict[str, TranscriptAnnotationModel]): Keys are transcript
             IDs and values are transcript annotation models.
+        source (str): Source of the genomic annotation. E.g., ENSEMBL or
+            GENCODE.
     """
     FAILED_TO_FIND_EXON_ERROR = 'Failed to find the exon.'
     FAILED_TO_FIND_INTRON_ERROR = 'Failed to find the intron.'

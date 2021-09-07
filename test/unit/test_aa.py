@@ -72,9 +72,9 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
             'Source:HGNC Symbol;Acc:HGNC:12158]'
         )
         seq.infer_ids_ensembl()
-        self.assertEqual(seq.protein_id, 'ENSP00000488240.1')
-        self.assertEqual(seq.transcript_id, 'ENST00000631435.1')
-        self.assertEqual(seq.gene_id, 'ENSG00000282253.1')
+        self.assertEqual(seq.protein_id, 'ENSP00000488240')
+        self.assertEqual(seq.transcript_id, 'ENST00000631435')
+        self.assertEqual(seq.gene_id, 'ENSG00000282253')
 
     def testinfer_ids_ensembl_case2(self):
         """ Test that error will raise with GENCODE style. """

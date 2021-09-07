@@ -141,9 +141,9 @@ class AminoAcidSeqRecord(SeqRecord):
             raise ValueError(r'Couldn\'t find transcript ID')
         transcript_id = match.group(1)
 
-        self.gene_id = gene_id
-        self.protein_id = protein_id
-        self.transcript_id = transcript_id
+        self.gene_id = gene_id.split('.')[0]
+        self.protein_id = protein_id.split('.')[0]
+        self.transcript_id = transcript_id.split('.')[0]
 
     def iter_enzymatic_cleave_sites(self, rule:str, exception:str=None
             ) -> Iterable[int]:
