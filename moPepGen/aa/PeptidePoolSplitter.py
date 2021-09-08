@@ -24,7 +24,8 @@ class VariantSourceSet(set):
         >>> print(VariantSourceSet(['A', 'B']) > VariantSourceSet(['B']))
         True
     """
-    levels = {}
+    levels_map = {}
+    levels = []
 
     def __init__(self, *args):
         """ constructor """
@@ -34,7 +35,7 @@ class VariantSourceSet(set):
 
     def validate(self, it):
         """ Validate element """
-        if it not in self.levels:
+        if it not in self.levels_map:
             raise ValueError(f'No defined level found for {it}')
 
     def add(self, element):
@@ -46,16 +47,19 @@ class VariantSourceSet(set):
     def set_levels(cls, levels:Dict[str,int]):
         """ set levels. This is to make sure that all instances share the same
         order. """
-        cls.levels = levels
+        cls.levels_map = levels
+        cls.levels = [y[0] for y in sorted(cls.levels_map.items(), key=lambda x:x[1])]
 
     @classmethod
     def reset_levels(cls):
         """ reset levels """
-        cls.levels = {}
+        cls.levels_map = {}
+        cls.levels = []
 
     def __str__(self) -> str:
         """ str """
-        return SPLIT_DATABASE_KEY_SEPARATER.join(self)
+        sorted_list = [x for x in self.levels if x in self]
+        return SPLIT_DATABASE_KEY_SEPARATER.join(sorted_list)
 
     def __gt__(self, other:VariantSourceSet) -> bool:
         """ greater than """
@@ -88,7 +92,7 @@ class VariantSourceSet(set):
 
     def to_int(self, sort=True) -> Iterable[int]:
         """ to int """
-        source_int = {self.levels[x] for x in self}
+        source_int = {self.levels_map[x] for x in self}
         if sort:
             source_int = list(source_int)
             source_int.sort()
@@ -119,8 +123,8 @@ class VariantPeptideInfo():
             for var_id in var_ids:
                 try:
                     source = label_map[tx_id][var_id]
-                except KeyError:
-                    raise err.VariantSourceNotFoundError(tx_id, var_id)
+                except KeyError as e:
+                    raise err.VariantSourceNotFoundError(tx_id, var_id) from e
                 info.sources.add(source)
             info_list.append(info)
         return info_list
@@ -128,7 +132,7 @@ class VariantPeptideInfo():
     def __str__(self) -> str:
         """ str """
         x = [self.transcript_id] + self.variant_labels + [self.variant_index]
-        return VARIANT_PEPTIDE_SOURCE_DELIMITER.join(x)
+        return '|'.join(x)
 
     def __eq__(self, other:VariantPeptideInfo):
         """ equal to """
@@ -243,9 +247,9 @@ class PeptidePoolSplitter():
 
     def split(self, max_groups:int, additional_split:List[Set]):
         """ Split peptide pool into separate databases """
+        VariantSourceSet.set_levels(self.order)
         delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         additional_split = [VariantSourceSet(x) for x in additional_split]
-        VariantSourceSet.set_levels(self.order)
         for peptide in self.peptides.peptides:
             peptide_infos = VariantPeptideInfo.from_variant_peptide(
                 peptide, self.label_map)
