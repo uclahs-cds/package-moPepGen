@@ -34,25 +34,25 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
         default=None
     )
     p.add_argument(
-        '-d', '--order-source',
+        '--order-source',
         type=str,
         help='Order of sources, separate by comma. E.g., SNP,SNV,Fusion'
     )
     p.add_argument(
-        '-u', '--group-source',
+        '--group-source',
         type=str,
         help='Group sources. E.g., PointMutation:gSNP,sSNV INDEL:gINDEL,sINDEL',
         nargs='*'
     )
     p.add_argument(
-        '-l', '--max-source-groups',
+        '--max-source-groups',
         type=int,
         help='Maximal number of different source groups to be separate into'
         'individual database FASTA files. Defaults to 1',
         default=1
     )
     p.add_argument(
-        '-s','--priority-list',
+        '--additional-split',
         type=str,
         help='Source groups that will be split into individual FASTA file'
         'even if the number of groups exceeds --max-source-groups.',
@@ -95,7 +95,7 @@ def split_database(args:argparse.Namespace) -> None:
         with open(file, 'rt') as handle:
             splitter.load_gvf(handle)
 
-    priority_list = args.priority_list or []
-    splitter.split(args.max_source_groups, priority_list)
+    additional_split = args.additional_split or []
+    splitter.split(args.max_source_groups, additional_split)
 
     splitter.write(args.output_prefix)

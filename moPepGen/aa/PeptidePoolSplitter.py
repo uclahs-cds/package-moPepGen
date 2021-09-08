@@ -192,10 +192,10 @@ class PeptidePoolSplitter():
             self.databases[database_key] = VariantPeptidePool()
         self.databases[database_key].peptides.add(peptide)
 
-    def split(self, max_groups:int, priority_list:List[str]):
+    def split(self, max_groups:int, additional_split_list:List[str]):
         """ Split peptide pool into separate databases """
         delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
-        for group in priority_list:
+        for group in additional_split_list:
             if group not in self.sources:
                 raise ValueError(f"group {group} not found")
         VariantSourceSet.set_levels(self.order)
@@ -217,7 +217,7 @@ class PeptidePoolSplitter():
                 self.add_peptide_to_database(database_key, peptide)
             else:
                 has_priority = False
-                for priority in priority_list:
+                for priority in additional_split_list:
                     ind = get_index_with_priority(source_sets, priority)
                     if ind is not None:
                         sources = source_sets.pop(ind)
