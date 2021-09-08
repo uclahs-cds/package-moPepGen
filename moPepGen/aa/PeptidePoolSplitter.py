@@ -13,7 +13,16 @@ if TYPE_CHECKING:
 NONCODING_SOURCE = 'Noncoding'
 
 class VariantSourceSet(set):
-    """ Variant source set """
+    """ Variant source set. This is a class of ordered set.
+
+    Example:
+        >>> VariantSourceSet.set_levels({'A':0, 'B':1, 'C':2})
+        >>> print(VariantSourceSet(['A']) < VariantSourceSet(['B']))
+        True
+
+        >>> print(VariantSourceSet(['A', 'B']) > VariantSourceSet(['B']))
+        True
+    """
     levels = {}
 
     def __init__(self, *args):
@@ -34,7 +43,8 @@ class VariantSourceSet(set):
 
     @classmethod
     def set_levels(cls, levels:Dict[str,int]):
-        """ set levels """
+        """ set levels. This is to make sure that all instances share the same
+        order. """
         cls.levels = levels
 
     @classmethod
@@ -99,11 +109,24 @@ class VariantSourceSet(set):
         return source_list
 
 LabelMap = Dict[str,Dict[str,str]]
-DatabaseKey = Union[VariantSourceSet, str]
-Databases = Dict[DatabaseKey,VariantPeptidePool]
+Databases = Dict[str,VariantPeptidePool]
 
 class PeptidePoolSplitter():
-    """ PeptidePoolSplitter to split peptide pool into separate databases """
+    """ PeptidePoolSplitter to split peptide pool into separate databases.
+
+    Attributes:
+        peptides (VariantPeptidePool): The variant peptide pool.
+        order (Dict[str,str]): Order of sources.
+        label_map (Dict[str,Dict[str,str]]): This a nested dict of transcripts,
+            variant lables, and their corresponding source type. This is to
+            quickly retrieve the source type of a given variant label.
+        group_map (Dict[str,str]): A map of certain variant sources being
+            grouped together.
+        databases (Dict[str,VariantPeptidePool]): This is the splitted
+            databases. It is a dict that keys are the string representation of
+            variant sources, and values are the splitted VariantPeptidePool.
+        sources (Set[str]): Variant sources.
+    """
     def __init__(self, peptides:VariantPeptidePool=None, order:Dict[str,int]=None,
             label_map:LabelMap=None, group_map:Dict[str,str]=None,
             databases:Databases=None, sources:Set[str]=None):
