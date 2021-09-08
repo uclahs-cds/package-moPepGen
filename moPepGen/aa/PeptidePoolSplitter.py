@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Dict, IO, Iterable, List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.seqvar import GVFMetadata
-from moPepGen import seqvar, VARIANT_PEPTIDE_SOURCE_DELIMITER
+from moPepGen import seqvar, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
+    SPLIT_DATABASE_KEY_SEPARATER
 from .VariantPeptidePool import VariantPeptidePool
 
 
@@ -54,7 +55,7 @@ class VariantSourceSet(set):
 
     def __str__(self) -> str:
         """ str """
-        return '-'.join(self)
+        return SPLIT_DATABASE_KEY_SEPARATER.join(self)
 
     def __gt__(self, other:VariantSourceSet) -> bool:
         """ greater than """
@@ -93,20 +94,63 @@ class VariantSourceSet(set):
             source_int.sort()
         return source_int
 
-    @classmethod
-    def from_variant_peptide(cls, peptide:AminoAcidSeqRecord,
-            label_map:LabelMap) -> List[VariantSourceSet]:
-        """ Create VariantSourceSet from AminoAcidSeqRecord """
-        source_list = []
+class VariantPeptideInfo():
+    """ Variant peptide label. This is a helper class in order to sort peptide
+    labels easily. """
+    def __init__(self, transcript_id:str, variant_labels:List[str],
+            variant_index:int, sources:VariantSourceSet=None):
+        """ Constructor """
+        self.transcript_id = transcript_id
+        self.variant_labels = variant_labels
+        self.variant_index = variant_index
+        self.sources = sources or VariantSourceSet()
+
+    @staticmethod
+    def from_variant_peptide(peptide:AminoAcidSeqRecord, label_map:LabelMap
+            ) -> List[VariantPeptideInfo]:
+        """ Parse from a variant peptide record """
+        info_list = []
         for label in peptide.description.split(VARIANT_PEPTIDE_SOURCE_DELIMITER):
-            tx_id, *var_ids, _ = label.split('|')
-            sources = cls()
+            tx_id, *var_ids, var_index = label.split('|')
+            info = VariantPeptideInfo(tx_id, var_ids, var_index)
             if not var_ids:
-                sources.add(NONCODING_SOURCE)
+                info.sources.add(NONCODING_SOURCE)
             for var_id in var_ids:
-                sources.add(label_map[tx_id][var_id])
-            source_list.append(sources)
-        return source_list
+                info.sources.add(label_map[tx_id][var_id])
+            info_list.append(info)
+        return info_list
+
+    def __str__(self) -> str:
+        """ str """
+        x = [self.transcript_id] + self.variant_labels + [self.variant_index]
+        return VARIANT_PEPTIDE_SOURCE_DELIMITER.join(x)
+
+    def __eq__(self, other:VariantPeptideInfo):
+        """ equal to """
+        return self.transcript_id == other.transcript_id\
+            and set(self.variant_labels) == set(other.variant_labels) \
+            and self.variant_index == other.variant_index \
+            and self.sources == other.sources
+
+    def __ne__(self, other:VariantPeptideInfo):
+        """ not equal to """
+        return not self == other
+
+    def __gt__(self, other:VariantPeptideInfo):
+        """" greater than """
+        return self.sources > other.sources
+
+    def __ge__(self, other:VariantPeptideInfo):
+        """ greater than or equal to """
+        return self > other or self == other
+
+    def __lt__(self, other:VariantPeptideInfo):
+        """ less than """
+        return not self >=  other
+
+    def __le__(self, other:VariantPeptideInfo):
+        """ less than or equal to """
+        return not self > other
 
 LabelMap = Dict[str,Dict[str,str]]
 Databases = Dict[str,VariantPeptidePool]
@@ -192,43 +236,36 @@ class PeptidePoolSplitter():
             self.databases[database_key] = VariantPeptidePool()
         self.databases[database_key].peptides.add(peptide)
 
-    def split(self, max_groups:int, additional_split_list:List[str]):
+    def split(self, max_groups:int, additional_split:List[Set]):
         """ Split peptide pool into separate databases """
         delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
-        for group in additional_split_list:
-            if group not in self.sources:
-                raise ValueError(f"group {group} not found")
+        additional_split = [VariantSourceSet(x) for x in additional_split]
         VariantSourceSet.set_levels(self.order)
         for peptide in self.peptides.peptides:
-            source_sets = VariantSourceSet.from_variant_peptide(
+            peptide_infos = VariantPeptideInfo.from_variant_peptide(
                 peptide, self.label_map)
+            peptide_infos.sort()
 
-            order = [i for _,i in sorted((v,i) for i,v in enumerate(source_sets))]
-            source_sets = [source_sets[i] for i in order]
-
-            labels = peptide.description.split(delimiter)
-            labels = [labels[i] for i in order]
-            peptide.description = delimiter.join(labels)
+            peptide.description = delimiter.join([str(x) for x in peptide_infos])
             peptide.id = peptide.description
             peptide.name = peptide.description
 
-            if len(source_sets[0]) <= max_groups:
-                database_key = str(source_sets[0])
+            if len(peptide_infos[0].sources) <= max_groups:
+                database_key = str(peptide_infos[0].sources)
                 self.add_peptide_to_database(database_key, peptide)
             else:
                 has_additional_splitting = False
-                for additional in additional_split_list:
-                    ind = get_index_with_priority(source_sets, additional)
+                for additional_set in additional_split:
+                    ind = get_index_contains_source_set(peptide_infos, additional_set)
                     if ind is not None:
-                        sources = source_sets.pop(ind)
-                        source_sets.insert(0, sources)
-                        label = labels.pop(ind)
-                        labels.insert(label, 0)
-                        peptide.description = delimiter.join(labels)
+                        info = peptide_infos.pop(ind)
+                        peptide_infos.insert(0, info)
+                        label = delimiter.join([str(x) for x in peptide_infos])
+                        peptide.description = label
                         peptide.id = peptide.description
                         peptide.name = peptide.description
 
-                        database_key = self.get_additional_database_key(additional)
+                        database_key = self.get_additional_database_key(additional_set)
                         self.add_peptide_to_database(database_key, peptide)
                         has_additional_splitting = True
                         break
@@ -239,7 +276,7 @@ class PeptidePoolSplitter():
     @staticmethod
     def get_additional_database_key(additional:str) -> str:
         """ Get the database key for priority """
-        return f'{additional}-additional'
+        return f'{str(additional)}{SPLIT_DATABASE_KEY_SEPARATER}additional'
 
     @staticmethod
     def get_remaining_database_key() -> str:
@@ -261,11 +298,10 @@ class PeptidePoolSplitter():
             database.write(output_dir/filename)
 
 
-def get_index_with_priority(source_sets:List[VariantSourceSet],
-        priority:str) -> List[int]:
-    """ Find the indices of sources that contains label from a priority list.
-    The list must be already sorted. """
-    for i, sources in enumerate(source_sets):
-        if priority in sources:
+def get_index_contains_source_set(peptide_infos:List[VariantPeptideInfo],
+        target_set:VariantSourceSet) -> List[int]:
+    """ Find the indices of a list of source sets,  """
+    for i, info in enumerate(peptide_infos):
+        if target_set.issubset(info.sources):
             return i
     return None

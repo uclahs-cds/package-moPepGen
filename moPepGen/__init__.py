@@ -10,10 +10,15 @@ ERROR_NO_TX_AVAILABLE = 'No transcripts available'
 
 # global variables
 
-# This is variable in used in the moPepGen.aa.VariantPeptidePool module to
-# serve as a delimiter of variant peptide seqname if it is found in multiple
-# transcripts. E.g.: ENSG0001|SNV-10-T-A|1 ENSG0002|INDEL-20-CCCC-C|2
+# Used in the moPepGen.aa.VariantPeptidePool module to serve as a delimiter of
+# variant peptide seqname if it is found in multiple transcripts. E.g.:
+# ENSG0001|SNV-10-T-A|1 ENSG0002|INDEL-20-CCCC-C|2
 VARIANT_PEPTIDE_SOURCE_DELIMITER = ' '
+
+# Used in moPepGen.aa.PeptidePoolSplitter to server as the separater in split
+# database keys. E.g.:
+# gSNP-gINDEL
+SPLIT_DATABASE_KEY_SEPARATER = '-'
 
 class _CaptureEq:
     """Object wrapper that remembers "other" for successful equality tests.

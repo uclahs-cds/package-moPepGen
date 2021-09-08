@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from moPepGen.aa import PeptidePoolSplitter
+from moPepGen import SPLIT_DATABASE_KEY_SEPARATER
 from .common import add_args_verbose, print_start_message, print_help_if_missing_args
 
 
@@ -54,8 +55,9 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
     p.add_argument(
         '--additional-split',
         type=str,
-        help='Source groups that will be split into individual FASTA file'
-        'even if the number of groups exceeds --max-source-groups.',
+        help='For peptides that were not already split into FASTAs up to'
+        'max_source_groups, those involving the following source will be split'
+        'into additional FASTAs with decreasing priority',
         default=None
     )
     p.add_argument(
@@ -96,6 +98,8 @@ def split_database(args:argparse.Namespace) -> None:
             splitter.load_gvf(handle)
 
     additional_split = args.additional_split or []
+    sep = SPLIT_DATABASE_KEY_SEPARATER
+    additional_split = [{x.split(sep)} for x in additional_split]
     splitter.split(args.max_source_groups, additional_split)
 
     splitter.write(args.output_prefix)

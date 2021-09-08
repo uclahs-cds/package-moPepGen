@@ -3,7 +3,7 @@ import copy
 import io
 import unittest
 from test.unit import create_aa_record
-from moPepGen.aa import PeptidePoolSplitter, VariantSourceSet
+from moPepGen.aa import PeptidePoolSplitter, VariantSourceSet, VariantPeptideInfo
 
 
 GVF_CASE1 = [
@@ -68,22 +68,24 @@ class TestVariantSourceSet(unittest.TestCase):
         set2 = VariantSourceSet(['gINDEL', 'sINDEL'])
         self.assertTrue(set1 < set2)
 
+class TestVariantPeptideInfo(unittest.TestCase):
+    """ Test VariantPeptideInfo """
     def test_from_variant_peptide(self):
         """ Test forming from variant peptide """
         levels = {'gSNP': 0, 'gINDEL': 1, 'sSNV': 2, 'sINDEL': 3}
         VariantSourceSet.set_levels(levels)
         label_map = {'ENST0001': {'SNV-1157-G-A': 'sSNV'}}
         peptide = create_aa_record('KHIRJ','ENST0001|SNV-1157-G-A|1')
-        sources = VariantSourceSet.from_variant_peptide(peptide, label_map)
-        self.assertEqual(sources, [{'sSNV'}])
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map)
+        self.assertEqual([x.sources for x in infos], [{'sSNV'}])
 
         label_map = {
             'ENST0001': {'SNV-1157-G-A': 'gSNP', 'INDEL-100-GGGGG-G': 'gINDEL'}
         }
         label = 'ENST0001|SNV-1157-G-A|INDEL-100-GGGGG-G|1'
         peptide = create_aa_record('KHIRJ', label)
-        sources = VariantSourceSet.from_variant_peptide(peptide, label_map)
-        self.assertEqual(sources, [{'gSNP', 'gINDEL'}])
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map)
+        self.assertEqual([x.sources for x in infos], [{'gSNP', 'gINDEL'}])
 
         label_map = {
             'ENST0001': {'SNV-1157-G-A': 'gSNP', 'INDEL-100-GGGGG-G': 'gINDEL'},
@@ -91,8 +93,8 @@ class TestVariantSourceSet(unittest.TestCase):
         }
         label = 'ENST0001|SNV-1157-G-A|INDEL-100-GGGGG-G|1 ENST0002|SNV-254-T-A|1'
         peptide = create_aa_record('KHIRJ', label)
-        sources = VariantSourceSet.from_variant_peptide(peptide, label_map)
-        self.assertEqual(sources, [{'gSNP', 'gINDEL'}, {'sSNV'}])
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map)
+        self.assertEqual([x.sources for x in infos], [{'gSNP', 'gINDEL'}, {'sSNV'}])
 
 class TestPeptidePoolSplitter(unittest.TestCase):
     """ Test cases for testing PeptidePoolSplitter """
