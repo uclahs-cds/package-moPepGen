@@ -3,6 +3,7 @@ import copy
 import io
 import unittest
 from test.unit import create_aa_record
+from moPepGen.err import VariantSourceNotFoundError
 from moPepGen.aa import PeptidePoolSplitter, VariantSourceSet, VariantPeptideInfo
 
 
@@ -95,6 +96,20 @@ class TestVariantPeptideInfo(unittest.TestCase):
         peptide = create_aa_record('KHIRJ', label)
         infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map)
         self.assertEqual([x.sources for x in infos], [{'gSNP', 'gINDEL'}, {'sSNV'}])
+
+    def test_from_variant_peptide_case2(self):
+        """ Test forming from variant peptide """
+        levels = {'gSNP': 0, 'gINDEL': 1, 'sSNV': 2, 'sINDEL': 3}
+        VariantSourceSet.set_levels(levels)
+        label_map = {'ENST0001': {'SNV-1157-G-A': 'sSNV'}}
+
+        peptide = create_aa_record('KHIRJ','ENST0002|SNV-1157-G-A|1')
+        with self.assertRaises(VariantSourceNotFoundError):
+            VariantPeptideInfo.from_variant_peptide(peptide, label_map)
+
+        peptide = create_aa_record('KHIRJ','ENST0001|INDEL-1120-GAAA-A|1')
+        with self.assertRaises(VariantSourceNotFoundError):
+            VariantPeptideInfo.from_variant_peptide(peptide, label_map)
 
 class TestPeptidePoolSplitter(unittest.TestCase):
     """ Test cases for testing PeptidePoolSplitter """

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, IO, Iterable, List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.seqvar import GVFMetadata
-from moPepGen import seqvar, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
+from moPepGen import err, seqvar, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
     SPLIT_DATABASE_KEY_SEPARATER
 from .VariantPeptidePool import VariantPeptidePool
 
@@ -110,13 +110,18 @@ class VariantPeptideInfo():
             ) -> List[VariantPeptideInfo]:
         """ Parse from a variant peptide record """
         info_list = []
-        for label in peptide.description.split(VARIANT_PEPTIDE_SOURCE_DELIMITER):
+        delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
+        for label in peptide.description.split(delimiter):
             tx_id, *var_ids, var_index = label.split('|')
             info = VariantPeptideInfo(tx_id, var_ids, var_index)
             if not var_ids:
                 info.sources.add(NONCODING_SOURCE)
             for var_id in var_ids:
-                info.sources.add(label_map[tx_id][var_id])
+                try:
+                    source = label_map[tx_id][var_id]
+                except KeyError:
+                    raise err.VariantSourceNotFoundError(tx_id, var_id)
+                info.sources.add(source)
             info_list.append(info)
         return info_list
 
