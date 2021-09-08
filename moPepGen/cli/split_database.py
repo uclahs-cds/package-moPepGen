@@ -2,7 +2,6 @@
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from typing import List
 from moPepGen.aa import PeptidePoolSplitter
 from .common import add_args_verbose, print_start_message, print_help_if_missing_args
 
@@ -75,16 +74,25 @@ def split_database(args:argparse.Namespace) -> None:
 
     source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}
 
-    group_source = {}
-    for it in args.group_source:
-        key, val = it.split(':')
-        group_source[key] = val.split(',')
+    group_map = None
+    if args.group_source:
+        group_map = {}
+        for it in args.group_source:
+            key, val = it.split(':')
+            group_map[key] = val.split(',')
 
-    splitter = PeptidePoolSplitter(order=source_order, group_map=group_source)
-    splitter.load_database(args.variant_peptides)
+    splitter = PeptidePoolSplitter(order=source_order, group_map=group_map)
+
+    with open(args.variant_peptides, 'rt') as handle:
+        splitter.load_database(handle)
+
     if args.noncoding_peptides:
-        splitter.load_database_noncoding(args.noncoding_peptides)
+        with open(args.noncoding_peptides) as handle:
+            splitter.load_database_noncoding(handle)
+
     for file in args.variant_gvf:
-        splitter.load_gvf(file)
+        with open(file, 'rt') as handle:
+            splitter.load_gvf(handle)
+
     splitter.split(args.max_source_groups, args.priority_list)
     splitter.write(args.ourput_prefix)

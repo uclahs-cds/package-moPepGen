@@ -1,6 +1,6 @@
 """ module for peptide pool splitter """
 from __future__ import annotations
-from typing import Dict, Iterable, List, Set, TYPE_CHECKING, Union
+from typing import Dict, IO, Iterable, List, Set, TYPE_CHECKING, Union
 from moPepGen.seqvar import GVFMetadata
 from moPepGen import seqvar, VARIANT_PEPTIDE_DELIMITER
 from .VariantPeptidePool import VariantPeptidePool
@@ -14,12 +14,33 @@ NONCODING_SOURCE = 'Noncoding'
 
 class VariantSourceSet(set):
     """ Variant source set """
-    levels = []
+    levels = {}
+
+    def __init__(self, *args):
+        """ constructor """
+        for it in list(*args):
+            self.validate(it)
+        super().__init__(*args)
+
+    def validate(self, it):
+        """ Validate element """
+        if it not in self.levels:
+            raise ValueError(f'No defined level found for {it}')
+
+    def add(self, element):
+        """ override the add method """
+        self.validate(element)
+        super().add(element)
 
     @classmethod
     def set_levels(cls, levels:Dict[str,int]):
         """ set levels """
         cls.levels = levels
+
+    @classmethod
+    def reset_levels(cls):
+        """ reset levels """
+        cls.levels = {}
 
     def __str__(self) -> str:
         """ str """
@@ -31,12 +52,14 @@ class VariantSourceSet(set):
             return False
         if len(self) > len(other):
             return True
+        if len(self) < len(other):
+            return False
         this = self.to_int()
         that = other.to_int()
-        for x, y in enumerate(this, that):
-            if x > y:
+        for i, j in zip(this, that):
+            if i > j:
                 return True
-            if x < y:
+            if i < j:
                 return False
         return False
 
@@ -102,43 +125,42 @@ class PeptidePoolSplitter():
         """ Add a group to the end of the order. """
         if source in self.order:
             raise ValueError(f'The source {source} already has an order.')
-        self.order[source] = max(self.order.values()) + 1
+        self.order[source] = max(self.order.values()) + 1 if self.order else 0
 
-    def load_database(self, path:Path) -> None:
+    def load_database(self, handle:IO) -> None:
         """ load peptide database """
-        pool = VariantPeptidePool.load(path)
+        pool = VariantPeptidePool.load(handle)
         if not self.peptides:
             self.peptides = pool
             return
         for peptide in pool.peptides:
-            self.peptides.add_peptide(peptide)
+            self.peptides.add_peptide(peptide, None, skip_checking=True)
 
-    def load_database_noncoding(self, path:Path) -> None:
+    def load_database_noncoding(self, handle:IO) -> None:
         """ Load noncoding peptide database """
-        self.load_database(path)
+        self.load_database(handle)
         self.append_order_noncoding()
 
-    def load_gvf(self, path:Path) -> None:
+    def load_gvf(self, handle:IO) -> None:
         """ Load variant lables from GVF file. """
-        with open(path, 'rt') as handle:
-            metadata = GVFMetadata.parse(handle)
-            variants = seqvar.io.parse(handle)
-            source = metadata.source
+        metadata = GVFMetadata.parse(handle)
+        variants = seqvar.io.parse(handle)
+        source = metadata.source
 
-            if source in self.group_map:
-                source = self.group_map[source]
+        if source in self.group_map:
+            source = self.group_map[source]
 
-            self.sources.add(source)
+        self.sources.add(source)
 
-            if source not in self.order:
-                self.append_order(source)
+        if source not in self.order:
+            self.append_order(source)
 
-            for variant in variants:
-                tx_id = variant.attrs['TRANSCRIPT_ID']
-                if tx_id not in self.label_map:
-                    self.label_map[tx_id] = {}
-                if variant.id not in self.label_map[tx_id]:
-                    self.label_map[tx_id][variant.id] = source
+        for variant in variants:
+            tx_id = variant.attrs['TRANSCRIPT_ID']
+            if tx_id not in self.label_map:
+                self.label_map[tx_id] = {}
+            if variant.id not in self.label_map[tx_id]:
+                self.label_map[tx_id][variant.id] = source
 
     def add_peptide_to_database(self, database_key:str,
             peptide:AminoAcidSeqRecord) -> None:
@@ -157,7 +179,7 @@ class PeptidePoolSplitter():
             source_sets = VariantSourceSet.from_variant_peptide(
                 peptide, self.label_map)
 
-            order = [i for (v, i) in sorted((v, i) for (i, v) in enumerate(source_sets))]
+            order = [i for _,i in sorted((v,i) for i,v in enumerate(source_sets))]
             source_sets = [source_sets[i] for i in order]
 
             labels = peptide.description.split(VARIANT_PEPTIDE_DELIMITER)

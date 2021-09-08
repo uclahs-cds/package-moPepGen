@@ -1,6 +1,6 @@
 """ Module for variant peptide pool (unique) """
 from __future__ import annotations
-from typing import Set
+from typing import Set, IO
 from pathlib import Path
 from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
@@ -18,7 +18,7 @@ class VariantPeptidePool():
 
     def add_peptide(self, peptide:AminoAcidSeqRecord,
             canonical_peptides:Set[str], min_mw:int=500, min_length:int=7,
-            max_length:int=25):
+            max_length:int=25, skip_checking:bool=False):
         """ Add a peptide to the pool if it does not already exist. Otherwise,
         the label is appended to the existing same peptide.
 
@@ -29,12 +29,13 @@ class VariantPeptidePool():
             max_length (int): Maximal peptide sequence length.
             canonical_peptides (Set[str]): Canonical peptides.
         """
-        if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
-            return
-        if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
-            return
-        if str(peptide.seq) in canonical_peptides:
-            return
+        if not skip_checking:
+            if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
+                return
+            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
+                return
+            if str(peptide.seq) in canonical_peptides:
+                return
         same_peptide = get_equivalent(self.peptides, peptide)
         if same_peptide:
             same_peptide:Seq
@@ -58,10 +59,10 @@ class VariantPeptidePool():
                 writer.write_record(record)
 
     @classmethod
-    def load(cls, path:Path) -> VariantPeptidePool:
+    def load(cls, handle:IO) -> VariantPeptidePool:
         """ Load variant peptide pool from file """
         pool = cls()
-        for seq in SeqIO.parse(path, 'fasta'):
+        for seq in SeqIO.parse(handle, 'fasta'):
             seq.__class__ = AminoAcidSeqRecord
             seq.id = seq.description
             seq.name = seq.description
