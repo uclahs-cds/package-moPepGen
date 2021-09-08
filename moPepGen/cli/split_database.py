@@ -72,7 +72,8 @@ def split_database(args:argparse.Namespace) -> None:
     """ Split peptide database """
     print_start_message(args)
 
-    source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}
+    source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\
+        if args.order_source else None
 
     group_map = None
     if args.group_source:
@@ -94,5 +95,7 @@ def split_database(args:argparse.Namespace) -> None:
         with open(file, 'rt') as handle:
             splitter.load_gvf(handle)
 
-    splitter.split(args.max_source_groups, args.priority_list)
-    splitter.write(args.ourput_prefix)
+    priority_list = args.priority_list or []
+    splitter.split(args.max_source_groups, priority_list)
+
+    splitter.write(args.output_prefix)

@@ -1,13 +1,13 @@
 """ module for peptide pool splitter """
 from __future__ import annotations
 from typing import Dict, IO, Iterable, List, Set, TYPE_CHECKING, Union
+from pathlib import Path
 from moPepGen.seqvar import GVFMetadata
 from moPepGen import seqvar, VARIANT_PEPTIDE_DELIMITER
 from .VariantPeptidePool import VariantPeptidePool
 
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
 
 NONCODING_SOURCE = 'Noncoding'
@@ -175,7 +175,7 @@ class PeptidePoolSplitter():
             if group not in self.sources:
                 raise ValueError(f"group {group} not found")
         VariantSourceSet.set_levels(self.order)
-        for peptide in self.peptides:
+        for peptide in self.peptides.peptides:
             source_sets = VariantSourceSet.from_variant_peptide(
                 peptide, self.label_map)
 
@@ -188,7 +188,7 @@ class PeptidePoolSplitter():
             peptide.id = peptide.description
             peptide.name = peptide.description
 
-            if len(source_sets[0]) < max_groups:
+            if len(source_sets[0]) <= max_groups:
                 database_key = str(source_sets[0])
                 self.add_peptide_to_database(database_key, peptide)
             else:
@@ -209,7 +209,7 @@ class PeptidePoolSplitter():
                         has_priority = True
                         break
                 if not has_priority:
-                    database_key = self.get_remanent_database_key()
+                    database_key = self.get_remaining_database_key()
                     self.add_peptide_to_database(database_key, peptide)
 
     @staticmethod
@@ -218,9 +218,9 @@ class PeptidePoolSplitter():
         return f'{priority}+'
 
     @staticmethod
-    def get_remanent_database_key() -> str:
+    def get_remaining_database_key() -> str:
         """ Get the database key for remanent peptides """
-        return 'Remanent'
+        return 'Remaining'
 
     @staticmethod
     def get_database_filename(database_key:str, prefix:str) -> str:
