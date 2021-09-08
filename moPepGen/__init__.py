@@ -9,7 +9,11 @@ ERROR_INDEX_IN_INTRON = 'The genomic index seems to be in an intron'
 ERROR_NO_TX_AVAILABLE = 'No transcripts available'
 
 # global variables
-VARIANT_PEPTIDE_DELIMITER = ' '
+
+# This is variable in used in the moPepGen.aa.VariantPeptidePool module to
+# serve as a delimiter of variant peptide seqname if it is found in multiple
+# transcripts. E.g.: ENSG0001|SNV-10-T-A|1 ENSG0002|INDEL-20-CCCC-C|2
+VARIANT_PEPTIDE_SOURCE_DELIMITER = ' '
 
 class _CaptureEq:
     """Object wrapper that remembers "other" for successful equality tests.

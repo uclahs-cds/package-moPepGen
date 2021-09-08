@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, IO, Iterable, List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.seqvar import GVFMetadata
-from moPepGen import seqvar, VARIANT_PEPTIDE_DELIMITER
+from moPepGen import seqvar, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from .VariantPeptidePool import VariantPeptidePool
 
 
@@ -98,7 +98,7 @@ class VariantSourceSet(set):
             label_map:LabelMap) -> List[VariantSourceSet]:
         """ Create VariantSourceSet from AminoAcidSeqRecord """
         source_list = []
-        for label in peptide.description.split(VARIANT_PEPTIDE_DELIMITER):
+        for label in peptide.description.split(VARIANT_PEPTIDE_SOURCE_DELIMITER):
             tx_id, *var_ids, _ = label.split('|')
             sources = cls()
             if not var_ids:
@@ -194,6 +194,7 @@ class PeptidePoolSplitter():
 
     def split(self, max_groups:int, priority_list:List[str]):
         """ Split peptide pool into separate databases """
+        delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         for group in priority_list:
             if group not in self.sources:
                 raise ValueError(f"group {group} not found")
@@ -205,9 +206,9 @@ class PeptidePoolSplitter():
             order = [i for _,i in sorted((v,i) for i,v in enumerate(source_sets))]
             source_sets = [source_sets[i] for i in order]
 
-            labels = peptide.description.split(VARIANT_PEPTIDE_DELIMITER)
+            labels = peptide.description.split(delimiter)
             labels = [labels[i] for i in order]
-            peptide.description = VARIANT_PEPTIDE_DELIMITER.join(labels)
+            peptide.description = delimiter.join(labels)
             peptide.id = peptide.description
             peptide.name = peptide.description
 
@@ -223,7 +224,7 @@ class PeptidePoolSplitter():
                         source_sets.insert(0, sources)
                         label = labels.pop(ind)
                         labels.insert(label, 0)
-                        peptide.description = VARIANT_PEPTIDE_DELIMITER.join(labels)
+                        peptide.description = delimiter.join(labels)
                         peptide.id = peptide.description
                         peptide.name = peptide.description
 

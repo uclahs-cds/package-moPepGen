@@ -6,7 +6,7 @@ from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
 from Bio.SeqIO import FastaIO
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
-from moPepGen import get_equivalent, VARIANT_PEPTIDE_DELIMITER
+from moPepGen import get_equivalent, VARIANT_PEPTIDE_SOURCE_DELIMITER
 
 
 class VariantPeptidePool():
@@ -14,7 +14,7 @@ class VariantPeptidePool():
     def __init__(self, peptides:Set[AminoAcidSeqRecord]=None):
         """ Constructor """
         self.peptides = peptides or set()
-        self.peptide_delimeter = VARIANT_PEPTIDE_DELIMITER
+        self.peptide_delimeter = VARIANT_PEPTIDE_SOURCE_DELIMITER
 
     def add_peptide(self, peptide:AminoAcidSeqRecord,
             canonical_peptides:Set[str], min_mw:int=500, min_length:int=7,
