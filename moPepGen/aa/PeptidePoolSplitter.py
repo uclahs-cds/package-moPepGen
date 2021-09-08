@@ -54,7 +54,7 @@ class VariantSourceSet(set):
 
     def __str__(self) -> str:
         """ str """
-        return '+'.join(self)
+        return '-'.join(self)
 
     def __gt__(self, other:VariantSourceSet) -> bool:
         """ greater than """
@@ -216,9 +216,9 @@ class PeptidePoolSplitter():
                 database_key = str(source_sets[0])
                 self.add_peptide_to_database(database_key, peptide)
             else:
-                has_priority = False
-                for priority in additional_split_list:
-                    ind = get_index_with_priority(source_sets, priority)
+                has_additional_splitting = False
+                for additional in additional_split_list:
+                    ind = get_index_with_priority(source_sets, additional)
                     if ind is not None:
                         sources = source_sets.pop(ind)
                         source_sets.insert(0, sources)
@@ -228,18 +228,18 @@ class PeptidePoolSplitter():
                         peptide.id = peptide.description
                         peptide.name = peptide.description
 
-                        database_key = self.get_priority_database_key(priority)
+                        database_key = self.get_additional_database_key(additional)
                         self.add_peptide_to_database(database_key, peptide)
-                        has_priority = True
+                        has_additional_splitting = True
                         break
-                if not has_priority:
+                if not has_additional_splitting:
                     database_key = self.get_remaining_database_key()
                     self.add_peptide_to_database(database_key, peptide)
 
     @staticmethod
-    def get_priority_database_key(priority:str) -> str:
+    def get_additional_database_key(additional:str) -> str:
         """ Get the database key for priority """
-        return f'{priority}+'
+        return f'{additional}-additional'
 
     @staticmethod
     def get_remaining_database_key() -> str:
