@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=/home/chenghaozhu/projects/private-moPepGen-copy/test/files/index
+##genome_fasta=
+##annotation_gtf=
+##source=RNAEditing
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000128408.9	358	RNA_editing_site-A-G	A	G	.	.	TRANSCRIPT_ID=ENST00000614167.2
+ENSG00000244486.9	1002	RNA_editing_site-G-A	G	A	.	.	TRANSCRIPT_ID=ENST00000622235.5
