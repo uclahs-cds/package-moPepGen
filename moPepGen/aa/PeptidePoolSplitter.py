@@ -1,6 +1,6 @@
 """ module for peptide pool splitter """
 from __future__ import annotations
-from typing import Dict, IO, Iterable, List, Set, TYPE_CHECKING, Union
+from typing import Dict, IO, Iterable, List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.seqvar import GVFMetadata
 from moPepGen import seqvar, VARIANT_PEPTIDE_DELIMITER
@@ -101,7 +101,7 @@ class VariantSourceSet(set):
         for label in peptide.description.split(VARIANT_PEPTIDE_DELIMITER):
             tx_id, *var_ids, _ = label.split('|')
             sources = cls()
-            if not len(var_ids):
+            if not var_ids:
                 sources.add(NONCODING_SOURCE)
             for var_id in var_ids:
                 sources.add(label_map[tx_id][var_id])

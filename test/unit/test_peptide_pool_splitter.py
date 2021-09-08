@@ -2,8 +2,8 @@
 import copy
 import io
 import unittest
-from moPepGen.aa import PeptidePoolSplitter, VariantSourceSet, AminoAcidSeqRecord
 from test.unit import create_aa_record
+from moPepGen.aa import PeptidePoolSplitter, VariantSourceSet
 
 
 GVF_CASE1 = [
@@ -30,12 +30,13 @@ LABEL_MAP1 = {
 }
 
 class TestVariantSourceSet(unittest.TestCase):
+    """ Test cases for VariantSourceSet """
 
     def setUp(self):
+        """ Set up """
         super().setUp()
         VariantSourceSet.reset_levels()
 
-    """ Test cases for VariantSourceSet """
     def test_source_levels(self):
         """ Test comparing variant source set """
         levels = {'gSNP': 0, 'gINDEL': 1, 'sSNV': 2, 'sINDEL': 3}

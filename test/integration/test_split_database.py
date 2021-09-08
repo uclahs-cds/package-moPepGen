@@ -1,7 +1,7 @@
 """ Integration test of splitDatabase """
 import argparse
-from moPepGen import cli
 from test.integration import TestCaseIntegration
+from moPepGen import cli
 
 
 class TestSplitDatabase(TestCaseIntegration):
