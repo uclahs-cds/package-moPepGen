@@ -1,11 +1,11 @@
 """ Module for testing PeptidePoolSplitter """
 import copy
 import io
-from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
 import unittest
 from test.unit import create_aa_record
 from moPepGen.err import VariantSourceNotFoundError
-from moPepGen.aa import PeptidePoolSplitter, VariantSourceSet, VariantPeptideInfo
+from moPepGen.aa import PeptidePoolSplitter, VariantSourceSet, \
+    VariantPeptideInfo, VariantPeptidePool
 
 
 GVF_CASE1 = [
