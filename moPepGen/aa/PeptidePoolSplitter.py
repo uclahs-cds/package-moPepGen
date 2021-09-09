@@ -10,6 +10,7 @@ from .VariantPeptidePool import VariantPeptidePool
 
 if TYPE_CHECKING:
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
+    from moPepGen.gtf import GenomicAnnotation
 
 NONCODING_SOURCE = 'Noncoding'
 
@@ -110,8 +111,8 @@ class VariantPeptideInfo():
         self.sources = sources or VariantSourceSet()
 
     @staticmethod
-    def from_variant_peptide(peptide:AminoAcidSeqRecord, label_map:LabelMap
-            ) -> List[VariantPeptideInfo]:
+    def from_variant_peptide(peptide:AminoAcidSeqRecord, label_map:LabelMap,
+            anno:GenomicAnnotation) -> List[VariantPeptideInfo]:
         """ Parse from a variant peptide record """
         info_list = []
         delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
@@ -126,6 +127,8 @@ class VariantPeptideInfo():
                 except KeyError as e:
                     raise err.VariantSourceNotFoundError(tx_id, var_id) from e
                 info.sources.add(source)
+            if not anno.transcripts[tx_id].is_protein_coding():
+                info.sources.add(NONCODING_SOURCE)
             info_list.append(info)
         return info_list
 
@@ -193,6 +196,8 @@ class PeptidePoolSplitter():
     def append_order_noncoding(self):
         """ Add noncoding to the end of order """
         source = NONCODING_SOURCE
+        if source in self.sources:
+            return
         self.sources.add(source)
         if source not in self.order:
             self.append_order(source)
@@ -211,11 +216,6 @@ class PeptidePoolSplitter():
             return
         for peptide in pool.peptides:
             self.peptides.add_peptide(peptide, None, skip_checking=True)
-
-    def load_database_noncoding(self, handle:IO) -> None:
-        """ Load noncoding peptide database """
-        self.load_database(handle)
-        self.append_order_noncoding()
 
     def load_gvf(self, handle:IO) -> None:
         """ Load variant lables from GVF file. """
@@ -245,14 +245,16 @@ class PeptidePoolSplitter():
             self.databases[database_key] = VariantPeptidePool()
         self.databases[database_key].peptides.add(peptide)
 
-    def split(self, max_groups:int, additional_split:List[Set]):
+    def split(self, max_groups:int, additional_split:List[Set],
+            anno:GenomicAnnotation):
         """ Split peptide pool into separate databases """
+        self.append_order_noncoding()
         VariantSourceSet.set_levels(self.order)
         delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         additional_split = [VariantSourceSet(x) for x in additional_split]
         for peptide in self.peptides.peptides:
             peptide_infos = VariantPeptideInfo.from_variant_peptide(
-                peptide, self.label_map)
+                peptide, self.label_map, anno)
             peptide_infos.sort()
 
             peptide.description = delimiter.join([str(x) for x in peptide_infos])

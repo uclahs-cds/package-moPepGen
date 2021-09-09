@@ -16,6 +16,7 @@ class TestSplitDatabase(TestCaseIntegration):
         args.max_source_groups = 1
         args.additional_split = None
         args.output_prefix = self.work_dir/'test'
+        args.index_dir = None
         args.verbose = False
         return args
 
@@ -29,6 +30,7 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'fusion/star_fusion.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
         cli.split_database(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'test_gINDEL.fasta','test_gSNP.fasta','test_RNAEditing.fasta'}

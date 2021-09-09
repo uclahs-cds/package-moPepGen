@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from moPepGen.aa import PeptidePoolSplitter
-from moPepGen import SPLIT_DATABASE_KEY_SEPARATER
-from .common import add_args_verbose, print_start_message, print_help_if_missing_args
+from moPepGen import SPLIT_DATABASE_KEY_SEPARATER, logger
+from .common import add_args_reference, add_args_verbose, print_start_message,\
+    print_help_if_missing_args, load_references
 
 
 # pylint: disable=W0212
@@ -18,7 +19,7 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
     )
 
     p.add_argument(
-        '-a', '--variant-gvf',
+        '-g', '--variant-gvf',
         type=Path,
         help='Path to the input GVF files',
         nargs='+'
@@ -66,13 +67,17 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
         help='Output prefix'
     )
 
+    add_args_reference(p, genome=False, proteome=False)
     add_args_verbose(p)
-    p.set_defaults(func=split_database)
     print_help_if_missing_args(p)
+    p.set_defaults(func=split_database)
 
 def split_database(args:argparse.Namespace) -> None:
     """ Split peptide database """
     print_start_message(args)
+
+    _, anno, *_ = load_references(args, load_genome=False, \
+        load_proteome=False, load_canonical_peptides=False)
 
     source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\
         if args.order_source else None
@@ -91,7 +96,7 @@ def split_database(args:argparse.Namespace) -> None:
 
     if args.noncoding_peptides:
         with open(args.noncoding_peptides) as handle:
-            splitter.load_database_noncoding(handle)
+            splitter.load_database(handle)
 
     for file in args.variant_gvf:
         with open(file, 'rt') as handle:
@@ -100,6 +105,12 @@ def split_database(args:argparse.Namespace) -> None:
     additional_split = args.additional_split or []
     sep = SPLIT_DATABASE_KEY_SEPARATER
     additional_split = [{x.split(sep)} for x in additional_split]
-    splitter.split(args.max_source_groups, additional_split)
+    splitter.split(args.max_source_groups, additional_split, anno)
+
+    if args.verbose:
+        logger('Database split finished')
 
     splitter.write(args.output_prefix)
+
+    if args.verbose:
+        logger('Split databases saved to disk.')

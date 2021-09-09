@@ -249,3 +249,7 @@ class TranscriptAnnotationModel():
         for exon in self.exon:
             length += exon.location.end - exon.location.start
         return length
+
+    def is_protein_coding(self) -> bool:
+        """ returns if this is a coding gene """
+        return len(self.cds) > 0
