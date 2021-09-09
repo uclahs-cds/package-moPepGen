@@ -2,7 +2,8 @@
 from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING
-from moPepGen import ERROR_NO_TX_AVAILABLE
+from moPepGen import ERROR_NO_TX_AVAILABLE, \
+    ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON
 from moPepGen.SeqFeature import FeatureLocation
 
 
@@ -220,6 +221,34 @@ class VariantRecord():
         if self.type == 'Deletion':
             return (self.location.end - self.location.start - 1) % 3 != 0
         return abs(len(self.alt) - len(self.ref)) % 3 != 0
+
+    def is_spanning_over_splicing_site(self, anno:GenomicAnnotation,
+            transcription_id:str) -> bool:
+        """ Check if this is spanning over splicing site """
+        gene_id = self.location.seqname
+        if gene_id not in anno.genes:
+            raise ValueError(ERROR_VARIANT_NOT_IN_GENE_COORDINATE)
+        start = self.location.start
+        end = self.location.end
+
+        try:
+            anno.coordinate_gene_to_transcript(start, gene_id, transcription_id)
+            start_in_intron = False
+        except ValueError as e:
+            if e.args[0] == ERROR_INDEX_IN_INTRON:
+                start_in_intron = True
+            else:
+                raise e
+        try:
+            anno.coordinate_gene_to_transcript(end, gene_id, transcription_id)
+            end_in_intron = False
+        except ValueError as e:
+            if e.args[0] == ERROR_INDEX_IN_INTRON:
+                end_in_intron = True
+            else:
+                raise e
+        return ((not start_in_intron) and end_in_intron) \
+                or (start_in_intron and (not end_in_intron))
 
     def to_transcript_variant(self, anno:GenomicAnnotation, genome:DNASeqDict,
             tx_id:str=None) -> VariantRecord:

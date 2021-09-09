@@ -7,6 +7,7 @@ __version__ = '0.0.1'
 ## Error messages
 ERROR_INDEX_IN_INTRON = 'The genomic index seems to be in an intron'
 ERROR_NO_TX_AVAILABLE = 'No transcripts available'
+ERROR_VARIANT_NOT_IN_GENE_COORDINATE = 'Variant is not in gene coordinates.'
 
 # global variables
 

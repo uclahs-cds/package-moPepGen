@@ -369,6 +369,30 @@ class TestVEPRecord(unittest.TestCase):
         with self.assertRaises(TranscriptionStopSiteMutationError):
             vep_record.convert_to_variant_record(anno, genome)
 
+    def test_vep_to_variant_record_case12(self):
+        """ Transcriptional stop altering variant """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:10-15',
+            allele='-',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('aTa', 'aCa'),
+            existing_variation='-',
+            extra={}
+        )
+        record = vep_record.convert_to_variant_record(anno, genome)
+        res = record.is_spanning_over_splicing_site(anno, 'ENST0001.1')
+        self.assertTrue(res)
 
 if __name__ == '__main__':
     unittest.main()
