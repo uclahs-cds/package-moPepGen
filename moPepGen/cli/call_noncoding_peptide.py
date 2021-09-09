@@ -107,16 +107,16 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
         try:
             peptides = call_noncoding_peptide_main(tx_id, tx_model, genome,
                 rule, exception, miscleavage)
+
+            if not peptides:
+                continue
+
+            for peptide in peptides:
+                noncanonical_pool.add_peptide(peptide, canonical_peptides,
+                    min_mw, min_length, max_length)
         except:
             logger(f'Exception raised from {tx_id}')
             raise
-
-        if not peptides:
-            continue
-
-        for peptide in peptides:
-            noncanonical_pool.add_peptide(peptide, canonical_peptides,
-                min_mw, min_length, max_length)
 
         if args.verbose:
             i += 1
