@@ -120,7 +120,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
         if args.verbose:
             i += 1
-            if i % 1000 == 0:
+            if i % 5000 == 0:
                 logger(f'{i} transcripts processed.')
 
     noncanonical_pool.write(args.output_fasta)
