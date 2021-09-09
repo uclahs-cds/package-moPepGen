@@ -21,11 +21,12 @@ class TestSeqvarIO(unittest.TestCase):
         """ remove working files """
         super().tearDown()
         shutil.rmtree(WORK_DIR, ignore_errors=True)
+
     def test_seqvar_parse(self):
         """ Test parsing seqvar files. """
-        mop_path = 'test/files/vep/vep.gvf'
+        gvf_path = 'test/files/vep/vep_gSNP.gvf'
         i = 0
-        for record in seqvar.io.parse(mop_path):
+        for record in seqvar.io.parse(gvf_path):
             i += 1
             self.assertIsInstance(record, seqvar.VariantRecord)
             if i > 5:
@@ -38,7 +39,7 @@ class TestSeqvarIO(unittest.TestCase):
         variant = create_variant(10, 11, 'A', 'T', 'SNV', 'SNV-1', attrs)
         variant.location.seqname = 'ENST0001'
         output_file = WORK_DIR/'test.tvf'
-        metadata = seqvar.GVFMetadata('parseXXX')
+        metadata = seqvar.GVFMetadata('parseXXX', source='XXX', chrom='Gene ID')
         seqvar.io.write([variant], output_file, metadata)
         with open(output_file, 'rt') as handle:
             for line in handle:
@@ -56,3 +57,14 @@ class TestSeqvarIO(unittest.TestCase):
         for key, val in record.attrs.items():
             if 'START' in key:
                 self.assertEqual(int(val), 10)
+
+    def test_parse_metadata(self):
+        """ Test the metadata header is parsed correctly """
+        gvf_path = 'test/files/vep/vep_gSNP.gvf'
+        with open(gvf_path, 'rt') as handle:
+            metadata = seqvar.GVFMetadata.parse(handle)
+            records = list(seqvar.io.parse(handle))
+        self.assertEqual(metadata.source, 'gSNP')
+        self.assertEqual(metadata.parser, 'parseVEP')
+        self.assertEqual(metadata.info[0]['ID'], 'TRANSCRIPT_ID')
+        self.assertEqual(len(records), 8)

@@ -34,6 +34,7 @@ Starting from the second line should be moPepGen's metadata. Each line should be
 ##reference_index=/path/to/reference-index
 ##genome_fasta=/path/to/genome.fasta
 ##annotation_gtf=/path/to/annotation.gtf
+##source=SNP
 ```
 
 + `moPepGen_version`: the version number of moPepGen used to generate the variant file.
@@ -41,6 +42,7 @@ Starting from the second line should be moPepGen's metadata. Each line should be
 + `reference_index`: the path to the reference index used.
 + `genome_fasta`: The genome fasta file used.
 + `annotation_gtf`: The annotation GTF file used.
++ `source`: The source of variants (e.g., SNP, SNV, Fusion). This value is used in the splitDatabase subcommand.
 
 If reference_index is not empty, `genome_fasta` and `annotation_gtf` refer to the files used to generate the index.
 
@@ -61,6 +63,7 @@ Below is an example of a GVF file for point mutation, including single nucleotid
 ##reference_index=
 ##genome_fasta=
 ##annotation_gtf=
+##source=SNP
 ##CHROM=<Description='Gene ID'>
 ##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
@@ -83,6 +86,7 @@ Below is an example of a GVF file for gene fusions.
 ##reference_index=
 ##genome_fasta=
 ##annotation_gtf=
+##source=Fusion
 ##CHROM=<Description='Gene ID'>
 ##ALT=<ID=FUSION,Description="Fusion">
 ##INFO=<ID=TRANSCRIP_ID,Number="+",Type=String,Description="5' Junction (Donor) Transcript ID">
@@ -127,6 +131,7 @@ RI is represented as an insertion or the intron sequence.
 ##reference_index=/path/to/reference/index
 ##genome_fasta=/path/to/genome.fasta
 ##annotation_gtf=/path/to/annotaion.gtf
+##source=AlternativeSplicing
 ##CHROM=<Description='Gene ID'>
 ##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
 ##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
@@ -178,6 +183,7 @@ Circular RNAs are derived from back-spliced exons. They exist as individual RNA 
 ##reference_index=/path/to/reference-index
 ##genome_fasta=/path/to/genome.fasta
 ##annotation_gtf=/path/to/annotation.gtf
+##source=circRNA
 #gene_id  start  offset             length            intron  circ_id                       transcript_id      gene_name
 ENSG0001  413    0,211,398          72,85,63          .       CIRC-ENSG0001-E2-E3-E4        ENST0001,ENST0002  SYMB1
 ENSG0002  112    0,175              72,85             .       CIRC-ENSG0001-E3-E4           ENST0011,ENST0012  SYMB2

@@ -3,8 +3,9 @@ from typing import List
 from pathlib import Path
 import argparse
 from moPepGen import logger, seqvar, parser
-from .common import add_args_reference, add_args_verbose, print_start_message,\
-    print_help_if_missing_args, load_references, generate_metadata
+from .common import add_args_reference, add_args_verbose, add_args_source,\
+    print_start_message,print_help_if_missing_args, load_references, \
+    generate_metadata
 
 
 # pylint: disable=W0212
@@ -45,6 +46,7 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
         default=5,
         metavar=''
     )
+    add_args_source(p)
     add_args_reference(p, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_fusion_catcher)

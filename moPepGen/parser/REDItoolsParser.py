@@ -119,7 +119,7 @@ class REDItoolsRecord():
             gene_model = anno.genes[gene_id]
             position = anno.coordinate_genomic_to_gene(self.position - 1, gene_id)
             location = FeatureLocation(
-                seqname=tx_id,
+                seqname=gene_id,
                 start=position,
                 end=position + 1
             )

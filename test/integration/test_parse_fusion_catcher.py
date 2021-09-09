@@ -38,6 +38,7 @@ class TestParseFusionCatcher(TestCaseIntegration):
         """ Test parseFusionCatcher """
         args = argparse.Namespace()
         args.fusion = self.data_dir/'fusion/fusion_catcher.txt'
+        args.source = 'Fusion'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'

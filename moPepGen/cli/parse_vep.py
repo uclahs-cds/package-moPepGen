@@ -4,8 +4,9 @@ from typing import Dict, List, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen import seqvar, logger
-from .common import add_args_reference, add_args_verbose, print_start_message,\
-    print_help_if_missing_args, load_references, generate_metadata
+from .common import add_args_reference, add_args_verbose, add_args_source,\
+    print_start_message, print_help_if_missing_args, load_references, \
+    generate_metadata
 
 
 if TYPE_CHECKING:
@@ -39,6 +40,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         metavar='',
         required=True
     )
+    add_args_source(p)
     add_args_reference(p, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_vep)

@@ -11,6 +11,7 @@ class TestParseStarFusion(TestCaseIntegration):
     def test_parse_star_fusion_case1(self):
         """ Test parseSTARFusion """
         args = argparse.Namespace()
+        args.source = 'Fusion'
         args.fusion = self.data_dir/'fusion/star_fusion.txt'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'

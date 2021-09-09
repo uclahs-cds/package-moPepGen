@@ -6,7 +6,7 @@ from Bio import SeqIO
 from moPepGen import cli
 
 
-def get_base_args() -> argparse.Namespace:
+def create_base_args() -> argparse.Namespace:
     """ Create a base args """
     args = argparse.Namespace()
     args.index_dir = None
@@ -30,7 +30,7 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
 
     def test_call_noncoding_peptides_case1(self):
         """ test call noncoding peptides """
-        args = get_base_args()
+        args = create_base_args()
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -46,7 +46,7 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
 
     def test_call_noncoding_peptides_case2(self):
         """ test call noncoding peptides when no ORF is found """
-        args = get_base_args()
+        args = create_base_args()
         ref_dir = self.data_dir/'downsampled_reference/ENST00000644482.1'
         args.genome_fasta = ref_dir/'genome.fasta'
         args.annotation_gtf = ref_dir/'annotation.gtf'
