@@ -271,6 +271,16 @@ class TestPeptideVariantGraph(unittest.TestCase):
         seqs_expected = {'LPAQV', 'LPAQQ'}
         self.assertEqual(seqs, seqs_expected)
 
-
-if __name__ == '__main__':
-    unittest.main()
+    def test_call_variant_peptides(self):
+        """ test call peptides """
+        data = {
+            1: ('SSSSK', [0], [None]),
+            2: ('SSSSR', [1],[(0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)]),
+            3: ('SSSIR', [1], [None]),
+            4: ('SSXPK', [2,3], [None])
+        }
+        graph, _ = create_pgraph(data)
+        peptides = graph.call_variant_peptides(1)
+        received = {str(x.seq) for x in peptides}
+        expected = {'SSSSKSSSSR', 'SSSSR'}
+        self.assertEqual(received, expected)

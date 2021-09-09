@@ -557,11 +557,14 @@ class PeptideVariantGraph():
         return peptide_pool
 
 
-def update_peptide_pool(seq, peptide_pool:Set[aa.AminoAcidSeqDict],
+def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
+        peptide_pool:Set[aa.AminoAcidSeqDict],
         label_counter:Set[aa.AminoAcidSeqRecord], label:str,
         update_label:bool=True) -> None:
     """ Add a peptide sequence to a peptide pool if not already exists,
     otherwise update the same peptide's description """
+    if 'X' in seq.seq:
+        return
     if update_label:
         if label not in label_counter:
             label_counter[label] = 0
