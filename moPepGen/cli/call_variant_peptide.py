@@ -1,5 +1,6 @@
 """ Module for calling variant paptide """
 from __future__ import annotations
+import argparse
 from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
@@ -8,7 +9,6 @@ from .common import add_args_cleavage, add_args_verbose, print_start_message, \
 
 
 if TYPE_CHECKING:
-    import argparse
     from moPepGen import dna, gtf
 
 # pylint: disable=W0212
@@ -202,13 +202,18 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 if __name__ == '__main__':
+    import argparse
     test_args = argparse.Namespace()
+    test_args.command = 'callPeptides'
     test_args.input_variant = [
-        'test/files/vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.tvf'
+        'test/files/vep/CPCG0100_gencode_aa_snv_ENST00000588049.5.gvf'
     ]
-    test_args.index_dir = 'test/files/downsampled_index/ENST00000515757.5'
+    test_args.index_dir = 'test/files/gencode_34_index'
+    test_args.genome_fasta = None
+    test_args.annotation_gtf = None
+    test_args.proteome_fasta = None
     test_args.circ_rna_bed = None
-    test_args.output_fasta = 'test/files/vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.fasta'
+    test_args.output_fasta = 'test/files/vep/CPCG0100_gencode_aa_snv_ENST00000588049.5.fasta'
     test_args.verbose = True
     test_args.cleavage_rule = 'trypsin'
     test_args.miscleavage = 2

@@ -223,7 +223,7 @@ class VariantRecord():
         return abs(len(self.alt) - len(self.ref)) % 3 != 0
 
     def is_spanning_over_splicing_site(self, anno:GenomicAnnotation,
-            transcription_id:str) -> bool:
+            transcript_id:str) -> bool:
         """ Check if this is spanning over splicing site """
         gene_id = self.location.seqname
         if gene_id not in anno.genes:
@@ -232,7 +232,7 @@ class VariantRecord():
         end = self.location.end
 
         try:
-            anno.coordinate_gene_to_transcript(start, gene_id, transcription_id)
+            anno.coordinate_gene_to_transcript(start, gene_id, transcript_id)
             start_in_intron = False
         except ValueError as e:
             if e.args[0] == ERROR_INDEX_IN_INTRON:
@@ -240,7 +240,7 @@ class VariantRecord():
             else:
                 raise e
         try:
-            anno.coordinate_gene_to_transcript(end, gene_id, transcription_id)
+            anno.coordinate_gene_to_transcript(end - 1, gene_id, transcript_id)
             end_in_intron = False
         except ValueError as e:
             if e.args[0] == ERROR_INDEX_IN_INTRON:
@@ -265,8 +265,11 @@ class VariantRecord():
             self.location.start, self.location.seqname
         )
         end_genomic = anno.coordinate_gene_to_genomic(
-            self.location.end, self.location.seqname
+            self.location.end - 1, self.location.seqname
         )
+        if tx_model.transcript.strand == -1:
+            start_genomic, end_genomic = end_genomic, start_genomic
+        end_genomic += 1
         if start_genomic < tx_start:
             if end_genomic < tx_start:
                 raise ValueError(
@@ -287,8 +290,8 @@ class VariantRecord():
                 self.location.start, self.location.seqname, tx_id
             )
             end = anno.coordinate_gene_to_transcript(
-                self.location.end, self.location.seqname, tx_id
-            )
+                self.location.end - 1, self.location.seqname, tx_id
+            ) + 1
             ref = self.ref
             alt = self.alt
         location = FeatureLocation(seqname=tx_id, start=start, end=end)
