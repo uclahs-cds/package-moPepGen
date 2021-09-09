@@ -3,6 +3,7 @@ import copy
 import unittest
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
+from moPepGen.err import TranscriptionStopSiteMutationError
 
 
 GENOME_DATA = {
@@ -343,6 +344,30 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(int(tx_variant.location.end), 11)
         self.assertEqual(str(tx_variant.ref), 'T')
         self.assertEqual(str(tx_variant.alt), 'G')
+
+    def test_vep_to_variant_record_case11(self):
+        """ Transcriptional stop altering variant """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:38-50',
+            allele='-',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('aTa', 'aCa'),
+            existing_variation='-',
+            extra={}
+        )
+        with self.assertRaises(TranscriptionStopSiteMutationError):
+            vep_record.convert_to_variant_record(anno, genome)
 
 
 if __name__ == '__main__':
