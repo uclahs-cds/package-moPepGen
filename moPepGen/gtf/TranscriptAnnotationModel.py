@@ -194,7 +194,7 @@ class TranscriptAnnotationModel():
         cdna.name = self.transcript.transcript_id
         cdna.description = self.transcript.transcript_id + '|' \
             + self.transcript.gene_id + '|' \
-            + self.transcript.gene_id
+            + self.transcript.protein_id
         return cdna
 
     def get_transcript_index(self, genomic_index:int) -> int:
