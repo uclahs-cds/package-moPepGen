@@ -4,7 +4,7 @@ import argparse
 from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
-from .common import add_args_cleavage, add_args_verbose, print_start_message, \
+from moPepGen.cli.common import add_args_cleavage, add_args_verbose, print_start_message, \
     print_help_if_missing_args, add_args_reference, load_references
 
 
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     _args = argparse.Namespace()
     _args.command = 'callPeptides'
     _args.input_variant = [
-        'test/files/vep/CPCG0100_gencode_aa_snv_ENST00000588049.5.gvf'
+        'test/files/vep/CPCG0183_aa_indel.gvf'
     ]
     _args.index_dir = 'test/files/gencode_34_index'
     _args.genome_fasta = None

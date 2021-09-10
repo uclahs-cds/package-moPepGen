@@ -135,9 +135,18 @@ class VEPRecord():
 
         tx_id = self.feature
         tx_model = anno.transcripts[tx_id]
-        tx_end = tx_model.transcript.location.end if strand == 1 else \
-            tx_model.transcript.location.start
-        tx_end_genetic = anno.coordinate_genomic_to_gene(tx_end, self.gene)
+
+        if strand == 1:
+            tx_first = tx_model.transcript.location.start
+            tx_last = tx_model.transcript.location.end - 1
+            tx_start_genetic = anno.coordinate_genomic_to_gene(tx_first, self.gene)
+            tx_end_genetic = anno.coordinate_genomic_to_gene(tx_last, self.gene) + 1
+        else:
+            tx_first = tx_model.transcript.location.end - 1
+            tx_last = tx_model.transcript.location.start
+            tx_start_genetic = anno.coordinate_genomic_to_gene(tx_first, self.gene)
+            tx_end_genetic = anno.coordinate_genomic_to_gene(tx_last, self.gene) + 1
+
         if alt_end > tx_end_genetic:
             raise TranscriptionStopSiteMutationError()
         if strand == -1:
@@ -145,10 +154,10 @@ class VEPRecord():
         alt_end += 1
 
         if self.allele == '-':
-            if alt_start == 0:
+            if alt_start == tx_start_genetic:
+                alt_end += 1
                 ref = str(seq.seq[alt_start:alt_end])
-                i = alt_start_genomic - 1
-                alt = str(genome[chrom_seqname].seq[i:i+1])
+                alt = str(seq.seq[alt_end-1:alt_end])
             else:
                 alt_start -= 1
                 ref = str(seq.seq[alt_start:alt_end])

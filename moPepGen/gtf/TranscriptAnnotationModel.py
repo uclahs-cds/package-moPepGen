@@ -208,7 +208,7 @@ class TranscriptAnnotationModel():
             for exon in self.exon:
                 if exon.location.end < genomic_index:
                     index += exon.location.end - exon.location.start
-                elif exon.location.start < genomic_index:
+                elif exon.location.start <= genomic_index:
                     index += genomic_index - exon.location.start
                     break
                 else:

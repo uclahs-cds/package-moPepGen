@@ -275,10 +275,6 @@ class VariantRecord():
                 raise ValueError(
                     'Variant not associated with the given transcript'
                 )
-            if not tx_model.is_cds_start_nf():
-                raise ValueError(
-                    'Variant not associated with the given transcript'
-                )
             start = 0
             end = anno.coordinate_gene_to_transcript(
                 self.location.end + 1, self.location.seqname, tx_id
