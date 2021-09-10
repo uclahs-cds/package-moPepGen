@@ -142,7 +142,7 @@ class MXERecord(RMATSRecord):
                     'DONOR_END': second_end,
                     'DONOR_GENE_ID': self.gene_id,
                     'COORDINATE': 'gene',
-                    'GENE_SYMBOL': model.transcript.attributes['gene_name'],
+                    'GENE_SYMBOL': model.transcript.gene_name,
                     'GENOMIC_POSITION': f'{chrom}-{first_start + 1}:{first_end}-'
                     f'{second_start + 1}:{second_end}'
                 }
@@ -159,7 +159,7 @@ class MXERecord(RMATSRecord):
                     'TRANSCRIPT_ID': tx_id,
                     'START': first_start,
                     'END': first_end,
-                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.gene_name,
                     'GENOMIC_POSITION': first_genomic_position
                 }
                 _type = 'Deletion'
@@ -179,7 +179,7 @@ class MXERecord(RMATSRecord):
                     'DONOR_START': first_start,
                     'DONOR_END': first_end,
                     'DONOR_GENE_ID': self.gene_id,
-                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.gene_name,
                     'GENOMIC_POSITION': f'{chrom}-{second_start + 1}:{second_end}-'
                     f'{first_start + 1}:{first_end}'
                 }
@@ -196,7 +196,7 @@ class MXERecord(RMATSRecord):
                     'TRANSCRIPT_ID': tx_id,
                     'START': second_start,
                     'END': second_end,
-                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.gene_name,
                     'GENOMIC_POSITION': second_genomic_position
                 }
                 _type = 'Deletion'

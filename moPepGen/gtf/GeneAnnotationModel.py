@@ -1,10 +1,11 @@
 """ Module for Gene Annotation Model """
 from typing import List
-from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import dna
+from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 
 
-class GeneAnnotationModel(SeqFeature):
+class GeneAnnotationModel(GTFSeqFeature):
     """ A GeneAnnotationModel object holds the genomic range of a gene, and
     the transcript IDs that it is associated with. """
     def __init__(self, chrom:str, attributes:dict, *args,
@@ -14,7 +15,7 @@ class GeneAnnotationModel(SeqFeature):
         if transcripts is None:
             transcripts = []
         self.transcripts = transcripts
-        self.exons:List[SeqFeature] = []
+        self.exons:List[GTFSeqFeature] = []
 
     def get_gene_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:
@@ -27,7 +28,7 @@ class GeneAnnotationModel(SeqFeature):
             seq = seq.reverse_complement()
         else:
             raise ValueError('Gene is unstranded.')
-        gene_id = self.attributes['gene_id']
+        gene_id = self.gene_id
         location = FeatureLocation(seqname=gene_id, start=0, end=len(seq))
         location = dna.MatchedLocation(query=location, ref=location)
         return dna.DNASeqRecordWithCoordinates(seq=seq, locations=[location])
@@ -35,9 +36,9 @@ class GeneAnnotationModel(SeqFeature):
     def is_mrna_start_nf(self) -> bool:
         """ Whether the gene annotation has the mRNA_start_NF tag """
         return 'tag' in self.attributes and \
-            'mRNA_start_NF' in self.attributes['self.attributes']
+            'mRNA_start_NF' in self.attributes['tag']
 
     def is_cds_start_nf(self) -> bool:
         """ Whether the gene annotation has the cds_start_NF tag """
         return 'tag' in self.attributes and \
-            'cds_start_NF' in self.attributes['self.attributes']
+            'cds_start_NF' in self.attributes['tag']

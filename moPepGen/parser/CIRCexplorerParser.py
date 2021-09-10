@@ -67,7 +67,7 @@ class CIRCexplorerKnownRecord():
             ) -> CircRNAModel:
         """ COnvert a CIRCexplorerKnownRecord to CircRNAModel. """
         tx_model = anno.transcripts[self.isoform_name]
-        gene_id = tx_model.transcript.attributes['gene_id']
+        gene_id = tx_model.transcript.gene_id
         gene_model = anno.genes[gene_id]
         transcript_ids = [self.isoform_name]
 
@@ -112,4 +112,4 @@ class CIRCexplorerKnownRecord():
             fragments.append(fragment)
 
         return CircRNAModel(gene_id, fragments, intron, circ_id,
-            transcript_ids, gene_model.attributes['gene_name'])
+            transcript_ids, gene_model.gene_name)

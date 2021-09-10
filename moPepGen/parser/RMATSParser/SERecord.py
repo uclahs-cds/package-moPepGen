@@ -96,7 +96,7 @@ class SERecord(RMATSRecord):
                     'TRANSCRIPT_ID': tx_id,
                     'START': start,
                     'END': end,
-                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.gene_name,
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Deletion'
@@ -126,7 +126,7 @@ class SERecord(RMATSRecord):
                     'DONOR_START': start,
                     'DONOR_END': end,
                     'DONOR_GENE_ID': self.gene_id,
-                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.gene_name,
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Insertion'

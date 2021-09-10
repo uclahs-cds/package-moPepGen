@@ -30,6 +30,16 @@ class GTFSeqFeature(SeqFeature):
         """ transcript ID """
         return self.attributes['transcript_id']
 
+    @property
+    def protein_id(self) -> str:
+        """ protein ID """
+        return self.attributes['protein_id']
+
+    @property
+    def gene_name(self) -> str:
+        """ gene name """
+        return self.attributes['gene_name']
+
     def _shift(self, offset:int) -> GTFSeqFeature:
         """ shift by i """
         new_feature = super()._shift(offset)

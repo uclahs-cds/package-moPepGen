@@ -85,7 +85,7 @@ class RIRecord(RMATSRecord):
                 'DONOR_END': end_gene,
                 'DONOR_GENE_ID': self.gene_id,
                 'COORDINATE': 'gene',
-                'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                'GENE_SYMBOL': gene_model.gene_name,
                 'GENOMIC_POSITION': genomic_position
             }
             _type = 'Insertion'

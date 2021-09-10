@@ -184,11 +184,11 @@ class TestGTF(unittest.TestCase):
         self.assertIsInstance(anno, gtf.GenomicAnnotation)
         self.assertEqual(len(anno.transcripts), 5)
         for key, val in anno.transcripts.items():
-            self.assertEqual(val.transcript.attributes['transcript_id'], key)
+            self.assertEqual(val.transcript.transcript_id, key)
             for cds in val.cds:
-                self.assertEqual(cds.attributes['transcript_id'], key)
+                self.assertEqual(cds.transcript_id, key)
             for exon in val.exon:
-                self.assertEqual(exon.attributes['transcript_id'], key)
+                self.assertEqual(exon.transcript_id, key)
 
     def test_variant_coordinates_convert_case1(self):
         """ Test the converting the coordinates of variants to gene """

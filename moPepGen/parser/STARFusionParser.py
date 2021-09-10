@@ -87,7 +87,7 @@ class STARFusionRecord():
             List of VariantRecord
         """
         donor_model = anno.genes[self.left_gene]
-        donor_gene_symbol = donor_model.attributes['gene_name']
+        donor_gene_symbol = donor_model.gene_name
         donor_chrom = self.left_breakpoint.split(':')[0]
         left_breakpoint = int(self.left_breakpoint.split(':')[1]) - 1
         donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
@@ -96,7 +96,7 @@ class STARFusionRecord():
         donor_transcripts = donor_model.transcripts
 
         accepter_model = anno.genes[self.right_gene]
-        accepter_gene_symbol = accepter_model.attributes['gene_name']
+        accepter_gene_symbol = accepter_model.gene_name
         accepter_chrom = self.right_breakpoint.split(':')[0]
         right_breakpoint = int(self.right_breakpoint.split(':')[1]) - 1
         accepter_genome_position = f'{accepter_chrom}:{right_breakpoint}:{right_breakpoint}'
