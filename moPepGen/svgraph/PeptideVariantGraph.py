@@ -606,6 +606,8 @@ def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
         if same_peptide:
             same_peptide:aa.AminoAcidSeqRecord
             same_peptide.description += ' ' + seq.description
+            same_peptide.id = same_peptide.description
+            same_peptide.name = same_peptide.description
         else:
             peptide_pool.add(seq)
     else:

@@ -39,10 +39,10 @@ class VariantPeptidePool():
         same_peptide = get_equivalent(self.peptides, peptide)
         if same_peptide:
             same_peptide:Seq
-            new_label = peptide.id
-            same_peptide.id += (self.peptide_delimeter + new_label)
-            same_peptide.name = same_peptide.id
-            same_peptide.description = same_peptide.id
+            new_label = peptide.description
+            same_peptide.description += (self.peptide_delimeter + new_label)
+            same_peptide.id = same_peptide.description
+            same_peptide.name = same_peptide.description
         else:
             self.peptides.add(peptide)
 
