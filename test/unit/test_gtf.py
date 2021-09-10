@@ -1,12 +1,14 @@
 """ Test the GTF files are loaded and handled properly
 """
 import copy
+import io
 import unittest
 from test.unit import create_transcript_model, create_variant, \
     create_genomic_annotation
 from Bio import SeqIO
 from moPepGen import gtf
-from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from .test_vep import ANNOTATION_DATA
 
 
@@ -40,6 +42,25 @@ ANNOTATION_DATA = {
         ]
     }]
 }
+
+class TestGTFSeqFeature(unittest.TestCase):
+    """ Test cases for GTFSeqFeature """
+    def test_infer_source_ensembl(self):
+        """ Test source is infered from ensembl """
+        gtf_data = '1\thavana\ttranscript\t11869\t14409\t.\t+\t.\t' +\
+            'gene_id "ENSG00000223972"; gene_version "5"; transcript_id'+\
+            ' "ENST00000456328"; transcript_version "2"; gene_name "DDX11L1";'+\
+            ' gene_source "havana"; gene_biotype' +\
+            ' "transcribed_unprocessed_pseudogene"; transcript_name'+\
+            ' "DDX11L1-202"; transcript_source "havana"; transcript_biotype'+\
+            ' "processed_transcript"; tag "basic"; transcript_support_level "1"'
+
+        with io.BytesIO(gtf_data.encode('utf8')) as binary_file:
+            with io.TextIOWrapper(binary_file, encoding='utf8') as handle:
+                record:GTFSeqFeature = list(gtf.GtfIO.parse(handle))[0]
+        record.infer_annotation_source()
+        self.assertEqual(record.source, 'ENSEMBL')
+        self.assertEqual(record.biotype, 'transcribed_unprocessed_pseudogene')
 
 class TestAnnotationModel(unittest.TestCase):
     """ Test case for the annotation model """
@@ -290,7 +311,7 @@ class TestGTF(unittest.TestCase):
         strand = anno.genes[gene_id].location.strand
         location = FeatureLocation(seqname=gene_id, start=start, end=end,
             strand=strand)
-        intron = SeqFeature(chrom=gene_id, location=location, attributes={})
+        intron = GTFSeqFeature(chrom=gene_id, location=location, attributes={})
         ind = anno.find_intron_index(gene_id, intron, 'genomic')
         self.assertEqual(ind, 0)
 
@@ -318,7 +339,7 @@ class TestGTF(unittest.TestCase):
         strand = anno.genes[gene_id].location.strand
         location = FeatureLocation(seqname=gene_id, start=start, end=end,
             strand=strand)
-        intron = SeqFeature(chrom=gene_id, location=location, attributes={})
+        intron = GTFSeqFeature(chrom=gene_id, location=location, attributes={})
         ind = anno.find_intron_index(gene_id, intron, 'genomic')
         self.assertEqual(ind, 1)
 
@@ -329,6 +350,7 @@ class TestGTF(unittest.TestCase):
         intron = intron2._shift(10)
         with self.assertRaises(ValueError):
             anno.find_exon_index(gene_id, intron, 'gene')
+
     def test_coordinate_convert(self):
         """ Convert coodinates """
         anno = create_genomic_annotation(ANNOTATION_DATA)
@@ -345,7 +367,3 @@ class TestGTF(unittest.TestCase):
         tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
         x = anno.coordinate_gene_to_transcript(19, gene_id, tx_id)
         self.assertEqual(x, 10)
-
-
-if __name__ == '__main__':
-    unittest.main()

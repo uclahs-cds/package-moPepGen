@@ -116,3 +116,9 @@ class SeqFeature(BioSeqFeature):
     def __hash__(self):
         """ hash """
         return hash((self.chrom, self.location))
+
+    def _shift(self, offset:int) -> SeqFeature:
+        """ shift by i """
+        new_feature = super()._shift(offset)
+        new_feature.__class__ = self.__class__
+        return new_feature
