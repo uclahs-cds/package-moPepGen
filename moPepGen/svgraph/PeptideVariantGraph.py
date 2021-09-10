@@ -509,8 +509,6 @@ class MiscleavedNodes():
     def find_miscleaved_nodes(node:svgraph.PVGNode, miscleavage:int,
             graph:PeptideVariantGraph) -> MiscleavedNodes:
         """ find all miscleaved nodes """
-        if str(node.seq.seq) == 'SSLK':
-            print('here')
         queue = deque([[node]])
         nodes = MiscleavedNodes(deque([[node]]))
         i = 0
