@@ -537,7 +537,19 @@ class MiscleavedNodes():
     def join_miscleaved_peptides(self, peptide_pool:Set[aa.AminoAcidSeqRecord],
             graph:PeptideVariantGraph, check_variants:bool,
             label_counter:Dict[str,int]):
-        """ call peptides """
+        """ join miscleaved peptides and update the peptide pool.
+
+        Args:
+            peptide_pool (Set[aa.AminoAcidSeqRecord]): The container for all
+                peptides called from the PeptdieVariantGraph.
+            graph (PeptideVariantGraph): The graph object.
+            check_variants (bool): When true, only peptides that carries at
+                least 1 variant are kept. And when false, all unique peptides
+                are reported （e.g. noncoding).
+            label_counter (Dict[str,int]): The object counts the total
+                occurrences of each variant label. An int number is appended
+                to the end of the label (e.g. ENST0001|SNV-10-T-C|5)
+        """
         for queue in self.data:
             if check_variants:
                 variants:Set[seqvar.VariantRecordWithCoordinate] = set()
