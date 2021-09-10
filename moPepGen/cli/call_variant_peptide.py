@@ -202,22 +202,21 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 if __name__ == '__main__':
-    import argparse
-    test_args = argparse.Namespace()
-    test_args.command = 'callPeptides'
-    test_args.input_variant = [
+    _args = argparse.Namespace()
+    _args.command = 'callPeptides'
+    _args.input_variant = [
         'test/files/vep/CPCG0100_gencode_aa_snv_ENST00000588049.5.gvf'
     ]
-    test_args.index_dir = 'test/files/gencode_34_index'
-    test_args.genome_fasta = None
-    test_args.annotation_gtf = None
-    test_args.proteome_fasta = None
-    test_args.circ_rna_bed = None
-    test_args.output_fasta = 'test/files/vep/CPCG0100_gencode_aa_snv_ENST00000588049.5.fasta'
-    test_args.verbose = True
-    test_args.cleavage_rule = 'trypsin'
-    test_args.miscleavage = 2
-    test_args.min_mw = 500.
-    test_args.min_length = 7
-    test_args.max_length = 25
-    call_variant_peptide(args=test_args)
+    _args.index_dir = 'test/files/gencode_34_index'
+    _args.genome_fasta = None
+    _args.annotation_gtf = None
+    _args.proteome_fasta = None
+    _args.circ_rna_bed = None
+    _args.output_fasta = 'test/files/vep/CPCG0100_gencode_aa_snv_ENST00000588049.5.fasta'
+    _args.verbose = True
+    _args.cleavage_rule = 'trypsin'
+    _args.miscleavage = 2
+    _args.min_mw = 500.
+    _args.min_length = 7
+    _args.max_length = 25
+    call_variant_peptide(args=_args)

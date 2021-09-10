@@ -271,8 +271,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
         seqs_expected = {'LPAQV', 'LPAQQ'}
         self.assertEqual(seqs, seqs_expected)
 
-    def test_call_variant_peptides(self):
-        """ test call peptides """
+    def test_call_variant_peptides_ambiguous_amino_acid(self):
+        """ test call peptides with ambiguous amino acid """
         data = {
             1: ('SSSSK', [0], [None]),
             2: ('SSSSR', [1],[(0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)]),
@@ -283,4 +283,19 @@ class TestPeptideVariantGraph(unittest.TestCase):
         peptides = graph.call_variant_peptides(1)
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR'}
+        self.assertEqual(received, expected)
+
+    def test_call_variant_peptides_miscleavages(self):
+        """ test micleavages is handled correctly """
+        data = {
+            1: ('SSSSK', [0], [None]),
+            2: ('SSSSR', [1],[(0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)]),
+            3: ('SSSIR', [1], [None]),
+            4: ('SSSPK', [2,3], [None]),
+            5: ('SSSVK', [4], [None])
+        }
+        graph, _ = create_pgraph(data)
+        peptides = graph.call_variant_peptides(1)
+        received = {str(x.seq) for x in peptides}
+        expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
