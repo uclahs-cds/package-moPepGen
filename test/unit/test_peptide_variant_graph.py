@@ -299,3 +299,19 @@ class TestPeptideVariantGraph(unittest.TestCase):
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
+
+    def test_call_variant_peptides_truncated(self):
+        """ test tuncated peptide is handled properly """
+        data = {
+            1: ('SSSSK', [0], [None]),
+            2: ('SSSSR', [1],[(0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)]),
+            3: ('SSSIR', [1], [None]),
+            4: ('SSSPK', [2,3], [None]),
+            5: ('SSSVK', [4], [None])
+        }
+        graph, nodes = create_pgraph(data)
+        nodes[5].truncated = True
+        peptides = graph.call_variant_peptides(2)
+        received = {str(x.seq) for x in peptides}
+        expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSKSSSSRSSSPK', 'SSSSRSSSPK'}
+        self.assertEqual(received, expected)

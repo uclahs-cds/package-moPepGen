@@ -523,6 +523,12 @@ class MiscleavedNodes():
                 for _node in cur_node.out_nodes:
                     if _node is graph.stop:
                         continue
+                    if _node.truncated:
+                        # this is when 1. the gene has cds_end_NF tag, or 2.
+                        # stop lost mutation causing no further stop codon was
+                        # found until the end of the transcript. Thus the last
+                        # cleaved peptide is not be reported
+                        continue
                     new_batch = copy.copy(cur_batch)
                     new_batch.append(_node)
                     next_cleavage.appendleft(new_batch)
