@@ -49,8 +49,8 @@ class TestVariantRecord(unittest.TestCase):
         ]
         variant = create_variant(*variant_data)
         variant_tx = variant.to_transcript_variant(anno, genome, 'ENST0001')
-        self.assertEqual(variant_tx.location.start, 2)
-        self.assertEqual(variant_tx.location.end, 3)
+        self.assertEqual(variant_tx.location.start, 5)
+        self.assertEqual(variant_tx.location.end, 6)
         self.assertEqual(variant_tx.ref, 'C')
         self.assertEqual(variant_tx.alt, 'G')
         self.assertEqual(variant_tx.location.seqname, 'ENST0001')
