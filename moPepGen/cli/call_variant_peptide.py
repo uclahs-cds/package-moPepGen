@@ -205,14 +205,15 @@ if __name__ == '__main__':
     _args = argparse.Namespace()
     _args.command = 'callPeptides'
     _args.input_variant = [
-        'test/files/vep/CPCG0183_aa_indel.gvf'
+        'test/files/vep/CPCG0190_aa_indel_ENST00000424784.3.gvf'
     ]
-    _args.index_dir = 'test/files/gencode_34_index'
-    _args.genome_fasta = None
-    _args.annotation_gtf = None
-    _args.proteome_fasta = None
+    _args.index_dir = None
+    ref_dir = Path('test/files/downsampled_reference/ENST00000424784.3')
+    _args.genome_fasta = ref_dir/'genome.fasta'
+    _args.annotation_gtf = ref_dir/'annotation.gtf'
+    _args.proteome_fasta = ref_dir/'proteome.fasta'
     _args.circ_rna_bed = None
-    _args.output_fasta = 'test/files/vep/CPCG0100_gencode_aa_snv_ENST00000588049.5.fasta'
+    _args.output_fasta = 'test/files/vep/test.fasta'
     _args.verbose = True
     _args.cleavage_rule = 'trypsin'
     _args.miscleavage = 2

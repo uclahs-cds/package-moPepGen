@@ -3,7 +3,8 @@ from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING
 from moPepGen import ERROR_NO_TX_AVAILABLE, \
-    ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON
+    ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
+        ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
 from moPepGen.SeqFeature import FeatureLocation
 
 
@@ -69,7 +70,7 @@ class VariantRecord():
         """
         if _type not in ['Substitution', 'Deletion'] and \
                 len(location) != len(ref):
-            raise ValueError("Length of ref must match with location.")
+            raise ValueError(ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION)
         if _type not in _VARIANT_TYPES:
             raise ValueError('Variant type not supported')
         self.location = location
@@ -290,6 +291,11 @@ class VariantRecord():
             ) + 1
             ref = self.ref
             alt = self.alt
+            # If the distance from start to end on the transcript does not
+            # equal to that on the gene, the variant contains at least one
+            # intron. The ref is then regenerated.
+            if end - start != len(self.location):
+                ref = str(tx_seq.seq[start:end])
         location = FeatureLocation(seqname=tx_id, start=start, end=end)
         attrs = copy.deepcopy(self.attrs)
         del attrs['TRANSCRIPT_ID']
