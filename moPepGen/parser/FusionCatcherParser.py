@@ -95,17 +95,17 @@ class FusionCatcherRecord():
                 self.five_end_gene_id)
             accepter_gene_model = anno.get_gene_model_from_unversioned_id(
                 self.three_end_gene_id)
-            donor_gene_id = donor_gene_model.attributes['gene_id']
-            accepter_gene_id = accepter_gene_model.attributes['gene_id']
+            donor_gene_id = donor_gene_model.gene_id
+            accepter_gene_id = accepter_gene_model.gene_id
 
         # in case the ensembl ID does not match those in annotation
         # and not the same gene is referered to
-        donor_gene_symbol = donor_gene_model.attributes['gene_name']
+        donor_gene_symbol = donor_gene_model.gene_name
         if donor_gene_symbol != self.five_end_gene_symbol:
             raise ValueError(
                 'Annotation GTF version mismatch with FusionCatcher.'
             )
-        accepter_gene_symbol = accepter_gene_model.attributes['gene_name']
+        accepter_gene_symbol = accepter_gene_model.gene_name
         if accepter_gene_symbol != self.three_end_gene_symbol:
             raise ValueError(
                 'Annotation GTF version mismatch with FusionCatcher.'

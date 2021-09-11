@@ -115,7 +115,7 @@ class REDItoolsRecord():
             except ValueError as e:
                 if e.args[0] == ERROR_INDEX_IN_INTRON:
                     continue
-            gene_id = tx_model.transcript.attributes['gene_id']
+            gene_id = tx_model.transcript.gene_id
             gene_model = anno.genes[gene_id]
             position = anno.coordinate_genomic_to_gene(self.position - 1, gene_id)
             location = FeatureLocation(

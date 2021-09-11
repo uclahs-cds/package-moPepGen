@@ -6,6 +6,7 @@ import pickle
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import svgraph, dna, seqvar, gtf, aa
+from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 
 
 def load_references(base_dir:Path=None, index:bool=False
@@ -173,19 +174,19 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
     strand = data['strand']
     entry = data['transcript']
     location = FeatureLocation(start=entry[0], end=entry[1], seqname=chrom)
-    transcript = SeqFeature(chrom=chrom, location=location,
-        attributes=entry[2], strand=strand)
+    transcript = GTFSeqFeature(chrom=chrom, location=location,
+        attributes=entry[2], strand=strand, source='GENCODE')
     exons = []
     for entry in data['exon']:
         location = FeatureLocation(start=entry[0], end=entry[1])
-        exons.append(SeqFeature(chrom=chrom, location=location,
-            attributes=entry[2], strand=strand))
+        exons.append(GTFSeqFeature(chrom=chrom, location=location,
+            attributes=entry[2], strand=strand, source='GENCODE'))
     cds = []
     if 'cds' in data:
         for entry in data['cds']:
             location = FeatureLocation(start=entry[0], end=entry[1])
-            cds.append(SeqFeature(chrom=chrom, location=location,
-                attributes=entry[2], strand=strand))
+            cds.append(GTFSeqFeature(chrom=chrom, location=location,
+                attributes=entry[2], strand=strand, source='GENCODE'))
     model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
     return model
 

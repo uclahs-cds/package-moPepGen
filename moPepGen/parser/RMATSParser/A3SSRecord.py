@@ -96,7 +96,7 @@ class A3SSRecord(RMATSRecord):
                     'TRANSCRIPT_ID': tx_id,
                     'START': start_gene,
                     'END': end_gene,
-                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.gene_name,
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Deletion'
@@ -126,7 +126,7 @@ class A3SSRecord(RMATSRecord):
                     'DONOR_START': start_gene,
                     'DONOR_END': end_gene,
                     'DONOR_GENE_ID': self.gene_id,
-                    'GENE_SYMBOL': gene_model.attributes['gene_name'],
+                    'GENE_SYMBOL': gene_model.gene_name,
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Insertion'

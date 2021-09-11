@@ -1,6 +1,7 @@
 """ Module for Transcript Annotation model """
 from typing import List
-from moPepGen.SeqFeature import SeqFeature, FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen import dna, ERROR_INDEX_IN_INTRON
 
 
@@ -21,10 +22,10 @@ class TranscriptAnnotationModel():
         stop_codon (List[GTFRecord]): The GTF records of all the stop codons
             of the transcript.
     """
-    def __init__(self, transcript:SeqFeature=None,
-            cds:List[SeqFeature]=None, exon:List[SeqFeature]=None,
-            start_codon:List[SeqFeature]=None,
-            stop_codon:List[SeqFeature]=None):
+    def __init__(self, transcript:GTFSeqFeature=None,
+            cds:List[GTFSeqFeature]=None, exon:List[GTFSeqFeature]=None,
+            start_codon:List[GTFSeqFeature]=None,
+            stop_codon:List[GTFSeqFeature]=None):
         """ Construct a TranscriptAnnotationmodel """
         self.transcript = transcript
         self.cds = [] if cds is None else cds
@@ -32,7 +33,7 @@ class TranscriptAnnotationModel():
         self.start_codon = [] if start_codon is None else start_codon
         self.stop_codon = [] if stop_codon is None else stop_codon
 
-    def add_record(self, _type:str, record: SeqFeature):
+    def add_record(self, _type:str, record: GTFSeqFeature):
         """ Add a GTFRecrod into a TranscriptAnnotationModel. If the biotype
         is cds, exon, start_codon, or stop_codon, it is inserted in order.
 
@@ -132,7 +133,7 @@ class TranscriptAnnotationModel():
         location = dna.MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),
             ref=FeatureLocation(
-                seqname=self.transcript.attributes['transcript_id'],
+                seqname=self.transcript.transcript_id,
                 start=0,
                 end=len(seq)
             )
@@ -142,13 +143,13 @@ class TranscriptAnnotationModel():
             orf=orf,
             locations=[location]
         )
-        transcript.id = self.transcript.attributes['transcript_id']
-        transcript.name = self.transcript.attributes['transcript_id']
-        transcript.description = self.transcript.attributes['transcript_id'] +\
-            '|' + self.transcript.attributes['gene_id']
+        transcript.id = self.transcript.transcript_id
+        transcript.name = self.transcript.transcript_id
+        transcript.description = self.transcript.transcript_id +\
+            '|' + self.transcript.gene_id
         if 'protein_id' in self.transcript.attributes:
             transcript.description += '|' + \
-                self.transcript.attributes['protein_id']
+                self.transcript.protein_id
         return transcript
 
     def get_cdna_sequence(self, chrom:dna.DNASeqRecord
@@ -180,7 +181,7 @@ class TranscriptAnnotationModel():
         location = dna.MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),
             ref=FeatureLocation(
-                seqname=self.transcript.attributes['transcript_id'],
+                seqname=self.transcript.transcript_id,
                 start=cds_start,
                 end=cds_start + len(seq)
             )
@@ -189,11 +190,11 @@ class TranscriptAnnotationModel():
             seq=seq,
             locations=[location]
         )
-        cdna.id = self.transcript.attributes['transcript_id']
-        cdna.name = self.transcript.attributes['transcript_id']
-        cdna.description = self.transcript.attributes['transcript_id'] + '|' \
-            + self.transcript.attributes['gene_id'] + '|' \
-            + self.transcript.attributes['protein_id']
+        cdna.id = self.transcript.transcript_id
+        cdna.name = self.transcript.transcript_id
+        cdna.description = self.transcript.transcript_id + '|' \
+            + self.transcript.gene_id + '|' \
+            + self.transcript.protein_id
         return cdna
 
     def get_transcript_index(self, genomic_index:int) -> int:

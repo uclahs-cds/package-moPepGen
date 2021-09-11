@@ -1,12 +1,12 @@
 """ This module defines the class logic for the GTF annotations.
 """
-import re
 from typing import List, Dict
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar
 from . import GtfIO
 from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TYPES
 from .GeneAnnotationModel import GeneAnnotationModel
+from .GTFSeqFeature import GTFSeqFeature
 
 
 class GenomicAnnotation():
@@ -64,9 +64,9 @@ class GenomicAnnotation():
         result += f'\n{len(self.transcripts)} transcripts'
         return result
 
-    def add_gene_record(self, record:SeqFeature) -> None:
+    def add_gene_record(self, record:GTFSeqFeature) -> None:
         """ Add a gene record """
-        gene_id = record.attributes['gene_id']
+        gene_id = record.gene_id
         if gene_id in self.genes:
             raise ValueError(f'Same gene has multiple records: {gene_id}')
         record.__class__ = GeneAnnotationModel
@@ -74,48 +74,22 @@ class GenomicAnnotation():
         record.transcripts = []
         self.genes[gene_id] = record
 
-    def add_transcript_record(self, record:SeqFeature) -> None:
+    def add_transcript_record(self, record:GTFSeqFeature) -> None:
         """ Add a transcript record """
         feature = record.type.lower()
         if feature not in GTF_FEATURE_TYPES:
             return
-        transcript_id = record.attributes['transcript_id']
+        transcript_id = record.transcript_id
         record.id = transcript_id
         if transcript_id not in self.transcripts.keys():
             self.transcripts[transcript_id] = TranscriptAnnotationModel()
         self.transcripts[transcript_id].add_record(feature, record)
 
-        gene_id = record.attributes['gene_id']
+        gene_id = record.gene_id
         if gene_id not in self.genes:
             raise ValueError(f'Gene ID {gene_id} not found')
         if transcript_id not in self.genes[gene_id].transcripts:
             self.genes[gene_id].transcripts.append(transcript_id)
-
-    @staticmethod
-    def infer_annotation_source(record:SeqFeature) -> str:
-        """ Infer the annotation source from a GTF record. Returns GENCODE,
-        ENSEMBL, or None. """
-        pattern = re.compile('chr[0-9XYM]{1,2}')
-        if pattern.search(record.chrom):
-            return 'GENCODE'
-
-        pattern = re.compile(r'[A-Z]{2}[0-9]{6}\.[0-9]{1}')
-        if pattern.search(record.chrom):
-            return 'GENCODE'
-
-        pattern = re.compile('[0-9]{1,2}')
-        if pattern.search(record.chrom):
-            return 'ENSEMBL'
-
-        if record.chrom in ['X', 'Y', 'MT']:
-            return 'ENSEMBL'
-
-        pattern = re.compile('^CHR_H.+')
-        if pattern.search(record.chrom):
-            return 'ENSEMBL'
-
-        return None
-
 
     def dump_gtf(self, path:str, biotype:List[str]=None, source:str=None)->None:
         """ Dump a GTF file into a GenomicAnnotation
@@ -126,7 +100,7 @@ class GenomicAnnotation():
                 in a GTF can be annotated as protein_coding, miRNA, lncRNA,
                 miRNA, etc.
         """
-        record:SeqFeature
+        record:GTFSeqFeature
         if not source:
             count = 0
             inferred = {}
@@ -134,17 +108,21 @@ class GenomicAnnotation():
             if biotype is not None and record.biotype not in biotype:
                 continue
 
-            if not source and count > 100:
-                inferred = sorted(inferred.items(), key=lambda x: x[1])
-                source = inferred[-1][0]
-
             if not source:
-                count += 1
-                inferred_source = self.infer_annotation_source(record)
-                if inferred_source not in inferred:
-                    inferred[inferred_source] = 1
+                if count > 100:
+                    inferred = sorted(inferred.items(), key=lambda x: x[1])
+                    source = inferred[-1][0]
+                    record.source = source
                 else:
-                    inferred[inferred_source] += 1
+                    count += 1
+                    record.infer_annotation_source()
+                    inferred_source = record.source
+                    if inferred_source not in inferred:
+                        inferred[inferred_source] = 1
+                    else:
+                        inferred[inferred_source] += 1
+            else:
+                record.source = source
 
             feature = record.type.lower()
             if feature == 'gene':
@@ -152,6 +130,10 @@ class GenomicAnnotation():
                 continue
 
             self.add_transcript_record(record)
+
+        if not source:
+            inferred = sorted(inferred.items(), key=lambda x: x[1])
+            source = inferred[-1][0]
 
         self.source = source
 
@@ -316,7 +298,12 @@ class GenomicAnnotation():
             start, end = end, start
         location = FeatureLocation(seqname=gene_id, start=start, end=end,
             strand=strand)
-        return SeqFeature(chrom=gene_id, location=location, attributes={})
+        new_feature = feature.__class__(
+            chrom=gene_id, location=location, attributes={}
+        )
+        if hasattr(feature, 'source'):
+            new_feature.source = feature.source
+        return new_feature
 
     def feature_coordinate_genomic_to_gene(self, feature:SeqFeature,
             gene_id:str) -> SeqFeature:
@@ -330,7 +317,14 @@ class GenomicAnnotation():
             start, end = end, start
         location = FeatureLocation(seqname=gene_id, start=start, end=end,
             strand=0)
-        return SeqFeature(chrom=gene_id, location=location, attributes={})
+
+        new_feature =  feature.__class__(
+            chrom=gene_id, location=location, attributes={}
+        )
+        if hasattr(feature, 'source'):
+            new_feature.source = feature.source
+
+        return new_feature
 
     def create_gene_id_version_mapper(self) -> None:
         """ Create the a dict that keys are the unversioned gene ID, and values
@@ -365,7 +359,7 @@ class GenomicAnnotation():
 
         return self.genes[versioned_gene_id]
 
-    def get_all_exons_of_gene(self, gene_id) -> List[SeqFeature]:
+    def get_all_exons_of_gene(self, gene_id) -> List[GTFSeqFeature]:
         """ Get all exons of a gene """
         exons = set()
         gene_model = self.genes[gene_id]
@@ -376,13 +370,13 @@ class GenomicAnnotation():
         exons.sort()
         gene_model.exons = exons
 
-    def find_exon_index(self, gene_id:str, feature:SeqFeature,
+    def find_exon_index(self, gene_id:str, feature:GTFSeqFeature,
             coordinate:str='gene') -> int:
         """ Find the exon index of the gene.
 
         Args:
             gene_id (str): The gene ID.
-            feature (SeqFeature): The exon to look up.
+            feature (GTFSeqFeature): The exon to look up.
             coordinate (str): The coordinate type of the given feature. Can be
                 one of 'genomic' or 'gene'. Defaults to gene.
         """
@@ -412,13 +406,13 @@ class GenomicAnnotation():
                     break
         raise ValueError(self.FAILED_TO_FIND_EXON_ERROR)
 
-    def find_intron_index(self, gene_id:str, feature:SeqFeature,
+    def find_intron_index(self, gene_id:str, feature:GTFSeqFeature,
             coordinate:str="gene") -> int:
         """ Find the intron index of the gene.
 
         Args:
             gene_id (str): The gene ID.
-            feature (SeqFeature): The intron to look up.
+            feature (GTFSeqFeature): The intron to look up.
             coordinate (str): The coordinate type of the given feature. Can be
                 one of 'genomic' or 'gene'. Defaults to gene.
         """

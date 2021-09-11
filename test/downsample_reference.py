@@ -24,6 +24,7 @@ from Bio import SeqIO
 from moPepGen import gtf, dna, aa
 from moPepGen.gtf import GtfIO
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 
 
 def parse_args() -> argparse.Namespace:
@@ -103,7 +104,7 @@ def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
     transcripts:Dict[str, gtf.TranscriptAnnotationModel] = {}
 
     while True:
-        record = next(it, None)
+        record:GTFSeqFeature = next(it, None)
         if not record:
             if gene:
                 yield gene, transcripts
@@ -119,7 +120,7 @@ def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
         feature = record.type.lower()
         if feature not in gtf.GTF_FEATURE_TYPES:
             continue
-        transcript_id = record.attributes['transcript_id']
+        transcript_id = record.transcript_id
         if transcript_id not in transcripts:
             transcripts[transcript_id] = gtf.TranscriptAnnotationModel()
         transcripts[transcript_id].add_record(feature, record)
@@ -134,7 +135,7 @@ def downsample_gtf(path:Path, gene_list=None, tx_list=None
 
     for model in parse_gtf(path):
         if gene_list:
-            gene_id = model[0].attributes['gene_id']
+            gene_id = model[0].gene_id
             if gene_id in gene_list:
                 anno.genes[gene_id] = model[0]
                 anno.transcripts.update(model[1])
@@ -147,7 +148,7 @@ def downsample_gtf(path:Path, gene_list=None, tx_list=None
                     anno.transcripts[key] = val
                     tx_ids.append(key)
             if gene_wanted:
-                gene_id = model[0].attributes['gene_id']
+                gene_id = model[0].gene_id
                 anno.genes[gene_id] = model[0]
                 anno.genes[gene_id].transcripts = tx_ids
     for transcript in anno.transcripts.values():
@@ -173,7 +174,7 @@ def get_gene_sequences(path:Path, anno:gtf.GenomicAnnotation) -> dna.DNASeqDict:
         if record.id not in chrom_genes:
             continue
         for gene_model in chrom_genes[record.id]:
-            gene_id = gene_model.attributes['gene_id']
+            gene_id = gene_model.gene_id
             gene_seqs[gene_id] = gene_model.get_gene_sequence(record)
     return gene_seqs
 

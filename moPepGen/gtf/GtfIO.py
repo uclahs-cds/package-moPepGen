@@ -2,8 +2,9 @@
 from typing import IO, Union, Iterable
 from pathlib import Path
 from Bio.SeqIO.Interfaces import SequenceIterator
-from moPepGen.SeqFeature import SeqFeature, FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.gtf import GenomicAnnotation
+from .GTFSeqFeature import GTFSeqFeature
 
 
 class GtfIterator(SequenceIterator):
@@ -12,14 +13,14 @@ class GtfIterator(SequenceIterator):
         """ Constructor """
         super().__init__(source=source, mode=mode, fmt='GTF')
 
-    def parse(self, handle:IO[str]) -> Iterable[SeqFeature]:
+    def parse(self, handle:IO[str]) -> Iterable[GTFSeqFeature]:
         """ parse
         """
         records = self.iterate(handle)
         return records
 
     @staticmethod
-    def iterate(handle:IO[str]) -> Iterable[SeqFeature]:
+    def iterate(handle:IO[str]) -> Iterable[GTFSeqFeature]:
         """ Iterate through a GTF file and yield a record each time. """
         for line in handle:
             if line.startswith('#'):
@@ -50,14 +51,13 @@ class GtfIterator(SequenceIterator):
                 end=int(fields[4])
             )
 
-            record = SeqFeature(
+            record = GTFSeqFeature(
                 chrom=fields[0],
                 attributes=attributes,
                 location=location,
                 type=fields[2],
                 strand=strand
             )
-            # record.id = record.attributes['transcript_id']
             yield record
 
 def parse(handle:Union[IO[str], str]) -> GtfIterator:
@@ -65,7 +65,7 @@ def parse(handle:Union[IO[str], str]) -> GtfIterator:
     """
     return GtfIterator(handle)
 
-def to_gtf_record(record:SeqFeature) -> str:
+def to_gtf_record(record:GTFSeqFeature) -> str:
     """ Convert a SeqFeature object to a GTF record """
     if record.strand == 1:
         strand = '+'
