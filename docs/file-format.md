@@ -6,8 +6,8 @@
 		- [1.2 Point Mutation](#12-point-mutation)
 		- [1.3 Fusion](#13-fusion)
 		- [1.4 Alternative Splicing Site](#14-alternative-splicing-site)
-	- [2 CircRNA TSV Format](#2-circrna-tsv-format)
-	- [3 Variant Peptide FASTA](#3-variant-peptide-fasta)
+		- [1.5 CircRNA](#15-circrna)
+	- [2 Variant Peptide FASTA](#2-variant-peptide-fasta)
 
 
 ## 1 Gene Variant Format
@@ -173,38 +173,42 @@ ENSG0004	277	MXE-477-1103	T	<SUB>	.	.	TRANSCRIPT_ID=ENST0004;START=477;END=582;D
 
 This line above represents a MXE that the exon 447-582 (transcript ENST0004 position 277) is replaced with exon 1103-1228 of the gene.
 
-## 2 CircRNA TSV Format
+### 1.5 CircRNA
 
 Circular RNAs are derived from back-spliced exons. They exist as individual RNA molecules and have the potential to be translated to proteins. We are then interested in finding the possible peptide sequences translated from circRNAs with and without variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts than variants. Here we define a TSV file format to represent the circRNA molecules. In this TSV format, each row represent a circRNA, with the gene ID it is associated with, the start position at the gene, the offset and length of each segment, and IDs. Normally ach segment is an exon, but with intron retained alternative splicing, there could be introns.
 
 ```
+##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
-##parser=parseXXX
-##reference_index=/path/to/reference-index
+##parser=parseCIRCexplorer
+##reference_index=/path/to/reference/index
 ##genome_fasta=/path/to/genome.fasta
-##annotation_gtf=/path/to/annotation.gtf
-##source=circRNA
-#gene_id  start  offset             length            intron  circ_id                       transcript_id      gene_name
-ENSG0001  413    0,211,398          72,85,63          .       CIRC-ENSG0001-E2-E3-E4        ENST0001,ENST0002  SYMB1
-ENSG0002  112    0,175              72,85             .       CIRC-ENSG0001-E3-E4           ENST0011,ENST0012  SYMB2
-ENSG0002  112    0,73,175           72,103,85         2       CIRC-ENSG0001-E3-I3-E4        ENST0011,ENST0012  SYMB2
-ENSG0003  77     0,181,424          100,175,85        .       CIRC-ENSG0003-E2-E3-E4        ENST0021           SYMB3
-ENSG0003  77     0,101,181,357,424  100,80,175,67,85  2,4     CIRC-ENSG0003-E2-I2-E3-I3-E4  ENST0021           SYMB3
-ENSG0004  789    0                  112               1       CI-ENSG0004-I3                ENST0041           SYMB4
+##annotation_gtf=/path/to/annotaion.gtf
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=OFFSET,Number=+,Type=Integer,Description="Offsets of fragments (exons or introns)">
+##INFO=<ID=LENGTH,Number=+,Type=Integer,Description="Length of fragments (exons or introns)">
+##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
+##INFO=<ID=TRANSCRIPTS,Number=+,Type=String,Description="Transcripts associated with this circRNA">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+#CHROM    POS  ID                            REF  ALT  QUAL  FILTER  INFO
+ENSG0001  413  CIRC-ENSG0001-E2-E3-E4        .    .    .     .       OFFSET=0,211,398;LENGTH=72,85,63;INTRON=;TRANSCRIPTS=ENST0001,ENST0002;GENE_SYMBOL=SYMB1;
+ENSG0002  112  CIRC-ENSG0001-E3-E4           .    .    .     .       OFFSET=0,175LENGTH=72,85;INTRON=;TRANSCRIPTS=ENST0011,ENST0012;GENE_SYMBOL=SYMB2;
+ENSG0002  112  CIRC-ENSG0001-E3-I3-E4        .    .    .     .       OFFSET=0,73,175;LENGTH=72,103,85;INTRON=;TRANSCRIPTS=ENST0011,ENST0012;GENE_SYMBOL=SYMB2;
+ENSG0003  77   CIRC-ENSG0003-E2-E3-E4        .    .    .     .       OFFSET=0,181,424;LENGTH=100,175,85;INTRON=;TRANSCRIPTS=ENST0021;GENE_SYMBOL=SYMB3;
+ENSG0003  77   CIRC-ENSG0003-E2-I2-E3-I3-E4  .    .    .     .       OFFSET=0,101,181,357,424;LENGTH=100,80,175,67,85;INTRON=;TRANSCRIPTS=ENST0021;GENE_SYMBOL=SYMB3;
+ENSG0004  789  CI-ENSG0004-I3                .    .    .     .       OFFSET=0;LENGTH=112;INTRON=1;TRNASCRIPTS=ENST0041;GENE_SYMBOL=SYMB4;
 ```
 
-The circRNA TSV file is defined here to represent all circRNAs to be passed to moPepGen to call for variant peptides. In the TSV file, each row represents a circRNA. The TSV file has the columns below:
+Technically, circRNAs are not variants that alters the gene/transcript sequence. We here still use the GVF file format to tr The `Info` column must contain the following fields:
 
-+ **`gene_id`**: The gene ID of the gene where the circRNA is derived.
-+ **`start`**: The start position of the circRNA at the gene.
-+ **`offset`**: The offset of each fragment after the `start` position of the gene. Each segment can be either an exon or intron.
-+ **`length`**: The length of each fragmet.
-+ **`intron`**: The indices of fragments that are introns.
-+ **`circ_id`**: The ID of circRNAs have two components. They all start with CIRC-\<gene_id> where `gene_id` is the value from the first column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example, CIRC-ENSG0001-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
-+ **`transcript_id`** The transcript IDs that are able to generate this circRNA (e.g. contains all exons and introns of the circRNA.)
-+ **`gene_name`** The name of the gene.
++ **`OFFSET`**: The offset of each fragment after the `start` position of the gene. Each segment can be either an exon or intron.
++ **`LENGTH`**: The length of each fragmet.
++ **`INTRON`**: The indices of fragments that are introns.
++ **`TRANSCRIPTS`** The transcript IDs that are able to generate this circRNA (e.g. contains all exons and introns of the circRNA.)
++ **`GENE_SYMBOL`** The name of the gene.
 
-## 3 Variant Peptide FASTA
+The ID of circRNAs consist of two components. They all start with CIRC-\<gene_id> where `gene_id` is the value from the `CHROM` column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example, CIRC-ENSG0001-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
+## 2 Variant Peptide FASTA
 
 In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the GVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. A integer index is thus always added to the end to resolve redundancies.
 
