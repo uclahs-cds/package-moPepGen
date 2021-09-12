@@ -147,11 +147,12 @@ class VEPRecord():
             tx_start_genetic = anno.coordinate_genomic_to_gene(tx_first, self.gene)
             tx_end_genetic = anno.coordinate_genomic_to_gene(tx_last, self.gene) + 1
 
-        if alt_end > tx_end_genetic:
-            raise TranscriptionStopSiteMutationError()
         if strand == -1:
             alt_start, alt_end = alt_end, alt_start
         alt_end += 1
+
+        if alt_end > tx_end_genetic:
+            raise TranscriptionStopSiteMutationError()
 
         if self.allele == '-':
             if alt_start == tx_start_genetic:
