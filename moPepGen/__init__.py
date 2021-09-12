@@ -7,7 +7,9 @@ __version__ = '0.0.1'
 ## Error messages
 ERROR_INDEX_IN_INTRON = 'The genomic index seems to be in an intron'
 ERROR_NO_TX_AVAILABLE = 'No transcripts available'
-
+ERROR_VARIANT_NOT_IN_GENE_COORDINATE = 'Variant is not in gene coordinates.'
+ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION = \
+    'Length of ref does not match with the location.'
 # global variables
 
 # Used in the moPepGen.aa.VariantPeptidePool module to serve as a delimiter of

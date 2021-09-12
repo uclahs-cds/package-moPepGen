@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import Dict, List, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.parser import VEPParser
+from moPepGen.err import TranscriptionStopSiteMutationError
 from moPepGen import seqvar, logger
-from .common import add_args_reference, add_args_verbose, add_args_source,\
+from moPepGen.cli.common import add_args_reference, add_args_verbose, add_args_source,\
     print_start_message, print_help_if_missing_args, load_references, \
     generate_metadata
 
@@ -66,7 +67,10 @@ def parse_vep(args:argparse.Namespace) -> None:
             if transcript_id not in vep_records.keys():
                 vep_records[transcript_id] = []
 
-            record = record.convert_to_variant_record(anno, genome)
+            try:
+                record = record.convert_to_variant_record(anno, genome)
+            except TranscriptionStopSiteMutationError:
+                continue
 
             vep_records[transcript_id].append(record)
 
@@ -92,14 +96,15 @@ def parse_vep(args:argparse.Namespace) -> None:
 
 
 if __name__ == '__main__':
+    import argparse
     test_args = argparse.Namespace()
+    test_args.command = 'parseVEP'
     test_args.vep_txt = [
-        'test/files/vep/vep_snp.txt',
-        'test/files/vep/vep_indel.txt'
+        'test/files/CPCG0100_gencode_indel_ENST00000516353.1.txt'
     ]
-    test_args.index_dir = None
-    test_args.genome_fasta = 'test/files/genome.fasta'
-    test_args.annotation_gtf = 'test/files/annotation.gtf'
+    test_args.index_dir = 'test/files/gencode_34_index'
+    test_args.genome_fasta = None
+    test_args.annotation_gtf = None
     test_args.output_prefix = 'test/files/vep/vep'
     test_args.verbose = True
     parse_vep(args=test_args)

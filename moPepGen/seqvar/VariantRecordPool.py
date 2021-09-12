@@ -79,6 +79,10 @@ class VariantRecordPool():
                     continue
 
                 tx_id = record.attrs['TRANSCRIPT_ID']
+                if record.is_spanning_over_splicing_site(anno, tx_id):
+                    variants.add_genetic_variant(record, tx_id)
+                    continue
+
                 try:
                     tx_record = record.to_transcript_variant(anno, genome, tx_id)
                     variants.add_transcriptional_variant(tx_record, tx_id)
