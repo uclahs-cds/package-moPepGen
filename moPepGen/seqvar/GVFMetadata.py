@@ -63,6 +63,9 @@ class GVFMetadata():
         elif variant_type == 'Substitution':
             self.info.update(GVF_METADATA_INFO['Substitution'])
             self.added_types.append('Substitution')
+        elif variant_type == 'circRNA':
+            self.info.update(GVF_METADATA_INFO['circRNA'])
+            self.added_types.append('circRNA')
         else:
             raise ValueError(f'Unknown variant type: {variant_type}')
 
@@ -96,6 +99,10 @@ class GVFMetadata():
             *info_lines,
         ]
 
+    def is_circ_rna(self) -> bool:
+        """ checks if this is a circRNA """
+        return self.parser in ['parseCIRCexplorer']
+
     @classmethod
     def parse(cls, handle:IO) -> GVFMetadata:
         """ Parse the metadata from a GVF file """
@@ -123,6 +130,8 @@ class GVFMetadata():
                     k,v = it.split('=')
                     v = v.strip('"')
                     metadata[key][-1][k] = v
+            elif key == 'ALT':
+                pass
             elif key == 'mopepgen_version':
                 metadata['version'] = val
             elif key != 'fileformat':

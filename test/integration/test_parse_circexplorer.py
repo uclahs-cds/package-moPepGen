@@ -9,6 +9,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
     def test_parse_circexplorer(self):
         """ Test parseCIRCexplorer """
         args = argparse.Namespace()
+        args.command = 'parseCIRCexplorer'
         args.input_path = self.data_dir/'circRNA/CIRCexplorer_circularRNA_known.txt'
         args.output_prefix = str(self.work_dir/'circ')
         args.source = 'circRNA'
@@ -20,5 +21,5 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.verbose = False
         cli.parse_circexplorer(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'circ.tsv'}
+        expected = {'circ.gvf'}
         self.assertEqual(files, expected)

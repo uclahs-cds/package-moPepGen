@@ -1,6 +1,7 @@
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
 ##parser=parseRMATS
+##source=AlternativeSplicing
 ##reference_index=/path/to/reference/index
 ##genome_fasta=/path/to/genome.fasta
 ##annotation_gtf=/path/to/annotaion.gtf

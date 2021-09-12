@@ -10,6 +10,7 @@ class TestParseRMATS(TestCaseIntegration):
     def create_base_args(self) -> argparse.Namespace:
         """ Create base args """
         args = argparse.Namespace()
+        args.command = 'parseRMATS'
         args.source = 'AlternativeSplicing'
         args.skipped_exon = None
         args.alternative_5_splicing = None

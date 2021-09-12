@@ -1,8 +1,7 @@
 """ Variant Record Pool """
 from __future__ import annotations
-from typing import Dict, Iterable, List, TYPE_CHECKING
-from pathlib import Path
-from moPepGen import logger, ERROR_INDEX_IN_INTRON
+from typing import Dict, IO, Iterable, List, TYPE_CHECKING
+from moPepGen import ERROR_INDEX_IN_INTRON
 from . import VariantRecord, io
 
 
@@ -66,42 +65,33 @@ class VariantRecordPool():
         else:
             self.transcriptional[tx_id].append(record)
 
-    @staticmethod
-    def load_variants(files:Path, anno:GenomicAnnotation,
-            genome:DNASeqDict, verbose:bool) -> VariantRecordPool:
-        """ Load variants from files """
-        variants = VariantRecordPool()
-        for file in files:
-            for record in io.parse(file):
-                if not record.has_transcript():
-                    gene_id = record.location.seqname
-                    variants.add_genetic_variant(record, gene_id)
-                    continue
+    def load_variants(self, handle:IO, anno:GenomicAnnotation,
+            genome:DNASeqDict):
+        """ Load variants """
+        for record in io.parse(handle):
+            if not record.has_transcript():
+                gene_id = record.location.seqname
+                self.add_genetic_variant(record, gene_id)
+                continue
 
-                tx_id = record.attrs['TRANSCRIPT_ID']
-                try:
-                    tx_record = record.to_transcript_variant(anno, genome, tx_id)
-                    variants.add_transcriptional_variant(tx_record, tx_id)
-                except ValueError as e:
-                    if e.args[0] == ERROR_INDEX_IN_INTRON:
-                        variants.add_intronic_variant(record, tx_id)
-                    else:
-                        raise e
+            tx_id = record.attrs['TRANSCRIPT_ID']
+            try:
+                tx_record = record.to_transcript_variant(anno, genome, tx_id)
+                self.add_transcriptional_variant(tx_record, tx_id)
+            except ValueError as e:
+                if e.args[0] == ERROR_INDEX_IN_INTRON:
+                    self.add_intronic_variant(record, tx_id)
+                else:
+                    raise e
 
-            if verbose:
-                logger(f'Variant file {file} loaded.')
-
-        for val in variants.genetic.values():
+    def sort(self):
+        """ sort """
+        for val in self.genetic.values():
             val.sort()
-        for val in variants.intronic.values():
+        for val in self.intronic.values():
             val.sort()
-        for val in variants.transcriptional.values():
+        for val in self.transcriptional.values():
             val.sort()
-
-        if verbose:
-            logger('Variant records sorted.')
-
-        return variants
 
     def filter_variants(self, gene_id:str, anno:GenomicAnnotation,
             genome:DNASeqDict, exclude_type:List[str], start:int=None,

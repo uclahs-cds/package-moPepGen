@@ -9,7 +9,6 @@ from moPepGen import cli
 def create_base_args() -> argparse.Namespace:
     """ Create base args """
     args = argparse.Namespace()
-    args.circ_rna_bed = None
     args.index_dir = None
     args.genome_fasta = None
     args.annotation_gtf = None
@@ -89,9 +88,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args = create_base_args()
         args.input_variant = [
             str(self.data_dir/'vep'/'vep_gSNP.gvf'),
-            str(self.data_dir/'fusion'/'fusion.gvf')
+            str(self.data_dir/'fusion'/'fusion.gvf'),
+            str(self.data_dir/'circRNA'/'circ_rna.gvf')
         ]
-        args.circ_rna_bed = str(self.data_dir/'circRNA'/'circ_rna.tsv')
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'

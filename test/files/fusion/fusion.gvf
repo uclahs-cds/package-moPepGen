@@ -1,6 +1,7 @@
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
 ##parser=parseXXX
+##source=Fusion
 ##reference_index=
 ##genome_fasta=
 ##annotation_gtf=

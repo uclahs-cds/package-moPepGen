@@ -20,6 +20,9 @@ VARIANT_PEPTIDE_SOURCE_DELIMITER = ' '
 # gSNP-gINDEL
 SPLIT_DATABASE_KEY_SEPARATER = '-'
 
+# GVF header
+GVF_HEADER = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
+
 class _CaptureEq:
     """Object wrapper that remembers "other" for successful equality tests.
     Adopted from https://code.activestate.com/recipes/499299/
