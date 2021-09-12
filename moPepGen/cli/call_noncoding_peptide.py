@@ -1,8 +1,10 @@
 """ Module for calling noncoding peptide """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Set
+import copy
+from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path
 import pkg_resources
+from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, aa, logger
 from moPepGen.cli.common import add_args_cleavage, add_args_verbose, add_args_reference, \
     print_start_message, print_help_if_missing_args, load_references
@@ -42,9 +44,9 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         default=None
     )
     p.add_argument(
-        '-o', '--output-fasta',
+        '-o', '--output-prefix',
         type=Path,
-        help='Filename for the output FASTA.',
+        help='File prefix for the output FASTA.',
         metavar='',
         required=True
     )
@@ -64,6 +66,8 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     min_length:int = args.min_length
     max_length:int = args.max_length
+    peptide_fasta = f"{args.output_prefix}_peptide.fasta"
+    orf_fasta = f"{args.output_prefix}_orf.fasta"
 
     print_start_message(args)
 
@@ -90,6 +94,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
                 exclusion_biotypes.append(line.rstrip())
 
     noncanonical_pool = aa.VariantPeptidePool()
+    orf_pool = []
 
     i = 0
     for tx_id, tx_model in anno.transcripts.items():
@@ -105,11 +110,13 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             continue
 
         try:
-            peptides = call_noncoding_peptide_main(tx_id, tx_model, genome,
+            peptides, orfs = call_noncoding_peptide_main(tx_id, tx_model, genome,
                 rule, exception, miscleavage)
 
-            if not peptides:
+            if not orfs:
                 continue
+
+            orf_pool.extend(orfs)
 
             for peptide in peptides:
                 noncanonical_pool.add_peptide(peptide, canonical_peptides,
@@ -123,7 +130,9 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             if i % 5000 == 0:
                 logger(f'{i} transcripts processed.')
 
-    noncanonical_pool.write(args.output_fasta)
+    noncanonical_pool.write(peptide_fasta)
+    with open(orf_fasta, 'w') as handle:
+        write_orf(orf_pool, handle)
 
     if args.verbose:
         logger('Noncanonical peptide FASTA file written to disk.')
@@ -131,7 +140,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
 def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         genome:DNASeqDict, rule:str, exception:str, miscleavage:int
-        ) -> Set[aa.AminoAcidSeqRecord]:
+        ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
     """ Call noncoding peptides """
     chrom = tx_model.transcript.location.seqname
     tx_seq = tx_model.get_transcript_sequence(genome[chrom])
@@ -144,10 +153,38 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     dgraph.add_null_root()
     dgraph.find_all_orfs()
     if not dgraph.root.out_edges:
-        return None
+        return None, None
     pgraph = dgraph.translate()
+    orfs = get_orf_sequences(pgraph)
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
-    return pgraph.call_variant_peptides(
+    peptides = pgraph.call_variant_peptides(
         miscleavage=miscleavage,
-        check_variants=False
+        check_variants=False,
+        check_orf=True
     )
+    return peptides, orfs
+
+def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph) -> List[aa.AminoAcidSeqRecord]:
+    """ Get the full ORF sequences """
+    seqs = []
+    if not pgraph.orf_id_map:
+        pgraph.create_orf_id_map()
+    orf_id_map = pgraph.orf_id_map
+    for node in pgraph.root.out_nodes:
+        orf_start = node.orf[0]
+        orf_end = orf_start + len(node.seq.seq) * 3
+        orf_id = orf_id_map[orf_start]
+        seqname = f"{node.seq.transcript_id}|{orf_id}|{orf_start}-{orf_end}"
+        seq = copy.copy(node.seq)
+        seq.id = seqname
+        seq.name = seqname
+        seq.description = seqname
+        seqs.append(seq)
+    return seqs
+
+def write_orf(orfs:List[aa.AminoAcidSeqRecord], handle:IO):
+    """ Write ORF sequences """
+    record2title = lambda x: x.description
+    writer = FastaIO.FastaWriter(handle, record2title=record2title)
+    for record in orfs:
+        writer.write_record(record)
