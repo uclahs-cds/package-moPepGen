@@ -23,7 +23,7 @@ class PVGNode():
             in_nodes:Set[PVGNode]=None,
             out_nodes:Set[PVGNode]=None,
             frameshifts:Set[seqvar.VariantRecord]=None,
-            cleavage:bool=False):
+            cleavage:bool=False, truncated:bool=False):
         """ Construct a PVGNode object.
 
         Args:
@@ -34,6 +34,8 @@ class PVGNode():
             in_nodes (Set[PVGNode]): Inbound nodes.
             ou_nodes (Set[PVGNode]): Outbound nodes
             cleavage (bool): Whether the start of the node is a cleavage site.
+            truncated (bool): Whether the node is truncated. Useful when the
+                sequence does not have a confirmed stop codon.
         """
         self.seq = seq
         self.variants = variants
@@ -41,6 +43,7 @@ class PVGNode():
         self.out_nodes = set() if out_nodes is None else out_nodes
         self.frameshifts = set() if frameshifts is None else frameshifts
         self.cleavage = cleavage
+        self.truncated = truncated
 
     def add_out_edge(self, node:PVGNode) -> None:
         """ Add a outbound edge from this node.

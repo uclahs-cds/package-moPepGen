@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import List, Tuple, Iterable
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.err import TranscriptionStopSiteMutationError
 from moPepGen import seqvar, dna, gtf
 
 
@@ -131,15 +132,32 @@ class VEPRecord():
 
         alt_start = anno.coordinate_genomic_to_gene(alt_start_genomic, self.gene)
         alt_end = anno.coordinate_genomic_to_gene(alt_end_genomic - 1, self.gene)
+
+        tx_id = self.feature
+        tx_model = anno.transcripts[tx_id]
+
+        if strand == 1:
+            tx_first = tx_model.transcript.location.start
+            tx_last = tx_model.transcript.location.end - 1
+            tx_start_genetic = anno.coordinate_genomic_to_gene(tx_first, self.gene)
+            tx_end_genetic = anno.coordinate_genomic_to_gene(tx_last, self.gene) + 1
+        else:
+            tx_first = tx_model.transcript.location.end - 1
+            tx_last = tx_model.transcript.location.start
+            tx_start_genetic = anno.coordinate_genomic_to_gene(tx_first, self.gene)
+            tx_end_genetic = anno.coordinate_genomic_to_gene(tx_last, self.gene) + 1
+
+        if alt_end > tx_end_genetic:
+            raise TranscriptionStopSiteMutationError()
         if strand == -1:
             alt_start, alt_end = alt_end, alt_start
         alt_end += 1
 
         if self.allele == '-':
-            if alt_start == 0:
+            if alt_start == tx_start_genetic:
+                alt_end += 1
                 ref = str(seq.seq[alt_start:alt_end])
-                i = alt_start_genomic - 1
-                alt = str(genome[chrom_seqname].seq[i:i+1])
+                alt = str(seq.seq[alt_end-1:alt_end])
             else:
                 alt_start -= 1
                 ref = str(seq.seq[alt_start:alt_end])

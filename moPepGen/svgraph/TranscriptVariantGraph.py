@@ -1198,5 +1198,7 @@ class TranscriptVariantGraph():
                 if stop_index > -1:
                     pgraph.add_stop(new_pnode)
                 else:
+                    if not out_node.out_edges:
+                        new_pnode.truncated = True
                     queue.appendleft((out_node, new_pnode))
         return pgraph

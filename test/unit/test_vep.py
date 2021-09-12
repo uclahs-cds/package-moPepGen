@@ -3,6 +3,7 @@ import copy
 import unittest
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
+from moPepGen.err import TranscriptionStopSiteMutationError
 
 
 GENOME_DATA = {
@@ -253,34 +254,6 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(str(variant.ref), 'T')
         self.assertEqual(str(variant.alt), 'TGAG')
 
-    def test_vep_to_variant_record_case8(self):
-        """ Test convert vep to variant record with a deletion at the begining
-        of the transcript sequence.
-        """
-        anno_data = copy.deepcopy(ANNOTATION_DATA)
-        genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(anno_data)
-        # seq: CTGGT CCCCT ATGGG TCCTT C
-        vep_record = VEPParser.VEPRecord(
-            uploaded_variation='rs55971985',
-            location='chr1:6-8',
-            allele='-',
-            gene='ENSG0001',
-            feature='ENST0001.1',
-            feature_type='Transcript',
-            consequences=['missense_variant'],
-            cdna_position='1-3',
-            cds_position='1-3',
-            protein_position=3,
-            amino_acids=('S', 'T'),
-            codons=('ctg', '-'),
-            existing_variation='-',
-            extra={}
-        )
-        variant = vep_record.convert_to_variant_record(anno, genome)
-        with self.assertRaises(ValueError):
-            variant.to_transcript_variant(anno, genome)
-
     def test_vep_to_variant_record_case9(self):
         """ Test convert vep to variant record with a deletion at the begining
         of the transcript sequence but the transcript is cds_start_NF.
@@ -344,6 +317,88 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(str(tx_variant.ref), 'T')
         self.assertEqual(str(tx_variant.alt), 'G')
 
+    def test_vep_to_variant_record_case11(self):
+        """ Transcriptional stop altering variant """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:38-50',
+            allele='-',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('aTa', 'aCa'),
+            existing_variation='-',
+            extra={}
+        )
+        with self.assertRaises(TranscriptionStopSiteMutationError):
+            vep_record.convert_to_variant_record(anno, genome)
+
+    def test_vep_to_variant_record_case12(self):
+        """ Transcriptional stop altering variant """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:10-15',
+            allele='-',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('aTa', 'aCa'),
+            existing_variation='-',
+            extra={}
+        )
+        record = vep_record.convert_to_variant_record(anno, genome)
+        res = record.is_spanning_over_splicing_site(anno, 'ENST0001.1')
+        self.assertTrue(res)
+
+    def test_vep_to_variant_record_case13(self):
+        """ Test convert vep to variant record with a deletion at the begining
+        of the transcript sequence on - strand.
+        """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(anno_data)
+        anno.transcripts['ENST0001.1'].transcript.attributes['tag'] = ['cds_start_NF']
+        # seq: CTGGT CCCCT ATGGG TCCTT C
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:33-35',
+            allele='-',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='1-3',
+            cds_position='1-3',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('ctg', '-'),
+            existing_variation='-',
+            extra={}
+        )
+        variant = vep_record.convert_to_variant_record(anno, genome)
+        variant = variant.to_transcript_variant(anno, genome)
+        self.assertEqual(int(variant.location.start), 0)
+        self.assertEqual(int(variant.location.end), 4)
+        self.assertEqual(str(variant.ref), 'GAAG')
+        self.assertEqual(str(variant.alt), 'G')
 
 if __name__ == '__main__':
     unittest.main()

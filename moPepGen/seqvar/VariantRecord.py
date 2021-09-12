@@ -2,7 +2,9 @@
 from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING
-from moPepGen import ERROR_NO_TX_AVAILABLE
+from moPepGen import ERROR_NO_TX_AVAILABLE, \
+    ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
+        ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
 from moPepGen.SeqFeature import FeatureLocation
 
 
@@ -68,7 +70,7 @@ class VariantRecord():
         """
         if _type not in ['Substitution', 'Deletion'] and \
                 len(location) != len(ref):
-            raise ValueError("Length of ref must match with location.")
+            raise ValueError(ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION)
         if _type not in _VARIANT_TYPES:
             raise ValueError('Variant type not supported')
         self.location = location
@@ -221,6 +223,34 @@ class VariantRecord():
             return (self.location.end - self.location.start - 1) % 3 != 0
         return abs(len(self.alt) - len(self.ref)) % 3 != 0
 
+    def is_spanning_over_splicing_site(self, anno:GenomicAnnotation,
+            transcript_id:str) -> bool:
+        """ Check if this is spanning over splicing site """
+        gene_id = self.location.seqname
+        if gene_id not in anno.genes:
+            raise ValueError(ERROR_VARIANT_NOT_IN_GENE_COORDINATE)
+        start = self.location.start
+        end = self.location.end
+
+        try:
+            anno.coordinate_gene_to_transcript(start, gene_id, transcript_id)
+            start_in_intron = False
+        except ValueError as e:
+            if e.args[0] == ERROR_INDEX_IN_INTRON:
+                start_in_intron = True
+            else:
+                raise e
+        try:
+            anno.coordinate_gene_to_transcript(end - 1, gene_id, transcript_id)
+            end_in_intron = False
+        except ValueError as e:
+            if e.args[0] == ERROR_INDEX_IN_INTRON:
+                end_in_intron = True
+            else:
+                raise e
+        return ((not start_in_intron) and end_in_intron) \
+                or (start_in_intron and (not end_in_intron))
+
     def to_transcript_variant(self, anno:GenomicAnnotation, genome:DNASeqDict,
             tx_id:str=None) -> VariantRecord:
         """ Get variant records with transcription coordinates """
@@ -236,14 +266,13 @@ class VariantRecord():
             self.location.start, self.location.seqname
         )
         end_genomic = anno.coordinate_gene_to_genomic(
-            self.location.end, self.location.seqname
+            self.location.end - 1, self.location.seqname
         )
+        if tx_model.transcript.strand == -1:
+            start_genomic, end_genomic = end_genomic, start_genomic
+        end_genomic += 1
         if start_genomic < tx_start:
             if end_genomic < tx_start:
-                raise ValueError(
-                    'Variant not associated with the given transcript'
-                )
-            if not tx_model.is_cds_start_nf():
                 raise ValueError(
                     'Variant not associated with the given transcript'
                 )
@@ -258,10 +287,15 @@ class VariantRecord():
                 self.location.start, self.location.seqname, tx_id
             )
             end = anno.coordinate_gene_to_transcript(
-                self.location.end, self.location.seqname, tx_id
-            )
+                self.location.end - 1, self.location.seqname, tx_id
+            ) + 1
             ref = self.ref
             alt = self.alt
+            # If the distance from start to end on the transcript does not
+            # equal to that on the gene, the variant contains at least one
+            # intron. The ref is then regenerated.
+            if end - start != len(self.location):
+                ref = str(tx_seq.seq[start:end])
         location = FeatureLocation(seqname=tx_id, start=start, end=end)
         attrs = copy.deepcopy(self.attrs)
         del attrs['TRANSCRIPT_ID']
