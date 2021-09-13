@@ -319,7 +319,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertEqual(received, expected)
 
     def test_call_peptides_check_orf(self):
-        """ test tuncated peptide is handled properly """
+        """ test calling peptides when checking for ORF """
         data = {
             1: ('SSSSK', [0], [None], [1,None]),
             2: ('SSSSJ', [0], [None], [2,None]),
