@@ -34,12 +34,12 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.output_fasta = self.work_dir/'noncoding.fasta'
+        args.output_prefix = self.work_dir/'noncoding'
         cli.call_noncoding_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'noncoding.fasta'}
+        expected = {'noncoding_peptide.fasta', 'noncoding_orf.fasta'}
         self.assertEqual(files, expected)
-        with open(self.work_dir/'noncoding.fasta', 'rt') as handle:
+        with open(self.work_dir/'noncoding_peptide.fasta', 'rt') as handle:
             peptides = list(SeqIO.parse(handle, 'fasta'))
             ids = [p.id for p in peptides]
             self.assertEqual(len(ids),len(set(ids)))
@@ -51,10 +51,12 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
         args.genome_fasta = ref_dir/'genome.fasta'
         args.annotation_gtf = ref_dir/'annotation.gtf'
         args.proteome_fasta = ref_dir/'proteome.fasta'
-        args.output_fasta = self.work_dir/'noncoding.fasta'
+        args.output_prefix = self.work_dir/'noncoding'
         cli.call_noncoding_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'noncoding.fasta'}
+        expected = {'noncoding_peptide.fasta', 'noncoding_orf.fasta'}
         self.assertEqual(files, expected)
-        size = os.stat(self.work_dir/'noncoding.fasta').st_size
+        size = os.stat(self.work_dir/'noncoding_peptide.fasta').st_size
+        self.assertEqual(size, 0)
+        size = os.stat(self.work_dir/'noncoding_orf.fasta').st_size
         self.assertEqual(size, 0)

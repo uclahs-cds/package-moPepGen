@@ -213,6 +213,21 @@ class TestVariantPeptideInfo(unittest.TestCase):
         with self.assertRaises(VariantSourceNotFoundError):
             VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
 
+    def test_from_variant_peptide_noncoding(self):
+        """ Test forming from noncidng peptide """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        levels = copy.copy(SOURCE_ORDER)
+        VariantSourceSet.set_levels(levels)
+        label_map = {'ENST0001': {'SNV-1157-G-A': 'sSNV'}}
+
+        peptide = create_aa_record('KHIRJ','ENST0002|ORF1|1')
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+        self.assertIn('Noncoding', infos[0].sources)
+
+        peptide = create_aa_record('KHIRJ','ENST0002|1')
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+        self.assertIn('Noncoding', infos[0].sources)
+
 class TestPeptidePoolSplitter(unittest.TestCase):
     """ Test cases for testing PeptidePoolSplitter """
     def test_append_order_noncoding(self):
@@ -383,11 +398,8 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         anno = create_genomic_annotation(ANNOTATION_DATA)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
-            [
-                'SSSSSSSK',
-                'ENST0001|SNV-1002-T-A|SNV-1003-T-A|1'
-                ' ENST0002|INDEL-2101-TTTT-T|INDEL-2104-TTTT-T|1'
-            ]
+            ['SSSSSSSK', 'ENST0001|SNV-1002-T-A|SNV-1003-T-A|1'
+             ' ENST0002|INDEL-2101-TTTT-T|INDEL-2104-TTTT-T|1']
         ]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
         splitter = PeptidePoolSplitter(

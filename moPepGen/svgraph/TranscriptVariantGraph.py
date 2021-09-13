@@ -1188,10 +1188,21 @@ class TranscriptVariantGraph():
                         continue
                     variants.append(new_variant)
 
+                if pnode is root:
+                    if out_node.seq.locations:
+                        orf = [int(out_node.seq.locations[0].ref.start), None]
+                    else:
+                        orf = [None, None]
+                else:
+                    orf = pnode.orf
+                    if not orf[0] and out_node.seq.locations:
+                        orf[0] = int(out_node.seq.locations[0].ref.start)
+
                 new_pnode = svgraph.PVGNode(
                     seq=seq,
                     variants=variants,
-                    frameshifts=copy.copy(out_node.frameshifts)
+                    frameshifts=copy.copy(out_node.frameshifts),
+                    orf=orf
                 )
                 pnode.add_out_edge(new_pnode)
                 visited[out_node] = new_pnode

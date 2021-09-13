@@ -40,6 +40,8 @@ def create_pgraph(data:dict
             if it[8]:
                 frameshifts.add(variant.variant)
         node = svgraph.PVGNode(seq, variants, frameshifts=frameshifts)
+        if len(val) >= 4:
+            node.orf = val[3]
         node_list[key] = node
         for in_node_key in val[1]:
             node_list[in_node_key].add_out_edge(node)
@@ -315,3 +317,30 @@ class TestPeptideVariantGraph(unittest.TestCase):
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSKSSSSRSSSPK', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
+
+    def test_call_peptides_check_orf(self):
+        """ test calling peptides when checking for ORF """
+        data = {
+            1: ('SSSSK', [0], [None], [1,None]),
+            2: ('SSSSJ', [0], [None], [2,None]),
+            3: ('SSSSR', [1], [None], [1,None]),
+            4: ('SSSSR', [2], [None], [2,None])
+        }
+        graph, nodes = create_pgraph(data)
+        peptides = graph.call_variant_peptides(0, check_variants=False, check_orf=True)
+
+        received = {str(x.seq) for x in peptides}
+        expected = {'SSSSK', 'SSSSR', 'SSSSJ'}
+        self.assertEqual(received, expected)
+
+        tx_id = nodes[1].seq.id
+        expected = [
+            {f'{tx_id}|ORF1|1'}, {f'{tx_id}|ORF2|1'},
+            {f'{tx_id}|ORF1|2', f'{tx_id}|ORF2|2'}
+        ]
+        received = [set(str(x.description).split(' ')) for x in peptides]
+        self.assertEqual(len(expected), len(received))
+        for it in received:
+            self.assertIn(it, expected)
+        for it in expected:
+            self.assertIn(it, received)

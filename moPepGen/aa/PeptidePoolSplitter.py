@@ -119,6 +119,8 @@ class VariantPeptideInfo():
         for label in peptide.description.split(delimiter):
             tx_id, *var_ids, var_index = label.split('|')
             info = VariantPeptideInfo(tx_id, var_ids, var_index)
+            if (var_ids and var_ids[0].startswith('ORF')):
+                var_ids.pop(0)
             if not var_ids:
                 info.sources.add(NONCODING_SOURCE)
             for var_id in var_ids:
