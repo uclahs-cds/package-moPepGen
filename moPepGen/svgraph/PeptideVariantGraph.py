@@ -18,6 +18,8 @@ class PeptideVariantGraph():
             The sequence of this node is '*'
         rule (str): The rule for enzymatic cleavage, e.g., trypsin.
         exception (str): The exception for cleavage rule.
+        orf_id_map (Dict[int, str]): An ID map of ORF IDs from ORF start
+            position.
     """
     def __init__(self, root:svgraph.PVGNode):
         """ Construct a PeptideVariantGraph.
@@ -29,6 +31,7 @@ class PeptideVariantGraph():
         self.stop = svgraph.PVGNode(aa.AminoAcidSeqRecord(Seq('*')))
         self.rule = None
         self.exception = None
+        self.orf_id_map = None
 
     def add_stop(self, node:svgraph.PVGNode):
         """ Add the stop node after the specified node. """
@@ -139,7 +142,8 @@ class PeptideVariantGraph():
                     cur = svgraph.PVGNode(
                         seq=copy.copy(node.seq),
                         variants=copy.copy(node.variants),
-                        frameshifts=copy.copy(node.frameshifts)
+                        frameshifts=copy.copy(node.frameshifts),
+                        orf=node.orf
                     )
                     self.add_stop(cur)
                 else:
@@ -248,7 +252,8 @@ class PeptideVariantGraph():
                     frameshifts.update(node.frameshifts)
 
                     new_node = svgraph.PVGNode(
-                        seq=seq, variants=variants, frameshifts=frameshifts
+                        seq=seq, variants=variants, frameshifts=frameshifts,
+                        orf=first.orf
                     )
                     for upstream in first.in_nodes:
                         upstream.add_out_edge(new_node)
@@ -276,7 +281,8 @@ class PeptideVariantGraph():
                     new_node = svgraph.PVGNode(
                         seq=seq,
                         variants=variants,
-                        frameshifts=frameshifts
+                        frameshifts=frameshifts,
+                        orf=first.orf
                     )
                     for upstream in first.in_nodes:
                         upstream.add_out_edge(new_node)
@@ -448,8 +454,14 @@ class PeptideVariantGraph():
                 right = right.split_node(site, cleavage=True)
                 queue.appendleft(right)
 
-    def call_variant_peptides(self, miscleavage:int=2, check_variants:bool=True
-            ) -> Set[aa.AminoAcidSeqRecord]:
+    def create_orf_id_map(self) -> None:
+        """ Generate ORF ID map """
+        orfs = [node.orf[0] for node in self.root.out_nodes]
+        orfs.sort()
+        self.orf_id_map = {v:f"ORF{i+1}" for i,v in enumerate(orfs)}
+
+    def call_variant_peptides(self, miscleavage:int=2, check_variants:bool=True,
+            check_orf:bool=False) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
         Args:
@@ -457,10 +469,14 @@ class PeptideVariantGraph():
             check_variants (bool): When true, only peptides that carries at
                 least 1 variant are kept. And when false, all unique peptides
                 are reported.
+            check_orf (bool): When true, the ORF ID will be added to the
+                variant peptide label.
 
         Return:
             A set of aa.AminoAcidSeqRecord.
         """
+        if check_orf:
+            self.create_orf_id_map()
         queue:Deque[svgraph.PVGNode] = deque([self.root])
         visited:Set[svgraph.PVGNode] = set()
         peptide_pool:Set[aa.AminoAcidSeqRecord] = set()
@@ -491,9 +507,12 @@ class PeptideVariantGraph():
             miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
                 node=cur, miscleavage=miscleavage, graph=self
             )
+            if check_orf:
+                miscleaved_nodes.orf_id = self.orf_id_map[cur.orf[0]]
             miscleaved_nodes.join_miscleaved_peptides(
                 peptide_pool=peptide_pool, graph=self,
-                check_variants=check_variants, label_counter=label_counter
+                label_counter=label_counter, check_variants=check_variants,
+                check_orf=check_orf
             )
 
         return peptide_pool
@@ -501,9 +520,10 @@ class PeptideVariantGraph():
 
 class MiscleavedNodes():
     """ Helper class for looking for peptides with miscleavages """
-    def __init__(self, data:Deque[List[svgraph.PVGNode]]):
+    def __init__(self, data:Deque[List[svgraph.PVGNode]], orf_id:str=None):
         """ constructor """
         self.data = data
+        self.orf_id = orf_id
 
     @staticmethod
     def find_miscleaved_nodes(node:svgraph.PVGNode, miscleavage:int,
@@ -535,8 +555,8 @@ class MiscleavedNodes():
         return nodes
 
     def join_miscleaved_peptides(self, peptide_pool:Set[aa.AminoAcidSeqRecord],
-            graph:PeptideVariantGraph, check_variants:bool,
-            label_counter:Dict[str,int]):
+            graph:PeptideVariantGraph, label_counter:Dict[str,int],
+            check_variants:bool, check_orf:bool=True):
         """ join miscleaved peptides and update the peptide pool.
 
         Args:
@@ -565,38 +585,30 @@ class MiscleavedNodes():
                         variants.add(variant.variant)
                     variants.update(node.frameshifts)
 
-            if check_variants and variants:
+            label = seq.transcript_id
+
+            if check_orf:
+                label += ('|' + self.orf_id)
+
+            if check_variants:
+                if not variants:
+                    continue
                 variant_label = ''
                 for variant in variants:
                     variant_label += ('|' + str(variant.id))
-                seq.id = seq.transcript_id
-                seq.name = seq.transcript_id
-                seq.description = seq.transcript_id + variant_label
+                label += variant_label
 
-                label = seq.description
-                update_peptide_pool(seq, peptide_pool, label_counter,
-                    label, True)
+            seq.id = seq.transcript_id
+            seq.name = seq.transcript_id
+            seq.description = seq.transcript_id
 
-                if queue[0] in graph.root.out_nodes and seq.seq.startswith('M'):
-                    update_peptide_pool(seq[1:], peptide_pool,
-                        label_counter, label, True)
-            elif not check_variants:
-                seq.id = seq.transcript_id
-                seq.name = seq.transcript_id
-                seq.description = seq.transcript_id
+            update_peptide_pool(seq, peptide_pool, label_counter, label)
 
-                label = seq.description
-
-                if seq not in peptide_pool:
-                    update_peptide_pool(seq, peptide_pool,
-                        label_counter, label)
-
-                if queue[0] in graph.root.out_nodes \
-                        and seq.seq.startswith('M') \
-                        and seq[1:] not in peptide_pool:
-                    seq = seq[1:]
-                    update_peptide_pool(seq, peptide_pool,
-                        label_counter, label)
+            if queue[0] in graph.root.out_nodes \
+                    and seq.seq.startswith('M') \
+                    and seq[1:] not in peptide_pool:
+                seq = seq[1:]
+                update_peptide_pool(seq, peptide_pool, label_counter, label)
 
 
 def update_peptide_pool(seq:aa.AminoAcidSeqRecord,

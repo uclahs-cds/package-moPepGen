@@ -20,10 +20,9 @@ class PVGNode():
     """
     def __init__(self, seq:aa.AminoAcidSeqRecord,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            in_nodes:Set[PVGNode]=None,
-            out_nodes:Set[PVGNode]=None,
+            in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             frameshifts:Set[seqvar.VariantRecord]=None,
-            cleavage:bool=False, truncated:bool=False):
+            cleavage:bool=False, truncated:bool=False, orf:List[int]=None):
         """ Construct a PVGNode object.
 
         Args:
@@ -44,6 +43,7 @@ class PVGNode():
         self.frameshifts = set() if frameshifts is None else frameshifts
         self.cleavage = cleavage
         self.truncated = truncated
+        self.orf = orf if orf is not None else [None, None]
 
     def add_out_edge(self, node:PVGNode) -> None:
         """ Add a outbound edge from this node.
@@ -120,6 +120,7 @@ class PVGNode():
 
         new_node = PVGNode(seq=right_seq, variants=right_variants)
         new_node.frameshifts = copy.copy(self.frameshifts)
+        new_node.orf = self.orf
 
         if cleavage:
             new_node.cleavage = True
