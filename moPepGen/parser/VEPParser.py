@@ -4,7 +4,8 @@ from __future__ import annotations
 from typing import List, Tuple, Iterable
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen.err import TranscriptionStopSiteMutationError
+from moPepGen.err import TranscriptionStopSiteMutationError, \
+    TranscriptionStartSiteMutationError
 from moPepGen import seqvar, dna, gtf
 
 
@@ -151,8 +152,12 @@ class VEPRecord():
             alt_start, alt_end = alt_end, alt_start
         alt_end += 1
 
+        if alt_start < tx_start_genetic or (alt_start == tx_start_genetic \
+                and not tx_model.is_cds_start_nf()):
+            raise TranscriptionStartSiteMutationError(tx_id)
+
         if alt_end > tx_end_genetic:
-            raise TranscriptionStopSiteMutationError()
+            raise TranscriptionStopSiteMutationError(tx_id)
 
         if self.allele == '-':
             if alt_start == tx_start_genetic:

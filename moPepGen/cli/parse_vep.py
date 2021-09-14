@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Dict, List, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.parser import VEPParser
-from moPepGen.err import TranscriptionStopSiteMutationError
+from moPepGen.err import TranscriptionStopSiteMutationError, \
+    TranscriptionStartSiteMutationError
 from moPepGen import seqvar, logger
 from moPepGen.cli.common import add_args_reference, add_args_verbose, add_args_source,\
     print_start_message, print_help_if_missing_args, load_references, \
@@ -70,6 +71,8 @@ def parse_vep(args:argparse.Namespace) -> None:
             try:
                 record = record.convert_to_variant_record(anno, genome)
             except TranscriptionStopSiteMutationError:
+                continue
+            except TranscriptionStartSiteMutationError:
                 continue
 
             vep_records[transcript_id].append(record)

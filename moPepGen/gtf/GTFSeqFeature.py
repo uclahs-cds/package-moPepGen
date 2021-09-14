@@ -38,7 +38,9 @@ class GTFSeqFeature(SeqFeature):
     @property
     def gene_name(self) -> str:
         """ gene name """
-        return self.attributes['gene_name']
+        if 'gene_name' in self.attributes:
+            return self.attributes['gene_name']
+        return ''
 
     def _shift(self, offset:int) -> GTFSeqFeature:
         """ shift by i """

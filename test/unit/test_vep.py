@@ -3,7 +3,8 @@ import copy
 import unittest
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
-from moPepGen.err import TranscriptionStopSiteMutationError
+from moPepGen.err import TranscriptionStopSiteMutationError, \
+    TranscriptionStartSiteMutationError
 
 
 GENOME_DATA = {
@@ -427,6 +428,31 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(str(variant.ref), 'GAAG')
         self.assertEqual(str(variant.alt), 'G')
 
+    def test_vep_to_variant_record_case15(self):
+        """ Transcriptional start altering variant """
+        annotation_data = copy.copy(ANNOTATION_DATA)
+        annotation_data['genes'][0]['gene'] = (5, 40, ANNOTATION_ATTRS[0])
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(annotation_data)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:2-7',
+            allele='-',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('aTa', 'aCa'),
+            existing_variation='-',
+            extra={}
+        )
+        with self.assertRaises(TranscriptionStartSiteMutationError):
+            vep_record.convert_to_variant_record(anno, genome)
 
 if __name__ == '__main__':
     unittest.main()
