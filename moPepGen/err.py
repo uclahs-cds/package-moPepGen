@@ -1,4 +1,5 @@
 """ Module for errors """
+from moPepGen import logger
 
 class VariantSourceNotFoundError(Exception):
     """ Error to be raised when the variant source of a peptide is not found """
@@ -23,3 +24,21 @@ class TranscriptionStopSiteMutationError(Exception):
         if transcript_id:
             message += f"transcript [{transcript_id}] "
         super().__init__(message)
+
+class ReferenceSeqnameNotFoundError(Exception):
+    """ Error to be raised when the seqname is not found from the reference
+    genome """
+    raised = False
+    def __init__(self, seqname:str):
+        """ constructor """
+        msg = f"This seqname is not found from the reference genome: {seqname}"
+        super().__init__(msg)
+
+    @classmethod
+    def mute(cls):
+        """ Mute it """
+        cls.raised = True
+
+def warning(msg:str) -> None:
+    """ print a warning message """
+    logger(f"[ !!! moPepGen WARNING !!! ] {msg}")
