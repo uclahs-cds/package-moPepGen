@@ -43,6 +43,7 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
             peptides = list(SeqIO.parse(handle, 'fasta'))
             ids = [p.id for p in peptides]
             self.assertEqual(len(ids),len(set(ids)))
+            self.assertTrue(peptides[0].id.split('|')[0] != 'None')
 
     def test_call_noncoding_peptides_case2(self):
         """ test call noncoding peptides when no ORF is found """
