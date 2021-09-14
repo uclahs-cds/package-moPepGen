@@ -184,7 +184,7 @@ def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph) -> List[aa.AminoAcidSe
         orf_start = node.orf[0]
         orf_end = orf_start + len(node.seq.seq) * 3
         orf_id = orf_id_map[orf_start]
-        seqname = f"{node.seq.transcript_id}|{orf_id}|{orf_start}-{orf_end}"
+        seqname = f"{pgraph.id}|{orf_id}|{orf_start}-{orf_end}"
         seq = copy.copy(node.seq)
         seq.id = seqname
         seq.name = seqname
