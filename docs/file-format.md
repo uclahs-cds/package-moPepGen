@@ -190,6 +190,7 @@ Circular RNAs are derived from back-spliced exons. They exist as individual RNA 
 ##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
 ##INFO=<ID=TRANSCRIPTS,Number=+,Type=String,Description="Transcripts associated with this circRNA">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##POS=<Description="Gene coordinate of circRNA start">
 #CHROM    POS  ID                            REF  ALT  QUAL  FILTER  INFO
 ENSG0001  413  CIRC-ENSG0001-E2-E3-E4        .    .    .     .       OFFSET=0,211,398;LENGTH=72,85,63;INTRON=;TRANSCRIPTS=ENST0001,ENST0002;GENE_SYMBOL=SYMB1
 ENSG0002  112  CIRC-ENSG0001-E3-E4           .    .    .     .       OFFSET=0,175LENGTH=72,85;INTRON=;TRANSCRIPTS=ENST0011,ENST0012;GENE_SYMBOL=SYMB2
