@@ -6,6 +6,7 @@ from pathlib import Path
 import pkg_resources
 from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, aa, logger
+from moPepGen.err import ReferenceSeqnameNotFoundError, warning
 from moPepGen.cli.common import add_args_cleavage, add_args_verbose, add_args_reference, \
     print_start_message, print_help_if_missing_args, load_references
 
@@ -121,6 +122,10 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             for peptide in peptides:
                 noncanonical_pool.add_peptide(peptide, canonical_peptides,
                     min_mw, min_length, max_length)
+        except ReferenceSeqnameNotFoundError as e:
+            if not ReferenceSeqnameNotFoundError.raised:
+                warning(e.args[0] + ' Make sure your GTF and FASTA files match.')
+                ReferenceSeqnameNotFoundError.mute()
         except:
             logger(f'Exception raised from {tx_id}')
             raise
@@ -143,7 +148,12 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
     """ Call noncoding peptides """
     chrom = tx_model.transcript.location.seqname
-    tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+    try:
+        contig_seq = genome[chrom]
+    except KeyError as e:
+        raise ReferenceSeqnameNotFoundError(chrom) from e
+
+    tx_seq = tx_model.get_transcript_sequence(contig_seq)
 
     dgraph = svgraph.TranscriptVariantGraph(
         seq=tx_seq,
