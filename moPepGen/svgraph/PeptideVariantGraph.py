@@ -21,13 +21,14 @@ class PeptideVariantGraph():
         orf_id_map (Dict[int, str]): An ID map of ORF IDs from ORF start
             position.
     """
-    def __init__(self, root:svgraph.PVGNode):
+    def __init__(self, root:svgraph.PVGNode, _id:str):
         """ Construct a PeptideVariantGraph.
 
         Args:
             root (svgraph.PVGNode): The root node of the graph.
         """
         self.root = root
+        self.id = _id
         self.stop = svgraph.PVGNode(aa.AminoAcidSeqRecord(Seq('*')))
         self.rule = None
         self.exception = None
@@ -585,7 +586,7 @@ class MiscleavedNodes():
                         variants.add(variant.variant)
                     variants.update(node.frameshifts)
 
-            label = seq.transcript_id
+            label = graph.id
 
             if check_orf:
                 label += ('|' + self.orf_id)
@@ -595,12 +596,10 @@ class MiscleavedNodes():
                     continue
                 variant_label = ''
                 for variant in variants:
+                    if variant.type == 'circRNA':
+                        continue
                     variant_label += ('|' + str(variant.id))
                 label += variant_label
-
-            seq.id = seq.transcript_id
-            seq.name = seq.transcript_id
-            seq.description = seq.transcript_id
 
             update_peptide_pool(seq, peptide_pool, label_counter, label)
 
@@ -624,6 +623,8 @@ def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
             label_counter[label] = 0
         label_counter[label] += 1
         seq.description = label + '|' + str(label_counter[label])
+        seq.id = seq.description
+        seq.name = seq.description
         same_peptide = get_equivalent(peptide_pool, seq)
         if same_peptide:
             same_peptide:aa.AminoAcidSeqRecord

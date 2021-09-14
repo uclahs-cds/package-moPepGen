@@ -6,11 +6,11 @@ from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import aa, svgraph, seqvar
 
 
-def create_pgraph(data:dict
+def create_pgraph(data:dict, _id:str
         ) -> Tuple[svgraph.PeptideVariantGraph,Dict[int, svgraph.PVGNode]]:
     """ Create a peptide variant graph from data """
     root = svgraph.PVGNode(None)
-    graph = svgraph.PeptideVariantGraph(root)
+    graph = svgraph.PeptideVariantGraph(root, _id)
     node_list = {0: root}
     for key, val in data.items():
         seq = aa.AminoAcidSeqRecord(
@@ -68,7 +68,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             6: ('PRN', [4, 5], [None])
         }
 
-        graph, nodes = create_pgraph(data)
+        graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
         graph.expand_alignment_backward(nodes[1])
 
@@ -97,7 +97,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             7: ('PRN', [5, 6], [None])
         }
 
-        graph, nodes = create_pgraph(data)
+        graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
         branches = graph.expand_alignment_backward(nodes[2])
 
@@ -128,7 +128,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             6: ('PDNK', [4, 5], [None]),
             7: ('DCAGP', [6], [None])
         }
-        graph, nodes = create_pgraph(data)
+        graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
         graph.expand_alignment_forward(nodes[6])
         seqs = {str(node.seq.seq) for node in nodes[7].in_nodes}
@@ -156,7 +156,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             6: ('PDNK', [4, 5], [None]),
             7: ('DCAGP', [6], [None])
         }
-        graph, nodes = create_pgraph(data)
+        graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
         graph.expand_alignment_forward(nodes[6])
         seqs = {str(node.seq.seq) for node in nodes[7].in_nodes}
@@ -188,7 +188,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             6: ('V', [4], [(0, 1, 'A', 'T', 'SNV', '', 0, 1, False)]),
             7: ('PK', [5,6], [])
         }
-        graph, nodes = create_pgraph(data)
+        graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
         branches = graph.merge_join_alignments(nodes[4])
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
@@ -219,7 +219,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             6: ('V', [4], [(0, 1, 'A', 'T', 'SNV', '', 0, 1, False)]),
             7: ('PK', [5,6], [])
         }
-        graph, nodes = create_pgraph(data)
+        graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
         branches = graph.merge_join_alignments(nodes[4])
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
@@ -249,7 +249,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             6: ('V', [4], [(0, 1, 'A', 'T', 'SNV', '', 0, 1, False)]),
             7: ('PK', [5,6], [None])
         }
-        graph, nodes = create_pgraph(data)
+        graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
         branches = graph.cross_join_alignments(nodes[4], 5)
 
@@ -281,7 +281,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             3: ('SSSIR', [1], [None]),
             4: ('SSXPK', [2,3], [None])
         }
-        graph, _ = create_pgraph(data)
+        graph, _ = create_pgraph(data, 'ENST0001')
         peptides = graph.call_variant_peptides(1)
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR'}
@@ -296,7 +296,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             4: ('SSSPK', [2,3], [None]),
             5: ('SSSVK', [4], [None])
         }
-        graph, _ = create_pgraph(data)
+        graph, _ = create_pgraph(data, 'ENST0001')
         peptides = graph.call_variant_peptides(1)
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSRSSSPK'}
@@ -311,7 +311,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             4: ('SSSPK', [2,3], [None]),
             5: ('SSSVK', [4], [None])
         }
-        graph, nodes = create_pgraph(data)
+        graph, nodes = create_pgraph(data, 'ENST0001')
         nodes[5].truncated = True
         peptides = graph.call_variant_peptides(2)
         received = {str(x.seq) for x in peptides}
@@ -326,17 +326,17 @@ class TestPeptideVariantGraph(unittest.TestCase):
             3: ('SSSSR', [1], [None], [1,None]),
             4: ('SSSSR', [2], [None], [2,None])
         }
-        graph, nodes = create_pgraph(data)
+        graph_id = 'ENST0001'
+        graph, _ = create_pgraph(data, graph_id)
         peptides = graph.call_variant_peptides(0, check_variants=False, check_orf=True)
 
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSK', 'SSSSR', 'SSSSJ'}
         self.assertEqual(received, expected)
 
-        tx_id = nodes[1].seq.id
         expected = [
-            {f'{tx_id}|ORF1|1'}, {f'{tx_id}|ORF2|1'},
-            {f'{tx_id}|ORF1|2', f'{tx_id}|ORF2|2'}
+            {f'{graph_id}|ORF1|1'}, {f'{graph_id}|ORF2|1'},
+            {f'{graph_id}|ORF1|2', f'{graph_id}|ORF2|2'}
         ]
         received = [set(str(x.description).split(' ')) for x in peptides]
         self.assertEqual(len(expected), len(received))
@@ -344,3 +344,16 @@ class TestPeptideVariantGraph(unittest.TestCase):
             self.assertIn(it, expected)
         for it in expected:
             self.assertIn(it, received)
+
+    def test_call_peptides_id(self):
+        """ test peptide ids are named correctly. """
+        data = {
+            1: ('SSSSK', [0], [None]),
+            2: ('SSSSR', [1],[(0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)]),
+            3: ('SSSIR', [1], [None]),
+            4: ('SSXPK', [2,3], [None])
+        }
+        graph, _ = create_pgraph(data, 'ENST0001')
+        peptides = graph.call_variant_peptides(1)
+        for peptide in peptides:
+            self.assertTrue(peptide.description.startswith(graph.id))

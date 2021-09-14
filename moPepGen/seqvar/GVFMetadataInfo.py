@@ -116,3 +116,11 @@ GVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
         }
     }
 }
+
+GVF_METADATA_ADDITIONAL:Dict[str,Dict[str,Dict[str,Union[int, str]]]] = {
+    'circRNA': {
+        'POS': {
+            'Description': '"Gene coordinate of circRNA start"'
+        }
+    }
+}

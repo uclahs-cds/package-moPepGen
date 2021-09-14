@@ -19,7 +19,7 @@ class TranscriptVariantGraph():
         edges (Set[svgraph.TVGEdge]): Set of edges. Each
         seq (DNASeqRecordWithCoordinates): The original sequence of the
             transcript (reference).
-        transcript_id (str)
+        id (str)
         variants List[seqvar.VariantRecordWithCoordinate]: All variant
             records.
     """
@@ -1155,7 +1155,7 @@ class TranscriptVariantGraph():
                 GTCTAC                VY
         """
         root = svgraph.PVGNode(None)
-        pgraph = svgraph.PeptideVariantGraph(root)
+        pgraph = svgraph.PeptideVariantGraph(root, self.id)
 
         queue = deque([(self.root, root)])
         visited = dict()
@@ -1177,8 +1177,6 @@ class TranscriptVariantGraph():
 
                 if stop_index > -1:
                     seq = seq[:stop_index]
-
-                seq.transcript_id = self.id
 
                 # translate the dna variant location to peptide coordinates.
                 variants = []

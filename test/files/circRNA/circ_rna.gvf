@@ -11,6 +11,7 @@
 ##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
 ##INFO=<ID=TRANSCRIPTS,Number=+,Type=String,Description="Transcripts associated with this circRNA">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##POS=<Description="Gene coordinate of circRNA start">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
 ENSG00000128408.9	0	ENSG00000128408.9-circRNA-E3-E4	.	.	.	.	OFFSET=0,323;LENGTH=323,82;INTRON=;TRANSCRIPTS=ENST00000614167.2;GENE_SYMBOL=RIBC2
 ENSG00000099949.21	0	ENSG00000099949.21-circRNA-E1-E2	.	.	.	.	OFFSET=0,98;LENGTH=78,42;INTRON=;TRANSCRIPTS=ENST00000642151.1;GENE_SYMBOL=LZTR1
