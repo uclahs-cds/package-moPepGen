@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, IO
 from moPepGen import __version__
 from moPepGen.seqvar import SINGLE_NUCLEOTIDE_SUBSTITUTION
-from .GVFMetadataInfo import GVF_METADATA_INFO
+from .GVFMetadataInfo import GVF_METADATA_INFO, GVF_METADATA_ADDITIONAL
 
 
 ALT_DESCRIPTION = {
@@ -31,7 +31,8 @@ class GVFMetadata():
     """
     def __init__(self, parser:str, source:str, chrom:str,
             reference_index:str=None, genome_fasta:str=None,
-            annotation_gtf:str=None, version:str=None, info=None):
+            annotation_gtf:str=None, version:str=None, info=None,
+            additional=None):
         """ Construct a TVFMetadata object. """
         self.parser = parser
         self.source = source
@@ -42,6 +43,7 @@ class GVFMetadata():
         self.alt = {}
         self.info = info or GVF_METADATA_INFO['Base']
         self.added_types = []
+        self.additional = additional
         self.version = version or __version__
 
     def add_info(self, variant_type:str) -> None:
@@ -63,6 +65,10 @@ class GVFMetadata():
         elif variant_type == 'Substitution':
             self.info.update(GVF_METADATA_INFO['Substitution'])
             self.added_types.append('Substitution')
+        elif variant_type == 'circRNA':
+            self.info.update(GVF_METADATA_INFO['circRNA'])
+            self.added_types.append('circRNA')
+            self.additional = GVF_METADATA_ADDITIONAL['circRNA']
         else:
             raise ValueError(f'Unknown variant type: {variant_type}')
 
@@ -80,6 +86,15 @@ class GVFMetadata():
             desc = val['Description']
             line = f'##INFO=<ID={key},Number={number},Type={_type},Description="{desc}">'
             info_lines.append(line)
+
+        additional = []
+        if self.additional:
+            for key,val in self.additional.items():
+                values = []
+                for k,v in val.items():
+                    values.append(f"{k}={v}")
+                additional.append(f"##{key}=<{','.join(values)}>")
+
         ref_index = self.reference_index if self.reference_index else ''
         genome_fasta = self.genome_fasta if self.genome_fasta else ''
         annotation_gtf = self.annotation_gtf if self.annotation_gtf else ''
@@ -94,7 +109,12 @@ class GVFMetadata():
             f"##CHROM=<Description='{self.chrom}'>",
             *[f'##ALT=<ID={key},Description="{val}">' for key, val in self.alt],
             *info_lines,
+            *additional
         ]
+
+    def is_circ_rna(self) -> bool:
+        """ checks if this is a circRNA """
+        return self.parser in ['parseCIRCexplorer']
 
     @classmethod
     def parse(cls, handle:IO) -> GVFMetadata:
@@ -123,6 +143,8 @@ class GVFMetadata():
                     k,v = it.split('=')
                     v = v.strip('"')
                     metadata[key][-1][k] = v
+            elif key in ['ALT', 'POS']:
+                pass
             elif key == 'mopepgen_version':
                 metadata['version'] = val
             elif key != 'fileformat':

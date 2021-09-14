@@ -9,6 +9,7 @@ class TestParseREDItools(TestCaseIntegration):
     def test_parse_reditools_case1(self):
         """ Test parse reditools """
         args = argparse.Namespace()
+        args.command = 'parseREDItools'
         args.source = 'RNAEditingSite'
         args.reditools_table = self.data_dir/'reditools/reditools_annotated.txt'
         args.transcript_id_column = 16

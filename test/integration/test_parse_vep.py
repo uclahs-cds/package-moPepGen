@@ -10,6 +10,7 @@ class TestParseVEP(TestCaseIntegration):
     def test_parse_vep(self):
         """ Test genreate index """
         args = argparse.Namespace()
+        args.command = 'parseVEP'
         args.vep_txt = [
             self.data_dir/'vep'/'vep_snp.txt',
             self.data_dir/'vep'/'vep_indel.txt'

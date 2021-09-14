@@ -14,7 +14,7 @@ class AminoAcidSeqRecord(SeqRecord):
     def __init__(self, seq:SeqRecord, _id:str="<unknown id>",
             name:str="<unknown name>", description:str="<unknown description>",
             gene_id:str=None, transcript_id:str=None, protein_id:str=None,
-            **kwargs):
+            gene_name:str=None, **kwargs):
         self.id = None
         self.name = None
         super().__init__(seq, id=_id, name=name, description=description,
@@ -22,6 +22,7 @@ class AminoAcidSeqRecord(SeqRecord):
         self.gene_id = gene_id
         self.transcript_id = transcript_id
         self.protein_id = protein_id
+        self.gene_name = gene_name
 
     def __getitem__(self, index) -> AminoAcidSeqRecord:
         """"""

@@ -2,6 +2,7 @@
 from typing import Iterable, Union, IO
 from pathlib import Path
 import tempfile
+from moPepGen import GVF_HEADER
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.seqvar.VariantRecord import VariantRecord, ATTRS_POSITION
 from moPepGen.SeqFeature import FeatureLocation
@@ -103,10 +104,8 @@ def write(variants:Iterable[VariantRecord], output_path:str,
         handle (IO): The destination handle to write out.
         mode (str): If 'w', the header will be written, otherwise not.
     """
-    headers = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
-
     with tempfile.TemporaryFile(mode='w+t') as temp_file:
-        temp_file.write('#' + '\t'.join(headers) + '\n')
+        temp_file.write('#' + '\t'.join(GVF_HEADER) + '\n')
         for record in variants:
             line = record.to_string()
             temp_file.write(line + '\n')

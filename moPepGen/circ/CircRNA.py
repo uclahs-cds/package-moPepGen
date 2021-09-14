@@ -74,5 +74,6 @@ class CircRNAModel():
         circ_id = self.id
         tx_id = ','.join(self.transcript_ids)
         gene_name = self.gene_name
-        return f'{gene_id}\t{start}\t{offset}\t{length}\t{intron}\t{circ_id}'\
-            + f'\t{tx_id}\t{gene_name}'
+        info = f'OFFSET={offset};LENGTH={length};INTRON={intron};' +\
+            f'TRANSCRIPTS={tx_id};GENE_SYMBOL={gene_name}'
+        return '\t'.join([gene_id, start, circ_id, '.', '.', '.', '.', info])

@@ -1,6 +1,7 @@
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
 ##parser=parseVEP
+##source=gINDEL
 ##reference_index=/hot/users/czhu/private-moPepGen/private-moPepGen-py/test/files/gencode_34_index
 ##genome_fasta=
 ##annotation_gtf=

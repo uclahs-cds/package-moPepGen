@@ -87,5 +87,40 @@ GVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
             'Type': 'String',
             'Description': 'Coordinate for Insertion or Substitution'
         }
+    },
+    'circRNA': {
+        'OFFSET': {
+            'Number': '+',
+            'Type': 'Integer',
+            'Description': "Offsets of fragments (exons or introns)"
+        },
+        'LENGTH': {
+            'Number': '+',
+            'Type': 'Integer',
+            'Description': "Lengths of fragments (exons or introns)"
+        },
+        'INTRON': {
+            'Number': '+',
+            'Type': 'Integer',
+            'Description': "Indices of fragments that are introns"
+        },
+        'TRANSCRIPTS': {
+            'Number': '+',
+            'Type': 'String',
+            'Description': "Transcripts associated with this circRNA"
+        },
+        'GENE_SYMBOL': {
+            'Number': 1,
+            'Type': 'String',
+            'Description': "Gene Symbol"
+        }
+    }
+}
+
+GVF_METADATA_ADDITIONAL:Dict[str,Dict[str,Dict[str,Union[int, str]]]] = {
+    'circRNA': {
+        'POS': {
+            'Description': '"Gene coordinate of circRNA start"'
+        }
     }
 }

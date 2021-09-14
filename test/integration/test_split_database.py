@@ -27,7 +27,8 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'vep/vep_gSNP.gvf',
             self.data_dir/'vep/vep_gINDEL.gvf',
             self.data_dir/'reditools/reditools.gvf',
-            self.data_dir/'fusion/star_fusion.gvf'
+            self.data_dir/'fusion/star_fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'

@@ -53,7 +53,7 @@ def parse_circexplorer(args:argparse.Namespace):
     """ Parse circexplorer known circRNA results. """
     input_path = args.input_path
     output_prefix = args.output_prefix
-    output_path = output_prefix + '.tsv'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 
@@ -76,7 +76,8 @@ def parse_circexplorer(args:argparse.Namespace):
 
     metadata = generate_metadata(args)
 
-    circ.io.write(records, metadata, output_path)
+    with open(output_path, 'w') as handle:
+        circ.io.write(records, metadata, handle)
 
     if args.verbose:
         logger("CircRNA records written to disk.")

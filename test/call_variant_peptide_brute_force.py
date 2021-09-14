@@ -79,7 +79,9 @@ def main(args):
         miscleavage=args.miscleavage, min_mw=args.min_mw
     )
 
-    variant_pool = seqvar.VariantRecordPool.load_variants([args.input_gvf], anno, genome, False)
+    variant_pool = seqvar.VariantRecordPool()
+    with open(args.input_gvf) as handle:
+        variant_pool.load_variants(handle, anno, genome)
 
     tx_id = list(variant_pool.transcriptional.keys())[0]
     variants = variant_pool.transcriptional[tx_id]

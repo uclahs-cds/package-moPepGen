@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, IO, Iterable, List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.seqvar import GVFMetadata
-from moPepGen import err, seqvar, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
+from moPepGen import err, seqvar, circ, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
     SPLIT_DATABASE_KEY_SEPARATER
 from .VariantPeptidePool import VariantPeptidePool
 
@@ -99,38 +99,57 @@ class VariantSourceSet(set):
             source_int.sort()
         return source_int
 
+def is_circ_rna(_id:str) -> bool:
+    """ Check if the id is a circRNA """
+    return 'circRNA' in _id
+
 class VariantPeptideInfo():
     """ Variant peptide label. This is a helper class in order to sort peptide
-    labels easily. """
-    def __init__(self, transcript_id:str, variant_labels:List[str],
-            variant_index:int, sources:VariantSourceSet=None):
+    labels easily.
+
+    Args:
+        transcript_id (str): If the variant is a circRNA, this is the circRNA
+            ID.
+    """
+    def __init__(self, gene_id:str, transcript_id:str,
+            variant_labels:List[str], variant_index:int, sources:VariantSourceSet=None):
         """ Constructor """
+        self.gene_id = gene_id
         self.transcript_id = transcript_id
         self.variant_labels = variant_labels
         self.variant_index = variant_index
         self.sources = sources or VariantSourceSet()
 
+
     @staticmethod
-    def from_variant_peptide(peptide:AminoAcidSeqRecord, label_map:LabelMap,
-            anno:GenomicAnnotation) -> List[VariantPeptideInfo]:
+    def from_variant_peptide(peptide:AminoAcidSeqRecord,
+            label_map:LabelSourceMapping, anno:GenomicAnnotation
+            ) -> List[VariantPeptideInfo]:
         """ Parse from a variant peptide record """
         info_list = []
         delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         for label in peptide.description.split(delimiter):
-            tx_id, *var_ids, var_index = label.split('|')
-            info = VariantPeptideInfo(tx_id, var_ids, var_index)
+            x_id, *var_ids, var_index = label.split('|')
+            if is_circ_rna(x_id):
+                gene_id = x_id.split('-', 1)[0]
+                var_ids.append(x_id)
+            else:
+                gene_id = anno.transcripts[x_id].transcript.gene_id
+            info = VariantPeptideInfo(gene_id, x_id, var_ids, var_index)
+
             if (var_ids and var_ids[0].startswith('ORF')):
                 var_ids.pop(0)
-            if not var_ids:
-                info.sources.add(NONCODING_SOURCE)
+
+            gene_model = anno.genes[gene_id]
+            for tx_id in gene_model.transcripts:
+                if not anno.transcripts[tx_id].is_protein_coding():
+                    info.sources.add(NONCODING_SOURCE)
+                    break
+
             for var_id in var_ids:
-                try:
-                    source = label_map[tx_id][var_id]
-                except KeyError as e:
-                    raise err.VariantSourceNotFoundError(tx_id, var_id) from e
+                source = label_map.get_source(gene_id, var_id)
                 info.sources.add(source)
-            if not anno.transcripts[tx_id].is_protein_coding():
-                info.sources.add(NONCODING_SOURCE)
+
             info_list.append(info)
         return info_list
 
@@ -166,7 +185,35 @@ class VariantPeptideInfo():
         """ less than or equal to """
         return not self > other
 
-LabelMap = Dict[str,Dict[str,str]]
+class LabelSourceMapping():
+    """ Helper class to handle label source mapping """
+    def __init__(self, data:Dict[str,Dict[str,str]]=None):
+        """ construnctor"""
+        self.data = data or {}
+
+    def add_variant(self, variant:seqvar.VariantRecord, source:str):
+        """ add variant """
+        gene_id = variant.location.seqname
+        if gene_id not in self.data:
+            self.data[gene_id] = {}
+        if variant.id not in self.data[gene_id]:
+            self.data[gene_id][variant.id] = source
+
+    def add_circ_rna(self, record:circ.CircRNAModel, source:str):
+        """ add circRNA record """
+        gene_id = record.gene_id
+        if gene_id not in self.data:
+            self.data[gene_id] = {}
+        if record.id not in self.data[gene_id]:
+            self.data[gene_id][record.id] = source
+
+    def get_source(self, gene_id:str, var_id:str) -> bool:
+        """ Get source """
+        try:
+            return self.data[gene_id][var_id]
+        except KeyError as e:
+            raise err.VariantSourceNotFoundError(gene_id, var_id) from e
+
 Databases = Dict[str,VariantPeptidePool]
 
 class PeptidePoolSplitter():
@@ -186,11 +233,11 @@ class PeptidePoolSplitter():
         sources (Set[str]): Variant sources.
     """
     def __init__(self, peptides:VariantPeptidePool=None, order:Dict[str,int]=None,
-            label_map:LabelMap=None, group_map:Dict[str,str]=None,
+            label_map:LabelSourceMapping=None, group_map:Dict[str,str]=None,
             databases:Databases=None, sources:Set[str]=None):
         self.peptides = peptides
         self.databases = databases or {}
-        self.label_map = label_map or {}
+        self.label_map = label_map or LabelSourceMapping()
         self.group_map = group_map or {}
         self.order = order or {}
         self.sources = sources or set()
@@ -222,7 +269,6 @@ class PeptidePoolSplitter():
     def load_gvf(self, handle:IO) -> None:
         """ Load variant lables from GVF file. """
         metadata = GVFMetadata.parse(handle)
-        variants = seqvar.io.parse(handle)
         source = metadata.source
 
         if source in self.group_map:
@@ -233,12 +279,12 @@ class PeptidePoolSplitter():
         if source not in self.order:
             self.append_order(source)
 
-        for variant in variants:
-            tx_id = variant.attrs['TRANSCRIPT_ID']
-            if tx_id not in self.label_map:
-                self.label_map[tx_id] = {}
-            if variant.id not in self.label_map[tx_id]:
-                self.label_map[tx_id][variant.id] = source
+        if metadata.parser == 'parseCIRCexplorer':
+            for record in circ.io.parse(handle):
+                self.label_map.add_circ_rna(record, source)
+        else:
+            for variant in seqvar.io.parse(handle):
+                self.label_map.add_variant(variant, source)
 
     def add_peptide_to_database(self, database_key:str,
             peptide:AminoAcidSeqRecord) -> None:

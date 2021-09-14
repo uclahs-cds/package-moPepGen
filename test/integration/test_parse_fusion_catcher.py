@@ -37,6 +37,7 @@ class TestParseFusionCatcher(TestCaseIntegration):
     def test_parse_fusion_catcher(self):
         """ Test parseFusionCatcher """
         args = argparse.Namespace()
+        args.command = 'parseFusionCatcher'
         args.fusion = self.data_dir/'fusion/fusion_catcher.txt'
         args.source = 'Fusion'
         args.index_dir = None

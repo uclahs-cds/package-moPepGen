@@ -198,7 +198,7 @@ def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
             hasattr(args, 'annotation_gtf') else None
 
     return seqvar.GVFMetadata(
-        parser='parseVEP',
+        parser=args.command,
         source=args.source,
         chrom='Gene ID',
         reference_index=reference_index,

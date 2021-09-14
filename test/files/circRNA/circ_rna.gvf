@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseCIRCexplorer
+##source=circRNA
+##reference_index=/path/to/reference/index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotaion.gtf
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=OFFSET,Number=+,Type=Integer,Description="Offset of fragments (exons or introns)">
+##INFO=<ID=LENGTH,Number=+,Type=Integer,Description="Length of fragments (exons or introns)">
+##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
+##INFO=<ID=TRANSCRIPTS,Number=+,Type=String,Description="Transcripts associated with this circRNA">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##POS=<Description="Gene coordinate of circRNA start">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000128408.9	0	ENSG00000128408.9-circRNA-E3-E4	.	.	.	.	OFFSET=0,323;LENGTH=323,82;INTRON=;TRANSCRIPTS=ENST00000614167.2;GENE_SYMBOL=RIBC2
+ENSG00000099949.21	0	ENSG00000099949.21-circRNA-E1-E2	.	.	.	.	OFFSET=0,98;LENGTH=78,42;INTRON=;TRANSCRIPTS=ENST00000642151.1;GENE_SYMBOL=LZTR1
+ENSG00000099949.21	0	ENSG00000099949.21-circRNA-E1-I1-E2	.	.	.	.	OFFSET=0,78,98;LENGTH=78,20,42;INTRON=2;TRANSCRIPTS=ENST00000642151.1;GENE_SYMBOL=LZTR1
+ENSG00000244486.9	1376	ENSG00000244486.9-circRNA-E7-E8	.	.	.	.	OFFSET=0,118;LENGTH=118,116;INTRON=;TRANSCRIPTS=ENST00000622235.5;GENE_SYMBOL=SCARF2
