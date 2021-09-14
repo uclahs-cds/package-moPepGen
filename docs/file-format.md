@@ -228,7 +228,7 @@ XXXXXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
-For circRNA, the FASTA headers follow this style: `<circRNA-ID>|<gene_id>|<gene_name>|<variant_id_1>|...|<variant_id_k>|<index>`
+For circRNA, the FASTA headers follow this style: `<circRNA-ID>|<variant_id_1>|...|<variant_id_k>|<index>`
 
 ```
 >ENSG0001-circRNA-E3-E4|1
