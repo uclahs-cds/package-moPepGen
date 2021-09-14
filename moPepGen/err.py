@@ -23,3 +23,15 @@ class TranscriptionStopSiteMutationError(Exception):
         if transcript_id:
             message += f"transcript [{transcript_id}] "
         super().__init__(message)
+
+class TranscriptionStartSiteMutationError(Exception):
+    """ Error to to used when there is a variant altering the transcriptional
+    start site. """
+    def __init__(self, transcript_id:str=None, variant:str=None):
+        """ constructor """
+        message = 'The variant alters the transcription start site. '
+        if variant:
+            message += f"variant [{variant}]"
+        if transcript_id:
+            message += f"transcript [{transcript_id}] "
+        super().__init__(message)
