@@ -74,7 +74,16 @@ class CIRCexplorerKnownRecord():
         fragments:SeqFeature = []
         intron:List[int] = []
 
-        circ_id = f"CIRC-{gene_id}"
+        if self.circ_type == 'circRNA':
+            fragment_type = 'exon'
+            circ_id = 'CIRC'
+        elif self.circ_type == 'ciRNA':
+            fragment_type = 'intron'
+            circ_id = 'CI'
+        else:
+            raise ValueError(f'circRNA type unsupported: {self.circ_type}')
+
+        circ_id += f'-{gene_id}'
 
         for i, exon_size in enumerate(self.exon_sizes):
             exon_offset = self.exon_offsets[i]
@@ -88,14 +97,6 @@ class CIRCexplorerKnownRecord():
 
             location = FeatureLocation(seqname=gene_id, start=start, end=end)
 
-            if self.circ_type == 'circRNA':
-                fragment_type = 'exon'
-            elif self.circ_type == 'ciRNA':
-                fragment_type = 'intron'
-                intron.append(i)
-            else:
-                raise ValueError(f'circRNA type unsupported: {self.circ_type}')
-
             fragment = SeqFeature(
                 chrom=gene_id, location=location, attributes={},
                 type=fragment_type
@@ -108,6 +109,7 @@ class CIRCexplorerKnownRecord():
             elif fragment_type == 'intron':
                 intron_index = anno.find_intron_index(gene_id, fragment)
                 circ_id += f"-I{intron_index + 1}"
+                intron.append(i)
 
             fragments.append(fragment)
 

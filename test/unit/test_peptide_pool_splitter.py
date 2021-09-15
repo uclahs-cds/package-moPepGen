@@ -46,7 +46,7 @@ LABEL_MAP1 = {
         'INDEL-2102-TTTT-T': 'gINDEL',
         'INDEL-2103-TTTT-T': 'sINDEL',
         'INDEL-2104-TTTT-T': 'sINDEL',
-        'ENSG0002-circRNA-E1-E2': 'circRNA'
+        'CIRC-ENSG0002-E1-E2': 'circRNA'
     },
     'ENSG0003': {
         'SNV-3001-T-A': 'gSNP',
@@ -462,7 +462,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         anno = create_genomic_annotation(ANNOTATION_DATA)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
-            [ 'SSSSSSSK', 'ENSG0002-circRNA-E1-E2|1' ]
+            [ 'SSSSSSSK', 'CIRC-ENSG0002-E1-E2|1' ]
         ]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))

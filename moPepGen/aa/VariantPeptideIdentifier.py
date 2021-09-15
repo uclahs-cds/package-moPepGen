@@ -66,7 +66,7 @@ def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
         if len(var_ids) > 0 and var_ids[0].startswith('ORF'):
             orf_id = var_ids.pop(0)
 
-        if x_id.startswith('FUSION'):
+        if x_id.startswith('FUSION-'):
             first_variants:List[str] = []
             second_variants:List[str] = []
             for var_id in var_ids:
@@ -79,7 +79,7 @@ def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
                     raise ValueError('Variant is not valid')
             variant_id = FusionVariantPeptideIdentifier(x_id, first_variants,
                 second_variants, orf_id, index)
-        elif '-circRNA-' in x_id:
+        elif x_id.startswith('CIRC-') or x_id.startswith('CI-'):
             variant_id = CircRNAVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
         else:
             variant_id = BaseVariantPeptideIdentifier(x_id, var_ids, orf_id, index)

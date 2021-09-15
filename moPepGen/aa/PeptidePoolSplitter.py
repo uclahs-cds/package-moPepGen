@@ -102,7 +102,7 @@ class VariantSourceSet(set):
 
 def is_circ_rna(_id:str) -> bool:
     """ Check if the id is a circRNA """
-    return 'circRNA' in _id
+    return _id.startswith('CIRC-') or _id.startswith('CI-')
 
 class VariantPeptideInfo():
     """ Variant peptide label. This is a helper class in order to sort peptide
@@ -133,7 +133,7 @@ class VariantPeptideInfo():
         for variant_id in variant_ids:
             if isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
                 circ_rna_id = variant_id.circ_rna_id
-                gene_ids = [circ_rna_id.split('-', 1)[0]]
+                gene_ids = [circ_rna_id.split('-', 2)[1]]
                 var_ids = {gene_ids[0]: [circ_rna_id, *variant_id.variant_ids]}
             elif isinstance(variant_id, pi.FusionVariantPeptideIdentifier):
                 first_gene_id = variant_id.first_gene_id

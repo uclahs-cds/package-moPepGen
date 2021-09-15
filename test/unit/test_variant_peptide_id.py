@@ -87,21 +87,21 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
     def test_create_variant_id_single_circ_rna(self):
         """ single circRNA variant """
         variant_data = [
-            (101, 102, 'A', '<circRNA>', 'circRNA', 'ENSG0001-circRNA-E2-E3', None, 'ENSG0001')
+            (101, 102, 'A', '<circRNA>', 'circRNA', 'CIRC-ENSG0001-E2-E3', None, 'ENSG0001')
         ]
         variants = create_variants(variant_data)
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=1)
-        self.assertEqual(str(peptide_id), 'ENSG0001-circRNA-E2-E3|1')
+        self.assertEqual(str(peptide_id), 'CIRC-ENSG0001-E2-E3|1')
 
     def test_create_variant_id_single_circ_rna_and_snv(self):
         """ circRNA & snv """
         variant_data = [
-            (101, 102, 'A', '<circRNA>', 'circRNA', 'ENSG0001-circRNA-E2-E3', None, 'ENSG0001'),
+            (101, 102, 'A', '<circRNA>', 'circRNA', 'CIRC-ENSG0001-E2-E3', None, 'ENSG0001'),
             (111, 112, 'A', 'T', 'SNV', 'SNV-111-A-T', None, 'ENSG0001')
         ]
         variants = create_variants(variant_data)
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=2)
-        self.assertEqual(str(peptide_id), 'ENSG0001-circRNA-E2-E3|SNV-111-A-T|2')
+        self.assertEqual(str(peptide_id), 'CIRC-ENSG0001-E2-E3|SNV-111-A-T|2')
 
     def test_create_variant_id_orf(self):
         """ orf """
@@ -181,23 +181,23 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_single_circ_rna(self):
         """ parse variant from single fusion """
-        label = 'ENSG0001-circRNA-E2-E3|1'
+        label = 'CIRC-ENSG0001-E2-E3|1'
         peptide_ids = aa.parse_variant_peptide_id(label)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.CircRNAVariantPeptideIdentifier)
         peptide_ids:List[pi.CircRNAVariantPeptideIdentifier]
-        self.assertEqual(peptide_ids[0].circ_rna_id, 'ENSG0001-circRNA-E2-E3')
+        self.assertEqual(peptide_ids[0].circ_rna_id, 'CIRC-ENSG0001-E2-E3')
         self.assertEqual(len(peptide_ids[0].variant_ids), 0)
         self.assertEqual(str(peptide_ids[0]), label)
 
     def test_parse_variant_id_circ_rna_and_snv(self):
         """ parse variant from single fusion """
-        label = 'ENSG0001-circRNA-E2-E3|SNV-111-A-T|2'
+        label = 'CIRC-ENSG0001-E2-E3|SNV-111-A-T|2'
         peptide_ids = aa.parse_variant_peptide_id(label)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.CircRNAVariantPeptideIdentifier)
         peptide_ids:List[pi.CircRNAVariantPeptideIdentifier]
-        self.assertEqual(peptide_ids[0].circ_rna_id, 'ENSG0001-circRNA-E2-E3')
+        self.assertEqual(peptide_ids[0].circ_rna_id, 'CIRC-ENSG0001-E2-E3')
         self.assertEqual(set(peptide_ids[0].variant_ids), {'SNV-111-A-T'})
         self.assertEqual(str(peptide_ids[0]), label)
 

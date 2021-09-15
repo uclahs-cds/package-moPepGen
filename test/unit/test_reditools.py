@@ -1,7 +1,7 @@
 """ Test module for reditools parser """
 import copy
 import unittest
-from test.unit.test_vep import ANNOTATION_ATTRS
+from test.unit.test_vep_parser import ANNOTATION_ATTRS
 from test.unit import create_genomic_annotation
 from moPepGen import parser
 
