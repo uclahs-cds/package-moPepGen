@@ -174,7 +174,9 @@ class VEPRecord():
                 allele = str(Seq(allele).reverse_complement())
             if alt_end - alt_start == 1:
                 if len(allele) > 1:
-                    raise ValueError('Could not recognize the VEP record')
+                    raise ValueError(
+                        f'Could not recognize the VEP record. Transcript: [{self.feature}]'
+                    )
                 ref = str(seq.seq[alt_start])
                 alt = allele
             elif alt_end - alt_start == 2:
@@ -182,7 +184,12 @@ class VEPRecord():
                 ref = str(seq.seq[alt_start])
                 alt = ref + allele
             else:
-                raise ValueError('Could not recognize the VEP record')
+                if len(allele) > 1:
+                    raise ValueError(
+                        f'Could not recognize the VEP record. Transcript: [{self.feature}]'
+                    )
+                ref = str(seq.seq[alt_start:alt_end])
+                alt = allele
 
         _type = 'SNV' if len(ref) == 1 and len(alt) == 1 else 'INDEL'
         _id = f'{_type}-{alt_start + 1}-{ref}-{alt}'
