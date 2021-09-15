@@ -29,9 +29,12 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
         fusion_id = fusion_variant.id
         first_gene_id = fusion_variant.location.seqname
         second_gene_id = fusion_variant.attrs['ACCEPTER_GENE_ID']
-        label = FusionVariantPeptideIdentifer(fusion_id,
-            variant_ids[first_gene_id], variant_ids[second_gene_id],
-            index)
+
+        first_variant_ids = variant_ids.get(first_gene_id, [])
+        second_variant_ids = variant_ids.get(second_gene_id, [])
+
+        label = FusionVariantPeptideIdentifier(fusion_id, first_variant_ids,
+            second_variant_ids, orf_id, index)
         return str(label)
     gene_ids = list(variant_ids.keys())
     if len(gene_ids) > 1:
@@ -47,7 +50,14 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
     return str(label)
 
 def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
-    """ Parse variant peptide info from label """
+    """ Parse variant peptide identifier from peptide name.
+
+    Examples:
+        >>> peptide_label = 'ENST0001|SNV-100-A-T|1'
+        >>> parse_variant_peptide_id(peptide_label)
+        [<BaseVariantPeptideIdentifier>: 'ENST0001|SNV-100-A-T|1']
+
+    """
     variant_ids = []
     for it in label.split(VARIANT_PEPTIDE_SOURCE_DELIMITER):
         x_id, *var_ids, index = it.split('|')
@@ -67,7 +77,7 @@ def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
                     second_variants.append(var_id)
                 else:
                     raise ValueError('Variant is not valid')
-            variant_id = FusionVariantPeptideIdentifer(x_id, first_variants,
+            variant_id = FusionVariantPeptideIdentifier(x_id, first_variants,
                 second_variants, orf_id, index)
         elif '-circRNA-' in x_id:
             variant_id = CircRNAVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
@@ -83,6 +93,9 @@ class VariantPeptideIdentifier(ABC):
     @abstractmethod
     def __str__(self) -> str:
         """ str """
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}>: '{str(self)}'"
 
 class BaseVariantPeptideIdentifier(VariantPeptideIdentifier):
     """ Variant peptide identifier for output FASTA header """
@@ -124,7 +137,7 @@ class CircRNAVariantPeptideIdentifier(VariantPeptideIdentifier):
             x.append(str(self.index))
         return '|'.join(x)
 
-class FusionVariantPeptideIdentifer(VariantPeptideIdentifier):
+class FusionVariantPeptideIdentifier(VariantPeptideIdentifier):
     """ Fusion variant peptide identifier """
     def __init__(self, fusion_id:str, first_variants:List[str],
             second_variants:List[str], orf_id:str=None, index:int=None):

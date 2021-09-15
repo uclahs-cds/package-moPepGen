@@ -135,7 +135,7 @@ class VariantPeptideInfo():
                 circ_rna_id = variant_id.circ_rna_id
                 gene_ids = [circ_rna_id.split('-', 1)[0]]
                 var_ids = {gene_ids[0]: [circ_rna_id, *variant_id.variant_ids]}
-            elif isinstance(variant_id, pep_id.FusionVariantPeptideIdentifer):
+            elif isinstance(variant_id, pep_id.FusionVariantPeptideIdentifier):
                 first_gene_id = variant_id.first_gene_id
                 second_gene_id = variant_id.second_gene_id
                 gene_ids = [first_gene_id, second_gene_id]
