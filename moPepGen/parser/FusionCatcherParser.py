@@ -138,7 +138,7 @@ class FusionCatcherRecord():
         right_breakpoint_genetic = anno.coordinate_genomic_to_gene(
             index=right_breakpoint_genomic, gene=accepter_gene_id
         )
-        fusion_id = f'FUSION_{donor_gene_id}:{left_breakpoint_genetic}'+\
+        fusion_id = f'FUSION-{donor_gene_id}:{left_breakpoint_genetic}'+\
             f'-{accepter_gene_id}:{right_breakpoint_genetic}'
 
         records = []

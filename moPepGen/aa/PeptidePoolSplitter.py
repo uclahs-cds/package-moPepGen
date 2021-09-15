@@ -6,6 +6,7 @@ from moPepGen.seqvar import GVFMetadata
 from moPepGen import err, seqvar, circ, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
     SPLIT_DATABASE_KEY_SEPARATER
 from .VariantPeptidePool import VariantPeptidePool
+from . import VariantPeptideIdentifier as pep_id
 
 
 if TYPE_CHECKING:
@@ -111,11 +112,12 @@ class VariantPeptideInfo():
         transcript_id (str): If the variant is a circRNA, this is the circRNA
             ID.
     """
-    def __init__(self, gene_id:str, transcript_id:str,
-            variant_labels:List[str], variant_index:int, sources:VariantSourceSet=None):
+    def __init__(self, orignial_label:str, gene_ids:List[str],
+            variant_labels:Dict[str,List[str]],
+            variant_index:int, sources:VariantSourceSet=None):
         """ Constructor """
-        self.gene_id = gene_id
-        self.transcript_id = transcript_id
+        self.original_label = orignial_label
+        self.gene_ids = gene_ids
         self.variant_labels = variant_labels
         self.variant_index = variant_index
         self.sources = sources or VariantSourceSet()
@@ -127,41 +129,56 @@ class VariantPeptideInfo():
             ) -> List[VariantPeptideInfo]:
         """ Parse from a variant peptide record """
         info_list = []
-        delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
-        for label in peptide.description.split(delimiter):
-            x_id, *var_ids, var_index = label.split('|')
-            if is_circ_rna(x_id):
-                gene_id = x_id.split('-', 1)[0]
-                var_ids.append(x_id)
-            else:
-                gene_id = anno.transcripts[x_id].transcript.gene_id
-            info = VariantPeptideInfo(gene_id, x_id, var_ids, var_index)
+        variant_ids = pep_id.parse_variant_peptide_id(peptide.description)
+        for variant_id in variant_ids:
+            if isinstance(variant_id, pep_id.CircRNAVariantPeptideIdentifier):
+                circ_rna_id = variant_id.circ_rna_id
+                gene_ids = [circ_rna_id.split('-', 1)[0]]
+                var_ids = {gene_ids[0]: [circ_rna_id, *variant_id.variant_ids]}
+            elif isinstance(variant_id, pep_id.FusionVariantPeptideIdentifer):
+                first_gene_id = variant_id.first_gene_id
+                second_gene_id = variant_id.second_gene_id
+                gene_ids = [first_gene_id, second_gene_id]
+                var_ids = {
+                    first_gene_id: variant_id.first_variants + [variant_id.fusion_id],
+                    second_gene_id: variant_id.second_variants
+                }
+            elif isinstance(variant_id, pep_id.BaseVariantPeptideIdentifier):
+                gene_id = anno.transcripts[variant_id.transcript_id].transcript.gene_id
+                gene_ids = [gene_id]
+                var_ids = {gene_id: variant_id.variant_ids}
+            info = VariantPeptideInfo(str(variant_id), gene_ids, var_ids, variant_id.index)
 
-            if (var_ids and var_ids[0].startswith('ORF')):
-                var_ids.pop(0)
-
-            gene_model = anno.genes[gene_id]
-            for tx_id in gene_model.transcripts:
-                if not anno.transcripts[tx_id].is_protein_coding():
-                    info.sources.add(NONCODING_SOURCE)
+            has_noncoding = False
+            for gene_id in gene_ids:
+                gene_model = anno.genes[gene_id]
+                for tx_id in gene_model.transcripts:
+                    if not anno.transcripts[tx_id].is_protein_coding():
+                        info.sources.add(NONCODING_SOURCE)
+                        has_noncoding = True
+                        break
+                if has_noncoding:
                     break
 
-            for var_id in var_ids:
-                source = label_map.get_source(gene_id, var_id)
-                info.sources.add(source)
+            for gene_id, _ids in var_ids.items():
+                for var_id in _ids:
+                    source = label_map.get_source(gene_id, var_id)
+                    info.sources.add(source)
 
             info_list.append(info)
         return info_list
 
     def __str__(self) -> str:
         """ str """
-        x = [self.transcript_id] + self.variant_labels + [self.variant_index]
-        return '|'.join(x)
+        return self.original_label
 
     def __eq__(self, other:VariantPeptideInfo):
         """ equal to """
-        return self.transcript_id == other.transcript_id\
-            and set(self.variant_labels) == set(other.variant_labels) \
+        if len(self.gene_ids) != len(other.gene_ids):
+            return False
+        if any(x != y for x,y in zip(self.gene_ids, other.gene_ids)):
+            return False
+        return set(self.variant_labels) == set(other.variant_labels) \
             and self.variant_index == other.variant_index \
             and self.sources == other.sources
 

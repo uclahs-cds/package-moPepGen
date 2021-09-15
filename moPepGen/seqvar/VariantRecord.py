@@ -211,6 +211,14 @@ class VariantRecord():
             return True
         return len(self.ref) > 1 and len(self.alt) == 1
 
+    def is_fusion(self) -> bool:
+        """ Check if this is a fusion """
+        return self.type == 'Fusion'
+
+    def is_circ_rna(self) -> bool:
+        """ check if this is a circRNA """
+        return self.type == 'circRNA'
+
     def is_frameshifting(self) -> bool:
         """ Checks if the variant is frameshifting. """
         if self.type == 'Fusion':
