@@ -9,7 +9,7 @@ from Bio import SeqIO
 from moPepGen import gtf
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
-from .test_vep import ANNOTATION_DATA
+from .test_vep_parser import ANNOTATION_DATA
 
 
 ANNOTATION_ATTRS = [

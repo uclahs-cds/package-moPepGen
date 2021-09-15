@@ -69,11 +69,11 @@ Below is an example of a GVF file for point mutation, including single nucleotid
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
 #CHROM    POS  ID           REF  ALT  QUAL  FILTER  INFO
-ENSG0001  110  SNV_110-C-A  C    A    .     .       TRANSCRIPT_ID=ENST00011,ENST00012;GENE_SYMBOL=TP53;GENOMIC_POSITION="chr1:1000-1001"
-ENSG0002  210  SNV_210-T-A  T    A    .     .       TRANSCRIPT_ID=ENST00021,ENST00022;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
+ENSG0001  110  SNV-110-C-A  C    A    .     .       TRANSCRIPT_ID=ENST00011,ENST00012;GENE_SYMBOL=TP53;GENOMIC_POSITION="chr1:1000-1001"
+ENSG0002  210  SNV-210-T-A  T    A    .     .       TRANSCRIPT_ID=ENST00021,ENST00022;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
 ```
 
-The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene ID that the transcript belongs to. The `ID` column follows the pattern of '\<varant_type>_\<position>-\<ref>-\<alt>'. 
+The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene ID that the transcript belongs to. The `ID` column follows the pattern of '\<varant_type>-\<position>-\<ref>-\<alt>'. 
 
 ### 1.3 Fusion
 
@@ -98,9 +98,9 @@ Below is an example of a GVF file for gene fusions.
 ##INFO=<ID=DONOR_GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
 ##INFO=<ID=DONOR_GENE_SYMBOL,Number=1,Type=String,Description="5' Junction (Donor) Gene Symbol">
 #CHROM    POS  ID                                 REF  ALT       QUAL  FILTER  INFO
-ENSG0001  500  FUSION_ENST0001:500-ENST0011:1000  A    <FUSION>  .     .       TRANSCRIPT_ID=ENST0000;GENE_SYMBOL=SYMB1;ACCEPTER_GENE_ID=ENSG0010;ACCEPTER_TRANSCRIPT_ID=ENST0011;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr1:1000-1000;ACCEPTER_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
-ENSG0002  500  FUSION_ENST0002:500-ENST0011:1000  A    <FUSION>  .     .       TRANSCRIPT_ID=ENST0000;GENE_SYMBOL=SYMB1;ACCEPTER_GENE_ID=ENSG0010;ACCEPTER_TRANSCRIPT_ID=ENST0011;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr1:1000-1000;ACCEPTER_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
-ENSG0021  500  FUSION_ENST0021:500-ENST0031:1000  C    <FUSION>  .     .       TRANSCRIPT_ID=ENST0021;GENE_SYMBOL=SYMB2;ACCEPTER_GENE_ID=ENSG0030;ACCEPTER_TRANSCRIPT_ID=ENST0031;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr3:1000-1000;ACCEPTER_GENOMIC_POSITION=chr4:2000-2000;DONOR_GENE_SYMBOL=SYMB4
+ENSG0001  500  FUSION-ENST0001:500-ENST0011:1000  A    <FUSION>  .     .       TRANSCRIPT_ID=ENST0000;GENE_SYMBOL=SYMB1;ACCEPTER_GENE_ID=ENSG0010;ACCEPTER_TRANSCRIPT_ID=ENST0011;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr1:1000-1000;ACCEPTER_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
+ENSG0002  500  FUSION-ENST0002:500-ENST0011:1000  A    <FUSION>  .     .       TRANSCRIPT_ID=ENST0000;GENE_SYMBOL=SYMB1;ACCEPTER_GENE_ID=ENSG0010;ACCEPTER_TRANSCRIPT_ID=ENST0011;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr1:1000-1000;ACCEPTER_GENOMIC_POSITION=chr2:2000-2000;DONOR_GENE_SYMBOL=SYMB3
+ENSG0021  500  FUSION-ENST0021:500-ENST0031:1000  C    <FUSION>  .     .       TRANSCRIPT_ID=ENST0021;GENE_SYMBOL=SYMB2;ACCEPTER_GENE_ID=ENSG0030;ACCEPTER_TRANSCRIPT_ID=ENST0031;ACCEPTER_POSITION=1000;GENOMIC_POSITION=chr3:1000-1000;ACCEPTER_GENOMIC_POSITION=chr4:2000-2000;DONOR_GENE_SYMBOL=SYMB4
 ```
 
 The `Info` column must contain the following fields:
@@ -208,7 +208,7 @@ Technically, circRNAs are not variants that alters the gene/transcript sequence.
 + **`TRANSCRIPTS`** The transcript IDs that are able to generate this circRNA (e.g. contains all exons and introns of the circRNA.)
 + **`GENE_SYMBOL`** The name of the gene.
 
-The ID of circRNAs consist of two components. They all start with CIRC-\<gene_id> where `gene_id` is the value from the `CHROM` column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example, CIRC-ENSG0001-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
+The ID of circRNAs consist of two components. They all start with \<gene_id>-circRNA or \<gene_id>-ciRNA where `gene_id` is the value from the `CHROM` column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example,ENSG0001-circRNA-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
 ## 2 Variant Peptide FASTA
 
 In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the GVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. A integer index is thus always added to the end to resolve redundancies.

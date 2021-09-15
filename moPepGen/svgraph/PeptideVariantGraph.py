@@ -6,6 +6,7 @@ from collections import deque
 import itertools
 from Bio.Seq import Seq
 from moPepGen import aa, svgraph, seqvar, get_equivalent
+from moPepGen.aa.VariantPeptideIdentifier import create_variant_peptide_id
 
 
 class PeptideVariantGraph():
@@ -572,8 +573,7 @@ class MiscleavedNodes():
                 to the end of the label (e.g. ENST0001|SNV-10-T-C|5)
         """
         for queue in self.data:
-            if check_variants:
-                variants:Set[seqvar.VariantRecordWithCoordinate] = set()
+            variants:Set[seqvar.VariantRecordWithCoordinate] = set()
             seq:aa.AminoAcidSeqRecord = None
 
             for node in queue:
@@ -586,20 +586,11 @@ class MiscleavedNodes():
                         variants.add(variant.variant)
                     variants.update(node.frameshifts)
 
-            label = graph.id
-
-            if check_orf:
-                label += ('|' + self.orf_id)
-
-            if check_variants:
-                if not variants:
-                    continue
-                variant_label = ''
-                for variant in variants:
-                    if variant.type == 'circRNA':
-                        continue
-                    variant_label += ('|' + str(variant.id))
-                label += variant_label
+            orf_id = self.orf_id if check_orf else None
+            variants = list(variants)
+            if check_variants and not variants:
+                continue
+            label = create_variant_peptide_id(graph.id, variants, orf_id)
 
             update_peptide_pool(seq, peptide_pool, label_counter, label)
 

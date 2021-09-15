@@ -34,7 +34,8 @@ LABEL_MAP1 = {
         'INDEL-1101-TTTT-T': 'gINDEL',
         'INDEL-1102-TTTT-T': 'gINDEL',
         'INDEL-1103-TTTT-T': 'sINDEL',
-        'INDEL-1104-TTTT-T': 'sINDEL'
+        'INDEL-1104-TTTT-T': 'sINDEL',
+        'FUSION-ENSG0001:1050-ENSG0003:3090': 'Fusion'
     },
     'ENSG0002': {
         'SNV-2001-T-A': 'gSNP',
@@ -45,7 +46,7 @@ LABEL_MAP1 = {
         'INDEL-2102-TTTT-T': 'gINDEL',
         'INDEL-2103-TTTT-T': 'sINDEL',
         'INDEL-2104-TTTT-T': 'sINDEL',
-        'ENSG0002-circRNA-E1-E2': 'circRNA'
+        'CIRC-ENSG0002-E1-E2': 'circRNA'
     },
     'ENSG0003': {
         'SNV-3001-T-A': 'gSNP',
@@ -59,8 +60,8 @@ LABEL_MAP1 = {
     }
 }
 
-SOURCE_ORDER = {'gSNP': 0, 'gINDEL': 1, 'sSNV': 2, 'sINDEL': 3, 'Noncoding': 4,
-    'circRNA': 5}
+SOURCE_ORDER = {'gSNP': 0, 'gINDEL': 1, 'sSNV': 2, 'sINDEL': 3, 'Fusion':4,
+    'circRNA': 5, 'Noncoding': 6}
 
 ANNOTATION_ATTRS = [
     [
@@ -264,7 +265,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         levels = copy.copy(SOURCE_ORDER)
         splitter = PeptidePoolSplitter(order=levels)
         splitter.append_order_noncoding()
-        self.assertEqual(splitter.order['Noncoding'], 4)
+        self.assertEqual(splitter.order['Noncoding'], 6)
 
     def test_load_gvf(self):
         """ test loading gvf """
@@ -461,7 +462,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         anno = create_genomic_annotation(ANNOTATION_DATA)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
-            [ 'SSSSSSSK', 'ENSG0002-circRNA-E1-E2|1' ]
+            [ 'SSSSSSSK', 'CIRC-ENSG0002-E1-E2|1' ]
         ]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
@@ -476,5 +477,28 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         self.assertEqual({'gSNP', 'circRNA'}, set(splitter.databases.keys()))
 
         received = {str(x.seq) for x in splitter.databases['circRNA'].peptides}
+        expected = {'SSSSSSSK'}
+        self.assertEqual(expected, received)
+
+    def test_split_database_fusion(self):
+        """ Test split database with fusion. """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        peptides_data = [
+            [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
+            [ 'SSSSSSSK', 'FUSION-ENSG0001:1050-ENSG0003:3090|1' ]
+        ]
+        peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
+        label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
+        splitter = PeptidePoolSplitter(
+            peptides=peptides,
+            order=copy.copy(SOURCE_ORDER),
+            label_map=label_map,
+            sources=copy.copy(list(SOURCE_ORDER.keys()))
+        )
+        splitter.split(1, [{'Fusion'}], anno)
+
+        self.assertEqual({'gSNP', 'Fusion'}, set(splitter.databases.keys()))
+
+        received = {str(x.seq) for x in splitter.databases['Fusion'].peptides}
         expected = {'SSSSSSSK'}
         self.assertEqual(expected, received)

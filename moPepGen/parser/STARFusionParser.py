@@ -104,7 +104,7 @@ class STARFusionRecord():
         accepter_transcripts = accepter_model.transcripts
         records = []
 
-        fusion_id = f'FUSION_{self.left_gene}:{donor_position}'\
+        fusion_id = f'FUSION-{self.left_gene}:{donor_position}'\
             f'-{self.right_gene}:{accepter_position}'
 
         perms = itertools.product(donor_transcripts, accepter_transcripts)

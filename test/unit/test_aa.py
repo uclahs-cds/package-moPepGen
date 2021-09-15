@@ -123,7 +123,7 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
 
 
 class TestCaseVariantPeptidePool(unittest.TestCase):
-    """ Test case fro VariantPeptidePool """
+    """ Test cases for VariantPeptidePool """
     def test_variant_peptide_add(self):
         """ Test variant peptide is added to the pool """
         peptide_data = [
