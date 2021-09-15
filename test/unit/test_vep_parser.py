@@ -454,5 +454,30 @@ class TestVEPRecord(unittest.TestCase):
         with self.assertRaises(TranscriptionStartSiteMutationError):
             vep_record.convert_to_variant_record(anno, genome)
 
+    def test_vep_to_variant_record_case15_deletion(self):
+        """ deletion that allele is not - """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:19-22',
+            allele='T',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('aTa', 'aCa'),
+            existing_variation='-',
+            extra={}
+        )
+        record = vep_record.convert_to_variant_record(anno, genome)
+        self.assertEqual(record.ref, 'CTAT')
+        self.assertEqual(record.alt, 'T')
+
 if __name__ == '__main__':
     unittest.main()

@@ -165,7 +165,7 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     if not dgraph.root.out_edges:
         return None, None
     pgraph = dgraph.translate()
-    orfs = get_orf_sequences(pgraph)
+    orfs = get_orf_sequences(pgraph, tx_id)
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     peptides = pgraph.call_variant_peptides(
         miscleavage=miscleavage,
@@ -174,7 +174,8 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     )
     return peptides, orfs
 
-def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph) -> List[aa.AminoAcidSeqRecord]:
+def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str
+        ) -> List[aa.AminoAcidSeqRecord]:
     """ Get the full ORF sequences """
     seqs = []
     if not pgraph.orf_id_map:
@@ -184,7 +185,7 @@ def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph) -> List[aa.AminoAcidSe
         orf_start = node.orf[0]
         orf_end = orf_start + len(node.seq.seq) * 3
         orf_id = orf_id_map[orf_start]
-        seqname = f"{node.seq.transcript_id}|{orf_id}|{orf_start}-{orf_end}"
+        seqname = f"{tx_id}|{orf_id}|{orf_start}-{orf_end}"
         seq = copy.copy(node.seq)
         seq.id = seqname
         seq.name = seqname
