@@ -209,24 +209,3 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     pgraph = tgraph.translate()
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
-
-if __name__ == '__main__':
-    _args = argparse.Namespace()
-    _args.command = 'callPeptides'
-    _args.input_variant = [
-        'test/files/vep/CPCG0190_aa_indel_ENST00000424784.3.gvf'
-    ]
-    _args.index_dir = None
-    ref_dir = Path('test/files/downsampled_reference/ENST00000424784.3')
-    _args.genome_fasta = ref_dir/'genome.fasta'
-    _args.annotation_gtf = ref_dir/'annotation.gtf'
-    _args.proteome_fasta = ref_dir/'proteome.fasta'
-    _args.circ_rna_bed = None
-    _args.output_fasta = 'test/files/vep/test.fasta'
-    _args.verbose = True
-    _args.cleavage_rule = 'trypsin'
-    _args.miscleavage = 2
-    _args.min_mw = 500.
-    _args.min_length = 7
-    _args.max_length = 25
-    call_variant_peptide(args=_args)
