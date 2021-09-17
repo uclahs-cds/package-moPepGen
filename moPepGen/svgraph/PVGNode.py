@@ -87,8 +87,8 @@ class PVGNode():
 
     def find_reference_prev(self) -> PVGNode:
         """ Find and return the previous reference nocd. The previous reference
-        node is defined as the inbond node that has not variant, or all variant
-        from the current node can be found in that node. """
+        node is defined as the inbond node that has not variant, or any variant
+        that is not in this current node. """
         if not self.in_nodes:
             return None
         this_variants = [x.variant for x in self.variants]
@@ -96,7 +96,7 @@ class PVGNode():
             if not node.variants:
                 return node
             that_variants = [x.variant for x in node.variants]
-            if not any(it not in that_variants for it in this_variants):
+            if not any(it not in this_variants for it in that_variants):
                 return node
         raise ValueError('None of the in nodes is reference.')
 
