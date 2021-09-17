@@ -357,3 +357,11 @@ class TestPeptideVariantGraph(unittest.TestCase):
         peptides = graph.call_variant_peptides(1)
         for peptide in peptides:
             self.assertTrue(peptide.description.startswith(graph.id))
+
+    def test_call_peptides_empty_graph(self):
+        """ When the graph is empty """
+        data = {}
+        graph, _ = create_pgraph(data, 'ENST0001')
+        graph.add_stop(graph.root)
+        peptides = graph.call_variant_peptides(2)
+        self.assertEqual(len(peptides), 0)

@@ -494,6 +494,9 @@ class PeptideVariantGraph():
                     queue.appendleft(out_node)
                 continue
 
+            if cur is self.stop:
+                continue
+
             # skip the node if already visited
             visited_len_before = len(visited)
             visited.add(cur)
