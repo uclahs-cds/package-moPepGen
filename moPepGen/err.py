@@ -1,5 +1,11 @@
 """ Module for errors """
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from moPepGen import logger
+
+
+if TYPE_CHECKING:
+    from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 
 class VariantSourceNotFoundError(Exception):
     """ Error to be raised when the variant source of a peptide is not found """
@@ -36,7 +42,15 @@ class TranscriptionStartSiteMutationError(Exception):
         if transcript_id:
             message += f"transcript [{transcript_id}] "
         super().__init__(message)
-class ReferenceSeqnameNotFoundError(Exception):
+
+class MuteableErrorMixin():
+    """ Mixin for muteable errors """
+    @classmethod
+    def mute(cls):
+        """ Mute it """
+        cls.raised = True
+
+class ReferenceSeqnameNotFoundError(MuteableErrorMixin, Exception):
     """ Error to be raised when the seqname is not found from the reference
     genome """
     raised = False
@@ -45,10 +59,21 @@ class ReferenceSeqnameNotFoundError(Exception):
         msg = f"This seqname is not found from the reference genome: {seqname}"
         super().__init__(msg)
 
-    @classmethod
-    def mute(cls):
-        """ Mute it """
-        cls.raised = True
+class ExonNotFoundError(Exception):
+    """ Error to be raised when an exon is not found """
+    def __init__(self, gene_id:str, feature:GTFSeqFeature):
+        """ constructor """
+        msg = f"The feature {str(feature.location)} is not a valid exon from"+\
+        f" gene {gene_id}"
+        super().__init__(msg)
+
+class IntronNotFoundError(Exception):
+    """ Error to be raised when an exon is not found """
+    def __init__(self, gene_id:str, feature:GTFSeqFeature):
+        """ constructor """
+        msg = f"The feature {str(feature.location)} is not a valid intron" +\
+            f"from gene {gene_id}"
+        super().__init__(msg)
 
 def warning(msg:str) -> None:
     """ print a warning message """

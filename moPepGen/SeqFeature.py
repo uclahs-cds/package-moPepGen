@@ -46,6 +46,10 @@ class FeatureLocation(BioFeatureLocation):
         """ less or equal to """
         return not self > other
 
+    def __str__(self) -> str:
+        """ str """
+        return f"{self.seqname}:{int(self.start)}-{int(self.end)}"
+
     def __hash__(self):
         """ hash """
         return hash((self.seqname, self.start, self.end, self.strand))

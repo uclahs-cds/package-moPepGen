@@ -1,16 +1,14 @@
 """ Module for CIRCexplorer parser """
 from __future__ import annotations
-from typing import List, Dict, TYPE_CHECKING
+import argparse
+from typing import List, Dict
 from pathlib import Path
-from moPepGen import logger, circ
+from moPepGen import logger, circ, err
 from moPepGen.parser import CIRCexplorerParser
-from .common import add_args_reference, add_args_verbose, add_args_source,\
+from moPepGen.cli.common import add_args_reference, add_args_verbose, add_args_source,\
     print_start_message,print_help_if_missing_args, load_references, \
     generate_metadata
 
-
-if TYPE_CHECKING:
-    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
@@ -64,7 +62,21 @@ def parse_circexplorer(args:argparse.Namespace):
     for record in CIRCexplorerParser.parse(input_path):
         if record.read_number < args.min_read_number:
             continue
-        circ_record = record.convert_to_circ_rna(anno)
+        try:
+            circ_record = record.convert_to_circ_rna(anno)
+        except err.ExonNotFoundError:
+            err.warning(f"The CIRCexplorer record {record.name} from"
+                f" transcript {record.isoform_name} contains an unknown exon."
+                " Skipping it from parsing.")
+            continue
+        except err.IntronNotFoundError:
+            err.warning(f"The CIRCexplorer record {record.name} from"
+                f" transcript {record.isoform_name} contains an unknown intron."
+                " Skipping it from parsing.")
+            continue
+        except:
+            logger(f'Exception raised from record: {record.name}')
+            raise
         gene_id = circ_record.gene_id
         if gene_id not in circ_records:
             circ_records[gene_id] = []
