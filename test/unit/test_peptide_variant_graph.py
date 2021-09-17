@@ -50,6 +50,55 @@ def create_pgraph(data:dict, _id:str
 
 class TestPeptideVariantGraph(unittest.TestCase):
     """ Test case for peptide variant graph """
+    def test_find_reference_next(self):
+        """ Test that the reference next and prev can be found """
+        data = {
+            1: ('SSSR', [0], [None]),
+            2: ('SSSV', [1],[(0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)]),
+            3: ('SSSG', [1], [None]),
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        self.assertIs(nodes[1].find_reference_next(), nodes[3])
+        graph.add_stop(nodes[2])
+        self.assertIs(nodes[2].find_reference_next(), graph.stop)
+
+    def test_find_reference_next_chimeric(self):
+        """ When nodes are chimeric, such as combined because of frameshifting
+        mutations. """
+        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)
+        variant_2 = (5, 8, 'ACC', 'A', 'INDEL', '0:ACC-A', 0, 1, True)
+        data = {
+            1: ('SSSR', [0], [variant_1]),
+            2: ('SSSV', [1],[variant_1, variant_2]),
+            3: ('SSSG', [1], [variant_1]),
+        }
+        _, nodes = create_pgraph(data, 'ENST0001')
+        self.assertIs(nodes[1].find_reference_next(), nodes[3])
+
+    def test_find_reference_prev(self):
+        """ Test that the reference next and prev can be found """
+        data = {
+            1: ('SSSR', [0], [None]),
+            2: ('SSSV', [0],[(0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)]),
+            3: ('SSSG', [1,2], [None]),
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        self.assertIs(nodes[3].find_reference_prev(), nodes[1])
+        self.assertIs(nodes[2].find_reference_prev(), graph.root)
+
+    def test_find_reference_prev_chimeric(self):
+        """ When nodes are chimeric, such as combined because of frameshifting
+        mutations. """
+        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)
+        variant_2 = (5, 8, 'ACC', 'A', 'INDEL', '0:ACC-A', 0, 1, True)
+        data = {
+            1: ('SSSR', [0], [variant_1]),
+            2: ('SSSV', [0],[variant_1, variant_2]),
+            3: ('SSSG', [1,2], [variant_1]),
+        }
+        _, nodes = create_pgraph(data, 'ENST0001')
+        self.assertIs(nodes[3].find_reference_prev(), nodes[1])
+
     def test_expand_backward_no_inbound(self):
         r""" > Test expand backward when the node has no inbound nodes.
 
