@@ -1,9 +1,11 @@
 """ Test module for CIRCexplorerParser """
 import unittest
+import copy
 from test.unit import create_genomic_annotation
 from test.unit.test_vep_parser import ANNOTATION_DATA
 from moPepGen.parser.CIRCexplorerParser import CIRCexplorerKnownRecord
 from moPepGen.circ import CircRNAModel
+from moPepGen import err
 
 
 class TestCIRCexplorerParser(unittest.TestCase):
@@ -44,6 +46,32 @@ class TestCIRCexplorerParser(unittest.TestCase):
         self.assertIsInstance(circ_record, CircRNAModel)
         self.assertEqual(circ_record.id, 'CIRC-ENSG0001-E1-E2')
 
+    def test_to_convert_circ_rna_negative(self):
+        """ circRNA on -strand """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(anno_data)
+        record = self.create_base_record()
+        record.start = 5
+        record.end = 23
+        record.exon_sizes = [7, 6]
+        record.exon_offsets = [0, 12]
+        circ_record = record.convert_to_circ_rna(anno)
+        self.assertIsInstance(circ_record, CircRNAModel)
+        self.assertEqual(circ_record.id, 'CIRC-ENSG0001-E2-E3')
+
+    def test_to_convert_circ_rna_unknown_exon(self):
+        """ circRNA with unkonwn exon. ExonNotFoundError should raise. """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        record = self.create_base_record()
+        record.start = 5
+        record.end = 10
+        record.exon_sizes = [5]
+        record.exon_offsets = [0]
+        with self.assertRaises(err.ExonNotFoundError):
+            record.convert_to_circ_rna(anno)
+
     def test_to_convert_ci_rna(self):
         """ ciRNA """
         anno = create_genomic_annotation(ANNOTATION_DATA)
@@ -56,3 +84,31 @@ class TestCIRCexplorerParser(unittest.TestCase):
         circ_record = record.convert_to_circ_rna(anno)
         self.assertIsInstance(circ_record, CircRNAModel)
         self.assertEqual(circ_record.id, 'CI-ENSG0001-I1')
+
+    def test_to_convert_ci_rna_negative(self):
+        """ ciRNA """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(anno_data)
+        record = self.create_base_record()
+        record.start = 12
+        record.end = 17
+        record.exon_sizes = [5]
+        record.exon_offsets = [0]
+        record.circ_type = 'ciRNA'
+        circ_record = record.convert_to_circ_rna(anno)
+        self.assertIsInstance(circ_record, CircRNAModel)
+        self.assertEqual(circ_record.id, 'CI-ENSG0001-I2')
+
+    def test_to_convert_ci_rna_unknown_intron(self):
+        """ ciRNA with unkonwn intron. IntronNotFoundError should raise. """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        record = self.create_base_record()
+        record.start = 12
+        record.end = 15
+        record.exon_sizes = [3]
+        record.exon_offsets = [0]
+        record.circ_type = 'ciRNA'
+        with self.assertRaises(err.IntronNotFoundError):
+            record.convert_to_circ_rna(anno)

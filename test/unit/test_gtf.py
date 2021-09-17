@@ -6,7 +6,7 @@ import unittest
 from test.unit import create_transcript_model, create_variant, \
     create_genomic_annotation
 from Bio import SeqIO
-from moPepGen import gtf
+from moPepGen import gtf, err
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from .test_vep_parser import ANNOTATION_DATA
@@ -273,7 +273,7 @@ class TestGTF(unittest.TestCase):
         self.assertEqual(ind, 1)
 
         exon = exon2._shift(10)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(err.ExonNotFoundError):
             anno.find_exon_index(gene_id, exon, 'gene')
 
     def test_find_exon_index_case2(self):
@@ -298,7 +298,7 @@ class TestGTF(unittest.TestCase):
         self.assertEqual(ind, 2)
 
         exon = exon2._shift(10)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(err.ExonNotFoundError):
             anno.find_exon_index(gene_id, exon, 'gene')
 
     def test_find_intron_index_case1(self):
@@ -320,7 +320,7 @@ class TestGTF(unittest.TestCase):
         self.assertEqual(ind, 0)
 
         intron = intron2._shift(10)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(err.ExonNotFoundError):
             anno.find_exon_index(gene_id, intron, 'gene')
 
     def test_find_intron_index_case2(self):
@@ -348,7 +348,7 @@ class TestGTF(unittest.TestCase):
         self.assertEqual(ind, 1)
 
         intron = intron2._shift(10)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(err.ExonNotFoundError):
             anno.find_exon_index(gene_id, intron, 'gene')
 
     def test_coordinate_convert(self):

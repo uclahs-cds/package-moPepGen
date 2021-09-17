@@ -83,17 +83,18 @@ class CIRCexplorerKnownRecord():
         else:
             raise ValueError(f'circRNA type unsupported: {self.circ_type}')
 
-        circ_id += f'-{gene_id}'
+        fragment_ids = []
 
         for i, exon_size in enumerate(self.exon_sizes):
             exon_offset = self.exon_offsets[i]
             start = anno.coordinate_genomic_to_gene(
                 self.start + exon_offset, gene_id)
             end = anno.coordinate_genomic_to_gene(
-                self.start + exon_offset + exon_size, gene_id)
+                self.start + exon_offset + exon_size - 1, gene_id)
 
             if gene_model.strand == -1:
                 start, end = end, start
+            end += 1
 
             location = FeatureLocation(seqname=gene_id, start=start, end=end)
 
@@ -104,14 +105,17 @@ class CIRCexplorerKnownRecord():
 
             if fragment_type == 'exon':
                 exon_index = anno.find_exon_index(gene_id, fragment)
-                circ_id += f"-E{exon_index + 1}"
+                fragment_ids.append( f"E{exon_index + 1}")
 
             elif fragment_type == 'intron':
                 intron_index = anno.find_intron_index(gene_id, fragment)
-                circ_id += f"-I{intron_index + 1}"
+                fragment_ids.append(f"I{intron_index + 1}")
                 intron.append(i)
 
             fragments.append(fragment)
+
+        fragment_ids.sort()
+        circ_id += f'-{gene_id}-' + '-'.join(fragment_ids)
 
         return CircRNAModel(gene_id, fragments, intron, circ_id,
             transcript_ids, gene_model.gene_name)

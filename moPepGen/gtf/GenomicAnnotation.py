@@ -2,7 +2,7 @@
 """
 from typing import List, Dict
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
-from moPepGen import seqvar
+from moPepGen import seqvar, err
 from . import GtfIO
 from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TYPES
 from .GeneAnnotationModel import GeneAnnotationModel
@@ -21,8 +21,6 @@ class GenomicAnnotation():
         source (str): Source of the genomic annotation. E.g., ENSEMBL or
             GENCODE.
     """
-    FAILED_TO_FIND_EXON_ERROR = 'Failed to find the exon.'
-    FAILED_TO_FIND_INTRON_ERROR = 'Failed to find the intron.'
     def __init__(self, genes:Dict[str,GeneAnnotationModel]=None,
             transcripts:Dict[str, TranscriptAnnotationModel]=None,
             source:str=None):
@@ -292,10 +290,11 @@ class GenomicAnnotation():
         genomic. """
         gene_model = self.genes[gene_id]
         start = self.coordinate_gene_to_genomic(feature.location.start, gene_id)
-        end = self.coordinate_gene_to_genomic(feature.location.end, gene_id)
+        end = self.coordinate_gene_to_genomic(feature.location.end - 1, gene_id)
         strand = gene_model.location.strand
         if strand == -1:
             start, end = end, start
+        end += 1
         location = FeatureLocation(seqname=gene_id, start=start, end=end,
             strand=strand)
         new_feature = feature.__class__(
@@ -311,10 +310,11 @@ class GenomicAnnotation():
         """
         gene_model = self.genes[gene_id]
         start = self.coordinate_genomic_to_gene(feature.location.start, gene_id)
-        end = self.coordinate_genomic_to_gene(feature.location.end, gene_id)
+        end = self.coordinate_genomic_to_gene(feature.location.end - 1, gene_id)
         strand = gene_model.location.strand
         if strand == -1:
             start, end = end, start
+        end += 1
         location = FeatureLocation(seqname=gene_id, start=start, end=end,
             strand=0)
 
@@ -404,7 +404,7 @@ class GenomicAnnotation():
                     return i
                 if exon < feature:
                     break
-        raise ValueError(self.FAILED_TO_FIND_EXON_ERROR)
+        raise err.ExonNotFoundError(gene_id, feature)
 
     def find_intron_index(self, gene_id:str, feature:GTFSeqFeature,
             coordinate:str="gene") -> int:
@@ -462,4 +462,4 @@ class GenomicAnnotation():
                     break
                 i += 1
                 j = len(exons) - i - 1
-        raise ValueError(self.FAILED_TO_FIND_INTRON_ERROR)
+        raise err.IntronNotFoundError(gene_id, feature)
