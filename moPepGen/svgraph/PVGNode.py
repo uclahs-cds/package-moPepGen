@@ -71,20 +71,32 @@ class PVGNode():
             pass
 
     def find_reference_next(self) -> PVGNode:
-        """ Find and return the next reference node. """
+        """ Find and return the next reference node. The next reference node
+        is defined as the out node that has not variant, or not any variant
+        that is not in this current node. """
         if not self.out_nodes:
             return None
+        this_variants = [x.variant for x in self.variants]
         for node in self.out_nodes:
             if not node.variants:
+                return node
+            that_variants = [x.variant for x in node.variants]
+            if not any(it not in this_variants for it in that_variants):
                 return node
         raise ValueError('None of the out nodes is reference.')
 
     def find_reference_prev(self) -> PVGNode:
-        """ Find and return the previous reference nocd. """
-        if not self.out_nodes:
+        """ Find and return the previous reference nocd. The previous reference
+        node is defined as the inbond node that has not variant, or any variant
+        that is not in this current node. """
+        if not self.in_nodes:
             return None
+        this_variants = [x.variant for x in self.variants]
         for node in self.in_nodes:
             if not node.variants:
+                return node
+            that_variants = [x.variant for x in node.variants]
+            if not any(it not in this_variants for it in that_variants):
                 return node
         raise ValueError('None of the in nodes is reference.')
 
