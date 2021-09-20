@@ -914,10 +914,13 @@ class TranscriptVariantGraph():
         else:
             nodes = self.merge_with_outbonds(node)
 
-        # this is when all variants at this positions are frameshifting
-        # downstream is None whtn there is a variant at the last nucleotide.
+        # this is when all variants at this positions are frameshifting, or
+        # downstream is None, or there is a variant at the last nucleotide.
         if downstream in nodes or downstream is None:
             for anode in nodes:
+                if any(v.variant.is_frameshifting() for v in anode.variants):
+                    if not anode.branch:
+                        anode = self.create_branch(anode)
                 if anode.branch:
                     branches.append(anode)
             return downstream, branches
@@ -956,6 +959,9 @@ class TranscriptVariantGraph():
 
         while queue:
             cur = queue.pop()
+            if (len(cur.node.frameshifts) == 1 and len(cur.node.variants) == 1 and cur.node.variants[0].variant.location.start == 4384) \
+                    or (any(len(edge.out_node.frameshifts) == 1 and len(edge.out_node.variants) == 1 and edge.out_node.variants[0].variant.location.start == 4384 for edge in cur.node.out_edges)):
+                print('break')
             if cur.node is self.root:
                 if len(cur.node.out_edges) == 1:
                     main = cur.node.get_reference_next()
@@ -984,16 +990,21 @@ class TranscriptVariantGraph():
                     queue.append(new_cursor)
                     continue
                 node = self.align_variants(node)
-                main, _ = self.skip_nodes_or_branch_out(node)
+                main, branches = self.skip_nodes_or_branch_out(node)
                 if main:
                     new_cursor = svgraph.TVGCursor(node=main)
                     queue.appendleft(new_cursor)
-                    continue
+                for branch in branches:
+                    new_cursor = svgraph.TVGCursor(branch, True)
+                    queue.appendleft(new_cursor)
+                continue
 
             node.seq = node.seq[index:]
             node_copy = self.copy_node(node)
             self.update_frameshifts(node_copy)
             self.create_branch(node_copy)
+            if node_copy.seq.locations[0].ref.start == 4374:
+                print('break')
             node.seq = node.seq[3:]
             new_cursor = svgraph.TVGCursor(node)
             queue.appendleft(new_cursor)

@@ -690,6 +690,26 @@ class TestTranscriptGraph(unittest.TestCase):
             self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
         self.assertEqual(len(graph.root.out_edges), 2)
 
+    def test_find_orf_unkonwn_frameshift(self):
+        """ finding unkonwn ORF with framefhift mutations
+
+            GGCTGG-CGGTATGC-TGCT
+                  \         /
+                   C--------
+        """
+        data = {
+            0: ('GGCTGG', [], []),
+            1: ('C', [0], [(0, 'CGGTATGC', 'C', 'INDEL', '')]),
+            2: ('CGGTATGC', [0], []),
+            3: ('TGCT', [1,2], [])
+        }
+        graph, _ = create_dgraph2(data)
+        graph.add_null_root()
+        graph.find_orf_unknown()
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+        self.assertEqual(len(graph.root.out_edges), 1)
+
     def test_find_overlaps(self):
         r""" Correct farthest overlap node is found.
              T--
