@@ -108,7 +108,8 @@ class CIRCexplorerKnownRecord():
                 fragment_ids.append( f"E{exon_index + 1}")
 
             elif fragment_type == 'intron':
-                intron_index = anno.find_intron_index(gene_id, fragment)
+                intron_index = anno.find_intron_index(gene_id, fragment,
+                    transcript_id=self.isoform_name, exact_end=False)
                 fragment_ids.append(f"I{intron_index + 1}")
                 intron.append(i)
 
