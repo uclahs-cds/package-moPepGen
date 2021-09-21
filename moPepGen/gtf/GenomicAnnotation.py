@@ -407,7 +407,8 @@ class GenomicAnnotation():
         raise err.ExonNotFoundError(gene_id, feature)
 
     def find_intron_index(self, gene_id:str, feature:GTFSeqFeature,
-            coordinate:str="gene") -> int:
+            coordinate:str="gene", transcript_id:str=None, exact_end:bool=False
+            ) -> int:
         """ Find the intron index of the gene.
 
         Args:
@@ -420,7 +421,10 @@ class GenomicAnnotation():
         if not gene_model.exons:
             self.get_all_exons_of_gene(gene_id)
         exons = gene_model.exons
-
+        tx_exons = None
+        if transcript_id:
+            tx_model = self.transcripts[transcript_id]
+            tx_exons = tx_model.exon
         strand = self.genes[gene_id].strand
 
         if coordinate == 'gene':
@@ -430,36 +434,45 @@ class GenomicAnnotation():
             raise ValueError("Don't know how to handle the coordinate.")
 
         if strand == 1:
-            i = 0
-            while i < len(exons):
-                exon = exons[i]
+            it = enumerate(exons)
+            while True:
+                i, exon = next(it, (None, None))
+                if not exon:
+                    break
+                if tx_exons and exon not in tx_exons:
+                    continue
                 if exon.location.end == feature.location.start:
-                    i += 1
-                    if i >= len(exons):
+                    i, exon = next(it, (None, None))
+                    if not exon:
                         break
-                    exon = exons[i]
-                    if exon.location.start == feature.location.end:
+                    if tx_exons and exon not in tx_exons:
+                        break
+                    if exact_end and exon.location.start == feature.location.end:
+                        return i - 1
+                    if exon.location.start >= feature.location.end:
                         return i - 1
                     break
                 if exon.location.start > feature.location.end:
                     break
-                i += 1
         elif strand == -1:
-            i = 0
-            j = len(exons) - i - 1
-            while i < len(exons):
-                exon = exons[j]
+            it = reversed(list(enumerate(exons)))
+            while True:
+                i, exon = next(it, (None, None))
+                if not exon:
+                    break
+                if tx_exons and exon not in tx_exons:
+                    continue
                 if exon.location.start == feature.location.end:
-                    i += 1
-                    if i >= len(exons):
+                    i, exon = next(it, (None, None))
+                    if not exon:
                         break
-                    j = len(exons) - i - 1
-                    exon = exons[j]
-                    if exon.location.end == feature.location.start:
-                        return i - 1
+                    if tx_exons and exon not in tx_exons:
+                        break
+                    if exact_end and exon.location.end == feature.location.start:
+                        return i + 1
+                    if exon.location.end <= feature.location.start:
+                        return i + 1
                     break
                 if exon.location.end < feature.location.start:
                     break
-                i += 1
-                j = len(exons) - i - 1
         raise err.IntronNotFoundError(gene_id, feature)

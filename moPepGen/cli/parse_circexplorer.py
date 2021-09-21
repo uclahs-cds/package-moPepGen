@@ -35,10 +35,32 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         metavar=''
     )
     p.add_argument(
+        '--circexplorer3',
+        action='store_true',
+        hel='Using circRNA resutls from CIRCexplorer3',
+        metavar=''
+    )
+    p.add_argument(
         '--min-read-number',
         type=int,
-        help='Minimal number of junction read counts. Defaults to 2',
-        default=2,
+        help='Minimal number of junction read counts. Defaults to 1',
+        default=1,
+        metavar=''
+    )
+    p.add_argument(
+        '--min-fpb-circ',
+        type=float,
+        help='Minimal CRICscore value for CIRCexplorer3. Recommends to 1,'
+        'defaults to None',
+        default=None,
+        metavar=''
+    )
+    p.add_argument(
+        '--min-circ-score',
+        type=float,
+        help='Minimal CIRCscore value for CIRCexplorer3. Recommends to 1,'
+        'defaults to None',
+        default=None,
         metavar=''
     )
     add_args_source(p)
@@ -59,8 +81,12 @@ def parse_circexplorer(args:argparse.Namespace):
 
     circ_records:Dict[str, List[circ.CircRNAModel]] = {}
 
-    for record in CIRCexplorerParser.parse(input_path):
-        if record.read_number < args.min_read_number:
+    for record in CIRCexplorerParser.parse(input_path, args.circexplorer3):
+        if not args.circexplorer3:
+            if record.is_valid(args.min_read_number):
+                continue
+        elif not record.is_valid(args.min_read_number, args.min_fbr_circ, \
+                args.min_circ_score):
             continue
         try:
             circ_record = record.convert_to_circ_rna(anno)
