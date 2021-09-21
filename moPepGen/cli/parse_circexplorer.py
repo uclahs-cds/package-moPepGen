@@ -49,15 +49,15 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     )
     p.add_argument(
         '--min-fpb-circ',
-        type=int,
+        type=float,
         help='Minimal CRICscore value for CIRCexplorer3. Recommends to 1,'
         'defaults to None',
         default=None,
         metavar=''
     )
     p.add_argument(
-        '--min-fpb-circ',
-        type=int,
+        '--min-circ-score',
+        type=float,
         help='Minimal CIRCscore value for CIRCexplorer3. Recommends to 1,'
         'defaults to None',
         default=None,
