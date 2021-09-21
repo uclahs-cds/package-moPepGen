@@ -3,7 +3,7 @@ import unittest
 import copy
 from test.unit import create_genomic_annotation
 from test.unit.test_vep_parser import ANNOTATION_ATTRS, ANNOTATION_DATA
-from moPepGen.parser.CIRCexplorerParser import CIRCexplorerKnownRecord
+from moPepGen.parser.CIRCexplorerParser import CIRCexplorer2KnownRecord
 from moPepGen.circ import CircRNAModel
 from moPepGen import err
 
@@ -14,7 +14,7 @@ class TestCIRCexplorerParser(unittest.TestCase):
     @staticmethod
     def create_base_record():
         """ create a base CIRCexplorerKnownRecord """
-        return CIRCexplorerKnownRecord(
+        return CIRCexplorer2KnownRecord(
             chrom='chr1',
             start=None,
             end=None,

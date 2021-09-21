@@ -1,40 +1,13 @@
 """ Module for CIRCexplorer parser """
 from __future__ import annotations
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Union
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import gtf
 from moPepGen.circ import CircRNAModel
 
 
-def parse(path:Path) -> Iterable[CIRCexplorerKnownRecord]:
-    """ parse """
-    with open(path, 'rt') as handle:
-        for line in handle:
-            fields = line.rstrip().split('\t')
-            yield CIRCexplorerKnownRecord(
-                chrom=fields[0],
-                start=int(fields[1]),
-                end=int(fields[2]),
-                name=fields[3],
-                score=float(fields[4]),
-                strand=fields[5],
-                thick_start=int(fields[6]),
-                thick_end=int(fields[7]),
-                item_rgb=[int(x) for x in fields[8].split(',')],
-                exon_count=int(fields[9]),
-                exon_sizes=[int(x) for x in fields[10].split(',')],
-                exon_offsets=[int(x) for x in fields[11].split(',')],
-                read_number=int(fields[12]),
-                circ_type=fields[13],
-                gene_name=fields[14],
-                isoform_name=fields[15],
-                index=[int(x) for x in fields[16].split(',')],
-                flank_intron=fields[17]
-            )
-
-
-class CIRCexplorerKnownRecord():
+class CIRCexplorer2KnownRecord():
     """ CIRCexplorer Known Record
     NOTE: CIRCexplorer uses 0-based and end exclusive coordinates.
     """
@@ -120,3 +93,65 @@ class CIRCexplorerKnownRecord():
 
         return CircRNAModel(gene_id, fragments, intron, circ_id,
             transcript_ids, gene_model.gene_name)
+
+    def is_valid(self, min_read_number:int) -> bool:
+        """ Check if this is valid CIRCexplorer record """
+        return self.read_number > min_read_number
+
+class CIRCexplorer3KnownRecord(CIRCexplorer2KnownRecord):
+    """ CIRCexplorer3 """
+    def __init__(self, *args, fpb_circ:float, fpb_linear:float,
+            circ_score:float, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fpb_circ = fpb_circ
+        self.fpb_linear = fpb_linear
+        self.circ_score = circ_score
+
+    def is_valid(self, min_read_number: int, min_fbr_circ:float=None,
+            min_circ_score:float=None) -> bool:
+        """ Check if is valid """
+        #pylint: disable=W0221
+        if min_fbr_circ and self.fpb_circ < min_fbr_circ:
+            return False
+        if min_circ_score and self.circ_score < min_circ_score:
+            return False
+        return super().is_valid(min_read_number)
+
+
+CIRCexplorerKnownRecord = Union[CIRCexplorer2KnownRecord, CIRCexplorer3KnownRecord]
+
+def parse(path:Path, circ_explorer_3:bool=False
+        ) -> Iterable[CIRCexplorerKnownRecord]:
+    """ parse """
+    with open(path, 'rt') as handle:
+        for line in handle:
+            fields = line.rstrip().split('\t')
+            data = {
+                'chrom': fields[0],
+                'start': int(fields[1]),
+                'end': int(fields[2]),
+                'name': fields[3],
+                'score': float(fields[4]),
+                'strand': fields[5],
+                'thick_start': int(fields[6]),
+                'thick_end': int(fields[7]),
+                'item_rgb': [int(x) for x in fields[8].split(',')],
+                'exon_count': int(fields[9]),
+                'exon_sizes': [int(x) for x in fields[10].split(',')],
+                'exon_offsets': [int(x) for x in fields[11].split(',')],
+                'read_number': int(fields[12]),
+                'circ_type': fields[13],
+                'gene_name': fields[14],
+                'isoform_name': fields[15],
+                'index': [int(x) for x in fields[16].split(',')],
+                'flank_intron': fields[17]
+            }
+            if circ_explorer_3:
+                yield CIRCexplorer3KnownRecord(
+                    fpb_circ=float(fields[18]),
+                    fpb_linear=float(fields[19]),
+                    circ_score=float(fields[20]),
+                    **data
+                )
+            else:
+                yield CIRCexplorer2KnownRecord(**data)
