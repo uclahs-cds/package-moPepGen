@@ -37,7 +37,7 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--circexplorer3',
         action='store_true',
-        hel='Using circRNA resutls from CIRCexplorer3',
+        help='Using circRNA resutls from CIRCexplorer3',
         metavar=''
     )
     p.add_argument(
