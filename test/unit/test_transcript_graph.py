@@ -310,6 +310,76 @@ class TestTranscriptGraph(unittest.TestCase):
         ]
         graph = create_dgraph1(seq, variants)
 
+    def test_truncate_left_variant_right(self):
+        """ test truncate left when variant on the right"""
+        data = {
+            1: ('ATGG', [], []),
+            2: ('CCATG', [1], [(2, 'G', 'A', 'SNV', '')]),
+            3: ('CCCTG', [1], []),
+            4: ('CCCT', [2,3], [])
+        }
+        _, nodes = create_dgraph2(data)
+        left = nodes[2].truncate_left(2)
+        self.assertEqual(str(left.seq.seq),'CC')
+        self.assertEqual(len(left.variants), 0)
+        self.assertEqual(str(nodes[2].seq.seq),'ATG')
+        self.assertEqual(len(nodes[2].variants), 1)
+        self.assertEqual(nodes[2].variants[0].location.start, 0)
+        self.assertTrue(nodes[2].is_inbond_of(nodes[4]))
+        self.assertFalse(left.in_edges)
+        self.assertFalse(left.out_edges)
+
+    def test_truncate_left_variant_left(self):
+        """ test truncate left when variant on the left """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('CCATG', [1], [(2, 'G', 'A', 'SNV', '')]),
+            3: ('CCCTG', [1], []),
+            4: ('CCCT', [2,3], [])
+        }
+        _, nodes = create_dgraph2(data)
+        left = nodes[2].truncate_left(3)
+        self.assertEqual(str(left.seq.seq),'CCA')
+        self.assertEqual(len(left.variants), 1)
+        self.assertEqual(left.variants[0].location.start, 2)
+        self.assertEqual(str(nodes[2].seq.seq),'TG')
+        self.assertEqual(len(nodes[2].variants), 0)
+
+    def test_truncate_right_variant_left(self):
+        """ test truncate left when variant on the left """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('CCATG', [1], [(2, 'G', 'A', 'SNV', '')]),
+            3: ('CCCTG', [1], []),
+            4: ('CCCT', [2,3], [])
+        }
+        _, nodes = create_dgraph2(data)
+        right = nodes[2].truncate_right(3)
+        self.assertEqual(str(nodes[2].seq.seq),'CCA')
+        self.assertEqual(len(nodes[2].variants), 1)
+        self.assertEqual(nodes[2].variants[0].location.start, 2)
+        self.assertEqual(str(right.seq.seq),'TG')
+        self.assertEqual(len(right.variants), 0)
+        self.assertTrue(nodes[1].is_inbond_of(nodes[2]))
+        self.assertFalse(right.in_edges)
+        self.assertFalse(right.out_edges)
+
+    def test_truncate_right_variant_right(self):
+        """ test truncate left when variant on the right """
+        data = {
+            1: ('ATGG', [], []),
+            2: ('CCATG', [1], [(2, 'G', 'A', 'SNV', '')]),
+            3: ('CCCTG', [1], []),
+            4: ('CCCT', [2,3], [])
+        }
+        _, nodes = create_dgraph2(data)
+        right = nodes[2].truncate_right(2)
+        self.assertEqual(str(nodes[2].seq.seq),'CC')
+        self.assertEqual(len(nodes[2].variants), 0)
+        self.assertEqual(str(right.seq.seq),'ATG')
+        self.assertEqual(len(right.variants), 1)
+        self.assertEqual(right.variants[0].location.start, 0)
+
     def test_expand_alignments_case1(self):
         """ Variant alignments are expanded """
         seq = 'ATGGTCTGCCCTCTGAACTGA'
@@ -689,6 +759,44 @@ class TestTranscriptGraph(unittest.TestCase):
         for edge in graph.root.out_edges:
             self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
         self.assertEqual(len(graph.root.out_edges), 2)
+
+    def test_find_orf_unkonwn_frameshift(self):
+        r""" finding unkonwn ORF with framefhift mutations
+
+            GGCTGG-CGGTATGC-TGCT
+                  \         /
+                   C--------
+        """
+        data = {
+            0: ('GGCTGG', [], []),
+            1: ('C', [0], [(0, 'CGGTATGC', 'C', 'INDEL', '')]),
+            2: ('CGGTATGC', [0], []),
+            3: ('TGCT', [1,2], [])
+        }
+        graph, _ = create_dgraph2(data)
+        graph.add_null_root()
+        graph.find_orf_unknown()
+        for edge in graph.root.out_edges:
+            self.assertTrue(edge.out_node.seq.seq.startswith('ATG'))
+        self.assertEqual(len(graph.root.out_edges), 1)
+
+    def test_find_orf_unkonwn_after_mutation(self):
+        """ ORF after mutation """
+        var_1 = (0, 'CGG', 'C', 'INDEL', '', 0, 1)
+        var_2 = (0, 'ACC', 'A', 'INDEL', '', 6, 7)
+        data = {
+            0: ('GGCTGG', [], []),
+            1: ('CTCTGCA', [0], [var_1, var_2]),
+            2: ('CGGTCTGCACC', [0], []),
+            3: ('TGCT', [1,2], [])
+        }
+        graph,_ = create_dgraph2(data)
+        graph.add_null_root()
+        graph.find_orf_unknown()
+        self.assertEqual(len(graph.root.out_edges), 1)
+        orf = list(graph.root.out_edges)[0].out_node
+        self.assertEqual(len(orf.variants), 1)
+        self.assertEqual(list(orf.variants)[0].location.start, 0)
 
     def test_find_overlaps(self):
         r""" Correct farthest overlap node is found.

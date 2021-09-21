@@ -37,10 +37,10 @@ class PVGNode():
                 sequence does not have a confirmed stop codon.
         """
         self.seq = seq
-        self.variants = variants
-        self.in_nodes = set() if in_nodes is None else in_nodes
-        self.out_nodes = set() if out_nodes is None else out_nodes
-        self.frameshifts = set() if frameshifts is None else frameshifts
+        self.variants = variants or []
+        self.in_nodes = in_nodes or set()
+        self.out_nodes = out_nodes or set()
+        self.frameshifts = frameshifts or set ()
         self.cleavage = cleavage
         self.truncated = truncated
         self.orf = orf if orf is not None else [None, None]

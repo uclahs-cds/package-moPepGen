@@ -914,10 +914,13 @@ class TranscriptVariantGraph():
         else:
             nodes = self.merge_with_outbonds(node)
 
-        # this is when all variants at this positions are frameshifting
-        # downstream is None whtn there is a variant at the last nucleotide.
+        # this is when all variants at this positions are frameshifting, or
+        # downstream is None, or there is a variant at the last nucleotide.
         if downstream in nodes or downstream is None:
             for anode in nodes:
+                if any(v.variant.is_frameshifting() for v in anode.variants):
+                    if not anode.branch:
+                        anode = self.create_branch(anode)
                 if anode.branch:
                     branches.append(anode)
             return downstream, branches
@@ -930,7 +933,7 @@ class TranscriptVariantGraph():
             else:
                 self.update_frameshifts(anode)
                 anode = self.create_branch(anode)
-                anode.seq = anode.seq[index:]
+                anode.truncate_left(index)
                 anodes = self.merge_with_outbonds(anode)
                 if len(anodes) > 1:
                     raise ValueError('Multiple output nodes found.')
@@ -973,24 +976,28 @@ class TranscriptVariantGraph():
 
             node = cur.node
             index = node.seq.seq.find('ATG')
+
             if index == -1:
                 if not node.out_edges:
                     self.remove_node(node)
                     continue
-                node.seq = node.seq[-2:]
+                node.truncate_left(i=len(node.seq.seq)-2)
                 if len(node.out_edges) == 1:
                     nodes = self.merge_with_outbonds(node)
                     new_cursor = svgraph.TVGCursor(nodes[0])
                     queue.append(new_cursor)
                     continue
                 node = self.align_variants(node)
-                main, _ = self.skip_nodes_or_branch_out(node)
+                main, branches = self.skip_nodes_or_branch_out(node)
                 if main:
                     new_cursor = svgraph.TVGCursor(node=main)
                     queue.appendleft(new_cursor)
-                    continue
+                for branch in branches:
+                    new_cursor = svgraph.TVGCursor(branch, True)
+                    queue.appendleft(new_cursor)
+                continue
 
-            node.seq = node.seq[index:]
+            node.truncate_left(index)
             node_copy = self.copy_node(node)
             self.update_frameshifts(node_copy)
             self.create_branch(node_copy)
@@ -1035,7 +1042,7 @@ class TranscriptVariantGraph():
                     if not node.out_edges:
                         self.remove_node(node)
                         continue
-                    node.seq = node.seq[-2:]
+                    node.truncate_left(i=len(node.seq.seq)-2)
                     if len(node.out_edges) == 1:
                         nodes = self.merge_with_outbonds(node)
                         new_cursor = svgraph.TVGCursor(nodes[0], True)
@@ -1049,7 +1056,7 @@ class TranscriptVariantGraph():
                         new_cursor = svgraph.TVGCursor(branch, True)
                         queue.appendleft(new_cursor)
                 else:
-                    node.seq = node.seq[index:]
+                    node.truncate_left(index)
                 continue
 
             # back to the reference track
@@ -1060,7 +1067,7 @@ class TranscriptVariantGraph():
 
             if start_codon_index != -1:
                 cur_node = cur.node
-                cur_node.seq = cur_node.seq[start_codon_index:]
+                cur_node.truncate_left(start_codon_index)
                 while len(cur_node.seq) <= 2:
                     cur_node, branchs = self.prune_variants_or_branch_out(cur_node)
                     for branch in branchs:
@@ -1072,7 +1079,7 @@ class TranscriptVariantGraph():
                 self.remove_node(cur.node)
                 continue
 
-            cur.node.seq = cur.node.seq[-2:]
+            cur.node.truncate_left(i=len(cur.node.seq.seq)-2)
             main, branchs = self.prune_variants_or_branch_out(cur.node)
             new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
             queue.append(new_cursor)
@@ -1137,9 +1144,6 @@ class TranscriptVariantGraph():
                 node = self.align_variants(node, branch_out_size)
             branches = self.expand_alignments(node)
 
-            # if main:
-            #     new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
-            #     queue.appendleft(new_cursor)
             for branch in branches:
                 new_cursor = svgraph.TVGCursor(node=branch, search_orf=False)
                 queue.appendleft(new_cursor)
