@@ -43,7 +43,7 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--min-read-number',
         type=int,
-        help='Minimal number of junction read counts. Defaults to 2',
+        help='Minimal number of junction read counts. Defaults to 1',
         default=1,
         metavar=''
     )
