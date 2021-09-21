@@ -67,10 +67,10 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
                 _type=var_data[3],
                 _id=var_data[4]
             )
-            var_location = FeatureLocation(
-                start=var_data[0],
-                end=var_data[0] + len(var_data[1])
-            )
+            var_start = var_data[5] if len(var_data) >= 6 else var_data[0]
+            var_end = var_data[6] if len(var_data) >= 7 else \
+                    var_start + len(var_data[1])
+            var_location = FeatureLocation(start=var_start, end=var_end)
             variant = seqvar.VariantRecordWithCoordinate(
                 variant=var_record,
                 location=var_location

@@ -284,7 +284,9 @@ class TVGNode():
         return {node: downstream}
 
     def truncate_left(self, i:int) -> TVGNode:
-        """ Truncate the left i nucleotides off """
+        """ Truncate the left i nucleotides off. A new node with the left part
+        of the sequences and variants associated is returned. The self node
+        is updated with only the right part of the sequence and variants. """
         left_seq = self.seq[:i]
         left_variants = []
         right_variants = []
@@ -294,7 +296,7 @@ class TVGNode():
             if variant.location.start < i:
                 left_variants.append(variant)
             if variant.location.end > i:
-                right_variants.append(variant)
+                right_variants.append(variant.shift(-i))
                 if variant.location.start >= i and \
                         variant.variant.is_frameshifting():
                     left_frameshifts.remove(variant.variant)
@@ -313,7 +315,10 @@ class TVGNode():
         return left_node
 
     def truncate_right(self, i:int) -> TVGNode:
-        """ Truncate the right i nucltotide off """
+        """ Truncate the right i nucleotides off. A new node with the right
+        part of the sequences and variants associated is returned. The self
+        node is updated with only the left part of the sequence and variants.
+        """
         right_seq = self.seq[i:]
         left_variants = []
         right_variants = []
@@ -323,7 +328,7 @@ class TVGNode():
             if variant.location.start < i:
                 left_variants.append(variant)
             if variant.location.end > i:
-                right_variants.append(variant)
+                right_variants.append(variant.shift(-i))
                 if variant.location.start >= i and \
                         variant.variant.is_frameshifting():
                     self.frameshifts.remove(variant.variant)
