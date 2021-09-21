@@ -37,8 +37,7 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--circexplorer3',
         action='store_true',
-        help='Using circRNA resutls from CIRCexplorer3',
-        metavar=''
+        help='Using circRNA resutls from CIRCexplorer3'
     )
     p.add_argument(
         '--min-read-number',
