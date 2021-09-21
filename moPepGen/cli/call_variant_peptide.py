@@ -110,8 +110,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         for peptide in peptides:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
-        if verbose:
-            logger('circRNA processed')
+    if verbose:
+        logger('circRNA processed')
 
     variant_peptides.write(output_fasta)
 
