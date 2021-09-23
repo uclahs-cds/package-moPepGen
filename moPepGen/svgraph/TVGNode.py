@@ -319,7 +319,8 @@ class TVGNode():
         return {node: downstream}
 
     def get_orf_start(self, i:int=0) -> int:
-        """ """
+        """ Get the ORF start position given the start codon is found at
+        position i of the sequence. """
         if self.seq.locations:
             for loc in self.seq.locations:
                 if i < loc.query.start:

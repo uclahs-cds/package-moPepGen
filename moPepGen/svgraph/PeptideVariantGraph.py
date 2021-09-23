@@ -17,29 +17,33 @@ class PeptideVariantGraph():
         stop (svgraph.PVGNode): This node is added to the end of each
             branch of the graph to represent the end of the peptide sequence.
             The sequence of this node is '*'
+        id (str): The ID of the transcript. For circRNA, this could be the
+            circRNA ID.
+        has_known_orf (bool): Whether the given transcript has any known
+            ORF. If this is a noncoding transcript, 3-frame searching is
+            performed.
         rule (str): The rule for enzymatic cleavage, e.g., trypsin.
         exception (str): The exception for cleavage rule.
+        orfs (set): A set of all unique ORF start positions.
+        reading_frames (List[PVGNode]): The 3 reading frames, each being the
+            start node or None if not avaialable.
         orf_id_map (Dict[int, str]): An ID map of ORF IDs from ORF start
             position.
     """
-    def __init__(self, root:svgraph.PVGNode, _id:str, has_known_orf:bool=None):
-        """ Construct a PeptideVariantGraph.
-
-        Args:
-            root (svgraph.PVGNode): The root node of the graph.
-        """
+    def __init__(self, root:svgraph.PVGNode, _id:str, has_known_orf:bool=None,
+            rule:str=None, exception:str=None, orfs:Set[int]=None,
+            reading_frames:List[svgraph.PVGNode]=None,
+            orf_id_map:Dict[int,str]=None):
+        """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
         self.has_known_orf = has_known_orf
         self.stop = svgraph.PVGNode(aa.AminoAcidSeqRecord(Seq('*')))
-        self.rule = None
-        self.exception = None
-        self.orfs = set()
-        self.reading_frames = [None, None, None]
-        # The id_counter is used to keep track on the number of peptides that
-        # share the same description. The number is then appended to the
-        # description in the FASTA.
-        self.orf_id_map = {}
+        self.rule = rule
+        self.exception = exception
+        self.orfs = orfs or set()
+        self.reading_frames = reading_frames or [None, None, None]
+        self.orf_id_map = orf_id_map or {}
 
     def add_stop(self, node:svgraph.PVGNode):
         """ Add the stop node after the specified node. """
@@ -463,22 +467,23 @@ class PeptideVariantGraph():
                 queue.appendleft(right)
 
     def init_orfs(self) -> None:
-        """ Init ORFs """
+        """ Init the orfs list with all existing orfs. """
         self.orfs = {node.orf[0] for node in self.root.out_nodes}
 
     def update_orf(self, node:svgraph.PVGNode) -> None:
-        """ add ORF ID """
+        """ Update the orf list with the orf start position of the given node.
+        """
         self.orfs.add(node.orf[0])
 
     def create_orf_id_map(self) -> None:
-        """"""
+        """ Creates and map for ORF start site and its ID (ORF1, ORF2, etc) """
         orfs = list(self.orfs)
         orfs.sort()
         self.orf_id_map = {v:f"ORF{i+1}" for i,v in enumerate(orfs)}
 
 
     def call_variant_peptides(self, miscleavage:int=2, check_variants:bool=True,
-            check_orf:bool=False, keep_all_labels:bool=True
+            check_orf:bool=False, keep_all_occurrence:bool=True
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
@@ -489,6 +494,8 @@ class PeptideVariantGraph():
                 are reported.
             check_orf (bool): When true, the ORF ID will be added to the
                 variant peptide label.
+            keep_all_occurrence: Whether to keep all occurance of the peptide
+                within the graph/transcript.
 
         Return:
             A set of aa.AminoAcidSeqRecord.
@@ -594,5 +601,5 @@ class PeptideVariantGraph():
             self.create_orf_id_map()
 
         return peptide_pool.get_peptide_sequences(
-            keep_all_labels=keep_all_labels, orf_id_map=self.orf_id_map
+            keep_all_occurrence=keep_all_occurrence, orf_id_map=self.orf_id_map
         )

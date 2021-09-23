@@ -1,6 +1,5 @@
 """ Module for calling noncoding peptide """
 from __future__ import annotations
-import copy
 from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path
 import pkg_resources

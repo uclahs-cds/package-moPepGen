@@ -1,7 +1,6 @@
 """ Module for cursor for codon finding """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from moPepGen.svgraph.PVGNode import PVGNode
 
 
 if TYPE_CHECKING:

@@ -1,18 +1,15 @@
-""" Module for miscleaved nodes """
+""" Module for variant peptide dict """
 from __future__ import annotations
 from collections import deque
 import copy
-from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord, AminoAcidSeqRecordWithCoordinates
-from typing import Deque, Dict, Iterable, List, Set, TYPE_CHECKING, Tuple
+from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from moPepGen import aa, get_equivalent
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.aa.VariantPeptideIdentifier import create_variant_peptide_id
 
 
 if TYPE_CHECKING:
-    from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
-    from moPepGen.seqvar.VariantRecord import \
-        VariantRecord
+    from moPepGen.seqvar.VariantRecord import VariantRecord
 
 class MiscleavedNodes():
     """ Helper class for looking for peptides with miscleavages """
@@ -82,7 +79,7 @@ class MiscleavedNodes():
         return nodes
 
     def join_miscleaved_peptides(self, check_variants:bool
-            ) -> Iterable[Tuple[AminoAcidSeqRecord, VariantPeptideMetadata]]:
+            ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
         Args:
@@ -168,16 +165,37 @@ class VariantPeptideMetadata():
 T = Dict[aa.AminoAcidSeqRecord, Set[VariantPeptideMetadata]]
 
 class VariantPeptideDict():
-    """ Variant peptide pool as dict """
+    """ Variant peptide pool as dict.
+
+    Attributes:
+        tx_id (str): Transcript ID.
+        peptides (Dict[aa.AminoAcidSeqRecord, Set[VariantPeptideMetadata]]):
+            The peptide data pool, with keys being the AminoAcidRecord, and
+            values being set of VariantPeptdieMetadata (variants and ORF).
+        labels (Dict[str,int]): Label counter, as a dict with key being the
+            variant piptide label, and values being the number of occurrence
+            of this lable.
+    """
     def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None):
-        """ """
+        """ constructor """
         self.tx_id = tx_id
         self.peptides = peptides or {}
         self.labels = labels or {}
 
     def add_miscleaved_sequences(self, node:PVGNode, miscleavage:int,
             check_variants:bool, has_known_orf:bool):
-        """ """
+        """ Add amino acid sequences starting from the given node, with number
+        of miscleavages no more than a given number. The sequences being added
+        are the sequence of the current node, and plus n of downstream nodes,
+        with n ranges from 1 to miscleavages.
+
+        Args:
+            node (PVGNode): The start node.
+            miscleavage (int): Number of miscleavage to allow.
+            check_variants (bool): Whether to check variants.
+            has_known_orf (bool): Whether has known ORF. False for noncoding
+                genes/transcripts.
+        """
         if has_known_orf:
             miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
                 node=node, miscleavage=miscleavage
@@ -192,10 +210,17 @@ class VariantPeptideDict():
             val = self.peptides.setdefault(seq, set())
             val.add(metadata)
 
-    def get_peptide_sequences(self, keep_all_labels:bool=True,
-            orf_id_map:Dict[int,str]=None) -> Set[AminoAcidSeqRecord]:
-        """ """
-        peptide_pool:Set[AminoAcidSeqRecord] = set()
+    def get_peptide_sequences(self, keep_all_occurrence:bool=True,
+            orf_id_map:Dict[int,str]=None) -> Set[aa.AminoAcidSeqRecord]:
+        """ Get the peptide sequence and check for miscleavages.
+
+        Args:
+            keep_all_occurrence (bool): Whether to keep all occurance of the
+                peptide within the graph/transcript.
+            orf_id_map (Dict[int, str]): An ID map of ORF IDs from ORF start
+                position.
+        """
+        peptide_pool:Set[aa.AminoAcidSeqRecord] = set()
 
         for seq, metadatas in self.peptides.items():
             labels = []
@@ -216,7 +241,7 @@ class VariantPeptideDict():
                 label += f"|{self.labels[label]}"
                 labels.append(label)
 
-                if not keep_all_labels:
+                if not keep_all_occurrence:
                     break
             seq.description = " ".join(labels)
             seq.id = seq.description

@@ -1,14 +1,13 @@
 """ DNASeqRecord """
 from __future__ import annotations
-from moPepGen.seqvar.io import iterate
-from typing import Dict, Iterable, List
+import copy
+from typing import Iterable, List
 import re
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-import copy
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen.aa.expasy_rules import EXPASY_RULES
-from moPepGen import aa, dna
+from moPepGen import aa
 
 
 class DNASeqRecord(SeqRecord):
@@ -52,8 +51,8 @@ class DNASeqRecord(SeqRecord):
         """ find start codon index """
         return self.seq.find('ATG')
 
-    def iter_start_codon(self) -> Iterable(int):
-        """ """
+    def iter_start_codon(self) -> Iterable[int]:
+        """ Create iterators of start codon positions. """
         for it in re.finditer('ATG', str(self.seq)):
             yield it.start()
 

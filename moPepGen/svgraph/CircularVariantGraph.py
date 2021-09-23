@@ -3,7 +3,6 @@
 from __future__ import annotations
 from typing import Union, List, Deque, Tuple, Dict, TYPE_CHECKING
 import copy
-import re
 from collections import deque
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import svgraph, seqvar
