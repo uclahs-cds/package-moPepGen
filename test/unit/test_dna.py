@@ -2,7 +2,7 @@
 import unittest
 from Bio.Seq import Seq
 from moPepGen import dna
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
 
 SEQ = 'CCCTACTGGTCCTTCTGCCTTAGCCACAGGTTCTGAAACCAAAGCAAAACCACCAGAGAG' +\
@@ -51,7 +51,7 @@ class TestDNASeqWithCoordinates(unittest.TestCase):
     """ Test case for moPepGen.dna.DNASeqRecordWithCoordinates """
     def test_get_item_case(self):
         """ test __getitem__ """
-        location = dna.MatchedLocation(
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=20),
             ref=FeatureLocation(start=0, end=20)
         )
@@ -75,7 +75,7 @@ class TestDNASeqWithCoordinates(unittest.TestCase):
 
     def test_add(self):
         """ test __add__ """
-        location = dna.MatchedLocation(
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=10),
             ref=FeatureLocation(start=0, end=10)
         )
@@ -83,7 +83,7 @@ class TestDNASeqWithCoordinates(unittest.TestCase):
             seq=Seq('CCCTACTGGT'),
             locations=[location]
         )
-        location = dna.MatchedLocation(
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=10),
             ref=FeatureLocation(start=20, end=30)
         )
@@ -105,7 +105,7 @@ class TestDNASeqWithCoordinates(unittest.TestCase):
 
     def test_get_query_index(self):
         """ Test the correct query index is returned. """
-        location = dna.MatchedLocation(
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=20),
             ref=FeatureLocation(start=101, end=121)
         )

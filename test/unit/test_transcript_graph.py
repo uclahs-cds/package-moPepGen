@@ -967,6 +967,8 @@ class TestTranscriptGraph(unittest.TestCase):
             (4, 5, 'T', 'A', 'SNV', '4:T-A')
         ]
         graph = create_dgraph1(seq, variants)
+        graph.add_null_root()
+        graph.find_orf_known()
         graph.fit_into_codons()
         pgraph = graph.translate()
         self.assertIsInstance(pgraph, svgraph.PeptideVariantGraph)

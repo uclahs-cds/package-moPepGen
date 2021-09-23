@@ -6,11 +6,11 @@ from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import aa, svgraph, seqvar
 
 
-def create_pgraph(data:dict, _id:str
+def create_pgraph(data:dict, _id:str, has_known_orf:bool=True
         ) -> Tuple[svgraph.PeptideVariantGraph,Dict[int, svgraph.PVGNode]]:
     """ Create a peptide variant graph from data """
     root = svgraph.PVGNode(None)
-    graph = svgraph.PeptideVariantGraph(root, _id)
+    graph = svgraph.PeptideVariantGraph(root, _id, has_known_orf)
     node_list = {0: root}
     for key, val in data.items():
         seq = aa.AminoAcidSeqRecord(
@@ -42,6 +42,8 @@ def create_pgraph(data:dict, _id:str
         node = svgraph.PVGNode(seq, variants, frameshifts=frameshifts)
         if len(val) >= 4:
             node.orf = val[3]
+        else:
+            node.orf = [0, None]
         node_list[key] = node
         for in_node_key in val[1]:
             node_list[in_node_key].add_out_edge(node)

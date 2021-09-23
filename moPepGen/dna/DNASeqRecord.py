@@ -1,10 +1,12 @@
 """ DNASeqRecord """
 from __future__ import annotations
-from typing import Iterable, List
+from moPepGen.seqvar.io import iterate
+from typing import Dict, Iterable, List
 import re
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from moPepGen.SeqFeature import FeatureLocation
+import copy
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen import aa, dna
 
@@ -45,6 +47,15 @@ class DNASeqRecord(SeqRecord):
         )
         seq.__class__ = self.__class__
         return seq
+
+    def find_start_codon(self) -> int:
+        """ find start codon index """
+        return self.seq.find('ATG')
+
+    def iter_start_codon(self) -> Iterable(int):
+        """ """
+        for it in re.finditer('ATG', str(self.seq)):
+            yield it.start()
 
     def find_stop_codon(self, start:int=0) -> int:
         """ Find and return the stop codon.
@@ -248,17 +259,17 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
 
     Attributes:
         seq (Seq): The DNA sequence.
-        locations (List[dna.MatchedLocation]): The locations where this
+        locations (List[MatchedLocation]): The locations where this
             sequence is aligned tp.
         orf (FeatureLocation): The open reading frame start and end.
     """
-    def __init__(self, seq:Seq, locations:List[dna.MatchedLocation],
+    def __init__(self, seq:Seq, locations:List[MatchedLocation],
             *args, orf:FeatureLocation=None, **kwargs, ):
         """ Constract a DNASeqRecordWithCoordinates object.
 
         Args:
             seq (Seq): The DNA sequence.
-            locations (List[dna.MatchedLocation]): The locations where this
+            locations (List[MatchedLocation]): The locations where this
                 sequence is aligned tp.
             orf (FeatureLocation): The open reading frame start and end.
         """
@@ -272,8 +283,19 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
         """ add operation """
         new = super().__add__(other)
         new.__class__ = DNASeqRecordWithCoordinates
-        new.locations = self.locations + \
-            [location.shift(len(self)) for location in other.locations]
+        left_locs = copy.copy(self.locations)
+        right_locs = copy.copy(other.locations)
+        if left_locs and right_locs:
+            lhs = self.locations[-1]
+            rhs = other.locations[0].shift(len(self))
+            if lhs.ref.end == rhs.ref.start and lhs.query.end == rhs.query.start:
+                query = FeatureLocation(start=lhs.query.start, end=rhs.query.end)
+                ref = FeatureLocation(start=lhs.ref.start, end=rhs.ref.end)
+                new_loc = MatchedLocation(query=query, ref=ref)
+                left_locs.pop(-1)
+                right_locs[0] = new_loc
+
+        new.locations = left_locs + [loc.shift(len(self)) for loc in right_locs]
         new.orf = self.orf
         return new
 

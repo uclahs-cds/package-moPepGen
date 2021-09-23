@@ -133,7 +133,8 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
         _id=tx_id,
-        cds_start_nf=cds_start_nf
+        cds_start_nf=cds_start_nf,
+        has_known_orf=tx_model.is_protein_coding()
     )
 
     ## Create transcript variant graph

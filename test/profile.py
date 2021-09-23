@@ -3,7 +3,7 @@ import pathlib
 from Bio import SeqIO
 from moPepGen import dna, aa, svgraph, seqvar
 from moPepGen.gtf import GenomicAnnotation
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
 
 def run_task():
@@ -19,7 +19,7 @@ def run_task():
     transcript_seq = None
     for transcript_seq in SeqIO.parse(f'{file_dir}/transcript.fasta', 'fasta'):
         transcript_seq.__class__ = dna.DNASeqRecordWithCoordinates
-        location = dna.MatchedLocation(
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=len(transcript_seq)),
             ref=FeatureLocation(start=0, end=len(transcript_seq))
         )
