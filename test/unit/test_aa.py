@@ -141,3 +141,9 @@ class TestCaseVariantPeptidePool(unittest.TestCase):
             if str(seq.seq) == peptide_data[-1][0]:
                 expected = f'{peptide_data[0][1]} {peptide_data[-1][1]}'
                 self.assertEqual(seq.description, expected)
+
+class TestCaseAminoAcidSeqRecordWithCoordinates(unittest.TestCase):
+    """ Test cases for AminoAcidSeqRecordWithCoordinates """
+    def test_add(self):
+        """ test add """
+
