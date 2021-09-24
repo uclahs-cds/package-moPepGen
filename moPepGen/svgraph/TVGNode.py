@@ -98,6 +98,10 @@ class TVGNode():
         or outbonding edge. """
         return (not self.in_edges) and (not self.out_edges)
 
+    def is_reference(self) -> bool:
+        """ check if it is reference (no variants) """
+        return not self.variants and not self.frameshifts
+
     def is_exclusively_outbond_of(self, other:svgraph.TVGNode) -> bool:
         """ Checks if the node is exclusively outbond with the other.
         Exclusive binding means the upstream node has only 1 outbond edge,

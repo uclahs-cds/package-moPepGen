@@ -217,19 +217,23 @@ def create_dna_record_dict(data:dict) -> dna.DNASeqDict:
         genome[key] = dna.DNASeqRecord(Seq(val))
     return genome
 
-def create_dna_seq_with_coordinates(seq, start=None, end=None):
-    """ Create a dna.DNASeqRecordWithCoordinates instance """
-    if not start:
-        start = 0
-    if not end:
-        end = len(seq)
-    location = MatchedLocation(
-        query=FeatureLocation(start=0, end=len(seq)),
-        ref=FeatureLocation(start=start, end=end)
-    )
-    return dna.DNASeqRecordWithCoordinates(seq=Seq(seq), locations=[location])
-
 T = List[Tuple[Tuple[int,int], Tuple[int,int]]]
+def create_dna_seq_with_coordinates(seq, locations=T, orf=Tuple[int,int]
+        ) -> dna.DNASeqRecordWithCoordinates:
+    """ Create a dna.DNASeqRecordWithCoordinates instance """
+    locs = []
+    for (a,b),(c,d) in locations:
+        loc = MatchedLocation(
+            query=FeatureLocation(start=a, end=b),
+            ref=FeatureLocation(start=c, end=d)
+        )
+        locs.append(loc)
+    return dna.DNASeqRecordWithCoordinates(
+        seq=Seq(seq),
+        locations=locs,
+        orf=orf
+    )
+
 def create_aa_seq_with_coodinates(seq:str, locations=T, orf=Tuple[int,int]
         ) -> AminoAcidSeqRecordWithCoordinates:
     """ creat amino acid sequence with coordinates """

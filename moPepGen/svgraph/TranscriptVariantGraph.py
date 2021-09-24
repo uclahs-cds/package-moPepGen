@@ -921,8 +921,9 @@ class TranscriptVariantGraph():
 
     def skip_nodes_or_branch_out(self, node:svgraph.TVGNode, is_root:bool=False
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
-        """ For a given reference node, remove it and the downstream nodes if
-        no start codon was found. Branch out frameshifting variants.
+        """ For a given reference node, remove it if no start codon is found.
+        Its outbond nodes are also removed if no start codon is found on them.
+        Branch out frameshifting variants.
         """
         branches = []
         upstream_edges = copy.copy(node.in_edges)
@@ -977,7 +978,8 @@ class TranscriptVariantGraph():
 
         while queue:
             cur = queue.pop()
-            if all(frame for frame in self.reading_frames):
+            if cur.node.is_reference() and \
+                    all(frame for frame in self.reading_frames):
                 if self.root.is_inbond_of(cur.node):
                     self.remove_node(cur.node)
                 continue
@@ -1022,18 +1024,22 @@ class TranscriptVariantGraph():
             orf_start = node.get_orf_start(index)
             orf_id = orf_start % 3
 
-            if self.reading_frames[orf_id]:
-                node.truncate_left(3)
-                new_cursor = TVGCursor(node)
-                queue.appendleft(new_cursor)
-                continue
+            if cur.node.is_reference():
+                if self.reading_frames[orf_id]:
+                    node.truncate_left(3)
+                    new_cursor = TVGCursor(node)
+                    queue.appendleft(new_cursor)
+                    continue
 
             orf = [orf_start, None]
             node.truncate_left(index)
             node_copy = self.copy_node(node)
             self.update_frameshifts(node_copy)
             node_copy = self.create_branch(node_copy)
-            self.reading_frames[orf_id] = node_copy
+
+            if cur.node.is_reference:
+                self.reading_frames[orf_id] = node_copy
+
             node_copy.orf = orf
 
             node.truncate_left(3)
