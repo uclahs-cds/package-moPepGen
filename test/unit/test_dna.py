@@ -1,9 +1,9 @@
 """ Test the modules that handles the DNA sequences """
 import unittest
+from test.unit import create_dna_seq_with_coordinates
 from Bio.Seq import Seq
 from moPepGen import dna
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from test.unit import create_dna_seq_with_coordinates
 
 
 SEQ = 'CCCTACTGGTCCTTCTGCCTTAGCCACAGGTTCTGAAACCAAAGCAAAACCACCAGAGAG' +\
