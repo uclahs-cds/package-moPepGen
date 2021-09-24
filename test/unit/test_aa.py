@@ -1,6 +1,7 @@
 """ Test module for amino acids """
 import unittest
-from test.unit import create_aa_record, create_genomic_annotation
+from test.unit import create_aa_record, create_genomic_annotation, \
+    create_aa_seq_with_coodinates
 from Bio.Seq import Seq
 from moPepGen import aa
 
@@ -146,4 +147,52 @@ class TestCaseAminoAcidSeqRecordWithCoordinates(unittest.TestCase):
     """ Test cases for AminoAcidSeqRecordWithCoordinates """
     def test_add(self):
         """ test add """
+        loc1 = [((0,4),(0,4))]
+        loc2 = [((0,4),(4,8))]
+        seq1 = create_aa_seq_with_coodinates('SSSR', loc1, (0,None))
+        seq2 = create_aa_seq_with_coodinates('SSSF', loc2, (0,None))
+        seq = seq1 + seq2
+        self.assertEqual(str(seq.seq), 'SSSRSSSF')
+        received = {((int(x.query.start), int(x.query.end)), \
+            (int(x.ref.start), int(x.ref.end))) for x in seq.locations}
+        expected = {((0,8),(0,8))}
+        self.assertEqual(received, expected)
 
+    def test_getitem(self):
+        """ test getitem """
+        loc1 = [((0,4),(0,4))]
+        seq1 = create_aa_seq_with_coodinates('SSSR', loc1, (0,None))
+        seq = seq1[1:3]
+        self.assertEqual(str(seq.seq), 'SS')
+        self.assertEqual(len(seq.locations), 1)
+        self.assertEqual(seq.locations[0].query.start, 0)
+        self.assertEqual(seq.locations[0].query.end, 2)
+        self.assertEqual(seq.locations[0].ref.start, 1)
+        self.assertEqual(seq.locations[0].ref.end, 3)
+
+        loc1 = [((0,4),(0,4)), ((5,8), (5,8))]
+        seq1 = create_aa_seq_with_coodinates('SSSRSSSG', loc1, (0,None))
+        seq = seq1[3:7]
+        self.assertEqual(len(seq.locations), 2)
+        self.assertEqual(seq.locations[0].query.start, 0)
+        self.assertEqual(seq.locations[0].query.end, 1)
+        self.assertEqual(seq.locations[0].ref.start, 3)
+        self.assertEqual(seq.locations[0].ref.end, 4)
+        self.assertEqual(seq.locations[1].query.start, 2)
+        self.assertEqual(seq.locations[1].query.end, 4)
+        self.assertEqual(seq.locations[1].ref.start, 5)
+        self.assertEqual(seq.locations[1].ref.end, 7)
+
+        seq = seq1[4:7]
+        self.assertEqual(len(seq.locations), 1)
+        self.assertEqual(seq.locations[0].query.start, 1)
+        self.assertEqual(seq.locations[0].query.end, 3)
+        self.assertEqual(seq.locations[0].ref.start, 5)
+        self.assertEqual(seq.locations[0].ref.end, 7)
+
+        seq = seq1[2:5]
+        self.assertEqual(len(seq.locations), 1)
+        self.assertEqual(seq.locations[0].query.start, 0)
+        self.assertEqual(seq.locations[0].query.end, 2)
+        self.assertEqual(seq.locations[0].ref.start, 2)
+        self.assertEqual(seq.locations[0].ref.end, 4)

@@ -1,4 +1,5 @@
 """ Test module for moPepGen """
+from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecordWithCoordinates
 from typing import Dict, List, Tuple, Union
 import copy
 from pathlib import Path
@@ -227,6 +228,23 @@ def create_dna_seq_with_coordinates(seq, start=None, end=None):
         ref=FeatureLocation(start=start, end=end)
     )
     return dna.DNASeqRecordWithCoordinates(seq=Seq(seq), locations=[location])
+
+T = List[Tuple[Tuple[int,int], Tuple[int,int]]]
+def create_aa_seq_with_coodinates(seq:str, locations=T, orf=Tuple[int,int]
+        ) -> AminoAcidSeqRecordWithCoordinates:
+    """ creat amino acid sequence with coordinates """
+    locs = []
+    for (a,b),(c,d) in locations:
+        loc = MatchedLocation(
+            query=FeatureLocation(start=a, end=b),
+            ref=FeatureLocation(start=c, end=d)
+        )
+        locs.append(loc)
+    return AminoAcidSeqRecordWithCoordinates(
+        seq=Seq(seq),
+        locations=locs,
+        orf=orf
+    )
 
 def create_aa_record(seq:str, description:str):
     """ Create a AminoAcidSeqRecord """

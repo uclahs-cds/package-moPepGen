@@ -240,8 +240,8 @@ class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
                 query = FeatureLocation(start=lhs.query.start, end=rhs.query.end)
                 ref = FeatureLocation(start=lhs.ref.start, end=rhs.ref.end)
                 new_loc = MatchedLocation(query=query, ref=ref)
-                left_locs.pop(-1)
-                right_locs[0] = new_loc
+                right_locs.pop(0)
+                left_locs[-1] = new_loc
 
         new.locations = left_locs + [loc.shift(len(self)) for loc in right_locs]
         new.orf = self.orf
@@ -258,9 +258,9 @@ class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
             for location in self.locations:
                 lhs = location.query.start
                 rhs = location.query.end
-                if rhs < start:
+                if rhs <= start:
                     continue
-                if lhs > stop:
+                if lhs >= stop:
                     break
                 if lhs <= start:
                     if rhs <= stop:
