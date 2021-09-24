@@ -540,18 +540,17 @@ class PeptideVariantGraph():
             start_index = cur.seq.seq.find('M')
             if in_cds and stop_index == -1:
                 node_list.append(cur)
-            orf = cur.orf
+            if in_cds and stop_index > -1:
+                cur_copy = cur.copy()
+                cur_copy.truncate_right(stop_index)
+                cur_copy.remove_out_edges()
+                node_list.append(cur_copy)
+                trash.add(cur_copy)
+                if stop_index > start_index:
+                    in_cds = False
+                    orf = [None, None]
             last_stop_index, last_start_index = None, None
             while stop_index > -1 or start_index > -1:
-                if stop_index > -1 and stop_index != last_stop_index:
-                    if stop_index > start_index:
-                        in_cds = False
-                        orf = [None, None]
-                    cur_copy = cur.copy()
-                    cur_copy.truncate_right(stop_index)
-                    cur_copy.remove_out_edges()
-                    node_list.append(cur_copy)
-                    trash.add(cur_copy)
                 if 0 < start_index < stop_index and \
                         (start_index != last_start_index or \
                         stop_index != last_stop_index):

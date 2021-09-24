@@ -58,7 +58,7 @@ class PVGNode():
         for variant in self.variants:
             if variant.location.overlaps(location):
                 variants.append(variant.shift(-start))
-            elif variant.location.start >= stop and variant.varint in frameshifts:
+            elif variant.location.start >= stop and variant.variant in frameshifts:
                 frameshifts.remove(variant.variant)
         return PVGNode(
             seq=seq,

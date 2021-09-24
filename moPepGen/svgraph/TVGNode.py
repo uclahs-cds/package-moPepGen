@@ -1,5 +1,6 @@
 """ Module for TVGNode class """
 from __future__ import annotations
+from moPepGen.seqvar import VariantRecord
 from typing import List, Set, Tuple, Dict, Deque
 import copy
 from collections import deque
@@ -100,7 +101,37 @@ class TVGNode():
 
     def is_reference(self) -> bool:
         """ check if it is reference (no variants) """
-        return not self.variants and not self.frameshifts
+        return not self.variants
+
+    def should_skip_frameshift(self, dist:int=60, n:int=3) -> bool:
+        """ checks if the node is frameshifting and should be skipped """
+        my_frameshifts:List[VariantRecord] = []
+        for v in self.variants:
+            if v.variant.is_frameshifting():
+                my_frameshifts.append(v.variant)
+        if not my_frameshifts:
+            return False
+
+        if len(self.frameshifts) > n:
+            return True
+
+        my_frameshifts.sort()
+        this_frameshift = my_frameshifts[0]
+
+        upstream_frameshifts:List[VariantRecord] = []
+        for v in self.frameshifts:
+            if v not in my_frameshifts:
+                upstream_frameshifts.append(v)
+        if not upstream_frameshifts:
+            return False
+        last_frameshift = upstream_frameshifts[-1]
+
+        n_shifted = sum([it.frames_shifted() for it in upstream_frameshifts])
+        if n_shifted % 3 != 0:
+            return False
+
+        dist = this_frameshift.location.start - last_frameshift.location.end
+        return dist >= dist
 
     def is_exclusively_outbond_of(self, other:svgraph.TVGNode) -> bool:
         """ Checks if the node is exclusively outbond with the other.

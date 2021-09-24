@@ -602,11 +602,15 @@ class TranscriptVariantGraph():
             cur = next_node
         return end_nodes
 
-    def branch_out_frameshifts_in_alignments(self, upstream:svgraph.TVGNode,
-            branch_out_size:int=100) -> List[svgraph.TVGNode]:
+    def branch_or_skip_frameshifts(self, upstream:svgraph.TVGNode,
+            branch_out_size:int=100, max_frameshift_dist:int=60,
+            max_frameshift_num:int=3
+            ) -> List[svgraph.TVGNode]:
         """ Create a branch for any frameshifting mutation within the active
         region. If the created branch also has frameshifting mutations within
         its active region, they will be further branched out, too. """
+        dist = max_frameshift_dist
+        num = max_frameshift_num
         start_node = upstream
         main_end_node = upstream.find_farthest_node_with_overlap()
         node_to_branch = start_node.next_node_to_branch_out(
@@ -616,11 +620,14 @@ class TranscriptVariantGraph():
         end_nodes = []
         while node_to_branch:
             self.update_frameshifts(node_to_branch)
-            branched_node = self.create_branch(node_to_branch)
-
-            branch_ends = self.branch_out_frameshifts_in_alignments(
-                branched_node, branch_out_size)
-            end_nodes.extend(branch_ends)
+            if node_to_branch.should_skip_frameshift(dist, num):
+                self.remove_node(node_to_branch)
+            else:
+                branched_node = self.create_branch(node_to_branch)
+                self.update_frameshifts(branched_node)
+                branch_ends = self.branch_or_skip_frameshifts(
+                    branched_node, branch_out_size, dist, num)
+                end_nodes.extend(branch_ends)
 
             main_end_node = upstream.find_farthest_node_with_overlap()
             node_to_branch = start_node.next_node_to_branch_out(
@@ -634,8 +641,8 @@ class TranscriptVariantGraph():
         return end_nodes
 
     def align_variants(self, node:svgraph.TVGNode, branch_out_size:int=100,
-            branch_out_frameshifting:bool=True
-            ) -> svgraph.TVGNode:
+            branch_out_frameshifting:bool=True, max_frameshift_dist:int=60,
+            max_frameshift_num:int=3) -> svgraph.TVGNode:
         r""" Aligns all variants at that overlaps to the same start and end
         position. Frameshifting mutations will be brached out
 
@@ -658,8 +665,8 @@ class TranscriptVariantGraph():
         """
         start_node = node
         if branch_out_frameshifting:
-            end_nodes = self.branch_out_frameshifts_in_alignments(node,
-                branch_out_size)
+            end_nodes = self.branch_or_skip_frameshifts(node,
+                branch_out_size, max_frameshift_dist, max_frameshift_num)
         else:
             end_nodes = [node.find_farthest_node_with_overlap()]
 
@@ -1026,7 +1033,7 @@ class TranscriptVariantGraph():
 
             if cur.node.is_reference():
                 if self.reading_frames[orf_id]:
-                    node.truncate_left(3)
+                    node.truncate_left(index + 3)
                     new_cursor = TVGCursor(node)
                     queue.appendleft(new_cursor)
                     continue
@@ -1037,7 +1044,7 @@ class TranscriptVariantGraph():
             self.update_frameshifts(node_copy)
             node_copy = self.create_branch(node_copy)
 
-            if cur.node.is_reference:
+            if cur.node.is_reference():
                 self.reading_frames[orf_id] = node_copy
 
             node_copy.orf = orf
@@ -1140,7 +1147,8 @@ class TranscriptVariantGraph():
         else:
             self.find_orf_unknown()
 
-    def fit_into_codons(self, branch_out_size:int=100) -> None:
+    def fit_into_codons(self, max_frameshift_dist:int=75,
+            max_frameshift_num:int=3, branch_out_size:int=100) -> None:
         r""" This takes the variant graph, and fit all cleave sites into the
         range of codons. For frameshifting mutations, the downstream part
         will be branched out.
@@ -1183,7 +1191,9 @@ class TranscriptVariantGraph():
                 continue
 
             if len(node.out_edges) > 1:
-                node = self.align_variants(node, branch_out_size)
+                node = self.align_variants(node, branch_out_size,
+                    max_frameshift_dist=max_frameshift_dist,
+                    max_frameshift_num=max_frameshift_num)
             branches = self.expand_alignments(node)
 
             for branch in branches:
