@@ -39,6 +39,20 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         metavar='',
         required=True
     )
+    p.add_argument(
+        '--max-frameshift-dist',
+        type=int,
+        help='Max distance between a frameshift mutation and its previous one '
+        'if the combination of upstream frameshift mutations gets back to the'
+        'original reading frame.',
+        default=75
+    )
+    p.add_argument(
+        '--max-frameshift-num',
+        type=int,
+        help='Max number of frameshift mutations allowed together.',
+        default=3
+    )
 
     add_args_reference(p)
     add_args_cleavage(p)
@@ -58,6 +72,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     min_length:int = args.min_length
     max_length:int = args.max_length
+    max_frameshift_dist:int = args.max_frameshift_dist
+    max_frameshift_num:int = args.max_frameshift_num
 
     print_start_message(args)
 
@@ -89,7 +105,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
         try:
             peptides = call_peptide_main(variant_pool, tx_id, anno,
-                genome, rule, exception, miscleavage)
+                genome, rule, exception, miscleavage, max_frameshift_dist,
+                max_frameshift_num)
         except:
             logger(f'Exception raised from {tx_id}')
             raise
@@ -105,7 +122,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     for circ_rna in circ_rna_pool:
         peptides = call_peptide_circ_rna(circ_rna, anno, genome,
-            variant_pool, rule, exception, miscleavage)
+            variant_pool, rule, exception, miscleavage, max_frameshift_dist,
+            max_frameshift_num)
 
         for peptide in peptides:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
@@ -120,8 +138,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
 def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
         tx_id:str, anno:gtf.GenomicAnnotation,
-        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int
-        ) -> Set[aa.AminoAcidSeqRecord]:
+        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int,
+        max_frameshift_dist:int, max_frameshift_num:int) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_variants = variant_pool.transcriptional[tx_id]
     tx_model = anno.transcripts[tx_id]
@@ -133,7 +151,8 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     dgraph = svgraph.TranscriptVariantGraph(
         seq=transcript_seq,
         _id=tx_id,
-        cds_start_nf=cds_start_nf
+        cds_start_nf=cds_start_nf,
+        has_known_orf=tx_model.is_protein_coding()
     )
 
     ## Create transcript variant graph
@@ -174,7 +193,7 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
         variant = next(variant_iter, None)
 
     dgraph.find_all_orfs()
-    dgraph.fit_into_codons()
+    dgraph.fit_into_codons(max_frameshift_dist, max_frameshift_num)
     pgraph = dgraph.translate()
 
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
@@ -183,7 +202,8 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
         variant_pool:seqvar.VariantRecordPool, rule:str,
-        exception:str, miscleavage:int)-> Set[aa.AminoAcidSeqRecord]:
+        exception:str, miscleavage:int, max_frameshift_dist:int,
+        max_frameshift_num:int)-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
     gene_model = annotation.genes[gene_id]
@@ -205,7 +225,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph.create_variant_graph(variant_records)
     cgraph.align_all_variants()
     tgraph = cgraph.find_all_orfs()
-    tgraph.fit_into_codons()
+    tgraph.fit_into_codons(max_frameshift_dist, max_frameshift_num)
     pgraph = tgraph.translate()
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)

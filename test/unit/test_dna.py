@@ -1,8 +1,9 @@
 """ Test the modules that handles the DNA sequences """
 import unittest
+from test.unit import create_dna_seq_with_coordinates
 from Bio.Seq import Seq
 from moPepGen import dna
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
 
 SEQ = 'CCCTACTGGTCCTTCTGCCTTAGCCACAGGTTCTGAAACCAAAGCAAAACCACCAGAGAG' +\
@@ -51,7 +52,8 @@ class TestDNASeqWithCoordinates(unittest.TestCase):
     """ Test case for moPepGen.dna.DNASeqRecordWithCoordinates """
     def test_get_item_case(self):
         """ test __getitem__ """
-        location = dna.MatchedLocation(
+
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=20),
             ref=FeatureLocation(start=0, end=20)
         )
@@ -75,22 +77,11 @@ class TestDNASeqWithCoordinates(unittest.TestCase):
 
     def test_add(self):
         """ test __add__ """
-        location = dna.MatchedLocation(
-            query=FeatureLocation(start=0, end=10),
-            ref=FeatureLocation(start=0, end=10)
-        )
-        seq1 = dna.DNASeqRecordWithCoordinates(
-            seq=Seq('CCCTACTGGT'),
-            locations=[location]
-        )
-        location = dna.MatchedLocation(
-            query=FeatureLocation(start=0, end=10),
-            ref=FeatureLocation(start=20, end=30)
-        )
-        seq2 = dna.DNASeqRecordWithCoordinates(
-            seq=Seq('CCTTCTGCCT'),
-            locations=[location]
-        )
+        loc1 = [((0,10), (0,10))]
+        loc2 = [((0,10), (20,30))]
+
+        seq1 = create_dna_seq_with_coordinates('CCCTACTGGT', loc1, [0, None])
+        seq2 = create_dna_seq_with_coordinates('CCTTCTGCCT', loc2, [0, None])
 
         seq = seq1 + seq2
         self.assertEqual(str(seq.seq), 'CCCTACTGGTCCTTCTGCCT')
@@ -103,9 +94,68 @@ class TestDNASeqWithCoordinates(unittest.TestCase):
         self.assertEqual(int(seq.locations[1].query.start), 10)
         self.assertEqual(int(seq.locations[1].query.end), 20)
 
+        loc1 = [((0,10), (0,10))]
+        loc2 = [((1,10), (10,19))]
+
+        seq1 = create_dna_seq_with_coordinates('CCCTACTGGT', loc1, [0, None])
+        seq2 = create_dna_seq_with_coordinates('CCTTCTGCCT', loc2, [0, None])
+        seq = seq1 + seq2
+        self.assertEqual(len(seq.locations), 2)
+        self.assertEqual(int(seq.locations[1].query.start), 11)
+        self.assertEqual(int(seq.locations[1].query.end), 20)
+
+        loc1 = [((0,10), (0,10))]
+        loc2 = [((0,9), (11,20))]
+
+        seq1 = create_dna_seq_with_coordinates('CCCTACTGGT', loc1, [0, None])
+        seq2 = create_dna_seq_with_coordinates('CCTTCTGCCT', loc2, [0, None])
+        seq = seq1 + seq2
+        self.assertEqual(len(seq.locations), 2)
+        self.assertEqual(int(seq.locations[1].query.start), 10)
+        self.assertEqual(int(seq.locations[1].query.end), 19)
+
+    def test_getitem(self):
+        """ test get item """
+        loc1 = [((0,4),(0,4))]
+        seq1 = create_dna_seq_with_coordinates('AAAC', loc1, (0,None))
+        seq = seq1[1:3]
+        self.assertEqual(str(seq.seq), 'AA')
+        self.assertEqual(len(seq.locations), 1)
+        self.assertEqual(seq.locations[0].query.start, 0)
+        self.assertEqual(seq.locations[0].query.end, 2)
+        self.assertEqual(seq.locations[0].ref.start, 1)
+        self.assertEqual(seq.locations[0].ref.end, 3)
+
+        loc1 = [((0,4),(0,4)), ((5,8), (5,8))]
+        seq1 = create_dna_seq_with_coordinates('AAACGGGT', loc1, (0,None))
+        seq = seq1[3:7]
+        self.assertEqual(len(seq.locations), 2)
+        self.assertEqual(seq.locations[0].query.start, 0)
+        self.assertEqual(seq.locations[0].query.end, 1)
+        self.assertEqual(seq.locations[0].ref.start, 3)
+        self.assertEqual(seq.locations[0].ref.end, 4)
+        self.assertEqual(seq.locations[1].query.start, 2)
+        self.assertEqual(seq.locations[1].query.end, 4)
+        self.assertEqual(seq.locations[1].ref.start, 5)
+        self.assertEqual(seq.locations[1].ref.end, 7)
+
+        seq = seq1[4:7]
+        self.assertEqual(len(seq.locations), 1)
+        self.assertEqual(seq.locations[0].query.start, 1)
+        self.assertEqual(seq.locations[0].query.end, 3)
+        self.assertEqual(seq.locations[0].ref.start, 5)
+        self.assertEqual(seq.locations[0].ref.end, 7)
+
+        seq = seq1[2:5]
+        self.assertEqual(len(seq.locations), 1)
+        self.assertEqual(seq.locations[0].query.start, 0)
+        self.assertEqual(seq.locations[0].query.end, 2)
+        self.assertEqual(seq.locations[0].ref.start, 2)
+        self.assertEqual(seq.locations[0].ref.end, 4)
+
     def test_get_query_index(self):
         """ Test the correct query index is returned. """
-        location = dna.MatchedLocation(
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=20),
             ref=FeatureLocation(start=101, end=121)
         )

@@ -231,6 +231,18 @@ class VariantRecord():
             return (self.location.end - self.location.start - 1) % 3 != 0
         return abs(len(self.alt) - len(self.ref)) % 3 != 0
 
+    def frames_shifted(self):
+        """ get number of nucleotide shifted """
+        if self.type == 'Fusion':
+            return 0
+        if self.type in ['Insertion', 'Substritution']:
+            end = int(self.attrs['DONOR_END'])
+            start = int(self.attrs['DONOR_START'])
+            return abs(end - start) % 3
+        if self.type == 'Deletion':
+            return (self.location.end - self.location.start - 1) % 3
+        return abs(len(self.alt) - len(self.ref)) % 3
+
     def is_spanning_over_splicing_site(self, anno:GenomicAnnotation,
             transcript_id:str) -> bool:
         """ Check if this is spanning over splicing site """

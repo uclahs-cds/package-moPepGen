@@ -1,6 +1,6 @@
 """ Module for Transcript Annotation model """
 from typing import List
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen import dna, ERROR_INDEX_IN_INTRON
 
@@ -130,7 +130,7 @@ class TranscriptAnnotationModel():
         if self.transcript.strand == -1:
             seq = seq.reverse_complement()
 
-        location = dna.MatchedLocation(
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),
             ref=FeatureLocation(
                 seqname=self.transcript.transcript_id,
@@ -178,7 +178,7 @@ class TranscriptAnnotationModel():
         if self.transcript.strand == -1:
             seq = seq.reverse_complement()
 
-        location = dna.MatchedLocation(
+        location = MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),
             ref=FeatureLocation(
                 seqname=self.transcript.transcript_id,

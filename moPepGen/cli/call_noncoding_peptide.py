@@ -1,6 +1,5 @@
 """ Module for calling noncoding peptide """
 from __future__ import annotations
-import copy
 from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path
 import pkg_resources
@@ -158,35 +157,37 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     dgraph = svgraph.TranscriptVariantGraph(
         seq=tx_seq,
         _id=tx_id,
-        cds_start_nf=True
+        cds_start_nf=True,
+        has_known_orf=False
     )
     dgraph.add_null_root()
     dgraph.find_all_orfs()
     if not dgraph.root.out_edges:
         return None, None
     pgraph = dgraph.translate()
-    orfs = get_orf_sequences(pgraph, tx_id)
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     peptides = pgraph.call_variant_peptides(
         miscleavage=miscleavage,
         check_variants=False,
         check_orf=True
     )
+    orfs = get_orf_sequences(pgraph, tx_id)
     return peptides, orfs
 
 def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str
         ) -> List[aa.AminoAcidSeqRecord]:
     """ Get the full ORF sequences """
     seqs = []
-    if not pgraph.orf_id_map:
-        pgraph.create_orf_id_map()
-    orf_id_map = pgraph.orf_id_map
-    for node in pgraph.root.out_nodes:
-        orf_start = node.orf[0]
-        orf_end = orf_start + len(node.seq.seq) * 3
-        orf_id = orf_id_map[orf_start]
+    for orf_start, orf_id in pgraph.orf_id_map.items():
+        node = pgraph.reading_frames[orf_start % 3]
+        seq_start = int((orf_start - node.orf[0]) / 3)
+        seq_len = node.seq.seq[seq_start:].find('*')
+        if seq_len == -1:
+            seq_len = len(node.seq.seq) - seq_start
+        orf_end = orf_start + seq_len * 3
+        seq_end = seq_start + seq_len
         seqname = f"{tx_id}|{orf_id}|{orf_start}-{orf_end}"
-        seq = copy.copy(node.seq)
+        seq = node.seq[seq_start:seq_end]
         seq.id = seqname
         seq.name = seqname
         seq.description = seqname

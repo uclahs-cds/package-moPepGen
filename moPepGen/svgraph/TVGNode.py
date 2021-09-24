@@ -3,8 +3,10 @@ from __future__ import annotations
 from typing import List, Set, Tuple, Dict, Deque
 import copy
 from collections import deque
+import math
 from moPepGen.dna import DNASeqRecordWithCoordinates
-from moPepGen import seqvar, svgraph
+from moPepGen import seqvar, svgraph, aa
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
 
 class TVGNode():
@@ -21,7 +23,8 @@ class TVGNode():
     """
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False):
+            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
+            orf:List[int]=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -35,6 +38,7 @@ class TVGNode():
         self.variants:List[seqvar.VariantRecordWithCoordinate] = variants if variants else []
         self.frameshifts = frameshifts if frameshifts else set()
         self.branch = branch
+        self.orf = orf or [None, None]
 
     def __hash__(self):
         """ hash """
@@ -46,6 +50,27 @@ class TVGNode():
             seq = None
             locations = []
         return hash((str(seq), *locations))
+
+    def __getitem__(self, index) -> TVGNode:
+        """ get item """
+        start, stop, _ = index.indices(len(self.seq))
+        location = FeatureLocation(start=start, end=stop)
+        seq = self.seq.__getitem__(index)
+        variants = []
+        frameshifts = copy.copy(self.frameshifts)
+
+        for variant in self.variants:
+            if variant.location.overlaps(location):
+                variants.append(variant.shift(-start))
+            elif variant.location.start >= stop and variant.varint in frameshifts:
+                frameshifts.remove(variant.variant)
+        return TVGNode(
+            seq=seq,
+            variants=variants,
+            frameshifts=frameshifts,
+            orf=self.orf,
+            branch=self.branch
+        )
 
     def get_edge_to(self, other:TVGNode) -> svgraph.TVGEdge:
         """ Find the edge from this to the other node """
@@ -72,6 +97,40 @@ class TVGNode():
         """ Checks if the node is an orphan, that doesn't have any inbonding
         or outbonding edge. """
         return (not self.in_edges) and (not self.out_edges)
+
+    def is_reference(self) -> bool:
+        """ check if it is reference (no variants) """
+        return not self.variants
+
+    def should_skip_frameshift(self, dist:int=60, n:int=3) -> bool:
+        """ checks if the node is frameshifting and should be skipped """
+        my_frameshifts:List[seqvar.VariantRecord] = []
+        for v in self.variants:
+            if v.variant.is_frameshifting():
+                my_frameshifts.append(v.variant)
+        if not my_frameshifts:
+            return False
+
+        if len(self.frameshifts) > n:
+            return True
+
+        my_frameshifts.sort()
+        this_frameshift = my_frameshifts[0]
+
+        upstream_frameshifts:List[seqvar.VariantRecord] = []
+        for v in self.frameshifts:
+            if v not in my_frameshifts:
+                upstream_frameshifts.append(v)
+        if not upstream_frameshifts:
+            return False
+        last_frameshift = upstream_frameshifts[-1]
+
+        n_shifted = sum([it.frames_shifted() for it in upstream_frameshifts])
+        if n_shifted % 3 != 0:
+            return False
+
+        diff = this_frameshift.location.start - last_frameshift.location.end
+        return diff >= dist
 
     def is_exclusively_outbond_of(self, other:svgraph.TVGNode) -> bool:
         """ Checks if the node is exclusively outbond with the other.
@@ -150,6 +209,16 @@ class TVGNode():
             if edge.type == 'reference':
                 return edge.in_node
         return None
+
+    def copy(self) -> TVGNode:
+        """ Create a copy of the node """
+        return TVGNode(
+            seq=self.seq,
+            variants=copy.copy(self.variants),
+            frameshifts=copy.copy(self.frameshifts),
+            branch=self.branch,
+            orf=self.orf
+        )
 
     def deepcopy(self, propagate_frameshifts:bool=True) -> TVGNode:
         """ Create a deep copy of the node and all its downstream nodes.
@@ -283,6 +352,24 @@ class TVGNode():
 
         return {node: downstream}
 
+    def get_orf_start(self, i:int=0) -> int:
+        """ Get the ORF start position given the start codon is found at
+        position i of the sequence. """
+        if self.seq.locations:
+            for loc in self.seq.locations:
+                if i < loc.query.start:
+                    return int((3 - (loc.query.start - i) % 3) % 3 + loc.ref.start)
+                if loc.query.start <= i < loc.query.end:
+                    return int(i - loc.query.start + loc.ref.start)
+        out_node = self.get_reference_next()
+        if out_node.seq.locations:
+            for loc in out_node.seq.locations:
+                if i < loc.query.start:
+                    return int((3 - (loc.query.start - i) % 3) % 3 + loc.ref.start)
+                if loc.query.start <= i < loc.query.end:
+                    return int(i - loc.query.start + loc.ref.start)
+        raise ValueError('Can not find ORF')
+
     def truncate_left(self, i:int) -> TVGNode:
         """ Truncate the left i nucleotides off. A new node with the left part
         of the sequences and variants associated is returned. The self node
@@ -364,3 +451,35 @@ class TVGNode():
             self.variants.append(variant.shift(len(self.seq.seq)))
 
         self.frameshifts.update(other.frameshifts)
+
+    def translate(self) -> svgraph.PVGNode:
+        """ translate to a PVGNode """
+        seq = self.seq.translate()
+
+        locations = []
+        for loc in self.seq.locations:
+            if len(loc.query) < 3:
+                continue
+            query_start = math.ceil(loc.query.start / 3)
+            query_end = math.floor(loc.query.end / 3)
+            query = FeatureLocation(start=query_start, end=query_end)
+            dna_query_codon_start = query_start * 3
+            dna_ref_codon_start = loc.ref.start + dna_query_codon_start - query.start
+            ref_start = math.ceil((dna_ref_codon_start - self.orf[0]) / 3)
+            ref_end = ref_start + len(query)
+            ref = FeatureLocation(start=ref_start, end=ref_end)
+            locations.append(MatchedLocation(query=query, ref=ref))
+
+        seq.__class__ = aa.AminoAcidSeqRecordWithCoordinates
+        seq.locations = locations
+        seq.orf = self.orf
+
+        # translate the dna variant location to peptide coordinates.
+        variants = [v.to_protein_coordinates() for v in self.variants]
+
+        return svgraph.PVGNode(
+            seq=seq,
+            variants=variants,
+            frameshifts=copy.copy(self.frameshifts),
+            orf=[None, None]
+        )

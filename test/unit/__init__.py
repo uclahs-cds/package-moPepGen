@@ -4,7 +4,7 @@ import copy
 from pathlib import Path
 import pickle
 from Bio.Seq import Seq
-from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from moPepGen.SeqFeature import FeatureLocation, SeqFeature, MatchedLocation
 from moPepGen import svgraph, dna, seqvar, gtf, aa
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 
@@ -38,7 +38,7 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
 
         if not graph:
             if _seq:
-                seq_location = dna.MatchedLocation(
+                seq_location = MatchedLocation(
                     query=FeatureLocation(start=0, end=len(_seq)),
                     ref=FeatureLocation(start=0, end=len(_seq))
                 )
@@ -87,7 +87,7 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
             if right > left:
                 ref_start = left + node_start
                 ref_end = right  + node_start
-                seq_location = dna.MatchedLocation(
+                seq_location = MatchedLocation(
                     query=FeatureLocation(start=left, end=right),
                     ref=FeatureLocation(start=ref_start, end=ref_end)
                 )
@@ -98,7 +98,7 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
             right = len(_seq)
             ref_start = left + node_start
             ref_end = right + node_start
-            seq_location = dna.MatchedLocation(
+            seq_location = MatchedLocation(
                 query=FeatureLocation(start=left, end=right),
                 ref=FeatureLocation(start=ref_start, end=ref_end)
             )
@@ -124,7 +124,7 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
         # update graph.seq if the current node has no variants
         if not node.variants:
             root_seq = graph.seq.seq + _seq if graph.seq else _seq
-            root_seq_location = dna.MatchedLocation(
+            root_seq_location = MatchedLocation(
                 query=FeatureLocation(start=0, end=len(root_seq)),
                 ref=FeatureLocation(start=0, end=len(root_seq))
             )
@@ -151,9 +151,10 @@ def create_variants(data) -> List[seqvar.VariantRecord]:
     """ Helper function to create a list of VariantRecord """
     return [create_variant(*x) for x in data]
 
-def create_dgraph1(seq, variants) -> svgraph.TranscriptVariantGraph:
+def create_dgraph1(seq, variants, has_known_orf:bool=True
+        ) -> svgraph.TranscriptVariantGraph:
     """ Create a dna transcript graph from sequence and variants """
-    location = dna.MatchedLocation(
+    location = MatchedLocation(
         query=FeatureLocation(start=0, end=len(seq)),
         ref=FeatureLocation(start=0, end=len(seq))
     )
@@ -162,7 +163,7 @@ def create_dgraph1(seq, variants) -> svgraph.TranscriptVariantGraph:
         locations=[location],
         orf=FeatureLocation(start=0, end=len(seq))
     )
-    graph = svgraph.TranscriptVariantGraph(seq, '')
+    graph = svgraph.TranscriptVariantGraph(seq, '', has_known_orf=has_known_orf)
     records = create_variants(variants)
     graph.create_variant_graph(records)
     return graph
@@ -215,17 +216,38 @@ def create_dna_record_dict(data:dict) -> dna.DNASeqDict:
         genome[key] = dna.DNASeqRecord(Seq(val))
     return genome
 
-def create_dna_seq_with_coordinates(seq, start=None, end=None):
+T = List[Tuple[Tuple[int,int], Tuple[int,int]]]
+def create_dna_seq_with_coordinates(seq:str, locations=T, orf=Tuple[int,int]
+        ) -> dna.DNASeqRecordWithCoordinates:
     """ Create a dna.DNASeqRecordWithCoordinates instance """
-    if not start:
-        start = 0
-    if not end:
-        end = len(seq)
-    location = dna.MatchedLocation(
-        query=FeatureLocation(start=0, end=len(seq)),
-        ref=FeatureLocation(start=start, end=end)
+    locs = []
+    for (a,b),(c,d) in locations:
+        loc = MatchedLocation(
+            query=FeatureLocation(start=a, end=b),
+            ref=FeatureLocation(start=c, end=d)
+        )
+        locs.append(loc)
+    return dna.DNASeqRecordWithCoordinates(
+        seq=Seq(seq),
+        locations=locs,
+        orf=orf
     )
-    return dna.DNASeqRecordWithCoordinates(seq=Seq(seq), locations=[location])
+
+def create_aa_seq_with_coordinates(seq:str, locations=T, orf=Tuple[int,int]
+        ) -> aa.AminoAcidSeqRecordWithCoordinates:
+    """ creat amino acid sequence with coordinates """
+    locs = []
+    for (a,b),(c,d) in locations:
+        loc = MatchedLocation(
+            query=FeatureLocation(start=a, end=b),
+            ref=FeatureLocation(start=c, end=d)
+        )
+        locs.append(loc)
+    return aa.AminoAcidSeqRecordWithCoordinates(
+        seq=Seq(seq),
+        locations=locs,
+        orf=orf
+    )
 
 def create_aa_record(seq:str, description:str):
     """ Create a AminoAcidSeqRecord """

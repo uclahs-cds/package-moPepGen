@@ -1,6 +1,6 @@
 """ Module for Gene Annotation Model """
 from typing import List
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import dna
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 
@@ -30,7 +30,7 @@ class GeneAnnotationModel(GTFSeqFeature):
             raise ValueError('Gene is unstranded.')
         gene_id = self.gene_id
         location = FeatureLocation(seqname=gene_id, start=0, end=len(seq))
-        location = dna.MatchedLocation(query=location, ref=location)
+        location = MatchedLocation(query=location, ref=location)
         return dna.DNASeqRecordWithCoordinates(seq=seq, locations=[location])
 
     def is_mrna_start_nf(self) -> bool:

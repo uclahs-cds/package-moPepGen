@@ -4,8 +4,9 @@ from typing import List, Tuple, Set, Deque, Union, TYPE_CHECKING
 from collections import deque
 import copy
 from Bio.Seq import Seq
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import dna, seqvar, svgraph
+from moPepGen.svgraph.TVGCursor import TVGCursor
 
 
 if TYPE_CHECKING:
@@ -24,7 +25,8 @@ class TranscriptVariantGraph():
             records.
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
-            _id:str, cds_start_nf:bool=False):
+            _id:str, cds_start_nf:bool=False, has_known_orf:bool=True,
+            reading_frames:List[svgraph.TVGNode]=None):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -39,10 +41,14 @@ class TranscriptVariantGraph():
         self.root = node
         self.id = _id
         self.cds_start_nf = cds_start_nf
+        self.has_known_orf = has_known_orf
+        if reading_frames and len(reading_frames) != 3:
+            raise ValueError('The length of reading_frames must be exactly 3.')
+        self.reading_frames = reading_frames or [None, None, None]
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
-        self.seq.locations = [dna.MatchedLocation(
+        self.seq.locations = [MatchedLocation(
             query=FeatureLocation(start=0, end=len(self.seq)),
             ref=FeatureLocation(start=0, end=len(self.seq))
         )]
@@ -133,6 +139,12 @@ class TranscriptVariantGraph():
                     continue
                 queue.appendleft(edge.out_node)
         return k
+
+    @staticmethod
+    def get_orf_index(node:svgraph.TVGNode, i:int=0) -> int:
+        """ Find the ORF index of a given node at given position of its
+        sequence """
+        return node.get_orf_start(i) % 3
 
     def update_frameshifts(self, node:svgraph.TVGNode) -> None:
         """ Update the frameshifts slot """
@@ -429,7 +441,7 @@ class TranscriptVariantGraph():
         insert_variants = variant_pool.filter_variants(gene_id, anno, genome,
             exclude_type, start=donor_start, end=donor_end)
         # add the reference sequence to the insertion sequence.
-        ref_seq_location = dna.MatchedLocation(
+        ref_seq_location = MatchedLocation(
             query=FeatureLocation(start=0, end=1),
             ref=FeatureLocation(
                 seqname=self.id,
@@ -550,6 +562,7 @@ class TranscriptVariantGraph():
             out_node = edge.out_node
             out_node.seq = node.seq + out_node.seq
             out_node.branch = node.branch
+            out_node.orf = node.orf
 
             variants = copy.copy(node.variants)
             for variant in out_node.variants:
@@ -589,11 +602,15 @@ class TranscriptVariantGraph():
             cur = next_node
         return end_nodes
 
-    def branch_out_frameshifts_in_alignments(self, upstream:svgraph.TVGNode,
-            branch_out_size:int=100) -> List[svgraph.TVGNode]:
+    def branch_or_skip_frameshifts(self, upstream:svgraph.TVGNode,
+            branch_out_size:int=100, max_frameshift_dist:int=60,
+            max_frameshift_num:int=3
+            ) -> List[svgraph.TVGNode]:
         """ Create a branch for any frameshifting mutation within the active
         region. If the created branch also has frameshifting mutations within
         its active region, they will be further branched out, too. """
+        dist = max_frameshift_dist
+        num = max_frameshift_num
         start_node = upstream
         main_end_node = upstream.find_farthest_node_with_overlap()
         node_to_branch = start_node.next_node_to_branch_out(
@@ -603,11 +620,14 @@ class TranscriptVariantGraph():
         end_nodes = []
         while node_to_branch:
             self.update_frameshifts(node_to_branch)
-            branched_node = self.create_branch(node_to_branch)
-
-            branch_ends = self.branch_out_frameshifts_in_alignments(
-                branched_node, branch_out_size)
-            end_nodes.extend(branch_ends)
+            if node_to_branch.should_skip_frameshift(dist, num):
+                self.remove_node(node_to_branch)
+            else:
+                branched_node = self.create_branch(node_to_branch)
+                self.update_frameshifts(branched_node)
+                branch_ends = self.branch_or_skip_frameshifts(
+                    branched_node, branch_out_size, dist, num)
+                end_nodes.extend(branch_ends)
 
             main_end_node = upstream.find_farthest_node_with_overlap()
             node_to_branch = start_node.next_node_to_branch_out(
@@ -621,8 +641,8 @@ class TranscriptVariantGraph():
         return end_nodes
 
     def align_variants(self, node:svgraph.TVGNode, branch_out_size:int=100,
-            branch_out_frameshifting:bool=True
-            ) -> svgraph.TVGNode:
+            branch_out_frameshifting:bool=True, max_frameshift_dist:int=60,
+            max_frameshift_num:int=3) -> svgraph.TVGNode:
         r""" Aligns all variants at that overlaps to the same start and end
         position. Frameshifting mutations will be brached out
 
@@ -645,8 +665,8 @@ class TranscriptVariantGraph():
         """
         start_node = node
         if branch_out_frameshifting:
-            end_nodes = self.branch_out_frameshifts_in_alignments(node,
-                branch_out_size)
+            end_nodes = self.branch_or_skip_frameshifts(node,
+                branch_out_size, max_frameshift_dist, max_frameshift_num)
         else:
             end_nodes = [node.find_farthest_node_with_overlap()]
 
@@ -767,6 +787,7 @@ class TranscriptVariantGraph():
 
             for sibling in sibling_nodes:
                 sibling.append_left(left_over)
+                sibling.orf = node.orf
 
             if len(sibling_nodes) == 1:
                 end_node = self.single_expand_to_codons(sibling_nodes[0])
@@ -774,6 +795,7 @@ class TranscriptVariantGraph():
                 end_node = self.siblings_expand_to_codons(sibling_nodes)
 
             if end_node:
+                end_node.orf = node.orf
                 end_nodes.append(end_node)
 
         return end_nodes
@@ -808,7 +830,8 @@ class TranscriptVariantGraph():
                 raise ValueError('Somthing went wrong with variant alignment.')
             for node in nodes:
                 node.append_right(ref_node)
-                self.truncate_at_stop_codon_if_found(node)
+                if self.has_known_orf:
+                    self.truncate_at_stop_codon_if_found(node)
             self.remove_node(ref_node)
             return None
 
@@ -816,7 +839,8 @@ class TranscriptVariantGraph():
         right_over = ref_node.truncate_left(right_index)
         for node in nodes:
             node.append_right(right_over)
-            self.truncate_at_stop_codon_if_found(node)
+            if self.has_known_orf:
+                self.truncate_at_stop_codon_if_found(node)
             found_stop.append(not node.out_edges)
         if all(found_stop):
             return None
@@ -875,6 +899,7 @@ class TranscriptVariantGraph():
         are before the start codon. For start lost variants, create a branch.
         """
         outbound_ref = node.get_reference_next()
+        outbound_ref.orf = node.orf
         ref_start = outbound_ref.seq.locations[0].ref.start
         orf = self.seq.orf
         branches = []
@@ -903,8 +928,9 @@ class TranscriptVariantGraph():
 
     def skip_nodes_or_branch_out(self, node:svgraph.TVGNode, is_root:bool=False
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
-        """ For a given reference node, remove it and the downstream nodes if
-        no start codon was found. Branch out frameshifting variants.
+        """ For a given reference node, remove it if no start codon is found.
+        Its outbond nodes are also removed if no start codon is found on them.
+        Branch out frameshifting variants.
         """
         branches = []
         upstream_edges = copy.copy(node.in_edges)
@@ -927,7 +953,7 @@ class TranscriptVariantGraph():
 
         for anode in nodes:
             seq = anode.seq + downstream.seq[:2]
-            index = seq.seq.find('ATG')
+            index = seq.find_start_codon()
             if index == -1:
                 self.remove_node(anode)
             else:
@@ -954,28 +980,33 @@ class TranscriptVariantGraph():
               \ /                    \ /
                A                      A
         """
-        cur = svgraph.TVGCursor(node=self.root, search_orf=False)
-        queue:Deque[svgraph.TVGCursor] = deque([cur])
+        cur = TVGCursor(node=self.root, search_orf=False)
+        queue:Deque[TVGCursor] = deque([cur])
 
         while queue:
             cur = queue.pop()
+            if cur.node.is_reference() and \
+                    all(frame for frame in self.reading_frames):
+                if self.root.is_inbond_of(cur.node):
+                    self.remove_node(cur.node)
+                continue
             if cur.node is self.root:
                 if len(cur.node.out_edges) == 1:
                     main = cur.node.get_reference_next()
-                    new_cursor = svgraph.TVGCursor(node=main)
+                    new_cursor = TVGCursor(node=main)
                     queue.append(new_cursor)
                     continue
                 self.align_variants(cur.node)
                 main, branches = self.skip_nodes_or_branch_out(cur.node, True)
-                new_cursor = svgraph.TVGCursor(node=main)
+                new_cursor = TVGCursor(node=main)
                 queue.appendleft(new_cursor)
                 for branch in branches:
-                    new_cursor = svgraph.TVGCursor(branch, True)
+                    new_cursor = TVGCursor(branch, True)
                     queue.appendleft(new_cursor)
                 continue
 
             node = cur.node
-            index = node.seq.seq.find('ATG')
+            index = node.seq.find_start_codon()
 
             if index == -1:
                 if not node.out_edges:
@@ -984,25 +1015,42 @@ class TranscriptVariantGraph():
                 node.truncate_left(i=len(node.seq.seq)-2)
                 if len(node.out_edges) == 1:
                     nodes = self.merge_with_outbonds(node)
-                    new_cursor = svgraph.TVGCursor(nodes[0])
+                    new_cursor = TVGCursor(nodes[0])
                     queue.append(new_cursor)
                     continue
                 node = self.align_variants(node)
                 main, branches = self.skip_nodes_or_branch_out(node)
                 if main:
-                    new_cursor = svgraph.TVGCursor(node=main)
+                    new_cursor = TVGCursor(node=main)
                     queue.appendleft(new_cursor)
                 for branch in branches:
-                    new_cursor = svgraph.TVGCursor(branch, True)
+                    new_cursor = TVGCursor(branch, True)
                     queue.appendleft(new_cursor)
                 continue
 
+            orf_start = node.get_orf_start(index)
+            orf_id = orf_start % 3
+
+            if cur.node.is_reference():
+                if self.reading_frames[orf_id]:
+                    node.truncate_left(index + 3)
+                    new_cursor = TVGCursor(node)
+                    queue.appendleft(new_cursor)
+                    continue
+
+            orf = [orf_start, None]
             node.truncate_left(index)
             node_copy = self.copy_node(node)
             self.update_frameshifts(node_copy)
-            self.create_branch(node_copy)
-            node.seq = node.seq[3:]
-            new_cursor = svgraph.TVGCursor(node)
+            node_copy = self.create_branch(node_copy)
+
+            if cur.node.is_reference():
+                self.reading_frames[orf_id] = node_copy
+
+            node_copy.orf = orf
+
+            node.truncate_left(3)
+            new_cursor = TVGCursor(node)
             queue.appendleft(new_cursor)
 
     def find_orf_known(self) -> None:
@@ -1010,29 +1058,29 @@ class TranscriptVariantGraph():
         occured prior to the start codon will be ignored. For start lost
         mutations, the start codon will be searched.
         """
-        cur = svgraph.TVGCursor(node=self.root, search_orf=False)
-        queue:Deque[svgraph.TVGCursor] = deque([cur])
+        cur = TVGCursor(node=self.root, search_orf=False)
+        queue:Deque[TVGCursor] = deque([cur])
 
         while queue:
             cur = queue.pop()
             if cur.node is self.root:
                 if len(cur.node.out_edges) == 1:
                     main = cur.node.get_reference_next()
-                    new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
+                    new_cursor = TVGCursor(node=main, search_orf=False)
                     queue.append(new_cursor)
                     continue
                 main,branches = self.prune_variants_or_branch_out(cur.node)
-                new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
+                new_cursor = TVGCursor(node=main, search_orf=False)
                 queue.appendleft(new_cursor)
                 for branch in branches:
                     search_orf = not self.cds_start_nf
-                    new_cursor = svgraph.TVGCursor(branch, search_orf)
+                    new_cursor = TVGCursor(branch, search_orf)
                     queue.appendleft(new_cursor)
                 continue
 
             if cur.search_orf:
                 node = cur.node
-                index = node.seq.seq.find('ATG')
+                index = node.seq.find_start_codon()
 
                 # for start lost mutation or non-translatable sequences, if
                 # start codon is not found in the current cursor, merge the
@@ -1045,33 +1093,38 @@ class TranscriptVariantGraph():
                     node.truncate_left(i=len(node.seq.seq)-2)
                     if len(node.out_edges) == 1:
                         nodes = self.merge_with_outbonds(node)
-                        new_cursor = svgraph.TVGCursor(nodes[0], True)
+                        new_cursor = TVGCursor(nodes[0], True)
                         queue.appendleft(new_cursor)
                         continue
                     node = self.align_variants(node)
                     main, branches = self.skip_nodes_or_branch_out(node)
-                    new_cursor = svgraph.TVGCursor(node=main)
+                    new_cursor = TVGCursor(node=main)
                     queue.appendleft(new_cursor)
                     for branch in branches:
-                        new_cursor = svgraph.TVGCursor(branch, True)
+                        new_cursor = TVGCursor(branch, True)
                         queue.appendleft(new_cursor)
                 else:
+                    orf_start = node.get_orf_start(index)
                     node.truncate_left(index)
+                    node.orf = [orf_start, None]
                 continue
 
             # back to the reference track
             if self.cds_start_nf:
+                orf_start = 0
                 start_codon_index = 0
             else:
-                start_codon_index = cur.node.seq.get_query_index(self.seq.orf.start)
+                orf_start = int(self.seq.orf.start)
+                start_codon_index = cur.node.seq.get_query_index(orf_start)
 
             if start_codon_index != -1:
                 cur_node = cur.node
                 cur_node.truncate_left(start_codon_index)
+                cur_node.orf = [orf_start, None]
                 while len(cur_node.seq) <= 2:
                     cur_node, branchs = self.prune_variants_or_branch_out(cur_node)
                     for branch in branchs:
-                        new_cursor = svgraph.TVGCursor(branch, True)
+                        new_cursor = TVGCursor(branch, True)
                         queue.appendleft(new_cursor)
                 continue
 
@@ -1081,20 +1134,21 @@ class TranscriptVariantGraph():
 
             cur.node.truncate_left(i=len(cur.node.seq.seq)-2)
             main, branchs = self.prune_variants_or_branch_out(cur.node)
-            new_cursor = svgraph.TVGCursor(node=main, search_orf=False)
+            new_cursor = TVGCursor(node=main, search_orf=False)
             queue.append(new_cursor)
             for branch in branchs:
-                new_cursor = svgraph.TVGCursor(node=branch, search_orf=True)
+                new_cursor = TVGCursor(node=branch, search_orf=True)
                 queue.appendleft(new_cursor)
 
     def find_all_orfs(self):
         """ Fild all ORFs """
-        if self.seq.orf:
+        if self.has_known_orf:
             self.find_orf_known()
         else:
             self.find_orf_unknown()
 
-    def fit_into_codons(self, branch_out_size:int=100) -> None:
+    def fit_into_codons(self, max_frameshift_dist:int=75,
+            max_frameshift_num:int=3, branch_out_size:int=100) -> None:
         r""" This takes the variant graph, and fit all cleave sites into the
         range of codons. For frameshifting mutations, the downstream part
         will be branched out.
@@ -1112,22 +1166,15 @@ class TranscriptVariantGraph():
         """
         if self.root.seq is not None:
             self.add_null_root()
-        queue:Deque[svgraph.TVGCursor] = deque()
+        queue:Deque[TVGCursor] = deque()
         for edge in self.root.out_edges:
-            cur = svgraph.TVGCursor(node=edge.out_node, search_orf=False)
+            cur = TVGCursor(node=edge.out_node, search_orf=False)
             queue.append(cur)
 
         while queue:
-            cur:svgraph.TVGCursor = queue.pop()
+            cur:TVGCursor = queue.pop()
 
             node = cur.node
-            stop_codon_index = node.seq.find_stop_codon()
-            if stop_codon_index != -1:
-                node.seq = node.seq[:stop_codon_index + 3]
-                while node.out_edges:
-                    edge = node.out_edges.pop()
-                    self.remove_edge(edge)
-                continue
             if not node.out_edges:
                 continue
 
@@ -1136,16 +1183,21 @@ class TranscriptVariantGraph():
             # frameshifting mutation is branched out.
             if len(node.out_edges) == 1:
                 node = self.merge_with_outbonds(node)[0]
-                new_cursor = svgraph.TVGCursor(node=node, search_orf=False)
+                if self.root.is_inbond_of(node):
+                    orf_idx = node.orf[0] % 3
+                    self.reading_frames[orf_idx] = node
+                new_cursor = TVGCursor(node=node, search_orf=False)
                 queue.appendleft(new_cursor)
                 continue
 
             if len(node.out_edges) > 1:
-                node = self.align_variants(node, branch_out_size)
+                node = self.align_variants(node, branch_out_size,
+                    max_frameshift_dist=max_frameshift_dist,
+                    max_frameshift_num=max_frameshift_num)
             branches = self.expand_alignments(node)
 
             for branch in branches:
-                new_cursor = svgraph.TVGCursor(node=branch, search_orf=False)
+                new_cursor = TVGCursor(node=branch, search_orf=False)
                 queue.appendleft(new_cursor)
 
     def translate(self) -> svgraph.PeptideVariantGraph:
@@ -1159,7 +1211,7 @@ class TranscriptVariantGraph():
                 GTCTAC                VY
         """
         root = svgraph.PVGNode(None)
-        pgraph = svgraph.PeptideVariantGraph(root, self.id)
+        pgraph = svgraph.PeptideVariantGraph(root, self.id, self.has_known_orf)
 
         queue = deque([(self.root, root)])
         visited = dict()
@@ -1176,42 +1228,29 @@ class TranscriptVariantGraph():
                     pnode.add_out_edge(out_pnode)
                     continue
 
-                seq = out_node.seq.translate()
-                stop_index = seq.seq.find('*')
+                orf = out_node.orf
 
-                if stop_index > -1:
-                    seq = seq[:stop_index]
+                new_pnode = out_node.translate()
+                new_pnode.orf = orf
 
-                # translate the dna variant location to peptide coordinates.
-                variants = []
-                for variant in out_node.variants:
-                    new_variant = variant.to_protein_coordinates()
-                    if new_variant.location.start > len(seq):
-                        continue
-                    variants.append(new_variant)
+                if self.has_known_orf:
+                    stop_index = new_pnode.seq.seq.find('*')
+                    if stop_index > -1:
+                        new_pnode.truncate_right(stop_index)
 
-                if pnode is root:
-                    if out_node.seq.locations:
-                        orf = [int(out_node.seq.locations[0].ref.start), None]
+                    pnode.add_out_edge(new_pnode)
+                    visited[out_node] = new_pnode
+                    if stop_index > -1:
+                        pgraph.add_stop(new_pnode)
                     else:
-                        orf = [None, None]
+                        if not out_node.out_edges:
+                            new_pnode.truncated = True
+                        queue.appendleft((out_node, new_pnode))
                 else:
-                    orf = pnode.orf
-                    if not orf[0] and out_node.seq.locations:
-                        orf[0] = int(out_node.seq.locations[0].ref.start)
-
-                new_pnode = svgraph.PVGNode(
-                    seq=seq,
-                    variants=variants,
-                    frameshifts=copy.copy(out_node.frameshifts),
-                    orf=orf
-                )
-                pnode.add_out_edge(new_pnode)
-                visited[out_node] = new_pnode
-                if stop_index > -1:
-                    pgraph.add_stop(new_pnode)
-                else:
-                    if not out_node.out_edges:
-                        new_pnode.truncated = True
+                    pnode.add_out_edge(new_pnode)
+                    visited[out_node] = new_pnode
                     queue.appendleft((out_node, new_pnode))
+        for i, dnode in enumerate(self.reading_frames):
+            if dnode:
+                pgraph.reading_frames[i] = visited[dnode]
         return pgraph

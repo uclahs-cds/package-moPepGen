@@ -1,9 +1,12 @@
 """ Module for Amino Acid Record """
 from __future__ import annotations
 from typing import Iterable, List, Set
+import copy
 import re
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqUtils
+from Bio.Seq import Seq
+from moPepGen.SeqFeature import MatchedLocation, FeatureLocation
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 
 
@@ -204,3 +207,85 @@ class AminoAcidSeqRecord(SeqRecord):
                 end += 1
             start += 1
         return peptides
+
+
+class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
+    """ Amino acid sequence record with coordinates """
+    def __init__(self, seq:Seq, locations:List[MatchedLocation],
+            *args, orf:FeatureLocation=None, **kwargs ):
+        """ Constract a DNASeqRecordWithCoordinates object.
+
+        Args:
+            seq (Seq): The amino acid sequence.
+            locations (List[MatchedLocation]): The locations where this
+                sequence is aligned tp.
+            orf (FeatureLocation): The open reading frame start and end.
+        """
+        super().__init__(seq=seq, *args, **kwargs)
+        self.locations = locations
+        # query index
+        self.orf = orf
+
+    def __add__(self, other:AminoAcidSeqRecordWithCoordinates
+            ) -> AminoAcidSeqRecordWithCoordinates:
+        """ add operation """
+        new = super().__add__(other)
+        new.__class__ = AminoAcidSeqRecordWithCoordinates
+        left_locs = copy.copy(self.locations)
+        right_locs = copy.copy(other.locations)
+        if left_locs and right_locs:
+            lhs = self.locations[-1]
+            rhs = other.locations[0].shift(len(self))
+            if lhs.ref.end == rhs.ref.start and lhs.query.end == rhs.query.start:
+                query = FeatureLocation(start=lhs.query.start, end=rhs.query.end)
+                ref = FeatureLocation(start=lhs.ref.start, end=rhs.ref.end)
+                new_loc = MatchedLocation(query=query, ref=ref)
+                right_locs.pop(0)
+                left_locs[-1] = new_loc
+
+        new.locations = left_locs + [loc.shift(len(self)) for loc in right_locs]
+        new.orf = self.orf
+        return new
+
+    def __getitem__(self, index)->AminoAcidSeqRecordWithCoordinates:
+        """ get item """
+        if isinstance(index, int):
+            return super().__getitem__(index)
+        start, stop, _ = index.indices(len(self))
+
+        locations = []
+        if start != stop:
+            for location in self.locations:
+                lhs = location.query.start
+                rhs = location.query.end
+                if rhs <= start:
+                    continue
+                if lhs >= stop:
+                    break
+                if lhs <= start:
+                    if rhs <= stop:
+                        location = location[start-lhs:]
+                    else:
+                        location = location[start-lhs:stop-lhs]
+                else:
+                    if rhs <= stop:
+                        location = location.shift(-start)
+                    else:
+                        new_location = location[:stop-lhs]
+                        new_location = new_location.shift(lhs-start)
+                        location = new_location
+
+                locations.append(location)
+
+        return self.__class__(
+            seq=self.seq[index],
+            locations=locations,
+            orf = self.orf,
+            _id=self.id,
+            name=self.name,
+            description=self.description
+        )
+
+    def __hash__(self):
+        """hash"""
+        return hash(self.seq)

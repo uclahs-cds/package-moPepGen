@@ -3,7 +3,6 @@
 from __future__ import annotations
 from typing import Union, List, Deque, Tuple, Dict, TYPE_CHECKING
 import copy
-import re
 from collections import deque
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import svgraph, seqvar
@@ -80,7 +79,7 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         return super().create_variant_graph(filtered_variants)
 
     @staticmethod
-    def create_branch_and_expand(node:svgraph.TVGNode, n_rounds:int=4
+    def create_branch_and_expand(node:svgraph.TVGNode, n_loops:int=4
             ) -> svgraph.TVGNode:
         """ Create a branch of a given node and all its downstream nodes. The
         returned node is a leading node of a directed acyclic graph, and can be
@@ -107,17 +106,17 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
         visited:Dict[Tuple(svgraph.TVGNode, int), svgraph.TVGNode] = {}
 
         while queue:
-            source, target, _round = queue.pop()
+            source, target, loop = queue.pop()
             if source is node:
-                _round += 1
-            if _round >= n_rounds:
+                loop += 1
+            if loop >= n_loops:
                 break
-            if (source, _round) in visited:
+            if (source, loop) in visited:
                 continue
             for edge in source.out_edges:
                 source_out_node = edge.out_node
-                if (source_out_node, _round) in visited:
-                    new_out_node = visited[(source_out_node, _round)]
+                if (source_out_node, loop) in visited:
+                    new_out_node = visited[(source_out_node, loop)]
                 else:
                     frameshifts = copy.copy(source_out_node.frameshifts)
                     frameshifts.update(target.frameshifts)
@@ -126,16 +125,16 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                         variants=copy.copy(source_out_node.variants),
                         frameshifts=frameshifts
                     )
-                    visited[(source_out_node, _round)] = new_out_node
+                    visited[(source_out_node, loop)] = new_out_node
                 new_edge = svgraph.TVGEdge(target, new_out_node,
                     _type=edge.type)
                 target.out_edges.add(new_edge)
                 new_out_node.in_edges.add(new_edge)
-                queue.appendleft((edge.out_node, new_out_node, _round))
+                queue.appendleft((edge.out_node, new_out_node, loop))
         return new_node
 
     def find_orf_in_outbound_nodes(self, node:svgraph.TVGNode,
-            carry_over:DNASeqRecordWithCoordinates
+            carry_over:svgraph.TVGNode
             ) -> Tuple[svgraph.TVGNode, List[svgraph.TVGNode]]:
         """ Look for potential start codon int the out bound nodes.
 
@@ -160,11 +159,16 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
 
         if len(siblings) == 1:
             downstream = siblings[0]
-            seq = carry_over + downstream.seq[:2]
-            indices = [m.start() for m in re.finditer('ATG', str(seq.seq))]
+            seq = carry_over.seq + downstream.seq[:2]
+            indices = list(seq.iter_start_codon())
             for index in indices:
+                orf_start = downstream.get_orf_start(index)
+                orf_id = orf_start % 3
+                if self.reading_frames[orf_id]:
+                    continue
                 branch = self.create_branch_and_expand(downstream)
-                branch.seq = (carry_over + downstream.seq)[index:]
+                branch.append_left(carry_over)
+                branch.truncate_right(index)
                 filtered_variants = []
                 for variant in branch.variants:
                     if int(variant.location.start) + len(carry_over.seq) - index > 0:
@@ -172,14 +176,24 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                 branch.variants = filtered_variants
                 branch.branch = len(downstream.variants) > 0
                 branches.append(branch)
+                branch.orf = [orf_start, None]
+                self.reading_frames[orf_id] = branch
         else:
             downstream = siblings[0].get_reference_next()
             for sibling in siblings:
-                seq = carry_over + sibling.seq + downstream.seq[:2]
-                indices = [m.start() for m in re.finditer('ATG', str(seq.seq))]
+                seq = carry_over.seq + sibling.seq + downstream.seq[:2]
+                indices = list(seq.iter_start_codon())
                 for index in indices:
-                    branch = self.create_branch_and_expand(sibling)
-                    branch.seq = (carry_over + sibling.seq)[index:]
+                    sibling_copy = sibling.copy()
+                    for edge in sibling.out_edges:
+                        self.add_edge(sibling_copy, edge.out_node, edge.type)
+                    sibling_copy.append_left(carry_over)
+                    orf_start = sibling_copy.get_orf_start(index)
+                    orf_id = orf_start % 3
+                    if self.reading_frames[orf_id]:
+                        continue
+                    branch = self.create_branch_and_expand(sibling_copy)
+                    branch.truncate_left(index)
                     filtered_variants = []
                     for variant in branch.variants:
                         if int(variant.location.start) + len(carry_over.seq) - index > 0:
@@ -187,13 +201,16 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
                     branch.variants = filtered_variants
                     branch.branch = len(sibling.variants) > 0
                     branches.append(branch)
+                    branch.orf = [orf_start, None]
+                    self.reading_frames[orf_id] = branch
+                    self.remove_node(sibling_copy)
         return downstream, branches
 
 
     def find_all_orfs(self) -> svgraph.TranscriptVariantGraph:
         """ Find all ORFs and create a TranscriptVariantGraph which is no
         longer cyclic. """
-        tvg = svgraph.TranscriptVariantGraph(None, self.id)
+        tvg = svgraph.TranscriptVariantGraph(None, self.id, has_known_orf=False)
 
         self.align_all_variants()
 
@@ -201,21 +218,36 @@ class CircularVariantGraph(svgraph.TranscriptVariantGraph):
 
         while queue:
             cur = queue.pop()
+            if all(frame for frame in self.reading_frames):
+                if self.root.is_inbond_of(cur.node):
+                    self.remove_node(cur.node)
+                continue
 
-            indices = [m.start() for m in re.finditer('ATG', str(cur.seq.seq))]
+            index = cur.seq.find_start_codon()
+
+            indices = list(cur.seq.iter_start_codon())
             for index in indices:
+                orf_start = cur.get_orf_start(index)
+                orf_id = orf_start % 3
+                if self.reading_frames[orf_id]:
+                    continue
                 branch = self.create_branch_and_expand(cur)
-                branch.seq = branch.seq[index:]
+                branch.truncate_left(index)
                 _type = 'variant_start' if branch.branch else 'reference'
+                branch.orf = [orf_start, None]
+                self.reading_frames[orf_id] = branch
                 tvg.add_edge(tvg.root, branch, _type)
+                tvg.reading_frames[orf_id] = branch
 
             index = indices[-1] if indices else -2
-            carry_over = cur.seq[index:]
+            carry_over = cur[index:]
 
             main, branches = self.find_orf_in_outbound_nodes(cur, carry_over)
             for branch in branches:
                 _type = 'variant_start' if branch.branch else 'reference'
                 tvg.add_edge(tvg.root, branch, _type)
+                orf_id = branch.orf[0] % 3
+                tvg.reading_frames[orf_id] = branch
 
             if cur.seq.locations[0].ref.start < main.seq.locations[0].ref.start:
                 queue.append(main)
