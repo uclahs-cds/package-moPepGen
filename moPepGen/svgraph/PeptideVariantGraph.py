@@ -30,14 +30,14 @@ class PeptideVariantGraph():
         orf_id_map (Dict[int, str]): An ID map of ORF IDs from ORF start
             position.
     """
-    def __init__(self, root:svgraph.PVGNode, _id:str, has_known_orf:bool=None,
-            rule:str=None, exception:str=None, orfs:Set[int]=None,
-            reading_frames:List[svgraph.PVGNode]=None,
+    def __init__(self, root:svgraph.PVGNode, _id:str,
+            known_orf:List[int,int], rule:str=None, exception:str=None,
+            orfs:Set[int]=None, reading_frames:List[svgraph.PVGNode]=None,
             orf_id_map:Dict[int,str]=None):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
-        self.has_known_orf = has_known_orf
+        self.known_orf = known_orf
         self.stop = svgraph.PVGNode(aa.AminoAcidSeqRecord(Seq('*')))
         self.rule = rule
         self.exception = exception
@@ -64,6 +64,10 @@ class PeptideVariantGraph():
             out_node = node.out_nodes.pop()
             node.remove_out_edge(out_node)
         del node
+
+    def known_reading_frame_index(self) -> int:
+        """ """
+        return self.known_orf[0] % 3
 
     def cleave_if_possible(self, node:svgraph.PVGNode,
             return_first:bool=False) -> svgraph.PVGNode:
@@ -501,16 +505,30 @@ class PeptideVariantGraph():
             A set of aa.AminoAcidSeqRecord.
         """
         self.init_orfs()
+
         queue:Deque[Tuple[svgraph.PVGNode,bool]] = deque([(self.root,True)])
         visited:Set[svgraph.PVGNode] = set()
         peptide_pool = VariantPeptideDict(tx_id=self.id)
+
+        if self.known_orf:
+            known_orf_aa = (
+                (self.known_orf[0] - self.known_reading_frame_index())/3,
+                (self.known_orf[1] - self.known_reading_frame_index())/3
+            )
 
         while queue:
             cur, in_cds = queue.pop()
             orf = cur.orf
             if cur is self.root and cur.seq is None:
-                for out_node in cur.out_nodes:
-                    queue.appendleft((out_node,True))
+                if self.known_orf:
+                    i = self.known_reading_frame_index()
+                    out_node = self.reading_frames[i]
+                    node_start = out_node.seq.locations[0].ref.start
+                    in_cds = node_start >= known_orf_aa[0]
+                    queue.appendleft((out_node, in_cds))
+                else:
+                    for out_node in cur.out_nodes:
+                        queue.appendleft((out_node,False))
                 continue
 
             if cur is self.stop:
@@ -523,13 +541,25 @@ class PeptideVariantGraph():
             if visited_len_before == visited_len_after:
                 continue
 
-            if self.has_known_orf:
+            if self.known_orf:
                 # add out nodes to the queue
-                for out_node in cur.out_nodes:
-                    if out_node is not self.stop:
-                        queue.appendleft((out_node, True))
-                peptide_pool.add_miscleaved_sequences(cur, miscleavage,
-                    check_variants, self.has_known_orf)
+                if in_cds:
+                    index = cur.seq.get_query_index(known_orf_aa[1])
+                    if index == -1:
+                        cur = cur.truncate_right(index)
+                    peptide_pool.add_miscleaved_sequences(cur, miscleavage,
+                        check_variants, bool(self.known_orf))
+                    if index != -1:
+                        for out_node in cur.out_nodes:
+                            if out_node is not self.stop:
+                                queue.appendleft((out_node, True))
+                else:
+                    index = cur.seq.get_query_index(known_orf_aa[0])
+                    if index == -1:
+                        out_node = cur.find_reference_next()
+                        queue.appendleft((out_node,False))
+                    else:
+                        cur.truncate_left((index, True))
                 continue
 
             node_list = []
@@ -592,7 +622,7 @@ class PeptideVariantGraph():
 
             for node in node_list:
                 peptide_pool.add_miscleaved_sequences(node, miscleavage,
-                    check_variants, self.has_known_orf)
+                    check_variants, bool(self.known_orf))
             for node in trash:
                 self.remove_node(node)
 

@@ -1,6 +1,6 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import List, Tuple, Set, Deque, Union, TYPE_CHECKING
+from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING
 from collections import deque
 import copy
 from Bio.Seq import Seq
@@ -9,6 +9,8 @@ from moPepGen import dna, seqvar
 from moPepGen.svgraph.TVGCursor import TVGCursor
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
+from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
+from moPepGen.svgraph.PVGNode import PVGNode
 
 
 if TYPE_CHECKING:
@@ -28,8 +30,7 @@ class ThreeFrameTVG():
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
-            cds_start_nf:bool=False, has_known_orf:bool=True,
-            known_reading_frame:TVGNode=None):
+            cds_start_nf:bool=False, has_known_orf:bool=True):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -47,7 +48,6 @@ class ThreeFrameTVG():
             raise ValueError('The length of reading_frames must be exactly 3.')
         self.cds_start_nf = cds_start_nf
         self.has_known_orf = has_known_orf
-        self.knownd_reading_frame = known_reading_frame
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -58,13 +58,22 @@ class ThreeFrameTVG():
 
     def init_three_frames(self):
         """ """
-        node0 = TVGNode(self.seq)
-        node1 = TVGNode(self.seq)
-        node2 = TVGNode(self.seq)
-        self.add_edge(self.root, node0, 'reference')
-        self.add_edge(self.root, node1, 'reference')
-        self.add_edge(self.root, node2, 'reference')
-        self.reading_frames = [node0, node1, node2]
+        root0 = TVGNode(None)
+        node0 = TVGNode(self.seq, reading_frame_index=0, subgraph_id=self.id)
+        self.add_edge(root0, node0, 'reference')
+        self.add_edge(self.root, root0, 'reference')
+
+        root1 = TVGNode(None)
+        node1 = TVGNode(self.seq[1:], reading_frame_index=1, subgraph_id=self.id)
+        self.add_edge(root1, node1, 'reference')
+        self.add_edge(self.root, root1, 'reference')
+
+        root2 = TVGNode(None)
+        node2 = TVGNode(self.seq[2:], reading_frame_index=2, subgraph_id=self.id)
+        self.add_edge(root2, node2, 'reference')
+        self.add_edge(self.root, root2, 'reference')
+
+        self.reading_frames = [root0, root1, root2]
 
     @staticmethod
     def remove_edge(edge:TVGEdge) -> None:
@@ -182,8 +191,18 @@ class ThreeFrameTVG():
         Returns:
             The two new nodes.
         """
-        left_node = TVGNode(node.seq[:i])
-        right_node = TVGNode(node.seq[i:])
+        left_node = TVGNode(
+            node.seq[:i],
+            subgraph_id=self.id,
+            reading_frame_index=node.reading_frame_index,
+            orf=node.orf
+        )
+        right_node = TVGNode(
+            node.seq[i:],
+            subgraph_id=self.id,
+            reading_frame_index=node.reading_frame_index,
+            orf=node.orf
+        )
 
         for variant in node.variants:
             if variant.location.start < i:
@@ -263,7 +282,8 @@ class ThreeFrameTVG():
         )
         var_node = TVGNode(
             seq=seq,
-            variants=[variant_with_coordinates]
+            variants=[variant_with_coordinates],
+            subgraph_id=self.id
         )
         returns = [None, None]
         # variant start
@@ -348,12 +368,14 @@ class ThreeFrameTVG():
 
         branch = ThreeFrameTVG(accepter_tx_seq, self.id)
         branch.init_three_frames()
+        for root in branch.reading_frames:
+            list(root.out_edges)[0].out_node.subgraph_id = branch.id
         branch.create_variant_graph(accepter_variant_records)
         for edge in branch.root.out_edges:
             edge.out_node.variants.append(variant)
 
         for i in range(3):
-            var_node = branch.reading_frames[i]
+            var_node = branch.reading_frames[i].get_reference_next()
             while var_node.in_edges:
                 edge = var_node.in_edges.pop()
                 branch.remove_edge(edge)
@@ -365,7 +387,7 @@ class ThreeFrameTVG():
             var_node.frameshifts.add(variant)
             variant_start = variant.location.start
 
-            node = self.reading_frames[i]
+            node = nodes[i]
             node_start = node.seq.locations[0].ref.start
 
             if variant_start < node_start:
@@ -402,7 +424,7 @@ class ThreeFrameTVG():
         branch.create_variant_graph(variants)
 
         for i in range(3):
-            var_head = branch.reading_frames[i]
+            var_head = branch.reading_frames[i].get_reference_next()
             var_tail = var_head
             next_node = var_tail.get_reference_next()
             while next_node:
@@ -538,7 +560,9 @@ class ThreeFrameTVG():
             if not any(cursors):
                 break
 
-            if variant.is_frameshifting():
+            start_altering = self.seq.orf and variant.location.overlaps(self.seq.orf)
+
+            if variant.is_frameshifting() and not start_altering:
                 frames_shifted = variant.frames_shifted()
                 for i in range(3):
                     j = (i + frames_shifted) % 3
@@ -589,14 +613,14 @@ class ThreeFrameTVG():
             seq=copy.copy(node.seq),
             variants=copy.copy(node.variants),
             frameshifts=copy.copy(node.frameshifts),
-            branch=node.branch
+            branch=node.branch,
+            subgraph_id=node.subgraph_id
         )
         for edge in node.in_edges:
             self.add_edge(edge.in_node, node_copy, edge.type)
         for edge in node.out_edges:
             self.add_edge(node_copy, edge.out_node, edge.type)
         return node_copy
-
 
     def create_branch(self, node:TVGNode) -> TVGNode:
         """ Create a branch by making a deep copy of the specified node and
@@ -663,47 +687,22 @@ class ThreeFrameTVG():
             cur = next_node
         return end_nodes
 
-    def branch_or_skip_frameshifts(self, upstream:TVGNode,
-            branch_out_size:int=100, max_frameshift_dist:int=60,
-            max_frameshift_num:int=3
-            ) -> List[TVGNode]:
-        """ Create a branch for any frameshifting mutation within the active
-        region. If the created branch also has frameshifting mutations within
-        its active region, they will be further branched out, too. """
-        dist = max_frameshift_dist
-        num = max_frameshift_num
-        start_node = upstream
-        main_end_node = upstream.find_farthest_node_with_overlap()
-        node_to_branch = start_node.next_node_to_branch_out(
-            to_node=main_end_node,
-            branch_out_size=branch_out_size
-        )
-        end_nodes = []
-        while node_to_branch:
-            self.update_frameshifts(node_to_branch)
-            if node_to_branch.should_skip_frameshift(dist, num):
-                self.remove_node(node_to_branch)
-            else:
-                branched_node = self.create_branch(node_to_branch)
-                self.update_frameshifts(branched_node)
-                branch_ends = self.branch_or_skip_frameshifts(
-                    branched_node, branch_out_size, dist, num)
-                end_nodes.extend(branch_ends)
+    def find_bridge_in_nodes(self, start:TVGNode, end=TVGNode) -> List[TVGNode]:
+        """ """
+        this_id = start.reading_frame_index
+        bridge_in = []
+        queue:Deque[TVGNode] = deque([e.out_node for e in start.out_edges])
+        while queue:
+            cur = queue.pop()
+            if any(e.out_node.reading_frame_index != this_id for e in cur.out_edges):
+                continue
+            if cur is end:
+                continue
+            if any(e.in_node.reading_frame_index != this_id for e in cur.out_edges):
+                bridge_in.append(cur)
+        return bridge_in
 
-            main_end_node = upstream.find_farthest_node_with_overlap()
-            node_to_branch = start_node.next_node_to_branch_out(
-                to_node=main_end_node,
-                branch_out_size=branch_out_size
-            )
-        end_nodes.append(main_end_node)
-        additional_end_nodes = self.find_additional_end_nodes(start_node,
-            main_end_node)
-        end_nodes.extend(additional_end_nodes)
-        return end_nodes
-
-    def align_variants(self, node:TVGNode, branch_out_size:int=100,
-            branch_out_frameshifting:bool=True, max_frameshift_dist:int=60,
-            max_frameshift_num:int=3) -> TVGNode:
+    def align_variants(self, node:TVGNode) -> Tuple[TVGNode, TVGNode]:
         r""" Aligns all variants at that overlaps to the same start and end
         position. Frameshifting mutations will be brached out
 
@@ -724,16 +723,16 @@ class ThreeFrameTVG():
         Returns:
             The original input node.
         """
+        this_orf = node.reading_frame_index
         start_node = node
-        if branch_out_frameshifting:
-            end_nodes = self.branch_or_skip_frameshifts(node,
-                branch_out_size, max_frameshift_dist, max_frameshift_num)
-        else:
-            end_nodes = [node.find_farthest_node_with_overlap()]
+        end_node = node.find_farthest_node_with_overlap()
+        bridge_ins = self.find_bridge_in_nodes(start=start_node,end=end_node)
 
         new_nodes = set()
         queue = deque()
         trash = set()
+        bridge_map:Dict[TVGNode, TVGNode] = {x:x for x in bridge_ins}
+        new_bridges:Set[TVGNode] = set()
 
         # start by removing the out edges from the start node.
         while start_node.out_edges:
@@ -741,30 +740,35 @@ class ThreeFrameTVG():
             out_node:TVGNode = edge.out_node
             self.remove_edge(edge)
             queue.appendleft(out_node)
-            new_nodes.add(out_node)
+
+        for bridge in bridge_ins:
+            queue.append(bridge)
 
         while queue:
             cur:TVGNode = queue.pop()
-            if cur in end_nodes or not cur.out_edges:
+            if cur is end_node or not cur.out_edges:
                 continue
 
-            # because the new node will be reconstructed and added back
-            new_nodes.remove(cur)
-
-            out_edges = copy.copy(cur.out_edges)
-            for out_edge in out_edges:
+            for out_edge in copy.copy(cur.out_edges):
                 out_node:TVGNode = out_edge.out_node
 
-                if out_node in end_nodes:
+                if out_node is end_node:
                     new_node = TVGNode(
                         seq=cur.seq,
                         variants=copy.copy(cur.variants),
                         frameshifts=copy.copy(cur.frameshifts),
-                        branch=cur.branch
+                        branch=cur.branch,
+                        orf=cur.orf,
+                        reading_frame_index=cur.reading_frame_index,
+                        subgraph_id=cur.subgraph_id
                     )
                     for edge in cur.out_edges:
                         self.add_edge(new_node, edge.out_node, _type=edge.type)
-                    new_nodes.add(new_node)
+                    if cur not in bridge_ins:
+                        new_nodes.add(new_node)
+                    else:
+                        bridge_map[new_node] = bridge_map[cur]
+                        new_bridges.add(new_node)
                     continue
 
                 trash.add(out_node)
@@ -782,7 +786,10 @@ class ThreeFrameTVG():
                     seq=cur.seq + out_node.seq,
                     variants=new_variants,
                     frameshifts=frameshifts,
-                    branch=cur.branch
+                    branch=cur.branch,
+                    reading_frame_index=cur.reading_frame_index,
+                    orf=cur.orf,
+                    subgraph_id=cur.subgraph_id
                 )
 
                 edges = copy.copy(out_node.out_edges)
@@ -791,12 +798,18 @@ class ThreeFrameTVG():
                         else 'reference'
                     self.add_edge(new_node, edge.out_node, _type=edge_type)
 
-                if out_node not in end_nodes:
+                if out_node is not end_node and \
+                        out_node.reading_frame_index == this_orf \
+                        and all(e.out_node.reading_frame_index == this_orf
+                            for e in out_node.out_edges) \
+                        and out_node.subgraph_id == self.id:
                     queue.appendleft(new_node)
 
-                new_nodes.add(new_node)
+                if cur in bridge_ins:
+                    bridge_map[new_node] = bridge_map[cur]
             # now remove the cur node from graph
-            self.remove_node(cur)
+            if cur not in bridge_ins:
+                self.remove_node(cur)
 
         for trash_node in trash:
             self.remove_node(trash_node)
@@ -809,9 +822,15 @@ class ThreeFrameTVG():
                 in_edge_type = 'reference'
             self.add_edge(start_node, new_node, in_edge_type)
 
-        return start_node
+        for bridge in new_bridges:
+            original_bridge = bridge_map[bridge]
+            for edge in original_bridge.in_edges:
+                self.add_edge(edge.in_node, bridge)
+            self.remove_node(original_bridge)
 
-    def expand_alignments(self, node:TVGNode) -> List[TVGNode]:
+        return start_node, end_node
+
+    def expand_alignments(self, start:TVGNode) -> TVGNode:
         r""" Expand the aligned variants into the range of codons. For
         frameshifting mutations, a copy of each downstream node will be
         created and branched out. Exclusive nodes are merged.
@@ -834,432 +853,77 @@ class ThreeFrameTVG():
             downstream node is returned.
         """
         # number of NT to be carried over to the downstreams.
-        if node.seq:
-            left_index = len(node.seq) - len(node.seq) % 3
-            left_over = node.truncate_right(left_index)
+        if start.seq:
+            left_index = len(start.seq) - len(start.seq) % 3
+            left_over = start.truncate_right(left_index)
         else:
             left_over_seq = dna.DNASeqRecordWithCoordinates(Seq(''), [])
-            left_over = TVGNode(left_over_seq)
+            left_over = TVGNode(
+                left_over_seq,
+                subgraph_id=start.subgraph_id
+            )
 
-        end_nodes = []
+        for out_edge in start.out_edges:
+            out_node = out_edge.out_node
+            out_node.append_left(left_over)
 
-        # The reason of grouping outbond nodes into siblings
-        for sibling_nodes in self.group_outbond_siblings(node):
 
-            for sibling in sibling_nodes:
-                sibling.append_left(left_over)
-                sibling.orf = node.orf
-
-            if len(sibling_nodes) == 1:
-                end_node = self.single_expand_to_codons(sibling_nodes[0])
-            else:
-                end_node = self.siblings_expand_to_codons(sibling_nodes)
-
-            if end_node:
-                end_node.orf = node.orf
-                end_nodes.append(end_node)
-
-        return end_nodes
-
-    def truncate_at_stop_codon_if_found(self, node:TVGNode):
-        """ Look for stop codon in the given node. If a stop codon is found,
-        the node is then truncated at the stop codon position, and the
-        downstream nodes will be removed. """
-        stop_codon_index = node.seq.find_stop_codon()
-        if stop_codon_index > -1:
-            node.truncate_right(stop_codon_index)
-            while node.out_edges:
-                edge = node.out_edges.pop()
-                self.remove_edge(edge)
-
-    def siblings_expand_to_codons(self, nodes:List[TVGNode]
-            ) -> TVGNode:
-        """ Expand multiple sibling nodes to codons """
-        sibling_len = len(nodes[0].seq.seq)
-
-        ref_node = nodes[0].get_reference_next()
-        for node in nodes:
-            if not node.is_inbond_of(ref_node):
-                raise ValueError("Sibling alignments don't have the same "
-                    "outbound node.")
-
-        right_index = (3 - sibling_len % 3) % 3
-
-        if len(ref_node.seq.seq) < right_index + 3:
-            # shouldn't happen. Raising an  exception for now.
-            if len(ref_node.out_edges) > 0:
-                raise ValueError('Somthing went wrong with variant alignment.')
-            for node in nodes:
-                node.append_right(ref_node)
-                if self.has_known_orf:
-                    self.truncate_at_stop_codon_if_found(node)
-            self.remove_node(ref_node)
+        ref_node = start.get_reference_next()
+        if not ref_node.out_edges:
             return None
 
-        found_stop = []
-        right_over = ref_node.truncate_left(right_index)
-        for node in nodes:
-            node.append_right(right_over)
-            if self.has_known_orf:
-                self.truncate_at_stop_codon_if_found(node)
-            found_stop.append(not node.out_edges)
-        if all(found_stop):
-            return None
-        return ref_node
+        end = ref_node.get_reference_next()
+        right_index = (3 - len(ref_node.seq) % 3) % 3
+        right_over = end.truncate_left(right_index)
 
-    def single_expand_to_codons(self, node:TVGNode) -> TVGNode:
-        """ Expand a single node to codons """
-        # If the given node is caused by a Fusion, we don't need to do anything
-        # Because the acceptor (downstream) node is actually a reference node
-        # of the acceptor transcript.
-        if any(variant.variant.type == 'Fusion' for variant in node.variants):
-            return node
-        cur = node
-        while len(cur.out_edges) == 1:
-            cur = self.merge_with_outbonds(cur)[0]
-        if len(cur.seq.seq) > 3 or not cur.out_edges:
-            return cur
-        # This condition shouldn't happen. I don't see how, but raising an
-        # exception for now.
-        raise ValueError('Something went wrong with variant alignment.')
+        for in_edge in end.in_edges:
+            in_node = in_edge.in_node
+            in_node.append_right(right_over)
 
+        return end
 
-    @staticmethod
-    def group_outbond_siblings(upstream:TVGNode
-            ) -> List[List[TVGNode]]:
-        """ Group the downstream nodes with variant alignments if they are
-        connected to the same downstream node. Sibling nodes are the ones that
-        share the same upstream and downstream nodes.
-
-        Args:
-            upstream (TVGNode): The upstream node of which the outbond
-                nodes are grouped.
-
-        Return:
-            A 2-dimensional list, that each child list contains nodes that are
-            sibling to each other (ie sharing the same upstream and downstream
-            node).
-        """
-        out_nodes = {edge.out_node for edge in upstream.out_edges}
-        groups:List[List[TVGNode]] = []
-        while out_nodes:
-            out_node = out_nodes.pop()
-            downstream = out_node.get_reference_next()
-            group:List[TVGNode] = [out_node]
-            if downstream:
-                for edge in downstream.in_edges:
-                    if edge.in_node in out_nodes:
-                        group.append(edge.in_node)
-                        out_nodes.remove(edge.in_node)
-            groups.append(group)
-        return groups
-
-    def prune_variants_or_branch_out(self, node:TVGNode
-            ) -> Tuple[TVGNode, List[TVGNode]]:
-        """ For a given reference node, remove the outbound variants if they
-        are before the start codon. For start lost variants, create a branch.
-        """
-        outbound_ref = node.get_reference_next()
-        outbound_ref.orf = node.orf
-        ref_start = outbound_ref.seq.locations[0].ref.start
-        orf = self.seq.orf
-        branches = []
-
-        # Maybe improved for start retained mutations
-        if orf.start > ref_start:
-            edges = copy.copy(node.out_edges)
-            for edge in edges:
-                if edge.out_node is outbound_ref:
-                    continue
-                self.remove_node(edge.out_node)
-
-        edges = copy.copy(node.out_edges)
-        for edge in edges:
-            if edge.out_node is outbound_ref:
-                continue
-            self.update_frameshifts(edge.out_node)
-            branch = self.create_branch(edge.out_node)
-            branches.append(branch)
-        if node is not self.root:
-            nodes = self.merge_with_outbonds(node)
-            for merged_node in nodes:
-                if not merged_node.variants:
-                    return merged_node, branches
-        return outbound_ref, branches
-
-    def skip_nodes_or_branch_out(self, node:TVGNode, is_root:bool=False
-            ) -> Tuple[TVGNode, List[TVGNode]]:
-        """ For a given reference node, remove it if no start codon is found.
-        Its outbond nodes are also removed if no start codon is found on them.
-        Branch out frameshifting variants.
-        """
-        branches = []
-        upstream_edges = copy.copy(node.in_edges)
-        downstream = node.find_farthest_node_with_overlap()
-        if is_root:
-            nodes = [edge.out_node for edge in node.out_edges]
-        else:
-            nodes = self.merge_with_outbonds(node)
-
-        # this is when all variants at this positions are frameshifting, or
-        # downstream is None, or there is a variant at the last nucleotide.
-        if downstream in nodes or downstream is None:
-            for anode in nodes:
-                if any(v.variant.is_frameshifting() for v in anode.variants):
-                    if not anode.branch:
-                        anode = self.create_branch(anode)
-                if anode.branch:
-                    branches.append(anode)
-            return downstream, branches
-
-        for anode in nodes:
-            seq = anode.seq + downstream.seq[:2]
-            index = seq.find_start_codon()
-            if index == -1:
-                self.remove_node(anode)
-            else:
-                self.update_frameshifts(anode)
-                anode = self.create_branch(anode)
-                anode.truncate_left(index)
-                anodes = self.merge_with_outbonds(anode)
-                if len(anodes) > 1:
-                    raise ValueError('Multiple output nodes found.')
-                branches.append(anodes[0])
-        for edge in upstream_edges:
-            self.add_edge(edge.in_node, downstream, _type=edge.type)
-        return downstream, branches
-
-    def find_orf_unknown(self) -> None:
-        r""" Find all possible start codons when the ORF is unknown. Each ORF
-        becomes the start of a subgraph downstream directly to the root.
-
-        This is used for untranslatable transcripts such as lncRNA.
-
-                                 ATGCT
-                                /
-        GGATGG-G-TGCT    ->    ^-ATGG-G-TGCT
-              \ /                    \ /
-               A                      A
-        """
-        cur = TVGCursor(node=self.root, search_orf=False)
-        queue:Deque[TVGCursor] = deque([cur])
-
+    def trim_until_bridges_or_start_codon(self, reading_frame_index:int,
+            look_for_start_codon:bool):
+        """ """
+        root = self.reading_frames[reading_frame_index]
+        queue = deque([e.out_node for e in root.out_edges])
+        bridges:Dict[str,TVGNode] = {}
         while queue:
             cur = queue.pop()
-            if cur.node.is_reference() and \
-                    all(frame for frame in self.reading_frames):
-                if self.root.is_inbond_of(cur.node):
-                    self.remove_node(cur.node)
-                continue
-            if cur.node is self.root:
-                if len(cur.node.out_edges) == 1:
-                    main = cur.node.get_reference_next()
-                    new_cursor = TVGCursor(node=main)
-                    queue.append(new_cursor)
-                    continue
-                self.align_variants(cur.node)
-                main, branches = self.skip_nodes_or_branch_out(cur.node, True)
-                new_cursor = TVGCursor(node=main)
-                queue.appendleft(new_cursor)
-                for branch in branches:
-                    new_cursor = TVGCursor(branch, True)
-                    queue.appendleft(new_cursor)
+            if cur.subgraph_id in bridges:
                 continue
 
-            node = cur.node
-            index = node.seq.find_start_codon()
+            has_bridge = any(e.in_node.reading_frame_index == 0 for e in cur.in_edges)
 
-            if index == -1:
-                if not node.out_edges:
-                    self.remove_node(node)
-                    continue
-                node.truncate_left(i=len(node.seq.seq)-2)
-                if len(node.out_edges) == 1:
-                    nodes = self.merge_with_outbonds(node)
-                    new_cursor = TVGCursor(nodes[0])
-                    queue.append(new_cursor)
-                    continue
-                node = self.align_variants(node)
-                main, branches = self.skip_nodes_or_branch_out(node)
-                if main:
-                    new_cursor = TVGCursor(node=main)
-                    queue.appendleft(new_cursor)
-                for branch in branches:
-                    new_cursor = TVGCursor(branch, True)
-                    queue.appendleft(new_cursor)
+            if cur.subgraph_id not in bridges and has_bridge:
+                bridges[cur.subgraph_id] = cur
                 continue
 
-            orf_start = node.get_orf_start(index)
-            orf_id = orf_start % 3
-
-            if cur.node.is_reference():
-                if self.reading_frames[orf_id]:
-                    node.truncate_left(index + 3)
-                    new_cursor = TVGCursor(node)
-                    queue.appendleft(new_cursor)
-                    continue
-
-            orf = [orf_start, None]
-            node.truncate_left(index)
-            node_copy = self.copy_node(node)
-            self.update_frameshifts(node_copy)
-            node_copy = self.create_branch(node_copy)
-
-            if cur.node.is_reference():
-                self.reading_frames[orf_id] = node_copy
-
-            node_copy.orf = orf
-
-            node.truncate_left(3)
-            new_cursor = TVGCursor(node)
-            queue.appendleft(new_cursor)
-
-    def find_orf_known(self) -> None:
-        """ Find the start codon according to the known ORF. Any variants
-        occured prior to the start codon will be ignored. For start lost
-        mutations, the start codon will be searched.
-        """
-        cur = TVGCursor(node=self.root, search_orf=False)
-        queue:Deque[TVGCursor] = deque([cur])
-
-        while queue:
-            cur = queue.pop()
-            if cur.node is self.root:
-                if len(cur.node.out_edges) == 1:
-                    main = cur.node.get_reference_next()
-                    new_cursor = TVGCursor(node=main, search_orf=False)
-                    queue.append(new_cursor)
-                    continue
-                main,branches = self.prune_variants_or_branch_out(cur.node)
-                new_cursor = TVGCursor(node=main, search_orf=False)
-                queue.appendleft(new_cursor)
-                for branch in branches:
-                    search_orf = not self.cds_start_nf
-                    new_cursor = TVGCursor(branch, search_orf)
-                    queue.appendleft(new_cursor)
-                continue
-
-            if cur.search_orf:
-                node = cur.node
-                index = node.seq.find_start_codon()
-
-                # for start lost mutation or non-translatable sequences, if
-                # start codon is not found in the current cursor, merge the
-                # last nucleotides with each of the out nodes, and research.
-                # This may be improved by skipping visited nodes.
-                if index == -1:
-                    if not node.out_edges:
-                        self.remove_node(node)
-                        continue
-                    node.truncate_left(i=len(node.seq.seq)-2)
-                    if len(node.out_edges) == 1:
-                        nodes = self.merge_with_outbonds(node)
-                        new_cursor = TVGCursor(nodes[0], True)
-                        queue.appendleft(new_cursor)
-                        continue
-                    node = self.align_variants(node)
-                    main, branches = self.skip_nodes_or_branch_out(node)
-                    new_cursor = TVGCursor(node=main)
-                    queue.appendleft(new_cursor)
-                    for branch in branches:
-                        new_cursor = TVGCursor(branch, True)
-                        queue.appendleft(new_cursor)
+            for edge in cur.out_edges:
+                if edge.out_node.subgraph_id == self.id:
+                    queue.appendleft(edge.out_node)
                 else:
-                    orf_start = node.get_orf_start(index)
-                    node.truncate_left(index)
-                    node.orf = [orf_start, None]
-                continue
+                    queue.append(edge.out_node)
+                self.add_edge(root, edge.out_node)
+            self.remove_node(cur)
 
-            # back to the reference track
-            if self.cds_start_nf:
-                orf_start = 0
-                start_codon_index = 0
-            else:
-                orf_start = int(self.seq.orf.start)
-                start_codon_index = cur.node.seq.get_query_index(orf_start)
 
-            if start_codon_index != -1:
-                cur_node = cur.node
-                cur_node.truncate_left(start_codon_index)
-                cur_node.orf = [orf_start, None]
-                while len(cur_node.seq) <= 2:
-                    cur_node, branchs = self.prune_variants_or_branch_out(cur_node)
-                    for branch in branchs:
-                        new_cursor = TVGCursor(branch, True)
-                        queue.appendleft(new_cursor)
-                continue
-
-            if not cur.node.out_edges:
-                self.remove_node(cur.node)
-                continue
-
-            cur.node.truncate_left(i=len(cur.node.seq.seq)-2)
-            main, branchs = self.prune_variants_or_branch_out(cur.node)
-            new_cursor = TVGCursor(node=main, search_orf=False)
-            queue.append(new_cursor)
-            for branch in branchs:
-                new_cursor = TVGCursor(node=branch, search_orf=True)
-                queue.appendleft(new_cursor)
-
-    def find_all_orfs(self):
-        """ Fild all ORFs """
-        if self.has_known_orf:
-            self.find_orf_known()
-        else:
-            self.find_orf_unknown()
-
-    def fit_into_codons(self, max_frameshift_dist:int=75,
-            max_frameshift_num:int=3, branch_out_size:int=100) -> None:
-        r""" This takes the variant graph, and fit all cleave sites into the
-        range of codons. For frameshifting mutations, the downstream part
-        will be branched out.
-
-        The case where there are mutations before the start codon isn't
-        considered
-
-        Example:
-
-                 T--                    GTG-CCCT
-                /   \                  /
-            ATGG-TCT-G-CCCT   ->    ATG-GTCTGC-CCT
-                    \ /                \      /
-                     A                  GTCTAC
-        """
-        if self.root.seq is not None:
-            self.add_null_root()
-        queue:Deque[TVGCursor] = deque()
-        for edge in self.root.out_edges:
-            cur = TVGCursor(node=edge.out_node, search_orf=False)
-            queue.append(cur)
-
+    def fit_into_codons(self) -> None:
+        """ """
+        queue:Deque[TVGNode] = deque([self.reading_frames])
         while queue:
-            cur:TVGCursor = queue.pop()
-
-            node = cur.node
-            if not node.out_edges:
+            cur = queue.pop()
+            if not cur.out_edges:
+                continue
+            nxt = cur.get_reference_next()
+            if len(cur.out_edges) == 1 and len(nxt.in_edges) == 1:
+                cur = self.merge_with_outbonds(cur)[0]
+                queue.appendleft(cur)
                 continue
 
-            # If the node has only one out node, we just need to merge then
-            # together. This is the case of the reference node after a
-            # frameshifting mutation is branched out.
-            if len(node.out_edges) == 1:
-                node = self.merge_with_outbonds(node)[0]
-                if self.root.is_inbond_of(node):
-                    orf_idx = node.orf[0] % 3
-                    self.reading_frames[orf_idx] = node
-                new_cursor = TVGCursor(node=node, search_orf=False)
-                queue.appendleft(new_cursor)
-                continue
-
-            if len(node.out_edges) > 1:
-                node = self.align_variants(node, branch_out_size,
-                    max_frameshift_dist=max_frameshift_dist,
-                    max_frameshift_num=max_frameshift_num)
-            branches = self.expand_alignments(node)
-
-            for branch in branches:
-                new_cursor = TVGCursor(node=branch, search_orf=False)
-                queue.appendleft(new_cursor)
+            self.align_variants(cur)
+            node = self.expand_alignments(cur)
+            queue.append(node)
 
     def translate(self) -> PeptideVariantGraph:
         r""" Converts a DNA transcript variant graph into a peptide variant
@@ -1272,9 +936,13 @@ class ThreeFrameTVG():
                 GTCTAC                VY
         """
         root = PVGNode(None)
-        pgraph = PeptideVariantGraph(root, self.id, self.has_known_orf)
+        if self.has_known_orf:
+            known_orf = [int(self.seq.orf.start), int(self.seq.orf.end)]
+        else:
+            known_orf = [None, None]
+        pgraph = PeptideVariantGraph(root, self.id, known_orf)
 
-        queue = deque([(self.root, root)])
+        queue = deque([(dnode, root) for dnode in self.reading_frames])
         visited = dict()
 
         while queue:
@@ -1312,6 +980,7 @@ class ThreeFrameTVG():
                     visited[out_node] = new_pnode
                     queue.appendleft((out_node, new_pnode))
         for i, dnode in enumerate(self.reading_frames):
+            dnode = dnode.get_reference_next()
             if dnode:
                 pgraph.reading_frames[i] = visited[dnode]
         return pgraph

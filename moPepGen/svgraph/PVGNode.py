@@ -20,6 +20,7 @@ class PVGNode():
         cleavage (bool): Whether the start of the node is a cleavage site.
     """
     def __init__(self, seq:aa.AminoAcidSeqRecordWithCoordinates,
+            reading_frame_index:int,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             frameshifts:Set[seqvar.VariantRecord]=None,
@@ -28,7 +29,7 @@ class PVGNode():
 
         Args:
             seq (aa.AminoAcidSeqRecordWithCoordinates): The amino acid sequence
-                with the coordinates of that ORF (offset to the first M)
+                with the coordinates reading frame
             variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
                 carried in the sequence.
             frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
@@ -46,6 +47,7 @@ class PVGNode():
         self.cleavage = cleavage
         self.truncated = truncated
         self.orf = orf or [None, None]
+        self.reading_frame_index = reading_frame_index
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """

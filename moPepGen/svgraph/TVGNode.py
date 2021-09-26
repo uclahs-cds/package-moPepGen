@@ -24,7 +24,8 @@ class TVGNode():
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
-            orf:List[int]=None):
+            orf:List[int]=None, reading_frame_index:int=None,
+            subgraph_id:str=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -39,6 +40,8 @@ class TVGNode():
         self.frameshifts = frameshifts if frameshifts else set()
         self.branch = branch
         self.orf = orf or [None, None]
+        self.reading_frame_index = reading_frame_index
+        self.subgraph_id = subgraph_id
 
     def __hash__(self):
         """ hash """
@@ -69,7 +72,9 @@ class TVGNode():
             variants=variants,
             frameshifts=frameshifts,
             orf=self.orf,
-            branch=self.branch
+            branch=self.branch,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
     def get_edge_to(self, other:TVGNode) -> svgraph.TVGEdge:
@@ -156,7 +161,7 @@ class TVGNode():
         return False
 
     def next_node_to_branch_out(self, to_node:svgraph.TVGNode,
-            branch_out_size:int=100) -> svgraph.TVGNode:
+            branch_out_size:int=100) -> TVGNode:
         """ Returns the next node that needs to be branched out between two
         reference nodes. Returns None if not found.
 
@@ -217,7 +222,9 @@ class TVGNode():
             variants=copy.copy(self.variants),
             frameshifts=copy.copy(self.frameshifts),
             branch=self.branch,
-            orf=self.orf
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
     def deepcopy(self, propagate_frameshifts:bool=True) -> TVGNode:
@@ -229,7 +236,11 @@ class TVGNode():
         new_node = self.__class__(
             seq=self.seq,
             variants=copy.copy(self.variants),
-            frameshifts=copy.copy(self.frameshifts)
+            frameshifts=copy.copy(self.frameshifts),
+            branch=self.branch,
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
         queue:Deque[Tuple[TVGNode, TVGNode]] = deque([(self, new_node)])
@@ -247,10 +258,14 @@ class TVGNode():
                     frameshifts = copy.copy(source_out_node.frameshifts)
                     if propagate_frameshifts:
                         frameshifts.update(target.frameshifts)
-                    new_out_node = self.__class__(
+                    new_out_node = source_out_node.__class__(
                         seq=source_out_node.seq,
                         variants=copy.copy(source_out_node.variants),
-                        frameshifts=frameshifts
+                        frameshifts=frameshifts,
+                        branch=source_out_node.branch,
+                        orf=source_out_node.orf,
+                        reading_frame_index=source_out_node.reading_frame_index,
+                        subgraph_id=source_out_node.subgraph_id
                     )
                     visited[source_out_node] = new_out_node
                 new_edge = svgraph.TVGEdge(target, new_out_node,
@@ -287,12 +302,10 @@ class TVGNode():
         visited = {self}
         while queue:
             cur:TVGNode = queue.popleft()
-
             if cur is None:
                 continue
 
-            # if this is the start of a new branch, don't count it.
-            if cur.branch:
+            if cur.reading_frame_index != self.reading_frame_index:
                 continue
 
             visited_len_before = len(visited)
@@ -392,7 +405,10 @@ class TVGNode():
             seq=left_seq,
             variants=left_variants,
             frameshifts=left_frameshifts,
-            branch=self.branch
+            branch=self.branch,
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
         self.seq = self.seq[i:]
@@ -424,7 +440,10 @@ class TVGNode():
             seq=right_seq,
             variants=right_variants,
             frameshifts=right_frameshifts,
-            branch=False
+            branch=False,
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
         self.seq = self.seq[:i]
@@ -465,7 +484,7 @@ class TVGNode():
             query = FeatureLocation(start=query_start, end=query_end)
             dna_query_codon_start = query_start * 3
             dna_ref_codon_start = loc.ref.start + dna_query_codon_start - query.start
-            ref_start = math.ceil((dna_ref_codon_start - self.orf[0]) / 3)
+            ref_start = math.ceil((dna_ref_codon_start - self.reading_frame_index) / 3)
             ref_end = ref_start + len(query)
             ref = FeatureLocation(start=ref_start, end=ref_end)
             locations.append(MatchedLocation(query=query, ref=ref))
@@ -481,5 +500,20 @@ class TVGNode():
             seq=seq,
             variants=variants,
             frameshifts=copy.copy(self.frameshifts),
-            orf=[None, None]
+            orf=[None, None],
+            reading_frame_index=self.reading_frame_index
         )
+
+    def get_reference_offset(self, i:int=0) -> int:
+        """ """
+        if self.seq.locations:
+            loc = self.seq.locations[0]
+            return loc.ref.start + i - loc.query.start
+        elif self.variants:
+            var = self.variants[0]
+            loc = var.location
+            if len(loc) == len(var.variant.location) or loc.start > 0:
+                return var.variant.location.start + i - loc.start
+            else:
+                return var.variant.location.end + i - loc.end
+        raise ValueError

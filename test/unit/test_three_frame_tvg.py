@@ -20,22 +20,28 @@ def create_three_frame_tvg(data:Dict[Union[int,str],List]
     graph = ThreeFrameTVG(seq, _id='')
     for edge in copy.copy(graph.root.out_edges):
         graph.remove_edge(edge)
-    node_list[0] = graph.root
+    graph.reading_frames[0] = TVGNode(None, reading_frame_index=0, subgraph_id=graph.id)
+    graph.reading_frames[1] = TVGNode(None, reading_frame_index=1, subgraph_id=graph.id)
+    graph.reading_frames[2] = TVGNode(None, reading_frame_index=2, subgraph_id=graph.id)
+
     node_data:Dict[int,list] = data['nodes']
     for key,val in node_data.items():
         _seq = Seq(val[0])
 
-        in_nodes = [node_list[i] for i in val[1]]
+        if key in data['reading_frames']:
+            in_nodes = [graph.reading_frames[data['reading_frames'].index(key)]]
+        else:
+            in_nodes = [node_list[i] for i in val[1]]
         for node in in_nodes:
             if not node.variants:
                 # upstream is the in_node that has no variants
                 upstream = node
                 break
 
-        if 0 in val[1]:
+        if 0 in val[1] or not val[1]:
             node_start = data['node_start'][key]
         else:
-            upstream.seq.locations[-1].ref.end
+            node_start = upstream.seq.locations[-1].ref.end
 
         variants = []
         frameshifts = copy.copy(upstream.frameshifts)
@@ -87,7 +93,9 @@ def create_three_frame_tvg(data:Dict[Union[int,str],List]
             seq_locations.append(seq_location)
 
         seq = dna.DNASeqRecordWithCoordinates(_seq, seq_locations)
-        node = TVGNode(seq, variants, frameshifts)
+        orf_idx = upstream.reading_frame_index
+        node = TVGNode(seq, variants, frameshifts, reading_frame_index=orf_idx,
+            subgraph_id=graph.id)
         if len(val) == 4:
             node.branch = val[3]
         node_list[key] = node
@@ -103,7 +111,8 @@ def create_three_frame_tvg(data:Dict[Union[int,str],List]
             graph.add_edge(in_node, node, edge_type)
 
     for i, key in enumerate(data['reading_frames']):
-        graph.reading_frames[i] = node_list[key]
+        if key:
+            graph.reading_frames[i] = node_list[key]
 
     return graph, node_list
 
@@ -214,11 +223,11 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         data = {
             'seq': 'AAATAAATAAAT',
             'reading_frames': [1,2,3],
-            'node_start': {1: 0, 2:0, 3:0},
+            'node_start': {1: 0, 2:1, 3:2},
             'nodes': {
                 1: ['AAATAAATAAAT', [0], []],
-                2: ['AAATAAATAAAT', [0], []],
-                3: ['AAATAAATAAAT', [0], []]
+                2: ['AATAAATAAAT', [0], []],
+                3: ['ATAAATAAAT', [0], []]
             }
         }
         gene_id = 'ENSG0001'
@@ -238,5 +247,108 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         graph.apply_insertion(cursors, ins_var, var_pool, genome, anno)
 
         received = {str(n.seq.seq) for n in graph.reading_frames}
-        self.assertEqual(received, {'AAA'})
+        self.assertEqual(received, {'A', 'AA', 'AAA'})
 
+    def test_align_variants(self):
+        """ find_known_orf wihtout mutation """
+        data = {
+            'seq': 'AAATAAATAAAT',
+            'reading_frames': [1,None,None],
+            'node_start': {1: 0},
+            'nodes': {
+                1: ['AAAT', [], []],
+                2: ['A', [1], []],
+                3: ['G', [1], [(0, 'A', 'G', 'SNV', '')]],
+                4: ['G', [2,3], []],
+                5: ['T', [2], [(0, 'G', 'T', 'SNV', '')]],
+                6: ['C', [4,5], []]
+            }
+        }
+
+        graph, nodes = create_three_frame_tvg(data)
+        graph.align_variants(nodes[1])
+        self.assertEqual(len(nodes[1].out_edges), 3)
+        received = {str(e.out_node.seq.seq) for e in nodes[1].out_edges}
+        expected = {'GG', 'AG', 'AT'}
+        self.assertEqual(received, expected)
+
+    def test_align_variants_bridge(self):
+        """ find_known_orf wihtout mutation """
+        data = {
+            'seq': 'AAATAAATAAAT',
+            'reading_frames': [1,11,None],
+            'node_start': {1: 0, 11:1},
+            'nodes': {
+                1: ['AAA', [], []],
+                2: ['TA', [1], []],
+                3: ['T', [1], [(0, 'TA', 'T', 'INDEL', '')]],
+                4: ['G', [2], []],
+                11: ['AAT', [], []],
+                12: ['A', [11], []],
+                13: ['G', [11], [(0, 'A', 'G', 'SNV', '')]],
+                14: ['G', [3, 12,13], []],
+                15: ['T', [12], [(0, 'G', 'T', 'SNV', '')]],
+                16: ['C', [14,15], []]
+            }
+        }
+
+        graph, nodes = create_three_frame_tvg(data)
+        graph.align_variants(nodes[11])
+        self.assertEqual(len(nodes[11].out_edges), 3)
+        received = {str(e.out_node.seq.seq) for e in nodes[11].out_edges}
+        expected = {'GG', 'AG', 'AT'}
+        self.assertEqual(received, expected)
+        node = nodes[1].get_reference_next().get_reference_next()
+        self.assertEqual(len(node.in_edges), 4)
+        received = {str(e.in_node.seq.seq) for e in node.in_edges}
+        expected = {'GG', 'AG', 'AT'}
+        self.assertEqual(received, expected)
+
+    def test_expand_alignments(self):
+        """ find_known_orf wihtout mutation """
+        data = {
+            'seq': 'AAATAAATAAAT',
+            'reading_frames': [1,None,None],
+            'node_start': {1: 0},
+            'nodes': {
+                1: ['AAAT', [], []],
+                2: ['AG', [1], []],
+                3: ['GG', [1], [(0, 'A', 'G', 'SNV', '')]],
+                4: ['AT', [1], [(1, 'G', 'T', 'SNV', '')]],
+                5: ['CCC', [2,3,4], []]
+            }
+        }
+
+        graph, nodes = create_three_frame_tvg(data)
+        graph.expand_alignments(nodes[1])
+        self.assertEqual(str(nodes[1].seq.seq), 'AAA')
+        received = {str(e.out_node.seq.seq) for e in nodes[1].out_edges}
+        expected = {'TGG', 'TAG', 'TAT'}
+        self.assertEqual(received, expected)
+
+    def test_expand_alignment_bridge(self):
+        """ find_known_orf wihtout mutation """
+        data = {
+            'seq': 'AAATAAATAAAT',
+            'reading_frames': [1,11,None],
+            'node_start': {1: 0, 11:1},
+            'nodes': {
+                1: ['AAA', [], []],
+                2: ['TA', [1], []],
+                3: ['TG', [1], [(0, 'TA', 'T', 'INDEL', '')]],
+                4: ['G', [2], []],
+                11: ['AAAT', [], []],
+                12: ['AG', [11], []],
+                13: ['GG', [11], [(0, 'A', 'G', 'SNV', '')]],
+                14: ['AT', [11], [(1, 'G', 'T', 'SNV', '')]],
+                15: ['CCC', [12,13,14, 3], []]
+            }
+        }
+
+        graph, nodes = create_three_frame_tvg(data)
+        graph.expand_alignments(nodes[11])
+        self.assertEqual(len(nodes[11].out_edges), 3)
+        self.assertEqual(str(nodes[11].seq.seq), 'AAA')
+        received = {str(e.out_node.seq.seq) for e in nodes[11].out_edges}
+        expected = {'TGG', 'TAG', 'TAT'}
+        self.assertEqual(received, expected)
