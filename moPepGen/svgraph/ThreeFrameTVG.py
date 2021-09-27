@@ -5,12 +5,13 @@ from collections import deque
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from moPepGen import dna, seqvar
+from moPepGen import dna, seqvar, all_equal
 from moPepGen.svgraph.TVGCursor import TVGCursor
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
 from moPepGen.svgraph.PVGNode import PVGNode
+from moPepGen.svgraph.VariantCombinations import VariantCombinations
 
 
 if TYPE_CHECKING:
@@ -116,6 +117,13 @@ class ThreeFrameTVG():
         out_node.in_edges.add(edge)
         return edge
 
+    def is_out_bond_to_any_root(self, node:TVGNode):
+        """ Check if the node is out bond to any root of reading frame """
+        for root in self.reading_frames:
+            if root.is_inbond_of(node):
+                return True
+        return False
+
     def remove_node(self, node:TVGNode):
         """ Remove a node from its inboud and outbound node. """
         while node.in_edges:
@@ -124,6 +132,15 @@ class ThreeFrameTVG():
         while node.out_edges:
             edge = node.out_edges.pop()
             self.remove_edge(edge)
+
+    def get_known_reading_frame_index(self):
+        """ get known reading frame index """
+        return self.seq.orf.start % 3
+
+    def should_add_singleton(self, node:TVGNode) -> bool:
+        """ Checks if singleton frameshift should be added """
+        return not self.has_known_orf or \
+            node.reading_frame_index == self.get_known_reading_frame_index()
 
     def add_null_root(self):
         """ Adds a null node to the root. """
@@ -157,20 +174,6 @@ class ThreeFrameTVG():
         """ Find the ORF index of a given node at given position of its
         sequence """
         return node.get_orf_start(i) % 3
-
-    def update_frameshifts(self, node:TVGNode) -> None:
-        """ Update the frameshifts slot """
-        if node is not self.root:
-            if len(node.in_edges) == 1:
-                upstream = next(iter(node.in_edges)).in_node
-            else:
-                upstream = node.get_reference_prev()
-            if upstream:
-                node.frameshifts = copy.copy(upstream.frameshifts)
-
-        for variant in node.variants:
-            if variant.variant.is_frameshifting():
-                node.frameshifts.add(variant.variant)
 
     def splice(self, node:TVGNode, i:int, _type:str
             ) -> Tuple[TVGNode, TVGNode]:
@@ -210,9 +213,13 @@ class ThreeFrameTVG():
             if variant.location.end > i:
                 right_node.variants.append(variant)
 
-        for frameshift in node.frameshifts:
-            left_node.frameshifts.add(frameshift)
-            right_node.frameshifts.add(frameshift)
+        if node.frameshifts:
+            left_node.frameshifts = copy.copy(node.frameshifts)
+            right_node.frameshifts = copy.copy(node.frameshifts)
+            for variant in node.variants:
+                if variant.variant.is_frameshifting() and \
+                        variant.location.start > len(left_node.seq.seq):
+                    left_node.frameshifts.remove(variant)
 
         while node.in_edges:
             edge = node.in_edges.pop()
@@ -283,7 +290,9 @@ class ThreeFrameTVG():
         var_node = TVGNode(
             seq=seq,
             variants=[variant_with_coordinates],
-            subgraph_id=self.id
+            subgraph_id=self.id,
+            reading_frame_index=source.reading_frame_index,
+            orf=source.orf
         )
         returns = [None, None]
         # variant start
@@ -331,9 +340,9 @@ class ThreeFrameTVG():
         # returns the node with the first nucleotide of the input node.
         return returns
 
-    def apply_fusion(self, nodes:List[TVGNode], variant:seqvar.VariantRecord,
+    def apply_fusion(self, cursors:List[TVGNode], variant:seqvar.VariantRecord,
             variant_pool:seqvar.VariantRecordPool, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation) -> TVGNode:
+            anno:gtf.GenomicAnnotation) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
 
@@ -351,7 +360,7 @@ class ThreeFrameTVG():
                 associated with the donor transcript. Variants before the
                 breakpoint won't be applied.
         """
-        nodes = copy.copy(nodes)
+        cursors = copy.copy(cursors)
         accepter_gene_id = variant.attrs['ACCEPTER_GENE_ID']
         accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
         accepter_tx_model = anno.transcripts[accepter_tx_id]
@@ -370,7 +379,7 @@ class ThreeFrameTVG():
         branch.init_three_frames()
         for root in branch.reading_frames:
             list(root.out_edges)[0].out_node.subgraph_id = branch.id
-        branch.create_variant_graph(accepter_variant_records)
+        branch.create_variant_graph(accepter_variant_records, None, None, None)
         for edge in branch.root.out_edges:
             edge.out_node.variants.append(variant)
 
@@ -384,10 +393,9 @@ class ThreeFrameTVG():
                 location=FeatureLocation(start=0, end=0)
             )
             var_node.variants.append(var)
-            var_node.frameshifts.add(variant)
             variant_start = variant.location.start
 
-            node = nodes[i]
+            node = cursors[i]
             node_start = node.seq.locations[0].ref.start
 
             if variant_start < node_start:
@@ -403,13 +411,13 @@ class ThreeFrameTVG():
             self.add_edge(node, var_node, 'variant_start')
             self.reading_frames[i] = node
 
-        return nodes
+        return cursors
 
     def _apply_insertion(self, cursors:List[TVGNode],
             var:seqvar.VariantRecordWithCoordinate,
             seq:dna.DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecord]
-        ) -> TVGNode:
+        ) -> List[TVGNode]:
         """ Apply insertion """
         cursors = copy.copy(cursors)
         branch = ThreeFrameTVG(seq, self.id)
@@ -420,8 +428,7 @@ class ThreeFrameTVG():
             is_frameshifting = False
             if var.variant.is_frameshifting():
                 is_frameshifting = True
-                node.frameshifts.add(var.variant)
-        branch.create_variant_graph(variants)
+        branch.create_variant_graph(variants, None, None, None)
 
         for i in range(3):
             var_head = branch.reading_frames[i].get_reference_next()
@@ -487,7 +494,7 @@ class ThreeFrameTVG():
             variant:seqvar.VariantRecord,
             variant_pool:seqvar.VariantRecordPool,
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation
-            ) -> TVGNode:
+            ) -> List[TVGNode]:
         """ Apply an insertion into the the TVG graph. """
         gene_id = variant.attrs['DONOR_GENE_ID']
         gene_model = anno.genes[gene_id]
@@ -519,11 +526,11 @@ class ThreeFrameTVG():
         )
         return self._apply_insertion(cursors, var, insert_seq, insert_variants)
 
-    def apply_substitution(self, nodes:List[TVGNode],
+    def apply_substitution(self, cursors:List[TVGNode],
             variant:seqvar.VariantRecord,
             variant_pool:seqvar.VariantRecordPool,
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation
-            ) -> TVGNode:
+            ) -> List[TVGNode]:
         """ Apply a substitution variant into the graph """
         gene_id = variant.attrs['DONOR_GENE_ID']
         gene_model = anno.genes[gene_id]
@@ -539,11 +546,11 @@ class ThreeFrameTVG():
             variant=variant,
             location=FeatureLocation(start=0, end=len(sub_seq.seq))
         )
-        return self._apply_insertion(nodes, var, sub_seq, sub_variants)
+        return self._apply_insertion(cursors, var, sub_seq, sub_variants)
 
 
-    def create_variant_graph(self, variants:List[seqvar.VariantRecord]
-            ) -> None:
+    def create_variant_graph(self, variants:List[seqvar.VariantRecord],
+            variant_pool, genome, anno) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
@@ -554,51 +561,61 @@ class ThreeFrameTVG():
         """
         variant_iter = iter(variants)
         variant = next(variant_iter, None)
-        cursors = copy.copy(self.reading_frames)
+        cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
+
+        if self.has_known_orf:
+            start_codon = FeatureLocation(
+                start=self.seq.orf.start,
+                end=self.seq.orf.start + 3
+            )
 
         while variant:
             if not any(cursors):
                 break
+            # skipping start lost mutations
+            start_altering = variant.location.start < 3 or \
+                (self.has_known_orf and variant.location.overlaps(start_codon))
+            if start_altering:
+                variant = next(variant_iter, None)
+                continue
 
-            start_altering = self.seq.orf and variant.location.overlaps(self.seq.orf)
+            if not any(any(y.is_inbond_of(x) for y in self.reading_frames) \
+                    for x in cursors) and not \
+                    all_equal([x.seq.locations[0].ref.start for x in cursors]):
+                raise ValueError('Not all cursors are equal. Somthing messed up.')
 
-            if variant.is_frameshifting() and not start_altering:
+            if any(c.seq.locations[0].ref.start > variant.location.start for c in cursors):
+                variant = next(variant_iter, None)
+                continue
+
+            any_cursor_expired = False
+            for i,cursor in enumerate(cursors):
+                if cursor.seq.locations[-1].ref.end <= variant.location.start:
+                    cursors[i] = cursors[i].get_reference_next()
+                    any_cursor_expired = True
+            if any_cursor_expired:
+                continue
+
+            if variant.type == 'Fusion':
+                cursors = self.apply_fusion(cursors, variant, variant_pool, genome, anno)
+
+            elif variant.type == 'Insertion':
+                cursors = self.apply_insertion(cursors, variant, variant_pool, genome, anno)
+
+            elif variant.type == 'Substitution':
+                cursors = self.apply_substitution(cursors, variant, variant_pool, genome, anno)
+
+            elif variant.is_frameshifting() and not start_altering:
                 frames_shifted = variant.frames_shifted()
                 for i in range(3):
                     j = (i + frames_shifted) % 3
-                    source = cursors[i]
-                    target = cursors[j]
-
-                    if source.seq.locations[0].ref.start > variant.location.start:
-                        variant = next(variant_iter, None)
-                        continue
-
-                    if source.seq.locations[-1].ref.end <= variant.location.start:
-                        cursors[i] = source.get_reference_next()
-                        continue
-
-                    if any(x not in self.reading_frames for x in [source,target])\
-                            and source.seq.locations[0].ref.start != \
-                            target.seq.locations[0].ref.start:
-                        raise ValueError
-
-                    source, target = self.apply_variant(source, target, variant)
-                    cursors[i] = source
-                    cursors[j] = target
-                variant = next(variant_iter, None)
+                    cursors[i], cursors[j] = self.apply_variant(cursors[i],
+                        cursors[j], variant)
             else:
-                for i, source in enumerate(cursors):
-                    if source.seq.locations[0].ref.start > variant.location.start:
-                        variant = next(variant_iter, None)
-                        continue
-
-                    if source.seq.locations[-1].ref.end <= variant.location.start:
-                        cursors[i] = source.get_reference_next()
-                        continue
-
-                    source, _ = self.apply_variant(source, source, variant)
-                    cursors[i] = source
-                variant = next(variant_iter, None)
+                for i,_ in enumerate(cursors):
+                    cursors[i], _ = self.apply_variant(cursors[i], cursors[i],
+                        variant)
+            variant = next(variant_iter, None)
 
     def copy_node(self, node:TVGNode) -> TVGNode:
         """ Create a copy of a node and connect to the same up and downstream
@@ -657,7 +674,10 @@ class ThreeFrameTVG():
             for in_edge in in_edges:
                 self.add_edge(in_edge.in_node, out_node, in_edge.type)
 
-            self.update_frameshifts(out_node)
+            out_node.frameshifts = copy.copy(node.frameshifts)
+            for variant in out_node.variants:
+                if variant.variant.is_frameshifting():
+                    out_node.frameshifts.add(variant.variant)
 
             out_nodes.append(out_node)
 
@@ -687,20 +707,25 @@ class ThreeFrameTVG():
             cur = next_node
         return end_nodes
 
-    def find_bridge_in_nodes(self, start:TVGNode, end=TVGNode) -> List[TVGNode]:
+    def find_bridge_nodes(self, start:TVGNode, end=TVGNode
+            ) -> Tuple[List[TVGNode], List[TVGNode]]:
         """ """
         this_id = start.reading_frame_index
         bridge_in = []
+        bridge_out = []
         queue:Deque[TVGNode] = deque([e.out_node for e in start.out_edges])
         while queue:
             cur = queue.pop()
             if any(e.out_node.reading_frame_index != this_id for e in cur.out_edges):
+                bridge_out.append(cur)
                 continue
-            if cur is end:
-                continue
-            if any(e.in_node.reading_frame_index != this_id for e in cur.out_edges):
-                bridge_in.append(cur)
-        return bridge_in
+            for e in cur.in_edges:
+                if e.in_node.reading_frame_index != this_id:
+                    bridge_in.append(e.in_node)
+            if cur is not end:
+                for e in cur.out_edges:
+                    queue.appendleft(e.out_node)
+        return bridge_in, bridge_out
 
     def align_variants(self, node:TVGNode) -> Tuple[TVGNode, TVGNode]:
         r""" Aligns all variants at that overlaps to the same start and end
@@ -726,7 +751,12 @@ class ThreeFrameTVG():
         this_orf = node.reading_frame_index
         start_node = node
         end_node = node.find_farthest_node_with_overlap()
-        bridge_ins = self.find_bridge_in_nodes(start=start_node,end=end_node)
+        end_nodes = [end_node]
+        bridge_ins, bridge_outs = self.find_bridge_nodes(start_node, end_node)
+
+        for bridge in bridge_outs:
+            for e in bridge.out_edges:
+                end_nodes.append(e.out_node)
 
         new_nodes = set()
         queue = deque()
@@ -742,17 +772,17 @@ class ThreeFrameTVG():
             queue.appendleft(out_node)
 
         for bridge in bridge_ins:
-            queue.append(bridge)
+            queue.appendleft(bridge)
 
         while queue:
             cur:TVGNode = queue.pop()
-            if cur is end_node or not cur.out_edges:
+            if cur in end_nodes or not cur.out_edges:
                 continue
 
             for out_edge in copy.copy(cur.out_edges):
                 out_node:TVGNode = out_edge.out_node
 
-                if out_node is end_node:
+                if out_node in end_nodes:
                     new_node = TVGNode(
                         seq=cur.seq,
                         variants=copy.copy(cur.variants),
@@ -781,7 +811,7 @@ class ThreeFrameTVG():
 
                 # create new node with the combined sequence
                 frameshifts = copy.copy(cur.frameshifts)
-                frameshifts.update(out_node.frameshifts)
+                frameshifts.update(out_node.variants, self.should_add_singleton(cur))
                 new_node = TVGNode(
                     seq=cur.seq + out_node.seq,
                     variants=new_variants,
@@ -798,7 +828,7 @@ class ThreeFrameTVG():
                         else 'reference'
                     self.add_edge(new_node, edge.out_node, _type=edge_type)
 
-                if out_node is not end_node and \
+                if out_node not in end_nodes and \
                         out_node.reading_frame_index == this_orf \
                         and all(e.out_node.reading_frame_index == this_orf
                             for e in out_node.out_edges) \
@@ -825,7 +855,7 @@ class ThreeFrameTVG():
         for bridge in new_bridges:
             original_bridge = bridge_map[bridge]
             for edge in original_bridge.in_edges:
-                self.add_edge(edge.in_node, bridge)
+                self.add_edge(edge.in_node, bridge, edge.type)
             self.remove_node(original_bridge)
 
         return start_node, end_node
@@ -882,42 +912,68 @@ class ThreeFrameTVG():
 
         return end
 
-    def trim_until_bridges_or_start_codon(self, reading_frame_index:int,
-            look_for_start_codon:bool):
+    def update_frameshifts(self, max_n:int=5):
         """ """
-        root = self.reading_frames[reading_frame_index]
-        queue = deque([e.out_node for e in root.out_edges])
-        bridges:Dict[str,TVGNode] = {}
+        queue:Deque[TVGNode] = deque(self.reading_frames)
+        visited:Set[TVGNode] = set()
+
         while queue:
             cur = queue.pop()
-            if cur.subgraph_id in bridges:
+            if cur in self.reading_frames:
+                for edge in cur.out_edges:
+                    queue.appendleft(edge.out_node)
                 continue
 
-            has_bridge = any(e.in_node.reading_frame_index == 0 for e in cur.in_edges)
-
-            if cur.subgraph_id not in bridges and has_bridge:
-                bridges[cur.subgraph_id] = cur
+            if self.is_out_bond_to_any_root(cur):
+                cur.frameshifts = VariantCombinations(max_n=max_n)
+                add_singleton = self.should_add_singleton(cur)
+                cur.frameshifts.update(cur.variants, add_singleton)
+                for edge in cur.out_edges:
+                    queue.appendleft(edge.out_node)
                 continue
+
+            # if not all in nodes are already visited, skip and wait until later
+            upstream_unprocessed = False
+            for edge in cur.in_edges:
+                if edge.in_node.frameshifts is None:
+                    upstream_unprocessed = True
+                    break
+            if upstream_unprocessed:
+                visited.discard(cur)
+                continue
+
+            # skip if it is already visited
+            len_before = len(visited)
+            visited.add(cur)
+            len_after = len(visited)
+            if len_before == len_after:
+                continue
+
+            cur.frameshifts = VariantCombinations(max_n=max_n)
+            for edge in cur.in_edges:
+                in_node = edge.in_node
+                if cur.frameshifts is None:
+                    cur.frameshifts = VariantCombinations(max_n=max_n)
+                cur.frameshifts.extend(in_node.frameshifts)
+            add_singleton = self.should_add_singleton(cur)
+            cur.frameshifts.update(cur.variants, add_singleton)
 
             for edge in cur.out_edges:
-                if edge.out_node.subgraph_id == self.id:
-                    queue.appendleft(edge.out_node)
-                else:
-                    queue.append(edge.out_node)
-                self.add_edge(root, edge.out_node)
-            self.remove_node(cur)
-
+                queue.appendleft(edge.out_node)
 
     def fit_into_codons(self) -> None:
         """ """
-        queue:Deque[TVGNode] = deque([self.reading_frames])
+        queue:Deque[TVGNode] = deque(self.reading_frames)
         while queue:
             cur = queue.pop()
             if not cur.out_edges:
                 continue
             nxt = cur.get_reference_next()
             if len(cur.out_edges) == 1 and len(nxt.in_edges) == 1:
-                cur = self.merge_with_outbonds(cur)[0]
+                if cur in self.reading_frames:
+                    cur = cur.get_reference_next()
+                else:
+                    cur = self.merge_with_outbonds(cur)[0]
                 queue.appendleft(cur)
                 continue
 
@@ -935,7 +991,7 @@ class ThreeFrameTVG():
                \      /              \  /
                 GTCTAC                VY
         """
-        root = PVGNode(None)
+        root = PVGNode(None, None)
         if self.has_known_orf:
             known_orf = [int(self.seq.orf.start), int(self.seq.orf.end)]
         else:
@@ -957,28 +1013,15 @@ class ThreeFrameTVG():
                     pnode.add_out_edge(out_pnode)
                     continue
 
-                orf = out_node.orf
-
+                if self.has_known_orf:
+                    orf = known_orf
+                else:
+                    orf = out_node.orf
                 new_pnode = out_node.translate()
                 new_pnode.orf = orf
-
-                if self.has_known_orf:
-                    stop_index = new_pnode.seq.seq.find('*')
-                    if stop_index > -1:
-                        new_pnode.truncate_right(stop_index)
-
-                    pnode.add_out_edge(new_pnode)
-                    visited[out_node] = new_pnode
-                    if stop_index > -1:
-                        pgraph.add_stop(new_pnode)
-                    else:
-                        if not out_node.out_edges:
-                            new_pnode.truncated = True
-                        queue.appendleft((out_node, new_pnode))
-                else:
-                    pnode.add_out_edge(new_pnode)
-                    visited[out_node] = new_pnode
-                    queue.appendleft((out_node, new_pnode))
+                pnode.add_out_edge(new_pnode)
+                visited[out_node] = new_pnode
+                queue.appendleft((out_node, new_pnode))
         for i, dnode in enumerate(self.reading_frames):
             dnode = dnode.get_reference_next()
             if dnode:

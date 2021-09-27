@@ -4,6 +4,7 @@ import copy
 from typing import List, Set
 from moPepGen import aa, seqvar
 from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.svgraph.VariantCombinations import VariantCombinations
 
 
 class PVGNode():
@@ -23,7 +24,7 @@ class PVGNode():
             reading_frame_index:int,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None,
+            frameshifts:VariantCombinations=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None):
         """ Construct a PVGNode object.
 
@@ -43,7 +44,7 @@ class PVGNode():
         self.variants = variants or []
         self.in_nodes = in_nodes or set()
         self.out_nodes = out_nodes or set()
-        self.frameshifts = frameshifts or set ()
+        self.frameshifts = frameshifts or VariantCombinations()
         self.cleavage = cleavage
         self.truncated = truncated
         self.orf = orf or [None, None]
@@ -60,14 +61,15 @@ class PVGNode():
         for variant in self.variants:
             if variant.location.overlaps(location):
                 variants.append(variant.shift(-start))
-            elif variant.location.start >= stop and variant.variant in frameshifts:
+            elif variant.location.start >= stop and variant.variant.is_frameshifting():
                 frameshifts.remove(variant.variant)
         return PVGNode(
             seq=seq,
             variants=variants,
             frameshifts=frameshifts,
             cleavage=self.cleavage,
-            orf=self.orf
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -99,6 +101,13 @@ class PVGNode():
         """ remove output nodes """
         for node in copy.copy(self.out_nodes):
             self.remove_out_edge(node)
+
+    def is_bridge(self) -> None:
+        """ Check if this is a bridge node to another reading frame """
+        for node in self.out_nodes:
+            if node.reading_frame_index != self.reading_frame_index:
+                return True
+        return False
 
     def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. The next reference node
@@ -160,7 +169,12 @@ class PVGNode():
         self.seq = left_seq
         self.variants = left_variants
 
-        new_node = PVGNode(seq=right_seq, variants=right_variants)
+        new_node = PVGNode(
+            seq=right_seq,
+            reading_frame_index=self.reading_frame_index,
+            variants=right_variants,
+            orf=self.orf
+        )
         new_node.frameshifts = copy.copy(self.frameshifts)
         new_node.orf = self.orf
 
@@ -169,10 +183,8 @@ class PVGNode():
 
         # need to remove the frameshift variant if it is no longer ther after
         # splitting the node.
-        left_frameshifts = copy.copy(self.frameshifts)
-        for variant in left_frameshifts:
-            if variant in variants_to_pop:
-                self.frameshifts.remove(variant)
+        for variant in variants_to_pop:
+            self.frameshifts.remove(variant)
 
         while self.out_nodes:
             node = self.out_nodes.pop()
@@ -201,6 +213,7 @@ class PVGNode():
             seq=right_seq,
             variants=right_variants,
             frameshifts=right_frameshifts,
+            reading_frame_index=self.reading_frame_index
         )
 
         self.seq = self.seq[:i]
@@ -229,7 +242,8 @@ class PVGNode():
         left_node = PVGNode(
             seq=left_seq,
             variants=left_variants,
-            frameshifts=left_frameshifts
+            frameshifts=left_frameshifts,
+            reading_frame_index=self.reading_frame_index
         )
 
         self.seq = self.seq[i:]
@@ -251,7 +265,8 @@ class PVGNode():
             frameshifts=copy.copy(self.frameshifts),
             cleavage=self.cleavage,
             truncated=self.truncated,
-            orf=self.orf
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index
         )
 
     def get_nearest_next_ref_index(self) -> int:

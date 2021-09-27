@@ -148,52 +148,18 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     cds_start_nf = 'tag' in tx_model.transcript.attributes and \
         'cds_start_NF' in tx_model.transcript.attributes['tag']
 
-    dgraph = svgraph.TranscriptVariantGraph(
+    dgraph = svgraph.ThreeFrameTVG(
         seq=transcript_seq,
         _id=tx_id,
         cds_start_nf=cds_start_nf,
         has_known_orf=tx_model.is_protein_coding()
     )
+    dgraph.init_three_frames()
+    dgraph.create_variant_graph(tx_variants, variant_pool, genome, anno)
+    dgraph.update_frameshifts()
 
-    ## Create transcript variant graph
-    # dgraph.create_variant_graph(variant_records)
-    dgraph.add_null_root()
-    variant_iter = iter(tx_variants)
-    variant = next(variant_iter, None)
-    cur = dgraph.root.get_reference_next()
-    while variant:
-        if cur.seq.locations[0].ref.start > variant.location.start:
-            variant = next(variant_iter, None)
-            continue
-
-        if cur.seq.locations[-1].ref.end <= variant.location.start:
-            cur = cur.get_reference_next()
-            continue
-
-        if variant.type == 'Fusion':
-            cur = dgraph.apply_fusion(cur, variant, variant_pool, genome, anno)
-            variant = next(variant_iter, None)
-            continue
-
-        if variant.type in 'Insertion':
-            cur = dgraph.apply_insertion(cur, variant, variant_pool, genome,
-                anno)
-            variant = next(variant_iter, None)
-            continue
-
-        if variant.type == 'Substitution':
-            cur = dgraph.apply_substitution(cur, variant, variant_pool,
-                genome, anno)
-            variant = next(variant_iter, None)
-            continue
-
-        cur = dgraph.apply_variant(cur, variant)
-        if len(cur.in_edges) == 0:
-            dgraph.root = cur
-        variant = next(variant_iter, None)
-
-    dgraph.find_all_orfs()
-    dgraph.fit_into_codons(max_frameshift_dist, max_frameshift_num)
+    # dgraph.find_all_orfs()
+    dgraph.fit_into_codons()
     pgraph = dgraph.translate()
 
     pgraph.form_cleavage_graph(rule=rule, exception=exception)

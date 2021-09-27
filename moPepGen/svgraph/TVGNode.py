@@ -7,6 +7,7 @@ import math
 from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph, aa
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
+from moPepGen.svgraph.VariantCombinations import VariantCombinations
 
 
 class TVGNode():
@@ -23,7 +24,7 @@ class TVGNode():
     """
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
+            frameshifts:VariantCombinations=None, branch:bool=False,
             orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None):
         """ Constructor for TVGNode.
@@ -37,7 +38,7 @@ class TVGNode():
         self.in_edges:Set[svgraph.TVGEdge] = set()
         self.out_edges:Set[svgraph.TVGEdge] = set()
         self.variants:List[seqvar.VariantRecordWithCoordinate] = variants if variants else []
-        self.frameshifts = frameshifts if frameshifts else set()
+        self.frameshifts = frameshifts
         self.branch = branch
         self.orf = orf or [None, None]
         self.reading_frame_index = reading_frame_index
@@ -107,8 +108,14 @@ class TVGNode():
         """ check if it is reference (no variants) """
         return not self.variants
 
+    def has_in_bridge(self) -> bool:
+        """ check if it has any in node from different reading frame """
+        return any(e.in_node.reading_frame_index != self.reading_frame_index
+            for e in self.in_edges)
+
     def should_skip_frameshift(self, dist:int=60, n:int=3) -> bool:
-        """ checks if the node is frameshifting and should be skipped """
+        """ checks if the node is frameshifting and should be skipped
+        TODO: should be retired """
         my_frameshifts:List[seqvar.VariantRecord] = []
         for v in self.variants:
             if v.variant.is_frameshifting():
@@ -313,6 +320,9 @@ class TVGNode():
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
                 if cur is farthest and cur is not self:
+                    if cur.out_edges and cur.get_reference_next().has_in_bridge():
+                        for edge in cur.out_edges:
+                            queue.append(edge.out_node)
                     # if the farthest has less than 6 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
@@ -455,12 +465,14 @@ class TVGNode():
         """ Combine the other node the the left. """
         self.seq = other.seq + self.seq
 
+        frameshifts = copy.copy(other.frameshifts)
+        frameshifts.update(self.variants)
+        self.frameshifts = frameshifts
+
         variants = copy.copy(other.variants)
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
         self.variants = variants
-
-        self.frameshifts.update(other.frameshifts)
 
     def append_right(self, other:TVGNode) -> None:
         """ Combine the other node the the right. """
@@ -468,8 +480,8 @@ class TVGNode():
 
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
-
-        self.frameshifts.update(other.frameshifts)
+            if variant.variant.is_frameshifting():
+                self.frameshifts.add(variant)
 
     def translate(self) -> svgraph.PVGNode:
         """ translate to a PVGNode """

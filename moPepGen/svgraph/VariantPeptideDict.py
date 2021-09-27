@@ -6,6 +6,7 @@ from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from moPepGen import aa, get_equivalent
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.aa.VariantPeptideIdentifier import create_variant_peptide_id
+from moPepGen.svgraph.VariantCombinations import VariantCombinations
 
 
 if TYPE_CHECKING:
@@ -19,7 +20,7 @@ class MiscleavedNodes():
         self.orf = orf
 
     @staticmethod
-    def find_miscleaved_nodes(node:PVGNode, miscleavage:int
+    def _find_miscleaved_nodes(node:PVGNode, miscleavage:int
             ) -> MiscleavedNodes:
         """ find all miscleaved nodes """
         queue = deque([[node]])
@@ -48,7 +49,7 @@ class MiscleavedNodes():
         return nodes
 
     @staticmethod
-    def find_miscleaved_nodes_unkown_orf(node:PVGNode, miscleavage:int
+    def find_miscleaved_nodes(node:PVGNode, miscleavage:int
             ) -> MiscleavedNodes:
         """ find all miscleaved nodes """
         queue = deque([[node]])
@@ -106,9 +107,9 @@ class MiscleavedNodes():
                 else:
                     seq = seq + other
                 if check_variants:
+                    metadata.variants.extend(node.frameshifts)
                     for variant in node.variants:
                         metadata.variants.add(variant.variant)
-                    metadata.variants.update(node.frameshifts)
 
             if seq:
                 seq.__class__ = aa.AminoAcidSeqRecord
@@ -156,10 +157,10 @@ def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
 
 class VariantPeptideMetadata():
     """ Variant peptide metadata """
-    def __init__(self, variants:Set[VariantRecord]=None,
+    def __init__(self, variants:VariantCombinations=None,
             orf:List[int]=None):
         """  """
-        self.variants = variants or set()
+        self.variants = variants or VariantCombinations(max_n=float('inf'))
         self.orf = orf
 
 T = Dict[aa.AminoAcidSeqRecord, Set[VariantPeptideMetadata]]
@@ -183,7 +184,7 @@ class VariantPeptideDict():
         self.labels = labels or {}
 
     def add_miscleaved_sequences(self, node:PVGNode, miscleavage:int,
-            check_variants:bool, has_known_orf:bool):
+            check_variants:bool):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
@@ -196,14 +197,9 @@ class VariantPeptideDict():
             has_known_orf (bool): Whether has known ORF. False for noncoding
                 genes/transcripts.
         """
-        if has_known_orf:
-            miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
-                node=node, miscleavage=miscleavage
-            )
-        else:
-            miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes_unkown_orf(
-                node=node, miscleavage=miscleavage
-            )
+        miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
+            node=node, miscleavage=miscleavage
+        )
         for seq, metadata in miscleaved_nodes.join_miscleaved_peptides(check_variants):
             if 'X' in seq.seq:
                 continue
@@ -227,19 +223,20 @@ class VariantPeptideDict():
             metadatas = list(metadatas)
             metadatas.sort(key=lambda x: x.orf[0])
             for metadata in metadatas:
-                variants = list(metadata.variants)
-                orf_id = None
-                if orf_id_map:
-                    orf_id = orf_id_map[metadata.orf[0]]
+                for variants in metadata.variants.data:
+                    variants = list(variants)
+                    orf_id = None
+                    if orf_id_map:
+                        orf_id = orf_id_map[metadata.orf[0]]
 
-                label = create_variant_peptide_id(self.tx_id, variants, orf_id)
+                    label = create_variant_peptide_id(self.tx_id, variants, orf_id)
 
-                if label in self.labels:
-                    self.labels[label] += 1
-                else:
-                    self.labels[label] = 1
-                label += f"|{self.labels[label]}"
-                labels.append(label)
+                    if label in self.labels:
+                        self.labels[label] += 1
+                    else:
+                        self.labels[label] = 1
+                    label += f"|{self.labels[label]}"
+                    labels.append(label)
 
                 if not keep_all_occurrence:
                     break

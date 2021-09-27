@@ -38,7 +38,7 @@ class PeptideVariantGraph():
         self.root = root
         self.id = _id
         self.known_orf = known_orf
-        self.stop = svgraph.PVGNode(aa.AminoAcidSeqRecord(Seq('*')))
+        self.stop = svgraph.PVGNode(aa.AminoAcidSeqRecord(Seq('*')), None)
         self.rule = rule
         self.exception = exception
         self.orfs = orfs or set()
@@ -68,6 +68,10 @@ class PeptideVariantGraph():
     def known_reading_frame_index(self) -> int:
         """ """
         return self.known_orf[0] % 3
+
+    def has_known_orf(self) -> bool:
+        """ Check if it has a known ORF """
+        return self.known_orf[0]
 
     def cleave_if_possible(self, node:svgraph.PVGNode,
             return_first:bool=False) -> svgraph.PVGNode:
@@ -159,7 +163,8 @@ class PeptideVariantGraph():
                         seq=copy.copy(node.seq),
                         variants=copy.copy(node.variants),
                         frameshifts=copy.copy(node.frameshifts),
-                        orf=node.orf
+                        orf=node.orf,
+                        reading_frame_index=node.reading_frame_index
                     )
                     self.add_stop(cur)
                 else:
@@ -170,8 +175,8 @@ class PeptideVariantGraph():
                         variants.append(variant.shift(len(node.seq)))
                     cur.variants = variants
 
-                frameshifts = copy.copy(node. frameshifts)
-                frameshifts.update(cur.frameshifts)
+                frameshifts = copy.copy(node.frameshifts)
+                frameshifts.update(cur.variants)
                 cur.frameshifts = frameshifts
 
                 upstream.add_out_edge(cur)
@@ -223,7 +228,7 @@ class PeptideVariantGraph():
 
             for variant in node.variants:
                 cur.variants.append(variant.shift(len(cur.seq)))
-            cur.frameshifts.update(node.frameshifts)
+            cur.frameshifts.update(node.variants)
 
             cur.remove_out_edge(node)
             cur.add_out_edge(downstream)
@@ -265,11 +270,11 @@ class PeptideVariantGraph():
                     for variant in node.variants:
                         variants.append(variant.shift(len(first.seq)))
                     frameshifts = copy.copy(first.frameshifts)
-                    frameshifts.update(node.frameshifts)
+                    frameshifts.update(node.variants)
 
                     new_node = svgraph.PVGNode(
                         seq=seq, variants=variants, frameshifts=frameshifts,
-                        orf=first.orf
+                        orf=first.orf, reading_frame_index=first.reading_frame_index
                     )
                     for upstream in first.in_nodes:
                         upstream.add_out_edge(new_node)
@@ -291,14 +296,15 @@ class PeptideVariantGraph():
                         seq = first.seq + node.seq + second.seq
 
                     frameshifts = copy.copy(first.frameshifts)
-                    frameshifts.update(node.frameshifts)
-                    frameshifts.update(second.frameshifts)
+                    frameshifts.update(node.variants)
+                    frameshifts.update(second.variants)
 
                     new_node = svgraph.PVGNode(
                         seq=seq,
                         variants=variants,
                         frameshifts=frameshifts,
-                        orf=first.orf
+                        orf=first.orf,
+                        reading_frame_index=first.reading_frame_index
                     )
                     for upstream in first.in_nodes:
                         upstream.add_out_edge(new_node)
@@ -351,7 +357,7 @@ class PeptideVariantGraph():
 
             for variant in left.variants:
                 first.variants.append(variant.shift(len(first.seq)))
-            first.frameshifts.update(left.frameshifts)
+            first.frameshifts.update(left.variants)
 
             while first.out_nodes:
                 out_node = first.out_nodes.pop()
@@ -368,7 +374,7 @@ class PeptideVariantGraph():
                 for variant in second.variants:
                     variants.append(variant.shift(len(right.seq)))
                 second.variants = variants
-                second.frameshifts.update(right.frameshifts)
+                second.frameshifts.update(right.variants)
 
                 while second.in_nodes:
                     in_node = second.in_nodes.pop()
@@ -437,7 +443,8 @@ class PeptideVariantGraph():
 
                 branches = self.expand_alignment_backward(cur)
                 for branch in branches:
-                    queue.appendleft(branch)
+                    if not branch.is_bridge():
+                        queue.appendleft(branch)
                 continue
 
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
@@ -452,7 +459,8 @@ class PeptideVariantGraph():
                 else:
                     branches = self.merge_join_alignments(cur)
                 for branch in branches:
-                    queue.appendleft(branch)
+                    if not branch.is_bridge():
+                        queue.appendleft(branch)
             elif len(sites) == 1:
                 if self.next_is_stop(cur):
                     cur.split_node(sites[0], cleavage=True)
@@ -461,7 +469,8 @@ class PeptideVariantGraph():
                     continue
                 branches = self.cross_join_alignments(cur, sites[0])
                 for branch in branches:
-                    queue.appendleft(branch)
+                    if not branch.is_bridge():
+                        queue.appendleft(branch)
             else:
                 right = cur.split_node(sites[0], cleavage=True)
                 cur = self.expand_alignment_forward(cur)
@@ -510,17 +519,17 @@ class PeptideVariantGraph():
         visited:Set[svgraph.PVGNode] = set()
         peptide_pool = VariantPeptideDict(tx_id=self.id)
 
-        if self.known_orf:
+        if self.has_known_orf():
             known_orf_aa = (
-                (self.known_orf[0] - self.known_reading_frame_index())/3,
-                (self.known_orf[1] - self.known_reading_frame_index())/3
+                int((self.known_orf[0] - self.known_reading_frame_index())/3),
+                int((self.known_orf[1] - self.known_reading_frame_index())/3)
             )
 
         while queue:
             cur, in_cds = queue.pop()
             orf = cur.orf
             if cur is self.root and cur.seq is None:
-                if self.known_orf:
+                if self.has_known_orf():
                     i = self.known_reading_frame_index()
                     out_node = self.reading_frames[i]
                     node_start = out_node.seq.locations[0].ref.start
@@ -541,25 +550,33 @@ class PeptideVariantGraph():
             if visited_len_before == visited_len_after:
                 continue
 
-            if self.known_orf:
+            if self.has_known_orf():
                 # add out nodes to the queue
                 if in_cds:
-                    index = cur.seq.get_query_index(known_orf_aa[1])
-                    if index == -1:
-                        cur = cur.truncate_right(index)
+                    stop_index = cur.seq.get_query_index(known_orf_aa[1])
+                    if stop_index > -1:
+                        cur.truncate_right(stop_index)
+
+                    truncate_index = cur.seq.seq.find('*')
+                    if truncate_index > -1:
+                        cur.truncate_right(truncate_index)
+                        cur.truncated = True
+
                     peptide_pool.add_miscleaved_sequences(cur, miscleavage,
-                        check_variants, bool(self.known_orf))
-                    if index != -1:
+                        check_variants)
+                    if stop_index == -1 and truncate_index == -1:
                         for out_node in cur.out_nodes:
                             if out_node is not self.stop:
                                 queue.appendleft((out_node, True))
                 else:
-                    index = cur.seq.get_query_index(known_orf_aa[0])
-                    if index == -1:
+                    start_index = cur.seq.get_query_index(known_orf_aa[0])
+                    if start_index == -1:
                         out_node = cur.find_reference_next()
                         queue.appendleft((out_node,False))
                     else:
-                        cur.truncate_left((index, True))
+                        visited.remove(cur)
+                        cur.truncate_left(start_index)
+                        queue.appendleft((cur, True))
                 continue
 
             node_list = []
@@ -592,7 +609,8 @@ class PeptideVariantGraph():
                     self.update_orf(cur_copy)
                     node_list.append(cur_copy)
                     trash.add(cur_copy)
-                if stop_index < start_index and start_index != last_start_index:
+                if start_index > -1 and stop_index == -1 \
+                        and start_index != last_start_index:
                     cur_copy = cur.copy()
                     cur_copy.truncate_left(start_index)
                     orf_start = cur_copy.get_orf_start()
@@ -622,7 +640,7 @@ class PeptideVariantGraph():
 
             for node in node_list:
                 peptide_pool.add_miscleaved_sequences(node, miscleavage,
-                    check_variants, bool(self.known_orf))
+                    check_variants)
             for node in trash:
                 self.remove_node(node)
 

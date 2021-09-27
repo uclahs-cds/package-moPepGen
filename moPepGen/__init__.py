@@ -1,5 +1,7 @@
 """ moPepGen """
 from datetime import datetime
+import itertools
+from typing import Iterable
 
 
 __version__ = '0.0.1'
@@ -76,3 +78,8 @@ def logger(message:str) -> None:
         f'[ {datetime.now().strftime(format="%Y-%m-%d %H:%M:%S")} ] {message}',
         flush=True
     )
+
+def all_equal(iterable:Iterable) -> bool:
+    """ Check if all elements are equal """
+    it = itertools.groupby(iterable)
+    return next(it, True) and not next(it, False)
