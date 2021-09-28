@@ -68,7 +68,7 @@ class VariantRecord():
             _type (str): Variant type, must be one of 'SNV', 'INDEL', 'Fusion',
                 'RNAEditingSite', 'AlternativeSplicing'
         """
-        if _type not in ['Substitution', 'Deletion'] and \
+        if _type not in ['Substitution', 'Deletion', 'circRNA'] and \
                 len(location) != len(ref):
             raise ValueError(ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION)
         if _type not in _VARIANT_TYPES:

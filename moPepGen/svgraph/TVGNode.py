@@ -234,7 +234,7 @@ class TVGNode():
             subgraph_id=self.subgraph_id
         )
 
-    def deepcopy(self, propagate_frameshifts:bool=True) -> TVGNode:
+    def deepcopy(self) -> TVGNode:
         """ Create a deep copy of the node and all its downstream nodes.
 
         Args:
@@ -262,13 +262,10 @@ class TVGNode():
                     new_out_node = visited[source_out_node]
                     visited_this = True
                 else:
-                    frameshifts = copy.copy(source_out_node.frameshifts)
-                    if propagate_frameshifts:
-                        frameshifts.update(target.frameshifts)
                     new_out_node = source_out_node.__class__(
                         seq=source_out_node.seq,
                         variants=copy.copy(source_out_node.variants),
-                        frameshifts=frameshifts,
+                        frameshifts=copy.copy(source_out_node.frameshifts),
                         branch=source_out_node.branch,
                         orf=source_out_node.orf,
                         reading_frame_index=source_out_node.reading_frame_index,

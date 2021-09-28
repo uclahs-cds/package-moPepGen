@@ -59,17 +59,17 @@ class ThreeFrameTVG():
 
     def init_three_frames(self):
         """ """
-        root0 = TVGNode(None)
+        root0 = TVGNode(None, reading_frame_index=0)
         node0 = TVGNode(self.seq, reading_frame_index=0, subgraph_id=self.id)
         self.add_edge(root0, node0, 'reference')
         self.add_edge(self.root, root0, 'reference')
 
-        root1 = TVGNode(None)
+        root1 = TVGNode(None, reading_frame_index=1)
         node1 = TVGNode(self.seq[1:], reading_frame_index=1, subgraph_id=self.id)
         self.add_edge(root1, node1, 'reference')
         self.add_edge(self.root, root1, 'reference')
 
-        root2 = TVGNode(None)
+        root2 = TVGNode(None, reading_frame_index=2)
         node2 = TVGNode(self.seq[2:], reading_frame_index=2, subgraph_id=self.id)
         self.add_edge(root2, node2, 'reference')
         self.add_edge(self.root, root2, 'reference')
@@ -978,8 +978,9 @@ class ThreeFrameTVG():
                 continue
 
             self.align_variants(cur)
-            node = self.expand_alignments(cur)
-            queue.append(node)
+            if cur.out_edges:
+                node = self.expand_alignments(cur)
+                queue.append(node)
 
     def translate(self) -> PeptideVariantGraph:
         r""" Converts a DNA transcript variant graph into a peptide variant

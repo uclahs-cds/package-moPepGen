@@ -184,14 +184,13 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     variant_records = variant_pool.filter_variants(gene_id, annotation, genome,
         exclusion_variant_types, intron=False, segments=record.fragments)
 
-    cgraph = svgraph.CircularVariantGraph(
+    cgraph = svgraph.ThreeFrameCVG(
         circ_seq, _id=record.id, circ_record=record
     )
-
-    cgraph.create_variant_graph(variant_records)
-    cgraph.align_all_variants()
-    tgraph = cgraph.find_all_orfs()
-    tgraph.fit_into_codons(max_frameshift_dist, max_frameshift_num)
-    pgraph = tgraph.translate()
+    cgraph.init_three_frames()
+    cgraph.create_variant_circ_graph(variant_records)
+    cgraph.duplicate_three_frames()
+    cgraph.fit_into_codons()
+    pgraph = cgraph.translate()
     pgraph.form_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
