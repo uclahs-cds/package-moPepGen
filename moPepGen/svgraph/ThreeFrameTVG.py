@@ -1,5 +1,6 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
+from math import trunc
 from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING
 from collections import deque
 import copy
@@ -57,20 +58,26 @@ class ThreeFrameTVG():
             ref=FeatureLocation(start=0, end=len(self.seq))
         )]
 
-    def init_three_frames(self):
+    def init_three_frames(self, truncate_head:bool=True):
         """ """
         root0 = TVGNode(None, reading_frame_index=0)
+        root1 = TVGNode(None, reading_frame_index=1)
+        root2 = TVGNode(None, reading_frame_index=2)
+
         node0 = TVGNode(self.seq, reading_frame_index=0, subgraph_id=self.id)
+        if truncate_head:
+            node1 = TVGNode(self.seq[1:], reading_frame_index=1, subgraph_id=self.id)
+            node2 = TVGNode(self.seq[2:], reading_frame_index=2, subgraph_id=self.id)
+        else:
+            node1 = TVGNode(self.seq, reading_frame_index=1, subgraph_id=self.id)
+            node2 = TVGNode(self.seq, reading_frame_index=2, subgraph_id=self.id)
+
         self.add_edge(root0, node0, 'reference')
         self.add_edge(self.root, root0, 'reference')
 
-        root1 = TVGNode(None, reading_frame_index=1)
-        node1 = TVGNode(self.seq[1:], reading_frame_index=1, subgraph_id=self.id)
         self.add_edge(root1, node1, 'reference')
         self.add_edge(self.root, root1, 'reference')
 
-        root2 = TVGNode(None, reading_frame_index=2)
-        node2 = TVGNode(self.seq[2:], reading_frame_index=2, subgraph_id=self.id)
         self.add_edge(root2, node2, 'reference')
         self.add_edge(self.root, root2, 'reference')
 

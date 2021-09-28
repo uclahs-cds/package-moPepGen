@@ -41,8 +41,8 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         self.attrs = attrs
         self.circ = circ_record
 
-    def init_three_frames(self):
-        super().init_three_frames()
+    def init_three_frames(self, truncate_head:bool=False):
+        super().init_three_frames(truncate_head)
         var = self.as_frameshifting()
         for root in self.reading_frames:
             if len(root.out_edges) > 1:
@@ -90,29 +90,18 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                     break
         super().create_variant_graph(filtered_variants, None, None, None)
 
-    def align_all_variants(self) -> None:
-        """ Align all variants """
-        queue:Deque[svgraph.TVGNode] = deque([self.reading_frames])
-        node = self.root
-        while True:
-            if len(node.out_edges) > 1 :
-                self.align_variants(node)
-                next_node = node.find_farthest_node_with_overlap(min_size = 0)
-            else:
-                next_node = list(node.out_edges)[0].out_node
-            if next_node.seq.locations[0].ref.start <= node.seq.locations[0].ref.start:
-                return
-            node = next_node
-
-    def duplicate_three_frames(self):
+    def extend_loop(self):
         """ """
         frame_map:Dict[TVGNode, TVGNode] = {}
         for root in self.reading_frames:
             if len(root.in_edges) > 2:
                 raise ValueError('CVG should not have any stop altering mutation')
+            in_edge = None
             for in_edge in root.in_edges:
                 if in_edge.in_node is not self.root:
                     break
+            if not in_edge:
+                raise ValueError('The TVG is not cyclic')
             frame_map[root] = in_edge.in_node
             self.remove_edge(in_edge)
 
@@ -124,3 +113,13 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             head = list(root.out_edges)[0].out_node
             end_node = frame_map[self.reading_frames[head.reading_frame_index]]
             self.add_edge(end_node, head, 'reference')
+
+    def truncate_three_frames(self):
+        """ """
+        for i, root in enumerate(self.reading_frames):
+            if i == 0:
+                continue
+            if len(root.out_edges) > 1:
+                raise ValueError('CVG should not contain any start altering mutaiton')
+            head = list(root.out_edges)[0].out_node
+            head.truncate_left(i)
