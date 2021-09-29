@@ -4,7 +4,7 @@ import copy
 from typing import List, Set
 from moPepGen import aa, seqvar
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen.svgraph.VariantCombinations import VariantCombinations
+
 
 
 class PVGNode():
@@ -24,7 +24,7 @@ class PVGNode():
             reading_frame_index:int,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
-            frameshifts:VariantCombinations=None,
+            frameshifts:Set[seqvar.VariantRecord]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None):
         """ Construct a PVGNode object.
 
@@ -44,7 +44,7 @@ class PVGNode():
         self.variants = variants or []
         self.in_nodes = in_nodes or set()
         self.out_nodes = out_nodes or set()
-        self.frameshifts = frameshifts or VariantCombinations()
+        self.frameshifts = frameshifts or set()
         self.cleavage = cleavage
         self.truncated = truncated
         self.orf = orf or [None, None]
@@ -62,7 +62,7 @@ class PVGNode():
             if variant.location.overlaps(location):
                 variants.append(variant.shift(-start))
             elif variant.location.start >= stop and variant.variant.is_frameshifting():
-                frameshifts.remove(variant.variant)
+                frameshifts.discard(variant.variant)
         return PVGNode(
             seq=seq,
             variants=variants,
@@ -109,6 +109,19 @@ class PVGNode():
                 return True
         return False
 
+    def get_variant_at(self, start:int, end:int=-1) -> seqvar.VariantRecord:
+        """ Get the variant at position i """
+        if end == -1:
+            end = len(self.seq)
+        if not -1 < start <= end <= len(self.seq):
+            raise ValueError('start and end out of the range')
+        variants = []
+        location = FeatureLocation(start=start, end=end)
+        for variant in self.variants:
+            if variant.location.overlaps(location):
+                variants.append(variant.variant)
+        return variants
+
     def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. The next reference node
         is defined as the out node that has not variant, or not any variant
@@ -130,6 +143,8 @@ class PVGNode():
         that is not in this current node. """
         if not self.in_nodes:
             return None
+        if len(self.in_nodes) == 1:
+            return list(self.in_nodes)[0]
         this_variants = [x.variant for x in self.variants]
         for node in self.in_nodes:
             if not node.variants:
@@ -207,7 +222,7 @@ class PVGNode():
                 right_variants.append(variant.shift(-i))
                 if variant.location.start >= i and \
                         variant.variant.is_frameshifting():
-                    self.frameshifts.remove(variant.variant)
+                    self.frameshifts.discard(variant.variant)
 
         right_node = PVGNode(
             seq=right_seq,
@@ -237,7 +252,7 @@ class PVGNode():
                 right_variants.append(variant.shift(-i))
                 if variant.location.start >= i and \
                         variant.variant.is_frameshifting():
-                    left_frameshifts.remove(variant.variant)
+                    left_frameshifts.discard(variant.variant)
 
         left_node = PVGNode(
             seq=left_seq,
@@ -280,11 +295,16 @@ class PVGNode():
         return int(cur.seq.locations[0].ref.start)
 
     def get_orf_start(self, i:int=0) -> int:
-        """ get orf start position """
-        for loc in self.seq.locations:
-            if i < loc.query.end:
-                return max(loc.query.start, i) * 3
-        x = self.get_nearest_next_ref_index()
-        if x == -1:
-            return -1
-        return x * 3
+        """ get the ORF start position at the reference transcript sequence
+        given M is found at the query postion i. """
+        k = self.reading_frame_index
+        if self.seq.locations:
+            for loc in self.seq.locations:
+                if i < loc.query.start:
+                    return loc.ref.start * 3 + k
+                if loc.query.start <= i < loc.query.end:
+                    return (i - loc.query.start + loc.ref.start) * 3 + k
+        out_node = self.find_reference_next()
+        if out_node.seq.locations:
+            return out_node.seq.locations[0].ref.start * 3 + k
+        raise ValueError('Can not find ORF')

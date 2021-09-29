@@ -226,7 +226,7 @@ class ThreeFrameTVG():
             for variant in node.variants:
                 if variant.variant.is_frameshifting() and \
                         variant.location.start > len(left_node.seq.seq):
-                    left_node.frameshifts.remove(variant)
+                    left_node.frameshifts.discard(variant)
 
         while node.in_edges:
             edge = node.in_edges.pop()
@@ -681,11 +681,6 @@ class ThreeFrameTVG():
             for in_edge in in_edges:
                 self.add_edge(in_edge.in_node, out_node, in_edge.type)
 
-            out_node.frameshifts = copy.copy(node.frameshifts)
-            for variant in out_node.variants:
-                if variant.variant.is_frameshifting():
-                    out_node.frameshifts.add(variant.variant)
-
             out_nodes.append(out_node)
 
         self.remove_node(node)
@@ -818,7 +813,6 @@ class ThreeFrameTVG():
 
                 # create new node with the combined sequence
                 frameshifts = copy.copy(cur.frameshifts)
-                frameshifts.update(out_node.variants, self.should_add_singleton(cur))
                 new_node = TVGNode(
                     seq=cur.seq + out_node.seq,
                     variants=new_variants,
@@ -1004,7 +998,12 @@ class ThreeFrameTVG():
             known_orf = [int(self.seq.orf.start), int(self.seq.orf.end)]
         else:
             known_orf = [None, None]
-        pgraph = PeptideVariantGraph(root, self.id, known_orf)
+
+        pgraph = PeptideVariantGraph(
+            root=root,
+            _id=self.id,
+            known_orf=known_orf
+        )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
         visited = dict()

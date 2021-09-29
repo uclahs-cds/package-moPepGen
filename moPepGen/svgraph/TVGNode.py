@@ -7,7 +7,6 @@ import math
 from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph, aa
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from moPepGen.svgraph.VariantCombinations import VariantCombinations
 
 
 class TVGNode():
@@ -24,7 +23,7 @@ class TVGNode():
     """
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            frameshifts:VariantCombinations=None, branch:bool=False,
+            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
             orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None):
         """ Constructor for TVGNode.
@@ -38,7 +37,7 @@ class TVGNode():
         self.in_edges:Set[svgraph.TVGEdge] = set()
         self.out_edges:Set[svgraph.TVGEdge] = set()
         self.variants:List[seqvar.VariantRecordWithCoordinate] = variants if variants else []
-        self.frameshifts = frameshifts
+        self.frameshifts = frameshifts or set()
         self.branch = branch
         self.orf = orf or [None, None]
         self.reading_frame_index = reading_frame_index
@@ -112,6 +111,20 @@ class TVGNode():
         """ check if it has any in node from different reading frame """
         return any(e.in_node.reading_frame_index != self.reading_frame_index
             for e in self.in_edges)
+
+    def has_bridge_from_reading_frame(self, other_reading_frame_index:int):
+        """ Check if it has a in bridge node from another reading frame """
+        return any(x.reading_frame_index == other_reading_frame_index\
+            for x in self.get_in_bridges())
+
+    def get_in_bridges(self) -> List[TVGNode]:
+        """ Get all in bridge nodes """
+        in_bridges = []
+        for edge in self.in_edges:
+            in_node = edge.in_node
+            if any(v.variant.is_frameshifting() for v in in_node.variants):
+                in_bridges.append(in_node)
+        return in_bridges
 
     def should_skip_frameshift(self, dist:int=60, n:int=3) -> bool:
         """ checks if the node is frameshifting and should be skipped
@@ -383,11 +396,9 @@ class TVGNode():
                     return int(i - loc.query.start + loc.ref.start)
         out_node = self.get_reference_next()
         if out_node.seq.locations:
-            for loc in out_node.seq.locations:
-                if i < loc.query.start:
-                    return int((3 - (loc.query.start - i) % 3) % 3 + loc.ref.start)
-                if loc.query.start <= i < loc.query.end:
-                    return int(i - loc.query.start + loc.ref.start)
+            loc = out_node.seq.locations[0]
+            return int(((len(self.seq.seq) + loc.query.start - i) % 3) % 3 + loc.ref.start)
+            # return int((3 - (loc.query.start - i) % 3) % 3 + loc.ref.start)
         raise ValueError('Can not find ORF')
 
     def truncate_left(self, i:int) -> TVGNode:

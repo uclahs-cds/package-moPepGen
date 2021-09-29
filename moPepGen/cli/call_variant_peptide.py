@@ -156,9 +156,7 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     )
     dgraph.init_three_frames()
     dgraph.create_variant_graph(tx_variants, variant_pool, genome, anno)
-    dgraph.update_frameshifts()
 
-    # dgraph.find_all_orfs()
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
 

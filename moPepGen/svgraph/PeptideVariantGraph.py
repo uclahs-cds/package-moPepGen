@@ -1,25 +1,29 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import Set, Deque, Dict, List, Tuple
+from typing import Set, Deque, Dict, List, Tuple, TYPE_CHECKING
 from collections import deque
 import itertools
 from Bio.Seq import Seq
-from moPepGen import aa, svgraph
+from moPepGen import aa, seqvar
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
+from moPepGen.svgraph.PVGNode import PVGNode
 
+
+if TYPE_CHECKING:
+    from moPepGen.svgraph.TVGNode import TVGNode
 
 class PeptideVariantGraph():
     """ Defines the DAG data structure for peptide and variants.
 
     Attributes:
-        root (svgraph.PVGNode): The root node of the graph.
-        stop (svgraph.PVGNode): This node is added to the end of each
+        root (PVGNode): The root node of the graph.
+        stop (PVGNode): This node is added to the end of each
             branch of the graph to represent the end of the peptide sequence.
             The sequence of this node is '*'
         id (str): The ID of the transcript. For circRNA, this could be the
             circRNA ID.
-        has_known_orf (bool): Whether the given transcript has any known
+        has_known_orf (bool): Whether the givenf transcript has any known
             ORF. If this is a noncoding transcript, 3-frame searching is
             performed.
         rule (str): The rule for enzymatic cleavage, e.g., trypsin.
@@ -30,31 +34,31 @@ class PeptideVariantGraph():
         orf_id_map (Dict[int, str]): An ID map of ORF IDs from ORF start
             position.
     """
-    def __init__(self, root:svgraph.PVGNode, _id:str,
+    def __init__(self, root:PVGNode, _id:str,
             known_orf:List[int,int], rule:str=None, exception:str=None,
-            orfs:Set[int]=None, reading_frames:List[svgraph.PVGNode]=None,
+            orfs:Set[int]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
         self.known_orf = known_orf
-        self.stop = svgraph.PVGNode(aa.AminoAcidSeqRecord(Seq('*')), None)
+        self.stop = PVGNode(aa.AminoAcidSeqRecord(Seq('*')), None)
         self.rule = rule
         self.exception = exception
         self.orfs = orfs or set()
         self.reading_frames = reading_frames or [None, None, None]
         self.orf_id_map = orf_id_map or {}
 
-    def add_stop(self, node:svgraph.PVGNode):
+    def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
         node.add_out_edge(self.stop)
 
-    def next_is_stop(self, node:svgraph.PVGNode) -> bool:
+    def next_is_stop(self, node:PVGNode) -> bool:
         """ Checks if stop is linked as a outbound node. """
         return self.stop in node.out_nodes
 
     @staticmethod
-    def remove_node(node:svgraph.PVGNode) -> None:
+    def remove_node(node:PVGNode) -> None:
         """ Remove a given node, and also remove the all edges from and to it.
         """
         while node.in_nodes:
@@ -73,13 +77,13 @@ class PeptideVariantGraph():
         """ Check if it has a known ORF """
         return self.known_orf[0]
 
-    def cleave_if_possible(self, node:svgraph.PVGNode,
-            return_first:bool=False) -> svgraph.PVGNode:
+    def cleave_if_possible(self, node:PVGNode,
+            return_first:bool=False) -> PVGNode:
         """ For a given node, it checks whether there is any cleave site and
         split at each site.
 
         Args:
-            node (svgraph.PVGNode): The target node to cleave
+            node (PVGNode): The target node to cleave
             return_first (bool): When true, returns the first node rather
                 than last. Defaults to False
         """
@@ -96,14 +100,13 @@ class PeptideVariantGraph():
             )
         return first_node if return_first else node
 
-    def group_outbond_siblings(self, upstream:svgraph.PVGNode
-            ) -> List[List[svgraph.PVGNode]]:
+    def group_outbond_siblings(self, upstream:PVGNode) -> List[List[PVGNode]]:
         """ Group the downstream nodes with variant alignments if they are
         connected to the same downstream node. Sibling nodes are the ones that
         share the same upstream and downstream nodes.
 
         Args:
-            upstream (svgraph.TVGNode): The upstream node of which the outbond
+            upstream (TVGNode): The upstream node of which the outbond
                 nodes are grouped.
 
         Return:
@@ -112,13 +115,13 @@ class PeptideVariantGraph():
             node).
         """
         out_nodes = copy.copy(upstream.out_nodes)
-        groups:List[List[svgraph.PVGNode]] = []
+        groups:List[List[PVGNode]] = []
         while out_nodes:
             out_node = out_nodes.pop()
             if out_node is self.stop:
                 continue
             downstream = out_node.find_reference_next()
-            group:List[svgraph.TVGNode] = [out_node]
+            group:List[TVGNode] = [out_node]
             if downstream and downstream is not self.stop:
                 for node in downstream.in_nodes:
                     if node in out_nodes:
@@ -127,8 +130,7 @@ class PeptideVariantGraph():
             groups.append(group)
         return groups
 
-    def expand_alignment_backward(self, node:svgraph.PVGNode,
-            ) -> Set[svgraph.PVGNode]:
+    def expand_alignment_backward(self, node:PVGNode) -> Set[PVGNode]:
         r""" Expand the variant alignment bubble backward to the previous
         cleave site. The sequence of the input node is first prepended to each
         of outbound node, and then the inbound node of those outbond nodes are
@@ -143,7 +145,7 @@ class PeptideVariantGraph():
         AER-NCW-H-ST     ->      AER-NCWH-ST
 
         Args:
-            node (svgraph.Peptide): The node that the outbond variant alignment
+            node (PVGNode): The node that the outbond variant alignment
             bubble should be expanded.
 
         Returns:
@@ -159,7 +161,7 @@ class PeptideVariantGraph():
             for cur in siblings:
                 node.remove_out_edge(cur)
                 if cur is self.stop:
-                    cur = svgraph.PVGNode(
+                    cur = PVGNode(
                         seq=copy.copy(node.seq),
                         variants=copy.copy(node.variants),
                         frameshifts=copy.copy(node.frameshifts),
@@ -175,10 +177,6 @@ class PeptideVariantGraph():
                         variants.append(variant.shift(len(node.seq)))
                     cur.variants = variants
 
-                frameshifts = copy.copy(node.frameshifts)
-                frameshifts.update(cur.variants)
-                cur.frameshifts = frameshifts
-
                 upstream.add_out_edge(cur)
                 last = self.cleave_if_possible(cur)
 
@@ -193,8 +191,7 @@ class PeptideVariantGraph():
         # return to_return, branches
         return downstreams
 
-    def expand_alignment_forward(self, node:svgraph.PVGNode
-            ) -> svgraph.PVGNode:
+    def expand_alignment_forward(self, node:PVGNode) -> PVGNode:
         r""" Expand the upsteam variant alignment bubble to the end of the
         node of input. The sequencing of the node of input is first appended
         to each of the leading nodes, and the outbound node of those nodes
@@ -211,7 +208,7 @@ class PeptideVariantGraph():
         AER-NCWH-STQQPK-QQPQE    ->    AER-NCWHSTQQPK-QQPQE
 
         Args:
-            node (svgraph.PVGNode): The node that the inbound variant
+            node (PVGNode): The node that the inbound variant
                 alignment bubble to be expanded.
 
         Returns:
@@ -228,7 +225,6 @@ class PeptideVariantGraph():
 
             for variant in node.variants:
                 cur.variants.append(variant.shift(len(cur.seq)))
-            cur.frameshifts.update(node.variants)
 
             cur.remove_out_edge(node)
             cur.add_out_edge(downstream)
@@ -237,8 +233,7 @@ class PeptideVariantGraph():
         node.remove_out_edge(downstream)
         return downstream
 
-    def merge_join_alignments(self, node:svgraph.PVGNode
-            ) -> Set[svgraph.PVGNode]:
+    def merge_join_alignments(self, node:PVGNode) -> Set[PVGNode]:
         r""" For a given node, join all the inbond and outbond nodes with any
         combinations.
 
@@ -253,7 +248,7 @@ class PeptideVariantGraph():
                                        NCWVSTQQ
 
         Args:
-            node (svgraph.PVGNode): The node in the graph of target.
+            node (PVGNode): The node in the graph of target.
          """
         downstreams = set()
 
@@ -269,11 +264,9 @@ class PeptideVariantGraph():
                     variants = copy.copy(first.variants)
                     for variant in node.variants:
                         variants.append(variant.shift(len(first.seq)))
-                    frameshifts = copy.copy(first.frameshifts)
-                    frameshifts.update(node.variants)
 
-                    new_node = svgraph.PVGNode(
-                        seq=seq, variants=variants, frameshifts=frameshifts,
+                    new_node = PVGNode(
+                        seq=seq, variants=variants, frameshifts=copy.copy(first.frameshifts),
                         orf=first.orf, reading_frame_index=first.reading_frame_index
                     )
                     for upstream in first.in_nodes:
@@ -296,10 +289,8 @@ class PeptideVariantGraph():
                         seq = first.seq + node.seq + second.seq
 
                     frameshifts = copy.copy(first.frameshifts)
-                    frameshifts.update(node.variants)
-                    frameshifts.update(second.variants)
 
-                    new_node = svgraph.PVGNode(
+                    new_node = PVGNode(
                         seq=seq,
                         variants=variants,
                         frameshifts=frameshifts,
@@ -329,8 +320,7 @@ class PeptideVariantGraph():
 
         return downstreams
 
-    def cross_join_alignments(self, node:svgraph.PVGNode, site:int,
-            ) -> List[svgraph.PVGNode]:
+    def cross_join_alignments(self, node:PVGNode, site:int) -> List[PVGNode]:
         r""" For a given node, split at the given position, expand inbound and
         outbound alignments, and join them with edges.
 
@@ -341,7 +331,7 @@ class PeptideVariantGraph():
         AER-NCWH-STEEKLPAQ-Q-PK    ->    AER-NCWHSTEEK-LPAQQ-PK
 
         Args:
-            node (svgraph.PVGNode): The node in the graph of target.
+            node (PVGNode): The node in the graph of target.
         """
         left = node
         right = node.split_node(site, cleavage=True)
@@ -357,7 +347,6 @@ class PeptideVariantGraph():
 
             for variant in left.variants:
                 first.variants.append(variant.shift(len(first.seq)))
-            first.frameshifts.update(left.variants)
 
             while first.out_nodes:
                 out_node = first.out_nodes.pop()
@@ -374,7 +363,6 @@ class PeptideVariantGraph():
                 for variant in second.variants:
                     variants.append(variant.shift(len(right.seq)))
                 second.variants = variants
-                second.frameshifts.update(right.variants)
 
                 while second.in_nodes:
                     in_node = second.in_nodes.pop()
@@ -483,10 +471,10 @@ class PeptideVariantGraph():
         """ Init the orfs list with all existing orfs. """
         self.orfs = {node.orf[0] for node in self.root.out_nodes}
 
-    def update_orf(self, node:svgraph.PVGNode) -> None:
+    def update_orf(self, orf:List[int,int]) -> None:
         """ Update the orf list with the orf start position of the given node.
         """
-        self.orfs.add(node.orf[0])
+        self.orfs.add(tuple(orf))
 
     def create_orf_id_map(self) -> None:
         """ Creates and map for ORF start site and its ID (ORF1, ORF2, etc) """
@@ -514,135 +502,53 @@ class PeptideVariantGraph():
             A set of aa.AminoAcidSeqRecord.
         """
         self.init_orfs()
-
-        queue:Deque[Tuple[svgraph.PVGNode,bool]] = deque([(self.root,True)])
-        visited:Set[svgraph.PVGNode] = set()
+        cur = VariantPeptideCursor(self.root, True, [None,None], [])
+        queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
         peptide_pool = VariantPeptideDict(tx_id=self.id)
+        traversal = VariantPeptideGraphTraversal(
+            check_variants=check_variants, check_orf=check_orf,
+            miscleavage=miscleavage, queue=queue, pool=peptide_pool
+        )
 
         if self.has_known_orf():
-            known_orf_aa = (
+            traversal.known_orf_aa = (
                 int((self.known_orf[0] - self.known_reading_frame_index())/3),
                 int((self.known_orf[1] - self.known_reading_frame_index())/3)
             )
 
-        while queue:
-            cur, in_cds = queue.pop()
-            orf = cur.orf
-            if cur is self.root and cur.seq is None:
-                if self.has_known_orf():
-                    i = self.known_reading_frame_index()
-                    out_node = self.reading_frames[i]
-                    node_start = out_node.seq.locations[0].ref.start
-                    in_cds = node_start >= known_orf_aa[0]
-                    queue.appendleft((out_node, in_cds))
-                else:
-                    for out_node in cur.out_nodes:
-                        queue.appendleft((out_node,False))
+        while not traversal.is_done():
+            cur = traversal.queue.pop()
+            if cur.node is self.root and cur.node.seq is None:
+                # if self.has_known_orf():
+                #     i = self.known_reading_frame_index()
+                #     out_node = self.reading_frames[i]
+                #     node_start = out_node.seq.locations[0].ref.start
+                #     in_cds = node_start >= traversal.known_orf_aa[0]
+                #     cur = VariantPeptideCursor(out_node, in_cds, [])
+                #     traversal.queue.appendleft(cur)
+                # else:
+                #     for out_node in cur.node.out_nodes:
+                #         cur = VariantPeptideCursor(out_node, in_cds, [])
+                #         traversal.queue.appendleft(cur)
+                for out_node in cur.node.out_nodes:
+                    cur = VariantPeptideCursor(out_node, False, cur.orf, [])
+                    traversal.queue.appendleft(cur)
                 continue
 
-            if cur is self.stop:
-                continue
-
-            # skip the node if already visited
-            visited_len_before = len(visited)
-            visited.add(cur)
-            visited_len_after = len(visited)
-            if visited_len_before == visited_len_after:
+            if cur.node is self.stop:
                 continue
 
             if self.has_known_orf():
                 # add out nodes to the queue
-                if in_cds:
-                    stop_index = cur.seq.get_query_index(known_orf_aa[1])
-                    if stop_index > -1:
-                        cur.truncate_right(stop_index)
-
-                    truncate_index = cur.seq.seq.find('*')
-                    if truncate_index > -1:
-                        cur.truncate_right(truncate_index)
-                        cur.truncated = True
-
-                    peptide_pool.add_miscleaved_sequences(cur, miscleavage,
-                        check_variants)
-                    if stop_index == -1 and truncate_index == -1:
-                        for out_node in cur.out_nodes:
-                            if out_node is not self.stop:
-                                queue.appendleft((out_node, True))
-                else:
-                    start_index = cur.seq.get_query_index(known_orf_aa[0])
-                    if start_index == -1:
-                        out_node = cur.find_reference_next()
-                        queue.appendleft((out_node,False))
-                    else:
-                        visited.remove(cur)
-                        cur.truncate_left(start_index)
-                        queue.appendleft((cur, True))
-                continue
-
-            node_list = []
-            trash = set()
-
-            orf = cur.orf
-            stop_index = cur.seq.seq.find('*')
-            start_index = cur.seq.seq.find('M')
-            if in_cds and stop_index == -1:
-                node_list.append(cur)
-            if in_cds and stop_index > -1:
-                cur_copy = cur.copy()
-                cur_copy.truncate_right(stop_index)
-                cur_copy.remove_out_edges()
-                node_list.append(cur_copy)
-                trash.add(cur_copy)
-                if stop_index > start_index:
-                    in_cds = False
-                    orf = [None, None]
-            last_stop_index, last_start_index = None, None
-            while stop_index > -1 or start_index > -1:
-                if 0 < start_index < stop_index and \
-                        (start_index != last_start_index or \
-                        stop_index != last_stop_index):
-                    cur_copy = cur[start_index:stop_index]
-                    cur_copy.remove_out_edges()
-                    orf_start = cur_copy.get_orf_start()
-                    cur_copy.orf = [orf_start, None]
-                    self.add_stop(cur_copy)
-                    self.update_orf(cur_copy)
-                    node_list.append(cur_copy)
-                    trash.add(cur_copy)
-                if start_index > -1 and stop_index == -1 \
-                        and start_index != last_start_index:
-                    cur_copy = cur.copy()
-                    cur_copy.truncate_left(start_index)
-                    orf_start = cur_copy.get_orf_start()
-                    cur_copy.orf = [orf_start, None]
-                    self.update_orf(cur_copy)
-                    if not in_cds:
-                        in_cds = True
-                        orf = cur_copy.orf
-                    node_list.append(cur_copy)
-                    trash.add(cur_copy)
-
-                last_start_index, last_stop_index = start_index, stop_index
-
-                if -1 < start_index < stop_index or (stop_index == -1 \
-                        and start_index > -1):
-                    x = cur.seq.seq[start_index+1:].find('M')
-                    start_index = x + start_index + 1 if x > -1 else x
-                elif -1 < stop_index < start_index or (stop_index > -1 \
-                        and start_index == -1):
-                    x = cur.seq.seq[stop_index+1:].find('*')
-                    stop_index = x + stop_index + 1 if x > -1 else x
-
-            for out_node in cur.out_nodes:
-                if out_node is not self.stop:
-                    out_node.orf = orf
-                    queue.appendleft((out_node, in_cds))
-
-            for node in node_list:
-                peptide_pool.add_miscleaved_sequences(node, miscleavage,
-                    check_variants)
-            for node in trash:
-                self.remove_node(node)
+                self.update_variant_peptide_dict_known_orf(
+                    cursor=cur,
+                    traversal=traversal
+                )
+            else:
+                self.update_variant_peptide_dict_unknown_orf(
+                    cursor=cur,
+                    traversal=traversal
+                )
 
         if check_orf:
             self.create_orf_id_map()
@@ -650,3 +556,224 @@ class PeptideVariantGraph():
         return peptide_pool.get_peptide_sequences(
             keep_all_occurrence=keep_all_occurrence, orf_id_map=self.orf_id_map
         )
+
+    def update_variant_peptide_dict_known_orf(self, cursor:VariantPeptideCursor,
+            traversal:VariantPeptideGraphTraversal) -> None:
+        """ """
+        node = cursor.node
+        in_cds = cursor.in_cds
+        start_gain = cursor.start_gain
+        if in_cds:
+            stop_index = node.seq.get_query_index(traversal.known_orf_aa[1])
+            if stop_index > -1:
+                node.truncate_right(stop_index)
+
+            truncate_index = node.seq.seq.find('*')
+            if truncate_index > -1:
+                node.truncate_right(truncate_index)
+                node.truncated = True
+
+            traversal.pool.add_miscleaved_sequences(
+                node=node,
+                miscleavage=traversal.miscleavage,
+                check_variants=traversal.check_variants,
+                additional_variants=start_gain
+            )
+            if stop_index == -1 and truncate_index == -1:
+                for out_node in node.out_nodes:
+                    if out_node is not self.stop:
+                        if out_node.is_bridge():
+                            start_gain = [v.variant for v in out_node.variants]
+                        elif node.is_bridge:
+                            start_gain = [v.variant for v in node.variants]
+                        cur = VariantPeptideCursor(out_node, True, start_gain)
+                        traversal.stage(node, out_node, cur)
+        else:
+            if node.reading_frame_index != self.known_reading_frame_index():
+                for out_node in node.out_nodes:
+                    cur = VariantPeptideCursor(out_node, False, [])
+                    traversal.stage(node, out_node, cur)
+                    return
+
+            start_index = node.seq.get_query_index(traversal.known_orf_aa[0])
+            if start_index == -1:
+                for out_node in node.out_nodes:
+                    cur = VariantPeptideCursor(out_node, False, [])
+                    traversal.stage(node, out_node, cur)
+            else:
+                node.truncate_left(start_index)
+                cur = VariantPeptideCursor(node, True, [])
+                traversal.queue.append(cur)
+
+    def update_variant_peptide_dict_unknown_orf(self, cursor:VariantPeptideCursor,
+            traversal:VariantPeptideGraphTraversal) -> None:
+        """ """
+        node = cursor.node
+        in_cds = cursor.in_cds
+        start_gain = cursor.start_gain
+        orf = cursor.orf
+
+        node_list:List[Tuple[PVGNode, List[int,int]]] = []
+        trash = set()
+        stop_index = node.seq.seq.find('*')
+        start_index = node.seq.seq.find('M')
+
+        if in_cds and stop_index == -1:
+            node_list.append((node, orf))
+
+        if in_cds and stop_index > -1:
+            cur_copy = node.copy()
+            cur_copy.truncate_right(stop_index)
+            cur_copy.remove_out_edges()
+            node_list.append((cur_copy, orf))
+            trash.add(cur_copy)
+            if stop_index > start_index:
+                in_cds = False
+                orf = [None, None]
+
+        last_stop_index, last_start_index = -1, -1
+
+        while stop_index > -1 or start_index > -1:
+            if 0 < start_index < stop_index and (start_index !=
+                    last_start_index or stop_index != last_stop_index):
+                cur_copy = node[start_index:stop_index]
+                cur_copy.remove_out_edges()
+                orf_start = cur_copy.get_orf_start()
+                cory_orf = [orf_start, None]
+                self.add_stop(cur_copy)
+                self.update_orf(orf)
+                node_list.append((cur_copy, cory_orf))
+                trash.add(cur_copy)
+            if start_index > -1 and stop_index == -1 \
+                    and start_index != last_start_index:
+                cur_copy = node.copy()
+                cur_copy.truncate_left(start_index)
+                orf_start = cur_copy.get_orf_start()
+                orf_copy = [orf_start, None]
+                self.update_orf(orf_copy)
+                if not in_cds:
+                    in_cds = True
+                    orf = orf_copy
+                node_list.append((cur_copy, orf_copy))
+                trash.add(cur_copy)
+
+            if start_index != -1:
+                last_start_index = start_index
+            if stop_index != -1:
+                last_stop_index = stop_index
+            # last_start_index, last_stop_index = start_index, stop_index
+
+            if -1 < start_index < stop_index or (stop_index == -1 \
+                    and start_index > -1):
+                x = node.seq.seq[start_index+1:].find('M')
+                start_index = x + start_index + 1 if x > -1 else x
+            elif -1 < stop_index < start_index or (stop_index > -1 \
+                    and start_index == -1):
+                x = node.seq.seq[stop_index+1:].find('*')
+                stop_index = x + stop_index + 1 if x > -1 else x
+
+        for out_node in node.out_nodes:
+            if out_node is not self.stop:
+                out_node.orf = orf
+                if node.is_bridge():
+                    if not in_cds:
+                        start_gain = []
+                    elif last_start_index > -1:
+                        start_gain = out_node.get_variant_at(
+                            start=last_start_index,
+                            end=min(last_start_index + 3, len(out_node.seq.seq))
+                        )
+                    else:
+                        start_gain = [v.variant for v in out_node.variants\
+                            if v.variant.is_frameshifting()]
+                else:
+                    if last_stop_index > last_start_index:
+                        start_gain = []
+
+                cursor = VariantPeptideCursor(out_node, in_cds, orf, start_gain)
+                traversal.stage(node, out_node, cursor)
+
+        for node, orf in node_list:
+            traversal.pool.add_miscleaved_sequences(
+                node=node,
+                orf=orf,
+                miscleavage=traversal.miscleavage,
+                check_variants=traversal.check_variants,
+                additional_variants=start_gain
+            )
+        for node in trash:
+            self.remove_node(node)
+
+class VariantPeptideCursor():
+    """ """
+    def __init__(self, node:PVGNode, in_cds:bool, orf:List[int,int],
+            start_gain:List[seqvar.VariantRecord]):
+        """ constructor """
+        self.node = node
+        self.in_cds = in_cds
+        self.start_gain = start_gain
+        self.orf = orf or [None, None]
+
+VaraintPeptideCursorStack = Dict[PVGNode, Dict[PVGNode, VariantPeptideCursor]]
+class VariantPeptideGraphTraversal():
+    """ """
+    def __init__(self, check_variants:bool, check_orf:bool, miscleavage:int,
+            pool:VariantPeptideDict, known_orf_aa:Tuple[int,int]=None,
+            queue:Deque[VariantPeptideCursor]=None,
+            stack:VaraintPeptideCursorStack=None):
+        """ constructor """
+        self.check_variants = check_variants
+        self.check_orf = check_orf
+        self.miscleavage = miscleavage
+        self.known_orf_aa = known_orf_aa or (None, None)
+        self.queue = queue or deque([])
+        self.pool = pool
+        self.stack = stack or {}
+
+    def is_done(self):
+        """ """
+        return not bool(self.queue)
+
+    def has_known_orf(self):
+        """ """
+        return self.known_orf_aa[0] is not None
+
+    def stage(self, in_node:PVGNode, out_node:PVGNode,
+            cursor:VariantPeptideCursor):
+        """ """
+        in_nodes = self.stack.setdefault(out_node, {})
+
+        if in_node in in_nodes:
+            return
+        in_nodes[in_node] = cursor
+
+        if len(in_nodes) != len(out_node.in_nodes):
+            return
+
+        try:
+            ref = out_node.find_reference_prev()
+            if in_nodes[ref].in_cds:
+                self.queue.appendleft(in_nodes[ref])
+                return
+        except ValueError:
+            pass
+
+        in_frame_cursors:List[VariantPeptideCursor]
+        for node in out_node.in_nodes:
+            if node.reading_frame_index == out_node.reading_frame_index:
+                if node.in_nodes:
+                    self.queue.appendleft(in_nodes[ref])
+                    return
+                in_frame_cursors.append(node)
+
+        ref = in_frame_cursors[0]
+
+        in_cds_cursors:List[VariantPeptideCursor] = []
+        for cursor in in_nodes.values():
+            if cursor.in_cds:
+                in_cds_cursors.append(cursor)
+        if in_cds_cursors:
+            in_cds_cursors.sort(key=lambda x: x.start_gain[0])
+            self.queue.appendleft(in_cds_cursors[0])
+        else:
+            self.queue.appendleft(in_nodes[ref])
