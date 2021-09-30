@@ -75,7 +75,7 @@ class PeptideVariantGraph():
 
     def has_known_orf(self) -> bool:
         """ Check if it has a known ORF """
-        return self.known_orf[0]
+        return self.known_orf[0] is not None
 
     def cleave_if_possible(self, node:PVGNode,
             return_first:bool=False) -> PVGNode:
@@ -467,10 +467,6 @@ class PeptideVariantGraph():
                 right = right.split_node(site, cleavage=True)
                 queue.appendleft(right)
 
-    def init_orfs(self) -> None:
-        """ Init the orfs list with all existing orfs. """
-        self.orfs = {node.orf[0] for node in self.root.out_nodes}
-
     def update_orf(self, orf:List[int,int]) -> None:
         """ Update the orf list with the orf start position of the given node.
         """
@@ -501,7 +497,6 @@ class PeptideVariantGraph():
         Return:
             A set of aa.AminoAcidSeqRecord.
         """
-        self.init_orfs()
         cur = VariantPeptideCursor(self.root, True, [None,None], [])
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
         peptide_pool = VariantPeptideDict(tx_id=self.id)
@@ -562,6 +557,7 @@ class PeptideVariantGraph():
         """ """
         node = cursor.node
         in_cds = cursor.in_cds
+        orf = cursor.orf
         start_gain = cursor.start_gain
         if in_cds:
             stop_index = node.seq.get_query_index(traversal.known_orf_aa[1])
@@ -575,6 +571,7 @@ class PeptideVariantGraph():
 
             traversal.pool.add_miscleaved_sequences(
                 node=node,
+                orf=tuple(orf),
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 additional_variants=start_gain
@@ -586,23 +583,25 @@ class PeptideVariantGraph():
                             start_gain = [v.variant for v in out_node.variants]
                         elif node.is_bridge:
                             start_gain = [v.variant for v in node.variants]
-                        cur = VariantPeptideCursor(out_node, True, start_gain)
+                        cur = VariantPeptideCursor(out_node, True, orf, start_gain)
                         traversal.stage(node, out_node, cur)
         else:
             if node.reading_frame_index != self.known_reading_frame_index():
                 for out_node in node.out_nodes:
-                    cur = VariantPeptideCursor(out_node, False, [])
+                    cur = VariantPeptideCursor(out_node, False, orf, [])
                     traversal.stage(node, out_node, cur)
                     return
 
             start_index = node.seq.get_query_index(traversal.known_orf_aa[0])
             if start_index == -1:
+                orf = self.known_orf
                 for out_node in node.out_nodes:
-                    cur = VariantPeptideCursor(out_node, False, [])
+                    cur = VariantPeptideCursor(out_node, False, orf, [])
                     traversal.stage(node, out_node, cur)
             else:
                 node.truncate_left(start_index)
-                cur = VariantPeptideCursor(node, True, [])
+                orf = traversal.known_orf_aa
+                cur = VariantPeptideCursor(node, True, orf, [])
                 traversal.queue.append(cur)
 
     def update_variant_peptide_dict_unknown_orf(self, cursor:VariantPeptideCursor,
@@ -696,7 +695,7 @@ class PeptideVariantGraph():
         for node, orf in node_list:
             traversal.pool.add_miscleaved_sequences(
                 node=node,
-                orf=orf,
+                orf=tuple(orf),
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 additional_variants=start_gain
@@ -752,13 +751,14 @@ class VariantPeptideGraphTraversal():
 
         try:
             ref = out_node.find_reference_prev()
-            if in_nodes[ref].in_cds:
-                self.queue.appendleft(in_nodes[ref])
-                return
         except ValueError:
             pass
 
-        in_frame_cursors:List[VariantPeptideCursor]
+        if in_nodes[ref].in_cds:
+            self.queue.appendleft(in_nodes[ref])
+            return
+
+        in_frame_cursors:List[VariantPeptideCursor] = []
         for node in out_node.in_nodes:
             if node.reading_frame_index == out_node.reading_frame_index:
                 if node.in_nodes:

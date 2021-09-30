@@ -199,7 +199,7 @@ class PVGNode():
         # need to remove the frameshift variant if it is no longer ther after
         # splitting the node.
         for variant in variants_to_pop:
-            self.frameshifts.remove(variant)
+            self.frameshifts.discard(variant)
 
         while self.out_nodes:
             node = self.out_nodes.pop()

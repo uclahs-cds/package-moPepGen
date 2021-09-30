@@ -126,37 +126,6 @@ class TVGNode():
                 in_bridges.append(in_node)
         return in_bridges
 
-    def should_skip_frameshift(self, dist:int=60, n:int=3) -> bool:
-        """ checks if the node is frameshifting and should be skipped
-        TODO: should be retired """
-        my_frameshifts:List[seqvar.VariantRecord] = []
-        for v in self.variants:
-            if v.variant.is_frameshifting():
-                my_frameshifts.append(v.variant)
-        if not my_frameshifts:
-            return False
-
-        if len(self.frameshifts) > n:
-            return True
-
-        my_frameshifts.sort()
-        this_frameshift = my_frameshifts[0]
-
-        upstream_frameshifts:List[seqvar.VariantRecord] = []
-        for v in self.frameshifts:
-            if v not in my_frameshifts:
-                upstream_frameshifts.append(v)
-        if not upstream_frameshifts:
-            return False
-        last_frameshift = upstream_frameshifts[-1]
-
-        n_shifted = sum([it.frames_shifted() for it in upstream_frameshifts])
-        if n_shifted % 3 != 0:
-            return False
-
-        diff = this_frameshift.location.start - last_frameshift.location.end
-        return diff >= dist
-
     def is_exclusively_outbond_of(self, other:svgraph.TVGNode) -> bool:
         """ Checks if the node is exclusively outbond with the other.
         Exclusive binding means the upstream node has only 1 outbond edge,
@@ -164,52 +133,6 @@ class TVGNode():
         if not self.is_inbond_of(other):
             return False
         return len(self.out_edges) == 1 and len(other.in_edges) == 1
-
-    def needs_branch_out(self, branch_out_size:int=100) -> bool:
-        """ Checks if the node needs to branch out """
-        for variant in self.variants:
-            if variant.variant.is_frameshifting():
-                return True
-        for variant in self.variants:
-            location = variant.location
-            variant_len = location.end - location.start
-            if variant_len >= branch_out_size:
-                return True
-        # For variants located in the end of the sequence.
-        if not self.out_edges:
-            return True
-        return False
-
-    def next_node_to_branch_out(self, to_node:svgraph.TVGNode,
-            branch_out_size:int=100) -> TVGNode:
-        """ Returns the next node that needs to be branched out between two
-        reference nodes. Returns None if not found.
-
-        Args:
-            to_node (svgraph.TVGNode): The to node
-            branch_out_size (int): The size limit of the variant to forch
-                creating a branch in th graph.
-        """
-        queue:Deque[svgraph.TVGNode] = deque()
-        for edge in self.out_edges:
-            queue.appendleft(edge.out_node)
-
-        while queue:
-            cur = queue.pop()
-            if cur is to_node:
-                continue
-            if cur.branch:
-                continue
-            if not cur.variants:
-                for edge in cur.out_edges:
-                    queue.appendleft(edge.out_node)
-                continue
-            if cur.needs_branch_out(branch_out_size):
-                return cur
-            for edge in cur.out_edges:
-                queue.appendleft(edge.out_node)
-
-        return None
 
     def get_reference_next(self) -> TVGNode:
         """ Get the next node of which the edge is reference (not variant
@@ -398,7 +321,6 @@ class TVGNode():
         if out_node.seq.locations:
             loc = out_node.seq.locations[0]
             return int(((len(self.seq.seq) + loc.query.start - i) % 3) % 3 + loc.ref.start)
-            # return int((3 - (loc.query.start - i) % 3) % 3 + loc.ref.start)
         raise ValueError('Can not find ORF')
 
     def truncate_left(self, i:int) -> TVGNode:
@@ -452,7 +374,7 @@ class TVGNode():
                 right_variants.append(variant.shift(-i))
                 if variant.location.start >= i and \
                         variant.variant.is_frameshifting():
-                    self.frameshifts.remove(variant.variant)
+                    self.frameshifts.discard(variant.variant)
 
         right_node = TVGNode(
             seq=right_seq,

@@ -44,7 +44,7 @@ class CIRCexplorer2KnownRecord():
         gene_model = anno.genes[gene_id]
         transcript_ids = [self.isoform_name]
 
-        fragments:SeqFeature = []
+        fragments:List[SeqFeature] = []
         intron:List[int] = []
 
         if self.circ_type == 'circRNA':

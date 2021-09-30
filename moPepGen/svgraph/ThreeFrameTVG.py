@@ -32,7 +32,7 @@ class ThreeFrameTVG():
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
-            cds_start_nf:bool=False, has_known_orf:bool=True):
+            cds_start_nf:bool=False, has_known_orf:bool=None):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -49,7 +49,7 @@ class ThreeFrameTVG():
         if reading_frames and len(reading_frames) != 3:
             raise ValueError('The length of reading_frames must be exactly 3.')
         self.cds_start_nf = cds_start_nf
-        self.has_known_orf = has_known_orf
+        self.has_known_orf = has_known_orf or bool(seq.orf is not None)
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -59,7 +59,13 @@ class ThreeFrameTVG():
         )]
 
     def init_three_frames(self, truncate_head:bool=True):
-        """ """
+        """ Initiate the three reading frames as empty nodes.
+
+        Args:
+            truncated_head (bool): If true, the first x nucleotides are
+                stripped off, to simulate how reading frames work. Defaults to
+                True.
+        """
         root0 = TVGNode(None, reading_frame_index=0)
         root1 = TVGNode(None, reading_frame_index=1)
         root2 = TVGNode(None, reading_frame_index=2)
@@ -372,7 +378,8 @@ class ThreeFrameTVG():
         accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
         accepter_tx_model = anno.transcripts[accepter_tx_id]
         accepter_chrom = accepter_tx_model.transcript.location.seqname
-        accepter_tx_seq = accepter_tx_model.get_transcript_sequence(genome[accepter_chrom])
+        accepter_tx_seq = accepter_tx_model.get_transcript_sequence(
+            genome[accepter_chrom])
         breakpoint_gene = variant.get_accepter_position()
         breakpoint_tx = anno.coordinate_gene_to_transcript(breakpoint_gene,
             accepter_gene_id, accepter_tx_id)
@@ -382,8 +389,8 @@ class ThreeFrameTVG():
             start=breakpoint_tx, return_coord='transcript'
         )
 
-        branch = ThreeFrameTVG(accepter_tx_seq, self.id)
-        branch.init_three_frames()
+        branch = ThreeFrameTVG(accepter_tx_seq[breakpoint_tx:], self.id)
+        branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             list(root.out_edges)[0].out_node.subgraph_id = branch.id
         branch.create_variant_graph(accepter_variant_records, None, None, None)
@@ -417,6 +424,7 @@ class ThreeFrameTVG():
             node, _ = self.splice(node, index, 'reference')
             self.add_edge(node, var_node, 'variant_start')
             self.reading_frames[i] = node
+            cursors[i] = node
 
         return cursors
 
@@ -428,7 +436,7 @@ class ThreeFrameTVG():
         """ Apply insertion """
         cursors = copy.copy(cursors)
         branch = ThreeFrameTVG(seq, self.id)
-        branch.init_three_frames()
+        branch.init_three_frames(truncate_head=False)
         for edge in branch.root.out_edges:
             node = edge.out_node
             node.variants.append(var)
@@ -687,37 +695,21 @@ class ThreeFrameTVG():
 
         return out_nodes
 
-    @staticmethod
-    def find_additional_end_nodes(start:TVGNode, end:TVGNode
-            ) -> List[TVGNode]:
-        """ Find additional end node of active regions, e.g. Fusion. Because
-        Fusions are by default branches, so not processed during the variant
-        node alignment. """
-        end_nodes = []
-        cur = start
-        if cur.variants:
-            cur = cur.get_reference_next()
-        while cur is not end:
-            for edge in cur.out_edges:
-                out_node = edge.out_node
-                if edge.type in ['reference', 'variant_end']:
-                    next_node = edge.out_node
-                for variant in out_node.variants:
-                    if variant.variant.type == 'Fusion':
-                        end_node = out_node.find_farthest_node_with_overlap()
-                        end_nodes.append(end_node)
-            cur = next_node
-        return end_nodes
-
     def find_bridge_nodes(self, start:TVGNode, end=TVGNode
             ) -> Tuple[List[TVGNode], List[TVGNode]]:
         """ """
         this_id = start.reading_frame_index
         bridge_in = []
         bridge_out = []
+        visited = set()
         queue:Deque[TVGNode] = deque([e.out_node for e in start.out_edges])
         while queue:
             cur = queue.pop()
+            len_before = len(visited)
+            visited.add(cur)
+            len_after = len(visited)
+            if len_before == len_after:
+                continue
             if any(e.out_node.reading_frame_index != this_id for e in cur.out_edges):
                 bridge_out.append(cur)
                 continue
@@ -794,9 +786,10 @@ class ThreeFrameTVG():
                         reading_frame_index=cur.reading_frame_index,
                         subgraph_id=cur.subgraph_id
                     )
+                    trash.add(cur)
                     for edge in cur.out_edges:
                         self.add_edge(new_node, edge.out_node, _type=edge.type)
-                    if cur not in bridge_ins:
+                    if cur not in bridge_map:
                         new_nodes.add(new_node)
                     else:
                         bridge_map[new_node] = bridge_map[cur]
@@ -912,55 +905,6 @@ class ThreeFrameTVG():
             in_node.append_right(right_over)
 
         return end
-
-    def update_frameshifts(self, max_n:int=5):
-        """ """
-        queue:Deque[TVGNode] = deque(self.reading_frames)
-        visited:Set[TVGNode] = set()
-
-        while queue:
-            cur = queue.pop()
-            if cur in self.reading_frames:
-                for edge in cur.out_edges:
-                    queue.appendleft(edge.out_node)
-                continue
-
-            if self.is_out_bond_to_any_root(cur):
-                cur.frameshifts = VariantCombinations(max_n=max_n)
-                add_singleton = self.should_add_singleton(cur)
-                cur.frameshifts.update(cur.variants, add_singleton)
-                for edge in cur.out_edges:
-                    queue.appendleft(edge.out_node)
-                continue
-
-            # if not all in nodes are already visited, skip and wait until later
-            upstream_unprocessed = False
-            for edge in cur.in_edges:
-                if edge.in_node.frameshifts is None:
-                    upstream_unprocessed = True
-                    break
-            if upstream_unprocessed:
-                visited.discard(cur)
-                continue
-
-            # skip if it is already visited
-            len_before = len(visited)
-            visited.add(cur)
-            len_after = len(visited)
-            if len_before == len_after:
-                continue
-
-            cur.frameshifts = VariantCombinations(max_n=max_n)
-            for edge in cur.in_edges:
-                in_node = edge.in_node
-                if cur.frameshifts is None:
-                    cur.frameshifts = VariantCombinations(max_n=max_n)
-                cur.frameshifts.extend(in_node.frameshifts)
-            add_singleton = self.should_add_singleton(cur)
-            cur.frameshifts.update(cur.variants, add_singleton)
-
-            for edge in cur.out_edges:
-                queue.appendleft(edge.out_node)
 
     def fit_into_codons(self) -> None:
         """ """

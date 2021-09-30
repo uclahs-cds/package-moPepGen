@@ -27,7 +27,17 @@ class VariantRecordPool():
             transcript ID (e.g., UTR). In gene coordinates.
     """
     def __init__(self, transcriptional:T=None, intronic:T=None, genetic:T=None):
-        """ Constructor """
+        """ Constructor
+
+        Args:
+            transcriptional (Dict[str, List[VariantRecord]]): Variant records
+                located in the transcript regions (exons), in transcriptional
+                coordinates.
+            intronic (Dict[str, List[VariantRecord]]): Variant records located
+                in the intronic regions. In gene coordinates.
+            genetic (Dict[str, List[VariantRecord]]): Variant records without a
+                transcript ID (e.g., UTR). In gene coordinates.
+        """
         self.transcriptional = transcriptional or {}
         self.intronic = intronic or {}
         self.genetic = genetic or {}
