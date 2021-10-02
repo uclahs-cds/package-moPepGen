@@ -742,7 +742,6 @@ class ThreeFrameTVG():
         Returns:
             The original input node.
         """
-        this_orf = node.reading_frame_index
         start_node = node
         end_node = node.find_farthest_node_with_overlap()
         end_nodes = [end_node]
@@ -759,9 +758,8 @@ class ThreeFrameTVG():
         new_bridges:Set[TVGNode] = set()
 
         # start by removing the out edges from the start node.
-        while start_node.out_edges:
-            edge = start_node.out_edges.pop()
-            out_node:TVGNode = edge.out_node
+        for edge in copy.copy(start_node.out_edges) :
+            out_node = edge.out_node
             self.remove_edge(edge)
             queue.appendleft(out_node)
 
@@ -816,27 +814,19 @@ class ThreeFrameTVG():
                     subgraph_id=cur.subgraph_id
                 )
 
-                edges = copy.copy(out_node.out_edges)
-                for edge in edges:
+                for edge in copy.copy(out_node.out_edges):
                     edge_type = 'variant_end' if new_node.variants \
                         else 'reference'
                     self.add_edge(new_node, edge.out_node, _type=edge_type)
 
-                if out_node not in end_nodes and \
-                        out_node.reading_frame_index == this_orf \
-                        and all(e.out_node.reading_frame_index == this_orf
-                            for e in out_node.out_edges) \
-                        and out_node.subgraph_id == self.id:
+                if out_node not in end_nodes:
                     queue.appendleft(new_node)
 
-                if cur in bridge_ins:
+                if cur in bridge_map:
                     bridge_map[new_node] = bridge_map[cur]
             # now remove the cur node from graph
-            if cur not in bridge_ins:
+            if cur not in bridge_map:
                 self.remove_node(cur)
-
-        for trash_node in trash:
-            self.remove_node(trash_node)
 
         # add now nodes to the graph
         for new_node in new_nodes:
@@ -850,7 +840,10 @@ class ThreeFrameTVG():
             original_bridge = bridge_map[bridge]
             for edge in original_bridge.in_edges:
                 self.add_edge(edge.in_node, bridge, edge.type)
-            self.remove_node(original_bridge)
+            trash.add(original_bridge)
+
+        for trash_node in trash:
+            self.remove_node(trash_node)
 
         return start_node, end_node
 
@@ -925,7 +918,7 @@ class ThreeFrameTVG():
             self.align_variants(cur)
             if cur.out_edges:
                 node = self.expand_alignments(cur)
-                queue.append(node)
+                queue.appendleft(node)
 
     def translate(self) -> PeptideVariantGraph:
         r""" Converts a DNA transcript variant graph into a peptide variant

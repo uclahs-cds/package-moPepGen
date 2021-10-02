@@ -223,25 +223,32 @@ class VariantRecord():
         """ Checks if the variant is frameshifting. """
         if self.type == 'Fusion':
             return True
+        ref_len = len(self.location)
         if self.type in ['Insertion', 'Substritution']:
             end = int(self.attrs['DONOR_END'])
             start = int(self.attrs['DONOR_START'])
-            return abs(end - start) % 3 != 0
-        if self.type == 'Deletion':
-            return (self.location.end - self.location.start - 1) % 3 != 0
-        return abs(len(self.alt) - len(self.ref)) % 3 != 0
+            alt_len = end - start
+        elif self.type == 'Deletion':
+            alt_len = 1
+        else:
+            alt_len = len(self.alt)
+        return (ref_len - alt_len) % 3 != 0
 
     def frames_shifted(self):
-        """ get number of nucleotide shifted """
+        """ get number of nucleotide shifted
+        TODO: tests needed """
         if self.type == 'Fusion':
-            return 0
+            return True
+        ref_len = len(self.location)
         if self.type in ['Insertion', 'Substritution']:
             end = int(self.attrs['DONOR_END'])
             start = int(self.attrs['DONOR_START'])
-            return (end - start) % 3
-        if self.type == 'Deletion':
-            return (self.location.end - self.location.start - 1) % 3
-        return (len(self.alt) - len(self.ref)) % 3
+            alt_len = end - start
+        elif self.type == 'Deletion':
+            alt_len = 1
+        else:
+            alt_len = len(self.alt)
+        return (ref_len - alt_len) % 3
 
     def is_spanning_over_splicing_site(self, anno:GenomicAnnotation,
             transcript_id:str) -> bool:
@@ -332,3 +339,8 @@ class VariantRecord():
     def has_transcript(self):
         """ Checks if the variant has any transcript IDs annotated """
         return 'TRANSCRIPT_ID' in self.attrs
+
+    def is_stop_lost(self, stop:int):
+        """ Check if this is a stop lost mutation """
+        loc = FeatureLocation(start=stop, end=stop+3)
+        return self.location.overlaps(loc)

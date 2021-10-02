@@ -1,6 +1,7 @@
 """ Module for node in the peptide graph """
 from __future__ import annotations
 import copy
+from functools import cmp_to_key
 from typing import List, Set
 from moPepGen import aa, seqvar
 from moPepGen.SeqFeature import FeatureLocation
@@ -105,9 +106,14 @@ class PVGNode():
     def is_bridge(self) -> None:
         """ Check if this is a bridge node to another reading frame """
         for node in self.out_nodes:
-            if node.reading_frame_index != self.reading_frame_index:
+            if node.out_nodes and \
+                    node.reading_frame_index != self.reading_frame_index:
                 return True
         return False
+
+    def has_any_in_bridge(self) -> None:
+        """ Check if it has any incoming node that is bridge """
+        return any(node.is_bridge() for node in self.in_nodes)
 
     def get_variant_at(self, start:int, end:int=-1) -> seqvar.VariantRecord:
         """ Get the variant at position i """
@@ -138,7 +144,7 @@ class PVGNode():
         raise ValueError('None of the out nodes is reference.')
 
     def find_reference_prev(self) -> PVGNode:
-        """ Find and return the previous reference nocd. The previous reference
+        """ Find and return the previous reference node. The previous reference
         node is defined as the inbond node that has not variant, or any variant
         that is not in this current node. """
         if not self.in_nodes:
@@ -154,6 +160,32 @@ class PVGNode():
                 return node
         raise ValueError('None of the in nodes is reference.')
 
+    def find_least_varaint_prev(self) -> PVGNode:
+        """ Find and return the inbonding node that has the least number of
+        variants """
+        if not self.in_nodes:
+            return None
+        if len(self.in_nodes) == 1:
+            return list(self.in_nodes)[0]
+
+        def sort_func(this:PVGNode, that:PVGNode):
+            x = this.variants
+            y = that.variants
+            if len(x) < len(y):
+                return -1
+            if len(x) > len(y):
+                return 1
+            if len(x) == 0 and len(y) == 0:
+                return -1
+            for i,j in zip(x,y):
+                if i.location < j.location:
+                    return -1
+                if i.location > j.location:
+                    return 1
+            return -1
+
+        return sorted(self.in_nodes, key=cmp_to_key(sort_func))[0]
+
     def split_node(self, index:int, cleavage:bool=False) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
         as the outbound edge. Variants will also be adjusted. For example:
@@ -164,6 +196,8 @@ class PVGNode():
 
         Args:
             index (int): the position to split
+            cleavage (bool): If true, the cleavage attribute of the right node
+                is update to be True.
 
         Returns:
             The new created node with the right part of the original sequence.
@@ -266,17 +300,45 @@ class PVGNode():
 
         return left_node
 
+    def append_left(self, other:PVGNode) -> None:
+        """ Combine the other node the the left. """
+        self.seq = other.seq + self.seq
+
+        frameshifts = copy.copy(other.frameshifts)
+        for variant in self.variants:
+            if variant.variant.is_frameshifting():
+                frameshifts.add(variant.variant)
+        self.frameshifts = frameshifts
+
+        variants = copy.copy(other.variants)
+        for variant in self.variants:
+            variants.append(variant.shift(len(other.seq.seq)))
+        self.variants = variants
+
+    def append_right(self, other:PVGNode) -> None:
+        """ Combine the other node the the right. """
+        new_seq = self.seq + other.seq
+
+        for variant in other.variants:
+            self.variants.append(variant.shift(len(self.seq.seq)))
+            if variant.variant.is_frameshifting():
+                self.frameshifts.add(variant)
+
+        self.seq = new_seq
+
     def find_start_index(self) -> int:
         """ Find the start amino acid position """
         return self.seq.seq.find('M')
 
-    def copy(self) -> PVGNode:
+    def copy(self, in_nodes:bool=True, out_nodes:bool=True) -> PVGNode:
         """ Create a copy of the node """
+        new_in_nodes = copy.copy(self.in_nodes) if in_nodes else set()
+        new_out_nodes = copy.copy(self.out_nodes) if out_nodes else set()
         return PVGNode(
             seq=self.seq,
             variants=copy.copy(self.variants),
-            in_nodes=self.in_nodes,
-            out_nodes=self.out_nodes,
+            in_nodes=new_in_nodes,
+            out_nodes=new_out_nodes,
             frameshifts=copy.copy(self.frameshifts),
             cleavage=self.cleavage,
             truncated=self.truncated,
@@ -308,3 +370,8 @@ class PVGNode():
         if out_node.seq.locations:
             return out_node.seq.locations[0].ref.start * 3 + k
         raise ValueError('Can not find ORF')
+
+    def get_stop_lost_variants(self, i) -> List[seqvar.VariantRecord]:
+        """ """
+        stop = FeatureLocation(start=i, end=i+1)
+        return [x.variant for x in self.variants if x.location.overlaps(stop)]

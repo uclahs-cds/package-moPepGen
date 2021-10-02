@@ -406,12 +406,14 @@ class TVGNode():
 
     def append_right(self, other:TVGNode) -> None:
         """ Combine the other node the the right. """
-        self.seq = self.seq + other.seq
+        new_seq = self.seq + other.seq
 
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
             if variant.variant.is_frameshifting():
                 self.frameshifts.add(variant)
+
+        self.seq = new_seq
 
     def translate(self) -> svgraph.PVGNode:
         """ translate to a PVGNode """

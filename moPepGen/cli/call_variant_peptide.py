@@ -105,8 +105,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
         try:
             peptides = call_peptide_main(variant_pool, tx_id, anno,
-                genome, rule, exception, miscleavage, max_frameshift_dist,
-                max_frameshift_num)
+                genome, rule, exception, miscleavage)
         except:
             logger(f'Exception raised from {tx_id}')
             raise
@@ -122,8 +121,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     for circ_rna in circ_rna_pool:
         peptides = call_peptide_circ_rna(circ_rna, anno, genome,
-            variant_pool, rule, exception, miscleavage, max_frameshift_dist,
-            max_frameshift_num)
+            variant_pool, rule, exception, miscleavage)
 
         for peptide in peptides:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
@@ -138,8 +136,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
 def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
         tx_id:str, anno:gtf.GenomicAnnotation,
-        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int,
-        max_frameshift_dist:int, max_frameshift_num:int) -> Set[aa.AminoAcidSeqRecord]:
+        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_variants = variant_pool.transcriptional[tx_id]
     tx_model = anno.transcripts[tx_id]
@@ -156,7 +153,6 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     )
     dgraph.init_three_frames()
     dgraph.create_variant_graph(tx_variants, variant_pool, genome, anno)
-
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
 
@@ -166,8 +162,7 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
         variant_pool:seqvar.VariantRecordPool, rule:str,
-        exception:str, miscleavage:int, max_frameshift_dist:int,
-        max_frameshift_num:int)-> Set[aa.AminoAcidSeqRecord]:
+        exception:str, miscleavage:int)-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
     gene_model = annotation.genes[gene_id]
