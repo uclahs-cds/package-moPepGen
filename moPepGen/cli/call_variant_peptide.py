@@ -39,20 +39,6 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         metavar='',
         required=True
     )
-    p.add_argument(
-        '--max-frameshift-dist',
-        type=int,
-        help='Max distance between a frameshift mutation and its previous one '
-        'if the combination of upstream frameshift mutations gets back to the'
-        'original reading frame.',
-        default=75
-    )
-    p.add_argument(
-        '--max-frameshift-num',
-        type=int,
-        help='Max number of frameshift mutations allowed together.',
-        default=3
-    )
 
     add_args_reference(p)
     add_args_cleavage(p)
@@ -72,8 +58,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     min_length:int = args.min_length
     max_length:int = args.max_length
-    max_frameshift_dist:int = args.max_frameshift_dist
-    max_frameshift_num:int = args.max_frameshift_num
 
     print_start_message(args)
 
@@ -136,7 +120,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
 def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
         tx_id:str, anno:gtf.GenomicAnnotation,
-        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int) -> Set[aa.AminoAcidSeqRecord]:
+        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int
+        ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_variants = variant_pool.transcriptional[tx_id]
     tx_model = anno.transcripts[tx_id]
@@ -156,7 +141,7 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
 
-    pgraph.form_cleavage_graph(rule=rule, exception=exception)
+    pgraph.create_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
@@ -186,5 +171,5 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph.truncate_three_frames()
     cgraph.fit_into_codons()
     pgraph = cgraph.translate()
-    pgraph.form_cleavage_graph(rule=rule, exception=exception)
+    pgraph.create_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)

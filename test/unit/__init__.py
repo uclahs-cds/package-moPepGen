@@ -184,10 +184,6 @@ def create_dgraph1(seq, variants, has_known_orf:bool=True,
     )
     graph = svgraph.ThreeFrameTVG(seq, '', has_known_orf=has_known_orf)
     records = create_variants(variants)
-    if not variant_pool:
-        variant_pool = VariantRecordPool(
-            transcriptional={seq.attrs['transcript_id']: variants}
-        )
     graph.create_variant_graph(records, variant_pool, genome, anno)
     return graph
 

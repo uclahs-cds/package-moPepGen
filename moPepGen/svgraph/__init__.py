@@ -6,4 +6,3 @@ from moPepGen.svgraph.TVGCursor import TVGCursor
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.ThreeFrameCVG import ThreeFrameCVG
-from moPepGen.svgraph.ThreeFrameTVG import ThreeFrameTVG

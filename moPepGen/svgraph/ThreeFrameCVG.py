@@ -1,7 +1,7 @@
 """ Module for CircularVariantGraph, a directed cyclic graph, for circRNA etc.
 """
 from __future__ import annotations
-from typing import Deque, Dict, Union, List, TYPE_CHECKING
+from typing import Dict, Union, List, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import svgraph, seqvar
 from moPepGen.svgraph.TVGNode import TVGNode
@@ -91,7 +91,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         super().create_variant_graph(filtered_variants, None, None, None)
 
     def extend_loop(self):
-        """ """
+        """ Extend each reading frame for one more loop. """
         frame_map:Dict[TVGNode, TVGNode] = {}
         for root in self.reading_frames:
             if len(root.in_edges) > 2:
@@ -115,7 +115,8 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             self.add_edge(end_node, head, 'reference')
 
     def truncate_three_frames(self):
-        """ """
+        """ For each of the reading frames, tuncate the leading nodes for 1
+        nucleotide. """
         for i, root in enumerate(self.reading_frames):
             if i == 0:
                 continue

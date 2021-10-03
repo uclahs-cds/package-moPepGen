@@ -447,17 +447,3 @@ class TVGNode():
             orf=[None, None],
             reading_frame_index=self.reading_frame_index
         )
-
-    def get_reference_offset(self, i:int=0) -> int:
-        """ """
-        if self.seq.locations:
-            loc = self.seq.locations[0]
-            return loc.ref.start + i - loc.query.start
-        elif self.variants:
-            var = self.variants[0]
-            loc = var.location
-            if len(loc) == len(var.variant.location) or loc.start > 0:
-                return var.variant.location.start + i - loc.start
-            else:
-                return var.variant.location.end + i - loc.end
-        raise ValueError

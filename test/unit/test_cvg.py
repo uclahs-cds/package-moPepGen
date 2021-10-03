@@ -1,7 +1,6 @@
 """ Module for CircularVariantGraph """
 from typing import List, Tuple
 import unittest
-from test.unit import create_variant
 from Bio.Seq import Seq
 from moPepGen import svgraph, dna, circ
 from moPepGen.SeqFeature import FeatureLocation

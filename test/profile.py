@@ -12,8 +12,8 @@ def run_task():
     file_dir = f'{pathlib.Path(__file__).parent.absolute()}/files/{transcript_id}'
 
     # gtf
-    gtf = GenomicAnnotation()
-    gtf.dump_gtf(f'{file_dir}/annotation.gtf')
+    anno = GenomicAnnotation()
+    anno.dump_gtf(f'{file_dir}/annotation.gtf')
 
     # transcript
     transcript_seq = None
@@ -25,8 +25,8 @@ def run_task():
         )
         transcript_seq.locations = [location]
         transcript_seq.orf = FeatureLocation(
-            start=gtf.transcripts[transcript_id].get_cds_start_index(),
-            end=gtf.transcripts[transcript_id].get_cds_end_index()
+            start=anno.transcripts[transcript_id].get_cds_start_index(),
+            end=anno.transcripts[transcript_id].get_cds_end_index()
         )
 
     # protein
@@ -34,40 +34,25 @@ def run_task():
     proteins.dump_fasta(f'{file_dir}/translate.fasta')
 
     # vep
-    variants = {}
+    variant_pool = seqvar.VariantRecordPool()
 
     variant_file = f'{file_dir}/vep_moPepGen.txt'
 
     with open(variant_file, 'rt') as handle:
-        for line in handle:
-            if line.startswith('#'):
-                continue
-            fields = line.rstrip().split('\t')
-            transcript_id = fields[0]
-            record = seqvar.VariantRecord(
-                location=FeatureLocation(
-                    seqname=transcript_id,
-                    start=int(fields[1]),
-                    end=int(fields[2])
-                ),
-                ref=fields[3],
-                alt=fields[4],
-                _type=fields[5],
-                _id=fields[6]
-            )
-            if transcript_id not in variants:
-                variants[transcript_id] = [record]
-            else:
-                variants[transcript_id].append(record)
+        seqvar.GVFMetadata.parse(handle)
+        variant_pool.load_variants(handle, anno, None)
 
-    dgraph = svgraph.TranscriptVariantGraph(
+    tx_variants = variant_pool.transcriptional[transcript_id]
+
+    dgraph = svgraph.ThreeFrameTVG(
         seq=transcript_seq,
-        _id=transcript_id
+        _id=transcript_id,
+        has_known_orf=True
     )
-    dgraph.create_variant_graph(variants[transcript_id])
+    dgraph.create_variant_graph(tx_variants, variant_pool, None, anno)
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
-    pgraph.form_cleavage_graph('trypsin')
+    pgraph.create_cleavage_graph('trypsin')
     peptides = pgraph.call_variant_peptides()
     print(peptides)
 

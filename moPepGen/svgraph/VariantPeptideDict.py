@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import deque
 import copy
 from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
-from moPepGen import aa, get_equivalent, seqvar
+from moPepGen import aa, get_equivalent
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.aa.VariantPeptideIdentifier import create_variant_peptide_id
 

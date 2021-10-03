@@ -1,19 +1,14 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import Set, Deque, Dict, List, Tuple, TYPE_CHECKING
+from typing import Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
-import itertools
 from functools import cmp_to_key
 from Bio.Seq import Seq
 from moPepGen import aa, seqvar
-from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
 
-
-if TYPE_CHECKING:
-    from moPepGen.svgraph.TVGNode import TVGNode
 
 class PeptideVariantGraph():
     """ Defines the DAG data structure for peptide and variants.
@@ -38,7 +33,7 @@ class PeptideVariantGraph():
     """
     def __init__(self, root:PVGNode, _id:str,
             known_orf:List[int,int], rule:str=None, exception:str=None,
-            orfs:Set[int]=None, reading_frames:List[PVGNode]=None,
+            orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None):
         """ Construct a PeptideVariantGraph """
         self.root = root
@@ -72,7 +67,7 @@ class PeptideVariantGraph():
         del node
 
     def known_reading_frame_index(self) -> int:
-        """ """
+        """ Get the readign frame index of the known ORF. """
         return self.known_orf[0] % 3
 
     def has_known_orf(self) -> bool:
@@ -102,106 +97,54 @@ class PeptideVariantGraph():
             )
         return first_node if return_first else node
 
-    def group_outbond_siblings(self, upstream:PVGNode) -> List[List[PVGNode]]:
-        """ Group the downstream nodes with variant alignments if they are
-        connected to the same downstream node. Sibling nodes are the ones that
-        share the same upstream and downstream nodes.
+    @staticmethod
+    def find_nodes_for_merging(node:PVGNode, cleavage:bool=False
+            ) -> Tuple[Set[PVGNode],Set[PVGNode]]:
+        """ Find all start and end nodes for merging.
 
         Args:
-            upstream (TVGNode): The upstream node of which the outbond
-                nodes are grouped.
+            node (PVGNode)
+            cleavage (bool): When True, the input node is treated as the start
+                node, so it's in-bond nodes are not looked.
+        """
+        queue:Deque[PVGNode] = deque(node.out_nodes)
+        if cleavage:
+            start = {node}
+        else:
+            start = copy.copy(node.in_nodes)
+        end = copy.copy(node.out_nodes)
+        while queue:
+            cur = queue.pop()
+            if cur.has_any_in_bridge():
+                for in_node in cur.in_nodes:
+                    if in_node.is_bridge():
+                        start.add(in_node)
+                if cur.is_bridge():
+                    continue
+                end.remove(cur)
+                end.update(cur.out_nodes)
+                for out_node in cur.out_nodes:
+                    queue.appendleft(out_node)
+        return start, end
 
+    def merge_nodes_between(self, start_nodes:Iterable[PVGNode],
+            end_nodes:Iterable[PVGNode]) -> Set[PVGNode]:
+        """ For any nodes between given serious of start and end nodes, merge
+        them if they are connected. The total number of resulted merged nodes
+        equals to the number of nodes in the end set. This function is used
+        primary in creating the cleavage graph.
+
+        If a merged node is a singleton (i.e., no other node sharing the same
+        end node with it in the result), itself is returned, otherwise, returns
+        the next node.
+
+        Args:
+            start_nodes (Iterable[PVGNode]): serious of nodes to start merging.
+            end_nodes (Iterable[PVGNode]): serious of nodes to merge to.
         Return:
-            A 2-dimensional list, that each child list contains nodes that are
-            sibling to each other (ie sharing the same upstream and downstream
-            node).
+            A set of nodes to be used in the next iteration of creating the
+            cleavage graph.
         """
-        out_nodes = copy.copy(upstream.out_nodes)
-        groups:List[List[PVGNode]] = []
-        while out_nodes:
-            out_node = out_nodes.pop()
-            if out_node is self.stop:
-                continue
-            try:
-                downstream = out_node.find_reference_next()
-            except ValueError as e:
-                if len(out_node.out_nodes) > 1:
-                    raise ValueError('Cannot infer downstream') from e
-                downstream = list(out_node.out_nodes)[0]
-
-            group:List[TVGNode] = [out_node]
-            if downstream and downstream is not self.stop:
-                for node in downstream.in_nodes:
-                    if node in out_nodes:
-                        group.append(node)
-                        out_nodes.remove(node)
-            groups.append(group)
-        return groups
-
-    def _expand_alignment_backward(self, node:PVGNode) -> Set[PVGNode]:
-        r""" Expand the variant alignment bubble backward to the previous
-        cleave site. The sequence of the input node is first prepended to each
-        of outbound node, and then the inbound node of those outbond nodes are
-        then pointed to the inbond node of the input node.
-
-        In the example below, the node H and V are expanded backward to include
-        NCW. The input variable node should be the node NCW. The returned node
-        is ST
-
-                V                    NCWV
-               / \                  /    \
-        AER-NCW-H-ST     ->      AER-NCWH-ST
-
-        Args:
-            node (PVGNode): The node that the outbond variant alignment
-            bubble should be expanded.
-
-        Returns:
-            A tuple of size 2 is returned. The first element is the end node
-            of the variant alignment bubble, and the second is a set of all
-            branches with frameshifting variants.
-        """
-        upstream = list(node.in_nodes)[0]
-
-        downstreams = set()
-
-        for siblings in self.group_outbond_siblings(node):
-            for cur in siblings:
-                node.remove_out_edge(cur)
-                if cur is self.stop:
-                    cur = PVGNode(
-                        seq=copy.copy(node.seq),
-                        variants=copy.copy(node.variants),
-                        frameshifts=copy.copy(node.frameshifts),
-                        orf=node.orf,
-                        reading_frame_index=node.reading_frame_index
-                    )
-                    self.add_stop(cur)
-                else:
-                    cur.seq = node.seq + cur.seq
-
-                    variants = copy.copy(node.variants)
-                    for variant in cur.variants:
-                        variants.append(variant.shift(len(node.seq)))
-                    cur.variants = variants
-
-                upstream.add_out_edge(cur)
-                last = self.cleave_if_possible(cur)
-
-            if len(siblings) == 1:
-                downstreams.add(last)
-            else:
-                if len(last.out_nodes) > 1:
-                    raise ValueError('Multiple out nodes found.')
-                downstreams.add(list(last.out_nodes)[0])
-
-        upstream.remove_out_edge(node)
-        # return to_return, branches
-        return downstreams
-
-    def expand_alignment_backward(self, node:PVGNode) -> PVGNode:
-        """ """
-        start_nodes, end_nodes = self.find_nodes_for_merging(node, True)
         new_nodes:Set[PVGNode] = set()
         trash:Set[PVGNode] = set()
         queue:Deque[PVGNode] = deque(start_nodes)
@@ -233,12 +176,12 @@ class PeptideVariantGraph():
             new_nodes.remove(new_node)
             new_nodes.add(last)
 
-        downstreams = set()
+        downstreams:Set[PVGNode] = set()
         for new_node in new_nodes:
             if new_node.is_bridge():
                 continue
             if len(new_node.out_nodes) > 1:
-                raise ValueError
+                raise ValueError('Graph topology unexpected.')
             downstream = list(new_node.out_nodes)[0]
             if len(downstream.in_nodes) == 1:
                 downstreams.add(new_node)
@@ -246,7 +189,32 @@ class PeptideVariantGraph():
                 downstreams.add(downstream)
         return downstreams
 
-    def expand_alignment_forward(self, node:PVGNode) -> PVGNode:
+    def expand_backward(self, node:PVGNode) -> Set[PVGNode]:
+        r""" Expand the variant alignment bubble backward to the previous
+        cleave site. The sequence of the input node is first prepended to each
+        of outbound node, and then the inbound node of those outbond nodes are
+        then pointed to the inbond node of the input node.
+
+        In the example below, the node H and V are expanded backward to include
+        NCW. The input variable node should be the node NCW. The returned node
+        is ST
+
+                V                    NCWV
+               / \                  /    \
+        AER-NCW-H-ST     ->      AER-NCWH-ST
+
+        Args:
+            node (PVGNode): The node that the outbond variant alignment
+            bubble should be expanded.
+
+        Returns:
+            A set of nodes that are either the resulted merged node if it is
+            singleton, or the downstream node otherwise.
+        """
+        start_nodes, end_nodes = self.find_nodes_for_merging(node, True)
+        return self.merge_nodes_between(start_nodes, end_nodes)
+
+    def expand_forward(self, node:PVGNode) -> PVGNode:
         r""" Expand the upsteam variant alignment bubble to the end of the
         node of input. The sequencing of the node of input is first appended
         to each of the leading nodes, and the outbound node of those nodes
@@ -288,85 +256,41 @@ class PeptideVariantGraph():
         node.remove_out_edge(downstream)
         return downstream
 
-    @staticmethod
-    def find_nodes_for_merging(node:PVGNode, cleavage:bool=False
-            ) -> Tuple[Set[PVGNode],Set[PVGNode]]:
-        """ Find all start and end nodes for merging.
+    def merge_join(self, node:PVGNode) -> Set[PVGNode]:
+        r""" For a given node, join all the inbond and outbond nodes with any
+        combinations.
+
+        In the example below, node NCWHSTQQ is returned
+
+                                       NCWHSTQV
+                                      /        \
+            NCWV     V               | NCWVSTQV |
+           /    \   / \              |/        \|
+        AER-NCWH-STQ-Q-PK    ->    AER-NCWHSTQQ-PK
+                                      \        /
+                                       NCWVSTQQ
+        Args:
+            node (PVGNode): The node in the graph of target.
+        returns:
+            A set of nodes that are either the resulted merged node if it is
+            singleton, or the downstream node otherwise.
+        """
+        start_nodes, end_nodes = self.find_nodes_for_merging(node)
+        return self.merge_nodes_between(start_nodes, end_nodes)
+
+    def cross_join(self, node:PVGNode, site:int) -> Set[PVGNode]:
+        r""" For a given node, split at the given position, expand inbound and
+        outbound alignments, and join them with edges.
+
+        In the example below, the node PK is returned
+
+            NCWV           V                 NCWVSTEEK-LPAQV
+           /    \         / \               /         X     \
+        AER-NCWH-STEEKLPAQ-Q-PK    ->    AER-NCWHSTEEK-LPAQQ-PK
 
         Args:
-            node (PVGNode)
-            cleavage (bool): When True, the input node is treated as the start
-                node, so it's in-bond nodes are not looked.
+            node (PVGNode): The node in the graph of target.
         """
-        queue:Deque[PVGNode] = deque(node.out_nodes)
-        if cleavage:
-            start = {node}
-        else:
-            start = copy.copy(node.in_nodes)
-        end = copy.copy(node.out_nodes)
-        while queue:
-            cur = queue.pop()
-            if cur.has_any_in_bridge():
-                for in_node in cur.in_nodes:
-                    if in_node.is_bridge():
-                        start.add(in_node)
-                if cur.is_bridge():
-                    continue
-                end.remove(cur)
-                end.update(cur.out_nodes)
-                for out_node in cur.out_nodes:
-                    queue.appendleft(out_node)
-        return start, end
-
-    def merge_join_alignments(self, node:PVGNode) -> Set[PVGNode]:
-        """ """
-        start_nodes, end_nodes = self.find_nodes_for_merging(node)
-        new_nodes:Set[PVGNode] = set()
-        trash:Set[PVGNode] = set()
-        queue:Deque[PVGNode] = deque(start_nodes)
-
-        while queue:
-            cur = queue.pop()
-            trash.add(cur)
-            for out_node in cur.out_nodes:
-                new_node = cur.copy(in_nodes=False, out_nodes=False)
-                for in_node in cur.in_nodes:
-                    in_node.add_out_edge(new_node)
-
-                if out_node is not self.root:
-                    trash.add(out_node)
-                    new_node.append_right(out_node)
-                    for out_out_node in out_node.out_nodes:
-                        new_node.add_out_edge(out_out_node)
-
-                if out_node in end_nodes or out_node is self.stop:
-                    new_nodes.add(new_node)
-                else:
-                    queue.appendleft(new_node)
-
-        for x in trash:
-            self.remove_node(x)
-
-        for new_node in copy.copy(new_nodes):
-            last = self.cleave_if_possible(new_node)
-            new_nodes.remove(new_node)
-            new_nodes.add(last)
-
-        downstreams = set()
-        for new_node in new_nodes:
-            if new_node.is_bridge():
-                continue
-            if len(new_node.out_nodes) > 1:
-                raise ValueError
-            downstream = list(new_node.out_nodes)[0]
-            if len(downstream.in_nodes) == 1:
-                downstreams.add(new_node)
-            else:
-                downstreams.add(downstream)
-        return downstreams
-
-    def cross_join_alignments(self, node:PVGNode, site:int) -> Set[PVGNode]:
-        """ """
         head = node.split_node(site)
 
         # there shouldn't have any bridge out in inbond nodes
@@ -378,52 +302,10 @@ class PeptideVariantGraph():
         self.remove_node(node)
 
         start_nodes, end_nodes = self.find_nodes_for_merging(head, True)
-        new_nodes:Set[PVGNode] = set()
-        trash:Set[PVGNode] = set()
-        queue:Deque[PVGNode] = deque(start_nodes)
-
-        while queue:
-            cur = queue.pop()
-            trash.add(cur)
-            for out_node in cur.out_nodes:
-                new_node = cur.copy(in_nodes=False, out_nodes=False)
-                for in_node in cur.in_nodes:
-                    in_node.add_out_edge(new_node)
-
-                if out_node is not self.root:
-                    trash.add(out_node)
-                    new_node.append_right(out_node)
-                    for out_out_node in out_node.out_nodes:
-                        new_node.add_out_edge(out_out_node)
-
-                if out_node in end_nodes or out_node is self.stop:
-                    new_nodes.add(new_node)
-                else:
-                    queue.appendleft(new_node)
-
-        for x in trash:
-            self.remove_node(x)
-
-        for new_node in copy.copy(new_nodes):
-            last = self.cleave_if_possible(new_node)
-            new_nodes.remove(new_node)
-            new_nodes.add(last)
-
-        downstreams = set()
-        for new_node in new_nodes:
-            if new_node.is_bridge():
-                continue
-            if len(new_node.out_nodes) > 1:
-                raise ValueError
-            downstream = list(new_node.out_nodes)[0]
-            if len(downstream.in_nodes) == 1:
-                downstreams.add(new_node)
-            else:
-                downstreams.add(downstream)
-        return downstreams
+        return self.merge_nodes_between(start_nodes, end_nodes)
 
 
-    def form_cleavage_graph(self, rule:str, exception:str=None) -> None:
+    def create_cleavage_graph(self, rule:str, exception:str=None) -> None:
         """ Form a cleavage graph from a variant graph. After calling this
         method, every each in the graph should represent a cleavage in the
         sequence of the pull peptide of reference and variated.
@@ -435,7 +317,6 @@ class PeptideVariantGraph():
         self.rule = rule
         self.exception = exception
         queue = deque([self.root])
-        branch = set()
 
         while queue:
             cur = queue.pop()
@@ -460,13 +341,13 @@ class PeptideVariantGraph():
                 if self.next_is_stop(cur):
                     if len(cur.out_nodes) > 1:
                         # return branch
-                        branches = self.expand_alignment_backward(cur)
+                        branches = self.expand_backward(cur)
                         for branch in branches:
                             queue.appendleft(branch)
                     continue
 
                 if not cur.is_bridge():
-                    branches = self.expand_alignment_backward(cur)
+                    branches = self.expand_backward(cur)
                     for branch in branches:
                         if cur.reading_frame_index == branch.reading_frame_index and \
                                 not branch.is_bridge():
@@ -478,26 +359,26 @@ class PeptideVariantGraph():
 
             if len(sites) == 0:
                 if self.next_is_stop(cur) or cur.is_bridge():
-                    self.expand_alignment_forward(cur)
+                    self.expand_forward(cur)
                     continue
                 if cur.cleavage:
-                    branches = self.expand_alignment_backward(cur)
+                    branches = self.expand_backward(cur)
                 else:
-                    branches = self.merge_join_alignments(cur)
+                    branches = self.merge_join(cur)
                 for branch in branches:
                     queue.appendleft(branch)
             elif len(sites) == 1:
                 if self.next_is_stop(cur) or cur.is_bridge():
                     cur.split_node(sites[0], cleavage=True)
-                    cur = self.expand_alignment_forward(cur)
+                    cur = self.expand_forward(cur)
                     queue.appendleft(cur)
                     continue
-                branches = self.cross_join_alignments(cur, sites[0])
+                branches = self.cross_join(cur, sites[0])
                 for branch in branches:
                     queue.appendleft(branch)
             else:
                 right = cur.split_node(sites[0], cleavage=True)
-                cur = self.expand_alignment_forward(cur)
+                cur = self.expand_forward(cur)
                 site = right.seq.find_first_enzymatic_cleave_site(
                     rule=self.rule, exception=self.exception)
                 right = right.split_node(site, cleavage=True)
@@ -513,7 +394,6 @@ class PeptideVariantGraph():
         orfs = list(self.orfs)
         orfs.sort()
         self.orf_id_map = {v:f"ORF{i+1}" for i,v in enumerate(orfs)}
-
 
     def call_variant_peptides(self, miscleavage:int=2, check_variants:bool=True,
             check_orf:bool=False, keep_all_occurrence:bool=True
@@ -533,10 +413,10 @@ class PeptideVariantGraph():
         Return:
             A set of aa.AminoAcidSeqRecord.
         """
-        cur = VariantPeptideCursor(None, self.root, True, [None,None], [])
+        cur = PVGCursor(None, self.root, True, [None,None], [])
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
         peptide_pool = VariantPeptideDict(tx_id=self.id)
-        traversal = VariantPeptideGraphTraversal(
+        traversal = PVGTraversal(
             check_variants=check_variants, check_orf=check_orf,
             miscleavage=miscleavage, queue=queue, pool=peptide_pool,
         )
@@ -552,7 +432,7 @@ class PeptideVariantGraph():
             cur = traversal.queue.pop()
             if cur.out_node is self.root and cur.out_node.seq is None:
                 for out_node in cur.out_node.out_nodes:
-                    cur = VariantPeptideCursor(cur.out_node, out_node, False,
+                    cur = PVGCursor(cur.out_node, out_node, False,
                         cur.orf, [])
                     traversal.queue.appendleft(cur)
                 continue
@@ -562,12 +442,12 @@ class PeptideVariantGraph():
 
             if self.has_known_orf():
                 # add out nodes to the queue
-                self.update_variant_peptide_dict_known_orf(
+                self.call_and_stage_known_orf(
                     cursor=cur,
                     traversal=traversal
                 )
             else:
-                self.update_variant_peptide_dict_unknown_orf(
+                self.call_and_stage_unknown_orf(
                     cursor=cur,
                     traversal=traversal
                 )
@@ -579,9 +459,11 @@ class PeptideVariantGraph():
             keep_all_occurrence=keep_all_occurrence, orf_id_map=self.orf_id_map
         )
 
-    def update_variant_peptide_dict_known_orf(self, cursor:VariantPeptideCursor,
-            traversal:VariantPeptideGraphTraversal) -> None:
-        """ """
+    def call_and_stage_known_orf(self, cursor:PVGCursor,
+            traversal:PVGTraversal) -> None:
+        """ For a given node in the graph, call miscleavage peptides if it
+        is in CDS. For each of its outbond node, stage it until all inbond
+        edges of the outbond node is visited. """
         target_node = cursor.out_node
         in_cds = cursor.in_cds
         orf = cursor.orf
@@ -626,13 +508,13 @@ class PeptideVariantGraph():
                         cur_start_gain = list(new_start_gain)
                 else:
                     cur_start_gain = []
-                cur = VariantPeptideCursor(target_node, out_node, in_cds, orf,
+                cur = PVGCursor(target_node, out_node, in_cds, orf,
                     cur_start_gain)
                 traversal.stage(target_node, out_node, cur)
         else:
             if target_node.reading_frame_index != self.known_reading_frame_index():
                 for out_node in target_node.out_nodes:
-                    cur = VariantPeptideCursor(target_node, out_node, False,
+                    cur = PVGCursor(target_node, out_node, False,
                         orf, [])
                     traversal.stage(target_node, out_node, cur)
                 return
@@ -640,7 +522,7 @@ class PeptideVariantGraph():
             start_index = target_node.seq.get_query_index(traversal.known_orf_aa[0])
             if start_index == -1:
                 for out_node in target_node.out_nodes:
-                    cur = VariantPeptideCursor(target_node, out_node, False, orf, [])
+                    cur = PVGCursor(target_node, out_node, False, orf, [])
                     traversal.stage(target_node, out_node, cur)
             else:
                 node_copy = target_node.copy()
@@ -658,13 +540,15 @@ class PeptideVariantGraph():
                         cur_start_gain = start_gain
                         if out_node.is_bridge():
                             cur_start_gain = [v.variant for v in out_node.variants]
-                        cur = VariantPeptideCursor(target_node, out_node, True, orf, cur_start_gain)
+                        cur = PVGCursor(target_node, out_node, True, orf, cur_start_gain)
                         traversal.stage(target_node, out_node, cur)
                 self.remove_node(node_copy)
 
-    def update_variant_peptide_dict_unknown_orf(self, cursor:VariantPeptideCursor,
-            traversal:VariantPeptideGraphTraversal) -> None:
-        """ """
+    def call_and_stage_unknown_orf(self, cursor:PVGCursor,
+            traversal:PVGTraversal) -> None:
+        """ For a given node in the graph, call miscleavage peptides if it
+        is in CDS. For each of its outbond node, stage it until all inbond
+        edges of the outbond node is visited. """
         target_node = cursor.out_node
         in_cds = cursor.in_cds
         start_gain = cursor.start_gain
@@ -747,7 +631,7 @@ class PeptideVariantGraph():
                     if last_stop_index > last_start_index:
                         start_gain = []
 
-                cursor = VariantPeptideCursor(target_node, out_node, in_cds, orf,
+                cursor = PVGCursor(target_node, out_node, in_cds, orf,
                     start_gain)
                 traversal.stage(target_node, out_node, cursor)
 
@@ -762,8 +646,8 @@ class PeptideVariantGraph():
         for target_node in trash:
             self.remove_node(target_node)
 
-class VariantPeptideCursor():
-    """ """
+class PVGCursor():
+    """ Helper class for cursors when graph traversal to call peptides. """
     def __init__(self, in_node:PVGNode, out_node:PVGNode, in_cds:bool,
             orf:List[int,int], start_gain:List[seqvar.VariantRecord]):
         """ constructor """
@@ -773,52 +657,15 @@ class VariantPeptideCursor():
         self.start_gain = start_gain
         self.orf = orf or [None, None]
 
-    def __eq__(self, other:VariantPeptideCursor) -> bool:
-        """ """
-        return self.in_cds == other.in_cds \
-            and self.orf == other.orf \
-            and self.start_gain == other.start_gain
-
-    def __ne__(self, other:VariantPeptideCursor) -> bool:
-        """ """
-        return not self == other
-
-    def __gt__(self, other:VariantPeptideCursor) -> bool:
-        """ greater than """
-        if self.in_cds and not other.in_cds:
-            return False
-        if not self.in_cds and other.in_cds:
-            return True
-
-        if self.start_gain and not other.start_gain:
-            return True
-        if not self.start_gain and other.start_gain:
-            return False
-        if self.start_gain and other.start_gain:
-            return sorted(self.start_gain)[0] > sorted(other.start_gain)[0]
-        return False
-
-    def __ge__(self, other:VariantPeptideCursor) -> bool:
-        """ """
-        return self > other or self == other
-
-    def __lt__(self, other:VariantPeptideCursor) -> bool:
-        """ """
-        return not self >= other
-
-    def __le__(self, other:VariantPeptideCursor) -> bool:
-        """ """
-        return not self > other
-
-
-VaraintPeptideCursorStack = Dict[PVGNode, Dict[PVGNode, VariantPeptideCursor]]
-class VariantPeptideGraphTraversal():
-    """ """
+class PVGTraversal():
+    """ PVG Traversal. The purpose of this class is to facilitate the graph
+    traversal to call variant peptides.
+    """
     def __init__(self, check_variants:bool, check_orf:bool, miscleavage:int,
             pool:VariantPeptideDict, known_orf_tx:Tuple[int,int]=None,
             known_orf_aa:Tuple[int,int]=None,
-            queue:Deque[VariantPeptideCursor]=None,
-            stack:VaraintPeptideCursorStack=None):
+            queue:Deque[PVGCursor]=None,
+            stack:Dict[PVGNode, Dict[PVGNode, PVGCursor]]=None):
         """ constructor """
         self.check_variants = check_variants
         self.check_orf = check_orf
@@ -829,64 +676,21 @@ class VariantPeptideGraphTraversal():
         self.pool = pool
         self.stack = stack or {}
 
-    def is_done(self):
-        """ """
+    def is_done(self) -> bool:
+        """ Check if the traversal is done """
         return not bool(self.queue)
 
     def has_known_orf(self):
-        """ """
+        """ Check if the transcript has any known ORF """
         return self.known_orf_aa[0] is not None
 
     def known_reading_frame_index(self) -> int:
-        """ """
+        """ Get the reading frame index of the known ORF """
         return self.known_orf_tx[0] % 3
 
     @staticmethod
-    def sort_func(lhs:VariantPeptideCursor, rhs:VariantPeptideCursor):
-        """ sort function """
-        x = lhs.start_gain
-        y = rhs.start_gain
-        if len(x) == 0:
-            return -1
-        if len(y) == 0:
-            return -1
-        return -1 if x[0].location.start < y[0].location.start else 1
-
-    def get_least_in_cds_cursor(self, node:PVGNode) -> VariantPeptideCursor:
-        """ """
-        cursors = [c for c in self.stack[node].values() if c.in_cds is True
-            and len(c.start_gain) > 0]
-        if len(cursors) == 0:
-            return None
-        return sorted(cursors, key=cmp_to_key(self.sort_func))[0]
-
-    def get_stop_lost_cursor(self, node:PVGNode) -> VariantPeptideCursor:
-        """ """
-        stop = self.known_orf_tx[1]
-        cursors:List[VariantPeptideCursor] = []
-        for cur in self.stack[node].values():
-            in_cds = cur.in_cds
-            has_stop_lost = False
-            for variant in cur.out_node.variants:
-                if variant.variant.is_stop_lost(stop):
-                    has_stop_lost = True
-                    break
-            if not has_stop_lost:
-                for variant in cur.start_gain:
-                    if variant.is_stop_lost(stop):
-                        has_stop_lost = True
-                        break
-
-            if in_cds and has_stop_lost:
-                cursors.append(cur)
-        if len(cursors) == 0:
-            return None
-        return sorted(cursors, key=cmp_to_key(self.sort_func))[0]
-
-    @staticmethod
-    def comp_func_known_orf_in_frame(x:VariantPeptideCursor,
-            y:VariantPeptideCursor) -> bool:
-        """ """
+    def cmp_known_orf_in_frame(x:PVGCursor, y:PVGCursor) -> bool:
+        """ comparison for in frame nodes with known ORF """
         if x.in_cds and not y.in_cds:
             return -1
         if not x.in_cds and y.in_cds:
@@ -901,9 +705,8 @@ class VariantPeptideGraphTraversal():
         return -1
 
     @staticmethod
-    def comp_func_known_orf_frame_shifted(x:VariantPeptideCursor,
-            y:VariantPeptideCursor) -> bool:
-        """ """
+    def cmp_known_orf_frame_shifted(x:PVGCursor, y:PVGCursor) -> bool:
+        """ comparison for frameshifing nodes with known ORF """
         if x.in_cds and not y.in_cds:
             return -1
         if not x.in_cds and y.in_cds:
@@ -918,9 +721,8 @@ class VariantPeptideGraphTraversal():
         return -1
 
     @staticmethod
-    def comp_func_unknown_orf(x:VariantPeptideCursor,
-            y:VariantPeptideCursor) -> bool:
-        """ """
+    def cmp_unknown_orf(x:PVGCursor, y:PVGCursor) -> bool:
+        """ comparision for unkonwn ORF """
         if x.in_cds and not y.in_cds:
             return -1
         if not x.in_cds and y.in_cds:
@@ -935,9 +737,9 @@ class VariantPeptideGraphTraversal():
         return -1
 
     @staticmethod
-    def comp_func_unknown_orf_check_orf(x:VariantPeptideCursor,
-            y:VariantPeptideCursor) -> bool:
-        """ """
+    def cmp_unknown_orf_check_orf(x:PVGCursor, y:PVGCursor) -> bool:
+        """ comparison for unknown ORF and check ORFs. """
+        # pylint: disable=R0911
         if x.in_cds and not y.in_cds:
             return -1
         if not x.in_cds and y.in_cds:
@@ -962,8 +764,10 @@ class VariantPeptideGraphTraversal():
         return -1
 
     def stage(self, in_node:PVGNode, out_node:PVGNode,
-            cursor:VariantPeptideCursor):
-        """ """
+            cursor:PVGCursor):
+        """ When a node is visited through a particular edge during the variant
+        peptide finding graph traversal, it is stage until all inbond edges
+        are visited. """
         in_nodes = self.stack.setdefault(out_node, {})
 
         if in_node in in_nodes:
@@ -976,13 +780,13 @@ class VariantPeptideGraphTraversal():
         curs = list(self.stack[out_node].values())
         if self.known_orf_aa[0] is not None:
             if out_node.reading_frame_index == self.known_reading_frame_index():
-                func = self.comp_func_known_orf_in_frame
+                func = self.cmp_known_orf_in_frame
             else:
-                func = self.comp_func_known_orf_frame_shifted
+                func = self.cmp_known_orf_frame_shifted
         elif self.check_orf:
-            func = self.comp_func_unknown_orf_check_orf
+            func = self.cmp_unknown_orf_check_orf
         else:
-            func = self.comp_func_unknown_orf
+            func = self.cmp_unknown_orf
 
         curs.sort(key=cmp_to_key(func))
 

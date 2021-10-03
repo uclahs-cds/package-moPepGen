@@ -370,8 +370,3 @@ class PVGNode():
         if out_node.seq.locations:
             return out_node.seq.locations[0].ref.start * 3 + k
         raise ValueError('Can not find ORF')
-
-    def get_stop_lost_variants(self, i) -> List[seqvar.VariantRecord]:
-        """ """
-        stop = FeatureLocation(start=i, end=i+1)
-        return [x.variant for x in self.variants if x.location.overlaps(stop)]

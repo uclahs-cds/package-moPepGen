@@ -1,18 +1,15 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from math import trunc
 from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING
 from collections import deque
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import dna, seqvar, all_equal
-from moPepGen.svgraph.TVGCursor import TVGCursor
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
 from moPepGen.svgraph.PVGNode import PVGNode
-from moPepGen.svgraph.VariantCombinations import VariantCombinations
 
 
 if TYPE_CHECKING:
@@ -695,9 +692,11 @@ class ThreeFrameTVG():
 
         return out_nodes
 
-    def find_bridge_nodes(self, start:TVGNode, end=TVGNode
+    @staticmethod
+    def find_bridge_nodes_between(start:TVGNode, end=TVGNode
             ) -> Tuple[List[TVGNode], List[TVGNode]]:
-        """ """
+        """ Find all bridge in and bridge out nodes between a start and a
+        end node. """
         this_id = start.reading_frame_index
         bridge_in = []
         bridge_out = []
@@ -745,7 +744,7 @@ class ThreeFrameTVG():
         start_node = node
         end_node = node.find_farthest_node_with_overlap()
         end_nodes = [end_node]
-        bridge_ins, bridge_outs = self.find_bridge_nodes(start_node, end_node)
+        bridge_ins, bridge_outs = self.find_bridge_nodes_between(start_node, end_node)
 
         for bridge in bridge_outs:
             for e in bridge.out_edges:
@@ -847,7 +846,8 @@ class ThreeFrameTVG():
 
         return start_node, end_node
 
-    def expand_alignments(self, start:TVGNode) -> TVGNode:
+    @staticmethod
+    def expand_alignments(start:TVGNode) -> TVGNode:
         r""" Expand the aligned variants into the range of codons. For
         frameshifting mutations, a copy of each downstream node will be
         created and branched out. Exclusive nodes are merged.
@@ -900,7 +900,18 @@ class ThreeFrameTVG():
         return end
 
     def fit_into_codons(self) -> None:
-        """ """
+        r""" This takes the variant graph, and fit all cleave sites into the
+        range of codons. For frameshifting mutations, the downstream part
+        will be branched out.
+        The case where there are mutations before the start codon isn't
+        considered
+        Example:
+                 T--                    GTG-CCCT
+                /   \                  /
+            ATGG-TCT-G-CCCT   ->    ATG-GTCTGC-CCT
+                    \ /                \      /
+                     A                  GTCTAC
+        """
         queue:Deque[TVGNode] = deque(self.reading_frames)
         while queue:
             cur = queue.pop()

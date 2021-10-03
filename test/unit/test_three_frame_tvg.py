@@ -457,7 +457,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             4: ('CCCT',  [2,3],   [])
         }
         seq = 'ATGGCCCTGCCCT'
-        _, nodes = create_three_frame_tvg(data, 'seq')
+        _, nodes = create_three_frame_tvg(data, seq)
         right = nodes[2].truncate_right(2)
         self.assertEqual(str(nodes[2].seq.seq),'CC')
         self.assertEqual(len(nodes[2].variants), 0)

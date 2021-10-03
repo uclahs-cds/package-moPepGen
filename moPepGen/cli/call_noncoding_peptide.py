@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path
 import pkg_resources
-from Bio.SeqIO import FastaIO, read
+from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, aa, logger
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
@@ -163,7 +163,7 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     )
     dgraph.init_three_frames()
     pgraph = dgraph.translate()
-    pgraph.form_cleavage_graph(rule=rule, exception=exception)
+    pgraph.create_cleavage_graph(rule=rule, exception=exception)
     peptides = pgraph.call_variant_peptides(
         miscleavage=miscleavage,
         check_variants=False,
