@@ -620,9 +620,11 @@ class PeptideVariantGraph():
                     if not in_cds:
                         start_gain = []
                     elif last_start_index > -1:
-                        start_gain = out_node.get_variant_at(
+                        # carry over variants from the target node to the next
+                        # node if a start codon is found.
+                        start_gain = target_node.get_variant_at(
                             start=last_start_index,
-                            end=min(last_start_index + 3, len(out_node.seq.seq))
+                            end=min(last_start_index + 3, len(target_node.seq.seq))
                         )
                     else:
                         start_gain = [v.variant for v in out_node.variants\
