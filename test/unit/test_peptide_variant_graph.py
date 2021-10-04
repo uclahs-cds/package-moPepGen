@@ -408,7 +408,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             4: ('SSSPK', [2,3], [None], [((0,5),(11,16))], 0),
             5: ('SSSVK', [4], [None], [((0,5),(16,21))], 0)
         }
-        graph, nodes = create_pgraph(data, 'ENST0001', known_orf=[18, 27])
+        graph, _ = create_pgraph(data, 'ENST0001', known_orf=[18, 27])
         peptides = graph.call_variant_peptides(0)
         received = {str(x.seq) for x in peptides}
         expected = {'MSS'}
