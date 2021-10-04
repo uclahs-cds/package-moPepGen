@@ -578,8 +578,8 @@ class PeptideVariantGraph():
             if 0 < start_index < stop_index and (start_index !=
                     last_start_index or stop_index != last_stop_index):
                 cur_copy = target_node[start_index:stop_index]
+                orf_start = target_node.get_orf_start(start_index)
                 cur_copy.remove_out_edges()
-                orf_start = cur_copy.get_orf_start()
                 cur_orf = [orf_start, None]
                 self.add_stop(cur_copy)
                 self.update_orf(cur_orf)
