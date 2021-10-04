@@ -398,6 +398,22 @@ class TestPeptideVariantGraph(unittest.TestCase):
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSKSSSSRSSSPK', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
 
+    def test_call_variant_peptides_small_orf(self):
+        """ test very small ORF is handled """
+        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('SMSS*R', [1],[variant_1], [((0,3),(5,8)), ((4,6),(9,11))], 0),
+            3: ('SMSI*R', [1], [None], [((0,6),(5,11))], 0),
+            4: ('SSSPK', [2,3], [None], [((0,5),(11,16))], 0),
+            5: ('SSSVK', [4], [None], [((0,5),(16,21))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001', known_orf=[18, 27])
+        peptides = graph.call_variant_peptides(0)
+        received = {str(x.seq) for x in peptides}
+        expected = {'MSS'}
+        self.assertEqual(received, expected)
+
     def test_call_peptides_check_orf(self):
         """ test calling peptides when checking for ORF """
         locations = [((0,4),(0,4))]
