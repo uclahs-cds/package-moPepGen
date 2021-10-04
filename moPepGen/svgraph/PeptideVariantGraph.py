@@ -514,8 +514,7 @@ class PeptideVariantGraph():
         else:
             if target_node.reading_frame_index != self.known_reading_frame_index():
                 for out_node in target_node.out_nodes:
-                    cur = PVGCursor(target_node, out_node, False,
-                        orf, [])
+                    cur = PVGCursor(target_node, out_node, False, orf, [])
                     traversal.stage(target_node, out_node, cur)
                 return
 
@@ -526,7 +525,13 @@ class PeptideVariantGraph():
                     traversal.stage(target_node, out_node, cur)
             else:
                 node_copy = target_node.copy()
-                node_copy.truncate_left(start_index)
+                stop_index = node_copy.seq.seq.find('*')
+                if stop_index < start_index:
+                    node_copy.truncate_left(start_index)
+                    in_cds = True
+                else:
+                    node_copy = node_copy[start_index:stop_index]
+                    in_cds = False
                 orf = traversal.known_orf_aa
                 traversal.pool.add_miscleaved_sequences(
                     node=node_copy,
@@ -540,7 +545,8 @@ class PeptideVariantGraph():
                         cur_start_gain = start_gain
                         if out_node.is_bridge():
                             cur_start_gain = [v.variant for v in out_node.variants]
-                        cur = PVGCursor(target_node, out_node, True, orf, cur_start_gain)
+                        cur = PVGCursor(target_node, out_node, in_cds, orf,
+                            cur_start_gain)
                         traversal.stage(target_node, out_node, cur)
                 self.remove_node(node_copy)
 
@@ -637,16 +643,16 @@ class PeptideVariantGraph():
                     start_gain)
                 traversal.stage(target_node, out_node, cursor)
 
-        for target_node, orf in node_list:
+        for node, orf in node_list:
             traversal.pool.add_miscleaved_sequences(
-                node=target_node,
+                node=node,
                 orf=tuple(orf),
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 additional_variants=start_gain
             )
-        for target_node in trash:
-            self.remove_node(target_node)
+        for node in trash:
+            self.remove_node(node)
 
 class PVGCursor():
     """ Helper class for cursors when graph traversal to call peptides. """

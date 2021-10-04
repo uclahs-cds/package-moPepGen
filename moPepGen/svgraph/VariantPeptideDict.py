@@ -196,6 +196,8 @@ class VariantPeptideDict():
         peptide_pool:Set[aa.AminoAcidSeqRecord] = set()
 
         for seq, metadatas in self.peptides.items():
+            if '*' in seq:
+                raise ValueError('Invalid amino acid symbol found in the sequence.')
             labels = []
             metadatas = list(metadatas)
             metadatas.sort(key=lambda x: x.orf[0])
