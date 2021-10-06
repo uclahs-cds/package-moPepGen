@@ -139,6 +139,8 @@ class TVGNode():
         or cleavage). """
         if not self.out_edges:
             return None
+        if len(self.out_edges) == 1:
+            return list(self.out_edges)[0].out_node
         ref_node = None
         for edge in self.out_edges:
             if edge.type in ['reference', 'variant_end']:
