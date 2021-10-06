@@ -582,6 +582,13 @@ class PeptideVariantGraph():
                 if stop_index < start_index:
                     node_copy.truncate_left(start_index)
                     in_cds = True
+                    more_stop_index = node_copy.seq.seq.find('*')
+                    if more_stop_index > -1:
+                        # checks if there are more stop after start.
+                        node_copy.truncate_right(more_stop_index)
+                        in_cds = False
+                        for out_node in copy.copy(node_copy.out_nodes):
+                            node_copy.remove_out_edge(out_node)
                 else:
                     node_copy = node_copy[start_index:stop_index]
                     in_cds = False

@@ -179,6 +179,8 @@ class VariantPeptideDict():
                 check_variants, additional_variants):
             if 'X' in seq.seq:
                 continue
+            if '*' in seq:
+                raise ValueError('Invalid amino acid symbol found in the sequence.')
             val = self.peptides.setdefault(seq, set())
             val.add(metadata)
 

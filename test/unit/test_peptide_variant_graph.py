@@ -4,6 +4,8 @@ import unittest
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import aa, svgraph, seqvar
+from moPepGen.svgraph.PeptideVariantGraph import PVGTraversal, PVGCursor
+from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 
 
 def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
@@ -460,3 +462,44 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.add_stop(graph.root)
         peptides = graph.call_variant_peptides(2)
         self.assertEqual(len(peptides), 0)
+
+    def test_call_and_stage_known_orf_incds(self):
+        """ Test call and stage known orf """
+        variant_1 = (8, 9, 'T', 'A', 'INDEL', '8:TCT-T', 0, 1, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('SSSSR', [1],[variant_1], [((1,5),(6,10))], 0),
+            3: ('SSXPK', [2], [None], [((0,5),(10,15))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [0,30]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (0,30), (0,10))
+        cursor = PVGCursor(nodes[1], nodes[2], True, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+
+        received = {str(x.seq) for x in traversal.pool.peptides.keys()}
+        expected = {str(nodes[2].seq.seq)}
+        self.assertEqual(received, expected)
+
+        self.assertTrue(traversal.queue[-1].in_cds)
+
+    def test_call_and_stage_known_orf_with_multiple_stop(self):
+        """ Test call and stage known orf """
+        variant_1 = (8, 9, 'T', 'A', 'INDEL', '8:TCT-T', 2, 3, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('*MS*R', [1],[variant_1], [((0,3),(5,8)), ((4,5),(9,10))], 0),
+            3: ('*MSSK', [1], [None], [((0,5),(5,10))], 0),
+            4: ('SSXPK', [2,3], [None], [((0,5),(10,15))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [0,30]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (18,60), (6,20))
+        cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+
+        received = {str(x.seq) for x in traversal.pool.peptides.keys()}
+        expected = {'MS'}
+        self.assertEqual(received, expected)
