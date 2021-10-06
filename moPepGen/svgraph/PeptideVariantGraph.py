@@ -11,6 +11,8 @@ from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
 
 
+T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
+
 class PeptideVariantGraph():
     """ Defines the DAG data structure for peptide and variants.
 
@@ -195,7 +197,10 @@ class PeptideVariantGraph():
 
     def move_downstreams(self, nodes:Iterable[PVGNode], reading_frame_index:int
             ) -> Set[PVGNode]:
-        """"""
+        """ Get the downstream nodes to be added to the queue for creating
+        cleavage graph. This function should be called after the
+        `merge_nodes_routes` in the graph updating functions such as
+        merge_forward, merge_backward etc. """
         downstreams:Set[PVGNode] = set()
         for node in nodes:
             if node.reading_frame_index != reading_frame_index:
@@ -213,7 +218,6 @@ class PeptideVariantGraph():
                     downstreams.add(downstream)
         return downstreams
 
-    T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
     def expand_backward(self, node:PVGNode) -> T:
         r""" Expand the variant alignment bubble backward to the previous
         cleave site. The sequence of the input node is first prepended to each
@@ -321,7 +325,6 @@ class PeptideVariantGraph():
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
-
 
     def create_cleavage_graph(self, rule:str, exception:str=None) -> None:
         """ Form a cleavage graph from a variant graph. After calling this
@@ -433,7 +436,6 @@ class PeptideVariantGraph():
                     rule=self.rule, exception=self.exception)
                 right = right.split_node(site, cleavage=True)
                 queue.appendleft(right)
-        return
 
     def update_orf(self, orf:List[int,int]) -> None:
         """ Update the orf list with the orf start position of the given node.
