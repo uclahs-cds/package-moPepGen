@@ -4,6 +4,7 @@ import copy
 from typing import Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
+import itertools
 from Bio.Seq import Seq
 from moPepGen import aa, seqvar
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
@@ -98,8 +99,8 @@ class PeptideVariantGraph():
         return first_node if return_first else node
 
     @staticmethod
-    def find_nodes_for_merging(node:PVGNode, cleavage:bool=False
-            ) -> Tuple[Set[PVGNode],Set[PVGNode]]:
+    def find_routes_for_merging(node:PVGNode, cleavage:bool=False
+            ) -> Set[Tuple[PVGNode]]:
         """ Find all start and end nodes for merging.
 
         Args:
@@ -107,28 +108,31 @@ class PeptideVariantGraph():
             cleavage (bool): When True, the input node is treated as the start
                 node, so it's in-bond nodes are not looked.
         """
-        queue:Deque[PVGNode] = deque(node.out_nodes)
+        routes:Set[Tuple[PVGNode]] = set()
+        visited:Set[PVGNode] = {node}
         if cleavage:
-            start = {node}
+            for out_node in node.out_nodes:
+                route = (node, out_node)
+                routes.add(route)
+                visited.add(out_node)
         else:
-            start = copy.copy(node.in_nodes)
-        end = copy.copy(node.out_nodes)
-        while queue:
-            cur = queue.pop()
-            if cur.has_any_in_bridge():
-                for in_node in cur.in_nodes:
-                    if in_node.is_bridge():
-                        start.add(in_node)
-                if cur.is_bridge():
-                    continue
-                end.remove(cur)
-                end.update(cur.out_nodes)
-                for out_node in cur.out_nodes:
-                    queue.appendleft(out_node)
-        return start, end
+            for in_node, out_node in itertools.product(node.in_nodes, node.out_nodes):
+                route = (in_node, node, out_node)
+                routes.add(route)
+                visited.add(in_node)
+                visited.add(out_node)
 
-    def merge_nodes_between(self, start_nodes:Iterable[PVGNode],
-            end_nodes:Iterable[PVGNode]) -> Set[PVGNode]:
+        for cur in copy.copy(routes):
+            for in_node in cur[-1].in_nodes:
+                if in_node.is_bridge() and in_node not in visited:
+                    for out_node in cur[-1].out_nodes:
+                        new_route = (in_node, cur[-1],)
+                        routes.add(new_route)
+                        visited.add(in_node)
+        return routes
+
+    def merge_nodes_routes(self, routes:Set[Tuple[PVGNode]]
+            ) -> Tuple[Set[PVGNode], Dict[PVGNode, List[PVGNode]]]:
         """ For any nodes between given serious of start and end nodes, merge
         them if they are connected. The total number of resulted merged nodes
         equals to the number of nodes in the end set. This function is used
@@ -145,51 +149,72 @@ class PeptideVariantGraph():
             A set of nodes to be used in the next iteration of creating the
             cleavage graph.
         """
+        trash:Set[Tuple[PVGNode,PVGNode]] = set()
         new_nodes:Set[PVGNode] = set()
-        trash:Set[PVGNode] = set()
-        queue:Deque[PVGNode] = deque(start_nodes)
+        start_nodes = {route[0] for route in routes}
+        end_nodes = {route[-1] for route in routes}
+        inbridge_list:Dict[PVGNode,List[PVGNode]] = {}
 
-        while queue:
-            cur = queue.pop()
-            trash.add(cur)
-            for out_node in cur.out_nodes:
-                new_node = cur.copy(in_nodes=False, out_nodes=False)
-                for in_node in cur.in_nodes:
-                    in_node.add_out_edge(new_node)
-
-                if out_node is not self.root:
-                    trash.add(out_node)
-                    new_node.append_right(out_node)
-                    for out_out_node in out_node.out_nodes:
-                        new_node.add_out_edge(out_out_node)
-
-                if out_node in end_nodes or out_node is self.stop:
-                    new_nodes.add(new_node)
+        for route in routes:
+            for i,node in enumerate(route):
+                if i == 0:
+                    new_node = node.copy(in_nodes=False, out_nodes=False)
                 else:
-                    queue.appendleft(new_node)
+                    new_node.append_right(node)
+                    trash.add((route[i-1], node))
 
-        for x in trash:
-            self.remove_node(x)
+            for in_node in route[0].in_nodes:
+                in_node.add_out_edge(new_node)
+
+            for out_node in route[-1].out_nodes:
+                new_node.add_out_edge(out_node)
+
+            new_nodes.add(new_node)
+
+            if route[0].is_bridge():
+                val = inbridge_list.setdefault(route[0], [])
+                val.append(new_node)
+
+        for in_node,out_node in trash:
+            in_node.remove_out_edge(out_node)
+
+        for node in start_nodes:
+            if not node.out_nodes:
+                self.remove_node(node)
+
+        for node in end_nodes:
+            if not node.in_nodes:
+                self.remove_node(node)
 
         for new_node in copy.copy(new_nodes):
             last = self.cleave_if_possible(new_node)
             new_nodes.remove(new_node)
             new_nodes.add(last)
 
+        return new_nodes, inbridge_list
+
+    def move_downstreams(self, nodes:Iterable[PVGNode], reading_frame_index:int
+            ) -> Set[PVGNode]:
+        """"""
         downstreams:Set[PVGNode] = set()
-        for new_node in new_nodes:
-            if new_node.is_bridge():
+        for node in nodes:
+            if node.reading_frame_index != reading_frame_index:
                 continue
-            if len(new_node.out_nodes) > 1:
-                raise ValueError('Graph topology unexpected.')
-            downstream = list(new_node.out_nodes)[0]
-            if len(downstream.in_nodes) == 1:
-                downstreams.add(new_node)
+            if node.is_bridge():
+                continue
+            is_sharing_downstream = any(any(y is not node and y in nodes \
+                for y in x.in_nodes) for x in node.out_nodes if x is not self.stop)
+            if not is_sharing_downstream:
+                downstreams.add(node)
             else:
-                downstreams.add(downstream)
+                for downstream in node.out_nodes:
+                    if downstream is self.stop:
+                        continue
+                    downstreams.add(downstream)
         return downstreams
 
-    def expand_backward(self, node:PVGNode) -> Set[PVGNode]:
+    T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
+    def expand_backward(self, node:PVGNode) -> T:
         r""" Expand the variant alignment bubble backward to the previous
         cleave site. The sequence of the input node is first prepended to each
         of outbound node, and then the inbound node of those outbond nodes are
@@ -211,10 +236,13 @@ class PeptideVariantGraph():
             A set of nodes that are either the resulted merged node if it is
             singleton, or the downstream node otherwise.
         """
-        start_nodes, end_nodes = self.find_nodes_for_merging(node, True)
-        return self.merge_nodes_between(start_nodes, end_nodes)
+        reading_frame_index = node.reading_frame_index
+        routes = self.find_routes_for_merging(node, True)
+        new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        downstreams = self.move_downstreams(new_nodes, reading_frame_index)
+        return downstreams, inbridge_list
 
-    def expand_forward(self, node:PVGNode) -> PVGNode:
+    def expand_forward(self, node:PVGNode) -> T:
         r""" Expand the upsteam variant alignment bubble to the end of the
         node of input. The sequencing of the node of input is first appended
         to each of the leading nodes, and the outbound node of those nodes
@@ -237,26 +265,15 @@ class PeptideVariantGraph():
         Returns:
             The end node is returned.
         """
-        if len(node.out_nodes) > 1:
-            raise ValueError('Outbond node has multiple')
+        routes = set()
+        reading_frame_index = node.reading_frame_index
+        for in_node in node.in_nodes:
+            routes.add((in_node, node))
+        new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        downstreams = self.move_downstreams(new_nodes, reading_frame_index)
+        return downstreams, inbridge_list
 
-        downstream = next(iter(node.out_nodes))
-
-        while node.in_nodes:
-            cur = node.in_nodes.pop()
-            cur.seq = cur.seq + node.seq
-
-            for variant in node.variants:
-                cur.variants.append(variant.shift(len(cur.seq)))
-
-            cur.remove_out_edge(node)
-            cur.add_out_edge(downstream)
-            self.cleave_if_possible(node=cur)
-
-        node.remove_out_edge(downstream)
-        return downstream
-
-    def merge_join(self, node:PVGNode) -> Set[PVGNode]:
+    def merge_join(self, node:PVGNode) -> T:
         r""" For a given node, join all the inbond and outbond nodes with any
         combinations.
 
@@ -275,10 +292,13 @@ class PeptideVariantGraph():
             A set of nodes that are either the resulted merged node if it is
             singleton, or the downstream node otherwise.
         """
-        start_nodes, end_nodes = self.find_nodes_for_merging(node)
-        return self.merge_nodes_between(start_nodes, end_nodes)
+        reading_frame_index = node.reading_frame_index
+        routes = self.find_routes_for_merging(node)
+        new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        downstreams = self.move_downstreams(new_nodes, reading_frame_index)
+        return downstreams, inbridge_list
 
-    def cross_join(self, node:PVGNode, site:int) -> Set[PVGNode]:
+    def cross_join(self, node:PVGNode, site:int) -> T:
         r""" For a given node, split at the given position, expand inbound and
         outbound alignments, and join them with edges.
 
@@ -291,18 +311,16 @@ class PeptideVariantGraph():
         Args:
             node (PVGNode): The node in the graph of target.
         """
-        head = node.split_node(site)
+        reading_frame_index = node.reading_frame_index
+        head = node.split_node(site, cleavage=True)
 
         # there shouldn't have any bridge out in inbond nodes
-        for in_node in copy.copy(node.in_nodes):
-            in_node.append_right(node)
-            for out_node in node.out_nodes:
-                in_node.add_out_edge(out_node)
-            self.cleave_if_possible(in_node)
-        self.remove_node(node)
+        self.expand_forward(node)
 
-        start_nodes, end_nodes = self.find_nodes_for_merging(head, True)
-        return self.merge_nodes_between(start_nodes, end_nodes)
+        routes = self.find_routes_for_merging(head, True)
+        new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        downstreams = self.move_downstreams(new_nodes, reading_frame_index)
+        return downstreams, inbridge_list
 
 
     def create_cleavage_graph(self, rule:str, exception:str=None) -> None:
@@ -318,6 +336,8 @@ class PeptideVariantGraph():
         self.exception = exception
         queue = deque([self.root])
 
+        inbridge_list:Dict[PVGNode,List[PVGNode]] = {}
+
         while queue:
             cur = queue.pop()
 
@@ -327,6 +347,11 @@ class PeptideVariantGraph():
             if cur.seq is None:
                 for out_node in cur.out_nodes:
                     queue.appendleft(out_node)
+                continue
+
+            if cur in inbridge_list:
+                for node in inbridge_list[cur]:
+                    queue.appendleft(node)
                 continue
 
             if len(cur.in_nodes) == 1:
@@ -341,17 +366,21 @@ class PeptideVariantGraph():
                 if self.next_is_stop(cur):
                     if len(cur.out_nodes) > 1:
                         # return branch
-                        branches = self.expand_backward(cur)
+                        branches, inbridges = self.expand_backward(cur)
                         for branch in branches:
                             queue.appendleft(branch)
+                        for key, val in inbridges.items():
+                            inbridge_list[key] = val
                     continue
 
                 if not cur.is_bridge():
-                    branches = self.expand_backward(cur)
+                    branches, inbridges = self.expand_backward(cur)
                     for branch in branches:
                         if cur.reading_frame_index == branch.reading_frame_index and \
                                 not branch.is_bridge():
                             queue.appendleft(branch)
+                    for key, val in inbridges.items():
+                        inbridge_list[key] = val
                 continue
 
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
@@ -359,30 +388,52 @@ class PeptideVariantGraph():
 
             if len(sites) == 0:
                 if self.next_is_stop(cur) or cur.is_bridge():
-                    self.expand_forward(cur)
+                    if not cur.cleavage:
+                        _,inbridges = self.expand_forward(cur)
+                        for key, val in inbridges.items():
+                            inbridge_list[key] = val
                     continue
                 if cur.cleavage:
-                    branches = self.expand_backward(cur)
+                    branches,inbridges = self.expand_backward(cur)
+                elif len(cur.out_nodes) == 1:
+                    branches,inbridges = self.expand_forward(cur)
                 else:
-                    branches = self.merge_join(cur)
+                    branches,inbridges = self.merge_join(cur)
                 for branch in branches:
                     queue.appendleft(branch)
+                for key, val in inbridges.items():
+                    inbridge_list[key] = val
             elif len(sites) == 1:
                 if self.next_is_stop(cur) or cur.is_bridge():
                     cur.split_node(sites[0], cleavage=True)
-                    cur = self.expand_forward(cur)
-                    queue.appendleft(cur)
+                    branches, inbridges = self.expand_forward(cur)
+                    for branch in branches:
+                        queue.appendleft(branch)
+                    for key, val in inbridges.items():
+                        inbridge_list[key] = val
                     continue
-                branches = self.cross_join(cur, sites[0])
+                if len(cur.out_nodes) == 1:
+                    right = cur.split_node(sites[0], cleavage=True)
+                    _,inbridges = self.expand_forward(cur)
+                    queue.appendleft(list(right.out_nodes)[0])
+                    for key, val in inbridges.items():
+                        inbridge_list[key] = val
+                    continue
+                branches, inbridges = self.cross_join(cur, sites[0])
                 for branch in branches:
                     queue.appendleft(branch)
+                for key, val in inbridges.items():
+                    inbridge_list[key] = val
             else:
                 right = cur.split_node(sites[0], cleavage=True)
-                cur = self.expand_forward(cur)
+                _,inbridges = self.expand_forward(cur)
+                for key, val in inbridges.items():
+                    inbridge_list[key] = val
                 site = right.seq.find_first_enzymatic_cleave_site(
                     rule=self.rule, exception=self.exception)
                 right = right.split_node(site, cleavage=True)
                 queue.appendleft(right)
+        return
 
     def update_orf(self, orf:List[int,int]) -> None:
         """ Update the orf list with the orf start position of the given node.
@@ -753,11 +804,12 @@ class PVGTraversal():
         if not x.in_cds and y.in_cds:
             return 1
 
-        if x.orf[0] is not None and y.orf[0] is None:
+        if x.orf[0] is not None and (y.orf[0] is None or y.orf[0] == -1):
             return -1
-        if x.orf[0] is None and y.orf[0] is not None:
+        if (x.orf[0] is None or x.orf[0] == -1) and y.orf[0] is not None:
             return 1
-        if x.orf[0] is not None and y.orf[0] is not None:
+        if x.orf[0] is not None and x.orf[0] != -1 and \
+                y.orf[0] is not None and y.orf[0] != -1:
             if x.orf[0] > y.orf[0]:
                 return -1
             if x.orf[0] < y.orf[0]:

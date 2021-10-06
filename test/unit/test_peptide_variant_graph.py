@@ -158,7 +158,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
 
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
-        branches = graph.expand_backward(nodes[2])
+        branches,_ = graph.expand_backward(nodes[2])
 
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
         self.assertEqual(seqs, {'GCVVV', 'GCVVVC', 'GCVVDC'})
@@ -258,7 +258,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
-        branches = graph.merge_join(nodes[4])
+        branches,_ = graph.merge_join(nodes[4])
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
         seqs_expect = {'NCWHSTQV', 'NCWVSTQV', 'NCWHSTQQ', 'NCWVSTQQ'}
         self.assertEqual(seqs, seqs_expect)
@@ -292,7 +292,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
-        branches = graph.merge_join(nodes[4])
+        branches,_ = graph.merge_join(nodes[4])
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
         seqs_expect = {'NCWHSTQV', 'NCWR', 'NCWHSTQQ', 'NCWR'}
         self.assertEqual(seqs, seqs_expect)
@@ -325,7 +325,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.rule = 'trypsin'
-        branches = graph.cross_join(nodes[4], 5)
+        branches,_ = graph.cross_join(nodes[4], 5)
 
         seqs = {str(node.seq.seq) for node in branches}
         expected = {'PK'}
@@ -339,13 +339,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         seqs_expected = {'LPAQV', 'LPAQQ'}
         self.assertEqual(seqs, seqs_expected)
 
-        seqs = {str(node.seq.seq) for node in nodes[2].out_nodes}
-        seqs_expected = {'LPAQV', 'LPAQQ'}
-        self.assertEqual(seqs, seqs_expected)
-
-        seqs = {str(node.seq.seq) for node in nodes[3].out_nodes}
-        seqs_expected = {'LPAQV', 'LPAQQ'}
-        self.assertEqual(seqs, seqs_expected)
+        self.assertTrue(len(nodes[2].out_nodes) == 0)
+        self.assertTrue(len(nodes[2].in_nodes) == 0)
+        self.assertTrue(len(nodes[3].out_nodes) == 0)
+        self.assertTrue(len(nodes[3].in_nodes) == 0)
 
     def test_call_variant_peptides_ambiguous_amino_acid(self):
         """ test call peptides with ambiguous amino acid """

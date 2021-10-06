@@ -89,14 +89,8 @@ class PVGNode():
         Args:
             node (PVGNode): The outbound node of the edge to remove.
         """
-        try:
-            self.out_nodes.remove(node)
-        except KeyError:
-            pass
-        try:
-            node.in_nodes.remove(self)
-        except KeyError:
-            pass
+        self.out_nodes.discard(node)
+        node.in_nodes.discard(self)
 
     def remove_out_edges(self) -> None:
         """ remove output nodes """
@@ -358,7 +352,13 @@ class PVGNode():
 
     def get_orf_start(self, i:int=0) -> int:
         """ get the ORF start position at the reference transcript sequence
-        given M is found at the query postion i. """
+        given M is found at the query postion i.
+
+        # NOTE: This implementation finds the closest ORF by looking downstream
+        # node with a location. But it may fail finding such a downstream node
+        # when the graph gets complicated. So an alternative approach is to
+        # have each node carries the ORF information from the beginning.
+        """
         k = self.reading_frame_index
         if self.seq.locations:
             for loc in self.seq.locations:
@@ -369,4 +369,5 @@ class PVGNode():
         out_node = self.find_reference_next()
         if out_node.seq.locations:
             return out_node.seq.locations[0].ref.start * 3 + k
-        raise ValueError('Can not find ORF')
+        # raise ValueError('Can not find ORF')
+        return -1
