@@ -106,6 +106,19 @@ class TestPeptideVariantGraph(unittest.TestCase):
         _, nodes = create_pgraph(data, 'ENST0001')
         self.assertIs(nodes[4].find_reference_prev(), nodes[2])
 
+    def test_find_orf_stop_gain(self):
+        """ test finding orf start position of a stop gain """
+        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)
+        locations = [((0,4),(0,4))]
+        data = {
+            1: ('MSSSR', [0], [None], locations, 0),
+            2: ('GSS', [1],[variant_1], [], 0),
+            3: ('GSSSK', [1], [None], locations, 0)
+        }
+        graph,nodes = create_pgraph(data, '')
+        graph.add_stop(nodes[2])
+        self.assertEqual(nodes[2].get_orf_start(), -1)
+
     def test_expand_backward_no_inbound(self):
         r""" > Test expand backward when the node has no inbound nodes.
 

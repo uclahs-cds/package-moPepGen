@@ -353,11 +353,6 @@ class PVGNode():
     def get_orf_start(self, i:int=0) -> int:
         """ get the ORF start position at the reference transcript sequence
         given M is found at the query postion i.
-
-        # NOTE: This implementation finds the closest ORF by looking downstream
-        # node with a location. But it may fail finding such a downstream node
-        # when the graph gets complicated. So an alternative approach is to
-        # have each node carries the ORF information from the beginning.
         """
         k = self.reading_frame_index
         if self.seq.locations:
@@ -367,6 +362,8 @@ class PVGNode():
                 if loc.query.start <= i < loc.query.end:
                     return (i - loc.query.start + loc.ref.start) * 3 + k
         out_node = self.find_reference_next()
+        if str(out_node.seq.seq) == '*' and not out_node.out_nodes:
+            return -1
         if out_node.seq.locations:
             return out_node.seq.locations[0].ref.start * 3 + k
         # raise ValueError('Can not find ORF')
