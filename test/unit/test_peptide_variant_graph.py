@@ -106,6 +106,34 @@ class TestPeptideVariantGraph(unittest.TestCase):
         _, nodes = create_pgraph(data, 'ENST0001')
         self.assertIs(nodes[4].find_reference_prev(), nodes[2])
 
+    def test_find_orf_stop_gain(self):
+        """ test finding orf start position of a stop gain """
+        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)
+        locations = [((0,4),(0,4))]
+        data = {
+            1: ('MSSSR', [0], [None], locations, 0),
+            2: ('GSS', [1],[variant_1], [], 0),
+            3: ('GSSSK', [1], [None], locations, 0)
+        }
+        graph,nodes = create_pgraph(data, '')
+        graph.add_stop(nodes[2])
+        self.assertEqual(nodes[2].get_orf_start(), -1)
+
+    def test_find_orf_varinats_outnode(self):
+        """ test finding orf start two variant nodes in a row """
+        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)
+        variant_2 = (0, 1, 'T', 'TCT', 'INDEL', '0:T-TCT', 1, 2, True)
+        locations1 = [((0,4),(0,4))]
+        locations2 = [((0,1), (5,6)),((2,4),(7,9))]
+        data = {
+            1: ('MSSSR', [0], [None], locations1, 0),
+            2: ('GSSR', [1],[variant_1], [], 0),
+            3: ('GSSSK', [1], [None], locations1, 0),
+            4: ('SSSG', [2], [variant_2], locations2, 0)
+        }
+        _,nodes = create_pgraph(data, '')
+        self.assertEqual(nodes[2].get_orf_start(), 15)
+
     def test_expand_backward_no_inbound(self):
         r""" > Test expand backward when the node has no inbound nodes.
 

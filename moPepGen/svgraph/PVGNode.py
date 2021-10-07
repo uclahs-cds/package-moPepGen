@@ -180,6 +180,37 @@ class PVGNode():
 
         return sorted(self.in_nodes, key=cmp_to_key(sort_func))[0]
 
+    def find_least_variant_next(self) -> PVGNode:
+        """ Find the outbond node that has the least number of variants """
+        if not self.out_nodes:
+            return None
+        if len(self.out_nodes) == 1:
+            return list(self.out_nodes)[0]
+
+        try:
+            return self.find_reference_next()
+        except ValueError:
+            pass
+
+        self_variants = {v.variant for v in self.variants}
+        def sort_func(this:PVGNode, that:PVGNode):
+            x = [v for v in this.variants if v.variant not in self_variants]
+            y = [v for v in that.variants if v.variant not in self_variants]
+            if len(x) < len(y):
+                return -1
+            if len(x) > len(y):
+                return 1
+            if len(x) == 0 and len(y) == 0:
+                return -1
+            for i,j in zip(x,y):
+                if i.location < j.location:
+                    return -1
+                if i.location > j.location:
+                    return 1
+            return -1
+
+        return sorted(self.out_nodes, key=cmp_to_key(sort_func))[0]
+
     def split_node(self, index:int, cleavage:bool=False) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
         as the outbound edge. Variants will also be adjusted. For example:
@@ -353,11 +384,6 @@ class PVGNode():
     def get_orf_start(self, i:int=0) -> int:
         """ get the ORF start position at the reference transcript sequence
         given M is found at the query postion i.
-
-        # NOTE: This implementation finds the closest ORF by looking downstream
-        # node with a location. But it may fail finding such a downstream node
-        # when the graph gets complicated. So an alternative approach is to
-        # have each node carries the ORF information from the beginning.
         """
         k = self.reading_frame_index
         if self.seq.locations:
@@ -366,7 +392,10 @@ class PVGNode():
                     return loc.ref.start * 3 + k
                 if loc.query.start <= i < loc.query.end:
                     return (i - loc.query.start + loc.ref.start) * 3 + k
-        out_node = self.find_reference_next()
+
+        out_node = self.find_least_variant_next()
+        if str(out_node.seq.seq) == '*' and not out_node.out_nodes:
+            return -1
         if out_node.seq.locations:
             return out_node.seq.locations[0].ref.start * 3 + k
         # raise ValueError('Can not find ORF')
