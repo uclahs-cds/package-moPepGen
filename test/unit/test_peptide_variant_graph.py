@@ -129,7 +129,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             1: ('MSSSR', [0], [None], locations1, 0),
             2: ('GSSR', [1],[variant_1], [], 0),
             3: ('GSSSK', [1], [None], locations1, 0),
-            3: ('SSSG', [2], [variant_2], locations2, 0)
+            4: ('SSSG', [2], [variant_2], locations2, 0)
         }
         _,nodes = create_pgraph(data, '')
         self.assertEqual(nodes[2].get_orf_start(), 15)

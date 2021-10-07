@@ -180,7 +180,7 @@ class PVGNode():
 
         return sorted(self.in_nodes, key=cmp_to_key(sort_func))[0]
 
-    def find_least_Variant_next(self) -> PVGNode:
+    def find_least_variant_next(self) -> PVGNode:
         """ Find the outbond node that has the least number of variants """
         if not self.out_nodes:
             return None
@@ -393,7 +393,7 @@ class PVGNode():
                 if loc.query.start <= i < loc.query.end:
                     return (i - loc.query.start + loc.ref.start) * 3 + k
 
-        out_node = self.find_least_Variant_next()
+        out_node = self.find_least_variant_next()
         if str(out_node.seq.seq) == '*' and not out_node.out_nodes:
             return -1
         if out_node.seq.locations:
