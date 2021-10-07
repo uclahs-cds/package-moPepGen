@@ -22,8 +22,6 @@ def create_base_args() -> argparse.Namespace:
     args.min_length = 7
     args.max_length = 25
     args.verbose = False
-    args.max_frameshift_dist = 60
-    args.max_frameshift_num = 3
     return args
 
 class TestCallVariantPeptides(TestCaseIntegration):

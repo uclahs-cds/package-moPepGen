@@ -289,3 +289,10 @@ class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
     def __hash__(self):
         """hash"""
         return hash(self.seq)
+
+    def get_query_index(self, ref_index:int) -> int:
+        """ Returns the query index wiht a given reference index """
+        for location in self.locations:
+            if ref_index in location.ref:
+                return location.query.start + ref_index - location.ref.start
+        return -1

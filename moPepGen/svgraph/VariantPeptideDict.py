@@ -13,46 +13,19 @@ if TYPE_CHECKING:
 
 class MiscleavedNodes():
     """ Helper class for looking for peptides with miscleavages """
-    def __init__(self, data:Deque[List[PVGNode]], orf:List[int]=None):
+    def __init__(self, data:Deque[List[PVGNode]], orf:Tuple[int,int]=None):
         """ constructor """
         self.data = data
         self.orf = orf
 
     @staticmethod
-    def find_miscleaved_nodes(node:PVGNode, miscleavage:int
+    def find_miscleaved_nodes(node:PVGNode, orf:Tuple[int,int], miscleavage:int
             ) -> MiscleavedNodes:
         """ find all miscleaved nodes """
+        if orf[0] is None:
+            raise ValueError('orf is None')
         queue = deque([[node]])
-        nodes = MiscleavedNodes(deque([[node]]), node.orf)
-        i = 0
-        while i < miscleavage and queue:
-            i += 1
-            next_cleavage = deque([])
-            while queue:
-                cur_batch = queue.pop()
-                cur_node = cur_batch[-1]
-                for _node in cur_node.out_nodes:
-                    if not _node.out_nodes:
-                        continue
-                    if _node.truncated:
-                        # this is when 1. the gene has cds_end_NF tag, or 2.
-                        # stop lost mutation causing no further stop codon was
-                        # found until the end of the transcript. Thus the last
-                        # cleaved peptide is not be reported
-                        continue
-                    new_batch = copy.copy(cur_batch)
-                    new_batch.append(_node)
-                    next_cleavage.appendleft(new_batch)
-                    nodes.data.append(copy.copy(new_batch))
-            queue = next_cleavage
-        return nodes
-
-    @staticmethod
-    def find_miscleaved_nodes_unkown_orf(node:PVGNode, miscleavage:int
-            ) -> MiscleavedNodes:
-        """ find all miscleaved nodes """
-        queue = deque([[node]])
-        nodes = MiscleavedNodes(deque([[node]]), node.orf)
+        nodes = MiscleavedNodes(deque([[node]]), orf)
         i = 0
         while i < miscleavage and queue:
             i += 1
@@ -78,7 +51,8 @@ class MiscleavedNodes():
             queue = next_cleavage
         return nodes
 
-    def join_miscleaved_peptides(self, check_variants:bool
+    def join_miscleaved_peptides(self, check_variants:bool,
+            additional_variants:List[VariantRecord]
             ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -106,9 +80,10 @@ class MiscleavedNodes():
                 else:
                     seq = seq + other
                 if check_variants:
+                    # metadata.variants.update(node.frameshifts)
                     for variant in node.variants:
                         metadata.variants.add(variant.variant)
-                    metadata.variants.update(node.frameshifts)
+                    metadata.variants.update(additional_variants)
 
             if seq:
                 seq.__class__ = aa.AminoAcidSeqRecord
@@ -157,7 +132,7 @@ def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
 class VariantPeptideMetadata():
     """ Variant peptide metadata """
     def __init__(self, variants:Set[VariantRecord]=None,
-            orf:List[int]=None):
+            orf:Tuple[int,int]=None):
         """  """
         self.variants = variants or set()
         self.orf = orf
@@ -182,8 +157,9 @@ class VariantPeptideDict():
         self.peptides = peptides or {}
         self.labels = labels or {}
 
-    def add_miscleaved_sequences(self, node:PVGNode, miscleavage:int,
-            check_variants:bool, has_known_orf:bool):
+    def add_miscleaved_sequences(self, node:PVGNode, orf:List[int, int],
+            miscleavage:int, check_variants:bool,
+            additional_variants:List[VariantRecord]):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
@@ -196,22 +172,21 @@ class VariantPeptideDict():
             has_known_orf (bool): Whether has known ORF. False for noncoding
                 genes/transcripts.
         """
-        if has_known_orf:
-            miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
-                node=node, miscleavage=miscleavage
-            )
-        else:
-            miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes_unkown_orf(
-                node=node, miscleavage=miscleavage
-            )
-        for seq, metadata in miscleaved_nodes.join_miscleaved_peptides(check_variants):
+        miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
+            node=node, orf=orf, miscleavage=miscleavage
+        )
+        for seq, metadata in miscleaved_nodes.join_miscleaved_peptides(
+                check_variants, additional_variants):
             if 'X' in seq.seq:
                 continue
+            if '*' in seq:
+                raise ValueError('Invalid amino acid symbol found in the sequence.')
             val = self.peptides.setdefault(seq, set())
             val.add(metadata)
 
     def get_peptide_sequences(self, keep_all_occurrence:bool=True,
-            orf_id_map:Dict[int,str]=None) -> Set[aa.AminoAcidSeqRecord]:
+            orf_id_map:Dict[Tuple[int,int],str]=None
+            ) -> Set[aa.AminoAcidSeqRecord]:
         """ Get the peptide sequence and check for miscleavages.
 
         Args:
@@ -223,6 +198,8 @@ class VariantPeptideDict():
         peptide_pool:Set[aa.AminoAcidSeqRecord] = set()
 
         for seq, metadatas in self.peptides.items():
+            if '*' in seq:
+                raise ValueError('Invalid amino acid symbol found in the sequence.')
             labels = []
             metadatas = list(metadatas)
             metadatas.sort(key=lambda x: x.orf[0])
@@ -230,7 +207,7 @@ class VariantPeptideDict():
                 variants = list(metadata.variants)
                 orf_id = None
                 if orf_id_map:
-                    orf_id = orf_id_map[metadata.orf[0]]
+                    orf_id = orf_id_map[metadata.orf]
 
                 label = create_variant_peptide_id(self.tx_id, variants, orf_id)
 

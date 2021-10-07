@@ -39,20 +39,6 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         metavar='',
         required=True
     )
-    p.add_argument(
-        '--max-frameshift-dist',
-        type=int,
-        help='Max distance between a frameshift mutation and its previous one '
-        'if the combination of upstream frameshift mutations gets back to the'
-        'original reading frame.',
-        default=75
-    )
-    p.add_argument(
-        '--max-frameshift-num',
-        type=int,
-        help='Max number of frameshift mutations allowed together.',
-        default=3
-    )
 
     add_args_reference(p)
     add_args_cleavage(p)
@@ -72,8 +58,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     min_length:int = args.min_length
     max_length:int = args.max_length
-    max_frameshift_dist:int = args.max_frameshift_dist
-    max_frameshift_num:int = args.max_frameshift_num
 
     print_start_message(args)
 
@@ -105,8 +89,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
         try:
             peptides = call_peptide_main(variant_pool, tx_id, anno,
-                genome, rule, exception, miscleavage, max_frameshift_dist,
-                max_frameshift_num)
+                genome, rule, exception, miscleavage)
         except:
             logger(f'Exception raised from {tx_id}')
             raise
@@ -122,14 +105,14 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     for circ_rna in circ_rna_pool:
         peptides = call_peptide_circ_rna(circ_rna, anno, genome,
-            variant_pool, rule, exception, miscleavage, max_frameshift_dist,
-            max_frameshift_num)
+            variant_pool, rule, exception, miscleavage)
 
         for peptide in peptides:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
-    if verbose:
-        logger('circRNA processed')
+    if circ_rna_pool:
+        if verbose:
+            logger('circRNA processed')
 
     variant_peptides.write(output_fasta)
 
@@ -138,8 +121,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
 def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
         tx_id:str, anno:gtf.GenomicAnnotation,
-        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int,
-        max_frameshift_dist:int, max_frameshift_num:int) -> Set[aa.AminoAcidSeqRecord]:
+        genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int
+        ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_variants = variant_pool.transcriptional[tx_id]
     tx_model = anno.transcripts[tx_id]
@@ -148,62 +131,24 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     cds_start_nf = 'tag' in tx_model.transcript.attributes and \
         'cds_start_NF' in tx_model.transcript.attributes['tag']
 
-    dgraph = svgraph.TranscriptVariantGraph(
+    dgraph = svgraph.ThreeFrameTVG(
         seq=transcript_seq,
         _id=tx_id,
         cds_start_nf=cds_start_nf,
         has_known_orf=tx_model.is_protein_coding()
     )
-
-    ## Create transcript variant graph
-    # dgraph.create_variant_graph(variant_records)
-    dgraph.add_null_root()
-    variant_iter = iter(tx_variants)
-    variant = next(variant_iter, None)
-    cur = dgraph.root.get_reference_next()
-    while variant:
-        if cur.seq.locations[0].ref.start > variant.location.start:
-            variant = next(variant_iter, None)
-            continue
-
-        if cur.seq.locations[-1].ref.end <= variant.location.start:
-            cur = cur.get_reference_next()
-            continue
-
-        if variant.type == 'Fusion':
-            cur = dgraph.apply_fusion(cur, variant, variant_pool, genome, anno)
-            variant = next(variant_iter, None)
-            continue
-
-        if variant.type in 'Insertion':
-            cur = dgraph.apply_insertion(cur, variant, variant_pool, genome,
-                anno)
-            variant = next(variant_iter, None)
-            continue
-
-        if variant.type == 'Substitution':
-            cur = dgraph.apply_substitution(cur, variant, variant_pool,
-                genome, anno)
-            variant = next(variant_iter, None)
-            continue
-
-        cur = dgraph.apply_variant(cur, variant)
-        if len(cur.in_edges) == 0:
-            dgraph.root = cur
-        variant = next(variant_iter, None)
-
-    dgraph.find_all_orfs()
-    dgraph.fit_into_codons(max_frameshift_dist, max_frameshift_num)
+    dgraph.init_three_frames()
+    dgraph.create_variant_graph(tx_variants, variant_pool, genome, anno)
+    dgraph.fit_into_codons()
     pgraph = dgraph.translate()
 
-    pgraph.form_cleavage_graph(rule=rule, exception=exception)
+    pgraph.create_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
         variant_pool:seqvar.VariantRecordPool, rule:str,
-        exception:str, miscleavage:int, max_frameshift_dist:int,
-        max_frameshift_num:int)-> Set[aa.AminoAcidSeqRecord]:
+        exception:str, miscleavage:int)-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
     gene_model = annotation.genes[gene_id]
@@ -218,14 +163,14 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     variant_records = variant_pool.filter_variants(gene_id, annotation, genome,
         exclusion_variant_types, intron=False, segments=record.fragments)
 
-    cgraph = svgraph.CircularVariantGraph(
+    cgraph = svgraph.ThreeFrameCVG(
         circ_seq, _id=record.id, circ_record=record
     )
-
-    cgraph.create_variant_graph(variant_records)
-    cgraph.align_all_variants()
-    tgraph = cgraph.find_all_orfs()
-    tgraph.fit_into_codons(max_frameshift_dist, max_frameshift_num)
-    pgraph = tgraph.translate()
-    pgraph.form_cleavage_graph(rule=rule, exception=exception)
+    cgraph.init_three_frames()
+    cgraph.create_variant_circ_graph(variant_records)
+    cgraph.extend_loop()
+    cgraph.truncate_three_frames()
+    cgraph.fit_into_codons()
+    pgraph = cgraph.translate()
+    pgraph.create_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)

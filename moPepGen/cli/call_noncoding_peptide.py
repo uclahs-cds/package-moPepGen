@@ -5,6 +5,7 @@ from pathlib import Path
 import pkg_resources
 from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, aa, logger
+from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
 from moPepGen.cli.common import add_args_cleavage, add_args_verbose, add_args_reference, \
     print_start_message, print_help_if_missing_args, load_references
@@ -154,40 +155,41 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
 
     tx_seq = tx_model.get_transcript_sequence(contig_seq)
 
-    dgraph = svgraph.TranscriptVariantGraph(
+    dgraph = svgraph.ThreeFrameTVG(
         seq=tx_seq,
         _id=tx_id,
         cds_start_nf=True,
         has_known_orf=False
     )
-    dgraph.add_null_root()
-    dgraph.find_all_orfs()
-    if not dgraph.root.out_edges:
-        return None, None
+    dgraph.init_three_frames()
     pgraph = dgraph.translate()
-    pgraph.form_cleavage_graph(rule=rule, exception=exception)
+    pgraph.create_cleavage_graph(rule=rule, exception=exception)
     peptides = pgraph.call_variant_peptides(
         miscleavage=miscleavage,
         check_variants=False,
         check_orf=True
     )
-    orfs = get_orf_sequences(pgraph, tx_id)
+    orfs = get_orf_sequences(pgraph, tx_id, tx_seq)
     return peptides, orfs
 
-def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str
-        ) -> List[aa.AminoAcidSeqRecord]:
+def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str,
+        tx_seq:DNASeqRecordWithCoordinates) -> List[aa.AminoAcidSeqRecord]:
     """ Get the full ORF sequences """
     seqs = []
-    for orf_start, orf_id in pgraph.orf_id_map.items():
-        node = pgraph.reading_frames[orf_start % 3]
-        seq_start = int((orf_start - node.orf[0]) / 3)
-        seq_len = node.seq.seq[seq_start:].find('*')
+    translate_seqs = [tx_seq[i:].translate() for i in range(3)]
+    for orf, orf_id in pgraph.orf_id_map.items():
+        orf_start = orf[0]
+        seq_start = int(orf_start / 3)
+        reading_frame_index = orf_start % 3
+        #seq_start = int((orf_start - node.orf[0]) / 3)
+        translate_seq = translate_seqs[reading_frame_index]
+        seq_len = translate_seq.seq[seq_start:].find('*')
         if seq_len == -1:
-            seq_len = len(node.seq.seq) - seq_start
+            seq_len = len(translate_seq.seq) - seq_start
         orf_end = orf_start + seq_len * 3
         seq_end = seq_start + seq_len
         seqname = f"{tx_id}|{orf_id}|{orf_start}-{orf_end}"
-        seq = node.seq[seq_start:seq_end]
+        seq = translate_seq[seq_start:seq_end]
         seq.id = seqname
         seq.name = seqname
         seq.description = seqname

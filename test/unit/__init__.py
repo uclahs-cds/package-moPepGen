@@ -7,6 +7,7 @@ from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature, MatchedLocation
 from moPepGen import svgraph, dna, seqvar, gtf, aa
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
+from moPepGen.seqvar import VariantRecordPool
 
 
 def load_references(base_dir:Path=None, index:bool=False
@@ -26,37 +27,71 @@ def load_references(base_dir:Path=None, index:bool=False
     return genome, anno
 
 
-Type = Tuple[Union[svgraph.TranscriptVariantGraph, svgraph.CircularVariantGraph],
+Type = Tuple[Union[svgraph.ThreeFrameTVG, svgraph.ThreeFrameCVG],
         Dict[int, svgraph.TVGNode]]
-def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> Type:
-    """ Create DNA transcript graph from node individuals.
+def create_three_frame_tvg(nodes:Dict[int,list], seq:str) -> Type:
+    """ Create a ThreeFrameTVG
+
+    Args:
+        nodes (Dict[int,list]): Data for nodes must be a dict with keys are int
+            and values are list of attributes of building the node. The value
+            can hold up to x attributes.
+
+            0 (str): the sequence of the node.
+            1 (List[int|str]): List of int or str values to indicate the inbond
+                node. If it is a string, it must follow the pattern of
+                'RF[0-2]' to indicate that the node is outbond to the root of
+                x reading frame.
+            2 (List[tuple]): List of attributes to build variants.
+            3 (int): Optional for the start coordinate of the sequence.
     """
-    node_list:Dict[int, svgraph.TVGNode] = {}
-    graph = None
-    for key, val in data.items():
-        _seq = Seq(val[0]) if val[0] else None
+    node_list:Dict[int,svgraph.TVGNode] = {}
+    raw_seq = Seq(seq)
+    seq = dna.DNASeqRecordWithCoordinates(raw_seq, [])
+    graph = svgraph.ThreeFrameTVG(seq, _id='')
+    for edge in copy.copy(graph.root.out_edges):
+        graph.remove_edge(edge)
+    graph.reading_frames[0] = svgraph.TVGNode(None, reading_frame_index=0,
+        subgraph_id=graph.id)
+    graph.reading_frames[1] = svgraph.TVGNode(None, reading_frame_index=1,
+        subgraph_id=graph.id)
+    graph.reading_frames[2] = svgraph.TVGNode(None, reading_frame_index=2,
+        subgraph_id=graph.id)
 
-        if not graph:
-            if _seq:
-                seq_location = MatchedLocation(
-                    query=FeatureLocation(start=0, end=len(_seq)),
-                    ref=FeatureLocation(start=0, end=len(_seq))
-                )
-                seq = dna.DNASeqRecordWithCoordinates(_seq, [seq_location])
+    for key,val in nodes.items():
+        _seq = Seq(val[0])
+
+        in_nodes = []
+        is_head_node = False
+        for i in val[1]:
+            if isinstance(i, str) and i.startswith('RF'):
+                in_nodes.append(graph.reading_frames[int(i[-1])])
+                is_head_node = True
             else:
-                seq = None
-            graph = svgraph.TranscriptVariantGraph(seq, 'ENST0001', cds_start_nf)
-            node_list[key] = graph.root
-            continue
+                in_nodes.append(node_list[i])
 
-        in_nodes = [node_list[i] for i in val[1]]
         for node in in_nodes:
             if not node.variants:
                 # upstream is the in_node that has no variants
                 upstream = node
-        node_start = upstream.seq.locations[-1].ref.end if upstream.seq else 0
-        variants = []
-        frameshifts = copy.copy(upstream.frameshifts)
+                break
+
+        if len(val) == 4:
+            node_start = val[3]
+        elif is_head_node:
+            node_start = 0
+        else:
+            for in_node in in_nodes:
+                if in_node.seq.locations:
+                    loc = in_node.seq.locations[-1]
+                    if loc.query.end != len(in_node.seq.seq):
+                        continue
+                    node_start = loc.ref.end
+                    break
+            else:
+                raise ValueError('cannot infer the node start')
+
+        variants:List[seqvar.VariantRecordWithCoordinate] = []
         for var_data in val[2]:
             var_start = node_start + var_data[0]
             var_end = var_start + len(var_data[1])
@@ -76,12 +111,9 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
                 location=var_location
             )
             variants.append(variant)
-            if variant.variant.is_frameshifting():
-                frameshifts.add(variant.variant)
 
         left = 0
         seq_locations = []
-        variant:seqvar.VariantRecordWithCoordinate
         for variant in variants:
             right = variant.location.start
             if right > left:
@@ -104,11 +136,10 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
             )
             seq_locations.append(seq_location)
 
-        # create a node
         seq = dna.DNASeqRecordWithCoordinates(_seq, seq_locations)
-        node = svgraph.TVGNode(seq, variants, frameshifts)
-        if len(val) == 4:
-            node.branch = val[3]
+        orf_idx = upstream.reading_frame_index
+        node = svgraph.TVGNode(seq, variants,
+            reading_frame_index=orf_idx, subgraph_id=graph.id)
         node_list[key] = node
 
         # add edges to in_nodes
@@ -120,20 +151,6 @@ def create_dgraph2(data:dict, circular:bool=False, cds_start_nf:bool=False) -> T
             else:
                 edge_type = 'variant_start'
             graph.add_edge(in_node, node, edge_type)
-
-        # update graph.seq if the current node has no variants
-        if not node.variants:
-            root_seq = graph.seq.seq + _seq if graph.seq else _seq
-            root_seq_location = MatchedLocation(
-                query=FeatureLocation(start=0, end=len(root_seq)),
-                ref=FeatureLocation(start=0, end=len(root_seq))
-            )
-            graph.seq = dna.DNASeqRecordWithCoordinates(root_seq,
-                [root_seq_location])
-    if circular:
-        for i in data[1][1]:
-            graph.add_edge(node_list[i], graph.root, 'reference')
-            graph.__class__ = svgraph.CircularVariantGraph
 
     return graph, node_list
 
@@ -151,8 +168,10 @@ def create_variants(data) -> List[seqvar.VariantRecord]:
     """ Helper function to create a list of VariantRecord """
     return [create_variant(*x) for x in data]
 
-def create_dgraph1(seq, variants, has_known_orf:bool=True
-        ) -> svgraph.TranscriptVariantGraph:
+def create_dgraph1(seq, variants, has_known_orf:bool=True,
+        variant_pool:VariantRecordPool=None,
+        genome:dna.DNASeqDict=None, anno:gtf.GenomicAnnotation=None
+        ) -> svgraph.ThreeFrameTVG:
     """ Create a dna transcript graph from sequence and variants """
     location = MatchedLocation(
         query=FeatureLocation(start=0, end=len(seq)),
@@ -163,9 +182,9 @@ def create_dgraph1(seq, variants, has_known_orf:bool=True
         locations=[location],
         orf=FeatureLocation(start=0, end=len(seq))
     )
-    graph = svgraph.TranscriptVariantGraph(seq, '', has_known_orf=has_known_orf)
+    graph = svgraph.ThreeFrameTVG(seq, '', has_known_orf=has_known_orf)
     records = create_variants(variants)
-    graph.create_variant_graph(records)
+    graph.create_variant_graph(records, variant_pool, genome, anno)
     return graph
 
 def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:

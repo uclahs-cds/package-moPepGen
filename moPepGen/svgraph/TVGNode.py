@@ -24,7 +24,8 @@ class TVGNode():
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
-            orf:List[int]=None):
+            orf:List[int]=None, reading_frame_index:int=None,
+            subgraph_id:str=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -36,9 +37,11 @@ class TVGNode():
         self.in_edges:Set[svgraph.TVGEdge] = set()
         self.out_edges:Set[svgraph.TVGEdge] = set()
         self.variants:List[seqvar.VariantRecordWithCoordinate] = variants if variants else []
-        self.frameshifts = frameshifts if frameshifts else set()
+        self.frameshifts = frameshifts or set()
         self.branch = branch
         self.orf = orf or [None, None]
+        self.reading_frame_index = reading_frame_index
+        self.subgraph_id = subgraph_id
 
     def __hash__(self):
         """ hash """
@@ -69,7 +72,9 @@ class TVGNode():
             variants=variants,
             frameshifts=frameshifts,
             orf=self.orf,
-            branch=self.branch
+            branch=self.branch,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
     def get_edge_to(self, other:TVGNode) -> svgraph.TVGEdge:
@@ -102,35 +107,24 @@ class TVGNode():
         """ check if it is reference (no variants) """
         return not self.variants
 
-    def should_skip_frameshift(self, dist:int=60, n:int=3) -> bool:
-        """ checks if the node is frameshifting and should be skipped """
-        my_frameshifts:List[seqvar.VariantRecord] = []
-        for v in self.variants:
-            if v.variant.is_frameshifting():
-                my_frameshifts.append(v.variant)
-        if not my_frameshifts:
-            return False
+    def has_in_bridge(self) -> bool:
+        """ check if it has any in node from different reading frame """
+        return any(e.in_node.reading_frame_index != self.reading_frame_index
+            for e in self.in_edges)
 
-        if len(self.frameshifts) > n:
-            return True
+    def has_bridge_from_reading_frame(self, other_reading_frame_index:int):
+        """ Check if it has a in bridge node from another reading frame """
+        return any(x.reading_frame_index == other_reading_frame_index\
+            for x in self.get_in_bridges())
 
-        my_frameshifts.sort()
-        this_frameshift = my_frameshifts[0]
-
-        upstream_frameshifts:List[seqvar.VariantRecord] = []
-        for v in self.frameshifts:
-            if v not in my_frameshifts:
-                upstream_frameshifts.append(v)
-        if not upstream_frameshifts:
-            return False
-        last_frameshift = upstream_frameshifts[-1]
-
-        n_shifted = sum([it.frames_shifted() for it in upstream_frameshifts])
-        if n_shifted % 3 != 0:
-            return False
-
-        diff = this_frameshift.location.start - last_frameshift.location.end
-        return diff >= dist
+    def get_in_bridges(self) -> List[TVGNode]:
+        """ Get all in bridge nodes """
+        in_bridges = []
+        for edge in self.in_edges:
+            in_node = edge.in_node
+            if any(v.variant.is_frameshifting() for v in in_node.variants):
+                in_bridges.append(in_node)
+        return in_bridges
 
     def is_exclusively_outbond_of(self, other:svgraph.TVGNode) -> bool:
         """ Checks if the node is exclusively outbond with the other.
@@ -140,57 +134,13 @@ class TVGNode():
             return False
         return len(self.out_edges) == 1 and len(other.in_edges) == 1
 
-    def needs_branch_out(self, branch_out_size:int=100) -> bool:
-        """ Checks if the node needs to branch out """
-        for variant in self.variants:
-            if variant.variant.is_frameshifting():
-                return True
-        for variant in self.variants:
-            location = variant.location
-            variant_len = location.end - location.start
-            if variant_len >= branch_out_size:
-                return True
-        # For variants located in the end of the sequence.
-        if not self.out_edges:
-            return True
-        return False
-
-    def next_node_to_branch_out(self, to_node:svgraph.TVGNode,
-            branch_out_size:int=100) -> svgraph.TVGNode:
-        """ Returns the next node that needs to be branched out between two
-        reference nodes. Returns None if not found.
-
-        Args:
-            to_node (svgraph.TVGNode): The to node
-            branch_out_size (int): The size limit of the variant to forch
-                creating a branch in th graph.
-        """
-        queue:Deque[svgraph.TVGNode] = deque()
-        for edge in self.out_edges:
-            queue.appendleft(edge.out_node)
-
-        while queue:
-            cur = queue.pop()
-            if cur is to_node:
-                continue
-            if cur.branch:
-                continue
-            if not cur.variants:
-                for edge in cur.out_edges:
-                    queue.appendleft(edge.out_node)
-                continue
-            if cur.needs_branch_out(branch_out_size):
-                return cur
-            for edge in cur.out_edges:
-                queue.appendleft(edge.out_node)
-
-        return None
-
     def get_reference_next(self) -> TVGNode:
         """ Get the next node of which the edge is reference (not variant
         or cleavage). """
         if not self.out_edges:
             return None
+        if len(self.out_edges) == 1:
+            return list(self.out_edges)[0].out_node
         ref_node = None
         for edge in self.out_edges:
             if edge.type in ['reference', 'variant_end']:
@@ -217,10 +167,12 @@ class TVGNode():
             variants=copy.copy(self.variants),
             frameshifts=copy.copy(self.frameshifts),
             branch=self.branch,
-            orf=self.orf
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
-    def deepcopy(self, propagate_frameshifts:bool=True) -> TVGNode:
+    def deepcopy(self) -> TVGNode:
         """ Create a deep copy of the node and all its downstream nodes.
 
         Args:
@@ -229,7 +181,11 @@ class TVGNode():
         new_node = self.__class__(
             seq=self.seq,
             variants=copy.copy(self.variants),
-            frameshifts=copy.copy(self.frameshifts)
+            frameshifts=copy.copy(self.frameshifts),
+            branch=self.branch,
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
         queue:Deque[Tuple[TVGNode, TVGNode]] = deque([(self, new_node)])
@@ -244,13 +200,14 @@ class TVGNode():
                     new_out_node = visited[source_out_node]
                     visited_this = True
                 else:
-                    frameshifts = copy.copy(source_out_node.frameshifts)
-                    if propagate_frameshifts:
-                        frameshifts.update(target.frameshifts)
-                    new_out_node = self.__class__(
+                    new_out_node = source_out_node.__class__(
                         seq=source_out_node.seq,
                         variants=copy.copy(source_out_node.variants),
-                        frameshifts=frameshifts
+                        frameshifts=copy.copy(source_out_node.frameshifts),
+                        branch=source_out_node.branch,
+                        orf=source_out_node.orf,
+                        reading_frame_index=source_out_node.reading_frame_index,
+                        subgraph_id=source_out_node.subgraph_id
                     )
                     visited[source_out_node] = new_out_node
                 new_edge = svgraph.TVGEdge(target, new_out_node,
@@ -287,12 +244,10 @@ class TVGNode():
         visited = {self}
         while queue:
             cur:TVGNode = queue.popleft()
-
             if cur is None:
                 continue
 
-            # if this is the start of a new branch, don't count it.
-            if cur.branch:
+            if cur.reading_frame_index != self.reading_frame_index:
                 continue
 
             visited_len_before = len(visited)
@@ -300,6 +255,9 @@ class TVGNode():
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
                 if cur is farthest and cur is not self:
+                    if cur.out_edges and cur.get_reference_next().has_in_bridge():
+                        for edge in cur.out_edges:
+                            queue.append(edge.out_node)
                     # if the farthest has less than 6 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
@@ -363,11 +321,8 @@ class TVGNode():
                     return int(i - loc.query.start + loc.ref.start)
         out_node = self.get_reference_next()
         if out_node.seq.locations:
-            for loc in out_node.seq.locations:
-                if i < loc.query.start:
-                    return int((3 - (loc.query.start - i) % 3) % 3 + loc.ref.start)
-                if loc.query.start <= i < loc.query.end:
-                    return int(i - loc.query.start + loc.ref.start)
+            loc = out_node.seq.locations[0]
+            return int(((len(self.seq.seq) + loc.query.start - i) % 3) % 3 + loc.ref.start)
         raise ValueError('Can not find ORF')
 
     def truncate_left(self, i:int) -> TVGNode:
@@ -392,7 +347,10 @@ class TVGNode():
             seq=left_seq,
             variants=left_variants,
             frameshifts=left_frameshifts,
-            branch=self.branch
+            branch=self.branch,
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
         self.seq = self.seq[i:]
@@ -418,13 +376,16 @@ class TVGNode():
                 right_variants.append(variant.shift(-i))
                 if variant.location.start >= i and \
                         variant.variant.is_frameshifting():
-                    self.frameshifts.remove(variant.variant)
+                    self.frameshifts.discard(variant.variant)
 
         right_node = TVGNode(
             seq=right_seq,
             variants=right_variants,
             frameshifts=right_frameshifts,
-            branch=False
+            branch=False,
+            orf=self.orf,
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
         self.seq = self.seq[:i]
@@ -436,21 +397,25 @@ class TVGNode():
         """ Combine the other node the the left. """
         self.seq = other.seq + self.seq
 
+        frameshifts = copy.copy(other.frameshifts)
+        frameshifts.update(self.variants)
+        self.frameshifts = frameshifts
+
         variants = copy.copy(other.variants)
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
         self.variants = variants
 
-        self.frameshifts.update(other.frameshifts)
-
     def append_right(self, other:TVGNode) -> None:
         """ Combine the other node the the right. """
-        self.seq = self.seq + other.seq
+        new_seq = self.seq + other.seq
 
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
+            if variant.variant.is_frameshifting():
+                self.frameshifts.add(variant)
 
-        self.frameshifts.update(other.frameshifts)
+        self.seq = new_seq
 
     def translate(self) -> svgraph.PVGNode:
         """ translate to a PVGNode """
@@ -465,7 +430,7 @@ class TVGNode():
             query = FeatureLocation(start=query_start, end=query_end)
             dna_query_codon_start = query_start * 3
             dna_ref_codon_start = loc.ref.start + dna_query_codon_start - query.start
-            ref_start = math.ceil((dna_ref_codon_start - self.orf[0]) / 3)
+            ref_start = math.ceil((dna_ref_codon_start - self.reading_frame_index) / 3)
             ref_end = ref_start + len(query)
             ref = FeatureLocation(start=ref_start, end=ref_end)
             locations.append(MatchedLocation(query=query, ref=ref))
@@ -481,5 +446,6 @@ class TVGNode():
             seq=seq,
             variants=variants,
             frameshifts=copy.copy(self.frameshifts),
-            orf=[None, None]
+            orf=[None, None],
+            reading_frame_index=self.reading_frame_index
         )
