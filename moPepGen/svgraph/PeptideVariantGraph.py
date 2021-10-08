@@ -358,98 +358,85 @@ class PeptideVariantGraph():
                 continue
 
             if len(cur.in_nodes) == 1:
-
-                site = cur.seq.find_first_enzymatic_cleave_site(rule=self.rule,
-                    exception=self.exception)
-                while site > -1:
-                    cur = cur.split_node(site, cleavage=True)
-                    site = cur.seq.find_first_enzymatic_cleave_site(
-                        rule=self.rule, exception=self.exception)
-
-                if self.next_is_stop(cur):
-                    if len(cur.out_nodes) > 1:
-                        # return branch
-                        branches, inbridges = self.expand_backward(cur)
-                        for branch in branches:
-                            queue.appendleft(branch)
-                        for key, val in inbridges.items():
-                            inbridge_list[key] = val
-                    continue
-
-                if cur.is_bridge():
-                    continue
-                if len(cur.out_nodes) == 1:
-                    downstream = list(cur.out_nodes)[0]
-                    site = downstream.seq.find_first_enzymatic_cleave_site(
-                        self.rule, self.exception
-                    )
-                    if site > -1:
-                        downstream.split_node(site, True)
-                    branches, inbridges = self.expand_forward(downstream)
-                    for branch in branches:
-                        if cur.reading_frame_index == branch.reading_frame_index:
-                            queue.appendleft(branch)
-                else:
-                    branches, inbridges = self.expand_backward(cur)
-                    for branch in branches:
-                        if cur.reading_frame_index == branch.reading_frame_index \
-                                and not branch.is_bridge():
-                            queue.appendleft(branch)
-                for key, val in inbridges.items():
-                        inbridge_list[key] = val
-                continue
-
-            sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
-                exception=self.exception)
-
-            if len(sites) == 0:
-                if self.next_is_stop(cur) or cur.is_bridge():
-                    if not cur.cleavage:
-                        _,inbridges = self.expand_forward(cur)
-                        for key, val in inbridges.items():
-                            inbridge_list[key] = val
-                    continue
-                if cur.cleavage:
-                    branches,inbridges = self.expand_backward(cur)
-                elif len(cur.out_nodes) == 1:
-                    branches,inbridges = self.expand_forward(cur)
-                else:
-                    branches,inbridges = self.merge_join(cur)
-                for branch in branches:
-                    queue.appendleft(branch)
-                for key, val in inbridges.items():
-                    inbridge_list[key] = val
-            elif len(sites) == 1:
-                if self.next_is_stop(cur) or cur.is_bridge():
-                    cur.split_node(sites[0], cleavage=True)
-                    branches, inbridges = self.expand_forward(cur)
-                    for branch in branches:
-                        queue.appendleft(branch)
-                    for key, val in inbridges.items():
-                        inbridge_list[key] = val
-                    continue
-                if len(cur.out_nodes) == 1:
-                    right = cur.split_node(sites[0], cleavage=True)
-                    _,inbridges = self.expand_forward(cur)
-                    queue.appendleft(list(right.out_nodes)[0])
-                    for key, val in inbridges.items():
-                        inbridge_list[key] = val
-                    continue
-                branches, inbridges = self.cross_join(cur, sites[0])
-                for branch in branches:
-                    queue.appendleft(branch)
-                for key, val in inbridges.items():
-                    inbridge_list[key] = val
+                downstreams, inbridges = self.fit_into_cleavages_single_upstream(cur)
             else:
-                right = cur.split_node(sites[0], cleavage=True)
+                downstreams, inbridges = \
+                    self.fit_into_cleavage_multiple_upstream(cur)
+
+            for downstream in downstreams:
+                queue.appendleft(downstream)
+            for key, val in inbridges.items():
+                inbridge_list[key] = val
+
+    def fit_into_cleavages_single_upstream(self, cur:PVGNode) -> T:
+        """ """
+        cur = self.cleave_if_possible(cur)
+        if self.next_is_stop(cur):
+            if len(cur.out_nodes) > 1:
+                return self.expand_backward(cur)
+            return set(), {}
+
+        if cur.is_bridge():
+            return set(), {}
+
+        i = cur.reading_frame_index
+
+        if len(cur.out_nodes) == 1:
+            downstream = list(cur.out_nodes)[0]
+            site = downstream.seq.find_first_enzymatic_cleave_site(
+                self.rule, self.exception
+            )
+            if site > -1:
+                downstream.split_node(site, True)
+            branches, inbridges = self.expand_forward(downstream)
+            branches = {x for x in branches if x.reading_frame_index == i}
+        else:
+            branches, inbridges = self.expand_backward(cur)
+            branches = {x for x in branches if x.reading_frame_index == i and\
+                not x.is_bridge()}
+        return branches, inbridges
+
+    def fit_into_cleavage_multiple_upstream(self, cur:PVGNode) -> T:
+        """ """
+        branches:Set[PVGNode] = set()
+        inbridges:Dict[PVGNode,List[PVGNode]] = {}
+
+        sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
+            exception=self.exception)
+
+        if len(sites) == 0:
+            if self.next_is_stop(cur) or cur.is_bridge():
                 if not cur.cleavage:
                     _,inbridges = self.expand_forward(cur)
-                    for key, val in inbridges.items():
-                        inbridge_list[key] = val
-                site = right.seq.find_first_enzymatic_cleave_site(
-                    rule=self.rule, exception=self.exception)
-                right = right.split_node(site, cleavage=True)
-                queue.appendleft(right)
+                return branches, inbridges
+            if cur.cleavage:
+                branches,inbridges = self.expand_backward(cur)
+            elif len(cur.out_nodes) == 1:
+                branches,inbridges = self.expand_forward(cur)
+            else:
+                branches,inbridges = self.merge_join(cur)
+
+        elif len(sites) == 1:
+            if self.next_is_stop(cur) or cur.is_bridge():
+                cur.split_node(sites[0], cleavage=True)
+                branches, inbridges = self.expand_forward(cur)
+            elif len(cur.out_nodes) == 1:
+                right = cur.split_node(sites[0], cleavage=True)
+                _,inbridges = self.expand_forward(cur)
+                branches = {list(right.out_nodes)[0]}
+            else:
+                branches, inbridges = self.cross_join(cur, sites[0])
+
+        else:
+            right = cur.split_node(sites[0], cleavage=True)
+            if not cur.cleavage:
+                _,inbridges = self.expand_forward(cur)
+            site = right.seq.find_first_enzymatic_cleave_site(
+                rule=self.rule, exception=self.exception)
+            right = right.split_node(site, cleavage=True)
+            branches = {right}
+
+        return branches, inbridges
 
     def update_orf(self, orf:List[int,int]) -> None:
         """ Update the orf list with the orf start position of the given node.
