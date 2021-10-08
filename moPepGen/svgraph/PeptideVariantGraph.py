@@ -390,7 +390,7 @@ class PeptideVariantGraph():
                     )
                     if site > -1:
                         downstream.split_node(site, True)
-                    branches, inbridge_list = self.expand_forward(downstream)
+                    branches, inbridges = self.expand_forward(downstream)
                 else:
                     branches, inbridges = self.expand_backward(cur)
                 for branch in branches:
