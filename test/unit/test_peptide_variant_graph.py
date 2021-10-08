@@ -557,7 +557,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertTrue(traversal.queue[-1].in_cds)
         self.assertEqual(len(traversal.queue[-1].start_gain), 1)
 
-    def test_fit_into_cleavage_inbridge_node_needs_merge(self):
+    def test_fit_into_cleavage_bridge_node_needs_merge(self):
         """ Test the fit into cleavage for bridge node that needs to be merged
         forward
                      Q

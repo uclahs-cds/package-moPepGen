@@ -369,7 +369,7 @@ class PeptideVariantGraph():
                 inbridge_list[key] = val
 
     def fit_into_cleavages_single_upstream(self, cur:PVGNode) -> T:
-        """ """
+        """ Fit node into cleavage sites when it has a single upstream node """
         cur = self.cleave_if_possible(cur)
         if self.next_is_stop(cur):
             if len(cur.out_nodes) > 1:
@@ -397,7 +397,8 @@ class PeptideVariantGraph():
         return branches, inbridges
 
     def fit_into_cleavage_multiple_upstream(self, cur:PVGNode) -> T:
-        """ """
+        """ Fit a node into cleavage sites when it has multiple upstream nodes
+        """
         branches:Set[PVGNode] = set()
         inbridges:Dict[PVGNode,List[PVGNode]] = {}
 
