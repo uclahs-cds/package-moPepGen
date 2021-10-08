@@ -535,7 +535,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
     def test_call_and_stage_known_orf_start_and_frameshift(self):
         """ Test when a frameshift mutation is in the same node as start codon
         """
-        variant_1 = (8, 9, 'T', 'A', 'INDEL', '8:TCT-T', 2, 3, True)
+        variant_1 = (8, 11, 'TCT', 'T', 'INDEL', '8:TCT-T', 2, 3, True)
         data = {
             1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
             2: ('*MSSR', [1],[variant_1], [((0,3),(5,8)), ((4,5),(9,10))], 0),

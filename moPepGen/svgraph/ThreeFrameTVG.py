@@ -576,26 +576,20 @@ class ThreeFrameTVG():
         variant = next(variant_iter, None)
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
 
-        if self.has_known_orf:
-            start_codon = FeatureLocation(
-                start=self.seq.orf.start,
-                end=self.seq.orf.start + 3
-            )
-
         while variant:
             if not any(cursors):
                 break
             # for indel insertion, if the insirtion location is right after
             # start codon, shift it backwoard for 1 NT so it can be included
-            is_indel_insertion = variant.type == 'INDEL' and variant.is_insertion()
-            variant_at_last_nt_of_start_codon = variant.location.start == 2 or\
-                (self.has_known_orf and variant.location.start == start_codon.end - 1)
-            if is_indel_insertion and variant_at_last_nt_of_start_codon:
-                variant.to_end_inclusion(self.seq)
+            # is_indel_insertion = variant.type == 'INDEL' and variant.is_insertion()
+            # variant_at_last_nt_of_start_codon = variant.location.start == 2 or\
+            #     (self.has_known_orf and variant.location.start == start_codon.end - 1)
+            # if is_indel_insertion and variant_at_last_nt_of_start_codon:
+            #     variant.to_end_inclusion(self.seq)
 
             # skipping start lost mutations
-            start_altering = variant.location.start < 3 or \
-                (self.has_known_orf and variant.location.overlaps(start_codon))
+            start_altering = variant.location.start < 3 # or \
+                # (self.has_known_orf and variant.location.overlaps(start_codon))
             if start_altering:
                 variant = next(variant_iter, None)
                 continue

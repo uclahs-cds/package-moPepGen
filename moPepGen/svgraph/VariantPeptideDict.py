@@ -52,7 +52,7 @@ class MiscleavedNodes():
         return nodes
 
     def join_miscleaved_peptides(self, check_variants:bool,
-            additional_variants:List[VariantRecord]
+            additional_variants:List[VariantRecord], is_start_codon:bool=False
             ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -93,11 +93,7 @@ class MiscleavedNodes():
 
             yield seq, metadata
 
-            is_start_codon = seq.seq.startswith('M') and \
-                    self.orf[0] is not None and \
-                    len(queue[0].seq.locations) > 0 and \
-                    int(self.orf[0] / 3) == queue[0].seq.locations[0].ref.start
-            if is_start_codon:
+            if is_start_codon and seq.seq.startswith('M'):
                 seq = seq[1:]
                 yield seq, metadata
 
@@ -161,7 +157,7 @@ class VariantPeptideDict():
         self.labels = labels or {}
 
     def add_miscleaved_sequences(self, node:PVGNode, orf:List[int, int],
-            miscleavage:int, check_variants:bool,
+            miscleavage:int, check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord]):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
@@ -179,7 +175,7 @@ class VariantPeptideDict():
             node=node, orf=orf, miscleavage=miscleavage
         )
         for seq, metadata in miscleaved_nodes.join_miscleaved_peptides(
-                check_variants, additional_variants):
+                check_variants, additional_variants, is_start_codon):
             if 'X' in seq.seq:
                 continue
             if '*' in seq:

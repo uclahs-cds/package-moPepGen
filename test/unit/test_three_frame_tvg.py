@@ -92,13 +92,13 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         variant = create_variant(7, 8, 'G', 'GGGCC', 'INDEL', 'INDEL-G-GGGCC')
         graph.create_variant_graph([variant], None, None, None)
         x = str(list(graph.reading_frames[0].out_edges)[0].out_node.seq.seq)
-        y = 'AAAAAATG'
+        y = 'AAAAAAT'
         self.assertEqual(x, y)
         x = str(list(graph.reading_frames[1].out_edges)[0].out_node.seq.seq)
-        y = 'AAAAATG'
+        y = 'AAAAAT'
         self.assertEqual(x, y)
         x = str(list(graph.reading_frames[2].out_edges)[0].out_node.seq.seq)
-        y = 'AAAATG'
+        y = 'AAAAT'
         self.assertEqual(x, y)
 
     def test_apply_fusion_case1(self):
