@@ -1,6 +1,6 @@
 """ Test module for ThreeFrameTVG """
 import unittest
-from test.unit import create_dgraph1, create_variant, create_variants, \
+from test.unit import create_variant, create_variants, \
     create_genomic_annotation, create_dna_record_dict, create_three_frame_tvg
 from moPepGen import seqvar
 from moPepGen.SeqFeature import FeatureLocation
