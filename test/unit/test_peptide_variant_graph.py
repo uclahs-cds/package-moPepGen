@@ -15,6 +15,8 @@ def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
     if not known_orf:
         known_orf = [None, None]
     graph = svgraph.PeptideVariantGraph(root, _id, known_orf)
+    graph.rule = 'trypsin'
+    graph.exception = 'trypsin'
     node_list:Dict[int,svgraph.PVGNode] = {0: root}
     for key, val in data.items():
         locs = []
@@ -554,3 +556,30 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertEqual(len(traversal.queue), 1)
         self.assertTrue(traversal.queue[-1].in_cds)
         self.assertEqual(len(traversal.queue[-1].start_gain), 1)
+
+    def test_fit_into_cleavage_inbridge_node_needs_merge(self):
+        """ Test the fit into cleavage for bridge node that needs to be merged
+        forward
+                     Q
+                    /
+        0      W-SPY-QT               0      WSPY-QT
+                /                                X
+              NG              ->            NGSPY-Q
+             /                             /
+        1 VLR-NGALT                   1 VLR-NGALT
+
+        """
+        data = {
+            1: ('VLR',  [0],  [None], [((0,3),( 0, 3))], 1),
+            2: ('NG',   [1],  [None], [((0,1),( 3, 4))], 1),
+            3: ('NGALT',[1],  [None], [((0,5),( 3, 8))], 1),
+            4: ('W',    [0],  [None], [((0,1),(0,1))], 0),
+            5: ('SPY',  [4,2],[None], [((0,3),(1,4))], 0),
+            6: ('QT',   [5],  [None], [((0,2),(4,6))], 0),
+            7: ('Q',    [5],  [None], [], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        branches,_ = graph.fit_into_cleavages_single_upstream(nodes[4])
+        self.assertEqual(len(branches), 2)
+        seqs = {str(x.seq.seq) for x in branches}
+        self.assertEqual(seqs, {'Q', 'QT'})
