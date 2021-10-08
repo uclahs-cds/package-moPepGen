@@ -280,6 +280,7 @@ class ThreeFrameTVG():
         source_end = source.seq.locations[-1].ref.end
         target_start = target.seq.locations[0].ref.start
         target_end = target.seq.locations[-1].ref.end
+
         if variant_start < source_start or variant_start > source_end:
             raise ValueError('Variant out of source range of source')
         if variant_start < target_start or variant_start > target_end:
@@ -584,6 +585,14 @@ class ThreeFrameTVG():
         while variant:
             if not any(cursors):
                 break
+            # for indel insertion, if the insirtion location is right after
+            # start codon, shift it backwoard for 1 NT so it can be included
+            is_indel_insertion = variant.type == 'INDEL' and variant.is_insertion()
+            variant_at_last_nt_of_start_codon = variant.location.start == 2 or\
+                (self.has_known_orf and variant.location.start == start_codon.end - 1)
+            if is_indel_insertion and variant_at_last_nt_of_start_codon:
+                variant.to_end_inclusion(self.seq)
+
             # skipping start lost mutations
             start_altering = variant.location.start < 3 or \
                 (self.has_known_orf and variant.location.overlaps(start_codon))

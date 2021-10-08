@@ -427,7 +427,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
 
     def test_call_variant_peptides_small_orf(self):
         """ test very small ORF is handled """
-        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)
+        variant_1 = (10, 11, 'C', 'T', 'SNV', '1:C-T', 3, 4, True)
         data = {
             1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
             2: ('SMSS*R', [1],[variant_1], [((0,3),(5,8)), ((4,6),(9,11))], 0),
@@ -438,7 +438,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[18, 27])
         peptides = graph.call_variant_peptides(0)
         received = {str(x.seq) for x in peptides}
-        expected = {'MSS'}
+        expected = {'MSS', 'SS'}
         self.assertEqual(received, expected)
 
     def test_call_peptides_check_orf(self):
@@ -529,5 +529,5 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.call_and_stage_known_orf(cursor,  traversal)
 
         received = {str(x.seq) for x in traversal.pool.peptides.keys()}
-        expected = {'MS'}
+        expected = {'MS', 'S'}
         self.assertEqual(received, expected)

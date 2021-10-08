@@ -157,6 +157,11 @@ class PeptideVariantGraph():
         end_nodes = {route[-1] for route in routes}
         inbridge_list:Dict[PVGNode,List[PVGNode]] = {}
 
+        # for end_node in end_nodes:
+        #     site = end_node.seq.find_first_enzymatic_cleave_site(self.rule)
+        #     if site > -1:
+        #         end_node.split_node(site, True)
+
         for route in routes:
             for i,node in enumerate(route):
                 if i == 0:
@@ -376,14 +381,24 @@ class PeptideVariantGraph():
                             inbridge_list[key] = val
                     continue
 
-                if not cur.is_bridge():
+                if cur.is_bridge():
+                    continue
+                if len(cur.out_nodes) == 1:
+                    downstream = list(cur.out_nodes)[0]
+                    site = downstream.seq.find_first_enzymatic_cleave_site(
+                        self.rule, self.exception
+                    )
+                    if site > -1:
+                        downstream.split_node(site, True)
+                    branches, inbridge_list = self.expand_forward(downstream)
+                else:
                     branches, inbridges = self.expand_backward(cur)
-                    for branch in branches:
-                        if cur.reading_frame_index == branch.reading_frame_index and \
-                                not branch.is_bridge():
-                            queue.appendleft(branch)
-                    for key, val in inbridges.items():
-                        inbridge_list[key] = val
+                for branch in branches:
+                    if cur.reading_frame_index == branch.reading_frame_index and \
+                            not branch.is_bridge():
+                        queue.appendleft(branch)
+                for key, val in inbridges.items():
+                    inbridge_list[key] = val
                 continue
 
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
@@ -429,9 +444,10 @@ class PeptideVariantGraph():
                     inbridge_list[key] = val
             else:
                 right = cur.split_node(sites[0], cleavage=True)
-                _,inbridges = self.expand_forward(cur)
-                for key, val in inbridges.items():
-                    inbridge_list[key] = val
+                if not cur.cleavage:
+                    _,inbridges = self.expand_forward(cur)
+                    for key, val in inbridges.items():
+                        inbridge_list[key] = val
                 site = right.seq.find_first_enzymatic_cleave_site(
                     rule=self.rule, exception=self.exception)
                 right = right.split_node(site, cleavage=True)
@@ -592,7 +608,7 @@ class PeptideVariantGraph():
                 else:
                     node_copy = node_copy[start_index:stop_index]
                     in_cds = False
-                orf = traversal.known_orf_aa
+                orf = traversal.known_orf_tx
                 traversal.pool.add_miscleaved_sequences(
                     node=node_copy,
                     orf=tuple(orf),
@@ -605,6 +621,8 @@ class PeptideVariantGraph():
                         cur_start_gain = start_gain
                         if out_node.is_bridge():
                             cur_start_gain = [v.variant for v in out_node.variants]
+                        if target_node.is_bridge():
+                            cur_start_gain = [v.variant for v in target_node.variants]
                         cur = PVGCursor(target_node, out_node, in_cds, orf,
                             cur_start_gain)
                         traversal.stage(target_node, out_node, cur)

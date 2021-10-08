@@ -11,7 +11,7 @@ from moPepGen.SeqFeature import FeatureLocation
 # To avoid circular import
 if TYPE_CHECKING:
     from moPepGen.gtf import GenomicAnnotation
-    from moPepGen.dna import DNASeqDict
+    from moPepGen.dna import DNASeqDict, DNASeqRecord
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution', 'circRNA']
@@ -344,3 +344,16 @@ class VariantRecord():
         """ Check if this is a stop lost mutation """
         loc = FeatureLocation(start=stop, end=stop+3)
         return self.location.overlaps(loc)
+
+    def to_end_inclusion(self, seq:DNASeqRecord):
+        """ Convert the variant to start exlusion and end inclusion format """
+        location = FeatureLocation(
+            seqname=self.location.seqname,
+            start=self.location.start + 1,
+            end=self.location.end + 1
+        )
+        ref = self.ref[1:] + str(seq.seq[self.location.end:])
+        alt = self.alt[1:] + str(seq.seq[self.location.end:])
+        self.location = location
+        self.ref = ref
+        self.alt = alt

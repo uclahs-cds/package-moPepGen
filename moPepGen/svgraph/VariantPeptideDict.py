@@ -93,8 +93,11 @@ class MiscleavedNodes():
 
             yield seq, metadata
 
-            if len(queue[0].in_nodes) == 1 and not list(queue[0].in_nodes)[0].in_nodes \
-                    and seq.seq.startswith('M'):
+            is_start_codon = seq.seq.startswith('M') and \
+                    self.orf[0] is not None and \
+                    len(queue[0].seq.locations) > 0 and \
+                    int(self.orf[0] / 3) == queue[0].seq.locations[0].ref.start
+            if is_start_codon:
                 seq = seq[1:]
                 yield seq, metadata
 
