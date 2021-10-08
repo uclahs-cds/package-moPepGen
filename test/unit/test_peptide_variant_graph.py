@@ -531,3 +531,26 @@ class TestPeptideVariantGraph(unittest.TestCase):
         received = {str(x.seq) for x in traversal.pool.peptides.keys()}
         expected = {'MS', 'S'}
         self.assertEqual(received, expected)
+
+    def test_call_and_stage_known_orf_start_and_frameshift(self):
+        """ Test when a frameshift mutation is in the same node as start codon
+        """
+        variant_1 = (8, 9, 'T', 'A', 'INDEL', '8:TCT-T', 2, 3, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('*MSSR', [1],[variant_1], [((0,3),(5,8)), ((4,5),(9,10))], 0),
+            3: ('*MSSK', [1], [None], [((0,5),(5,10))], 0),
+            4: ('SSSPK', [2], [None], [((0,5),(10,15))], 0),
+            5: ('SSSPK', [4], [None], [((0,5),(15,20))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        nodes[2].reading_frame_index = 0
+        nodes[4].reading_frame_index = 2
+        graph.known_orf = [6,30]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (18,60), (6,20))
+        cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(traversal.queue), 1)
+        self.assertTrue(traversal.queue[-1].in_cds)
+        self.assertEqual(len(traversal.queue[-1].start_gain), 1)

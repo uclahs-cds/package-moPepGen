@@ -1,8 +1,9 @@
 """ Test module for ThreeFrameTVG """
 import unittest
-from test.unit import create_variant, create_variants, \
+from test.unit import create_dgraph1, create_variant, create_variants, \
     create_genomic_annotation, create_dna_record_dict, create_three_frame_tvg
 from moPepGen import seqvar
+from moPepGen.SeqFeature import FeatureLocation
 
 
 GENOME_DATA = {
@@ -75,6 +76,30 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         seqs = {str(e.out_node.seq.seq) for e in source.out_edges}
         seqs_expected = set(['T', 'C'])
         self.assertEqual(seqs, seqs_expected)
+
+    def test_apply_variant_after_start_codon(self):
+        """ Test variant that starts right after the start codon """
+        seq = 'AAAAAATGGGCCCCCTTTTT'
+        data = {
+            1: (seq,     ['RF0'], [], 0),
+            2: (seq[1:], ['RF1'], [], 1),
+            3: (seq[2:], ['RF2'], [], 2)
+        }
+        graph,_ = create_three_frame_tvg(data, seq)
+        graph.has_known_orf = True
+        graph.known_orf = [5,20]
+        graph.seq.orf = FeatureLocation(start=5, end=20)
+        variant = create_variant(7, 8, 'G', 'GGGCC', 'INDEL', 'INDEL-G-GGGCC')
+        graph.create_variant_graph([variant], None, None, None)
+        x = str(list(graph.reading_frames[0].out_edges)[0].out_node.seq.seq)
+        y = 'AAAAAATG'
+        self.assertEqual(x, y)
+        x = str(list(graph.reading_frames[1].out_edges)[0].out_node.seq.seq)
+        y = 'AAAAATG'
+        self.assertEqual(x, y)
+        x = str(list(graph.reading_frames[2].out_edges)[0].out_node.seq.seq)
+        y = 'AAAATG'
+        self.assertEqual(x, y)
 
     def test_apply_fusion_case1(self):
         r""" Fusion breakpoint: acceptor 8, donor 8

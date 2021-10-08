@@ -352,8 +352,8 @@ class VariantRecord():
             start=self.location.start + 1,
             end=self.location.end + 1
         )
-        ref = self.ref[1:] + str(seq.seq[self.location.end:])
-        alt = self.alt[1:] + str(seq.seq[self.location.end:])
+        ref = self.ref[1:] + str(seq.seq[self.location.end])
+        alt = self.alt[1:] + str(seq.seq[self.location.end])
         self.location = location
         self.ref = ref
         self.alt = alt
