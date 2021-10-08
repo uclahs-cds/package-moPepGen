@@ -157,11 +157,6 @@ class PeptideVariantGraph():
         end_nodes = {route[-1] for route in routes}
         inbridge_list:Dict[PVGNode,List[PVGNode]] = {}
 
-        # for end_node in end_nodes:
-        #     site = end_node.seq.find_first_enzymatic_cleave_site(self.rule)
-        #     if site > -1:
-        #         end_node.split_node(site, True)
-
         for route in routes:
             for i,node in enumerate(route):
                 if i == 0:
@@ -391,14 +386,17 @@ class PeptideVariantGraph():
                     if site > -1:
                         downstream.split_node(site, True)
                     branches, inbridges = self.expand_forward(downstream)
+                    for branch in branches:
+                        if cur.reading_frame_index == branch.reading_frame_index:
+                            queue.appendleft(branch)
                 else:
                     branches, inbridges = self.expand_backward(cur)
-                for branch in branches:
-                    if cur.reading_frame_index == branch.reading_frame_index and \
-                            not branch.is_bridge():
-                        queue.appendleft(branch)
+                    for branch in branches:
+                        if cur.reading_frame_index == branch.reading_frame_index \
+                                and not branch.is_bridge():
+                            queue.appendleft(branch)
                 for key, val in inbridges.items():
-                    inbridge_list[key] = val
+                        inbridge_list[key] = val
                 continue
 
             sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
