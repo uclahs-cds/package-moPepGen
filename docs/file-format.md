@@ -1,5 +1,5 @@
 # File Structure Documentation
-	
+
 - [File Structure Documentation](#file-structure-documentation)
 	- [1 Gene Variant Format](#1-gene-variant-format)
 		- [1.1 File Metadata](#11-file-metadata)
@@ -73,7 +73,7 @@ ENSG0001  110  SNV-110-C-A  C    A    .     .       TRANSCRIPT_ID=ENST00011,ENST
 ENSG0002  210  SNV-210-T-A  T    A    .     .       TRANSCRIPT_ID=ENST00021,ENST00022;GENE_SYMBOL=EGFR;GENOMIC_POSITION="chr1:1000-1001"
 ```
 
-The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene ID that the transcript belongs to. The `ID` column follows the pattern of '\<varant_type>-\<position>-\<ref>-\<alt>'. 
+The `REF` and `ALT` must be explicit. The `INFO` column should contain the gene ID that the transcript belongs to. The `ID` column follows the pattern of '\<varant_type>-\<position>-\<ref>-\<alt>'.
 
 ### 1.3 Fusion
 
@@ -107,7 +107,7 @@ The `Info` column must contain the following fields:
 + `TRANSCRIPT_ID`: the transcript ID of the donor (upstream) transcript.
 + `ACCEPTER_GENE_ID`: the accepter (downstream) transcript's gene ID.
 + `ACCEPTER_TRANSCRIPT_ID`: the accepter (downstream) transcript's transcript ID.
-+ `ACCEPTER_POSITION`: the position of the break point of the ACCEPTER (downstream) transcript. 
++ `ACCEPTER_POSITION`: the position of the break point of the ACCEPTER (downstream) transcript.
 + `GENOMIC_POSITION`: the genomic position of the donor (upstream) transcript, in the format of `<chrom name>:<breakpoint>:<breakpoint>`.
 + `ACCEPTER_GENOMIC_POSITION`: the genomic position of the accepter (downstream) transcript, in the format of `<chrom name>:<breakpoint>-<breakpoint>`.
 
@@ -188,15 +188,15 @@ Circular RNAs are derived from back-spliced exons. They exist as individual RNA 
 ##INFO=<ID=OFFSET,Number=+,Type=Integer,Description="Offsets of fragments (exons or introns)">
 ##INFO=<ID=LENGTH,Number=+,Type=Integer,Description="Length of fragments (exons or introns)">
 ##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
-##INFO=<ID=TRANSCRIPTS,Number=+,Type=String,Description="Transcripts associated with this circRNA">
+##INFO=<ID=TRANSCRIPT,Number=1,Type=String,Description="Transcripts associated with this circRNA">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##POS=<Description="Gene coordinate of circRNA start">
 #CHROM    POS  ID                            REF  ALT  QUAL  FILTER  INFO
-ENSG0001  413  CIRC-ENSG0001-E2-E3-E4        .    .    .     .       OFFSET=0,211,398;LENGTH=72,85,63;INTRON=;TRANSCRIPTS=ENST0001,ENST0002;GENE_SYMBOL=SYMB1
-ENSG0002  112  CIRC-ENSG0001-E3-E4           .    .    .     .       OFFSET=0,175LENGTH=72,85;INTRON=;TRANSCRIPTS=ENST0011,ENST0012;GENE_SYMBOL=SYMB2
-ENSG0002  112  CIRC-ENSG0001-E3-I3-E4        .    .    .     .       OFFSET=0,73,175;LENGTH=72,103,85;INTRON=;TRANSCRIPTS=ENST0011,ENST0012;GENE_SYMBOL=SYMB2
-ENSG0003  77   CIRC-ENSG0003-E2-E3-E4        .    .    .     .       OFFSET=0,181,424;LENGTH=100,175,85;INTRON=;TRANSCRIPTS=ENST0021;GENE_SYMBOL=SYMB3
-ENSG0003  77   CIRC-ENSG0003-E2-I2-E3-I3-E4  .    .    .     .       OFFSET=0,101,181,357,424;LENGTH=100,80,175,67,85;INTRON=;TRANSCRIPTS=ENST0021;GENE_SYMBOL=SYMB3
+ENSG0001  413  CIRC-ENSG0001-E2-E3-E4        .    .    .     .       OFFSET=0,211,398;LENGTH=72,85,63;INTRON=;TRANSCRIPT=ENST0001,ENST0002;GENE_SYMBOL=SYMB1
+ENSG0002  112  CIRC-ENSG0001-E3-E4           .    .    .     .       OFFSET=0,175LENGTH=72,85;INTRON=;TRANSCRIPT=ENST0011,ENST0012;GENE_SYMBOL=SYMB2
+ENSG0002  112  CIRC-ENSG0001-E3-I3-E4        .    .    .     .       OFFSET=0,73,175;LENGTH=72,103,85;INTRON=;TRANSCRIPT=ENST0011,ENST0012;GENE_SYMBOL=SYMB2
+ENSG0003  77   CIRC-ENSG0003-E2-E3-E4        .    .    .     .       OFFSET=0,181,424;LENGTH=100,175,85;INTRON=;TRANSCRIPT=ENST0021;GENE_SYMBOL=SYMB3
+ENSG0003  77   CIRC-ENSG0003-E2-I2-E3-I3-E4  .    .    .     .       OFFSET=0,101,181,357,424;LENGTH=100,80,175,67,85;INTRON=;TRANSCRIPT=ENST0021;GENE_SYMBOL=SYMB3
 ENSG0004  789  CI-ENSG0004-I3                .    .    .     .       OFFSET=0;LENGTH=112;INTRON=1;TRNASCRIPTS=ENST0041;GENE_SYMBOL=SYMB4
 ```
 
@@ -205,10 +205,10 @@ Technically, circRNAs are not variants that alters the gene/transcript sequence.
 + **`OFFSET`**: The offset of each fragment after the `start` position of the gene. Each segment can be either an exon or intron.
 + **`LENGTH`**: The length of each fragmet.
 + **`INTRON`**: The indices of fragments that are introns.
-+ **`TRANSCRIPTS`** The transcript IDs that are able to generate this circRNA (e.g. contains all exons and introns of the circRNA.)
++ **`TRANSCRIPT`** The transcript ID that are able to generate this circRNA (e.g. contains all exons and introns of the circRNA.)
 + **`GENE_SYMBOL`** The name of the gene.
 
-The ID of circRNAs consist of two components. They all start with \<gene_id>-circRNA or \<gene_id>-ciRNA where `gene_id` is the value from the `CHROM` column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example,ENSG0001-circRNA-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
+The ID of circRNAs consist of two components. They all start with \<transcript_id>-circRNA or \<transcript_id>-ciRNA where `transcript_id` is the value from the `CHROM` column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example,ENSG0001-circRNA-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
 ## 2 Variant Peptide FASTA
 
 In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the GVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. A integer index is thus always added to the end to resolve redundancies.
