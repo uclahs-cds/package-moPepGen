@@ -26,14 +26,12 @@ def parse(handle:IO) -> Iterable[CircRNAModel]:
                 val = [int(x) for x in val.split(',')]
             elif key == 'INTRON':
                 val = [] if val == '' else [int(x) for x in val.split(',')]
-            elif key == 'TRANSCRIPTS':
-                val = val.split(',')
             attrs[key] = val
 
         offsets = attrs['OFFSET']
         lengths = attrs['LENGTH']
         introns = attrs['INTRON']
-        transcript_ids = attrs['TRANSCRIPTS']
+        tx_id = attrs['TRANSCRIPT']
         gene_name = attrs['GENE_SYMBOL']
 
         if len(offsets) != len(lengths):
@@ -52,8 +50,8 @@ def parse(handle:IO) -> Iterable[CircRNAModel]:
             )
             fragments.append(frag)
 
-        yield CircRNAModel(gene_id, fragments, introns, circ_id,
-            transcript_ids, gene_name)
+        yield CircRNAModel(tx_id, fragments, introns, circ_id,
+            gene_id, gene_name)
 
 
 def write(records:Iterable[CircRNAModel], metadata:GVFMetadata, handle:IO):

@@ -11,22 +11,22 @@ if TYPE_CHECKING:
 class CircRNAModel():
     """
     Attributes:
-        gene_id (str)
+        transcript_id (str)
         fragments (List[SeqFeature])
         intron (List[int])
         id (str)
-        transcript_ids (List[str])
+        gene_id (str)
         gene_name (str)
         gene_locations (List[SeqFeature])
     """
-    def __init__(self, gene_id:str, fragments:List[SeqFeature], intron:List[int],
-            _id:str, transcript_ids:List[str],  gene_name:str):
+    def __init__(self, transcript_id:str, fragments:List[SeqFeature],
+            intron:List[int], _id:str, gene_id:str, gene_name:str):
         """ Constructor """
         self.gene_id = gene_id
         self.fragments = fragments
         self.intron = intron
         self.id = _id
-        self.transcript_ids = transcript_ids
+        self.transcript_id = transcript_id
         self.gene_name = gene_name
         self.gene_locations = []
 
@@ -72,8 +72,8 @@ class CircRNAModel():
         length = ','.join(length)
         intron = ','.join([str(x) for x in self.intron])
         circ_id = self.id
-        tx_id = ','.join(self.transcript_ids)
+        tx_id = self.transcript_id
         gene_name = self.gene_name
         info = f'OFFSET={offset};LENGTH={length};INTRON={intron};' +\
-            f'TRANSCRIPTS={tx_id};GENE_SYMBOL={gene_name}'
+            f'TRANSCRIPT={tx_id};GENE_SYMBOL={gene_name}'
         return '\t'.join([gene_id, start, circ_id, '.', '.', '.', '.', info])

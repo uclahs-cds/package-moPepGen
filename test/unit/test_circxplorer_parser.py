@@ -45,7 +45,7 @@ class TestCIRCexplorerParser(unittest.TestCase):
         record.exon_offsets = [0, 12]
         circ_record = record.convert_to_circ_rna(anno)
         self.assertIsInstance(circ_record, CircRNAModel)
-        self.assertEqual(circ_record.id, 'CIRC-ENSG0001-E1-E2')
+        self.assertEqual(circ_record.id, 'CIRC-ENST0001.1-E1-E2')
 
     def test_to_convert_circ_rna_negative(self):
         """ circRNA on -strand """
@@ -60,7 +60,7 @@ class TestCIRCexplorerParser(unittest.TestCase):
         record.exon_offsets = [0, 12]
         circ_record = record.convert_to_circ_rna(anno)
         self.assertIsInstance(circ_record, CircRNAModel)
-        self.assertEqual(circ_record.id, 'CIRC-ENSG0001-E2-E3')
+        self.assertEqual(circ_record.id, 'CIRC-ENST0001.1-E2-E3')
 
     def test_to_convert_circ_rna_unknown_exon(self):
         """ circRNA with unkonwn exon. ExonNotFoundError should raise. """
@@ -84,7 +84,7 @@ class TestCIRCexplorerParser(unittest.TestCase):
         record.circ_type = 'ciRNA'
         circ_record = record.convert_to_circ_rna(anno)
         self.assertIsInstance(circ_record, CircRNAModel)
-        self.assertEqual(circ_record.id, 'CI-ENSG0001-I1')
+        self.assertEqual(circ_record.id, 'CI-ENST0001.1-I1')
 
     def test_to_convert_ci_rna_negative(self):
         """ ciRNA """
@@ -100,7 +100,7 @@ class TestCIRCexplorerParser(unittest.TestCase):
         record.circ_type = 'ciRNA'
         circ_record = record.convert_to_circ_rna(anno)
         self.assertIsInstance(circ_record, CircRNAModel)
-        self.assertEqual(circ_record.id, 'CI-ENSG0001-I2')
+        self.assertEqual(circ_record.id, 'CI-ENST0001.1-I2')
 
     def test_to_convert_ci_rna_fuzzy_end_positive(self):
         """ ciRNA with end before intron end positive strand """
@@ -113,7 +113,7 @@ class TestCIRCexplorerParser(unittest.TestCase):
         record.circ_type = 'ciRNA'
         circ_record = record.convert_to_circ_rna(anno)
         self.assertIsInstance(circ_record, CircRNAModel)
-        self.assertEqual(circ_record.id, 'CI-ENSG0001-I1')
+        self.assertEqual(circ_record.id, 'CI-ENST0001.1-I1')
 
     def test_to_convert_ci_rna_fuzzy_end_negative(self):
         """ ciRNA with end before intron end negative strand """
@@ -129,7 +129,7 @@ class TestCIRCexplorerParser(unittest.TestCase):
         record.circ_type = 'ciRNA'
         circ_record = record.convert_to_circ_rna(anno)
         self.assertIsInstance(circ_record, CircRNAModel)
-        self.assertEqual(circ_record.id, 'CI-ENSG0001-I2')
+        self.assertEqual(circ_record.id, 'CI-ENST0001.1-I2')
 
     def test_to_convert_ci_rna_invalid_end_positive(self):
         """ ciRNA with end after intron end on positive strand """

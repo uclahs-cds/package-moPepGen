@@ -39,10 +39,10 @@ class CIRCexplorer2KnownRecord():
     def convert_to_circ_rna(self, anno:gtf.GenomicAnnotation
             ) -> CircRNAModel:
         """ COnvert a CIRCexplorerKnownRecord to CircRNAModel. """
-        tx_model = anno.transcripts[self.isoform_name]
+        tx_id = self.isoform_name
+        tx_model = anno.transcripts[tx_id]
         gene_id = tx_model.transcript.gene_id
-        gene_model = anno.genes[gene_id]
-        transcript_ids = [self.isoform_name]
+        strand = tx_model.transcript.strand
 
         fragments:List[SeqFeature] = []
         intron:List[int] = []
@@ -65,34 +65,40 @@ class CIRCexplorer2KnownRecord():
             end = anno.coordinate_genomic_to_gene(
                 self.start + exon_offset + exon_size - 1, gene_id)
 
-            if gene_model.strand == -1:
+            if strand == -1:
                 start, end = end, start
             end += 1
 
             location = FeatureLocation(seqname=gene_id, start=start, end=end)
 
             fragment = SeqFeature(
-                chrom=gene_id, location=location, attributes={},
+                chrom=tx_id, location=location, attributes={},
                 type=fragment_type
             )
 
             if fragment_type == 'exon':
-                exon_index = anno.find_exon_index(gene_id, fragment)
+                exon_index = anno.find_exon_index(tx_id, fragment)
                 fragment_ids.append( f"E{exon_index + 1}")
 
             elif fragment_type == 'intron':
-                intron_index = anno.find_intron_index(gene_id, fragment,
-                    transcript_id=self.isoform_name, exact_end=False)
+                intron_index = anno.find_intron_index(tx_id, fragment,
+                    exact_end=False)
                 fragment_ids.append(f"I{intron_index + 1}")
                 intron.append(i)
 
             fragments.append(fragment)
 
         fragment_ids.sort()
-        circ_id += f'-{gene_id}-' + '-'.join(fragment_ids)
+        circ_id += f'-{tx_id}-' + '-'.join(fragment_ids)
 
-        return CircRNAModel(gene_id, fragments, intron, circ_id,
-            transcript_ids, gene_model.gene_name)
+        return CircRNAModel(
+            transcript_id=tx_id,
+            fragments=fragments,
+            intron=intron,
+            _id=circ_id,
+            gene_id=gene_id,
+            gene_name=tx_model.transcript.gene_name
+        )
 
     def is_valid(self, min_read_number:int) -> bool:
         """ Check if this is valid CIRCexplorer record """
