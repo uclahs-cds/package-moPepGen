@@ -56,8 +56,8 @@ class FeatureLocation(BioFeatureLocation):
 
     def overlaps(self, other:FeatureLocation) -> bool:
         """ Find whether the location overlaps with the other """
-        return self.start in other or self.end in other or \
-            other.start in self or other.end in self
+        return self.start in other or self.end - 1 in other or \
+            other.start in self or other.end - 1 in self
 
     def get_overlap(self, other:FeatureLocation) -> FeatureLocation:
         """ Returns the range that is overlap """
