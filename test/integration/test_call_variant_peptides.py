@@ -185,3 +185,12 @@ class TestCallVariantPeptides(TestCaseIntegration):
             /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000515757.5'
         self.default_test_case(tvf, reference, expect)
+
+    def test_call_variant_peptide_case12(self):
+        """ A test case that failed to find any variant peptide """
+        tvf = self.data_dir \
+            /'vep/CPCG0100_indel_ENST00000317799.10.gvf'
+        expect = self.data_dir \
+            /'vep/CPCG0100_indel_ENST00000317799.10_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000317799.10'
+        self.default_test_case(tvf, reference, expect)
