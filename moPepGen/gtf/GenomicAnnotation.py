@@ -370,7 +370,7 @@ class GenomicAnnotation():
         exons.sort()
         gene_model.exons = exons
 
-    def find_exon_index(self, gene_id:str, feature:GTFSeqFeature,
+    def find_exon_index(self, transcript_id:str, feature:GTFSeqFeature,
             coordinate:str='gene') -> int:
         """ Find the exon index of the gene.
 
@@ -380,12 +380,11 @@ class GenomicAnnotation():
             coordinate (str): The coordinate type of the given feature. Can be
                 one of 'genomic' or 'gene'. Defaults to gene.
         """
-        gene_model = self.genes[gene_id]
-        if not gene_model.exons:
-            self.get_all_exons_of_gene(gene_id)
-        exons = gene_model.exons
+        tx_model = self.transcripts[transcript_id]
+        gene_id = tx_model.transcript.gene_id
+        exons = tx_model.exon
 
-        strand = self.genes[gene_id].strand
+        strand = tx_model.transcript.strand
 
         if coordinate == 'gene':
             feature = self.feature_coordinate_gene_to_genomic(feature, gene_id)
@@ -406,8 +405,8 @@ class GenomicAnnotation():
                     break
         raise err.ExonNotFoundError(gene_id, feature)
 
-    def find_intron_index(self, gene_id:str, feature:GTFSeqFeature,
-            coordinate:str="gene", transcript_id:str=None, exact_end:bool=False
+    def find_intron_index(self, transcript_id:str, feature:GTFSeqFeature,
+            coordinate:str="gene", exact_end:bool=False
             ) -> int:
         """ Find the intron index of the gene.
 
@@ -417,15 +416,10 @@ class GenomicAnnotation():
             coordinate (str): The coordinate type of the given feature. Can be
                 one of 'genomic' or 'gene'. Defaults to gene.
         """
-        gene_model = self.genes[gene_id]
-        if not gene_model.exons:
-            self.get_all_exons_of_gene(gene_id)
-        exons = gene_model.exons
-        tx_exons = None
-        if transcript_id:
-            tx_model = self.transcripts[transcript_id]
-            tx_exons = tx_model.exon
-        strand = self.genes[gene_id].strand
+        tx_model = self.transcripts[transcript_id]
+        exons = tx_model.exon
+        strand = tx_model.transcript.strand
+        gene_id = tx_model.transcript.gene_id
 
         if coordinate == 'gene':
             feature = self.feature_coordinate_gene_to_genomic(feature, gene_id)
@@ -439,13 +433,9 @@ class GenomicAnnotation():
                 i, exon = next(it, (None, None))
                 if not exon:
                     break
-                if tx_exons and exon not in tx_exons:
-                    continue
                 if exon.location.end == feature.location.start:
                     i, exon = next(it, (None, None))
                     if not exon:
-                        break
-                    if tx_exons and exon not in tx_exons:
                         break
                     if exact_end and exon.location.start == feature.location.end:
                         return i - 1
@@ -460,13 +450,9 @@ class GenomicAnnotation():
                 i, exon = next(it, (None, None))
                 if not exon:
                     break
-                if tx_exons and exon not in tx_exons:
-                    continue
                 if exon.location.start == feature.location.end:
                     i, exon = next(it, (None, None))
                     if not exon:
-                        break
-                    if tx_exons and exon not in tx_exons:
                         break
                     if exact_end and exon.location.end == feature.location.start:
                         return i + 1

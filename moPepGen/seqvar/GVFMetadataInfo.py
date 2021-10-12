@@ -104,10 +104,10 @@ GVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
             'Type': 'Integer',
             'Description': "Indices of fragments that are introns"
         },
-        'TRANSCRIPTS': {
-            'Number': '+',
+        'TRANSCRIPT': {
+            'Number': '1',
             'Type': 'String',
-            'Description': "Transcripts associated with this circRNA"
+            'Description': "Transcript ID associated with this circRNA"
         },
         'GENE_SYMBOL': {
             'Number': 1,

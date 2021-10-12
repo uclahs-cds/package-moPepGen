@@ -265,16 +265,16 @@ class TestGTF(unittest.TestCase):
         tx_id = 'ENST0001.1'
         exon = anno.transcripts[tx_id].exon[1]
         gene_id = 'ENSG0001'
-        ind = anno.find_exon_index(gene_id, exon, 'genomic')
+        ind = anno.find_exon_index(tx_id, exon, 'genomic')
         self.assertEqual(ind, 1)
 
         exon2 = exon._shift(-anno.genes[gene_id].location.start)
-        ind = anno.find_exon_index(gene_id, exon2, 'gene')
+        ind = anno.find_exon_index(tx_id, exon2, 'gene')
         self.assertEqual(ind, 1)
 
         exon = exon2._shift(10)
         with self.assertRaises(err.ExonNotFoundError):
-            anno.find_exon_index(gene_id, exon, 'gene')
+            anno.find_exon_index(tx_id, exon, 'gene')
 
     def test_find_exon_index_case2(self):
         """ Test finding exon index with strand - """
@@ -284,22 +284,23 @@ class TestGTF(unittest.TestCase):
         for gene in anno.genes.values():
             gene.location.strand = -1
         for transcript in anno.transcripts.values():
+            transcript.transcript.location.strand = -1
             for exon in transcript.exon:
                 exon.location.strand = -1
 
         tx_id = 'ENST0001.1'
         exon = anno.transcripts[tx_id].exon[0]
         gene_id = 'ENSG0001'
-        ind = anno.find_exon_index(gene_id, exon, 'genomic')
+        ind = anno.find_exon_index(tx_id, exon, 'genomic')
         self.assertEqual(ind, 2)
 
         exon2 = anno.feature_coordinate_genomic_to_gene(exon, gene_id)
-        ind = anno.find_exon_index(gene_id, exon2, 'gene')
+        ind = anno.find_exon_index(tx_id, exon2, 'gene')
         self.assertEqual(ind, 2)
 
         exon = exon2._shift(10)
         with self.assertRaises(err.ExonNotFoundError):
-            anno.find_exon_index(gene_id, exon, 'gene')
+            anno.find_exon_index(tx_id, exon, 'gene')
 
     def test_find_intron_index_case1(self):
         """ Test finding intron index with strand = 1 """
@@ -312,16 +313,16 @@ class TestGTF(unittest.TestCase):
         location = FeatureLocation(seqname=gene_id, start=start, end=end,
             strand=strand)
         intron = GTFSeqFeature(chrom=gene_id, location=location, attributes={})
-        ind = anno.find_intron_index(gene_id, intron, 'genomic')
+        ind = anno.find_intron_index(tx_id, intron, 'genomic')
         self.assertEqual(ind, 0)
 
         intron2 = intron._shift(-anno.genes[gene_id].location.start)
-        ind = anno.find_intron_index(gene_id, intron2, 'gene')
+        ind = anno.find_intron_index(tx_id, intron2, 'gene')
         self.assertEqual(ind, 0)
 
         intron = intron2._shift(10)
         with self.assertRaises(err.ExonNotFoundError):
-            anno.find_exon_index(gene_id, intron, 'gene')
+            anno.find_exon_index(tx_id, intron, 'gene')
 
     def test_find_intron_index_case2(self):
         """ Test finding intron index with strand = -1 """
@@ -329,6 +330,7 @@ class TestGTF(unittest.TestCase):
         for gene in anno.genes.values():
             gene.location.strand = -1
         for transcript in anno.transcripts.values():
+            transcript.transcript.location.strand = -1
             for exon in transcript.exon:
                 exon.location.strand = -1
 
@@ -340,16 +342,16 @@ class TestGTF(unittest.TestCase):
         location = FeatureLocation(seqname=gene_id, start=start, end=end,
             strand=strand)
         intron = GTFSeqFeature(chrom=gene_id, location=location, attributes={})
-        ind = anno.find_intron_index(gene_id, intron, 'genomic')
+        ind = anno.find_intron_index(tx_id, intron, 'genomic')
         self.assertEqual(ind, 1)
 
         intron2 = anno.feature_coordinate_genomic_to_gene(intron, gene_id)
-        ind = anno.find_intron_index(gene_id, intron2, 'gene')
+        ind = anno.find_intron_index(tx_id, intron2, 'gene')
         self.assertEqual(ind, 1)
 
         intron = intron2._shift(10)
         with self.assertRaises(err.ExonNotFoundError):
-            anno.find_exon_index(gene_id, intron, 'gene')
+            anno.find_exon_index(tx_id, intron, 'gene')
 
     def test_coordinate_convert(self):
         """ Convert coodinates """

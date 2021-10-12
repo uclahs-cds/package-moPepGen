@@ -24,14 +24,12 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         type=Path,
         help='The input file path for CIRCexplorer result. Only the known'
         'circRNA result is supported.',
-        required=True,
         metavar=''
     )
     p.add_argument(
         '-o', '--output-prefix',
         type=str,
         help='Output prefix',
-        required=True,
         metavar=''
     )
     p.add_argument(
