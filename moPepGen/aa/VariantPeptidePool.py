@@ -1,13 +1,17 @@
 """ Module for variant peptide pool (unique) """
 from __future__ import annotations
-from typing import Set, IO
+from typing import Set, IO, Dict, TYPE_CHECKING
 from pathlib import Path
 from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
 from Bio.SeqIO import FastaIO
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from moPepGen import get_equivalent, VARIANT_PEPTIDE_SOURCE_DELIMITER
+from .VariantPeptideLabel import VariantPeptideInfo
 
+
+if TYPE_CHECKING:
+    from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 
 class VariantPeptidePool():
     """ Varaint Peptide Pool """
@@ -68,3 +72,31 @@ class VariantPeptidePool():
             seq.name = seq.description
             pool.peptides.add(seq)
         return pool
+
+    def filter(self, exprs:Dict[str,int], cutoff:float, anno:GenomicAnnotation,
+            keep_all_noncoding:bool, keep_all_coding:bool
+            ) -> VariantPeptidePool:
+        """ Filiter variant peptides according to gene expression. """
+        label_delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
+        filtered_pool = VariantPeptidePool()
+        for peptide in self.peptides:
+            peptide_entries = VariantPeptideInfo.from_variant_peptide(
+                peptide, anno, check_source=False
+            )
+            keep = []
+            for entry in peptide_entries:
+                if keep_all_noncoding and entry.all_noncoding(anno):
+                    should_keep = True
+                elif keep_all_coding and entry.all_coding(anno):
+                    should_keep = True
+                else:
+                    tx_ids = entry.get_transcript_ids()
+                    should_keep = entry.is_fusion() or entry.is_circ_rna() or\
+                        all(exprs[tx] > cutoff for tx in tx_ids)
+                if should_keep:
+                    keep.append(entry)
+            if keep:
+                label = label_delimiter.join([str(x) for x in keep])
+                peptide.description = label
+                filtered_pool.peptides.add(peptide)
+        return filtered_pool

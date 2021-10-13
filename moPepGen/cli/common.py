@@ -1,9 +1,10 @@
 """ Common functions for cli """
 import argparse
 import sys
-from typing import Tuple, Set
+from typing import Tuple, Set, List
 from pathlib import Path
 import pickle
+import pkg_resources
 from moPepGen import aa, dna, gtf, logger, seqvar
 
 
@@ -205,3 +206,26 @@ def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
         genome_fasta=genome_fasta,
         annotation_gtf=annotation_gtf
     )
+
+def load_inclusion_exclusion_biotypes(args:argparse.Namespace
+        ) -> Tuple[List[str], List[str]]:
+    """ Load inclusion and exclusion biotypes """
+    inclusion_biotypes = []
+    if args.inclusion_biotypes:
+        with open(args.inclusion_biotypes, 'rt') as handle:
+            for line in handle:
+                inclusion_biotypes.append(line.rstrip())
+
+    exclusion_path = args.exclusion_biotypes
+    if not exclusion_path:
+        exclusion_path = pkg_resources.resource_filename(
+            'moPepGen', 'data/gencode_hs_exclusion_list.txt'
+        )
+
+    exclusion_biotypes = []
+    if exclusion_path:
+        with open(exclusion_path, 'rt') as handle:
+            for line in handle:
+                exclusion_biotypes.append(line.rstrip())
+
+    return inclusion_biotypes, exclusion_biotypes

@@ -6,7 +6,7 @@ from moPepGen import cli, __version__
 CLI_MAIN_USAGE = "moPopGen [-h] [-V] <command> [options]"
 CLI_MAIN_DESCRIPTION = """
 -- Indexing
-   generateIndex       Generate genome and proteome index files for moPepGen
+   generateIndex       Generate genome and proteome index files for moPepGen.
 
 -- Parsing
    parseVEP            Parse VEP output.
@@ -20,8 +20,9 @@ CLI_MAIN_DESCRIPTION = """
    callVariant         Call non-canonical peptides from genomic variants.
    callNoncoding       Call non-canonical peptides from noncoding transcripts.
 
--- Splitting
-   splitDatabase        Split variant peptides into separate databases.
+-- Processing
+   filterFasta         Filter noncanonical peptides.
+   splitDatabase       Split noncanonical peptides into separate databases.
 """
 
 def main():
@@ -53,6 +54,7 @@ def main():
     cli.add_subparser_call_variant(subparsers)
     cli.add_subparser_call_noncoding(subparsers)
     cli.add_subparser_split_database(subparsers)
+    cli.add_subparser_filter_fasta(subparsers)
 
     args = parser.parse_args()
 
