@@ -2,13 +2,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path
-import pkg_resources
 from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, aa, logger
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
 from moPepGen.cli.common import add_args_cleavage, add_args_verbose, add_args_reference, \
-    print_start_message, print_help_if_missing_args, load_references
+    print_start_message, print_help_if_missing_args, load_references, \
+    load_inclusion_exclusion_biotypes
 
 
 if TYPE_CHECKING:
@@ -76,23 +76,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
         args=args, load_proteome=True
     )
 
-    inclusion_biotypes = []
-    if args.inclusion_biotypes:
-        with open(args.inclusion_biotypes, 'rt') as handle:
-            for line in handle:
-                inclusion_biotypes.append(line.rstrip())
-
-    exclusion_path = args.exclusion_biotypes
-    if not exclusion_path:
-        exclusion_path = pkg_resources.resource_filename(
-            'moPepGen', 'data/gencode_hs_exclusion_list.txt'
-        )
-
-    exclusion_biotypes = []
-    if exclusion_path:
-        with open(exclusion_path, 'rt') as handle:
-            for line in handle:
-                exclusion_biotypes.append(line.rstrip())
+    inclusion_biotypes, exclusion_biotypes = load_inclusion_exclusion_biotypes(args)
 
     noncanonical_pool = aa.VariantPeptidePool()
     orf_pool = []

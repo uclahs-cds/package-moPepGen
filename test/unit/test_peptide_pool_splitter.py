@@ -46,7 +46,7 @@ LABEL_MAP1 = {
         'INDEL-2102-TTTT-T': 'gINDEL',
         'INDEL-2103-TTTT-T': 'sINDEL',
         'INDEL-2104-TTTT-T': 'sINDEL',
-        'CIRC-ENSG0002-E1-E2': 'circRNA'
+        'CIRC-ENST0002-E1-E2': 'circRNA'
     },
     'ENSG0003': {
         'SNV-3001-T-A': 'gSNP',
@@ -66,35 +66,43 @@ SOURCE_ORDER = {'gSNP': 0, 'gINDEL': 1, 'sSNV': 2, 'sINDEL': 3, 'Fusion':4,
 ANNOTATION_ATTRS = [
     [
         {
-            'gene_id': 'ENSG0001'
+            'gene_id': 'ENSG0001',
+            'gene_type': 'protein_coding'
         }, {
             'transcript_id': 'ENST0001',
             'gene_id': 'ENSG0001',
-            'protein_id': 'ENSP0001'
+            'protein_id': 'ENSP0001',
+            'gene_type': 'protein_coding'
         }
     ], [
         {
-            'gene_id': 'ENSG0002'
+            'gene_id': 'ENSG0002',
+            'gene_type': 'protein_coding'
         }, {
             'transcript_id': 'ENST0002',
             'gene_id': 'ENSG0002',
-            'protein_id': 'ENSP0002'
+            'protein_id': 'ENSP0002',
+            'gene_type': 'protein_coding'
         }
     ], [
         {
-            'gene_id': 'ENSG0003'
+            'gene_id': 'ENSG0003',
+            'gene_type': 'protein_coding'
         }, {
             'transcript_id': 'ENST0003',
             'gene_id': 'ENSG0003',
-            'protein_id': 'ENSP0003'
+            'protein_id': 'ENSP0003',
+            'gene_type': 'protein_coding'
         }
     ], [
         {
-            'gene_id': 'ENSG0004'
+            'gene_id': 'ENSG0004',
+            'gene_type': 'protein_coding'
         }, {
             'transcript_id': 'ENST0004',
             'gene_id': 'ENSG0004',
-            'protein_id': 'ENSP0004'
+            'protein_id': 'ENSP0004',
+            'gene_type': 'protein_coding'
         }
     ]
 ]
@@ -204,7 +212,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         label_map_data = {'ENSG0001': {'SNV-1157-G-A': 'sSNV'}}
         label_map = LabelSourceMapping(label_map_data)
         peptide = create_aa_record('KHIRJ','ENST0001|SNV-1157-G-A|1')
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
         self.assertEqual([x.sources for x in infos], [{'sSNV'}])
 
         label_map_data = {
@@ -213,7 +221,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         label_map = LabelSourceMapping(label_map_data)
         label = 'ENST0001|SNV-1157-G-A|INDEL-100-GGGGG-G|1'
         peptide = create_aa_record('KHIRJ', label)
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
         self.assertEqual([x.sources for x in infos], [{'gSNP', 'gINDEL'}])
 
         label_map_data = {
@@ -223,7 +231,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         label_map = LabelSourceMapping(label_map_data)
         label = 'ENST0001|SNV-1157-G-A|INDEL-100-GGGGG-G|1 ENST0002|SNV-254-T-A|1'
         peptide = create_aa_record('KHIRJ', label)
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
         self.assertEqual([x.sources for x in infos], [{'gSNP', 'gINDEL'}, {'sSNV'}])
 
     def test_from_variant_peptide_case2(self):
@@ -236,11 +244,11 @@ class TestVariantPeptideInfo(unittest.TestCase):
 
         peptide = create_aa_record('KHIRJ','ENST0002|SNV-1157-G-A|1')
         with self.assertRaises(VariantSourceNotFoundError):
-            VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+            VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
 
         peptide = create_aa_record('KHIRJ','ENST0001|INDEL-1120-GAAA-A|1')
         with self.assertRaises(VariantSourceNotFoundError):
-            VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+            VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
 
     def test_from_variant_peptide_noncoding(self):
         """ Test forming from noncidng peptide """
@@ -251,11 +259,11 @@ class TestVariantPeptideInfo(unittest.TestCase):
         label_map = LabelSourceMapping(label_map_data)
 
         peptide = create_aa_record('KHIRJ','ENST0004|ORF1|1')
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
         self.assertIn('Noncoding', infos[0].sources)
 
         peptide = create_aa_record('KHIRJ','ENST0004|1')
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, label_map, anno)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
         self.assertIn('Noncoding', infos[0].sources)
 
 class TestPeptidePoolSplitter(unittest.TestCase):
@@ -462,7 +470,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         anno = create_genomic_annotation(ANNOTATION_DATA)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
-            [ 'SSSSSSSK', 'CIRC-ENSG0002-E1-E2|1' ]
+            [ 'SSSSSSSK', 'CIRC-ENST0002-E1-E2|1' ]
         ]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
