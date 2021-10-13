@@ -1,2 +1,0 @@
-from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
-from moPepGen.aa.PeptidePoolSplitter import VariantPeptideInfo

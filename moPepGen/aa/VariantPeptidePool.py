@@ -1,13 +1,13 @@
 """ Module for variant peptide pool (unique) """
 from __future__ import annotations
-from typing import Set, IO, List, Dict, TYPE_CHECKING
+from typing import Set, IO, Dict, TYPE_CHECKING
 from pathlib import Path
 from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
 from Bio.SeqIO import FastaIO
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
-from .VariantPeptideLabel import VariantPeptideInfo
 from moPepGen import get_equivalent, VARIANT_PEPTIDE_SOURCE_DELIMITER
+from .VariantPeptideLabel import VariantPeptideInfo
 
 
 if TYPE_CHECKING:
