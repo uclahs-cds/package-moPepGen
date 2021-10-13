@@ -49,11 +49,12 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
         '--tx-id-col',
         type=int,
         help="The index for transcript ID in the RNAseq quantification results."
+        " Index is 1-based."
     )
     p.add_argument(
         '--quant-col',
         type=str,
-        help='The column index for quantification.'
+        help='The column index number for quantification. Index is 1-based.'
     )
     p.add_argument(
         '--quant-cutoff',
@@ -93,8 +94,11 @@ def filter_fasta(args:argparse.Namespace) -> None:
 
     with open(args.exprs_table, 'rt') as handle:
         exprs = load_expression_table(
-            handle, args.tx_id_col, args.quant_col, args.skip_lines,
-            args.delimiter
+            handle=handle,
+            tx_col=args.tx_id_col - 1,
+            quant_col=args.quant_col - 1,
+            skip=args.skip_lines,
+            delim=args.delimiter
         )
 
     if args.verbose:
