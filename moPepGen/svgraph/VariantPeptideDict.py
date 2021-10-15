@@ -5,7 +5,7 @@ import copy
 from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from moPepGen import aa, get_equivalent
 from moPepGen.svgraph.PVGNode import PVGNode
-from moPepGen.aa.VariantPeptideIdentifier import create_variant_peptide_id
+from moPepGen.aa import VariantPeptideIdentifier as vpi
 
 
 if TYPE_CHECKING:
@@ -203,13 +203,20 @@ class VariantPeptideDict():
             labels = []
             metadatas = list(metadatas)
             metadatas.sort(key=lambda x: x.orf[0])
+            has_pure_circ_rna = False
             for metadata in metadatas:
                 variants = list(metadata.variants)
                 orf_id = None
                 if orf_id_map:
                     orf_id = orf_id_map[metadata.orf]
 
-                label = create_variant_peptide_id(self.tx_id, variants, orf_id)
+                label = vpi.create_variant_peptide_id(self.tx_id, variants, orf_id)
+
+                is_pure_circ_rna = len(variants) == 1 and variants[0].is_circ_rna()
+                if is_pure_circ_rna:
+                    if has_pure_circ_rna:
+                        continue
+                    has_pure_circ_rna = True
 
                 if label in self.labels:
                     self.labels[label] += 1
