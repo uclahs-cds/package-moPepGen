@@ -41,7 +41,8 @@ class MiscleavedNodes():
                     new_batch = copy.copy(cur_batch)
                     stop_index = _node.seq.seq.find('*')
                     if stop_index > -1:
-                        left_node = _node[:stop_index]
+                        left_node = _node[:stop_index + 1]
+                        left_node.seq = left_node.seq[:stop_index]
                         new_batch.append(left_node)
                         nodes.data.append(new_batch)
                         continue
