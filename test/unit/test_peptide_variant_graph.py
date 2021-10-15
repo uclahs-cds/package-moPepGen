@@ -409,6 +409,23 @@ class TestPeptideVariantGraph(unittest.TestCase):
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
 
+    def test_call_variant_peptides_stop_gain(self):
+        """ test micleavages is handled correctly """
+        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 2, 3, True)
+        locations = [((0,4),(0,4))]
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('SS*SR', [1],[variant_1], [((0,2), (5,7)),((3,5),(8,10))], 0),
+            3: ('SSSIR', [1], [None], locations, 0),
+            4: ('SSSPK', [2,3], [None], locations, 0),
+            5: ('SSSVK', [4], [None], locations, 0)
+        }
+        graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,60])
+        peptides = graph.call_variant_peptides(1)
+        received = {str(x.seq) for x in peptides}
+        expected = {'SSSSKSS', 'SS'}
+        self.assertEqual(received, expected)
+
     def test_call_variant_peptides_truncated(self):
         """ test tuncated peptide is handled properly """
         variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 0, 1, True)
