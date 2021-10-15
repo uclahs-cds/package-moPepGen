@@ -1,6 +1,6 @@
 """ Test Module for VariantPeptideDict """
 import unittest
-from test.unit import create_aa_record, create_variant, create_variants
+from test.unit import create_aa_record, create_variants
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict, \
     VariantPeptideMetadata
 
