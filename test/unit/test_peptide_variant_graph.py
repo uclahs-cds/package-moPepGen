@@ -410,7 +410,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertEqual(received, expected)
 
     def test_call_variant_peptides_stop_gain(self):
-        """ test micleavages is handled correctly """
+        """ test stop gain mutation is included """
         variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 2, 3, True)
         locations = [((0,4),(0,4))]
         data = {
