@@ -953,7 +953,8 @@ class ThreeFrameTVG():
         pgraph = PeptideVariantGraph(
             root=root,
             _id=self.id,
-            known_orf=known_orf
+            known_orf=known_orf,
+            cds_start_nf=self.cds_start_nf
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
