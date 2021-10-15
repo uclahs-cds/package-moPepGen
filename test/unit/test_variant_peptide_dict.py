@@ -11,9 +11,9 @@ def create_variant_peptide_dict(tx_id, data) -> VariantPeptideDict:
     for x,y in data:
         seq = create_aa_record(*x)
         metadatas = set()
-        for yy in y:
-            variants = set(create_variants(yy[0]))
-            metadatas.add(VariantPeptideMetadata(variants, yy[1]))
+        for it in y:
+            variants = set(create_variants(it[0]))
+            metadatas.add(VariantPeptideMetadata(variants, it[1]))
         peptides[seq] = metadatas
     return VariantPeptideDict(tx_id=tx_id, peptides=peptides)
 
@@ -40,11 +40,15 @@ class TestCaseVariantPeptideDict(unittest.TestCase):
     def test_get_peptide_sequences_circ_rna(self):
         """ Get peptide sequence with circRNA """
         tx_id = 'ENST0001'
+        variants = [
+            (100, 101, 'A', '<circRNA>', 'circRNA', 'CIRC-ENST0001-E1-E2-E3'),
+            (100, 101, 'A', '<circRNA>', 'circRNA', 'CIRC-ENST0001-E1-E2-E3')
+        ]
         data = [
             (
                 ('SSSSSSSSSR', tx_id), [
-                    ([(100, 101, 'A', '<circRNA>', 'circRNA', 'CIRC-ENST0001-E1-E2-E3')], [0, None]),
-                    ([(100, 101, 'A', '<circRNA>', 'circRNA', 'CIRC-ENST0001-E1-E2-E3')], [1, None])
+                    ([variants[0]], [0, None]),
+                    ([variants[1]], [1, None])
                 ]
             )
         ]
