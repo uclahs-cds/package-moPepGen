@@ -36,8 +36,9 @@ class CIRCexplorer2KnownRecord():
         self.index = index
         self.flank_intron = flank_intron
 
-    def convert_to_circ_rna(self, anno:gtf.GenomicAnnotation
-            ) -> CircRNAModel:
+    def convert_to_circ_rna(self, anno:gtf.GenomicAnnotation,
+            intron_start_range:Tuple[int,int]=(0,0),
+            intron_end_range:Tuple[int,int]=(0,0)) -> CircRNAModel:
         """ COnvert a CIRCexplorerKnownRecord to CircRNAModel. """
         tx_id = self.isoform_name
         tx_model = anno.transcripts[tx_id]
@@ -81,8 +82,11 @@ class CIRCexplorer2KnownRecord():
                 fragment_ids.append( f"E{exon_index + 1}")
 
             elif fragment_type == 'intron':
-                intron_index = anno.find_intron_index(tx_id, fragment,
-                    exact_end=False)
+                intron_index = anno.find_intron_index(
+                    tx_id, fragment,
+                    intron_start_range=intron_start_range,
+                    intron_end_range=intron_end_range
+                )
                 fragment_ids.append(f"I{intron_index + 1}")
                 intron.append(i)
 

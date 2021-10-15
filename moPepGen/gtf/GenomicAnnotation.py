@@ -1,6 +1,6 @@
 """ This module defines the class logic for the GTF annotations.
 """
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar, err
 from . import GtfIO
@@ -406,8 +406,8 @@ class GenomicAnnotation():
         raise err.ExonNotFoundError(gene_id, feature)
 
     def find_intron_index(self, transcript_id:str, feature:GTFSeqFeature,
-            coordinate:str="gene", exact_end:bool=False
-            ) -> int:
+            coordinate:str="gene", intron_start_range:Tuple[int,int]=(0,0),
+            intron_end_range:Tuple[int,int]=(0,0)) -> int:
         """ Find the intron index of the gene.
 
         Args:
@@ -421,6 +421,15 @@ class GenomicAnnotation():
         strand = tx_model.transcript.strand
         gene_id = tx_model.transcript.gene_id
 
+        intron_start_range = FeatureLocation(
+            start=intron_start_range[0],
+            end=intron_start_range[1] + 1
+        )
+        intron_end_range = FeatureLocation(
+            start=intron_end_range[0],
+            end=intron_end_range[1] + 1
+        )
+
         if coordinate == 'gene':
             feature = self.feature_coordinate_gene_to_genomic(feature, gene_id)
 
@@ -433,11 +442,13 @@ class GenomicAnnotation():
                 i, exon = next(it, (None, None))
                 if not exon:
                     break
-                if exon.location.end == feature.location.start:
+                start_offset = feature.location.start - exon.location.end
+                if start_offset in intron_start_range:
                     i, exon = next(it, (None, None))
                     if not exon:
                         break
-                    if exact_end and exon.location.start == feature.location.end:
+                    end_offset = feature.location.end - exon.location.start
+                    if end_offset in intron_end_range:
                         return i - 1
                     if exon.location.start >= feature.location.end:
                         return i - 1
@@ -450,11 +461,13 @@ class GenomicAnnotation():
                 i, exon = next(it, (None, None))
                 if not exon:
                     break
-                if exon.location.start == feature.location.end:
+                start_offset = - (feature.location.end - exon.location.start)
+                if start_offset in intron_start_range:
                     i, exon = next(it, (None, None))
                     if not exon:
                         break
-                    if exact_end and exon.location.end == feature.location.start:
+                    end_offset = - (feature.location.start - exon.location.end)
+                    if end_offset in intron_end_range:
                         return i + 1
                     if exon.location.end <= feature.location.start:
                         return i + 1
