@@ -353,6 +353,42 @@ class TestGTF(unittest.TestCase):
         with self.assertRaises(err.ExonNotFoundError):
             anno.find_exon_index(tx_id, intron, 'gene')
 
+    def test_find_intron_index_fuzzy_1(self):
+        """ Test finding intron index with end is earlier """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = 'ENSG0001'
+        tx_id = 'ENST0001.1'
+        start = anno.transcripts[tx_id].exon[0].location.end
+        end = anno.transcripts[tx_id].exon[1].location.start - 2
+        strand = anno.genes[gene_id].location.strand
+        location = FeatureLocation(seqname=gene_id, start=start, end=end,
+            strand=strand)
+        intron = GTFSeqFeature(chrom=gene_id, location=location, attributes={})
+        ind = anno.find_intron_index(tx_id, intron, 'genomic',
+            intron_end_range=(-3, 0))
+        self.assertEqual(ind, 0)
+
+    def test_find_intron_index_fuzzy_2(self):
+        """ Test finding intron index with star is earlier in - strand """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        for gene in anno.genes.values():
+            gene.location.strand = -1
+        for transcript in anno.transcripts.values():
+            transcript.transcript.location.strand = -1
+            for exon in transcript.exon:
+                exon.location.strand = -1
+        gene_id = 'ENSG0001'
+        tx_id = 'ENST0001.1'
+        start = anno.transcripts[tx_id].exon[0].location.end
+        end = anno.transcripts[tx_id].exon[1].location.start + 1
+        strand = anno.genes[gene_id].location.strand
+        location = FeatureLocation(seqname=gene_id, start=start, end=end,
+            strand=strand)
+        intron = GTFSeqFeature(chrom=gene_id, location=location, attributes={})
+        ind = anno.find_intron_index(tx_id, intron, 'genomic',
+            intron_start_range=(-2, 0))
+        self.assertEqual(ind, 1)
+
     def test_coordinate_convert(self):
         """ Convert coodinates """
         anno = create_genomic_annotation(ANNOTATION_DATA)

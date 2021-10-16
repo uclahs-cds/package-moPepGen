@@ -7,7 +7,7 @@ from moPepGen import logger, circ, err
 from moPepGen.parser import CIRCexplorerParser
 from moPepGen.cli.common import add_args_reference, add_args_verbose, add_args_source,\
     print_start_message,print_help_if_missing_args, load_references, \
-    generate_metadata
+    generate_metadata, parse_range
 
 
 # pylint: disable=W0212
@@ -60,6 +60,20 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         default=None,
         metavar=''
     )
+    p.add_argument(
+        '--intron-start-range',
+        type=str,
+        help='The range of difference allowed between the intron start and'
+        ' the reference position. Defaults to -2,0',
+        default='-2,0'
+    )
+    p.add_argument(
+        '--intron-end-range',
+        type=str,
+        help='The range of difference allowed between the intron end and'
+        ' the reference position. Defaults to -100,2',
+        default='-100,2'
+    )
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
     add_args_verbose(p)
@@ -71,6 +85,9 @@ def parse_circexplorer(args:argparse.Namespace):
     input_path = args.input_path
     output_prefix = args.output_prefix
     output_path = output_prefix + '.gvf'
+
+    intron_start_range = parse_range(args.intron_start_range)
+    intron_end_range = parse_range(args.intron_end_range)
 
     print_start_message(args)
 
@@ -86,7 +103,8 @@ def parse_circexplorer(args:argparse.Namespace):
                 args.min_circ_score):
             continue
         try:
-            circ_record = record.convert_to_circ_rna(anno)
+            circ_record = record.convert_to_circ_rna(anno, intron_start_range,
+                intron_end_range)
         except err.ExonNotFoundError:
             err.warning(f"The CIRCexplorer record {record.name} from"
                 f" transcript {record.isoform_name} contains an unknown exon."

@@ -229,3 +229,10 @@ def load_inclusion_exclusion_biotypes(args:argparse.Namespace
                 exclusion_biotypes.append(line.rstrip())
 
     return inclusion_biotypes, exclusion_biotypes
+
+def parse_range(x:str) -> Tuple[int,int]:
+    """ parse range from argument """
+    y = x.split(',')
+    if len(y) != 2:
+        raise ValueError('Range invalid')
+    return tuple(int(i) for i in y)
