@@ -122,6 +122,15 @@ class PVGNode():
                 variants.append(variant.variant)
         return variants
 
+    def get_cleavage_gain_variants(self) -> List[seqvar.VariantRecord]:
+        """ Get cleavage gain variants """
+        cleavage_gain = []
+        for variant in self.variants:
+            if variant.location.end == len(self.seq):
+                cleavage_gain.append(variant.variant)
+        return cleavage_gain
+
+
     def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. The next reference node
         is defined as the out node that has not variant, or not any variant
