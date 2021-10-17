@@ -102,7 +102,7 @@ def main(args):
                 if j == len(comb) - 1:
                     continue
                 for right in comb[j+1:]:
-                    if left.location.end > right.location.start:
+                    if left.location.end >= right.location.start:
                         skip = True
 
             if skip:
