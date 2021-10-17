@@ -327,6 +327,11 @@ class ThreeFrameTVG():
             head, tail = self.splice(target, index, 'reference')
             self.add_edge(var_node, tail, 'variant_end')
             returns[1] = head
+            if in_frame:
+                if returns[0] is source:
+                    returns[0] = head
+                else:
+                    returns[1] = returns[0]
         else:
             # This is the case that the range of this variant is larger than
             # the node, such as deletion.
@@ -345,9 +350,8 @@ class ThreeFrameTVG():
                     _, right = self.splice(cur, index, 'reference')
                     self.add_edge(var_node, right, 'variant_end')
             returns[1] = target
-
-        if in_frame:
-            returns[1] = returns[0]
+            if in_frame:
+                returns[1] = returns[0]
         # returns the node with the first nucleotide of the input node.
         return returns
 
@@ -579,13 +583,6 @@ class ThreeFrameTVG():
         while variant:
             if not any(cursors):
                 break
-            # for indel insertion, if the insirtion location is right after
-            # start codon, shift it backwoard for 1 NT so it can be included
-            # is_indel_insertion = variant.type == 'INDEL' and variant.is_insertion()
-            # variant_at_last_nt_of_start_codon = variant.location.start == 2 or\
-            #     (self.has_known_orf and variant.location.start == start_codon.end - 1)
-            # if is_indel_insertion and variant_at_last_nt_of_start_codon:
-            #     variant.to_end_inclusion(self.seq)
 
             # skipping start lost mutations
             start_altering = variant.location.start < 3 # or \

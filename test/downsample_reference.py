@@ -18,6 +18,7 @@ command line usage:
         --output-dir path/to/downsampled_index
 """
 import argparse
+import sys
 from typing import List, Tuple, Iterable, Dict
 from pathlib import Path
 from Bio import SeqIO

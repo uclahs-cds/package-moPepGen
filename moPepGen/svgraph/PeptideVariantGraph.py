@@ -575,8 +575,11 @@ class PeptideVariantGraph():
                     traversal.stage(target_node, out_node, cur)
                 return
 
+            additional_variants = []
             if target_node.variants and not self.cds_start_nf:
                 start_index = target_node.seq.seq.find('M')
+                if start_index > -1:
+                    additional_variants = target_node.get_variants_at(start_index)
             else:
                 start_index = target_node.seq.get_query_index(
                     traversal.known_orf_aa[0])
@@ -607,7 +610,7 @@ class PeptideVariantGraph():
                     miscleavage=traversal.miscleavage,
                     check_variants=traversal.check_variants,
                     is_start_codon=True,
-                    additional_variants=[]
+                    additional_variants=additional_variants
                 )
                 for out_node in target_node.out_nodes:
                     if out_node is not self.stop:
@@ -702,7 +705,7 @@ class PeptideVariantGraph():
                     elif last_start_index > -1:
                         # carry over variants from the target node to the next
                         # node if a start codon is found.
-                        start_gain = target_node.get_variant_at(
+                        start_gain = target_node.get_variants_at(
                             start=last_start_index,
                             end=min(last_start_index + 3, len(target_node.seq.seq))
                         )

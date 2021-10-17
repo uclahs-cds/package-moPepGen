@@ -3,7 +3,7 @@ import unittest
 from test.unit import create_variant, create_variants, \
     create_genomic_annotation, create_dna_record_dict, create_three_frame_tvg
 from moPepGen import seqvar
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
 
 GENOME_DATA = {
@@ -173,6 +173,36 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         out_nodes = {str(e.out_node.seq.seq) for e in source.out_edges}
         expected = {'A', 'T'}
         self.assertEqual(out_nodes, expected)
+
+    def test_apply_variant_inframe_case2(self):
+        """ apply inframe variant, where the reference node start position
+        is the same as the variant position. """
+        var_data = [
+            [4, 5, 'T', 'A', 'SNV', ''],
+            [5, 6, 'C', 'G', 'SNV', '']
+        ]
+        variants = create_variants(var_data)
+        data = {
+            1: ['AAAA', ['RF0'], [], 0],
+            2: ['T', [1], [], 0],
+            3: ['A', [1], [(0,'T','A','SNV','')], 0],
+            4: ['CTTAC', [2,3], [], 0]
+        }
+
+        graph, nodes = create_three_frame_tvg(data, 'AAAAAT')
+        loc = MatchedLocation(
+            query=FeatureLocation(0,5),
+            ref=FeatureLocation(5,10)
+        )
+        nodes[4].seq.locations = [loc]
+        source, target = graph.apply_variant(nodes[4], nodes[4], variants[1])
+        self.assertIs(source, target)
+        self.assertTrue(nodes[2].is_inbond_of(source))
+        self.assertTrue(nodes[3].is_inbond_of(source))
+        self.assertEqual(str(source.seq.seq), 'C')
+        new_node = [x for x in nodes[2].out_edges if x.out_node is not source][0]\
+            .out_node
+        self.assertEqual(new_node.seq.seq, 'G')
 
     def test_apply_variant_deletion(self):
         """ apply_variant """

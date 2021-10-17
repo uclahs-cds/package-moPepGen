@@ -109,7 +109,7 @@ class PVGNode():
         """ Check if it has any incoming node that is bridge """
         return any(node.is_bridge() for node in self.in_nodes)
 
-    def get_variant_at(self, start:int, end:int=-1) -> seqvar.VariantRecord:
+    def get_variants_at(self, start:int, end:int=-1) -> seqvar.VariantRecord:
         """ Get the variant at position i """
         if end == -1:
             end = len(self.seq)
