@@ -583,7 +583,10 @@ class PeptideVariantGraph():
 
             start_gain = []
             if target_node.variants and not self.cds_start_nf:
-                start_index = target_node.seq.seq.find('M')
+                start_index = target_node.seq.get_query_index(
+                    traversal.known_orf_aa[0])
+                if start_index == -1:
+                    start_index = target_node.seq.seq.find('M')
                 if start_index > -1:
                     start_gain = target_node.get_variants_at(start_index)
             else:
