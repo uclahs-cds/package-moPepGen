@@ -574,7 +574,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertTrue(traversal.queue[-1].in_cds)
         self.assertEqual(len(traversal.queue[-1].start_gain), 1)
 
-    def test_call_and_stage_known_orf_multiple_M(self):
+    def test_call_and_stage_known_orf_multiple_methionine(self):
         """ Test when a mutation is in the same cleavage node as start codon,
         and there is another M before the actual start codon.
         """
