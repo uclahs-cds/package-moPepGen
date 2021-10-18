@@ -102,6 +102,26 @@ class TestAnnotationModel(unittest.TestCase):
         seq = model.get_transcript_sequence(chrom)
         self.assertIs(seq.orf, None)
 
+    def test_get_transcript_sequence_case3(self):
+        """ Test the transcript sequence with first CDS's frame isn't 0. """
+        attributes = {
+            'transcript_id': 'ENST0001',
+            'gene_id': 'ENSG0001',
+            'protein_id': 'ENSP0001'
+        }
+        data = {
+            'chrom': 'chr22',
+            'strand': 1,
+            'transcript': (0, 20, attributes),
+            'exon': [(0,8,attributes), (10, 18, attributes)],
+            'cds': [(0,8,attributes), (10, 18, attributes)]
+        }
+        model = create_transcript_model(data)
+        model.cds[0].frame = 1
+        chrom = SeqIO.read('test/files/genome.fasta', 'fasta')
+        seq = model.get_transcript_sequence(chrom)
+        self.assertEqual(seq.orf.start, 1)
+
     def test_get_transcript_index_case1(self):
         """ Getting transcript index from genomic index when strand is + """
         attributes = {

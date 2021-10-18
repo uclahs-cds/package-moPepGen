@@ -6,10 +6,11 @@ from moPepGen.SeqFeature import SeqFeature
 
 class GTFSeqFeature(SeqFeature):
     """ GTF specific SeqFeture """
-    def __init__(self, *args, source:str=None, **kwargs):
+    def __init__(self, *args, source:str=None, frame:int=None, **kwargs):
         """ Constructor """
         super().__init__(*args, **kwargs)
         self.source = source
+        self.frame = frame
 
     @property
     def biotype(self) -> str:
