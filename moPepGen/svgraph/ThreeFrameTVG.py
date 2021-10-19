@@ -906,7 +906,8 @@ class ThreeFrameTVG():
             self.align_variants(cur)
             if cur.out_edges:
                 node = self.expand_alignments(cur)
-                queue.appendleft(node)
+                if node is not None:
+                    queue.appendleft(node)
 
     def translate(self) -> PeptideVariantGraph:
         r""" Converts a DNA transcript variant graph into a peptide variant

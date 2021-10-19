@@ -113,8 +113,8 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                 raise ValueError('CVG should not have any start altering mutation')
             head = list(root.out_edges)[0].out_node
             end_node = frame_map[self.reading_frames[head.reading_frame_index]]
-            for edge in copy.copy(head.in_edges):
-                self.remove_edge(edge)
+            for _edge in copy.copy(head.in_edges):
+                self.remove_edge(_edge)
             self.add_edge(end_node, head, 'reference')
 
     def truncate_three_frames(self):
