@@ -565,7 +565,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         nodes[2].reading_frame_index = 0
         nodes[4].reading_frame_index = 2
-        graph.known_orf = [6,30]
+        graph.known_orf = [18,60]
         pool = VariantPeptideDict(graph.id)
         traversal = PVGTraversal(True, False, 0, pool, (18,60), (6,20))
         cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
@@ -573,6 +573,29 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertEqual(len(traversal.queue), 1)
         self.assertTrue(traversal.queue[-1].in_cds)
         self.assertEqual(len(traversal.queue[-1].start_gain), 1)
+
+    def test_call_and_stage_known_orf_multiple_methionine(self):
+        """ Test when a mutation is in the same cleavage node as start codon,
+        and there is another M before the actual start codon.
+        """
+        variant_1 = (27, 28, 'T', 'TCCC', 'INDEL', '8:T-TCCC', 9, 10, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('SMSMRIK', [1],[variant_1], [((0,5),(5,10)), ((6,7),(10,11))], 0),
+            3: ('SMSMRK', [1], [None], [((0,6),(5,11))], 0),
+            4: ('SSSPK', [2], [None], [((0,5),(11,16))], 0),
+            5: ('SSSPK', [4], [None], [((0,5),(16,21))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [24,90]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (24,90), (8,30))
+        cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(pool.peptides), 2)
+        seqs = {str(x.seq) for x in pool.peptides.keys()}
+        expected = {'MRIK', 'RIK'}
+        self.assertEqual(seqs, expected)
 
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
         """ Test the fit into cleavage for bridge node that needs to be merged

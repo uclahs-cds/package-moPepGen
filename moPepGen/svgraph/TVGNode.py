@@ -64,7 +64,15 @@ class TVGNode():
 
         for variant in self.variants:
             if variant.location.overlaps(location):
-                variants.append(variant.shift(-start))
+                new_loc = FeatureLocation(
+                    start=max(variant.location.start, location.start),
+                    end=min(variant.location.end, location.end)
+                )
+                new_variant = seqvar.VariantRecordWithCoordinate(
+                    variant=variant.variant, location=new_loc
+                )
+                new_variant = new_variant.shift(-start)
+                variants.append(new_variant)
             elif variant.location.start >= stop and variant.varint in frameshifts:
                 frameshifts.remove(variant.variant)
         return TVGNode(
@@ -336,9 +344,24 @@ class TVGNode():
 
         for variant in self.variants:
             if variant.location.start < i:
-                left_variants.append(variant)
+                new_loc = FeatureLocation(
+                    start=variant.location.start,
+                    end=min(i, variant.location.end)
+                )
+                new_variant = seqvar.VariantRecordWithCoordinate(
+                    variant=variant.variant, location=new_loc
+                )
+                left_variants.append(new_variant)
             if variant.location.end > i:
-                right_variants.append(variant.shift(-i))
+                new_loc = FeatureLocation(
+                    start=max(variant.location.start, i),
+                    end=variant.location.end
+                )
+                new_variant = seqvar.VariantRecordWithCoordinate(
+                    variant=variant.variant, location=new_loc
+                )
+                new_variant = new_variant.shift(-i)
+                right_variants.append(new_variant)
                 if variant.location.start >= i and \
                         variant.variant.is_frameshifting():
                     left_frameshifts.remove(variant.variant)
@@ -371,9 +394,24 @@ class TVGNode():
 
         for variant in self.variants:
             if variant.location.start < i:
-                left_variants.append(variant)
+                new_loc = FeatureLocation(
+                    start=variant.location.start,
+                    end=min(i, variant.location.end)
+                )
+                new_variant = seqvar.VariantRecordWithCoordinate(
+                    variant=variant.variant, location=new_loc
+                )
+                left_variants.append(new_variant)
             if variant.location.end > i:
-                right_variants.append(variant.shift(-i))
+                new_loc = FeatureLocation(
+                    start=max(variant.location.start, i),
+                    end=variant.location.end
+                )
+                new_variant = seqvar.VariantRecordWithCoordinate(
+                    variant=variant.variant, location=new_loc
+                )
+                new_variant = new_variant.shift(-i)
+                right_variants.append(new_variant)
                 if variant.location.start >= i and \
                         variant.variant.is_frameshifting():
                     self.frameshifts.discard(variant.variant)

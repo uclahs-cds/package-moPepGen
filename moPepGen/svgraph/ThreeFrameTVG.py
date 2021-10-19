@@ -204,44 +204,14 @@ class ThreeFrameTVG():
         Returns:
             The two new nodes.
         """
-        left_node = TVGNode(
-            node.seq[:i],
-            subgraph_id=self.id,
-            reading_frame_index=node.reading_frame_index,
-            orf=node.orf
-        )
-        right_node = TVGNode(
-            node.seq[i:],
-            subgraph_id=self.id,
-            reading_frame_index=node.reading_frame_index,
-            orf=node.orf
-        )
+        left_node = node
+        right_node = left_node.truncate_right(i)
 
-        for variant in node.variants:
-            if variant.location.start < i:
-                left_node.variants.append(variant)
-            if variant.location.end > i:
-                right_node.variants.append(variant)
-
-        if node.frameshifts:
-            left_node.frameshifts = copy.copy(node.frameshifts)
-            right_node.frameshifts = copy.copy(node.frameshifts)
-            for variant in node.variants:
-                if variant.variant.is_frameshifting() and \
-                        variant.location.start > len(left_node.seq.seq):
-                    left_node.frameshifts.discard(variant)
-
-        while node.in_edges:
-            edge = node.in_edges.pop()
-            self.add_edge(edge.in_node, left_node, _type=edge.type)
+        for edge in copy.copy(left_node.out_edges):
+            self.add_edge(right_node, edge.out_node, edge.type)
             self.remove_edge(edge)
 
-        while node.out_edges:
-            edge = node.out_edges.pop()
-            self.add_edge(right_node, edge.out_node, _type=edge.type)
-            self.remove_edge(edge)
-
-        self.add_edge(left_node, right_node, _type=_type)
+        self.add_edge(left_node, right_node, _type)
 
         if self.root is node:
             self.root = left_node
@@ -327,6 +297,11 @@ class ThreeFrameTVG():
             head, tail = self.splice(target, index, 'reference')
             self.add_edge(var_node, tail, 'variant_end')
             returns[1] = head
+            if in_frame:
+                if variant_start == source_start:
+                    returns[0] = head
+                else:
+                    returns[1] = returns[0]
         else:
             # This is the case that the range of this variant is larger than
             # the node, such as deletion.
@@ -345,9 +320,8 @@ class ThreeFrameTVG():
                     _, right = self.splice(cur, index, 'reference')
                     self.add_edge(var_node, right, 'variant_end')
             returns[1] = target
-
-        if in_frame:
-            returns[1] = returns[0]
+            if in_frame:
+                returns[1] = returns[0]
         # returns the node with the first nucleotide of the input node.
         return returns
 
@@ -435,8 +409,8 @@ class ThreeFrameTVG():
         cursors = copy.copy(cursors)
         branch = ThreeFrameTVG(seq, self.id)
         branch.init_three_frames(truncate_head=False)
-        for edge in branch.root.out_edges:
-            node = edge.out_node
+        for root in branch.reading_frames:
+            node = list(root.out_edges)[0].out_node
             node.variants.append(var)
             is_frameshifting = False
             if var.variant.is_frameshifting():
@@ -579,13 +553,6 @@ class ThreeFrameTVG():
         while variant:
             if not any(cursors):
                 break
-            # for indel insertion, if the insirtion location is right after
-            # start codon, shift it backwoard for 1 NT so it can be included
-            # is_indel_insertion = variant.type == 'INDEL' and variant.is_insertion()
-            # variant_at_last_nt_of_start_codon = variant.location.start == 2 or\
-            #     (self.has_known_orf and variant.location.start == start_codon.end - 1)
-            # if is_indel_insertion and variant_at_last_nt_of_start_codon:
-            #     variant.to_end_inclusion(self.seq)
 
             # skipping start lost mutations
             start_altering = variant.location.start < 3 # or \
@@ -771,6 +738,10 @@ class ThreeFrameTVG():
         while queue:
             cur:TVGNode = queue.pop()
             if cur in end_nodes or not cur.out_edges:
+                if cur not in bridge_map:
+                    new_nodes.add(cur)
+                else:
+                    new_bridges.add(cur)
                 continue
 
             for out_edge in copy.copy(cur.out_edges):
@@ -892,6 +863,9 @@ class ThreeFrameTVG():
         if not ref_node.out_edges:
             return None
 
+        if len(ref_node.out_edges) > 1:
+            return ref_node
+
         end = ref_node.get_reference_next()
         right_index = (3 - len(ref_node.seq) % 3) % 3
         right_over = end.truncate_left(right_index)
@@ -932,7 +906,8 @@ class ThreeFrameTVG():
             self.align_variants(cur)
             if cur.out_edges:
                 node = self.expand_alignments(cur)
-                queue.appendleft(node)
+                if node is not None:
+                    queue.appendleft(node)
 
     def translate(self) -> PeptideVariantGraph:
         r""" Converts a DNA transcript variant graph into a peptide variant

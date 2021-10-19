@@ -206,7 +206,8 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
         for entry in data['cds']:
             location = FeatureLocation(start=entry[0], end=entry[1])
             cds.append(GTFSeqFeature(chrom=chrom, location=location,
-                attributes=entry[2], strand=strand, source='GENCODE'))
+                attributes=entry[2], strand=strand, source='GENCODE',
+                frame=0))
     model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
     return model
 

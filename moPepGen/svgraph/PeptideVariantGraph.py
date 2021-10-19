@@ -536,18 +536,22 @@ class PeptideVariantGraph():
             elif not node_copy.out_nodes:
                 node_copy.truncated = True
 
+            additional_variants = start_gain + cursor.cleavage_gain
+
             traversal.pool.add_miscleaved_sequences(
                 node=node_copy,
                 orf=tuple(orf),
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 is_start_codon=False,
-                additional_variants=start_gain
+                additional_variants=additional_variants
             )
             self.remove_node(node_copy)
             if stop_index > -1:
                 in_cds = False
                 orf = [None, None]
+
+            cleavage_gain = target_node.get_cleavage_gain_variants()
 
             for out_node in target_node.out_nodes:
                 if out_node is self.stop:
@@ -563,10 +567,12 @@ class PeptideVariantGraph():
                             if variant.variant.is_frameshifting():
                                 new_start_gain.add(variant.variant)
                         cur_start_gain = list(new_start_gain)
+                    cur_cleavage_gain = cleavage_gain
                 else:
                     cur_start_gain = []
+                    cur_cleavage_gain = None
                 cur = PVGCursor(target_node, out_node, in_cds, orf,
-                    cur_start_gain)
+                    cur_start_gain, cur_cleavage_gain)
                 traversal.stage(target_node, out_node, cur)
         else:
             if target_node.reading_frame_index != self.known_reading_frame_index():
@@ -575,8 +581,14 @@ class PeptideVariantGraph():
                     traversal.stage(target_node, out_node, cur)
                 return
 
+            start_gain = []
             if target_node.variants and not self.cds_start_nf:
-                start_index = target_node.seq.seq.find('M')
+                start_index = target_node.seq.get_query_index(
+                    traversal.known_orf_aa[0])
+                if start_index == -1:
+                    start_index = target_node.seq.seq.find('M')
+                if start_index > -1:
+                    start_gain = target_node.get_variants_at(start_index)
             else:
                 start_index = target_node.seq.get_query_index(
                     traversal.known_orf_aa[0])
@@ -607,7 +619,7 @@ class PeptideVariantGraph():
                     miscleavage=traversal.miscleavage,
                     check_variants=traversal.check_variants,
                     is_start_codon=True,
-                    additional_variants=[]
+                    additional_variants=start_gain
                 )
                 for out_node in target_node.out_nodes:
                     if out_node is not self.stop:
@@ -693,6 +705,8 @@ class PeptideVariantGraph():
                 x = target_node.seq.seq[stop_index+1:].find('*')
                 stop_index = x + stop_index + 1 if x > -1 else x
 
+        cleavage_gain = target_node.get_cleavage_gain_variants()
+
         for out_node in target_node.out_nodes:
             if out_node is not self.stop:
                 out_node.orf = orf
@@ -702,7 +716,7 @@ class PeptideVariantGraph():
                     elif last_start_index > -1:
                         # carry over variants from the target node to the next
                         # node if a start codon is found.
-                        start_gain = target_node.get_variant_at(
+                        start_gain = target_node.get_variants_at(
                             start=last_start_index,
                             end=min(last_start_index + 3, len(target_node.seq.seq))
                         )
@@ -714,8 +728,10 @@ class PeptideVariantGraph():
                         start_gain = []
 
                 cursor = PVGCursor(target_node, out_node, in_cds, orf,
-                    start_gain)
+                    start_gain, cleavage_gain)
                 traversal.stage(target_node, out_node, cursor)
+
+        additional_variants = start_gain + cursor.cleavage_gain
 
         for node, orf, is_start_codon in node_list:
             traversal.pool.add_miscleaved_sequences(
@@ -724,7 +740,7 @@ class PeptideVariantGraph():
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 is_start_codon=is_start_codon,
-                additional_variants=start_gain
+                additional_variants=additional_variants
             )
         for node in trash:
             self.remove_node(node)
@@ -732,12 +748,14 @@ class PeptideVariantGraph():
 class PVGCursor():
     """ Helper class for cursors when graph traversal to call peptides. """
     def __init__(self, in_node:PVGNode, out_node:PVGNode, in_cds:bool,
-            orf:List[int,int], start_gain:List[seqvar.VariantRecord]):
+            orf:List[int,int]=None, start_gain:List[seqvar.VariantRecord]=None,
+            cleavage_gain:List[seqvar.VariantRecord]=None):
         """ constructor """
         self.in_node = in_node
         self.out_node = out_node
         self.in_cds = in_cds
-        self.start_gain = start_gain
+        self.start_gain = start_gain or []
+        self.cleavage_gain = cleavage_gain or []
         self.orf = orf or [None, None]
 
 class PVGTraversal():

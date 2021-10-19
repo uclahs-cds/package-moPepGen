@@ -1,6 +1,7 @@
 """ Module for CircularVariantGraph, a directed cyclic graph, for circRNA etc.
 """
 from __future__ import annotations
+import copy
 from typing import Dict, Union, List, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import svgraph, seqvar
@@ -85,7 +86,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                 continue
             for location in self.seq.locations:
                 if variant.location.start > location.ref.start + 3 and \
-                    variant.location.end < location.ref.end:
+                        variant.location.end < location.ref.end:
                     filtered_variants.append(variant)
                     break
         super().create_variant_graph(filtered_variants, None, None, None)
@@ -112,6 +113,8 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                 raise ValueError('CVG should not have any start altering mutation')
             head = list(root.out_edges)[0].out_node
             end_node = frame_map[self.reading_frames[head.reading_frame_index]]
+            for _edge in copy.copy(head.in_edges):
+                self.remove_edge(_edge)
             self.add_edge(end_node, head, 'reference')
 
     def truncate_three_frames(self):

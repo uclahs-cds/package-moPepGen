@@ -62,6 +62,7 @@ class TranscriptAnnotationModel():
         """ Returns the CDS start index of the transcript """
         cds_start = 0
         if self.transcript.strand == 1:
+            cds_frame = self.cds[0].frame
             for exon in self.exon:
                 if self.cds[0].location.start not in exon:
                     cds_start += len(exon)
@@ -69,6 +70,7 @@ class TranscriptAnnotationModel():
                 cds_start += (self.cds[0].location.start - exon.location.start)
                 break
         elif self.transcript.strand == -1:
+            cds_frame = self.cds[-1].frame or 0
             for exon in reversed(self.exon):
                 if self.cds[-1].location.end != exon.location.end and \
                         self.cds[-1].location.end not in exon:
@@ -78,7 +80,7 @@ class TranscriptAnnotationModel():
                 break
         else:
             raise ValueError('Strand must not be unknown.')
-        return cds_start
+        return cds_start + cds_frame
 
     def get_cds_end_index(self) -> int:
         """ Returns the CDS stop index of the transcript. """

@@ -51,12 +51,15 @@ class GtfIterator(SequenceIterator):
                 end=int(fields[4])
             )
 
+            frame = None if fields[7] == '.' else int(fields[7])
+
             record = GTFSeqFeature(
                 chrom=fields[0],
                 attributes=attributes,
                 location=location,
                 type=fields[2],
-                strand=strand
+                strand=strand,
+                frame=frame
             )
             yield record
 
@@ -81,10 +84,10 @@ def to_gtf_record(record:GTFSeqFeature) -> str:
                 attrs += f" {key} {vali};"
         else:
             attrs += f" {key} {val};"
-
+    frame = '.' if record.frame is None else str(record.frame)
     record_data = [
         record.chrom, '.', record.type, str(int(record.location.start)+1),
-        str(int(record.location.end)), '.', strand, '0', attrs
+        str(int(record.location.end)), '.', strand, frame, attrs
     ]
     return '\t'.join(record_data)
 
