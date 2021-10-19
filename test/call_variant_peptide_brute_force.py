@@ -89,9 +89,11 @@ def main(args):
     tx_model = anno.transcripts[tx_id]
     tx_seq = tx_model.get_transcript_sequence(genome['chr1'])
 
-    canonical_peptides = tx_seq[tx_seq.orf.start:].translate(to_stop=True)\
+    tx_peptides = tx_seq[tx_seq.orf.start:].translate(to_stop=True)\
         .enzymatic_cleave('trypsin', 'trypsin_exception')
-    canonical_peptides = {str(peptide.seq) for peptide in canonical_peptides}
+    canonical_peptides = {str(peptide.seq) for peptide in tx_peptides}
+    if tx_peptides[0].seq.startswith('M'):
+        canonical_peptides.add(str(tx_peptides[0].seq[1:]))
     variant_peptides = set()
 
     for i in range(len(variants)):
