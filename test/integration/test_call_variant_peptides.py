@@ -215,6 +215,6 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Reported in issue #171 """
         gvf = self.data_dir/'vep/CPCG0190_indel_ENST00000281589.4.gvf'
         expected = self.data_dir \
-            /'vep/CPCG0190_indel_ENST00000281589.4_expected.gvf'
+            /'vep/CPCG0190_indel_ENST00000281589.4_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000281589.4'
         self.default_test_case(gvf, reference, expected)
