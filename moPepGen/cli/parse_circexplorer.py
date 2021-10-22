@@ -72,7 +72,7 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         type=str,
         help='The range of difference allowed between the intron end and'
         ' the reference position. Defaults to -100,2',
-        default='-100,2'
+        default='-100,5'
     )
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
