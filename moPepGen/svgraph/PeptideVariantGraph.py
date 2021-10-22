@@ -101,8 +101,8 @@ class PeptideVariantGraph():
             )
         return first_node if return_first else node
 
-    def find_routes_for_merging(self, node:PVGNode, cleavage:bool=False,
-            cleave_last_nodes:bool=True) -> Set[Tuple[PVGNode]]:
+    def find_routes_for_merging(self, node:PVGNode, cleavage:bool=False
+            ) -> Set[Tuple[PVGNode]]:
         """ Find all start and end nodes for merging.
 
         Args:
@@ -115,7 +115,9 @@ class PeptideVariantGraph():
         for out_node in node.out_nodes:
             if out_node.is_bridge():
                 continue
-            if len(out_node.seq.seq) < 25:
+            is_sharing_downstream = any(any(y is not out_node and y in node.out_nodes \
+                for y in x.in_nodes) for x in out_node.out_nodes if x is not self.stop)
+            if is_sharing_downstream:
                 continue
             site = out_node.seq.find_first_enzymatic_cleave_site(self.rule, self.exception)
             if site > -1:
