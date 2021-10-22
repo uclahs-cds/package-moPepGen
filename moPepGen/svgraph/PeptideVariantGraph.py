@@ -160,10 +160,13 @@ class PeptideVariantGraph():
 
         for route in routes:
             for i,node in enumerate(route):
+                node_is_bridge = node.is_bridge()
                 if i == 0:
                     new_node = node.copy(in_nodes=False, out_nodes=False)
                 else:
                     new_node.append_right(node)
+                    if node_is_bridge:
+                        new_node.was_bridge = True
                     trash.add((route[i-1], node))
 
             for in_node in route[0].in_nodes:

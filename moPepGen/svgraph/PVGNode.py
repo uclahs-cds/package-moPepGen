@@ -26,7 +26,8 @@ class PVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             frameshifts:Set[seqvar.VariantRecord]=None,
-            cleavage:bool=False, truncated:bool=False, orf:List[int]=None):
+            cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
+            was_bridge:bool=False):
         """ Construct a PVGNode object.
 
         Args:
@@ -50,6 +51,7 @@ class PVGNode():
         self.truncated = truncated
         self.orf = orf or [None, None]
         self.reading_frame_index = reading_frame_index
+        self.was_bridge = was_bridge
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -70,7 +72,8 @@ class PVGNode():
             frameshifts=frameshifts,
             cleavage=self.cleavage,
             orf=self.orf,
-            reading_frame_index=self.reading_frame_index
+            reading_frame_index=self.reading_frame_index,
+            was_bridge=self.was_bridge
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -103,6 +106,8 @@ class PVGNode():
             if node.out_nodes and \
                     node.reading_frame_index != self.reading_frame_index:
                 return True
+        if self.was_bridge:
+            return True
         return False
 
     def has_any_in_bridge(self) -> None:
@@ -256,13 +261,17 @@ class PVGNode():
             seq=right_seq,
             reading_frame_index=self.reading_frame_index,
             variants=right_variants,
-            orf=self.orf
+            orf=self.orf,
+            was_bridge=self.was_bridge
         )
         new_node.frameshifts = copy.copy(self.frameshifts)
         new_node.orf = self.orf
 
         if cleavage:
             new_node.cleavage = True
+
+        # we only keep the last node to be was_bridge
+        self.was_bridge = False
 
         # need to remove the frameshift variant if it is no longer ther after
         # splitting the node.
@@ -296,7 +305,8 @@ class PVGNode():
             seq=right_seq,
             variants=right_variants,
             frameshifts=right_frameshifts,
-            reading_frame_index=self.reading_frame_index
+            reading_frame_index=self.reading_frame_index,
+            was_bridge=self.was_bridge
         )
 
         self.seq = self.seq[:i]
@@ -326,7 +336,8 @@ class PVGNode():
             seq=left_seq,
             variants=left_variants,
             frameshifts=left_frameshifts,
-            reading_frame_index=self.reading_frame_index
+            reading_frame_index=self.reading_frame_index,
+            was_bridge=self.was_bridge
         )
 
         self.seq = self.seq[i:]
@@ -377,7 +388,8 @@ class PVGNode():
             cleavage=self.cleavage,
             truncated=self.truncated,
             orf=self.orf,
-            reading_frame_index=self.reading_frame_index
+            reading_frame_index=self.reading_frame_index,
+            was_bridge=self.was_bridge
         )
 
     def get_nearest_next_ref_index(self) -> int:
