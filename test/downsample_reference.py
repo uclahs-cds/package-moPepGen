@@ -244,9 +244,8 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
                 shift_seq_feature(cds, shift_offset, seqname)
     return genome, anno
 
-def main():
+def main(args):
     """ Downsample reference FASTA and GTF """
-    args = parse_args()
     genome_fasta:Path = args.genome_fasta
     annotation_gtf:Path = args.annotation_gtf
     protein_fasta:Path = args.protein_fasta
@@ -273,4 +272,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    _args = parse_args()
+    main(_args)
