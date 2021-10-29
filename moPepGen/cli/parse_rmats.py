@@ -98,8 +98,13 @@ def parse_rmats(args:argparse.Namespace) -> None:
     ]
     for event_type, path in rmats_outputs:
         if path:
+            logger(f"Start parsing {event_type} file {path}")
             for record in RMATSParser.parse(path, event_type):
-                var_records = record.convert_to_variant_records(anno, genome)
+                try:
+                    var_records = record.convert_to_variant_records(anno, genome)
+                except:
+                    logger(record.gene_id)
+                    raise
                 for var_record in var_records:
                     transcript_id = var_record.location.seqname
                     if transcript_id not in variants:

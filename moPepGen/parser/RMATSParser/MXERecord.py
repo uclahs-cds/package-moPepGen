@@ -101,24 +101,24 @@ class MXERecord(RMATSRecord):
             first_start = anno.coordinate_genomic_to_gene(
                 self.first_exon_start, self.gene_id)
             first_end = anno.coordinate_genomic_to_gene(
-                self.first_exon_end, self.gene_id)
+                self.first_exon_end - 1, self.gene_id) + 1
             second_start = anno.coordinate_genomic_to_gene(
                 self.second_exon_start, self.gene_id)
             second_end = anno.coordinate_genomic_to_gene(
-                self.second_exon_end, self.gene_id)
+                self.second_exon_end - 1, self.gene_id) + 1
             first_genomic_position = f'{chrom}:{self.first_exon_start + 1}'+\
                 f'-{self.first_exon_end}'
             second_genomic_position = f'{chrom}:{self.second_exon_start + 1}'+\
                 f'-{self.second_exon_end}'
         else:
             first_start = anno.coordinate_genomic_to_gene(
-                self.second_exon_end, self.gene_id)
+                self.second_exon_end - 1, self.gene_id)
             first_end = anno.coordinate_genomic_to_gene(
-                self.second_exon_start, self.gene_id)
+                self.second_exon_start, self.gene_id) + 1
             second_start = anno.coordinate_genomic_to_gene(
-                self.first_exon_end, self.gene_id)
+                self.first_exon_end - 1, self.gene_id)
             second_end = anno.coordinate_genomic_to_gene(
-                self.first_exon_start, self.gene_id)
+                self.first_exon_start, self.gene_id) + 1
             second_genomic_position = f'{chrom}:{self.first_exon_start + 1}'+\
                 f'-{self.first_exon_end}'
             first_genomic_position = f'{chrom}:{self.second_exon_end + 1}'+\
@@ -131,8 +131,7 @@ class MXERecord(RMATSRecord):
             for tx_id in have_first:
                 location = FeatureLocation(seqname=self.gene_id, start=first_start,
                     end=first_end)
-                seq = model.get_transcript_sequence(genome[chrom])
-                ref = str(seq.seq[first_start])
+                ref = str(gene_seq.seq[first_start])
                 alt = '<SUB>'
                 attrs = {
                     'GENE_ID': tx_id,
