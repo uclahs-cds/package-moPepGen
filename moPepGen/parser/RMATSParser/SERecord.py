@@ -87,9 +87,6 @@ class SERecord(RMATSRecord):
         location = FeatureLocation(seqname=self.gene_id, start=start, end=end)
         ref = str(gene_seq.seq[start])
 
-        if anno.genes[self.gene_id].location.strand == -1:
-            start, end = end, start
-
         genomic_position = f'{chrom}:{self.exon_start+1}:{self.exon_end}'
 
         if not skipped:

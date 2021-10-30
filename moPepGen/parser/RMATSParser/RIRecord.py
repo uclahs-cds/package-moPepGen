@@ -76,13 +76,13 @@ class RIRecord(RMATSRecord):
         genomic_position = f'{chrom}:{self.upstream_exon_end}-{self.downstream_exon_start}'
 
         for tx_id in have_adjacent:
-            location = FeatureLocation(seqname=self.gene_id, start=start_gene,
-                end=start_gene + 1)
+            location = FeatureLocation(seqname=self.gene_id, start=start_gene - 1,
+                end=start_gene)
             ref = str(gene_seq.seq[start_gene])
             alt = '<INS>'
             attrs = {
                 'TRANSCRIPT_ID': tx_id,
-                'DONOR_START': start_gene,
+                'DONOR_START': start_gene - 1,
                 'DONOR_END': end_gene,
                 'DONOR_GENE_ID': self.gene_id,
                 'COORDINATE': 'gene',

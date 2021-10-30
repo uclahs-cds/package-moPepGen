@@ -75,9 +75,9 @@ class A5SSRecord(RMATSRecord):
 
         if anno.genes[self.gene_id].location.strand == 1:
             start_gene = anno.coordinate_genomic_to_gene(self.short_exon_end - 1,
-                self.gene_id)
+                self.gene_id) + 1
             end_gene = anno.coordinate_genomic_to_gene(self.long_exon_end - 1,
-                self.gene_id)
+                self.gene_id) + 1
             genomic_position = f'{chrom}:{self.short_exon_end+1}-{self.long_exon_end}'
         else:
             start_gene = anno.coordinate_genomic_to_gene(self.short_exon_start,

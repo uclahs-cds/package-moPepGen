@@ -216,7 +216,7 @@ def create_gene_model(data:dict) -> gtf.GeneAnnotationModel:
     chrom = data['chrom']
     strand = data['strand']
     entry = data['gene']
-    location = FeatureLocation(start=entry[0], end=entry[1])
+    location = FeatureLocation(start=entry[0], end=entry[1], seqname=chrom)
     return gtf.GeneAnnotationModel(chrom=chrom, location=location,
         attributes=entry[2], strand=strand, transcripts=data['transcripts'])
 
