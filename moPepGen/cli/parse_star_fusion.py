@@ -25,14 +25,14 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
         '-f', '--fusion',
         type=str,
         help="Path to the STAR-Fusion's output file.",
-        metavar='',
+        metavar='<file>',
         required=True
     )
     p.add_argument(
         '-o', '--output-prefix',
         type=str,
         help='Prefix to the output filename.',
-        metavar='',
+        metavar='<value>',
         required=True
     )
     p.add_argument(
@@ -40,7 +40,7 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
         help='Minimal estimated junction reads. Defaults to 5.0',
         type=float,
         default=5.0,
-        metavar=''
+        metavar='<number>'
     )
     add_args_source(p)
     add_args_reference(p, proteome=False)

@@ -27,7 +27,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         '--skipped-exon',
         type=Path,
         help="Skipped exon junction count txt file.",
-        metavar='',
+        metavar='<file>',
         default=None,
         dest='skipped_exon'
     )
@@ -35,7 +35,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         '--alternative-5-splicing',
         type=Path,
         help="Alternative 5' splicing junction count txt file.",
-        metavar='',
+        metavar='<file>',
         default=None,
         dest='alternative_5_splicing'
     )
@@ -43,7 +43,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         '--alternative-3-splicing',
         type=Path,
         help="Alternative 3' splicing junction count txt file.",
-        metavar='',
+        metavar='<file>',
         default=None,
         dest='alternative_3_splicing'
     )
@@ -51,7 +51,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         '--mutually-exclusive-exons',
         type=Path,
         help="Mutually exclusive junction count txt file.",
-        metavar='',
+        metavar='<file>',
         default=None,
         dest='mutually_exclusive_exons'
     )
@@ -59,7 +59,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         '--retained-intron',
         type=Path,
         help="Retained intron junction count txt file.",
-        metavar='',
+        metavar='<file>',
         default=None,
         dest='retained_intron'
     )
@@ -68,7 +68,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         '-o', '--output-prefix',
         type=str,
         help='Prefix to the output filename.',
-        metavar=''
+        metavar='<value>'
     )
 
     add_args_source(p)

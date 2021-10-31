@@ -24,7 +24,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         '-t', '--reditools-table',
         type=str,
         help='Path to the REDItools output table.',
-        metavar='',
+        metavar='<file>',
         required=True
     )
     p.add_argument(
@@ -34,13 +34,13 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         'not contains it, use the AnnotateTable.py from the REDItools'
         'package. Defaults to 16',
         default=16,
-        metavar=''
+        metavar='<number>'
     )
     p.add_argument(
         '-o', '--output-prefix',
         type=str,
         help='Prefix to the output filename.',
-        metavar='',
+        metavar='<value>',
         required=True
     )
     add_args_source(p)

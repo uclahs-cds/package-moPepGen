@@ -38,14 +38,14 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         type=Path,
         nargs='+',
         help='Path to VEP result txt file.',
-        metavar='',
+        metavar='<file>',
         required=True
     )
     p.add_argument(
         '-o', '--output-prefix',
         type=str,
         help='Prefix to the output filename.',
-        metavar='',
+        metavar='<value>',
         required=True
     )
     add_args_source(p)
