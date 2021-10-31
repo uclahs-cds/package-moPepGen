@@ -23,7 +23,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
         '-o', '--output-dir',
         type=str,
         help='Ouput directory for index files.',
-        metavar='',
+        metavar='<file>',
         dest='output_dir',
         required=True
     )
