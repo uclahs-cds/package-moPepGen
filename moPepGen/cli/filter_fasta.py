@@ -78,6 +78,7 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     add_args_verbose(p)
     print_help_if_missing_args(p)
     p.set_defaults(func=filter_fasta)
+    return p
 
 def filter_fasta(args:argparse.Namespace) -> None:
     """ Filter noncanonical peptide FASTA """

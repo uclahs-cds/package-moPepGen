@@ -79,6 +79,7 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     add_args_verbose(p)
     p.set_defaults(func=parse_circexplorer)
     print_help_if_missing_args(p)
+    return p
 
 def parse_circexplorer(args:argparse.Namespace):
     """ Parse circexplorer known circRNA results. """

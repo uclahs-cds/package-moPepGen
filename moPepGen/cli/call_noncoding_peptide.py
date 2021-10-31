@@ -58,6 +58,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
 
     p.set_defaults(func=call_noncoding_peptide)
     print_help_if_missing_args(p)
+    return p
 
 def call_noncoding_peptide(args:argparse.Namespace) -> None:
     """ Main entry poitn for calling noncoding peptide """

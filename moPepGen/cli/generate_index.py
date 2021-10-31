@@ -32,6 +32,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     add_args_verbose(p)
     p.set_defaults(func=generate_index)
     print_help_if_missing_args(p)
+    return p
 
 
 def generate_index(args:argparse.Namespace):

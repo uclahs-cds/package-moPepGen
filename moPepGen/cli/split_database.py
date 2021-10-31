@@ -71,6 +71,7 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
     add_args_verbose(p)
     print_help_if_missing_args(p)
     p.set_defaults(func=split_database)
+    return p
 
 def split_database(args:argparse.Namespace) -> None:
     """ Split peptide database """

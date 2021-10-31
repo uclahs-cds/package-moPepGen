@@ -76,6 +76,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     add_args_verbose(p)
     p.set_defaults(func=parse_rmats)
     print_help_if_missing_args(p)
+    return p
 
 def parse_rmats(args:argparse.Namespace) -> None:
     """ Parse rMATS results into TSV """

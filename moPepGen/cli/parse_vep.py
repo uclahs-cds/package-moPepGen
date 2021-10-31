@@ -1,4 +1,10 @@
-""" VEP2VariantPeptides module """
+"""
+The `parseVEP` subcommand takes the output of Ensembl's [Variant Effector
+Predictor](https://uswest.ensembl.org/info/docs/tools/vep/index.html) (VEP) and
+convert it into the GVF file format that moPepGen internally uses. The result
+VEP file can then be parsed to moPepGen's `callVariant` subcommand to call for
+variant peptide sequences.
+"""
 from __future__ import annotations
 from typing import Dict, List, TYPE_CHECKING
 from pathlib import Path
@@ -18,7 +24,7 @@ if TYPE_CHECKING:
 def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen parseVEP """
 
-    p = subparsers.add_parser(
+    p:argparse.ArgumentParser = subparsers.add_parser(
         name='parseVEP',
         help='Parse VEP output for moPepGen to call variant peptides.',
         description="Parse VEP output tsv to the GVF format of variant records"
@@ -47,6 +53,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     add_args_verbose(p)
     p.set_defaults(func=parse_vep)
     print_help_if_missing_args(p)
+    return p
 
 def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """
@@ -96,7 +103,6 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     if args.verbose:
         logger('Variant info written to disk.')
-
 
 if __name__ == '__main__':
     import argparse

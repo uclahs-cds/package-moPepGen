@@ -51,6 +51,7 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
     add_args_verbose(p)
     p.set_defaults(func=parse_fusion_catcher)
     print_help_if_missing_args(p)
+    return p
 
 def parse_fusion_catcher(args:argparse.Namespace) -> None:
     """ Parse FusionCatcher output and save it in GVF format. """

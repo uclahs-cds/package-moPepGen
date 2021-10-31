@@ -48,6 +48,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
     add_args_verbose(p)
     p.set_defaults(func=parse_reditools)
     print_help_if_missing_args(p)
+    return p
 
 def parse_reditools(args:argparse.Namespace) -> None:
     """ Parse REDItools output and save it in the GVF format. """

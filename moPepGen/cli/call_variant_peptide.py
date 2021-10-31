@@ -46,6 +46,7 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
 
     p.set_defaults(func=call_variant_peptide)
     print_help_if_missing_args(p)
+    return p
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
     """ Main entry point for calling variant peptide """

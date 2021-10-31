@@ -47,6 +47,7 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     add_args_verbose(p)
     p.set_defaults(func=parse_star_fusion)
     print_help_if_missing_args(p)
+    return p
 
 def parse_star_fusion(args:argparse.Namespace) -> None:
     """ Parse the STAR-Fusion's output and save it in GVF format. """
