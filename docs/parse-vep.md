@@ -14,3 +14,5 @@
 ```
 {{ parse_vep_help(command) }}
 ```
+
+{{ macros_info() }}
