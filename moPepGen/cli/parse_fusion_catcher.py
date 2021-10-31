@@ -22,21 +22,21 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
         '-f', '--fusion',
         type=Path,
         help="Path to the FusionCatcher's output file.",
-        metavar='',
+        metavar='<file>',
         required=True
     )
     p.add_argument(
         '-o', '--output-prefix',
         type=str,
         help='Prefix to the output filename.',
-        metavar='',
+        metavar='<value>',
         required=True
     )
     p.add_argument(
         '--max-common-mapping',
         type=int,
         help='Maximal number of common mapping reads. Defaults to 0',
-        metavar='',
+        metavar='<number>',
         default=0
     )
     p.add_argument(
@@ -44,7 +44,7 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
         help='Minimal spanning unique reads. Defaults to 5',
         type=int,
         default=5,
-        metavar=''
+        metavar='<number>'
     )
     add_args_source(p)
     add_args_reference(p, proteome=False)

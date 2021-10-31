@@ -27,28 +27,28 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         '-t', '--min-tx-length',
         type=int,
         help='Minimal transcript length.',
-        metavar='',
+        metavar='<number>',
         default=21
     )
     p.add_argument(
         '-i', '--inclusion-biotypes',
         type=Path,
         help='Inclusion biotype list.',
-        metavar='',
+        metavar='<file>',
         default=None
     )
     p.add_argument(
         '-e', '--exclusion-biotypes',
         type=Path,
         help='Exclusion biotype list.',
-        metavar='',
+        metavar='<file>',
         default=None
     )
     p.add_argument(
         '-o', '--output-prefix',
         type=Path,
         help='File prefix for the output FASTA.',
-        metavar='',
+        metavar='<value>',
         required=True
     )
 

@@ -69,14 +69,14 @@ def add_args_cleavage(parser:argparse.ArgumentParser):
         type=str,
         help='Cleavage rule. Defaults to trypsin. Defaults to trypsin',
         default='trypsin',
-        metavar=''
+        metavar='<value>'
     )
     group.add_argument(
         '-m', '--miscleavage',
         type=int,
         help='Number of cleavages to allow. Defaults to 2',
         default=2,
-        metavar=''
+        metavar='<number>'
     )
     group.add_argument(
         '-w', '--min-mw',
@@ -84,7 +84,7 @@ def add_args_cleavage(parser:argparse.ArgumentParser):
         help='The minimal molecular weight of the non-canonical peptides.'
         'Defaults to 500',
         default=500.,
-        metavar=''
+        metavar='<number>'
     )
     group.add_argument(
         '-l', '--min-length',
@@ -92,7 +92,7 @@ def add_args_cleavage(parser:argparse.ArgumentParser):
         help='The minimal length of non-canonical peptides, inclusive.'
         'Defaults to 7',
         default=7,
-        metavar=''
+        metavar='<number>'
     )
     group.add_argument(
         '-x', '--max-length',
@@ -100,7 +100,7 @@ def add_args_cleavage(parser:argparse.ArgumentParser):
         help='The maximum length of non-canonical peptides, inclusive.'
         'Defaults to 25',
         default=25,
-        metavar=''
+        metavar='<number>'
     )
 
 def add_args_verbose(parser:argparse.ArgumentParser):
@@ -109,7 +109,6 @@ def add_args_verbose(parser:argparse.ArgumentParser):
         '-v', '--verbose',
         type=bool,
         help='Verbose',
-        metavar='',
         default=True
     )
 
