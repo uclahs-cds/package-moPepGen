@@ -17,9 +17,9 @@ jobs:
 
       - name: Create a requirement.txt
         run: |
-          echo 'mkdocs' > requirements.txt
-          echo 'mkdocstrings' >> requirements.txt
-          echo 'mkdocs-macros-plugin' >> requirements.txt
+          echo 'mkdocs==1.2.3' > requirements.txt
+          echo 'mkdocstrings==0.16.2' >> requirements.txt
+          echo 'mkdocs-macros-plugin==0.6.0' >> requirements.txt
           echo '.' >> requirements.txt
 
       - name: Deploy docs
