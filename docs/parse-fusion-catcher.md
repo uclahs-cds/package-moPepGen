@@ -1,7 +1,7 @@
 {% set command = 'parseFusionCatcher' %}
 # {{ command }}
 
-::: moPepGen.cli.call_variant_peptide
+::: moPepGen.cli.parse_fusion_catcher
 	handler: python
     selection:
       members: false

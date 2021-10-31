@@ -1,7 +1,7 @@
 {% set command = 'parseREDItools' %}
 # {{ command }}
 
-::: moPepGen.cli.call_variant_peptide
+::: moPepGen.cli.parse_reditools
 	handler: python
     selection:
       members: false

@@ -1,7 +1,7 @@
 {% set command = 'parseCIRCexplorer' %}
 # {{ command }}
 
-::: moPepGen.cli.call_variant_peptide
+::: moPepGen.cli.parse_circexplorer
 	handler: python
     selection:
       members: false

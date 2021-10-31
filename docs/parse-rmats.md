@@ -1,7 +1,7 @@
 {% set command = 'parseRMATS' %}
 # {{ command }}
 
-::: moPepGen.cli.call_variant_peptide
+::: moPepGen.cli.parse_rmats
 	handler: python
     selection:
       members: false

@@ -1,7 +1,7 @@
 {% set command = 'generateIndex' %}
 # {{ command }}
 
-::: moPepGen.cli.call_variant_peptide
+::: moPepGen.cli.generate_index
 	handler: python
     selection:
       members: false
