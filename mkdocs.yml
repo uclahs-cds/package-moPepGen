@@ -25,7 +25,8 @@ plugins:
         handlers:
             python:
                 docstring_stype: google
-    - macros
+    - macros:
+        verbose: true
 markdown_extensions:
   - tables
   - admonition
