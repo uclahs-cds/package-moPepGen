@@ -20,7 +20,7 @@ jobs:
           echo 'mkdocs' > requirements.txt
           echo 'mkdocstrings' >> requirements.txt
           echo 'mkdocs-macros-plugin' >> requirements.txt
-          pip install .
+          echo '.' >> requirements.txt
 
       - name: Deploy docs
         uses: mhausenblas/mkdocs-deploy-gh-pages@nomaterial
