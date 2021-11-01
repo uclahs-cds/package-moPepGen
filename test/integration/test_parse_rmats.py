@@ -30,7 +30,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_1.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.location.start, 323)
         self.assertTrue(record.id, 'SE_324')
         self.assertTrue(int(record.attrs['START']), 323)
@@ -43,7 +43,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_2.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.location.start, 870)
         self.assertTrue(record.id, 'SE_870')
         self.assertTrue(int(record.attrs['DONOR_START']), 870)
@@ -56,7 +56,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.alternative_5_splicing = self.data_dir/'alternative_splicing/rmats_a5ss_case_1.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Deletion')
 
     def test_parse_rmats_a5ss_case_2(self):
@@ -65,7 +65,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.alternative_5_splicing = self.data_dir/'alternative_splicing/rmats_a5ss_case_2.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Insertion')
 
     def test_parse_rmats_a3ss_case_1(self):
@@ -74,7 +74,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.alternative_3_splicing = self.data_dir/'alternative_splicing/rmats_a3ss_case_1.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Deletion')
 
     def test_parse_rmats_a3ss_case_2(self):
@@ -83,7 +83,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.alternative_3_splicing = self.data_dir/'alternative_splicing/rmats_a3ss_case_2.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Insertion')
 
     def test_parse_rmats_mxe_case_1(self):
@@ -92,7 +92,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_1.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))[0]
+        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Substitution')
 
     def test_parse_rmats_mxe_case_2(self):
@@ -101,7 +101,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_2.txt'
         cli.parse_rmats(args)
-        records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
+        records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
         self.assertTrue(len(records), 2)
         for record in records:
             self.assertEqual(record.type, 'Deletion')
@@ -111,7 +111,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.retained_intron = self.data_dir/'alternative_splicing/rmats_ri_case_1.txt'
         cli.parse_rmats(args)
-        records = list(seqvar.io.parse(f'{args.output_prefix}.tvf'))
+        records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
         self.assertTrue(len(records), 2)
         for record in records:
             self.assertEqual(record.type, 'Insertion')
