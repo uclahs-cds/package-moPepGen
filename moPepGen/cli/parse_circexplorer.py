@@ -97,7 +97,7 @@ def parse_circexplorer(args:argparse.Namespace):
 
     for record in CIRCexplorerParser.parse(input_path, args.circexplorer3):
         if not args.circexplorer3:
-            if record.is_valid(args.min_read_number):
+            if not record.is_valid(args.min_read_number):
                 continue
         elif not record.is_valid(args.min_read_number, args.min_fbr_circ, \
                 args.min_circ_score):
