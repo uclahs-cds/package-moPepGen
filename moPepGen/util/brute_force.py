@@ -5,44 +5,27 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
 from moPepGen import seqvar, aa, gtf, dna
+from moPepGen.cli.common import add_args_reference, add_args_cleavage, \
+    print_help_if_missing_args
 
 
-def parse_args():
-    """ parse command line argments """
-    parser = argparse.ArgumentParser()
+# pylint: disable=W0212
+def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
+    """ parse command line arguments """
+    parser:argparse.ArgumentParser = subparsers.add_parser(
+        name='bruteForce',
+        help='Call variant peptide with the brute force algorithm.'
+    )
     parser.add_argument(
         '-i', '--input-gvf',
         type=Path,
         help='GVF file'
     )
-    parser.add_argument(
-        '-r', '--reference-dir',
-        type=Path,
-        help='Index directory'
-    )
-    parser.add_argument(
-        '-c', '--cleavage-rule',
-        type=str,
-        help='Cleavage rule. Defaults to trypsin.',
-        default='trypsin',
-        metavar=''
-    )
-    parser.add_argument(
-        '-m', '--miscleavage',
-        type=int,
-        help='Number of cleavages to allow. Defaults to 2.',
-        metavar='',
-        default=2
-    )
-    parser.add_argument(
-        '-w', '--min-mw',
-        type=float,
-        help='The minimal molecular weight of the non-canonical peptides.'
-        'Defaults to 500',
-        default=500.,
-        metavar=''
-    )
-    return parser.parse_args()
+    add_args_reference(parser)
+    add_args_cleavage(parser)
+    parser.set_defaults(func=brute_force)
+    print_help_if_missing_args(parser)
+    return parser
 
 def _parse_exclusion(exclusion) -> Tuple:
     """ Parse exclusion to values """
@@ -60,7 +43,7 @@ def parse_variant_exclusion(exclusions:List[str]) -> Dict[Tuple,List[Tuple]]:
         groups[variant] = targets
     return groups
 
-def main(args):
+def brute_force(args):
     """ main """
 
     anno = gtf.GenomicAnnotation()
@@ -130,8 +113,3 @@ def main(args):
     variant_peptides.sort()
     for peptide in variant_peptides:
         print(peptide, file=sys.stdout)
-
-
-if __name__ == '__main__':
-    _args = parse_args()
-    main(_args)

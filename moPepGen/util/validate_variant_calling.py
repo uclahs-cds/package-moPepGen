@@ -2,17 +2,21 @@
 import argparse
 from contextlib import redirect_stdout
 from pathlib import Path
-from test.downsample_reference import main as downsample_reference
-from test.call_variant_peptide_brute_force import main as brute_force
 from Bio import SeqIO
-from moPepGen.cli.common import add_args_reference
+from moPepGen.cli.common import add_args_reference, print_help_if_missing_args
 from moPepGen.cli import call_variant_peptide
 from moPepGen import logger
+from moPepGen.util import downsample_reference, brute_force
 
 
-def parse_args():
+# pylint: disable=W0212
+def add_subparser_validate_variant_callilng(subparsers:argparse._SubParsersAction):
     """ parse args """
-    parser = argparse.ArgumentParser()
+    parser:argparse.ArgumentParser = subparsers.add_parser(
+        name='validateVariantCalling',
+        help='Validate the varaint peptide calling result of the graph-based'
+        ' algorithm with the brute force algorithm.'
+    )
     parser.add_argument(
         '-i', '--input-gvf',
         type=Path,
@@ -29,7 +33,9 @@ def parse_args():
         help='Output dir'
     )
     add_args_reference(parser, proteome=True, index=False)
-    return parser.parse_args()
+    parser.set_defaults(func=validate_variant_calling)
+    print_help_if_missing_args(parser)
+    return parser
 
 def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
         output_dir:Path):
@@ -108,7 +114,7 @@ def assert_equal(variant_fasta:Path, brute_force_txt:Path):
     else:
         logger('Equal!')
 
-def main(args:argparse.Namespace):
+def validate_variant_calling(args:argparse.Namespace):
     """ main entrypoint """
     output_dir:Path = args.output_dir
     ref_dir = output_dir/'index'
@@ -150,7 +156,3 @@ def main(args:argparse.Namespace):
     logger('Brute force completed.')
 
     assert_equal(variant_fasta, brute_force_txt)
-
-if __name__ == '__main__':
-    _args = parse_args()
-    main(_args)
