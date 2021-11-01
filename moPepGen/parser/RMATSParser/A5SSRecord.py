@@ -74,10 +74,10 @@ class A5SSRecord(RMATSRecord):
             return variants
 
         if anno.genes[self.gene_id].location.strand == 1:
-            start_gene = anno.coordinate_genomic_to_gene(self.short_exon_end,
-                self.gene_id)
-            end_gene = anno.coordinate_genomic_to_gene(self.long_exon_end,
-                self.gene_id)
+            start_gene = anno.coordinate_genomic_to_gene(self.short_exon_end - 1,
+                self.gene_id) + 1
+            end_gene = anno.coordinate_genomic_to_gene(self.long_exon_end - 1,
+                self.gene_id) + 1
             genomic_position = f'{chrom}:{self.short_exon_end+1}-{self.long_exon_end}'
         else:
             start_gene = anno.coordinate_genomic_to_gene(self.short_exon_start,
@@ -105,14 +105,7 @@ class A5SSRecord(RMATSRecord):
                 variants.append(record)
 
         if not long:
-            if model.transcript.location.strand == 1:
-                insert_position = anno.coordinate_genomic_to_gene(
-                    self.short_exon_end, self.gene_id
-                )
-            else:
-                insert_position = anno.coordinate_genomic_to_gene(
-                    self.short_exon_start, self.gene_id
-                )
+            insert_position = start_gene
             for tx_id in short:
                 location = FeatureLocation(
                     seqname=self.gene_id,

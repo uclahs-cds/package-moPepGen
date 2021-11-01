@@ -80,12 +80,12 @@ class SERecord(RMATSRecord):
             return variants
 
         start = anno.coordinate_genomic_to_gene(self.exon_start, self.gene_id)
-        end = anno.coordinate_genomic_to_gene(self.exon_end, self.gene_id)
+        end = anno.coordinate_genomic_to_gene(self.exon_end - 1, self.gene_id)
+        if gene_model.strand == -1:
+            start, end = end, start
+        end += 1
         location = FeatureLocation(seqname=self.gene_id, start=start, end=end)
         ref = str(gene_seq.seq[start])
-
-        if anno.genes[self.gene_id].location.strand == -1:
-            start, end = end, start
 
         genomic_position = f'{chrom}:{self.exon_start+1}:{self.exon_end}'
 

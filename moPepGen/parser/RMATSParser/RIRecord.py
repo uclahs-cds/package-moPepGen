@@ -67,21 +67,22 @@ class RIRecord(RMATSRecord):
         start_gene = anno.coordinate_genomic_to_gene(
             self.upstream_exon_end, self.gene_id)
         end_gene = anno.coordinate_genomic_to_gene(
-            self.downstream_exon_start, self.gene_id)
+            self.downstream_exon_start - 1, self.gene_id)
 
         if gene_model.location.strand == -1:
             start_gene, end_gene = end_gene, start_gene
+        end_gene += 1
 
         genomic_position = f'{chrom}:{self.upstream_exon_end}-{self.downstream_exon_start}'
 
         for tx_id in have_adjacent:
-            location = FeatureLocation(seqname=self.gene_id, start=start_gene,
-                end=start_gene + 1)
+            location = FeatureLocation(seqname=self.gene_id, start=start_gene - 1,
+                end=start_gene)
             ref = str(gene_seq.seq[start_gene])
             alt = '<INS>'
             attrs = {
                 'TRANSCRIPT_ID': tx_id,
-                'DONOR_START': start_gene,
+                'DONOR_START': start_gene - 1,
                 'DONOR_END': end_gene,
                 'DONOR_GENE_ID': self.gene_id,
                 'COORDINATE': 'gene',
