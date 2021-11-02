@@ -106,7 +106,7 @@ class CIRCexplorer2KnownRecord():
 
     def is_valid(self, min_read_number:int) -> bool:
         """ Check if this is valid CIRCexplorer record """
-        return self.read_number > min_read_number
+        return self.read_number >= min_read_number
 
 class CIRCexplorer3KnownRecord(CIRCexplorer2KnownRecord):
     """ CIRCexplorer3 """
