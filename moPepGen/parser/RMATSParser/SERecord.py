@@ -84,12 +84,12 @@ class SERecord(RMATSRecord):
         if gene_model.strand == -1:
             start, end = end, start
         end += 1
-        location = FeatureLocation(seqname=self.gene_id, start=start, end=end)
         ref = str(gene_seq.seq[start])
 
         genomic_position = f'{chrom}:{self.exon_start+1}:{self.exon_end}'
 
         if not skipped:
+            location = FeatureLocation(seqname=self.gene_id, start=start, end=end)
             for tx_id in retained:
                 alt = '<DEL>'
                 attrs = {
@@ -105,20 +105,19 @@ class SERecord(RMATSRecord):
                 variants.append(record)
 
         if not retained:
-            if gene_model.location.strand == 1:
+            if gene_model.strand == 1:
                 insert_position = anno.coordinate_genomic_to_gene(
-                    self.upstream_exon_end, self.gene_id
+                    index=self.upstream_exon_end - 1,
+                    gene=self.gene_id
                 )
             else:
                 insert_position = anno.coordinate_genomic_to_gene(
-                    self.downstream_exon_start, self.gene_id
+                    index=self.downstream_exon_start,
+                    gene=self.gene_id
                 )
+            location = FeatureLocation(seqname=self.gene_id, start=insert_position,
+                end=insert_position + 1)
             for tx_id in skipped:
-                location = FeatureLocation(
-                    seqname=tx_id,
-                    start=insert_position,
-                    end=insert_position + 1
-                )
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {

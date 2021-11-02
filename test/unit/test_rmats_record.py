@@ -97,6 +97,66 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].attrs['START'], 27)
         self.assertEqual(var_records[0].attrs['END'], 33)
 
+    def test_se_record_has_skipped_pos(self):
+        """ Test SERecord """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        exons:list = anno_data['transcripts'][0]['exon']
+        exons.pop(1)
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = RMATSParser.SERecord(
+            gene_id=gene_id,
+            gene_symbol='CRAP',
+            chrom=chrom,
+            exon_start=17,
+            exon_end=23,
+            upstream_exon_start=5,
+            upstream_exon_end=12,
+            downstream_exon_start=27,
+            downstream_exon_end=35
+        )
+        gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
+        var_records = record.convert_to_variant_records(anno, genome)
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].location.start, 11)
+        self.assertEqual(var_records[0].ref, str(gene_seq.seq[11]))
+        self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].attrs['DONOR_START'], 17)
+        self.assertEqual(var_records[0].attrs['DONOR_END'], 23)
+
+    def test_se_record_has_skipped_neg(self):
+        """ Test SERecord """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        exons:list = anno_data['transcripts'][0]['exon']
+        exons.pop(1)
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = RMATSParser.SERecord(
+            gene_id=gene_id,
+            gene_symbol='CRAP',
+            chrom=chrom,
+            exon_start=17,
+            exon_end=23,
+            upstream_exon_start=5,
+            upstream_exon_end=12,
+            downstream_exon_start=27,
+            downstream_exon_end=35
+        )
+        gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
+        var_records = record.convert_to_variant_records(anno, genome)
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].location.start, 22)
+        self.assertEqual(var_records[0].ref, str(gene_seq.seq[22]))
+        self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].attrs['DONOR_START'], 27)
+        self.assertEqual(var_records[0].attrs['DONOR_END'], 33)
+
     def test_a5ss_record_pos_strand(self):
         """ Test A5SSRecord with pos strand """
         genome = create_dna_record_dict(GENOME_DATA)
@@ -146,6 +206,29 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].location.start, 29)
         self.assertEqual(var_records[0].location.end, 32)
 
+    def test_a5ss_record_has_short(self):
+        """ Test that reference has the short version """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = RMATSParser.A5SSRecord(
+            gene_id=gene_id,
+            gene_symbol='CRAP',
+            chrom=chrom,
+            long_exon_start=17,
+            long_exon_end=25,
+            short_exon_start=17,
+            short_exon_end=23,
+            flanking_exon_start=27,
+            flanking_exon_end=35
+        )
+        var_records = record.convert_to_variant_records(anno, genome)
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].location.start, 22)
+        self.assertEqual(var_records[0].attrs['DONOR_START'], 23)
+        self.assertEqual(var_records[0].attrs['DONOR_END'], 25)
+
     def test_a3ss_record_pos_strand(self):
         """ Test A5SSRecord with pos strand """
         genome = create_dna_record_dict(GENOME_DATA)
@@ -194,6 +277,29 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 27)
         self.assertEqual(var_records[0].location.end, 30)
+
+    def test_a3ss_record_has_short(self):
+        """ Test A5SSRecord with pos strand """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = RMATSParser.A3SSRecord(
+            gene_id=gene_id,
+            gene_symbol='CRAP',
+            chrom=chrom,
+            long_exon_start=15,
+            long_exon_end=23,
+            short_exon_start=17,
+            short_exon_end=23,
+            flanking_exon_start=5,
+            flanking_exon_end=12
+        )
+        var_records = record.convert_to_variant_records(anno, genome)
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].location.start, 11)
+        self.assertEqual(var_records[0].attrs['DONOR_START'], 15)
+        self.assertEqual(var_records[0].attrs['DONOR_END'], 17)
 
     def test_mxe_record_pos_strand(self):
         """ Test A5SSRecord with pos strand """
@@ -273,7 +379,7 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 1)
-        self.assertEqual(var_records[0].attrs['DONOR_START'], 11)
+        self.assertEqual(var_records[0].attrs['DONOR_START'], 12)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 17)
 
     def test_ri_record_neg_strand(self):
@@ -299,5 +405,5 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 1)
-        self.assertEqual(var_records[0].attrs['DONOR_START'], 32)
+        self.assertEqual(var_records[0].attrs['DONOR_START'], 33)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 38)
