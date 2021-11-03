@@ -603,9 +603,15 @@ class PeptideVariantGraph():
                 if start_index > -1:
                     start_gain = target_node.get_variants_at(start_index)
             else:
-                start_index = target_node.seq.get_query_index(
-                    traversal.known_orf_aa[0])
+                has_start_altering = traversal.known_orf_aa[0] == 0 \
+                        and self.root in target_node.in_nodes
+                if has_start_altering:
+                    start_index = 0
+                else:
+                    start_index = target_node.seq.get_query_index(
+                        traversal.known_orf_aa[0])
             if start_index == -1:
+
                 for out_node in target_node.out_nodes:
                     cur = PVGCursor(target_node, out_node, False, orf, [])
                     traversal.stage(target_node, out_node, cur)

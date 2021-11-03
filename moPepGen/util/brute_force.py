@@ -73,6 +73,7 @@ def brute_force(args):
 
     tx_id = list(variant_pool.transcriptional.keys())[0]
     variants = variant_pool.transcriptional[tx_id]
+    variants = [x for x in variants if x.location.start >= 3]
 
     tx_model = anno.transcripts[tx_id]
     tx_seq = tx_model.get_transcript_sequence(genome['chr1'])

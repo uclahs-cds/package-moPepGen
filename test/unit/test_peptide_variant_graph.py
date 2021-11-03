@@ -597,6 +597,29 @@ class TestPeptideVariantGraph(unittest.TestCase):
         expected = {'MRIK', 'RIK'}
         self.assertEqual(seqs, expected)
 
+    def test_call_and_stage_known_orf_cds_start_NF_start_altering(self):
+        """ Test when the transcript is cds_start_NF, and the mutation is
+        start altering.
+        """
+        variant_1 = (4, 5, 'T', 'TCCC', 'INDEL', '8:T-TCCC', 0, 2, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5), (0,5))], 2),
+            2: ('SSSSK', [0], [variant_1], [], 2),
+            3: ('SMSMRK', [1, 2], [None], [((0,6),(5,11))], 2),
+            4: ('SSSPK', [3], [None], [((0,5),(11,16))], 2)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.cds_start_nf = True
+        graph.known_orf = [2,92]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (2,92), (0,30))
+        cursor = PVGCursor(graph.root, nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(pool.peptides), 1)
+        seqs = {str(x.seq) for x in pool.peptides.keys()}
+        expected = {'SSSSK'}
+        self.assertEqual(seqs, expected)
+
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
         """ Test the fit into cleavage for bridge node that needs to be merged
         forward
