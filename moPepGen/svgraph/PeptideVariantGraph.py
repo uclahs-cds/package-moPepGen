@@ -9,6 +9,7 @@ from Bio.Seq import Seq
 from moPepGen import aa, seqvar
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
+from moPepGen.SeqFeature import FeatureLocation
 
 
 T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
@@ -533,121 +534,156 @@ class PeptideVariantGraph():
         """ For a given node in the graph, call miscleavage peptides if it
         is in CDS. For each of its outbond node, stage it until all inbond
         edges of the outbond node is visited. """
+        if cursor.in_cds:
+            self.call_and_stage_known_orf_in_cds(
+                cursor=cursor, traversal=traversal
+            )
+        else:
+            self.call_and_stage_known_orf_not_in_cds(
+                cursor=cursor, traversal=traversal
+            )
+
+    def call_and_stage_known_orf_in_cds(self, cursor:PVGCursor,
+            traversal:PVGTraversal) -> None:
+        """ Kown ORF in CDS branch """
         target_node = cursor.out_node
         in_cds = cursor.in_cds
         orf = cursor.orf
         start_gain = cursor.start_gain
-        if in_cds:
+        node_copy = target_node.copy()
+
+        stop_index = node_copy.seq.seq.find('*')
+
+        if stop_index > -1:
+            node_copy.truncate_right(stop_index)
+            for out_node in copy.copy(node_copy.out_nodes):
+                node_copy.remove_out_edge(out_node)
+            for variant in target_node.variants:
+                if variant.location.start == stop_index:
+                    node_copy.variants.append(copy.copy(variant))
+        elif not node_copy.out_nodes:
+            node_copy.truncated = True
+
+        additional_variants = start_gain + cursor.cleavage_gain
+
+        traversal.pool.add_miscleaved_sequences(
+            node=node_copy,
+            orf=tuple(orf),
+            miscleavage=traversal.miscleavage,
+            check_variants=traversal.check_variants,
+            is_start_codon=False,
+            additional_variants=additional_variants
+        )
+        self.remove_node(node_copy)
+        if stop_index > -1:
+            in_cds = False
+            orf = [None, None]
+
+        cleavage_gain = target_node.get_cleavage_gain_variants()
+
+        for out_node in target_node.out_nodes:
+            if out_node is self.stop:
+                continue
+            if in_cds:
+                cur_start_gain = copy.copy(start_gain)
+                if not cur_start_gain:
+                    new_start_gain = set()
+                    for variant in out_node.variants:
+                        if variant.variant.is_frameshifting():
+                            new_start_gain.add(variant.variant)
+                    for variant in target_node.variants:
+                        if variant.variant.is_frameshifting():
+                            new_start_gain.add(variant.variant)
+                    cur_start_gain = list(new_start_gain)
+                cur_cleavage_gain = cleavage_gain
+            else:
+                cur_start_gain = []
+                cur_cleavage_gain = None
+            cur = PVGCursor(target_node, out_node, in_cds, orf,
+                cur_start_gain, cur_cleavage_gain)
+            traversal.stage(target_node, out_node, cur)
+
+    def call_and_stage_known_orf_not_in_cds(self, cursor:PVGCursor,
+            traversal:PVGTraversal) -> None:
+        """ Kown ORF not in CDS branch """
+        target_node = cursor.out_node
+        in_cds = cursor.in_cds
+        orf = cursor.orf
+        start_gain = cursor.start_gain
+        start_codon = FeatureLocation(
+            start=self.known_orf[0], end=self.known_orf[0] + 3
+        )
+        has_start_altering = any(x.variant.location.overlaps(start_codon)
+            for x in target_node.variants)
+        if target_node.reading_frame_index != self.known_reading_frame_index() \
+                and not has_start_altering:
+            for out_node in target_node.out_nodes:
+                cur = PVGCursor(target_node, out_node, False, orf, [])
+                traversal.stage(target_node, out_node, cur)
+            return
+
+        start_gain = []
+        if has_start_altering and not self.cds_start_nf:
+            start_index = target_node.seq.seq.find('M')
+        elif target_node.variants and not self.cds_start_nf:
+            start_index = target_node.seq.get_query_index(
+                traversal.known_orf_aa[0])
+            if start_index == -1:
+                start_index = target_node.seq.seq.find('M')
+        else:
+            has_start_altering = traversal.known_orf_aa[0] == 0 \
+                    and self.root in target_node.in_nodes
+            if has_start_altering:
+                start_index = 0
+            else:
+                start_index = target_node.seq.get_query_index(
+                    traversal.known_orf_aa[0])
+        if start_index == -1:
+
+            for out_node in target_node.out_nodes:
+                cur = PVGCursor(target_node, out_node, False, orf, [])
+                traversal.stage(target_node, out_node, cur)
+        else:
+            start_gain = target_node.get_variants_at(start_index)
             node_copy = target_node.copy()
-
             stop_index = node_copy.seq.seq.find('*')
-
-            if stop_index > -1:
-                node_copy.truncate_right(stop_index)
-                for out_node in copy.copy(node_copy.out_nodes):
-                    node_copy.remove_out_edge(out_node)
-            elif not node_copy.out_nodes:
-                node_copy.truncated = True
-
-            additional_variants = start_gain + cursor.cleavage_gain
-
+            if stop_index < start_index:
+                node_copy.truncate_left(start_index)
+                in_cds = True
+                more_stop_index = node_copy.seq.seq.find('*')
+                if more_stop_index > -1:
+                    # checks if there are more stop after start.
+                    node_copy.truncate_right(more_stop_index)
+                    in_cds = False
+                    for out_node in copy.copy(node_copy.out_nodes):
+                        node_copy.remove_out_edge(out_node)
+            else:
+                node_copy = node_copy[start_index:stop_index]
+                in_cds = False
+            orf = traversal.known_orf_tx
             traversal.pool.add_miscleaved_sequences(
                 node=node_copy,
                 orf=tuple(orf),
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
-                is_start_codon=False,
-                additional_variants=additional_variants
+                is_start_codon=True,
+                additional_variants=start_gain
             )
-            self.remove_node(node_copy)
-            if stop_index > -1:
-                in_cds = False
-                orf = [None, None]
-
-            cleavage_gain = target_node.get_cleavage_gain_variants()
-
             for out_node in target_node.out_nodes:
-                if out_node is self.stop:
-                    continue
-                if in_cds:
-                    cur_start_gain = copy.copy(start_gain)
-                    if not cur_start_gain:
-                        new_start_gain = set()
-                        for variant in out_node.variants:
-                            if variant.variant.is_frameshifting():
-                                new_start_gain.add(variant.variant)
-                        for variant in target_node.variants:
-                            if variant.variant.is_frameshifting():
-                                new_start_gain.add(variant.variant)
-                        cur_start_gain = list(new_start_gain)
-                    cur_cleavage_gain = cleavage_gain
-                else:
-                    cur_start_gain = []
-                    cur_cleavage_gain = None
-                cur = PVGCursor(target_node, out_node, in_cds, orf,
-                    cur_start_gain, cur_cleavage_gain)
-                traversal.stage(target_node, out_node, cur)
-        else:
-            if target_node.reading_frame_index != self.known_reading_frame_index():
-                for out_node in target_node.out_nodes:
-                    cur = PVGCursor(target_node, out_node, False, orf, [])
+                if out_node is not self.stop:
+                    cur_start_gain = set()
+                    for variant in out_node.variants:
+                        if variant.variant.is_frameshifting():
+                            cur_start_gain.add(variant.variant)
+                    for variant in target_node.variants:
+                        if variant.variant.is_frameshifting():
+                            cur_start_gain.add(variant.variant)
+                    cur_start_gain = list(cur_start_gain)
+                    cur = PVGCursor(target_node, out_node, in_cds, orf,
+                        cur_start_gain)
                     traversal.stage(target_node, out_node, cur)
-                return
+            self.remove_node(node_copy)
 
-            start_gain = []
-            if target_node.variants and not self.cds_start_nf:
-                start_index = target_node.seq.get_query_index(
-                    traversal.known_orf_aa[0])
-                if start_index == -1:
-                    start_index = target_node.seq.seq.find('M')
-                if start_index > -1:
-                    start_gain = target_node.get_variants_at(start_index)
-            else:
-                start_index = target_node.seq.get_query_index(
-                    traversal.known_orf_aa[0])
-            if start_index == -1:
-                for out_node in target_node.out_nodes:
-                    cur = PVGCursor(target_node, out_node, False, orf, [])
-                    traversal.stage(target_node, out_node, cur)
-            else:
-                node_copy = target_node.copy()
-                stop_index = node_copy.seq.seq.find('*')
-                if stop_index < start_index:
-                    node_copy.truncate_left(start_index)
-                    in_cds = True
-                    more_stop_index = node_copy.seq.seq.find('*')
-                    if more_stop_index > -1:
-                        # checks if there are more stop after start.
-                        node_copy.truncate_right(more_stop_index)
-                        in_cds = False
-                        for out_node in copy.copy(node_copy.out_nodes):
-                            node_copy.remove_out_edge(out_node)
-                else:
-                    node_copy = node_copy[start_index:stop_index]
-                    in_cds = False
-                orf = traversal.known_orf_tx
-                traversal.pool.add_miscleaved_sequences(
-                    node=node_copy,
-                    orf=tuple(orf),
-                    miscleavage=traversal.miscleavage,
-                    check_variants=traversal.check_variants,
-                    is_start_codon=True,
-                    additional_variants=start_gain
-                )
-                for out_node in target_node.out_nodes:
-                    if out_node is not self.stop:
-                        cur_start_gain = set()
-                        for variant in out_node.variants:
-                            if variant.variant.is_frameshifting():
-                                cur_start_gain.add(variant.variant)
-                        for variant in target_node.variants:
-                            if variant.variant.is_frameshifting():
-                                cur_start_gain.add(variant.variant)
-                        cur_start_gain = list(cur_start_gain)
-                        cur = PVGCursor(target_node, out_node, in_cds, orf,
-                            cur_start_gain)
-                        traversal.stage(target_node, out_node, cur)
-                self.remove_node(node_copy)
 
     def call_and_stage_unknown_orf(self, cursor:PVGCursor,
             traversal:PVGTraversal) -> None:
