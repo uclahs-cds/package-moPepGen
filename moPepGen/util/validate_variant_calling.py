@@ -43,7 +43,7 @@ def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
     args = argparse.Namespace()
     args.genome_fasta = genome
     args.annotation_gtf = anno
-    args.protein_fasta = protein
+    args.proteome_fasta = protein
     args.tx_list = [tx_id]
     args.gene_list = None
     args.output_dir = output_dir
