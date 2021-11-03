@@ -115,9 +115,10 @@ def brute_force(args):
 
             has_start_altering = any(x.location.overlaps(start_codon) for x in comb)
             if not tx_model.is_cds_start_nf() and has_start_altering:
-                cds_start = seq[tx_seq.orf.start + 1:].find('ATG')
+                cds_start = seq[tx_seq.orf.start:].find('ATG')
                 if cds_start == -1:
                     continue
+                cds_start = cds_start + tx_seq.orf.start
             else:
                 cds_start = tx_seq.orf.start
             aa_seq = seq[cds_start:].translate(to_stop=True)
