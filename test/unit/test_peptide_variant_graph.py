@@ -620,6 +620,26 @@ class TestPeptideVariantGraph(unittest.TestCase):
         expected = {'SSSSK'}
         self.assertEqual(seqs, expected)
 
+    def test_call_and_stage_known_orf_start_altering(self):
+        """ Test when the transcript is not cds_start_NF, and the mutation is
+        start altering and.
+        """
+        variant_1 = (7, 8, 'T', 'TCCC', 'INDEL', '8:T-TCCC', 2, 3, True)
+        data = {
+            1: ('SSMSK', [0], [None], [((0,5), (0,5))], 0),
+            2: ('SSSSK', [0], [variant_1], [], 0),
+            3: ('SMSMRK', [1, 2], [None], [((0,6),(5,11))], 0),
+            4: ('SSSPK', [3], [None], [((0,5),(11,16))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.cds_start_nf = True
+        graph.known_orf = [6,90]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (6,90), (2,30))
+        cursor = PVGCursor(graph.root, nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(pool.peptides), 0)
+
     def test_call_and_stage_known_orf_cds_stop_gain(self):
         """ Test when the transcript is cds_start_NF, and the mutation is
         start altering.

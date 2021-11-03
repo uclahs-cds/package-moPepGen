@@ -9,6 +9,7 @@ from Bio.Seq import Seq
 from moPepGen import aa, seqvar
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
+from moPepGen.SeqFeature import FeatureLocation
 
 
 T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
@@ -591,20 +592,26 @@ class PeptideVariantGraph():
                     cur_start_gain, cur_cleavage_gain)
                 traversal.stage(target_node, out_node, cur)
         else:
-            if target_node.reading_frame_index != self.known_reading_frame_index():
+            start_codon = FeatureLocation(
+                start=self.known_orf[0], end=self.known_orf[0] + 3
+            )
+            has_start_altering = any(x.variant.location.overlaps(start_codon)
+                for x in target_node.variants)
+            if target_node.reading_frame_index != self.known_reading_frame_index() \
+                    and not has_start_altering:
                 for out_node in target_node.out_nodes:
                     cur = PVGCursor(target_node, out_node, False, orf, [])
                     traversal.stage(target_node, out_node, cur)
                 return
 
             start_gain = []
-            if target_node.variants and not self.cds_start_nf:
+            if has_start_altering and not self.cds_start_nf:
+                start_index = target_node.seq.seq.find('M')
+            elif target_node.variants and not self.cds_start_nf:
                 start_index = target_node.seq.get_query_index(
                     traversal.known_orf_aa[0])
                 if start_index == -1:
                     start_index = target_node.seq.seq.find('M')
-                if start_index > -1:
-                    start_gain = target_node.get_variants_at(start_index)
             else:
                 has_start_altering = traversal.known_orf_aa[0] == 0 \
                         and self.root in target_node.in_nodes
@@ -619,6 +626,7 @@ class PeptideVariantGraph():
                     cur = PVGCursor(target_node, out_node, False, orf, [])
                     traversal.stage(target_node, out_node, cur)
             else:
+                start_gain = target_node.get_variants_at(start_index)
                 node_copy = target_node.copy()
                 stop_index = node_copy.seq.seq.find('*')
                 if stop_index < start_index:
