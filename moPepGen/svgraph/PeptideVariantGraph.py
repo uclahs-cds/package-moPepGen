@@ -546,6 +546,9 @@ class PeptideVariantGraph():
                 node_copy.truncate_right(stop_index)
                 for out_node in copy.copy(node_copy.out_nodes):
                     node_copy.remove_out_edge(out_node)
+                for variant in target_node.variants:
+                    if variant.location.start == stop_index:
+                        node_copy.variants.append(copy.copy(variant))
             elif not node_copy.out_nodes:
                 node_copy.truncated = True
 
