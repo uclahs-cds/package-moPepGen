@@ -87,9 +87,9 @@ class A5SSRecord(RMATSRecord):
             genomic_position = f'{chrom}:{self.long_exon_start+1}-{self.short_exon_end}'
 
         if not short:
+            location = FeatureLocation(seqname=self.gene_id, start=start_gene,
+                end=end_gene)
             for tx_id in long:
-                location = FeatureLocation(seqname=self.gene_id, start=start_gene,
-                    end=end_gene)
                 ref = str(gene_seq.seq[start_gene])
                 alt = '<DEL>'
                 attrs = {
@@ -105,13 +105,10 @@ class A5SSRecord(RMATSRecord):
                 variants.append(record)
 
         if not long:
-            insert_position = start_gene
+            insert_position = start_gene - 1
+            location = FeatureLocation(seqname=self.gene_id, start=insert_position,
+                end=insert_position + 1)
             for tx_id in short:
-                location = FeatureLocation(
-                    seqname=self.gene_id,
-                    start=insert_position,
-                    end=insert_position+1
-                )
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {

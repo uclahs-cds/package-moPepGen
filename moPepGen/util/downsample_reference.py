@@ -217,7 +217,7 @@ def downsample_reference(args:argparse.Namespace):
     """ Downsample reference FASTA and GTF """
     genome_fasta:Path = args.genome_fasta
     annotation_gtf:Path = args.annotation_gtf
-    protein_fasta:Path = args.protein_fasta
+    protein_fasta:Path = args.proteome_fasta
     gene_list:List[str] = args.gene_list
     tx_list:List[str] = args.tx_list
     output_dir:Path = args.output_dir
