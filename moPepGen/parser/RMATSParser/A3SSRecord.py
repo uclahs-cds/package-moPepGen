@@ -87,9 +87,9 @@ class A3SSRecord(RMATSRecord):
             genomic_position = f'{chrom}:{self.short_exon_end}-{self.long_exon_end}'
 
         if not short:
+            location = FeatureLocation(seqname=self.gene_id, start=start_gene,
+                end=end_gene)
             for tx_id in long:
-                location = FeatureLocation(seqname=self.gene_id,
-                    start=start_gene, end=end_gene)
                 ref = str(gene_seq.seq[start_gene])
                 alt = '<DEL>'
                 attrs = {
@@ -105,13 +105,19 @@ class A3SSRecord(RMATSRecord):
                 variants.append(record)
 
         if not long:
-            for tx_id in short:
-                insert_position = start_gene
-                location = FeatureLocation(
-                    seqname=self.gene_id,
-                    start=insert_position,
-                    end=insert_position + 1
+            if gene_model.strand == 1:
+                insert_position = anno.coordinate_genomic_to_gene(
+                    index=self.flanking_exon_end - 1,
+                    gene=self.gene_id
                 )
+            else:
+                insert_position = anno.coordinate_genomic_to_gene(
+                    index=self.flanking_exon_start,
+                    gene=self.gene_id
+                )
+            location = FeatureLocation(seqname=self.gene_id, start=insert_position,
+                end=insert_position + 1)
+            for tx_id in short:
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {

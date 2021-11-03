@@ -128,9 +128,9 @@ class MXERecord(RMATSRecord):
             f'{second_start}-{second_end}'
 
         if not have_second:
+            location = FeatureLocation(seqname=self.gene_id, start=first_start,
+                end=first_end)
             for tx_id in have_first:
-                location = FeatureLocation(seqname=self.gene_id, start=first_start,
-                    end=first_end)
                 ref = str(gene_seq.seq[first_start])
                 alt = '<SUB>'
                 attrs = {
@@ -149,9 +149,9 @@ class MXERecord(RMATSRecord):
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
-            for tx_id in have_both:
-                location = FeatureLocation(seqname=self.gene_id, start=first_start,
+            location = FeatureLocation(seqname=self.gene_id, start=first_start,
                     end=first_end)
+            for tx_id in have_both:
                 ref = str(gene_seq.seq[first_start])
                 alt = '<DEL>'
                 attrs = {
@@ -166,9 +166,9 @@ class MXERecord(RMATSRecord):
                 variants.append(record)
 
         if not have_first:
+            location = FeatureLocation(seqname=self.gene_id, start=second_start,
+                end=second_end)
             for tx_id in have_second:
-                location = FeatureLocation(seqname=self.gene_id, start=second_start,
-                    end=second_end)
                 ref = str(gene_seq.seq[second_start])
                 alt = '<SUB>'
                 attrs = {
@@ -186,9 +186,9 @@ class MXERecord(RMATSRecord):
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
+            location = FeatureLocation(seqname=self.gene_id, start=second_start,
+                end=second_end)
             for tx_id in have_both:
-                location = FeatureLocation(seqname=self.gene_id, start=second_start,
-                    end=second_end)
                 ref = str(gene_seq.seq[second_start])
                 alt = '<DEL>'
                 attrs = {

@@ -25,31 +25,17 @@ from moPepGen import gtf, dna, aa
 from moPepGen.gtf import GtfIO
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
+from moPepGen.cli.common import add_args_cleavage, add_args_reference, \
+    print_help_if_missing_args
 
 
-def parse_args() -> argparse.Namespace:
+# pylint: disable=W0212
+def add_subparser_downsample_reference(subparsers:argparse._SubParsersAction):
     """ Parse args """
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--genome-fasta',
-        type=Path,
-        help='Path to the reference genome assembly FASTA file.',
-        metavar='',
-        required=True
-    )
-    parser.add_argument(
-        '--annotation-gtf',
-        type=Path,
-        help='Path to the reference genome annotation GTF file.',
-        metavar='',
-        required=True
-    )
-    parser.add_argument(
-        '--protein-fasta',
-        type=Path,
-        help='Path to the reference protein fasta file.',
-        metavar='',
-        required=True
+    parser:argparse.ArgumentParser = subparsers.add_parser(
+        name='downsampleReference',
+        help='Create downsampleed reference files to contain only specified'
+        ' transcripts.'
     )
     parser.add_argument(
         '--gene-list',
@@ -71,31 +57,14 @@ def parse_args() -> argparse.Namespace:
         help='Output directory',
         metavar=''
     )
-    parser.add_argument(
-        '-c', '--cleavage-rule',
-        type=str,
-        help='Cleavage rule. Defaults to trypsin.',
-        default='trypsin',
-        metavar=''
-    )
-    parser.add_argument(
-        '-m', '--miscleavage',
-        type=int,
-        help='Number of cleavages to allow. Defaults to 2.',
-        metavar='',
-        default=2
-    )
-    parser.add_argument(
-        '-w', '--min-mw',
-        type=float,
-        help='The minimal molecular weight of the non-canonical peptides.'
-        'Defaults to 500',
-        default=500.,
-        metavar=''
-    )
-    return parser.parse_args()
+    add_args_reference(parser, index=False)
+    add_args_cleavage(parser)
+    parser.set_defaults(func=downsample_reference)
+    print_help_if_missing_args(parser)
+    return parser
 
-GeneTranscriptModel = Tuple[gtf.GeneAnnotationModel, Dict[str, gtf.TranscriptAnnotationModel]]
+GeneTranscriptModel = Tuple[gtf.GeneAnnotationModel, Dict[str, \
+    gtf.TranscriptAnnotationModel]]
 
 def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
     """ Parse GTF """
@@ -244,12 +213,11 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
                 shift_seq_feature(cds, shift_offset, seqname)
     return genome, anno
 
-def main():
+def downsample_reference(args:argparse.Namespace):
     """ Downsample reference FASTA and GTF """
-    args = parse_args()
     genome_fasta:Path = args.genome_fasta
     annotation_gtf:Path = args.annotation_gtf
-    protein_fasta:Path = args.protein_fasta
+    protein_fasta:Path = args.proteome_fasta
     gene_list:List[str] = args.gene_list
     tx_list:List[str] = args.tx_list
     output_dir:Path = args.output_dir
@@ -270,7 +238,3 @@ def main():
 
     with open(output_dir/'proteome.fasta', 'wt') as handle:
         SeqIO.write(proteins.values(), handle, 'fasta')
-
-
-if __name__ == '__main__':
-    main()

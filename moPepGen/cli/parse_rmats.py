@@ -86,7 +86,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
     mutually_exclusive = args.mutually_exclusive_exons
     retained_intron = args.retained_intron
     output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.tvf'
+    output_path = output_prefix + '.gvf'
 
     print_start_message(args)
 
