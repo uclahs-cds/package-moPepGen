@@ -89,7 +89,7 @@ def brute_force(args):
     )
     variants = variant_pool.transcriptional[tx_id]
     variants = [x for x in variants if x.location.start >= 3 and
-        x.location < start_codon and not x.location.overlaps(start_codon)]
+        (x.location >= start_codon or x.location.overlaps(start_codon))]
 
     for i in range(len(variants)):
         for comb in combinations(variants, i + 1):
