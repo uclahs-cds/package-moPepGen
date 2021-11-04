@@ -619,7 +619,7 @@ class PeptideVariantGraph():
         has_start_altering = any(x.variant.location.overlaps(start_codon)
             for x in target_node.variants)
         if target_node.reading_frame_index != self.known_reading_frame_index() \
-                and not has_start_altering:
+                and not (has_start_altering and not self.cds_start_nf):
             for out_node in target_node.out_nodes:
                 cur = PVGCursor(target_node, out_node, False, orf, [])
                 traversal.stage(target_node, out_node, cur)
@@ -634,8 +634,9 @@ class PeptideVariantGraph():
             if start_index == -1:
                 start_index = target_node.seq.seq.find('M')
         else:
-            has_start_altering = traversal.known_orf_aa[0] == 0 \
-                    and self.root in target_node.in_nodes
+            has_start_altering = has_start_altering and \
+                traversal.known_orf_aa[0] == 0 and \
+                self.root in target_node.in_nodes
             if has_start_altering:
                 start_index = 0
             else:
