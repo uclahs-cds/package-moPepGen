@@ -135,6 +135,14 @@ class PVGNode():
                 cleavage_gain.append(variant.variant)
         return cleavage_gain
 
+    def get_stop_lost_variants(self, stop_index:int) -> List[seqvar.VariantRecord]:
+        """ Get stop lost variants """
+        stop_lost = []
+        stop_codon = FeatureLocation(start=stop_index, end=stop_index + 3)
+        for variant in self.variants:
+            if variant.variant.location.overlaps(stop_codon):
+                stop_lost.append(variant.variant)
+        return stop_lost
 
     def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. The next reference node
