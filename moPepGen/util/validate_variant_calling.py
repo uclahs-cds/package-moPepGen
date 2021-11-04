@@ -121,7 +121,7 @@ def assert_equal(variant_fasta:Path, brute_force_txt:Path, output_dir:Path):
                     handle.write(seq + '\n')
         if brute_force_only:
             brute_force_only_file = output_dir/'brute_force_only.txt'
-            with open(brute_force_only_file, 'rt') as handle:
+            with open(brute_force_only_file, 'wt') as handle:
                 for seq in brute_force_only:
                     handle.write(seq + '\n')
         sys.exit(1)
