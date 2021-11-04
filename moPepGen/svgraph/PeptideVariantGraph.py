@@ -594,6 +594,9 @@ class PeptideVariantGraph():
                     for variant in target_node.variants:
                         if variant.variant.is_frameshifting():
                             new_start_gain.add(variant.variant)
+                    stop_index = self.known_orf[1]
+                    stop_lost = target_node.get_stop_lost_variants(stop_index)
+                    new_start_gain.update(stop_lost)
                     cur_start_gain = list(new_start_gain)
                 cur_cleavage_gain = cleavage_gain
             else:
