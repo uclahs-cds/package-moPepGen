@@ -729,14 +729,15 @@ class TestPeptideVariantGraph(unittest.TestCase):
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
         """ Test the fit into cleavage for bridge node that needs to be merged
         forward
-                     Q
-                    /
-        0      W-SPY-QT               0      WSPY-QT
-                /                                X
-              NG              ->            NGSPY-Q
-             /                             /
-        1 VLR-NGALT                   1 VLR-NGALT
-
+                     Q                       WSPYQ-
+                    /                       /      \
+        0      W-SPY-QT               0     -WSPYQT-
+                /                                  /|
+              NG              ->            NGSPYQ- |
+             /                             /       /
+        1 VLR-NGALT                       | NGSPYQT
+                                          |/
+                                      1 VLR-NGALT
         """
         data = {
             1: ('VLR',  [0],  [None], [((0,3),( 0, 3))], 1),
@@ -750,5 +751,6 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         branches,_ = graph.fit_into_cleavages_single_upstream(nodes[4])
         self.assertEqual(len(branches), 2)
-        seqs = {str(x.seq.seq) for x in branches}
-        self.assertEqual(seqs, {'Q', 'QT'})
+        actual = {str(x.seq.seq) for x in nodes[1].out_nodes}
+        expect = {'NGSPYQT', 'NGSPYQ'}
+        self.assertTrue(expect.issubset(actual))

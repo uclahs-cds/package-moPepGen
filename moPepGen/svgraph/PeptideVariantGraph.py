@@ -104,6 +104,22 @@ class PeptideVariantGraph():
             )
         return first_node if return_first else node
 
+    def find_nodes_with_seq(self, seq:str) -> List[PVGNode]:
+        """ find all nodes with the given sequence """
+        queue = deque(self.root.out_nodes)
+        visited = set([self.root])
+        found = []
+        while queue:
+            cur = queue.popleft()
+            if cur in visited:
+                continue
+            if cur.seq.seq == seq:
+                found.append(cur)
+            visited.add(cur)
+            for out_node in cur.out_nodes:
+                queue.append(out_node)
+        return found
+
     def find_routes_for_merging(self, node:PVGNode, cleavage:bool=False
             ) -> Set[Tuple[PVGNode]]:
         """ Find all start and end nodes for merging.
@@ -405,7 +421,10 @@ class PeptideVariantGraph():
             )
             if site > -1:
                 downstream.split_node(site, True)
-            branches, inbridges = self.expand_forward(downstream)
+            if len(downstream.out_nodes) == 1:
+                branches, inbridges = self.expand_forward(downstream)
+            else:
+                branches, inbridges = self.merge_join(downstream)
             branches = {x for x in branches if x.reading_frame_index == i}
         else:
             branches, inbridges = self.expand_backward(cur)
