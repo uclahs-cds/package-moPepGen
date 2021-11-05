@@ -38,7 +38,8 @@ class PeptideVariantGraph():
     def __init__(self, root:PVGNode, _id:str,
             known_orf:List[int,int], rule:str=None, exception:str=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
-            orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False):
+            orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
+            has_start_altering:bool=False):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
@@ -50,6 +51,7 @@ class PeptideVariantGraph():
         self.reading_frames = reading_frames or [None, None, None]
         self.orf_id_map = orf_id_map or {}
         self.cds_start_nf = cds_start_nf
+        self.has_start_altering = has_start_altering
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -101,6 +103,22 @@ class PeptideVariantGraph():
                 exception=self.exception
             )
         return first_node if return_first else node
+
+    def find_nodes_with_seq(self, seq:str) -> List[PVGNode]:
+        """ find all nodes with the given sequence """
+        queue = deque(self.root.out_nodes)
+        visited = set([self.root])
+        found = []
+        while queue:
+            cur = queue.popleft()
+            if cur in visited:
+                continue
+            if cur.seq.seq == seq:
+                found.append(cur)
+            visited.add(cur)
+            for out_node in cur.out_nodes:
+                queue.append(out_node)
+        return found
 
     def find_routes_for_merging(self, node:PVGNode, cleavage:bool=False
             ) -> Set[Tuple[PVGNode]]:
@@ -403,7 +421,10 @@ class PeptideVariantGraph():
             )
             if site > -1:
                 downstream.split_node(site, True)
-            branches, inbridges = self.expand_forward(downstream)
+            if len(downstream.out_nodes) == 1:
+                branches, inbridges = self.expand_forward(downstream)
+            else:
+                branches, inbridges = self.merge_join(downstream)
             branches = {x for x in branches if x.reading_frame_index == i}
         else:
             branches, inbridges = self.expand_backward(cur)
@@ -598,7 +619,9 @@ class PeptideVariantGraph():
                     stop_lost = target_node.get_stop_lost_variants(stop_index)
                     new_start_gain.update(stop_lost)
                     cur_start_gain = list(new_start_gain)
-                cur_cleavage_gain = cleavage_gain
+                cur_cleavage_gain = copy.copy(cleavage_gain)
+                cleavage_gain_down = out_node.get_cleavage_gain_from_downstream()
+                cur_cleavage_gain.extend(cleavage_gain_down)
             else:
                 cur_start_gain = []
                 cur_cleavage_gain = None
@@ -631,7 +654,7 @@ class PeptideVariantGraph():
         elif target_node.variants and not self.cds_start_nf:
             start_index = target_node.seq.get_query_index(
                 traversal.known_orf_aa[0])
-            if start_index == -1:
+            if start_index == -1 and self.has_start_altering:
                 start_index = target_node.seq.seq.find('M')
         else:
             has_start_altering = has_start_altering and \
@@ -780,8 +803,12 @@ class PeptideVariantGraph():
                     if last_stop_index > last_start_index:
                         start_gain = []
 
+                cur_cleavage_gain = copy.copy(cleavage_gain)
+                cleavage_gain_down = out_node.get_cleavage_gain_from_downstream()
+                cur_cleavage_gain.extend(cleavage_gain_down)
+
                 cursor = PVGCursor(target_node, out_node, in_cds, orf,
-                    start_gain, cleavage_gain)
+                    start_gain, cur_cleavage_gain)
                 traversal.stage(target_node, out_node, cursor)
 
         additional_variants = start_gain + cursor.cleavage_gain

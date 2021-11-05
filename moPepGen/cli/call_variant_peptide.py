@@ -4,6 +4,7 @@ import argparse
 from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar import GVFMetadata
 from moPepGen.cli.common import add_args_cleavage, add_args_verbose, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
@@ -131,11 +132,18 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     cds_start_nf = 'tag' in tx_model.transcript.attributes and \
         'cds_start_NF' in tx_model.transcript.attributes['tag']
 
+    start = transcript_seq.orf.start
+    start_codon = FeatureLocation(start=start, end=start+3)
+
+    has_start_altering = any(x.location.overlaps(start_codon) for x in
+        tx_variants)
+
     dgraph = svgraph.ThreeFrameTVG(
         seq=transcript_seq,
         _id=tx_id,
         cds_start_nf=cds_start_nf,
-        has_known_orf=tx_model.is_protein_coding()
+        has_known_orf=tx_model.is_protein_coding(),
+        has_start_altering=has_start_altering and not cds_start_nf
     )
     dgraph.init_three_frames()
     dgraph.create_variant_graph(tx_variants, variant_pool, genome, anno)
