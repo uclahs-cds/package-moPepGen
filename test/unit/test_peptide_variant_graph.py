@@ -706,6 +706,26 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertFalse(traversal.queue[0].in_cds)
 
+    def test_call_and_stage_known_orf_cleavage_gain_downstream(self):
+        """ Test when a cleavage gain was caused by downstream node.
+        """
+        variant_1 = (0, 1, 'C', 'T', 'SNV', '0:C-T', 0, 1, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('SSSSSSSSSR', [1],[None], [((0,10),(5,15))], 0),
+            3: ('SSSSK', [1],[None], [((0,5),(5,10))], 0),
+            4: ('SSSSR', [3], [variant_1], [((1,5),(11,15))], 0),
+            5: ('SSSPK', [2,4], [None], [((0,5), (15,20))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [0,39]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (6,13), (18,39))
+        cursor = PVGCursor(nodes[1], nodes[3], True, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        variants = list(list(traversal.pool.peptides.values())[0])[0].variants
+        self.assertEqual(len(variants), 1)
+
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
         """ Test the fit into cleavage for bridge node that needs to be merged
         forward
