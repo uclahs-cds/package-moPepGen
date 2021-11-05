@@ -114,22 +114,28 @@ def brute_force(args):
                 seq = seq[:start] + variant.alt + seq[end:]
 
             has_start_altering = any(x.location.overlaps(start_codon) for x in comb)
-            if not tx_model.is_cds_start_nf() and has_start_altering:
+
+            if not tx_seq.orf:
+                cds_start_positions = tx_seq.find_all_start_codons()
+            elif not tx_model.is_cds_start_nf() and has_start_altering:
                 cds_start = seq[tx_seq.orf.start:].find('ATG')
                 if cds_start == -1:
                     continue
                 cds_start = cds_start + tx_seq.orf.start
+                cds_start_positions = [cds_start]
             else:
                 cds_start = tx_seq.orf.start
-            aa_seq = seq[cds_start:].translate(to_stop=True)
-            aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
-            peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
-            for peptide in peptides:
-                if peptide is peptides[0] and peptide.seq.startswith('M'):
-                    if str(peptide.seq[1:]) not in canonical_peptides:
-                        variant_peptides.add(str(peptide.seq[1:]))
-                if str(peptide.seq) not in canonical_peptides:
-                    variant_peptides.add(str(peptide.seq))
+                cds_start_positions = [cds_start]
+            for cds_start in cds_start_positions:
+                aa_seq = seq[cds_start:].translate(to_stop=True)
+                aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
+                peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
+                for peptide in peptides:
+                    if peptide is peptides[0] and peptide.seq.startswith('M'):
+                        if str(peptide.seq[1:]) not in canonical_peptides:
+                            variant_peptides.add(str(peptide.seq[1:]))
+                    if str(peptide.seq) not in canonical_peptides:
+                        variant_peptides.add(str(peptide.seq))
 
     variant_peptides = list(variant_peptides)
     variant_peptides.sort()

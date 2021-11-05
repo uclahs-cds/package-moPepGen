@@ -48,6 +48,13 @@ class TestDNASeqRecord(unittest.TestCase):
         self.assertIsInstance(seq, dna.DNASeqRecord)
         self.assertEqual(str(seq.seq), 'CCCTACTGGTCCTTCTGCCT')
 
+    def test_find_all_start_codons(self):
+        """ find all start codons """
+        seq = dna.DNASeqRecord('CCCCCCCCATGCCCCCCCCATGCCCCCCCATGCCCCCCCC')
+        starts = seq.find_all_start_codons()
+        self.assertEqual(len(starts), 3)
+        self.assertTrue(all(seq.seq[i:i+3] == 'ATG' for i in starts))
+
 class TestDNASeqWithCoordinates(unittest.TestCase):
     """ Test case for moPepGen.dna.DNASeqRecordWithCoordinates """
     def test_get_item_case(self):
