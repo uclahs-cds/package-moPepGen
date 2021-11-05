@@ -684,6 +684,28 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(traversal.queue[0].start_gain), 1)
 
+    def test_call_and_stage_known_orf_not_in_cds_no_start_altering(self):
+        """ Test when the transcript doesn't have any start altering variants,
+        M not going to be treated as new start codon.
+        """
+        variant_1 = (66, 67, 'G', 'C', 'SNV', '41:G-C', 2, 3, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5), (0,5))], 0),
+            2: ('SMSMRK', [1], [None], [((0,6),(5,11))], 0),
+            3: ('SS*PGGK', [2], [None], [((0,5),(11,16))], 0),
+            4: ('JIWIK', [3], [None], [((0,5),(17,22))], 0),
+            5: ('JIMIT', [3], [variant_1], [((0,2),(17,19)),((3,5),(20,22))], 0),
+            6: ('VSSSP', [4,5], [None], [((0,5),(22,27))], 0),
+            7: ('JIWQT', [6], [None], [((0,5),(27,32))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [18,39]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (6,13), (18,39))
+        cursor = PVGCursor(nodes[5], nodes[6], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertFalse(traversal.queue[0].in_cds)
+
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
         """ Test the fit into cleavage for bridge node that needs to be merged
         forward

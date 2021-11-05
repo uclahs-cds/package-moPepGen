@@ -38,7 +38,8 @@ class PeptideVariantGraph():
     def __init__(self, root:PVGNode, _id:str,
             known_orf:List[int,int], rule:str=None, exception:str=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
-            orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False):
+            orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
+            has_start_altering:bool=False):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
@@ -50,6 +51,7 @@ class PeptideVariantGraph():
         self.reading_frames = reading_frames or [None, None, None]
         self.orf_id_map = orf_id_map or {}
         self.cds_start_nf = cds_start_nf
+        self.has_start_altering = has_start_altering
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -631,7 +633,7 @@ class PeptideVariantGraph():
         elif target_node.variants and not self.cds_start_nf:
             start_index = target_node.seq.get_query_index(
                 traversal.known_orf_aa[0])
-            if start_index == -1:
+            if start_index == -1 and self.has_start_altering:
                 start_index = target_node.seq.seq.find('M')
         else:
             has_start_altering = has_start_altering and \

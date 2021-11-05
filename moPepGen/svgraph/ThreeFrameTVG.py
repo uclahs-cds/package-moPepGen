@@ -29,7 +29,8 @@ class ThreeFrameTVG():
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
-            cds_start_nf:bool=False, has_known_orf:bool=None):
+            cds_start_nf:bool=False, has_known_orf:bool=None,
+            has_start_altering:bool=False):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -47,6 +48,7 @@ class ThreeFrameTVG():
             raise ValueError('The length of reading_frames must be exactly 3.')
         self.cds_start_nf = cds_start_nf
         self.has_known_orf = has_known_orf or bool(seq.orf is not None)
+        self.has_start_altering = has_start_altering
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -929,7 +931,8 @@ class ThreeFrameTVG():
             root=root,
             _id=self.id,
             known_orf=known_orf,
-            cds_start_nf=self.cds_start_nf
+            cds_start_nf=self.cds_start_nf,
+            has_start_altering=self.has_start_altering
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
