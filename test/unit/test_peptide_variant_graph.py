@@ -726,8 +726,26 @@ class TestPeptideVariantGraph(unittest.TestCase):
         variants = list(list(traversal.pool.peptides.values())[0])[0].variants
         self.assertEqual(len(variants), 1)
 
+    def test_call_and_stage_known_orf_start_lost(self):
+        """ Test for start lost variants.
+        """
+        variant_1 = (3, 4, 'C', 'T', 'SNV', '0:C-T', 1, 2, True)
+        data = {
+            1: ('SMSMK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('SSSMK', [0], [variant_1], [((0,1),(0,1)),((2,5),(2,5))], 0),
+            3: ('SSSPK', [1,2], [None], [((0,5),(5,10))], 0),
+            4: ('SSPPK', [3], [None], [((0,5),(10,15))], 0),
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [3,39]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (1,13), (3,39))
+        cursor = PVGCursor(graph.reading_frames[0], nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(traversal.pool.peptides), 2)
+
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
-        """ Test the fit into cleavage for bridge node that needs to be merged
+        r""" Test the fit into cleavage for bridge node that needs to be merged
         forward
                      Q                       WSPYQ-
                     /                       /      \
