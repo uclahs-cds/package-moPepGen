@@ -636,6 +636,7 @@ class PeptideVariantGraph():
         in_cds = cursor.in_cds
         orf = cursor.orf
         start_gain = cursor.start_gain
+        start_lost = cursor.start_lost
         start_codon = FeatureLocation(
             start=self.known_orf[0], end=self.known_orf[0] + 3
         )
@@ -648,9 +649,10 @@ class PeptideVariantGraph():
                 traversal.stage(target_node, out_node, cur)
             return
 
-        start_gain = []
         if has_start_altering and not self.cds_start_nf:
             start_index = target_node.seq.seq.find('M')
+            start_lost += [x.variant for x in target_node.variants \
+                if x.variant.location.overlaps(start_codon)]
         elif target_node.variants and not self.cds_start_nf:
             start_index = target_node.seq.get_query_index(
                 traversal.known_orf_aa[0])
@@ -666,12 +668,15 @@ class PeptideVariantGraph():
                 start_index = target_node.seq.get_query_index(
                     traversal.known_orf_aa[0])
         if start_index == -1:
-
             for out_node in target_node.out_nodes:
-                cur = PVGCursor(target_node, out_node, False, orf, [])
+                cur = PVGCursor(
+                    in_node=target_node, out_node=out_node,
+                    in_cds=False, orf=orf, start_lost=start_lost
+                )
                 traversal.stage(target_node, out_node, cur)
         else:
-            start_gain = target_node.get_variants_at(start_index)
+            start_gain.extend(target_node.get_variants_at(start_index))
+            additional_variants = start_gain + start_lost
             node_copy = target_node.copy()
             stop_index = node_copy.seq.seq.find('*')
             if stop_index < start_index:
@@ -694,7 +699,7 @@ class PeptideVariantGraph():
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 is_start_codon=True,
-                additional_variants=start_gain
+                additional_variants=additional_variants
             )
             for out_node in target_node.out_nodes:
                 if out_node is not self.stop:
@@ -829,12 +834,14 @@ class PVGCursor():
     """ Helper class for cursors when graph traversal to call peptides. """
     def __init__(self, in_node:PVGNode, out_node:PVGNode, in_cds:bool,
             orf:List[int,int]=None, start_gain:List[seqvar.VariantRecord]=None,
-            cleavage_gain:List[seqvar.VariantRecord]=None):
+            cleavage_gain:List[seqvar.VariantRecord]=None,
+            start_lost:list[seqvar.VariantRecord]=None):
         """ constructor """
         self.in_node = in_node
         self.out_node = out_node
         self.in_cds = in_cds
         self.start_gain = start_gain or []
+        self.start_lost = start_lost or []
         self.cleavage_gain = cleavage_gain or []
         self.orf = orf or [None, None]
 
