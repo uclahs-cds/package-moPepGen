@@ -22,11 +22,11 @@ nav:
 theme: readthedocs
 plugins:
   - mkdocstrings:
-    handlers:
-      python:
-        docstring_stype: google
+      handlers:
+        python:
+          docstring_stype: google
   - macros:
-    verbose: true
+      verbose: true
 markdown_extensions:
   - tables
   - admonition
