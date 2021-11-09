@@ -29,8 +29,7 @@ class ThreeFrameTVG():
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
-            cds_start_nf:bool=False, has_known_orf:bool=None,
-            has_start_altering:bool=False):
+            cds_start_nf:bool=False, has_known_orf:bool=None):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -48,7 +47,6 @@ class ThreeFrameTVG():
             raise ValueError('The length of reading_frames must be exactly 3.')
         self.cds_start_nf = cds_start_nf
         self.has_known_orf = has_known_orf or bool(seq.orf is not None)
-        self.has_start_altering = has_start_altering
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -557,9 +555,12 @@ class ThreeFrameTVG():
                 break
 
             # skipping start lost mutations
-            start_altering = variant.location.start < 3 # or \
-                # (self.has_known_orf and variant.location.overlaps(start_codon))
-            if start_altering:
+            start_index = self.seq.orf.start + 3 if self.has_known_orf else 2
+
+            if variant.location.start == start_index - 1 and variant.is_insertion():
+                variant.to_end_inclusion(self.seq)
+
+            if variant.location.start < start_index:
                 variant = next(variant_iter, None)
                 continue
 
@@ -589,7 +590,7 @@ class ThreeFrameTVG():
             elif variant.type == 'Substitution':
                 cursors = self.apply_substitution(cursors, variant, variant_pool, genome, anno)
 
-            elif variant.is_frameshifting() and not start_altering:
+            elif variant.is_frameshifting():
                 frames_shifted = variant.frames_shifted()
                 for i in range(3):
                     j = (i + frames_shifted) % 3
@@ -931,8 +932,7 @@ class ThreeFrameTVG():
             root=root,
             _id=self.id,
             known_orf=known_orf,
-            cds_start_nf=self.cds_start_nf,
-            has_start_altering=self.has_start_altering
+            cds_start_nf=self.cds_start_nf
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
