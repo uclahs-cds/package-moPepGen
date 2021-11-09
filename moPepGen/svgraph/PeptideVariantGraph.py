@@ -634,9 +634,6 @@ class PeptideVariantGraph():
         in_cds = cursor.in_cds
         orf = cursor.orf
         start_gain = cursor.start_gain
-        start_codon = FeatureLocation(
-            start=self.known_orf[0], end=self.known_orf[0] + 3
-        )
         if target_node.reading_frame_index != self.known_reading_frame_index():
             for out_node in target_node.out_nodes:
                 cur = PVGCursor(target_node, out_node, False, orf, [])

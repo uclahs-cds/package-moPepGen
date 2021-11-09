@@ -5,7 +5,6 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
 from moPepGen import seqvar, aa, gtf, dna
-from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
 
 

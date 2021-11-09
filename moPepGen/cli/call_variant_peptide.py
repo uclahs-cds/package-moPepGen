@@ -135,9 +135,6 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     start = transcript_seq.orf.start
     start_codon = FeatureLocation(start=start, end=start+3)
 
-    has_start_altering = any(x.location.overlaps(start_codon) for x in
-        tx_variants)
-
     dgraph = svgraph.ThreeFrameTVG(
         seq=transcript_seq,
         _id=tx_id,
