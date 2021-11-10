@@ -129,7 +129,8 @@ def brute_force(args):
                 cds_start = tx_seq.orf.start
                 cds_start_positions = [cds_start]
             for cds_start in cds_start_positions:
-                aa_seq = seq[cds_start:].translate(to_stop=True)
+                cds_stop = len(seq) - (len(seq) - cds_start) % 3
+                aa_seq = seq[cds_start:cds_stop].translate(to_stop=True)
                 aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
                 peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
                 for peptide in peptides:
