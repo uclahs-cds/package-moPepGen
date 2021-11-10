@@ -20,6 +20,7 @@ def main():
     )
 
     util.add_subparser_brute_force(subparsers)
+    util.add_subparser_brute_force_noncoding(subparsers)
     util.add_subparser_downsample_reference(subparsers)
     util.add_subparser_validate_variant_callilng(subparsers)
 
