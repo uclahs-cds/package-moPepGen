@@ -9,7 +9,6 @@ from Bio.Seq import Seq
 from moPepGen import aa, seqvar
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
-from moPepGen.SeqFeature import FeatureLocation
 
 
 T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
