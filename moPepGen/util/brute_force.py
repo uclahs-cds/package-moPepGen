@@ -19,7 +19,8 @@ def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
     parser.add_argument(
         '-i', '--input-gvf',
         type=Path,
-        help='GVF file'
+        help='GVF file',
+        nargs="+"
     )
     parser.add_argument(
         '-r', '--reference-dir',
@@ -69,8 +70,9 @@ def brute_force(args):
     )
 
     variant_pool = seqvar.VariantRecordPool()
-    with open(args.input_gvf) as handle:
-        variant_pool.load_variants(handle, anno, genome)
+    for gvf_file in args.input_gvf:
+        with open(gvf_file) as handle:
+            variant_pool.load_variants(handle, anno, genome)
 
     tx_id = list(variant_pool.transcriptional.keys())[0]
 
