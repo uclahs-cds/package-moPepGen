@@ -24,12 +24,9 @@ def define_env(env):
     # pylint: disable=W0612
 
     @env.macro
-    def parse_vep_help(command:str):
-        stream = io.StringIO()
-        with redirect_stdout(stream):
-            parser = argparse.ArgumentParser()
-            subparsers = parser.add_subparsers()
-            add_parser = COMMAND_MAPPER[command]
-            p = add_parser(subparsers)
-            p.print_help()
-        return stream.getvalue()
+    def get_arg_data(command:str):
+        parser = argparse.ArgumentParser()
+        subparsers = parser.add_subparsers()
+        add_parser = COMMAND_MAPPER[command]
+        p = add_parser(subparsers)
+        return p._actions

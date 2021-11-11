@@ -1,6 +1,5 @@
-"""
-The `parseVEP` subcommand takes the output of Ensembl's [Variant Effector
-Predictor](https://uswest.ensembl.org/info/docs/tools/vep/index.html) (VEP) and
+""" `parseVEP` takes the output of Ensembl's [Variant Effector Predictor
+](https://uswest.ensembl.org/info/docs/tools/vep/index.html) (VEP) and
 convert it into the GVF file format that moPepGen internally uses. The result
 VEP file can then be parsed to moPepGen's `callVariant` subcommand to call for
 variant peptide sequences.
@@ -12,9 +11,9 @@ from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
     TranscriptionStartSiteMutationError
 from moPepGen import seqvar, logger
-from moPepGen.cli.common import add_args_reference, add_args_verbose, add_args_source,\
-    print_start_message, print_help_if_missing_args, load_references, \
-    generate_metadata
+from moPepGen.cli.common import add_args_output_prefix, add_args_reference, \
+    add_args_verbose, add_args_source, print_start_message, \
+    print_help_if_missing_args, load_references, generate_metadata
 
 
 if TYPE_CHECKING:
@@ -41,13 +40,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         metavar='<file>',
         required=True
     )
-    p.add_argument(
-        '-o', '--output-prefix',
-        type=str,
-        help='Prefix to the output filename.',
-        metavar='<value>',
-        required=True
-    )
+    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
     add_args_verbose(p)

@@ -1,4 +1,5 @@
-""" Module for calling noncoding peptide """
+""" `callNoncoding` calls novel peptide sequences from noncoding gene sequences.
+It finds all start codons of any noncoding gene. """
 from __future__ import annotations
 from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path

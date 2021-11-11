@@ -1,12 +1,19 @@
-""" Module for rMATS parser """
+""" `parseRMATS` takes the alternative splicing event data called by
+[rMATS](http://rnaseq-mats.sourceforge.net/) and converts them to a GVF file.
+All five alternative splicing events are supported, including skipped exons,
+alternative 5 splicing, alternative 3 splicing, mutually exclusive exons, and
+retained introns. Both the tsv files with JC or JCEC suffix are supported.
+The created GVF file can be then used to call for variant peptides using
+[callVariant](call-variant.md)
+"""
 from __future__ import annotations
 from typing import Dict, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import logger, seqvar
 from moPepGen.parser import RMATSParser
-from .common import add_args_reference, add_args_verbose, add_args_source,\
-    print_start_message,print_help_if_missing_args, load_references, \
-    generate_metadata
+from .common import add_args_output_prefix, add_args_reference, \
+    add_args_verbose, add_args_source, print_start_message, \
+    print_help_if_missing_args, load_references, generate_metadata
 
 
 if TYPE_CHECKING:
@@ -24,53 +31,52 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     )
 
     p.add_argument(
-        '--skipped-exon',
+        '--se',
         type=Path,
-        help="Skipped exon junction count txt file.",
+        help="Skipped exon junction count txt file. The file name should have"
+        " the pattern of *_SE.MATS.JC.txt or *_SE.MATS.JCEC.txt",
         metavar='<file>',
         default=None,
         dest='skipped_exon'
     )
     p.add_argument(
-        '--alternative-5-splicing',
+        '--a5ss',
         type=Path,
-        help="Alternative 5' splicing junction count txt file.",
+        help="Alternative 5' splicing junction count txt file. The file name"
+        ' should have the pattern of *_S5SS.MATS.JC.txt or *_A5SS.MATS.JCEC.txt',
         metavar='<file>',
         default=None,
         dest='alternative_5_splicing'
     )
     p.add_argument(
-        '--alternative-3-splicing',
+        '--a3ss',
         type=Path,
-        help="Alternative 3' splicing junction count txt file.",
+        help="Alternative 3' splicing junction count txt file. The file name"
+        ' should have the pattern of *_S3SS.MATS.JC.txt or *_A3SS.MATS.JCEC.txt',
         metavar='<file>',
         default=None,
         dest='alternative_3_splicing'
     )
     p.add_argument(
-        '--mutually-exclusive-exons',
+        '--mXE',
         type=Path,
-        help="Mutually exclusive junction count txt file.",
+        help="Mutually exclusive junction count txt file. The file name should"
+        " have the pattern of *_MXE.MATS.JC.txt or *_MXE.MATS.JCEC.txt',",
         metavar='<file>',
         default=None,
         dest='mutually_exclusive_exons'
     )
     p.add_argument(
-        '--retained-intron',
+        '--ri',
         type=Path,
-        help="Retained intron junction count txt file.",
+        help="Retained intron junction count txt file. The file name should"
+        " have the pattern of *_RI.MATS.JC.txt or *_RI.MATS.JCEC.txt",
         metavar='<file>',
         default=None,
         dest='retained_intron'
     )
 
-    p.add_argument(
-        '-o', '--output-prefix',
-        type=str,
-        help='Prefix to the output filename.',
-        metavar='<value>'
-    )
-
+    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
     add_args_verbose(p)

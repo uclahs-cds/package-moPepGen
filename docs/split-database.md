@@ -9,6 +9,8 @@
       show_root_heading: false
       show_source: false
 
-```
-{{ parse_vep_help(command) }}
-```
+## Arguments
+
+{% with actions=get_arg_data(command) %}
+{% include 'partials/_command_usage.md' %}
+{% endwith %}

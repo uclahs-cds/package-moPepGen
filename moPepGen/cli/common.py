@@ -6,6 +6,7 @@ from pathlib import Path
 import pickle
 import pkg_resources
 from moPepGen import aa, dna, gtf, logger, seqvar
+from moPepGen.aa.expasy_rules import EXPASY_RULES
 
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
@@ -28,15 +29,18 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         group.add_argument(
             '-g', '--genome-fasta',
             type=Path,
-            help='Path to the genome assembly FASTA file.',
+            help='Path to the genome assembly FASTA file. Only ENSEMBL and'
+            ' GENCODE are supported. Its version must be the same as the'
+            ' annotation GTF and proteome FASTA',
             metavar='<file>',
             default=None
         )
     group.add_argument(
         '-a', '--annotation-gtf',
         type=Path,
-        help='Path to the annotation GTF file. Must come from ENSEMBL/GENCODE'
-        ' with the same version of the genome and protein FASTA.',
+        help='Path to the annotation GTF file. Only ENSEMBL and GENCODE are'
+        ' supported. Its version must be the same as the genome and proteome'
+        ' FASTA.',
         metavar='<file>',
         default=None
     )
@@ -44,8 +48,9 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         group.add_argument(
             '-p', '--proteome-fasta',
             type=Path,
-            help='Path to the translated protein sequence FASTA file. Must come'
-            'from ENSEMBL/GENCODE with the same version of the genome FASTA.',
+            help='Path to the translated protein sequence FASTA file. Only'
+            ' ENSEMBL and GENCODE are supported. Its verion must be the same'
+            ' as genome FASTA and annotation GTF.',
             metavar='<file>',
             default=None
         )
@@ -67,49 +72,64 @@ def add_args_cleavage(parser:argparse.ArgumentParser):
     group.add_argument(
         '-c', '--cleavage-rule',
         type=str,
-        help='Cleavage rule. Defaults to trypsin. Defaults to trypsin',
+        help='Enzymatic cleavage rule.',
         default='trypsin',
-        metavar='<value>'
+        metavar='<value>',
+        choices=list(EXPASY_RULES.keys())
     )
     group.add_argument(
         '-m', '--miscleavage',
         type=int,
-        help='Number of cleavages to allow. Defaults to 2',
+        help='Number of cleavages to allow per non-canonical peptide.',
         default=2,
         metavar='<number>'
     )
     group.add_argument(
         '-w', '--min-mw',
         type=float,
-        help='The minimal molecular weight of the non-canonical peptides.'
-        'Defaults to 500',
+        help='The minimal molecular weight of the non-canonical peptides.',
         default=500.,
         metavar='<number>'
     )
     group.add_argument(
         '-l', '--min-length',
         type=int,
-        help='The minimal length of non-canonical peptides, inclusive.'
-        'Defaults to 7',
+        help='The minimal length of non-canonical peptides, inclusive.',
         default=7,
         metavar='<number>'
     )
     group.add_argument(
         '-x', '--max-length',
         type=int,
-        help='The maximum length of non-canonical peptides, inclusive.'
-        'Defaults to 25',
+        help='The maximum length of non-canonical peptides, inclusive.',
         default=25,
         metavar='<number>'
     )
 
 def add_args_verbose(parser:argparse.ArgumentParser):
     """ Add verbose """
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         '-v', '--verbose',
-        type=bool,
+        action='store_true',
         help='Verbose',
         default=True
+    )
+    group.add_argument(
+        '-q', '--quiet',
+        action='store_false',
+        help='Quiet'
+    )
+
+def add_args_output_prefix(parser:argparse.ArgumentParser):
+    """ add output prefix """
+    parser.add_argument(
+        '-o', '--output-prefix',
+        type=str,
+        help='Prefix to the output filename. The output file will be saved as'
+        ' <output_prefix>.gvf',
+        metavar='<value>',
+        required=True
     )
 
 def add_args_source(parser:argparse.ArgumentParser):

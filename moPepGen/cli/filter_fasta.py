@@ -1,4 +1,6 @@
-""" Module for filterFasta """
+""" `filterFasta` takes the variant peptide sequence file (FASTA) and filters it
+based on the gene expression data. A expresion table must be given as a CSV
+or TSV. """
 from __future__ import annotations
 import argparse
 from pathlib import Path

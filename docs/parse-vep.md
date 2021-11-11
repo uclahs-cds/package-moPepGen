@@ -11,8 +11,8 @@
 
 {% include 'partials/_caution_on_reference_version.md' %}
 
-```
-{{ parse_vep_help(command) }}
-```
+## Arguments
 
-{{ macros_info() }}
+{% with actions=get_arg_data(command) %}
+{% include 'partials/_command_usage.md' %}
+{% endwith %}

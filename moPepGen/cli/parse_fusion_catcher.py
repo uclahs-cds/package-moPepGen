@@ -1,11 +1,14 @@
-""" Module for FusionCatcher parser """
+""" `parseFusionCatcher` takes the identified fusion transcript results from
+[FusionCatcher](https://github.com/ndaniel/fusioncatcher) and save as a
+GVF file. The GVF file can be later used to call variant peptides using
+[callVariant](call-variant.md)."""
 from typing import List
 from pathlib import Path
 import argparse
 from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_verbose, add_args_source,\
-    print_start_message,print_help_if_missing_args, load_references, \
-    generate_metadata
+    add_args_output_prefix, print_start_message,print_help_if_missing_args,\
+    load_references, generate_metadata
 
 
 # pylint: disable=W0212
@@ -26,26 +29,20 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
         required=True
     )
     p.add_argument(
-        '-o', '--output-prefix',
-        type=str,
-        help='Prefix to the output filename.',
-        metavar='<value>',
-        required=True
-    )
-    p.add_argument(
         '--max-common-mapping',
         type=int,
-        help='Maximal number of common mapping reads. Defaults to 0',
+        help='Maximal number of common mapping reads.',
         metavar='<number>',
         default=0
     )
     p.add_argument(
         '--min-spanning-unique',
-        help='Minimal spanning unique reads. Defaults to 5',
+        help='Minimal spanning unique reads.',
         type=int,
         default=5,
         metavar='<number>'
     )
+    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
     add_args_verbose(p)

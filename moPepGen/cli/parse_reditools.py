@@ -1,10 +1,14 @@
-""" Module for REDItools parser """
+""" `parseREDItools` takes RNA editing results called by
+[REDItools](https://github.com/BioinfoUNIBA/REDItools) and save as a GVF file.
+The GVF file can then be used to call variant peptides using
+[callVariant](call-variant.md)
+"""
 from __future__ import annotations
 from typing import Dict, List, TYPE_CHECKING
 from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_verbose, add_args_source,\
-    print_start_message,print_help_if_missing_args, load_references, \
-    generate_metadata
+    add_args_output_prefix, print_start_message,print_help_if_missing_args,\
+    load_references, generate_metadata
 
 
 if TYPE_CHECKING:
@@ -32,17 +36,11 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         type=int,
         help='The column index for transcript ID. If your REDItools table does'
         'not contains it, use the AnnotateTable.py from the REDItools'
-        'package. Defaults to 16',
+        'package.',
         default=16,
         metavar='<number>'
     )
-    p.add_argument(
-        '-o', '--output-prefix',
-        type=str,
-        help='Prefix to the output filename.',
-        metavar='<value>',
-        required=True
-    )
+    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
     add_args_verbose(p)

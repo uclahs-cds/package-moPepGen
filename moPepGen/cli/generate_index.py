@@ -1,4 +1,7 @@
-""" Module for the moPepGen generateIndex subcommand """
+""" `generateIndex` takes the reference genome FASTA, annotation GTF, and the
+translated proteome FASTA file, converts to the moPepGen objects, serialize
+them and save into disk. The index files can then be used in any moPepGen
+command. """
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import pickle

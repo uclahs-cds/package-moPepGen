@@ -1,10 +1,13 @@
-""" Module for STAR-Fusion parser """
+""" `parseSTARFusion` takes the identified fusion transcript results from
+[STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion/wiki) and save as a
+GVF file. The GVF file can be later used to call variant peptides using
+[callVariant](call-variant.md)."""
 from __future__ import annotations
 from typing import List, TYPE_CHECKING
 from moPepGen import logger, seqvar, parser
-from .common import add_args_reference, add_args_verbose, add_args_source,\
-    print_start_message, print_help_if_missing_args, load_references, \
-    generate_metadata
+from .common import add_args_output_prefix, add_args_reference, \
+    add_args_verbose, add_args_source, print_start_message, \
+    print_help_if_missing_args, load_references, generate_metadata
 
 
 if TYPE_CHECKING:
@@ -17,27 +20,21 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     p = subparsers.add_parser(
         name='parseSTARFusion',
         help='Parse STAR-Fusion result for moPepGen to call variant peptides.',
-        description='Parse the STAR-Fusion result to GVF format of variant'
-        'records for moPepGen to call variant peptides.'
+        description='Parse STAR-Fusion output to GVF format of variant'
+        ' records for moPepGen to call variant peptides.'
     )
 
     p.add_argument(
         '-f', '--fusion',
         type=str,
-        help="Path to the STAR-Fusion's output file.",
+        help="Path to STAR-Fusion's output file.",
         metavar='<file>',
         required=True
     )
-    p.add_argument(
-        '-o', '--output-prefix',
-        type=str,
-        help='Prefix to the output filename.',
-        metavar='<value>',
-        required=True
-    )
+    add_args_output_prefix(p)
     p.add_argument(
         '--min-est-j',
-        help='Minimal estimated junction reads. Defaults to 5.0',
+        help='Minimal estimated junction reads to be included.',
         type=float,
         default=5.0,
         metavar='<number>'
