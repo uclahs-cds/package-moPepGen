@@ -11,6 +11,12 @@
 
 {% include 'partials/_caution_on_reference_version.md' %}
 
+## Usage
+
+```
+{{ get_arg_usage(command) }}
+```
+
 ## Arguments
 
 {% with actions=get_arg_data(command) %}

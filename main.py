@@ -30,3 +30,14 @@ def define_env(env):
         add_parser = COMMAND_MAPPER[command]
         p = add_parser(subparsers)
         return p._actions
+
+    @env.macro
+    def get_arg_usage(command:str):
+        stream = io.StringIO()
+        with redirect_stdout(stream):
+            parser = argparse.ArgumentParser()
+            subparsers = parser.add_subparsers()
+            add_parser = COMMAND_MAPPER[command]
+            p = add_parser(subparsers)
+            p.print_help()
+        return stream.getvalue()

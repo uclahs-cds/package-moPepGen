@@ -1,13 +1,19 @@
 {% set command = 'filterFasta' %}
 # {{ command }}
 
-::: moPepGen.cli.call_variant_peptide
+::: moPepGen.cli.filter_fasta
 	handler: python
     selection:
       members: false
     rendering:
       show_root_heading: false
       show_source: false
+
+## Usage
+
+```
+{{ get_arg_usage(command) }}
+```
 
 ## Arguments
 

@@ -1,7 +1,7 @@
 {% set command = 'callNoncoding' %}
 # {{ command }}
 
-::: moPepGen.cli.call_variant_peptide
+::: moPepGen.cli.call_noncoding_peptide
 	handler: python
     selection:
       members: false
@@ -10,6 +10,12 @@
       show_source: false
 
 {% include 'partials/_caution_on_reference_version.md' %}
+
+## Usage
+
+```
+{{ get_arg_usage(command) }}
+```
 
 ## Arguments
 
