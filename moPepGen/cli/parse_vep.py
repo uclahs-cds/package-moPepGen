@@ -5,6 +5,7 @@ VEP file can then be parsed to moPepGen's `callVariant` subcommand to call for
 variant peptide sequences.
 """
 from __future__ import annotations
+import argparse
 from typing import Dict, List, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.parser import VEPParser
@@ -16,9 +17,6 @@ from moPepGen.cli.common import add_args_output_prefix, add_args_reference, \
     print_help_if_missing_args, load_references, generate_metadata
 
 
-if TYPE_CHECKING:
-    import argparse
-
 # pylint: disable=W0212
 def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen parseVEP """
@@ -29,7 +27,8 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         description="Parse VEP output tsv to the GVF format of variant records"
         "for moPepGen to call variant peptides. The genome assembly FASTA and"
         "annotation GTF must come from the same GENCODE/ENSEMBL version, and"
-        "must the consistent with the VEP output."
+        "must the consistent with the VEP output.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
     p.add_argument(

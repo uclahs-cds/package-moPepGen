@@ -4,15 +4,13 @@ The GVF file can then be used to call variant peptides using
 [callVariant](call-variant.md)
 """
 from __future__ import annotations
+import argparse
 from typing import Dict, List, TYPE_CHECKING
 from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_verbose, add_args_source,\
     add_args_output_prefix, print_start_message,print_help_if_missing_args,\
     load_references, generate_metadata
 
-
-if TYPE_CHECKING:
-    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
@@ -22,7 +20,8 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         name='parseREDItools',
         help='Parse REDItools result for moPepGen to call variant peptides.',
         description='Parse the REDItools result to a GVF format of variant'
-        'records for moPepGen to call variant peptides. The genome'
+        'records for moPepGen to call variant peptides. The genome',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-t', '--reditools-table',

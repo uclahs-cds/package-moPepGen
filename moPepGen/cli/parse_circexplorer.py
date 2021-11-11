@@ -20,7 +20,8 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         name='parseCIRCexplorer',
         help='Parse CIRCexplorer result',
         description='Parse CIRCexplorer result to a TSV format for moPepGen to'
-        ' call variant peptides'
+        ' call variant peptides',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-i', '--input-path',

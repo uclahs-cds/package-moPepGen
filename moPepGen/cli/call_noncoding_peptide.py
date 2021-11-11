@@ -1,6 +1,7 @@
 """ `callNoncoding` calls novel peptide sequences from noncoding gene sequences.
 It finds all start codons of any noncoding gene. """
 from __future__ import annotations
+import argparse
 from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path
 from Bio.SeqIO import FastaIO
@@ -13,7 +14,6 @@ from moPepGen.cli.common import add_args_cleavage, add_args_verbose, add_args_re
 
 
 if TYPE_CHECKING:
-    import argparse
     from moPepGen.gtf import TranscriptAnnotationModel
     from moPepGen.dna import DNASeqDict
 
@@ -22,7 +22,8 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen callNoncoding """
     p = subparsers.add_parser(
         name='callNoncoding',
-        help='Call non-canonical peptides from noncoding transcripts.'
+        help='Call non-canonical peptides from noncoding transcripts.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-t', '--min-tx-length',

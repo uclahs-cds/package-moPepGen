@@ -7,6 +7,7 @@ The created GVF file can be then used to call for variant peptides using
 [callVariant](call-variant.md)
 """
 from __future__ import annotations
+import argparse
 from typing import Dict, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import logger, seqvar
@@ -16,9 +17,6 @@ from .common import add_args_output_prefix, add_args_reference, \
     print_help_if_missing_args, load_references, generate_metadata
 
 
-if TYPE_CHECKING:
-    import argparse
-
 # pylint: disable=W0212
 def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen parseRMATs """
@@ -27,7 +25,8 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         name='parseRMATS',
         help='Parse rMATS result for moPepGen to call variant peptides.',
         description='Parse the rMATS result to GVF format of variant'
-        'records for moPepGen to call variant peptides.'
+        'records for moPepGen to call variant peptides.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
     p.add_argument(

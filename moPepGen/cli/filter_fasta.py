@@ -17,7 +17,8 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
         name='filterFasta',
         help='Filter noncanonical peptides.',
         description='Filter noncanonical peptides according to gene expression'
-        ' or gene biotypes.'
+        ' or gene biotypes.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-i', '--input-fasta',
