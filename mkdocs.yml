@@ -9,17 +9,17 @@ nav:
   - Quick Start: quick-start.md
   - File Format: file-format.md
   - Commands:
-    - generateIndex: generate-index.md
-    - parseVEP: parse-vep.md
-    - parseREDItools: parse-reditools.md
-    - parseSTARFuion: parse-star-fusion.md
-    - parseFusionCatcher: parse-fusion-catcher.md
-    - parseRMATS: parse-rmats.md
-    - parseCIRCexplorer: parse-circexplorer.md
-    - callVariant: call-variant.md
-    - callNoncoding: call-noncoding.md
-    - filterFasta: filter-fasta.md
-    - splitDatabase: split-database.md
+      - generateIndex: generate-index.md
+      - parseVEP: parse-vep.md
+      - parseREDItools: parse-reditools.md
+      - parseSTARFuion: parse-star-fusion.md
+      - parseFusionCatcher: parse-fusion-catcher.md
+      - parseRMATS: parse-rmats.md
+      - parseCIRCexplorer: parse-circexplorer.md
+      - callVariant: call-variant.md
+      - callNoncoding: call-noncoding.md
+      - filterFasta: filter-fasta.md
+      - splitDatabase: split-database.md
 theme: readthedocs
 plugins:
   - mkdocstrings:
