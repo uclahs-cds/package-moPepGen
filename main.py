@@ -22,6 +22,7 @@ COMMAND_MAPPER = {
 def define_env(env):
     "Hook function"
     # pylint: disable=W0612
+    # pylint: disable=W0212
 
     @env.macro
     def get_arg_data(command:str):
