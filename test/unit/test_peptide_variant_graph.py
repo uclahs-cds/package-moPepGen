@@ -597,17 +597,165 @@ class TestPeptideVariantGraph(unittest.TestCase):
         expected = {'MRIK', 'RIK'}
         self.assertEqual(seqs, expected)
 
-    def test_fit_into_cleavage_bridge_node_needs_merge(self):
-        """ Test the fit into cleavage for bridge node that needs to be merged
-        forward
-                     Q
-                    /
-        0      W-SPY-QT               0      WSPY-QT
-                /                                X
-              NG              ->            NGSPY-Q
-             /                             /
-        1 VLR-NGALT                   1 VLR-NGALT
+    def test_call_and_stage_known_orf_cds_start_nf_start_altering(self):
+        """ Test when the transcript is cds_start_NF, and the mutation is
+        start altering.
+        """
+        variant_1 = (4, 5, 'T', 'TCCC', 'INDEL', '8:T-TCCC', 0, 2, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5), (0,5))], 2),
+            2: ('SSSSK', [0], [variant_1], [], 2),
+            3: ('SMSMRK', [1, 2], [None], [((0,6),(5,11))], 2),
+            4: ('SSSPK', [3], [None], [((0,5),(11,16))], 2)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.cds_start_nf = True
+        graph.known_orf = [2,92]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (2,92), (0,30))
+        cursor = PVGCursor(graph.root, nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(pool.peptides), 1)
+        seqs = {str(x.seq) for x in pool.peptides.keys()}
+        expected = {'SSSSK'}
+        self.assertEqual(seqs, expected)
 
+    def test_call_and_stage_known_orf_start_altering(self):
+        """ Test when the transcript is not cds_start_NF, and the mutation is
+        start altering and.
+        """
+        variant_1 = (7, 8, 'T', 'TCCC', 'INDEL', '8:T-TCCC', 2, 3, True)
+        data = {
+            1: ('SSMSK', [0], [None], [((0,5), (0,5))], 0),
+            2: ('SSSSK', [0], [variant_1], [], 0),
+            3: ('SMSMRK', [1, 2], [None], [((0,6),(5,11))], 0),
+            4: ('SSSPK', [3], [None], [((0,5),(11,16))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.cds_start_nf = True
+        graph.known_orf = [6,90]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (6,90), (2,30))
+        cursor = PVGCursor(graph.root, nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(pool.peptides), 0)
+
+    def test_call_and_stage_known_orf_cds_stop_gain(self):
+        """ Test when the transcript is cds_start_NF, and the mutation is
+        start altering.
+        """
+        variant_1 = (4, 5, 'T', 'TCCC', 'INDEL', '8:T-TCCC', 0, 2, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5), (0,5))], 0),
+            2: ('SMSMRK', [1], [None], [((0,6),(5,11))], 0),
+            3: ('SSSPK', [2], [None], [((0,5),(11,16))], 0),
+            4: ('SS*PK', [2], [variant_1], [((0,2),(11,13)), ((3,5),(14,16))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [0,90]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (0,90), (0,30))
+        cursor = PVGCursor(nodes[2], nodes[4], True, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(pool.peptides), 1)
+        seqs = {str(x.seq) for x in pool.peptides.keys()}
+        expected = {'SS'}
+        self.assertEqual(seqs, expected)
+
+    def test_call_and_stage_known_orf_cds_stop_lost(self):
+        """ Test when the transcript is cds_start_NF, and the mutation is
+        start altering.
+        """
+        variant_1 = (41, 42, 'G', 'C', 'SNV', '41:G-C', 2, 3, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5), (0,5))], 0),
+            2: ('SMSMRK', [1], [None], [((0,6),(5,11))], 0),
+            3: ('SS*PK', [2], [None], [((0,5),(11,16))], 0),
+            4: ('SSSPK', [2], [variant_1], [((0,2),(11,13)), ((3,5),(14,16))], 0),
+            5: ('SPPPK', [3,4], [None], [((0,5),(17,22))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [0,39]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (0,42), (0,14))
+        cursor = PVGCursor(nodes[2], nodes[3], True, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        cursor = PVGCursor(nodes[2], nodes[4], True, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(traversal.queue[0].start_gain), 1)
+
+    def test_call_and_stage_known_orf_not_in_cds_no_start_altering(self):
+        """ Test when the transcript doesn't have any start altering variants,
+        M not going to be treated as new start codon.
+        """
+        variant_1 = (66, 67, 'G', 'C', 'SNV', '41:G-C', 2, 3, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5), (0,5))], 0),
+            2: ('SMSMRK', [1], [None], [((0,6),(5,11))], 0),
+            3: ('SS*PGGK', [2], [None], [((0,5),(11,16))], 0),
+            4: ('JIWIK', [3], [None], [((0,5),(17,22))], 0),
+            5: ('JIMIT', [3], [variant_1], [((0,2),(17,19)),((3,5),(20,22))], 0),
+            6: ('VSSSP', [4,5], [None], [((0,5),(22,27))], 0),
+            7: ('JIWQT', [6], [None], [((0,5),(27,32))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [18,39]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (6,13), (18,39))
+        cursor = PVGCursor(nodes[5], nodes[6], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertFalse(traversal.queue[0].in_cds)
+
+    def test_call_and_stage_known_orf_cleavage_gain_downstream(self):
+        """ Test when a cleavage gain was caused by downstream node.
+        """
+        variant_1 = (0, 1, 'C', 'T', 'SNV', '0:C-T', 0, 1, True)
+        data = {
+            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('SSSSSSSSSR', [1],[None], [((0,10),(5,15))], 0),
+            3: ('SSSSK', [1],[None], [((0,5),(5,10))], 0),
+            4: ('SSSSR', [3], [variant_1], [((1,5),(11,15))], 0),
+            5: ('SSSPK', [2,4], [None], [((0,5), (15,20))], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [0,39]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (6,13), (18,39))
+        cursor = PVGCursor(nodes[1], nodes[3], True, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        variants = list(list(traversal.pool.peptides.values())[0])[0].variants
+        self.assertEqual(len(variants), 1)
+
+    def test_call_and_stage_known_orf_start_lost(self):
+        """ Test for start lost variants.
+        """
+        variant_1 = (3, 4, 'C', 'T', 'SNV', '0:C-T', 1, 2, True)
+        data = {
+            1: ('SMSMK', [0], [None], [((0,5),(0,5))], 0),
+            2: ('SSSMK', [0], [variant_1], [((0,1),(0,1)),((2,5),(2,5))], 0),
+            3: ('SSSPK', [1,2], [None], [((0,5),(5,10))], 0),
+            4: ('SSPPK', [3], [None], [((0,5),(10,15))], 0),
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.known_orf = [3,39]
+        pool = VariantPeptideDict(graph.id)
+        traversal = PVGTraversal(True, False, 0, pool, (1,13), (3,39))
+        cursor = PVGCursor(graph.reading_frames[0], nodes[2], False, [0, None], [])
+        graph.call_and_stage_known_orf(cursor,  traversal)
+        self.assertEqual(len(traversal.pool.peptides), 2)
+
+    def test_fit_into_cleavage_bridge_node_needs_merge(self):
+        r""" Test the fit into cleavage for bridge node that needs to be merged
+        forward
+                     Q                       WSPYQ-
+                    /                       /      \
+        0      W-SPY-QT               0     -WSPYQT-
+                /                                  /|
+              NG              ->            NGSPYQ- |
+             /                             /       /
+        1 VLR-NGALT                       | NGSPYQT
+                                          |/
+                                      1 VLR-NGALT
         """
         data = {
             1: ('VLR',  [0],  [None], [((0,3),( 0, 3))], 1),
@@ -621,5 +769,6 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         branches,_ = graph.fit_into_cleavages_single_upstream(nodes[4])
         self.assertEqual(len(branches), 2)
-        seqs = {str(x.seq.seq) for x in branches}
-        self.assertEqual(seqs, {'Q', 'QT'})
+        actual = {str(x.seq.seq) for x in nodes[1].out_nodes}
+        expect = {'NGSPYQT', 'NGSPYQ'}
+        self.assertTrue(expect.issubset(actual))

@@ -2,6 +2,7 @@
 import argparse
 from contextlib import redirect_stdout
 from pathlib import Path
+import sys
 from Bio import SeqIO
 from moPepGen.cli.common import add_args_reference, print_help_if_missing_args
 from moPepGen.cli import call_variant_peptide
@@ -43,7 +44,7 @@ def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
     args = argparse.Namespace()
     args.genome_fasta = genome
     args.annotation_gtf = anno
-    args.protein_fasta = protein
+    args.proteome_fasta = protein
     args.tx_list = [tx_id]
     args.gene_list = None
     args.output_dir = output_dir
@@ -98,7 +99,7 @@ def call_brute_force(gvf_file:Path, ref_dir:Path, output_path):
         with redirect_stdout(handle):
             brute_force(args)
 
-def assert_equal(variant_fasta:Path, brute_force_txt:Path):
+def assert_equal(variant_fasta:Path, brute_force_txt:Path, output_dir:Path):
     """ assert equal """
     with open(variant_fasta, 'rt') as handle:
         variant_seqs = set()
@@ -111,8 +112,20 @@ def assert_equal(variant_fasta:Path, brute_force_txt:Path):
 
     if variant_seqs != brute_force_seqs:
         logger('Not equal!')
-    else:
-        logger('Equal!')
+        variant_only = variant_seqs - brute_force_seqs
+        brute_force_only = brute_force_seqs - variant_seqs
+        if variant_only:
+            variant_only_file = output_dir/'call_variant_only.txt'
+            with open(variant_only_file, 'wt') as handle:
+                for seq in variant_only:
+                    handle.write(seq + '\n')
+        if brute_force_only:
+            brute_force_only_file = output_dir/'brute_force_only.txt'
+            with open(brute_force_only_file, 'wt') as handle:
+                for seq in brute_force_only:
+                    handle.write(seq + '\n')
+        sys.exit(1)
+    logger('Equal!')
 
 def validate_variant_calling(args:argparse.Namespace):
     """ main entrypoint """
@@ -155,4 +168,4 @@ def validate_variant_calling(args:argparse.Namespace):
 
     logger('Brute force completed.')
 
-    assert_equal(variant_fasta, brute_force_txt)
+    assert_equal(variant_fasta, brute_force_txt, output_dir)
