@@ -5,6 +5,7 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
 from moPepGen import seqvar, aa, gtf, dna
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
 
 
@@ -72,7 +73,6 @@ def brute_force(args):
         variant_pool.load_variants(handle, anno, genome)
 
     tx_id = list(variant_pool.transcriptional.keys())[0]
-    variants = variant_pool.transcriptional[tx_id]
 
     tx_model = anno.transcripts[tx_id]
     tx_seq = tx_model.get_transcript_sequence(genome['chr1'])
@@ -83,6 +83,13 @@ def brute_force(args):
     if tx_peptides and tx_peptides[0].seq.startswith('M'):
         canonical_peptides.add(str(tx_peptides[0].seq[1:]))
     variant_peptides = set()
+
+    start_codon = FeatureLocation(
+        start=tx_seq.orf.start, end=tx_seq.orf.start + 3
+    )
+    variants = variant_pool.transcriptional[tx_id]
+    variants = [x for x in variants if x.location.start >= 3 and
+        (x.location >= start_codon or x.location.overlaps(start_codon))]
 
     for i in range(len(variants)):
         for comb in combinations(variants, i + 1):
@@ -97,6 +104,7 @@ def brute_force(args):
 
             if skip:
                 continue
+
             seq = tx_seq.seq
             offset = 0
             for variant in comb:
@@ -104,7 +112,16 @@ def brute_force(args):
                 end = variant.location.end + offset
                 offset = offset + len(variant.alt) - len(variant.ref)
                 seq = seq[:start] + variant.alt + seq[end:]
-            aa_seq = seq[tx_seq.orf.start:].translate(to_stop=True)
+
+            has_start_altering = any(x.location.overlaps(start_codon) for x in comb)
+            if not tx_model.is_cds_start_nf() and has_start_altering:
+                cds_start = seq[tx_seq.orf.start:].find('ATG')
+                if cds_start == -1:
+                    continue
+                cds_start = cds_start + tx_seq.orf.start
+            else:
+                cds_start = tx_seq.orf.start
+            aa_seq = seq[cds_start:].translate(to_stop=True)
             aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
             peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
             for peptide in peptides:
