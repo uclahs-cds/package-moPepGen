@@ -1,15 +1,18 @@
-""" Module for the moPepGen generateIndex subcommand """
+""" `generateIndex` takes the reference genome FASTA, annotation GTF, and the
+translated proteome FASTA file, converts them to the moPepGen objects,
+serializes them and saves into disk. The outputted index files also contain the
+canonical peptide pool. The index files can then be used in any moPepGen
+command. It is recommended to run `generateIndex` before any analysis using
+moPepGen to avoid processing the reference files repeatedly and save massive
+time. """
 from __future__ import annotations
-from typing import TYPE_CHECKING
+import argparse
 from pathlib import Path
 import pickle
 from moPepGen import dna, aa, gtf, logger
 from .common import add_args_cleavage, add_args_reference, add_args_verbose, \
     print_help_if_missing_args, print_start_message
 
-
-if TYPE_CHECKING:
-    import argparse
 
 # pylint: disable=W0212
 def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
@@ -18,13 +21,14 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
         name='generateIndex',
         help='Generate genome and proteome index files for moPepGen',
         description='Generate genome and proteome index files for moPepGen'
-        'parsers and peptide caller.'
+        'parsers and peptide caller.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-o', '--output-dir',
         type=Path,
         help='Ouput directory for index files.',
-        metavar='',
+        metavar='<file>',
         dest='output_dir',
         required=True
     )
@@ -33,6 +37,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     add_args_verbose(p)
     p.set_defaults(func=generate_index)
     print_help_if_missing_args(p)
+    return p
 
 
 def generate_index(args:argparse.Namespace):

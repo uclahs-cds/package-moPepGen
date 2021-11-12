@@ -1,13 +1,17 @@
-""" Module for CIRCexplorer parser """
+r""" `parseCIRCExplorer` takes the identified circRNA results from
+[CIRCexplorer](https://circexplorer2.readthedocs.io/) and save as a
+GVF file. The GVF file can be later used to call variant peptides using
+[callVariant](call-variant.md). Noted that only known circRNA is supported (
+\*_circular_known.txt) """
 from __future__ import annotations
 import argparse
 from typing import List, Dict
 from pathlib import Path
 from moPepGen import logger, circ, err
 from moPepGen.parser import CIRCexplorerParser
-from moPepGen.cli.common import add_args_reference, add_args_verbose, add_args_source,\
-    print_start_message,print_help_if_missing_args, load_references, \
-    generate_metadata, parse_range
+from moPepGen.cli.common import add_args_reference, add_args_verbose, \
+    add_args_source, add_args_output_prefix, print_start_message, \
+    print_help_if_missing_args, load_references, generate_metadata, parse_range
 
 
 # pylint: disable=W0212
@@ -17,20 +21,15 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         name='parseCIRCexplorer',
         help='Parse CIRCexplorer result',
         description='Parse CIRCexplorer result to a TSV format for moPepGen to'
-        ' call variant peptides'
+        ' call variant peptides',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-i', '--input-path',
         type=Path,
         help='The input file path for CIRCexplorer result. Only the known'
         'circRNA result is supported.',
-        metavar=''
-    )
-    p.add_argument(
-        '-o', '--output-prefix',
-        type=str,
-        help='Output prefix',
-        metavar=''
+        metavar='<file>'
     )
     p.add_argument(
         '--circexplorer3',
@@ -40,9 +39,9 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--min-read-number',
         type=int,
-        help='Minimal number of junction read counts. Defaults to 1',
+        help='Minimal number of junction read counts.',
         default=1,
-        metavar=''
+        metavar='<number>'
     )
     p.add_argument(
         '--min-fpb-circ',
@@ -50,7 +49,7 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         help='Minimal CRICscore value for CIRCexplorer3. Recommends to 1,'
         'defaults to None',
         default=None,
-        metavar=''
+        metavar='<number>'
     )
     p.add_argument(
         '--min-circ-score',
@@ -58,27 +57,31 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         help='Minimal CIRCscore value for CIRCexplorer3. Recommends to 1,'
         'defaults to None',
         default=None,
-        metavar=''
+        metavar='<number>'
     )
     p.add_argument(
         '--intron-start-range',
         type=str,
         help='The range of difference allowed between the intron start and'
-        ' the reference position. Defaults to -2,0',
-        default='-2,0'
+        ' the reference position.',
+        default='-2,0',
+        metavar='<number>'
     )
     p.add_argument(
         '--intron-end-range',
         type=str,
         help='The range of difference allowed between the intron end and'
-        ' the reference position. Defaults to -100,2',
-        default='-100,5'
+        ' the reference position.',
+        default='-100,5',
+        metavar='<number>'
     )
+    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_circexplorer)
     print_help_if_missing_args(p)
+    return p
 
 def parse_circexplorer(args:argparse.Namespace):
     """ Parse circexplorer known circRNA results. """

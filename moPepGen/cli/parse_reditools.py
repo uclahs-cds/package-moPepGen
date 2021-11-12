@@ -1,14 +1,16 @@
-""" Module for REDItools parser """
+""" `parseREDItools` takes RNA editing results called by
+[REDItools](https://github.com/BioinfoUNIBA/REDItools) and saves them as a GVF
+file. The GVF file can then be used to call variant peptides using
+[callVariant](call-variant.md)
+"""
 from __future__ import annotations
-from typing import Dict, List, TYPE_CHECKING
+import argparse
+from typing import Dict, List
 from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_verbose, add_args_source,\
-    print_start_message,print_help_if_missing_args, load_references, \
-    generate_metadata
+    add_args_output_prefix, print_start_message,print_help_if_missing_args,\
+    load_references, generate_metadata
 
-
-if TYPE_CHECKING:
-    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
@@ -18,13 +20,14 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         name='parseREDItools',
         help='Parse REDItools result for moPepGen to call variant peptides.',
         description='Parse the REDItools result to a GVF format of variant'
-        'records for moPepGen to call variant peptides. The genome'
+        'records for moPepGen to call variant peptides. The genome',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-t', '--reditools-table',
         type=str,
         help='Path to the REDItools output table.',
-        metavar='',
+        metavar='<file>',
         required=True
     )
     p.add_argument(
@@ -32,22 +35,17 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         type=int,
         help='The column index for transcript ID. If your REDItools table does'
         'not contains it, use the AnnotateTable.py from the REDItools'
-        'package. Defaults to 16',
+        'package.',
         default=16,
-        metavar=''
+        metavar='<number>'
     )
-    p.add_argument(
-        '-o', '--output-prefix',
-        type=str,
-        help='Prefix to the output filename.',
-        metavar='',
-        required=True
-    )
+    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_reditools)
     print_help_if_missing_args(p)
+    return p
 
 def parse_reditools(args:argparse.Namespace) -> None:
     """ Parse REDItools output and save it in the GVF format. """
@@ -90,13 +88,3 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     if args.verbose:
         logger("Variants written to disk.")
-
-
-if __name__ == '__main__':
-    test_args = argparse.Namespace()
-    test_args.table_file = 'test/files/reditools/CPT0208690010_merged_chr22.txt'
-    test_args.transcript_id_column = 16
-    test_args.index_dir = 'test/files/downsampled_set/gencode_v36_index'
-    test_args.output_prefix = 'test/files/reditools/CPT0208690010_merged_chr22.mop'
-    test_args.verbose = True
-    parse_reditools(test_args)

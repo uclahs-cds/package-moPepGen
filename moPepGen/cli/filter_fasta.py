@@ -1,4 +1,6 @@
-""" Module for filterFasta """
+""" `filterFasta` takes the variant peptide sequence file (FASTA) and filters it
+based on the gene expression data. A expresion table must be given as a CSV
+or TSV. """
 from __future__ import annotations
 import argparse
 from pathlib import Path
@@ -15,7 +17,8 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
         name='filterFasta',
         help='Filter noncanonical peptides.',
         description='Filter noncanonical peptides according to gene expression'
-        ' or gene biotypes.'
+        ' or gene biotypes.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-i', '--input-fasta',
@@ -78,6 +81,7 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     add_args_verbose(p)
     print_help_if_missing_args(p)
     p.set_defaults(func=filter_fasta)
+    return p
 
 def filter_fasta(args:argparse.Namespace) -> None:
     """ Filter noncanonical peptide FASTA """

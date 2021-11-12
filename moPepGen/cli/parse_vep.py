@@ -1,30 +1,34 @@
-""" VEP2VariantPeptides module """
+""" `parseVEP` takes the output of Ensembl's [Variant Effector Predictor
+](https://uswest.ensembl.org/info/docs/tools/vep/index.html) (VEP) and
+convert it into the GVF file format that moPepGen internally uses. The result
+VEP file can then be parsed to moPepGen's `callVariant` subcommand to call for
+variant peptide sequences.
+"""
 from __future__ import annotations
-from typing import Dict, List, TYPE_CHECKING
+import argparse
+from typing import Dict, List
 from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
     TranscriptionStartSiteMutationError
 from moPepGen import seqvar, logger
-from moPepGen.cli.common import add_args_reference, add_args_verbose, add_args_source,\
-    print_start_message, print_help_if_missing_args, load_references, \
-    generate_metadata
+from moPepGen.cli.common import add_args_output_prefix, add_args_reference, \
+    add_args_verbose, add_args_source, print_start_message, \
+    print_help_if_missing_args, load_references, generate_metadata
 
-
-if TYPE_CHECKING:
-    import argparse
 
 # pylint: disable=W0212
 def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen parseVEP """
 
-    p = subparsers.add_parser(
+    p:argparse.ArgumentParser = subparsers.add_parser(
         name='parseVEP',
         help='Parse VEP output for moPepGen to call variant peptides.',
         description="Parse VEP output tsv to the GVF format of variant records"
         "for moPepGen to call variant peptides. The genome assembly FASTA and"
         "annotation GTF must come from the same GENCODE/ENSEMBL version, and"
-        "must the consistent with the VEP output."
+        "must the consistent with the VEP output.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
     p.add_argument(
@@ -32,21 +36,16 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         type=Path,
         nargs='+',
         help='Path to VEP result txt file.',
-        metavar='',
+        metavar='<file>',
         required=True
     )
-    p.add_argument(
-        '-o', '--output-prefix',
-        type=str,
-        help='Prefix to the output filename.',
-        metavar='',
-        required=True
-    )
+    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
     add_args_verbose(p)
     p.set_defaults(func=parse_vep)
     print_help_if_missing_args(p)
+    return p
 
 def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """
@@ -96,18 +95,3 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     if args.verbose:
         logger('Variant info written to disk.')
-
-
-if __name__ == '__main__':
-    import argparse
-    test_args = argparse.Namespace()
-    test_args.command = 'parseVEP'
-    test_args.vep_txt = [
-        'test/files/CPCG0100_gencode_indel_ENST00000516353.1.txt'
-    ]
-    test_args.index_dir = 'test/files/gencode_34_index'
-    test_args.genome_fasta = None
-    test_args.annotation_gtf = None
-    test_args.output_prefix = 'test/files/vep/vep'
-    test_args.verbose = True
-    parse_vep(args=test_args)
