@@ -13,5 +13,6 @@ class RMATSRecord(ABC):
         self.chrom = chrom
 
     @abstractmethod
-    def convert_to_variant_records(self, anno, genome) -> List[seqvar.VariantRecord]:
+    def convert_to_variant_records(self, anno, genome, min_ijc, min_sjc
+            ) -> List[seqvar.VariantRecord]:
         """ Convert to variant records """

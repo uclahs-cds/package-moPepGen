@@ -21,7 +21,7 @@ from .common import add_args_output_prefix, add_args_reference, \
 def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen parseRMATs """
     ## parser_rmats
-    p = subparsers.add_parser(
+    p:argparse.ArgumentParser = subparsers.add_parser(
         name='parseRMATS',
         help='Parse rMATS result for moPepGen to call variant peptides.',
         description='Parse the rMATS result to GVF format of variant'
@@ -57,7 +57,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         dest='alternative_3_splicing'
     )
     p.add_argument(
-        '--mXE',
+        '--mxe',
         type=Path,
         help="Mutually exclusive junction count txt file. The file name should"
         " have the pattern of *_MXE.MATS.JC.txt or *_MXE.MATS.JCEC.txt',",
@@ -73,6 +73,20 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         metavar='<file>',
         default=None,
         dest='retained_intron'
+    )
+    p.add_argument(
+        '--min-ijc',
+        type=int,
+        help="Minimal junction read count for the inclusion version to be"
+        " analyzed.",
+        default=1
+    )
+    p.add_argument(
+        '--min-sjc',
+        type=int,
+        help="Minimal junction read count for the skipped version to be"
+        " analyzed.",
+        default=1
     )
 
     add_args_output_prefix(p)
@@ -107,7 +121,10 @@ def parse_rmats(args:argparse.Namespace) -> None:
             logger(f"Start parsing {event_type} file {path}")
             for record in RMATSParser.parse(path, event_type):
                 try:
-                    var_records = record.convert_to_variant_records(anno, genome)
+                    var_records = record.convert_to_variant_records(
+                        anno=anno, genome=genome,
+                        min_ijc=args.min_ijc, min_sjc=args.min_sjc
+                    )
                 except:
                     logger(record.gene_id)
                     raise
