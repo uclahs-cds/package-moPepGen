@@ -105,6 +105,7 @@ class A3SSRecord(RMATSRecord):
                 self.gene_id)
             genomic_position = f'{chrom}:{self.short_exon_end}-{self.long_exon_end}'
 
+        # For A3SS, the long version is "inclusion" and short is 'skipped'
         if not short and self.sjc_sample_1 >= min_sjc:
             location = FeatureLocation(seqname=self.gene_id, start=start_gene,
                 end=end_gene)

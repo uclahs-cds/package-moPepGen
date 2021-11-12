@@ -108,6 +108,8 @@ class SERecord(RMATSRecord):
 
         genomic_position = f'{chrom}:{self.exon_start+1}:{self.exon_end}'
 
+        # For SE, the skipped is 'skipped', and inclusion is 'inclusion'
+        # what a nonsense comment
         if not skipped and self.sjc_sample_1 >= min_sjc:
             location = FeatureLocation(seqname=self.gene_id, start=start, end=end)
             for tx_id in retained:

@@ -61,6 +61,9 @@ class RIRecord(RMATSRecord):
             ) -> List[seqvar.VariantRecord]:
         """ Convert to list of VariantRecord """
         variants = []
+        # Currently not counting the case when the inclusion version (retained)
+        # exists in GTF. So as long as the skipped junction reads are too small
+        # we will exit
         if self.sjc_sample_1 < min_sjc:
             return variants
         gene_model = anno.genes[self.gene_id]

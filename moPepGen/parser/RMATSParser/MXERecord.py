@@ -184,6 +184,7 @@ class MXERecord(RMATSRecord):
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
+        # For MXE, the first exon is 'inclusion' and second is 'skipped'.
         if not have_first and self.ijc_sample_1 >= min_ijc:
             location = FeatureLocation(seqname=self.gene_id, start=second_start,
                 end=second_end)
