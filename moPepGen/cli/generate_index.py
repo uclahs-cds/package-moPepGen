@@ -7,6 +7,7 @@ moPepGen to avoid processing the reference files repeatedly and save massive
 time. """
 from __future__ import annotations
 import argparse
+from pathlib import Path
 import pickle
 from moPepGen import dna, aa, gtf, logger
 from .common import add_args_cleavage, add_args_reference, add_args_verbose, \
@@ -25,7 +26,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     )
     p.add_argument(
         '-o', '--output-dir',
-        type=str,
+        type=Path,
         help='Ouput directory for index files.',
         metavar='<file>',
         dest='output_dir',
@@ -41,9 +42,9 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
 
 def generate_index(args:argparse.Namespace):
     """ Generate  """
-    path_genome:str = args.genome_fasta
-    path_gtf:str = args.annotation_gtf
-    parth_proteome:str = args.proteome_fasta
+    path_genome:Path = args.genome_fasta
+    path_gtf:Path = args.annotation_gtf
+    parth_proteome:Path = args.proteome_fasta
 
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
@@ -53,13 +54,15 @@ def generate_index(args:argparse.Namespace):
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     verbose:bool = args.verbose
 
-    output_dir:str = args.output_dir
-    output_genome = f"{output_dir}/genome.pickle"
-    output_proteome = f"{output_dir}/proteome.pickle"
-    output_anno = f"{output_dir}/annotation.pickle"
-    output_peptides = f"{output_dir}/canonical_peptides.pickle"
+    output_dir:Path = args.output_dir
+    output_genome = output_dir/"genome.pickle"
+    output_proteome = output_dir/"proteome.pickle"
+    output_anno = output_dir/"annotation.pickle"
+    output_peptides = output_dir/"canonical_peptides.pickle"
 
     print_start_message(args)
+
+    output_dir.mkdir(exist_ok=True)
 
     genome = dna.DNASeqDict()
     genome.dump_fasta(path_genome)
