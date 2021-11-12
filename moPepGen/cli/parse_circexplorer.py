@@ -1,4 +1,4 @@
-""" `parseCIRCExplorer` takes the identified circRNA results from
+r""" `parseCIRCExplorer` takes the identified circRNA results from
 [CIRCexplorer](https://circexplorer2.readthedocs.io/) and save as a
 GVF file. The GVF file can be later used to call variant peptides using
 [callVariant](call-variant.md). Noted that only known circRNA is supported (

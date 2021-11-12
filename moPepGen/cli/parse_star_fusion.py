@@ -4,7 +4,7 @@ GVF file. The GVF file can be later used to call variant peptides using
 [callVariant](call-variant.md)."""
 from __future__ import annotations
 import argparse
-from typing import List, TYPE_CHECKING
+from typing import List
 from moPepGen import logger, seqvar, parser
 from .common import add_args_output_prefix, add_args_reference, \
     add_args_verbose, add_args_source, print_start_message, \

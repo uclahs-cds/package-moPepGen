@@ -6,7 +6,7 @@ variant peptide sequences.
 """
 from __future__ import annotations
 import argparse
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List
 from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
@@ -95,17 +95,3 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     if args.verbose:
         logger('Variant info written to disk.')
-
-if __name__ == '__main__':
-    import argparse
-    test_args = argparse.Namespace()
-    test_args.command = 'parseVEP'
-    test_args.vep_txt = [
-        'test/files/CPCG0100_gencode_indel_ENST00000516353.1.txt'
-    ]
-    test_args.index_dir = 'test/files/gencode_34_index'
-    test_args.genome_fasta = None
-    test_args.annotation_gtf = None
-    test_args.output_prefix = 'test/files/vep/vep'
-    test_args.verbose = True
-    parse_vep(args=test_args)

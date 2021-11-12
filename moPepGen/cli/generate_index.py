@@ -7,7 +7,6 @@ moPepGen to avoid processing the reference files repeatedly and save massive
 time. """
 from __future__ import annotations
 import argparse
-from typing import TYPE_CHECKING
 import pickle
 from moPepGen import dna, aa, gtf, logger
 from .common import add_args_cleavage, add_args_reference, add_args_verbose, \

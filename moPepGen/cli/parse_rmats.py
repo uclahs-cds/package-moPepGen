@@ -8,7 +8,7 @@ The created GVF file can be then used to call for variant peptides using
 """
 from __future__ import annotations
 import argparse
-from typing import Dict, Set, TYPE_CHECKING
+from typing import Dict, Set
 from pathlib import Path
 from moPepGen import logger, seqvar
 from moPepGen.parser import RMATSParser
@@ -131,16 +131,3 @@ def parse_rmats(args:argparse.Namespace) -> None:
 
     if args.verbose:
         logger("Variants written to disk.")
-
-
-if __name__ == '__main__':
-    data = argparse.Namespace()
-    data.skipped_exon = Path('test/files/alternative_splicing/rmats_se.txt')
-    data.alternative_5_splicing = Path('test/files/alternative_splicing/rmats_a5ss.txt')
-    data.alternative_3_splicing = Path('test/files/alternative_splicing/rmats_a3ss.txt')
-    data.mutually_exclusive_exons = Path('test/files/alternative_splicing/rmats_mxe.txt')
-    data.retained_intron = Path('test/files/alternative_splicing/rmats_ri.txt')
-    data.index_dir = Path('test/files/index')
-    data.output_prefix = 'test/files/alternative_splicing/rmats'
-    data.verbose = True
-    parse_rmats(data)

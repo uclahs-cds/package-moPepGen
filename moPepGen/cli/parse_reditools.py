@@ -5,7 +5,7 @@ file. The GVF file can then be used to call variant peptides using
 """
 from __future__ import annotations
 import argparse
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List
 from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_verbose, add_args_source,\
     add_args_output_prefix, print_start_message,print_help_if_missing_args,\
@@ -88,13 +88,3 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     if args.verbose:
         logger("Variants written to disk.")
-
-
-if __name__ == '__main__':
-    test_args = argparse.Namespace()
-    test_args.table_file = 'test/files/reditools/CPT0208690010_merged_chr22.txt'
-    test_args.transcript_id_column = 16
-    test_args.index_dir = 'test/files/downsampled_set/gencode_v36_index'
-    test_args.output_prefix = 'test/files/reditools/CPT0208690010_merged_chr22.mop'
-    test_args.verbose = True
-    parse_reditools(test_args)
