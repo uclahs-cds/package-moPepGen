@@ -86,6 +86,9 @@ class MiscleavedNodes():
                         metadata.variants.add(variant.variant)
                     metadata.variants.update(additional_variants)
 
+            cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
+            metadata.variants.update(cleavage_gain_down)
+
             if seq:
                 seq.__class__ = aa.AminoAcidSeqRecord
 

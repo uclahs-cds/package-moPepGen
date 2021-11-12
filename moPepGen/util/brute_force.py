@@ -5,7 +5,6 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
 from moPepGen import seqvar, aa, gtf, dna
-from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
 
 
@@ -86,12 +85,15 @@ def brute_force(args):
         canonical_peptides.add(str(tx_peptides[0].seq[1:]))
     variant_peptides = set()
 
-    start_codon = FeatureLocation(
-        start=tx_seq.orf.start, end=tx_seq.orf.start + 3
-    )
-    variants = variant_pool.transcriptional[tx_id]
-    variants = [x for x in variants if x.location.start >= 3 and
-        (x.location >= start_codon or x.location.overlaps(start_codon))]
+    start_index = tx_seq.orf.start + 3
+    variants = []
+
+    for variant in variant_pool.transcriptional[tx_id]:
+        if variant.location.start < start_index -1:
+            continue
+        if variant.location.start == start_index - 1:
+            variant.to_end_inclusion(tx_seq)
+        variants.append(variant)
 
     for i in range(len(variants)):
         for comb in combinations(variants, i + 1):
@@ -115,16 +117,8 @@ def brute_force(args):
                 offset = offset + len(variant.alt) - len(variant.ref)
                 seq = seq[:start] + variant.alt + seq[end:]
 
-            has_start_altering = any(x.location.overlaps(start_codon) for x in comb)
-
             if not tx_seq.orf:
                 cds_start_positions = tx_seq.find_all_start_codons()
-            elif not tx_model.is_cds_start_nf() and has_start_altering:
-                cds_start = seq[tx_seq.orf.start:].find('ATG')
-                if cds_start == -1:
-                    continue
-                cds_start = cds_start + tx_seq.orf.start
-                cds_start_positions = [cds_start]
             else:
                 cds_start = tx_seq.orf.start
                 cds_start_positions = [cds_start]

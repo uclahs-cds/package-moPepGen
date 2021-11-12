@@ -135,6 +135,18 @@ class PVGNode():
                 cleavage_gain.append(variant.variant)
         return cleavage_gain
 
+    def get_cleavage_gain_from_downstream(self) -> List[seqvar.VariantRecord]:
+        """ Get the variants that gains the cleavage by downstream nodes """
+        cleavage_gain = []
+        for node in self.out_nodes:
+            if not node.variants:
+                return []
+            if node.variants[0].location.start != 0:
+                return []
+            if not cleavage_gain:
+                cleavage_gain.append(node.variants[0].variant)
+        return cleavage_gain
+
     def get_stop_lost_variants(self, stop_index:int) -> List[seqvar.VariantRecord]:
         """ Get stop lost variants """
         stop_lost = []

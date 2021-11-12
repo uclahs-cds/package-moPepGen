@@ -555,9 +555,12 @@ class ThreeFrameTVG():
                 break
 
             # skipping start lost mutations
-            start_altering = variant.location.start < 3 # or \
-                # (self.has_known_orf and variant.location.overlaps(start_codon))
-            if start_altering:
+            start_index = self.seq.orf.start + 3 if self.has_known_orf else 2
+
+            if variant.location.start == start_index - 1 and variant.is_insertion():
+                variant.to_end_inclusion(self.seq)
+
+            if variant.location.start < start_index:
                 variant = next(variant_iter, None)
                 continue
 
@@ -587,7 +590,7 @@ class ThreeFrameTVG():
             elif variant.type == 'Substitution':
                 cursors = self.apply_substitution(cursors, variant, variant_pool, genome, anno)
 
-            elif variant.is_frameshifting() and not start_altering:
+            elif variant.is_frameshifting():
                 frames_shifted = variant.frames_shifted()
                 for i in range(3):
                     j = (i + frames_shifted) % 3
