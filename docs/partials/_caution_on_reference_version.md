@@ -1,2 +1,2 @@
 !!! note "Reference Version"
-	Make sure the reference genome version used is consistent across all analysis.
+	The version of reference genome and proteome FASTA and annotation GTF **MUST** be consistent across all analysis.

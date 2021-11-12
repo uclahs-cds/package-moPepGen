@@ -1,6 +1,6 @@
 """ `parseREDItools` takes RNA editing results called by
-[REDItools](https://github.com/BioinfoUNIBA/REDItools) and save as a GVF file.
-The GVF file can then be used to call variant peptides using
+[REDItools](https://github.com/BioinfoUNIBA/REDItools) and saves them as a GVF
+file. The GVF file can then be used to call variant peptides using
 [callVariant](call-variant.md)
 """
 from __future__ import annotations

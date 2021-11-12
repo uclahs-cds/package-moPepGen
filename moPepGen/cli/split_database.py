@@ -1,7 +1,8 @@
-""" `splitDatabase` takes the variant peptide sequence FASTA file called by
-callVariant and/or noncoding novel peptide sequence FSTA file called by
-callNoncoding, and split peptide sequences into databases. The splitted
-database FASTA files can be used for sequential library searching. """
+""" `splitDatabase` takes the FASTA file with variant peptide sequences called
+by [`callVariant`](./call-variant.md) with or without noncoding novel peptides
+called by [`callNoncoding`](./call-noncoding.md), and splits peptide sequences
+into databases. The split database FASTA files can be used for sequential
+library searching. """
 from __future__ import annotations
 import argparse
 from pathlib import Path
