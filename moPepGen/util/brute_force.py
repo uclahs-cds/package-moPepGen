@@ -18,7 +18,8 @@ def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
     parser.add_argument(
         '-i', '--input-gvf',
         type=Path,
-        help='GVF file'
+        help='GVF file',
+        nargs="+"
     )
     parser.add_argument(
         '-r', '--reference-dir',
@@ -68,8 +69,9 @@ def brute_force(args):
     )
 
     variant_pool = seqvar.VariantRecordPool()
-    with open(args.input_gvf) as handle:
-        variant_pool.load_variants(handle, anno, genome)
+    for gvf_file in args.input_gvf:
+        with open(gvf_file) as handle:
+            variant_pool.load_variants(handle, anno, genome)
 
     tx_id = list(variant_pool.transcriptional.keys())[0]
 
@@ -115,16 +117,22 @@ def brute_force(args):
                 offset = offset + len(variant.alt) - len(variant.ref)
                 seq = seq[:start] + variant.alt + seq[end:]
 
-            cds_start = tx_seq.orf.start
-            aa_seq = seq[cds_start:].translate(to_stop=True)
-            aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
-            peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
-            for peptide in peptides:
-                if peptide is peptides[0] and peptide.seq.startswith('M'):
-                    if str(peptide.seq[1:]) not in canonical_peptides:
-                        variant_peptides.add(str(peptide.seq[1:]))
-                if str(peptide.seq) not in canonical_peptides:
-                    variant_peptides.add(str(peptide.seq))
+            if not tx_seq.orf:
+                cds_start_positions = tx_seq.find_all_start_codons()
+            else:
+                cds_start = tx_seq.orf.start
+                cds_start_positions = [cds_start]
+            for cds_start in cds_start_positions:
+                cds_stop = len(seq) - (len(seq) - cds_start) % 3
+                aa_seq = seq[cds_start:cds_stop].translate(to_stop=True)
+                aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
+                peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
+                for peptide in peptides:
+                    if peptide is peptides[0] and peptide.seq.startswith('M'):
+                        if str(peptide.seq[1:]) not in canonical_peptides:
+                            variant_peptides.add(str(peptide.seq[1:]))
+                    if str(peptide.seq) not in canonical_peptides:
+                        variant_peptides.add(str(peptide.seq))
 
     variant_peptides = list(variant_peptides)
     variant_peptides.sort()
