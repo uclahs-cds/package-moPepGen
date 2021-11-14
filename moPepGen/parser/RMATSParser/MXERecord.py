@@ -69,9 +69,9 @@ class MXERecord(RMATSRecord):
         strand = gene_model.location.strand
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        have_both:List[str] = []
-        have_first:List[str] = []
-        have_second:List[str] = []
+        have_both_in_ref:List[str] = []
+        have_first_in_ref:List[str] = []
+        have_second_in_ref:List[str] = []
 
         for tx_id in tx_ids:
             model = anno.transcripts[tx_id]
@@ -91,16 +91,16 @@ class MXERecord(RMATSRecord):
                         break
                     if int(exon.location.start) == self.downstream_exon_start:
                         if strand == 1:
-                            have_first.append(tx_id)
+                            have_first_in_ref.append(tx_id)
                         else:
-                            have_second.append(tx_id)
+                            have_second_in_ref.append(tx_id)
                     elif int(exon.location.start) == self.second_exon_start and \
                             int(exon.location.end) == self.second_exon_end:
                         exon = next(it, None)
                         if not exon:
                             break
                         if int(exon.location.start) == self.downstream_exon_start:
-                            have_both.append(tx_id)
+                            have_both_in_ref.append(tx_id)
                 elif int(exon.location.start) == self.second_exon_start and \
                         int(exon.location.end) == self.second_exon_end:
                     exon = next(it, None)
@@ -108,12 +108,12 @@ class MXERecord(RMATSRecord):
                         break
                     if int(exon.location.start) == self.downstream_exon_start:
                         if strand == 1:
-                            have_second.append(tx_id)
+                            have_second_in_ref.append(tx_id)
                         else:
-                            have_first.append(tx_id)
+                            have_first_in_ref.append(tx_id)
 
-        if (have_first and have_second) or \
-                (not have_first and not have_second and not have_both):
+        if (have_first_in_ref and have_second_in_ref) or \
+                (not have_first_in_ref and not have_second_in_ref and not have_both_in_ref):
             return variants
 
         if strand == 1:
@@ -146,10 +146,10 @@ class MXERecord(RMATSRecord):
         _id = f'MXE_{first_start + 1}-{first_end}:' +\
             f'{second_start}-{second_end}'
 
-        if not have_second and self.sjc_sample_1 >= min_sjc:
+        if not have_second_in_ref and self.sjc_sample_1 >= min_sjc:
             location = FeatureLocation(seqname=self.gene_id, start=first_start,
                 end=first_end)
-            for tx_id in have_first:
+            for tx_id in have_first_in_ref:
                 ref = str(gene_seq.seq[first_start])
                 alt = '<SUB>'
                 attrs = {
@@ -170,7 +170,7 @@ class MXERecord(RMATSRecord):
 
             location = FeatureLocation(seqname=self.gene_id, start=first_start,
                     end=first_end)
-            for tx_id in have_both:
+            for tx_id in have_both_in_ref:
                 ref = str(gene_seq.seq[first_start])
                 alt = '<DEL>'
                 attrs = {
@@ -185,10 +185,10 @@ class MXERecord(RMATSRecord):
                 variants.append(record)
 
         # For MXE, the first exon is 'inclusion' and second is 'skipped'.
-        if not have_first and self.ijc_sample_1 >= min_ijc:
+        if not have_first_in_ref and self.ijc_sample_1 >= min_ijc:
             location = FeatureLocation(seqname=self.gene_id, start=second_start,
                 end=second_end)
-            for tx_id in have_second:
+            for tx_id in have_second_in_ref:
                 ref = str(gene_seq.seq[second_start])
                 alt = '<SUB>'
                 attrs = {
@@ -208,7 +208,7 @@ class MXERecord(RMATSRecord):
 
             location = FeatureLocation(seqname=self.gene_id, start=second_start,
                 end=second_end)
-            for tx_id in have_both:
+            for tx_id in have_both_in_ref:
                 ref = str(gene_seq.seq[second_start])
                 alt = '<DEL>'
                 attrs = {

@@ -64,8 +64,8 @@ class SERecord(RMATSRecord):
         chrom = gene_model.location.seqname
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        skipped:List[str] = []
-        retained:List[str] = []
+        skipped_in_ref:List[str] = []
+        retained_in_ref:List[str] = []
 
         for tx_id in transcript_ids:
             model = anno.transcripts[tx_id]
@@ -82,7 +82,7 @@ class SERecord(RMATSRecord):
                     continue
 
                 if int(exon.location.start) == self.downstream_exon_start:
-                    skipped.append(tx_id)
+                    skipped_in_ref.append(tx_id)
                     break
                 if exon.location.start == self.exon_start and \
                         exon.location.end == self.exon_end:
@@ -90,13 +90,13 @@ class SERecord(RMATSRecord):
                     if not exon:
                         continue
                     if int(exon.location.start) == self.downstream_exon_start:
-                        retained.append(tx_id)
+                        retained_in_ref.append(tx_id)
                         break
 
-        if skipped and retained:
+        if skipped_in_ref and retained_in_ref:
             return variants
 
-        if not skipped and not retained:
+        if not skipped_in_ref and not retained_in_ref:
             return variants
 
         start = anno.coordinate_genomic_to_gene(self.exon_start, self.gene_id)
@@ -110,9 +110,9 @@ class SERecord(RMATSRecord):
 
         # For SE, the skipped is 'skipped', and inclusion is 'inclusion'
         # what a nonsense comment
-        if not skipped and self.sjc_sample_1 >= min_sjc:
+        if not skipped_in_ref and self.sjc_sample_1 >= min_sjc:
             location = FeatureLocation(seqname=self.gene_id, start=start, end=end)
-            for tx_id in retained:
+            for tx_id in retained_in_ref:
                 alt = '<DEL>'
                 attrs = {
                     'TRANSCRIPT_ID': tx_id,
@@ -126,7 +126,7 @@ class SERecord(RMATSRecord):
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
-        if not retained and self.ijc_sample_1 >= min_ijc:
+        if not retained_in_ref and self.ijc_sample_1 >= min_ijc:
             if gene_model.strand == 1:
                 insert_position = anno.coordinate_genomic_to_gene(
                     index=self.upstream_exon_end - 1,
@@ -139,7 +139,7 @@ class SERecord(RMATSRecord):
                 )
             location = FeatureLocation(seqname=self.gene_id, start=insert_position,
                 end=insert_position + 1)
-            for tx_id in skipped:
+            for tx_id in skipped_in_ref:
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {

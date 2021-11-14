@@ -63,8 +63,8 @@ class A5SSRecord(RMATSRecord):
         chrom = gene_model.location.seqname
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        short:List[str] = []
-        long:List[str] = []
+        short_in_ref:List[str] = []
+        long_in_ref:List[str] = []
 
         for tx_id in tx_ids:
             model = anno.transcripts[tx_id]
@@ -79,17 +79,17 @@ class A5SSRecord(RMATSRecord):
                     int(exon.location.end) == self.long_exon_end:
                     exon = next(it, None)
                     if exon and exon.location.start == self.flanking_exon_start:
-                        long.append(tx_id)
+                        long_in_ref.append(tx_id)
                     break
                 if int(exon.location.start) == self.short_exon_start and \
                         int(exon.location.end) == self.short_exon_end:
                     exon = next(it, None)
                     if exon and exon.location.start == self.flanking_exon_start:
-                        short.append(tx_id)
+                        short_in_ref.append(tx_id)
                     break
                 exon = next(it, None)
 
-        if (long and short) or (not long and not short):
+        if (long_in_ref and short_in_ref) or (not long_in_ref and not short_in_ref):
             return variants
 
         if anno.genes[self.gene_id].location.strand == 1:
@@ -106,10 +106,10 @@ class A5SSRecord(RMATSRecord):
             genomic_position = f'{chrom}:{self.long_exon_start+1}-{self.short_exon_end}'
 
         # For A5SS, the long version is 'inclusion' and short is 'skipped'.
-        if not short and self.sjc_sample_1 >= min_sjc:
+        if not short_in_ref and self.sjc_sample_1 >= min_sjc:
             location = FeatureLocation(seqname=self.gene_id, start=start_gene,
                 end=end_gene)
-            for tx_id in long:
+            for tx_id in long_in_ref:
                 ref = str(gene_seq.seq[start_gene])
                 alt = '<DEL>'
                 attrs = {
@@ -124,11 +124,11 @@ class A5SSRecord(RMATSRecord):
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
-        if not long and self.ijc_sample_1 >= min_ijc:
+        if not long_in_ref and self.ijc_sample_1 >= min_ijc:
             insert_position = start_gene - 1
             location = FeatureLocation(seqname=self.gene_id, start=insert_position,
                 end=insert_position + 1)
-            for tx_id in short:
+            for tx_id in short_in_ref:
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {
