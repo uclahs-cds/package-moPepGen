@@ -61,9 +61,6 @@ class RIRecord(RMATSRecord):
             ) -> List[seqvar.VariantRecord]:
         """ Convert to list of VariantRecord """
         variants = []
-        # Currently not counting the case when the inclusion version (retained)
-        # exists in GTF. So as long as the skipped junction reads are too small
-        # we will exit
         gene_model = anno.genes[self.gene_id]
         transcript_ids = gene_model.transcripts
         chrom = gene_model.location.seqname
@@ -102,7 +99,7 @@ class RIRecord(RMATSRecord):
 
         genomic_position = f'{chrom}:{self.upstream_exon_end}-{self.downstream_exon_start}'
 
-        if not retained_in_ref and self.sjc_sample_1 >= min_sjc:
+        if not retained_in_ref and self.ijc_sample_1 >= min_ijc:
             insert_position = start_gene - 1
             location = FeatureLocation(seqname=self.gene_id,
                 start=insert_position, end=insert_position + 1)
@@ -122,7 +119,7 @@ class RIRecord(RMATSRecord):
                 _id = f'RI_{start_gene}'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
-        if not spliced_in_ref and self.ijc_sample_1 >= min_ijc:
+        if not spliced_in_ref and self.sjc_sample_1 >= min_sjc:
             del_start = start_gene
             del_end = end_gene
             location = FeatureLocation(seqname=self.gene_id,
