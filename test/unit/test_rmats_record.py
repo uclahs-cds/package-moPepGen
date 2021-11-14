@@ -1,6 +1,8 @@
 """ Test case for RMATRecord """
 import copy
 import unittest
+from moPepGen import SeqFeature
+from moPepGen.SeqFeature import FeatureLocation
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import RMATSParser
 
@@ -519,3 +521,39 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(len(var_records[0].location), 1)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 33)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 38)
+
+    def test_ri_record_pos_spliced(self):
+        """ Test RIRecord with pos strand """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        exons:list = anno_data['transcripts'][0]['exon']
+        exon_1 = list(exons[0])
+        exon_1[1] = 23
+        exons[0] = tuple(exon_1)
+        exons.pop(1)
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = RMATSParser.RIRecord(
+            gene_id=gene_id,
+            gene_symbol='CRAP',
+            chrom=chrom,
+            retained_intron_exon_start=12,
+            retained_intron_exon_end=17,
+            upstream_exon_start=5,
+            upstream_exon_end=12,
+            downstream_exon_start=17,
+            downstream_exon_end=23,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
+        )
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].location.start, 12)
+        self.assertEqual(var_records[0].location.end, 17)

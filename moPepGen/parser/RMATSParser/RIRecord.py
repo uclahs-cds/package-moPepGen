@@ -64,14 +64,13 @@ class RIRecord(RMATSRecord):
         # Currently not counting the case when the inclusion version (retained)
         # exists in GTF. So as long as the skipped junction reads are too small
         # we will exit
-        if self.sjc_sample_1 < min_sjc:
-            return variants
         gene_model = anno.genes[self.gene_id]
         transcript_ids = gene_model.transcripts
         chrom = gene_model.location.seqname
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        have_adjacent:List[str] = []
+        spliced_in_ref:List[str] = []
+        retained_in_ref:List[str] = []
 
         for tx_id in transcript_ids:
             model = anno.transcripts[tx_id]
@@ -85,8 +84,11 @@ class RIRecord(RMATSRecord):
                     if exon and \
                             exon.location.start == self.downstream_exon_start and \
                             exon.location.end == self.downstream_exon_end:
-                        have_adjacent.append(tx_id)
+                        spliced_in_ref.append(tx_id)
                         break
+                if int(exon.location.start) == self.upstream_exon_start and \
+                        int(exon.location.end) == self.downstream_exon_end:
+                    retained_in_ref.append(tx_id)
                 exon = next(it, None)
 
         start_gene = anno.coordinate_genomic_to_gene(
@@ -100,24 +102,43 @@ class RIRecord(RMATSRecord):
 
         genomic_position = f'{chrom}:{self.upstream_exon_end}-{self.downstream_exon_start}'
 
-        insert_position = start_gene - 1
-        location = FeatureLocation(seqname=self.gene_id, start=insert_position,
-            end=insert_position + 1)
-
-        for tx_id in have_adjacent:
-            ref = str(gene_seq.seq[insert_position])
-            alt = '<INS>'
-            attrs = {
-                'TRANSCRIPT_ID': tx_id,
-                'DONOR_START': start_gene,
-                'DONOR_END': end_gene,
-                'DONOR_GENE_ID': self.gene_id,
-                'COORDINATE': 'gene',
-                'GENE_SYMBOL': gene_model.gene_name,
-                'GENOMIC_POSITION': genomic_position
-            }
-            _type = 'Insertion'
-            _id = f'RI_{start_gene}'
-            record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-            variants.append(record)
+        if not retained_in_ref and self.sjc_sample_1 >= min_sjc:
+            insert_position = start_gene - 1
+            location = FeatureLocation(seqname=self.gene_id,
+                start=insert_position, end=insert_position + 1)
+            for tx_id in spliced_in_ref:
+                ref = str(gene_seq.seq[insert_position])
+                alt = '<INS>'
+                attrs = {
+                    'TRANSCRIPT_ID': tx_id,
+                    'DONOR_START': start_gene,
+                    'DONOR_END': end_gene,
+                    'DONOR_GENE_ID': self.gene_id,
+                    'COORDINATE': 'gene',
+                    'GENE_SYMBOL': gene_model.gene_name,
+                    'GENOMIC_POSITION': genomic_position
+                }
+                _type = 'Insertion'
+                _id = f'RI_{start_gene}'
+                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+                variants.append(record)
+        if not spliced_in_ref and self.ijc_sample_1 >= min_ijc:
+            del_start = start_gene
+            del_end = end_gene
+            location = FeatureLocation(seqname=self.gene_id,
+                start=del_start, end=del_end)
+            for tx_id in retained_in_ref:
+                ref = str(gene_seq.seq[del_start])
+                alt = '<DEL>'
+                attrs = {
+                    'TRANSCRIPT_ID': tx_id,
+                    'START': del_start,
+                    'END': del_end,
+                    'GENE_SYMBOL': gene_model.gene_name,
+                    'GENOMIC_POSITION': genomic_position
+                }
+                _type = 'Deletion'
+                _id = f'RI_{start_gene}'
+                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+                variants.append(record)
         return variants
