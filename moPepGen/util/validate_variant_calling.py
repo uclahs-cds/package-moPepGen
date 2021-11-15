@@ -2,6 +2,7 @@
 import argparse
 from contextlib import redirect_stdout
 from pathlib import Path
+from typing import List
 import sys
 from Bio import SeqIO
 from moPepGen.cli.common import add_args_reference, print_help_if_missing_args
@@ -21,7 +22,8 @@ def add_subparser_validate_variant_callilng(subparsers:argparse._SubParsersActio
     parser.add_argument(
         '-i', '--input-gvf',
         type=Path,
-        help='Input GVF file.'
+        help='Input GVF file.',
+        nargs='+'
     )
     parser.add_argument(
         '-t', '--tx-id',
@@ -52,16 +54,17 @@ def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
     args.min_mw = 500.
     downsample_reference(args)
 
-def extract_gvf(tx_id:str, gvf_file:Path, output_path:Path):
+def extract_gvf(tx_id:str, gvf_files:List[Path], output_path:Path):
     """ extract GVF """
     i = 0
-    with open(gvf_file, 'rt') as in_handle, open(output_path, 'wt') as out_handle:
-        for line in in_handle:
-            if line.startswith('#'):
-                out_handle.write(line)
-            elif tx_id in line:
-                out_handle.write(line)
-                i += 0
+    for gvf_file in gvf_files:
+        with open(gvf_file, 'rt') as in_handle, open(output_path, 'wt') as out_handle:
+            for line in in_handle:
+                if line.startswith('#'):
+                    out_handle.write(line)
+                elif tx_id in line:
+                    out_handle.write(line)
+                    i += 0
     if i > 10:
         logger(f"{i} variants found. The brute force caller is going to take a while.")
 
@@ -89,7 +92,7 @@ def call_variant(gvf_file:Path, ref_dir:Path, output_fasta:Path):
 def call_brute_force(gvf_file:Path, ref_dir:Path, output_path):
     """ call brute force """
     args = argparse.Namespace()
-    args.input_gvf = gvf_file
+    args.input_gvf = [gvf_file]
     args.reference_dir = ref_dir
     args.cleavage_rule = 'trypsin'
     args.miscleavage = 2
@@ -144,7 +147,7 @@ def validate_variant_calling(args:argparse.Namespace):
     temp_gvf = output_dir/f"{args.tx_id}.gvf"
     extract_gvf(
         tx_id=args.tx_id,
-        gvf_file=args.input_gvf,
+        gvf_files=args.input_gvf,
         output_path=temp_gvf
     )
 
