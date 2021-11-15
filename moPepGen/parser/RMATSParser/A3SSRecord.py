@@ -10,7 +10,10 @@ class A3SSRecord(RMATSRecord):
     """ Alternative 3' Splicing Site """
     def __init__(self, gene_id:str, gene_symbol:str, chrom:str,
             long_exon_start:int, long_exon_end:int, short_exon_start:int,
-            short_exon_end:int, flanking_exon_start, flanking_exon_end:int):
+            short_exon_end:int, flanking_exon_start, flanking_exon_end:int,
+            ijc_sample_1:int, sjc_sample_1:int, ijc_sample_2:int,
+            sjc_sample_2:int, inc_form_len:int, skip_form_len:int,
+            pvalue:float, fdr:float):
         """ Constructor """
         super().__init__(gene_id, gene_symbol, chrom)
         self.long_exon_start = long_exon_start
@@ -19,7 +22,14 @@ class A3SSRecord(RMATSRecord):
         self.short_exon_end = short_exon_end
         self.flanking_exon_start = flanking_exon_start
         self.flanking_exon_end = flanking_exon_end
-
+        self.ijc_sample_1 = ijc_sample_1
+        self.sjc_sample_1 = sjc_sample_1
+        self.ijc_sample_2 = ijc_sample_2
+        self.sjc_sample_2 = sjc_sample_2
+        self.inc_form_len = inc_form_len
+        self.skip_form_len = skip_form_len
+        self.pvalue = pvalue
+        self.fdr = fdr
 
     @classmethod
     def readline(cls, line:str) -> A3SSRecord:
@@ -34,19 +44,28 @@ class A3SSRecord(RMATSRecord):
             short_exon_start=int(fields[7]),
             short_exon_end=int(fields[8]),
             flanking_exon_start=int(fields[9]),
-            flanking_exon_end=int(fields[10])
+            flanking_exon_end=int(fields[10]),
+            ijc_sample_1=int(fields[12]),
+            sjc_sample_1=int(fields[13]),
+            ijc_sample_2=None if fields[14] == '' else int(fields[14]),
+            sjc_sample_2=None if fields[15] == '' else int(fields[15]),
+            inc_form_len=int(fields[16]),
+            skip_form_len=int(fields[17]),
+            pvalue=None if fields[18] == 'NA' else float(fields[18]),
+            fdr=None if fields[19] == 'NA' else float(fields[19])
         )
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
-            genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
+            genome:dna.DNASeqDict, min_ijc:int, min_sjc:int
+            ) -> List[seqvar.VariantRecord]:
         variants = []
         gene_model = anno.genes[self.gene_id]
         tx_ids = gene_model.transcripts
         chrom = gene_model.location.seqname
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        short:List[str] = []
-        long:List[str] = []
+        short_in_ref:List[str] = []
+        long_in_ref:List[str] = []
 
         for tx_id in tx_ids:
             model = anno.transcripts[tx_id]
@@ -63,14 +82,14 @@ class A3SSRecord(RMATSRecord):
                         break
                     if exon.location.start == self.long_exon_start and \
                         int(exon.location.end) == self.long_exon_end:
-                        long.append(tx_id)
+                        long_in_ref.append(tx_id)
                     elif int(exon.location.start) == self.short_exon_start and \
                         int(exon.location.end) == self.short_exon_end:
-                        short.append(tx_id)
+                        short_in_ref.append(tx_id)
                     break
                 exon = next(it, None)
 
-        if (long and short) or (not long and not short):
+        if (long_in_ref and short_in_ref) or (not long_in_ref and not short_in_ref):
             return variants
 
         if gene_model.location.strand == 1:
@@ -86,10 +105,11 @@ class A3SSRecord(RMATSRecord):
                 self.gene_id)
             genomic_position = f'{chrom}:{self.short_exon_end}-{self.long_exon_end}'
 
-        if not short:
+        # For A3SS, the long version is "inclusion" and short is 'skipped'
+        if not short_in_ref and self.sjc_sample_1 >= min_sjc:
             location = FeatureLocation(seqname=self.gene_id, start=start_gene,
                 end=end_gene)
-            for tx_id in long:
+            for tx_id in long_in_ref:
                 ref = str(gene_seq.seq[start_gene])
                 alt = '<DEL>'
                 attrs = {
@@ -104,7 +124,7 @@ class A3SSRecord(RMATSRecord):
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
-        if not long:
+        if not long_in_ref and self.ijc_sample_1 >= min_ijc:
             if gene_model.strand == 1:
                 insert_position = anno.coordinate_genomic_to_gene(
                     index=self.flanking_exon_end - 1,
@@ -117,7 +137,7 @@ class A3SSRecord(RMATSRecord):
                 )
             location = FeatureLocation(seqname=self.gene_id, start=insert_position,
                 end=insert_position + 1)
-            for tx_id in short:
+            for tx_id in short_in_ref:
                 ref = str(gene_seq.seq[insert_position])
                 alt = '<INS>'
                 attrs = {

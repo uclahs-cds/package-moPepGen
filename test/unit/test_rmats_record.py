@@ -59,10 +59,18 @@ class TestRMATSRecord(unittest.TestCase):
             upstream_exon_start=5,
             upstream_exon_end=12,
             downstream_exon_start=27,
-            downstream_exon_end=35
+            downstream_exon_end=35,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
         gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 6)
         self.assertEqual(var_records[0].ref, str(gene_seq.seq[17]))
@@ -87,10 +95,18 @@ class TestRMATSRecord(unittest.TestCase):
             upstream_exon_start=5,
             upstream_exon_end=12,
             downstream_exon_start=27,
-            downstream_exon_end=35
+            downstream_exon_end=35,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
         gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 6)
         self.assertEqual(var_records[0].ref, str(gene_seq.seq[27]))
@@ -115,10 +131,18 @@ class TestRMATSRecord(unittest.TestCase):
             upstream_exon_start=5,
             upstream_exon_end=12,
             downstream_exon_start=27,
-            downstream_exon_end=35
+            downstream_exon_end=35,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
         gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].location.start, 11)
         self.assertEqual(var_records[0].ref, str(gene_seq.seq[11]))
@@ -146,10 +170,18 @@ class TestRMATSRecord(unittest.TestCase):
             upstream_exon_start=5,
             upstream_exon_end=12,
             downstream_exon_start=27,
-            downstream_exon_end=35
+            downstream_exon_end=35,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
         gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].location.start, 22)
         self.assertEqual(var_records[0].ref, str(gene_seq.seq[22]))
@@ -172,9 +204,17 @@ class TestRMATSRecord(unittest.TestCase):
             short_exon_start=17,
             short_exon_end=20,
             flanking_exon_start=27,
-            flanking_exon_end=35
+            flanking_exon_end=35,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 20)
@@ -198,9 +238,17 @@ class TestRMATSRecord(unittest.TestCase):
             short_exon_start=20,
             short_exon_end=23,
             flanking_exon_start=5,
-            flanking_exon_end=12
+            flanking_exon_end=12,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 29)
@@ -221,9 +269,17 @@ class TestRMATSRecord(unittest.TestCase):
             short_exon_start=17,
             short_exon_end=23,
             flanking_exon_start=27,
-            flanking_exon_end=35
+            flanking_exon_end=35,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].location.start, 22)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 23)
@@ -244,9 +300,17 @@ class TestRMATSRecord(unittest.TestCase):
             short_exon_start=20,
             short_exon_end=23,
             flanking_exon_start=5,
-            flanking_exon_end=12
+            flanking_exon_end=12,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 17)
@@ -270,9 +334,17 @@ class TestRMATSRecord(unittest.TestCase):
             short_exon_start=17,
             short_exon_end=20,
             flanking_exon_start=27,
-            flanking_exon_end=35
+            flanking_exon_end=35,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 27)
@@ -293,9 +365,17 @@ class TestRMATSRecord(unittest.TestCase):
             short_exon_start=17,
             short_exon_end=23,
             flanking_exon_start=5,
-            flanking_exon_end=12
+            flanking_exon_end=12,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].location.start, 11)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 15)
@@ -321,9 +401,17 @@ class TestRMATSRecord(unittest.TestCase):
             upstream_exon_start=5,
             upstream_exon_end=12,
             downstream_exon_start=40,
-            downstream_exon_end=48
+            downstream_exon_end=48,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 8)
         self.assertEqual(var_records[0].location.start, 27)
@@ -351,9 +439,17 @@ class TestRMATSRecord(unittest.TestCase):
             upstream_exon_start=5,
             upstream_exon_end=12,
             downstream_exon_start=40,
-            downstream_exon_end=48
+            downstream_exon_end=48,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 8)
         self.assertEqual(var_records[0].location.start, 15)
@@ -374,9 +470,17 @@ class TestRMATSRecord(unittest.TestCase):
             upstream_exon_start=5,
             upstream_exon_end=12,
             downstream_exon_start=17,
-            downstream_exon_end=23
+            downstream_exon_end=23,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 1)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 12)
@@ -400,10 +504,54 @@ class TestRMATSRecord(unittest.TestCase):
             upstream_exon_start=5,
             upstream_exon_end=12,
             downstream_exon_start=17,
-            downstream_exon_end=23
+            downstream_exon_end=23,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
         )
-        var_records = record.convert_to_variant_records(anno, genome)
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 1)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 33)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 38)
+
+    def test_ri_record_pos_spliced(self):
+        """ Test RIRecord with pos strand """
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        exons:list = anno_data['transcripts'][0]['exon']
+        exon_1 = list(exons[0])
+        exon_1[1] = 23
+        exons[0] = tuple(exon_1)
+        exons.pop(1)
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = RMATSParser.RIRecord(
+            gene_id=gene_id,
+            gene_symbol='CRAP',
+            chrom=chrom,
+            retained_intron_exon_start=12,
+            retained_intron_exon_end=17,
+            upstream_exon_start=5,
+            upstream_exon_end=12,
+            downstream_exon_start=17,
+            downstream_exon_end=23,
+            ijc_sample_1=1,
+            sjc_sample_1=1,
+            ijc_sample_2='',
+            sjc_sample_2='',
+            inc_form_len=300,
+            skip_form_len=74,
+            pvalue='NA',
+            fdr='NA'
+        )
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].location.start, 12)
+        self.assertEqual(var_records[0].location.end, 17)

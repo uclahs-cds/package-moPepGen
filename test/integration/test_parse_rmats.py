@@ -17,6 +17,8 @@ class TestParseRMATS(TestCaseIntegration):
         args.alternative_3_splicing = None
         args.mutually_exclusive_exons = None
         args.retained_intron = None
+        args.min_sjc = 1
+        args.min_ijc = 1
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
