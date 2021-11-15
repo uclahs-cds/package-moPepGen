@@ -675,6 +675,7 @@ class PeptideVariantGraph():
                 is_start_codon=True,
                 additional_variants=additional_variants
             )
+            cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
                 if out_node is not self.stop:
                     cur_start_gain = set()
@@ -685,8 +686,14 @@ class PeptideVariantGraph():
                         if variant.variant.is_frameshifting():
                             cur_start_gain.add(variant.variant)
                     cur_start_gain = list(cur_start_gain)
-                    cur = PVGCursor(target_node, out_node, in_cds, orf,
-                        cur_start_gain)
+                    cur_cleavage_gain = copy.copy(cleavage_gain)
+                    cleavage_gain_down = out_node.get_cleavage_gain_from_downstream()
+                    cur_cleavage_gain.extend(cleavage_gain_down)
+                    cur = PVGCursor(
+                        in_node=target_node, out_node=out_node, in_cds=in_cds,
+                        orf=orf, start_gain=cur_start_gain,
+                        cleavage_gain=cur_cleavage_gain
+                    )
                     traversal.stage(target_node, out_node, cur)
             self.remove_node(node_copy)
 
