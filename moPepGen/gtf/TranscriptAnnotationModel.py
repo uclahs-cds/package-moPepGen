@@ -1,9 +1,13 @@
 """ Module for Transcript Annotation model """
-from typing import List
+from __future__ import annotations
+from typing import List, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen import dna, ERROR_INDEX_IN_INTRON
 
+
+if TYPE_CHECKING:
+    from Bio.Seq import Seq
 
 GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon']
 
@@ -82,25 +86,12 @@ class TranscriptAnnotationModel():
             raise ValueError('Strand must not be unknown.')
         return cds_start + cds_frame
 
-    def get_cds_end_index(self) -> int:
+    @staticmethod
+    def get_cds_end_index(seq:Seq, start:int) -> int:
         """ Returns the CDS stop index of the transcript. """
-        cds_end = 0
-        if self.transcript.strand == 1:
-            for exon in self.exon:
-                if self.cds[-1].location.end not in exon:
-                    cds_end += len(exon)
-                    continue
-                cds_end += self.cds[-1].location.end - exon.location.start
-                break
-        elif self.transcript.strand == -1:
-            for exon in reversed(self.exon):
-                if self.cds[0].location.start not in exon:
-                    cds_end += len(exon)
-                    continue
-                cds_end += exon.location.end - self.cds[0].location.start
-        else:
-            raise ValueError('Strand must not be unknown.')
-        return cds_end
+        end = len(seq) - (len(seq) - start) % 3
+        aa_seq = seq[start:end].translate(to_stop=True)
+        return start + len(aa_seq) * 3
 
     def get_transcript_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:
@@ -122,15 +113,15 @@ class TranscriptAnnotationModel():
             else:
                 seq = seq + new_seq
 
+        if self.transcript.strand == -1:
+            seq = seq.reverse_complement()
+
         if self.cds:
             cds_start = self.get_cds_start_index()
-            cds_end = self.get_cds_end_index()
+            cds_end = self.get_cds_end_index(seq, cds_start)
             orf = FeatureLocation(start=cds_start, end=cds_end)
         else:
             orf = None
-
-        if self.transcript.strand == -1:
-            seq = seq.reverse_complement()
 
         location = MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),

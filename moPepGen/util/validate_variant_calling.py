@@ -85,8 +85,6 @@ def call_variant(gvf_file:Path, ref_dir:Path, output_fasta:Path):
     args.min_mw = 500.
     args.min_length = 7
     args.max_length = 25
-    args.max_frameshift_dist = 75
-    args.max_frameshift_num = 3
     call_variant_peptide(args=args)
 
 def call_brute_force(gvf_file:Path, ref_dir:Path, output_path):
@@ -96,7 +94,9 @@ def call_brute_force(gvf_file:Path, ref_dir:Path, output_path):
     args.reference_dir = ref_dir
     args.cleavage_rule = 'trypsin'
     args.miscleavage = 2
-    args.min_mw = 500
+    args.min_mw = 500.
+    args.min_length = 7
+    args.max_length = 25
 
     with open(output_path, 'wt') as handle:
         with redirect_stdout(handle):

@@ -4,6 +4,7 @@ import argparse
 from typing import List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
+from Bio import SeqUtils
 from moPepGen import seqvar, aa, gtf, dna
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
 
@@ -129,12 +130,23 @@ def brute_force(args):
                 peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
                 for peptide in peptides:
                     if peptide is peptides[0] and peptide.seq.startswith('M'):
-                        if str(peptide.seq[1:]) not in canonical_peptides:
+                        is_valid = peptide_is_valid(peptide.seq[1:],
+                            args.min_length, args.max_length, args.min_mw)
+                        if is_valid and \
+                                str(peptide.seq[1:]) not in canonical_peptides:
                             variant_peptides.add(str(peptide.seq[1:]))
-                    if str(peptide.seq) not in canonical_peptides:
+                    is_valid = peptide_is_valid(peptide.seq, args.min_length,
+                        args.max_length, args.min_mw)
+                    if is_valid and str(peptide.seq) not in canonical_peptides:
                         variant_peptides.add(str(peptide.seq))
 
     variant_peptides = list(variant_peptides)
     variant_peptides.sort()
     for peptide in variant_peptides:
         print(peptide, file=sys.stdout)
+
+def peptide_is_valid(peptide:str, min_length:int, max_length:int, min_mw:float
+        ) -> bool:
+    """ Check whether the peptide is valid """
+    return min_length <= len(peptide) <= max_length and \
+        SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
