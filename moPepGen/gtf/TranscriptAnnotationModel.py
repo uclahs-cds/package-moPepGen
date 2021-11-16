@@ -86,7 +86,8 @@ class TranscriptAnnotationModel():
             raise ValueError('Strand must not be unknown.')
         return cds_start + cds_frame
 
-    def get_cds_end_index(self, seq:Seq, start:int) -> int:
+    @staticmethod
+    def get_cds_end_index(seq:Seq, start:int) -> int:
         """ Returns the CDS stop index of the transcript. """
         end = len(seq) - (len(seq) - start) % 3
         aa_seq = seq[start:end].translate(to_stop=True)
