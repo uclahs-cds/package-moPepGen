@@ -88,8 +88,9 @@ class TranscriptAnnotationModel():
 
     def get_cds_end_index(self, seq:Seq, start:int) -> int:
         """ Returns the CDS stop index of the transcript. """
-        aa = seq[start:(len(seq) - (len(seq) % 3))].translate(to_stop=True)
-        return start + len(aa) * 3
+        end = len(seq) - (len(seq) - start) % 3
+        aa_seq = seq[start:end].translate(to_stop=True)
+        return start + len(aa_seq) * 3
 
     def get_transcript_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:
