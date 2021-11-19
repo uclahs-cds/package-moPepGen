@@ -66,7 +66,8 @@ def brute_force(args):
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     canonical_peptides = proteome.create_unique_peptide_pool(
         anno=anno, rule=rule, exception=exception,
-        miscleavage=args.miscleavage, min_mw=args.min_mw
+        miscleavage=args.miscleavage, min_mw=args.min_mw,
+        min_length=args.min_length, max_length=args.max_length
     )
 
     variant_pool = seqvar.VariantRecordPool()
@@ -79,11 +80,6 @@ def brute_force(args):
     tx_model = anno.transcripts[tx_id]
     tx_seq = tx_model.get_transcript_sequence(genome['chr1'])
 
-    tx_peptides = tx_seq[tx_seq.orf.start:].translate(to_stop=True)\
-        .enzymatic_cleave('trypsin', 'trypsin_exception')
-    canonical_peptides = {str(peptide.seq) for peptide in tx_peptides}
-    if tx_peptides and tx_peptides[0].seq.startswith('M'):
-        canonical_peptides.add(str(tx_peptides[0].seq[1:]))
     variant_peptides = set()
 
     start_index = tx_seq.orf.start + 3
