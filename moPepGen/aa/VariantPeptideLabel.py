@@ -151,7 +151,7 @@ class VariantPeptideInfo():
                 for gene_id in gene_ids:
                     gene_model = anno.genes[gene_id]
                     for tx_id in gene_model.transcripts:
-                        if not anno.transcripts[tx_id].is_protein_coding():
+                        if not anno.transcripts[tx_id].is_protein_coding:
                             info.sources.add(NONCODING_SOURCE)
                             has_noncoding = True
                             break
@@ -189,22 +189,22 @@ class VariantPeptideInfo():
     def all_noncoding(self, anno:GenomicAnnotation) -> bool:
         """ Check if all transcripts are noncoding """
         tx_ids = self.get_transcript_ids()
-        return all(not anno.transcripts[tx_id].is_protein_coding() for tx_id in tx_ids)
+        return all(not anno.transcripts[tx_id].is_protein_coding for tx_id in tx_ids)
 
     def any_noncoding(self, anno:GenomicAnnotation) -> bool:
         """ Check if all transcripts are noncoding """
         tx_ids = self.get_transcript_ids()
-        return any(not anno.transcripts[tx_id].is_protein_coding() for tx_id in tx_ids)
+        return any(not anno.transcripts[tx_id].is_protein_coding for tx_id in tx_ids)
 
     def all_coding(self, anno:GenomicAnnotation) -> bool:
         """ Check if all transcripts are coding """
         tx_ids = self.get_transcript_ids()
-        return all(anno.transcripts[tx_id].is_protein_coding() for tx_id in tx_ids)
+        return all(anno.transcripts[tx_id].is_protein_coding for tx_id in tx_ids)
 
     def any_coding(self, anno:GenomicAnnotation) -> bool:
         """ Check if all transcripts are coding """
         tx_ids = self.get_transcript_ids()
-        return any(anno.transcripts[tx_id].is_protein_coding() for tx_id in tx_ids)
+        return any(anno.transcripts[tx_id].is_protein_coding for tx_id in tx_ids)
 
     def get_transcript_ids(self) -> List[str]:
         """ get transcript IDs """

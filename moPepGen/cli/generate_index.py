@@ -78,13 +78,17 @@ def generate_index(args:argparse.Namespace):
     anno.dump_gtf(path_gtf)
     if verbose:
         logger('Genome annotation GTF loaded.')
+
+    proteome = aa.AminoAcidSeqDict()
+    proteome.dump_fasta(parth_proteome)
+
+    anno.check_protein_coding(proteome)
+
     with open(output_anno, 'wb') as handle:
         pickle.dump(anno, handle)
     if verbose:
         logger('Genome annotation GTF saved to disk.')
 
-    proteome = aa.AminoAcidSeqDict()
-    proteome.dump_fasta(parth_proteome)
     if verbose:
         logger('Proteome FASTA loaded.')
     with open(output_proteome, 'wb') as handle:

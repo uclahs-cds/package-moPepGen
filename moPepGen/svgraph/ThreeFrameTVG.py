@@ -46,7 +46,10 @@ class ThreeFrameTVG():
         if reading_frames and len(reading_frames) != 3:
             raise ValueError('The length of reading_frames must be exactly 3.')
         self.cds_start_nf = cds_start_nf
-        self.has_known_orf = has_known_orf or bool(seq.orf is not None)
+        if has_known_orf is None:
+            self.has_known_orf = bool(seq.orf is not None)
+        else:
+            self.has_known_orf = has_known_orf
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """

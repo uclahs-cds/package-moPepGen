@@ -29,13 +29,15 @@ class TranscriptAnnotationModel():
     def __init__(self, transcript:GTFSeqFeature=None,
             cds:List[GTFSeqFeature]=None, exon:List[GTFSeqFeature]=None,
             start_codon:List[GTFSeqFeature]=None,
-            stop_codon:List[GTFSeqFeature]=None):
+            stop_codon:List[GTFSeqFeature]=None,
+            is_protein_coding:bool=None):
         """ Construct a TranscriptAnnotationmodel """
         self.transcript = transcript
         self.cds = [] if cds is None else cds
         self.exon = [] if exon is None else exon
         self.start_codon = [] if start_codon is None else start_codon
         self.stop_codon = [] if stop_codon is None else stop_codon
+        self.is_protein_coding = is_protein_coding
 
     def add_record(self, _type:str, record: GTFSeqFeature):
         """ Add a GTFRecrod into a TranscriptAnnotationModel. If the biotype
@@ -243,7 +245,3 @@ class TranscriptAnnotationModel():
         for exon in self.exon:
             length += exon.location.end - exon.location.start
         return length
-
-    def is_protein_coding(self) -> bool:
-        """ returns if this is a coding gene """
-        return len(self.cds) > 0

@@ -43,6 +43,7 @@ class TestParseFusionCatcher(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'fusion_catcher')
         args.max_common_mapping = 0
         args.min_spanning_unique = 5

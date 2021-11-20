@@ -174,6 +174,13 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if verbose:
             logger('Annotation GTF loaded.')
 
+        proteome = aa.AminoAcidSeqDict()
+        proteome.dump_fasta(args.proteome_fasta)
+        if verbose:
+            logger('Proteome FASTA loaded.')
+
+        annotation.check_protein_coding(proteome)
+
         if load_genome:
             genome = dna.DNASeqDict()
             genome.dump_fasta(args.genome_fasta)
@@ -181,10 +188,6 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
                 logger('Genome assembly FASTA loaded.')
 
         if load_canonical_peptides:
-            proteome = aa.AminoAcidSeqDict()
-            proteome.dump_fasta(args.proteome_fasta)
-            if verbose:
-                logger('Proteome FASTA loaded.')
             rule:str = args.cleavage_rule
             miscleavage:int = int(args.miscleavage)
             min_mw:float = float(args.min_mw)
