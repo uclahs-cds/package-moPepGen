@@ -62,6 +62,8 @@ def brute_force(args):
     proteome = aa.AminoAcidSeqDict()
     proteome.dump_fasta(args.reference_dir/'proteome.fasta')
 
+    anno.check_protein_coding(proteome)
+
     rule = args.cleavage_rule
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     canonical_peptides = proteome.create_unique_peptide_pool(
@@ -125,17 +127,15 @@ def brute_force(args):
                     cds_end = len(tx_seq) - (len(tx_seq) - cds_start) % 3
                     cds_seq = tx_seq.seq[cds_start:cds_end]
                     canonical_seq = cds_seq.translate(to_stop=True)
+                else:
+                    canonical_seq = None
                 cds_stop = len(seq) - (len(seq) - cds_start) % 3
                 aa_seq = seq[cds_start:cds_stop].translate(to_stop=True)
                 aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
                 peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
                 for peptide in peptides:
-                    if peptide is peptides[0] and peptide.seq.startswith('M'):
-                        is_valid = peptide_is_valid(peptide.seq[1:], canonical_seq,
-                            args.min_length, args.max_length, args.min_mw)
-                        if is_valid and \
-                                str(peptide.seq[1:]) not in canonical_peptides:
-                            variant_peptides.add(str(peptide.seq[1:]))
+                    # if the first amino acid is M, it is already clipped, so
+                    # no need to check the leading M again.
                     is_valid = peptide_is_valid(peptide.seq, canonical_seq,
                         args.min_length, args.max_length, args.min_mw)
                     if is_valid and str(peptide.seq) not in canonical_peptides:
@@ -146,9 +146,10 @@ def brute_force(args):
     for peptide in variant_peptides:
         print(peptide, file=sys.stdout)
 
-def peptide_is_valid(peptide:str, canonical_seq, min_length:int, max_length:int,
-        min_mw:float) -> bool:
+def peptide_is_valid(peptide:str, canonical_seq:str, min_length:int,
+        max_length:int, min_mw:float) -> bool:
     """ Check whether the peptide is valid """
-    return peptide not in canonical_seq and \
-        min_length <= len(peptide) <= max_length and \
+    if canonical_seq and peptide in canonical_seq:
+        return False
+    return min_length <= len(peptide) <= max_length and \
         SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
