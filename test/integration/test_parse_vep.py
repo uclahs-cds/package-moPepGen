@@ -19,6 +19,7 @@ class TestParseVEP(TestCaseIntegration):
         args.index_dir = None
         args.source = 'gSNP'
         args.genome_fasta = self.data_dir/'genome.fasta'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.output_prefix = str(self.work_dir/'vep')
         args.verbose = False

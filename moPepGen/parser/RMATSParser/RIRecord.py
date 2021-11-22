@@ -78,8 +78,9 @@ class RIRecord(RMATSRecord):
                 if int(exon.location.start) == self.upstream_exon_start and \
                         int(exon.location.end) == self.upstream_exon_end:
                     exon = next(it, None)
-                    if exon and \
-                            exon.location.start == self.downstream_exon_start and \
+                    if not exon:
+                        break
+                    if exon.location.start == self.downstream_exon_start and \
                             exon.location.end == self.downstream_exon_end:
                         spliced_in_ref.append(tx_id)
                         break

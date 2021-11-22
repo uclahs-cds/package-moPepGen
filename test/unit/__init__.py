@@ -227,6 +227,8 @@ def create_genomic_annotation(data:dict) -> gtf.GenomicAnnotation:
         anno.genes[entry['gene_id']] = create_gene_model(entry)
     for entry in data['transcripts']:
         anno.transcripts[entry['transcript_id']] = create_transcript_model(entry)
+    for tx_model in anno.transcripts.values():
+        tx_model.is_protein_coding = len(tx_model.cds) > 0
     return anno
 
 def create_dna_record_dict(data:dict) -> dna.DNASeqDict:

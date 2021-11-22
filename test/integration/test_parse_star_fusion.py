@@ -17,6 +17,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'star_fusion')
         args.min_est_j = 5.0
         args.verbose = False

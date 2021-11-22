@@ -1,6 +1,7 @@
 """ This module defines the class logic for the GTF annotations.
 """
-from typing import List, Dict, Tuple
+from __future__ import annotations
+from typing import List, Dict, Tuple, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar, err
 from . import GtfIO
@@ -8,6 +9,9 @@ from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TY
 from .GeneAnnotationModel import GeneAnnotationModel
 from .GTFSeqFeature import GTFSeqFeature
 
+
+if TYPE_CHECKING:
+    from moPepGen.aa import AminoAcidSeqDict
 
 class GenomicAnnotation():
     """ This defines the annotation of genes and transcripts of the genome,
@@ -137,6 +141,11 @@ class GenomicAnnotation():
 
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()
+
+    def check_protein_coding(self, proteome:AminoAcidSeqDict) -> None:
+        """ Checks if each transcript is protein coding """
+        for tx_id, tx_model in self.transcripts.items():
+            tx_model.is_protein_coding = tx_id in proteome
 
     def coordinate_gene_to_transcript(self, index:int, gene:str,
             transcript:str) -> int:

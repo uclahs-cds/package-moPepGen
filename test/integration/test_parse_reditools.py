@@ -15,6 +15,7 @@ class TestParseREDItools(TestCaseIntegration):
         args.transcript_id_column = 16
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'reditools')
         args.verbose = False
         cli.parse_reditools(args)
