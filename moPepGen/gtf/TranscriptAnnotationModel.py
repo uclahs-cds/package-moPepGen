@@ -9,7 +9,8 @@ from moPepGen import dna, ERROR_INDEX_IN_INTRON
 if TYPE_CHECKING:
     from Bio.Seq import Seq
 
-GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon']
+GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon',
+    'utr']
 
 class TranscriptAnnotationModel():
     """ A TranscriptAnnotationModel holds all the annotations associated with
@@ -30,13 +31,19 @@ class TranscriptAnnotationModel():
             cds:List[GTFSeqFeature]=None, exon:List[GTFSeqFeature]=None,
             start_codon:List[GTFSeqFeature]=None,
             stop_codon:List[GTFSeqFeature]=None,
+            utr:List[GTFSeqFeature]=None,
+            five_utr:List[GTFSeqFeature]=None,
+            three_utr:List[GTFSeqFeature]=None,
             is_protein_coding:bool=None):
         """ Construct a TranscriptAnnotationmodel """
         self.transcript = transcript
-        self.cds = [] if cds is None else cds
-        self.exon = [] if exon is None else exon
-        self.start_codon = [] if start_codon is None else start_codon
-        self.stop_codon = [] if stop_codon is None else stop_codon
+        self.cds = cds or []
+        self.exon = exon or []
+        self.start_codon = start_codon or []
+        self.stop_codon = stop_codon or []
+        self.utr = utr or []
+        self.five_utr = five_utr or []
+        self.three_utr = three_utr or []
         self.is_protein_coding = is_protein_coding
 
     def add_record(self, _type:str, record: GTFSeqFeature):
@@ -57,12 +64,33 @@ class TranscriptAnnotationModel():
                 self.__setattr__(_type, [])
             self.__getattribute__(_type).append(record)
 
+    def split_utr(self) -> None:
+        """ Infer 3'UTR or 5'UTR. CDS must be already sorted. """
+        if not self.utr:
+            return
+        if not self.cds:
+            raise ValueError(
+                "UTR found but not CDS for transcript" + \
+                    self.transcript.transcript_id
+            )
+        strand = self.transcript.strand
+        for utr in self.utr:
+            if strand == 1 and utr < self.cds[0] \
+                    or strand == -1 and utr > self.cds[-1]:
+                self.five_utr.append(utr)
+            else:
+                self.three_utr.append(utr)
+
     def sort_records(self):
         """ sort records """
         self.cds.sort()
         self.exon.sort()
         self.start_codon.sort()
         self.stop_codon.sort()
+        self.split_utr()
+        self.utr.sort()
+        self.three_utr.sort()
+        self.five_utr.sort()
 
     def get_cds_start_index(self) -> int:
         """ Returns the CDS start index of the transcript """
@@ -88,10 +116,13 @@ class TranscriptAnnotationModel():
             raise ValueError('Strand must not be unknown.')
         return cds_start + cds_frame
 
-    @staticmethod
-    def get_cds_end_index(seq:Seq, start:int) -> int:
+    def get_cds_end_index(self, seq:Seq, start:int) -> int:
         """ Returns the CDS stop index of the transcript. """
-        end = len(seq) - (len(seq) - start) % 3
+        if self.three_utr:
+            end = self.get_transcript_index(self.three_utr[0].location.start)
+            end = end - (end - start) % 3
+        else:
+            end = len(seq) - (len(seq) - start) % 3
         aa_seq = seq[start:end].translate(to_stop=True)
         return start + len(aa_seq) * 3
 
@@ -245,3 +276,6 @@ class TranscriptAnnotationModel():
         for exon in self.exon:
             length += exon.location.end - exon.location.start
         return length
+
+    def say_hello(self):
+        print('hello')
