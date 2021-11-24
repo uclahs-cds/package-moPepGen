@@ -957,7 +957,13 @@ class ThreeFrameTVG():
                     orf = known_orf
                 else:
                     orf = out_node.orf
-                new_pnode = out_node.translate()
+                if orf[1] and out_node.has_ref_position(orf[1]):
+                    out_node_copy = copy.copy(out_node)
+                    pos = out_node.seq.get_query_index(orf[1])
+                    out_node_copy.truncate_right(pos)
+                    new_pnode = out_node_copy.translate()
+                else:
+                    new_pnode = out_node.translate()
                 new_pnode.orf = orf
                 pnode.add_out_edge(new_pnode)
                 visited[out_node] = new_pnode

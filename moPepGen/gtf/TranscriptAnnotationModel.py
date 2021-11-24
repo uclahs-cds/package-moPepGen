@@ -120,11 +120,8 @@ class TranscriptAnnotationModel():
         """ Returns the CDS stop index of the transcript. """
         if self.three_utr:
             end = self.get_transcript_index(self.three_utr[0].location.start)
-            end = end - (end - start) % 3
-        else:
-            end = len(seq) - (len(seq) - start) % 3
-        aa_seq = seq[start:end].translate(to_stop=True)
-        return start + len(aa_seq) * 3
+            return end - (end - start) % 3
+        return len(seq) - (len(seq) - start) % 3
 
     def get_transcript_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:
