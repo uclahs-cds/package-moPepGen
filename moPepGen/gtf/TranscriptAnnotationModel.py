@@ -34,7 +34,8 @@ class TranscriptAnnotationModel():
             utr:List[GTFSeqFeature]=None,
             five_utr:List[GTFSeqFeature]=None,
             three_utr:List[GTFSeqFeature]=None,
-            is_protein_coding:bool=None):
+            is_protein_coding:bool=None,
+            _seq:dna.DNASeqRecordWithCoordinates=None):
         """ Construct a TranscriptAnnotationmodel """
         self.transcript = transcript
         self.cds = cds or []
@@ -45,6 +46,7 @@ class TranscriptAnnotationModel():
         self.five_utr = five_utr or []
         self.three_utr = three_utr or []
         self.is_protein_coding = is_protein_coding
+        self._seq = _seq
 
     def add_record(self, _type:str, record: GTFSeqFeature):
         """ Add a GTFRecrod into a TranscriptAnnotationModel. If the biotype
@@ -133,6 +135,8 @@ class TranscriptAnnotationModel():
             chrom (DNASeqRecord): The chromosome sequence that the transcript
                 is located.
         """
+        if self._seq:
+            return self._seq
         if len(self.exon) == 0:
             raise ValueError("Transcript model has no exon")
         seq = None
@@ -173,7 +177,8 @@ class TranscriptAnnotationModel():
         if 'protein_id' in self.transcript.attributes:
             transcript.description += '|' + \
                 self.transcript.protein_id
-        return transcript
+        self._seq = transcript
+        return self._seq
 
     def get_cdna_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:
