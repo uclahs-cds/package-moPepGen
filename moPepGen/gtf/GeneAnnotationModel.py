@@ -34,9 +34,9 @@ class GeneAnnotationModel(GTFSeqFeature):
         return dna.DNASeqRecordWithCoordinates(seq=seq, locations=[location])
 
     def is_mrna_start_nf(self) -> bool:
-        """ Whether the gene annotation has the mRNA_start_NF tag """
+        """ Whether the gene annotation has the mrna_start_NF tag """
         return 'tag' in self.attributes and \
-            'mRNA_start_NF' in self.attributes['tag']
+            'mrna_start_NF' in self.attributes['tag']
 
     def is_cds_start_nf(self) -> bool:
         """ Whether the gene annotation has the cds_start_NF tag """

@@ -145,7 +145,7 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
         _id=tx_id,
         cds_start_nf=tx_model.is_cds_start_nf(),
         has_known_orf=tx_model.is_protein_coding,
-        mRNA_end_nf=tx_model.is_mRNA_end_nf()
+        mrna_end_nf=tx_model.is_mrna_end_nf()
     )
     dgraph.init_three_frames()
     dgraph.create_variant_graph(tx_variants, variant_pool, genome, anno)

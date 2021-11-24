@@ -272,10 +272,10 @@ class TranscriptAnnotationModel():
         return 'tag' in self.transcript.attributes and \
             'cds_start_NF' in self.transcript.attributes['tag']
 
-    def is_mRNA_end_nf(self) -> bool:
-        """ Returns if the transcript has the tag of mRNA_end_NF """
+    def is_mrna_end_nf(self) -> bool:
+        """ Returns if the transcript has the tag of mrna_end_NF """
         return 'tag' in self.transcript.attributes and \
-            'mRNA_end_NF' in self.transcript.attributes['tag']
+            'mrna_end_NF' in self.transcript.attributes['tag']
 
     def transcript_len(self) -> int:
         """ Get the transcript length minus introns """

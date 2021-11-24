@@ -91,7 +91,7 @@ def brute_force(args):
     for variant in variant_pool.transcriptional[tx_id]:
         if variant.location.start < start_index -1:
             continue
-        if tx_model.is_mRNA_end_nf() and variant.location.end <= tx_seq.orf.end - 3:
+        if tx_model.is_mrna_end_nf() and variant.location.end <= tx_seq.orf.end - 3:
             continue
         if variant.location.start == start_index - 1:
             variant.to_end_inclusion(tx_seq)

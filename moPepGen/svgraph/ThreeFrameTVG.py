@@ -25,13 +25,13 @@ class ThreeFrameTVG():
         reading_frames (List[TVGNode])
         has_known_orf (bool)
         cds_start_nf (bool)
-        mRNA_end_nf (bool)
+        mrna_end_nf (bool)
         id (str)
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
-            mRNA_end_nf:bool=False):
+            mrna_end_nf:bool=False):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -52,7 +52,7 @@ class ThreeFrameTVG():
             self.has_known_orf = bool(seq.orf is not None)
         else:
             self.has_known_orf = has_known_orf
-        self.mRNA_end_nf = mRNA_end_nf
+        self.mrna_end_nf = mrna_end_nf
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -570,9 +570,9 @@ class ThreeFrameTVG():
                 variant = next(variant_iter, None)
                 continue
 
-            # if the transcript is mRNA_end_NF, we are not going to use any
+            # if the transcript is mrna_end_NF, we are not going to use any
             # variants in the annotated 3'UTR region.
-            if self.mRNA_end_nf and variant.location.start <= self.seq.orf.end - 3:
+            if self.mrna_end_nf and variant.location.start <= self.seq.orf.end - 3:
                 continue
 
             if not any(any(y.is_inbond_of(x) for y in self.reading_frames) \

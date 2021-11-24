@@ -694,17 +694,20 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         expected = {'TG', 'TGG', 'TAG', 'TAT'}
         self.assertEqual(received, expected)
 
-    def test_translate_mRNA_end_nf(self):
-        """ Test that the UTR region is not translated with mRNA_end_NF """
+    def test_translate_mrna_end_nf(self):
+        """ Test that the UTR region is not translated with mrna_end_NF """
         data = {
             1: ['ATGAAA', ['RF0'], []],
             2: ['AAAAAA', [1], []],
             3: ['AAAAAA', [2], []]
         }
         graph, nodes = create_three_frame_tvg(data, 'ATGAAAAAAAAAAAAAAA')
-        graph.mRNA_end_nf = True
+        graph.mrna_end_nf = True
         graph.has_known_orf = True
         graph.seq.orf = FeatureLocation(start=0, end=15)
         pgraph = graph.translate()
-        node = list(list(list(pgraph.root.out_nodes)[0].out_nodes)[0].out_nodes)[0]
+        for x in pgraph.root.out_nodes:
+            if x.seq.seq == 'MK':
+                break
+        node = list(list(x.out_nodes)[0].out_nodes)[0]
         self.assertEqual(str(node.seq.seq), 'K')
