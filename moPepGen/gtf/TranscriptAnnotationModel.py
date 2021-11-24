@@ -283,6 +283,3 @@ class TranscriptAnnotationModel():
         for exon in self.exon:
             length += exon.location.end - exon.location.start
         return length
-
-    def say_hello(self):
-        print('hello')
