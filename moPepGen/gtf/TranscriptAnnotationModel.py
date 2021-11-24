@@ -9,7 +9,8 @@ from moPepGen import dna, ERROR_INDEX_IN_INTRON
 if TYPE_CHECKING:
     from Bio.Seq import Seq
 
-GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon']
+GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon',
+    'utr']
 
 class TranscriptAnnotationModel():
     """ A TranscriptAnnotationModel holds all the annotations associated with
@@ -30,14 +31,22 @@ class TranscriptAnnotationModel():
             cds:List[GTFSeqFeature]=None, exon:List[GTFSeqFeature]=None,
             start_codon:List[GTFSeqFeature]=None,
             stop_codon:List[GTFSeqFeature]=None,
-            is_protein_coding:bool=None):
+            utr:List[GTFSeqFeature]=None,
+            five_utr:List[GTFSeqFeature]=None,
+            three_utr:List[GTFSeqFeature]=None,
+            is_protein_coding:bool=None,
+            _seq:dna.DNASeqRecordWithCoordinates=None):
         """ Construct a TranscriptAnnotationmodel """
         self.transcript = transcript
-        self.cds = [] if cds is None else cds
-        self.exon = [] if exon is None else exon
-        self.start_codon = [] if start_codon is None else start_codon
-        self.stop_codon = [] if stop_codon is None else stop_codon
+        self.cds = cds or []
+        self.exon = exon or []
+        self.start_codon = start_codon or []
+        self.stop_codon = stop_codon or []
+        self.utr = utr or []
+        self.five_utr = five_utr or []
+        self.three_utr = three_utr or []
         self.is_protein_coding = is_protein_coding
+        self._seq = _seq
 
     def add_record(self, _type:str, record: GTFSeqFeature):
         """ Add a GTFRecrod into a TranscriptAnnotationModel. If the biotype
@@ -57,12 +66,33 @@ class TranscriptAnnotationModel():
                 self.__setattr__(_type, [])
             self.__getattribute__(_type).append(record)
 
+    def split_utr(self) -> None:
+        """ Infer 3'UTR or 5'UTR. CDS must be already sorted. """
+        if not self.utr:
+            return
+        if not self.cds:
+            raise ValueError(
+                "UTR found but not CDS for transcript" + \
+                    self.transcript.transcript_id
+            )
+        strand = self.transcript.strand
+        for utr in self.utr:
+            if strand == 1 and utr < self.cds[0] \
+                    or strand == -1 and utr > self.cds[-1]:
+                self.five_utr.append(utr)
+            else:
+                self.three_utr.append(utr)
+
     def sort_records(self):
         """ sort records """
         self.cds.sort()
         self.exon.sort()
         self.start_codon.sort()
         self.stop_codon.sort()
+        self.split_utr()
+        self.utr.sort()
+        self.three_utr.sort()
+        self.five_utr.sort()
 
     def get_cds_start_index(self) -> int:
         """ Returns the CDS start index of the transcript """
@@ -88,12 +118,12 @@ class TranscriptAnnotationModel():
             raise ValueError('Strand must not be unknown.')
         return cds_start + cds_frame
 
-    @staticmethod
-    def get_cds_end_index(seq:Seq, start:int) -> int:
+    def get_cds_end_index(self, seq:Seq, start:int) -> int:
         """ Returns the CDS stop index of the transcript. """
-        end = len(seq) - (len(seq) - start) % 3
-        aa_seq = seq[start:end].translate(to_stop=True)
-        return start + len(aa_seq) * 3
+        if self.three_utr:
+            end = self.get_transcript_index(self.three_utr[0].location.start)
+            return end - (end - start) % 3
+        return len(seq) - (len(seq) - start) % 3
 
     def get_transcript_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:
@@ -105,6 +135,8 @@ class TranscriptAnnotationModel():
             chrom (DNASeqRecord): The chromosome sequence that the transcript
                 is located.
         """
+        if self._seq:
+            return self._seq
         if len(self.exon) == 0:
             raise ValueError("Transcript model has no exon")
         seq = None
@@ -145,7 +177,8 @@ class TranscriptAnnotationModel():
         if 'protein_id' in self.transcript.attributes:
             transcript.description += '|' + \
                 self.transcript.protein_id
-        return transcript
+        self._seq = transcript
+        return self._seq
 
     def get_cdna_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:
@@ -238,6 +271,11 @@ class TranscriptAnnotationModel():
         """ Returns if the transcript has the tag of cds_start_NF """
         return 'tag' in self.transcript.attributes and \
             'cds_start_NF' in self.transcript.attributes['tag']
+
+    def is_mrna_end_nf(self) -> bool:
+        """ Returns if the transcript has the tag of mrna_end_NF """
+        return 'tag' in self.transcript.attributes and \
+            'mrna_end_NF' in self.transcript.attributes['tag']
 
     def transcript_len(self) -> int:
         """ Get the transcript length minus introns """

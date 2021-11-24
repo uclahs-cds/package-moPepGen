@@ -25,11 +25,13 @@ class ThreeFrameTVG():
         reading_frames (List[TVGNode])
         has_known_orf (bool)
         cds_start_nf (bool)
+        mrna_end_nf (bool)
         id (str)
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
-            cds_start_nf:bool=False, has_known_orf:bool=None):
+            cds_start_nf:bool=False, has_known_orf:bool=None,
+            mrna_end_nf:bool=False):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -50,6 +52,7 @@ class ThreeFrameTVG():
             self.has_known_orf = bool(seq.orf is not None)
         else:
             self.has_known_orf = has_known_orf
+        self.mrna_end_nf = mrna_end_nf
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -567,6 +570,11 @@ class ThreeFrameTVG():
                 variant = next(variant_iter, None)
                 continue
 
+            # if the transcript is mrna_end_NF, we are not going to use any
+            # variants in the annotated 3'UTR region.
+            if self.mrna_end_nf and variant.location.start <= self.seq.orf.end - 3:
+                continue
+
             if not any(any(y.is_inbond_of(x) for y in self.reading_frames) \
                     for x in cursors) and not \
                     all_equal([x.seq.locations[0].ref.start for x in cursors]):
@@ -957,7 +965,13 @@ class ThreeFrameTVG():
                     orf = known_orf
                 else:
                     orf = out_node.orf
-                new_pnode = out_node.translate()
+                if orf[1] and out_node.has_ref_position(orf[1]):
+                    out_node_copy = copy.copy(out_node)
+                    pos = out_node.seq.get_query_index(orf[1])
+                    out_node_copy.truncate_right(pos)
+                    new_pnode = out_node_copy.translate()
+                else:
+                    new_pnode = out_node.translate()
                 new_pnode.orf = orf
                 pnode.add_out_edge(new_pnode)
                 visited[out_node] = new_pnode

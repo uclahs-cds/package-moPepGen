@@ -101,5 +101,6 @@ def write(path:Path, anno:GenomicAnnotation) -> None:
                 handle.write(to_gtf_record(tx_model.transcript) + '\n')
                 records = tx_model.cds + tx_model.exon
                 records.sort()
+                records.extend(tx_model.utr)
                 for record in records:
                     handle.write(to_gtf_record(record) + '\n')

@@ -121,8 +121,7 @@ def downsample_gtf(path:Path, gene_list=None, tx_list=None
                 anno.genes[gene_id] = model[0]
                 anno.genes[gene_id].transcripts = tx_ids
     for transcript in anno.transcripts.values():
-        transcript.exon.sort()
-        transcript.cds.sort()
+        transcript.sort_records()
     return anno
 
 
@@ -211,6 +210,8 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
                 shift_seq_feature(exon, shift_offset, seqname)
             for cds in tx_model.cds:
                 shift_seq_feature(cds, shift_offset, seqname)
+            for utr in tx_model.utr:
+                shift_seq_feature(utr, shift_offset, seqname)
     return genome, anno
 
 def downsample_reference(args:argparse.Namespace):

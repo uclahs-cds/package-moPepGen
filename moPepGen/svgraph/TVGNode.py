@@ -125,6 +125,10 @@ class TVGNode():
         return any(x.reading_frame_index == other_reading_frame_index\
             for x in self.get_in_bridges())
 
+    def has_ref_position(self, i:int) -> bool:
+        """ Check if the node has a given reference position """
+        return any(i in x.ref for x in self.seq.locations)
+
     def get_in_bridges(self) -> List[TVGNode]:
         """ Get all in bridge nodes """
         in_bridges = []

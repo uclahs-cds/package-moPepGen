@@ -7,6 +7,7 @@ from itertools import combinations
 from Bio import SeqUtils
 from moPepGen import seqvar, aa, gtf, dna
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
+from moPepGen.seqvar.VariantRecord import VariantRecord
 
 
 # pylint: disable=W0212
@@ -85,10 +86,12 @@ def brute_force(args):
     variant_peptides = set()
 
     start_index = tx_seq.orf.start + 3
-    variants = []
+    variants:List[VariantRecord] = []
 
     for variant in variant_pool.transcriptional[tx_id]:
         if variant.location.start < start_index -1:
+            continue
+        if tx_model.is_mrna_end_nf() and variant.location.end <= tx_seq.orf.end - 3:
             continue
         if variant.location.start == start_index - 1:
             variant.to_end_inclusion(tx_seq)
@@ -117,20 +120,28 @@ def brute_force(args):
                 seq = seq[:start] + variant.alt + seq[end:]
 
             if not tx_model.is_protein_coding:
-                cds_start_positions = tx_seq.find_all_start_codons()
+                cds_start_positions = seq.find_all_start_codons()
             else:
                 cds_start = tx_seq.orf.start
                 cds_start_positions = [cds_start]
 
+            cds_end = tx_seq.orf.end
+
             for cds_start in cds_start_positions:
                 if not tx_model.is_protein_coding:
-                    cds_end = len(tx_seq) - (len(tx_seq) - cds_start) % 3
-                    cds_seq = tx_seq.seq[cds_start:cds_end]
+                    ref_cds_start = cds_start
+                    for variant in comb:
+                        if cds_start - offset in variant.location:
+                            ref_cds_start = ref_cds_start + len(variant.location) + \
+                                (3 - len(variant.location)%3)
+                    cur_cds_end = cds_end - (cds_end - cds_start) % 3
+                    cds_seq = tx_seq.seq[ref_cds_start:cur_cds_end]
                     canonical_seq = cds_seq.translate(to_stop=True)
                 else:
                     canonical_seq = None
-                cds_stop = len(seq) - (len(seq) - cds_start) % 3
-                aa_seq = seq[cds_start:cds_stop].translate(to_stop=True)
+                cur_cds_end = cds_end + offset
+                cur_cds_end = cur_cds_end - (cur_cds_end - cds_start) % 3
+                aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=True)
                 aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
                 peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
                 for peptide in peptides:

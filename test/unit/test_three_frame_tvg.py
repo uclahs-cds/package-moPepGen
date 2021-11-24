@@ -672,16 +672,16 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
                     AT                   TAT
         """
         data = {
-        1:  ['AAA', ['RF0'], []],
-        2:  ['TA', [1], []],
-        3:  ['TG', [1], [(0, 'TA', 'T', 'INDEL', '')]],
-        4:  ['G', [2], []],
-        11: ['AAAT', ['RF1'], []],
-        12: ['AG', [11], []],
-        13: ['GG', [11], [(0, 'A', 'G', 'SNV', '')]],
-        14: ['AT', [11], [(1, 'G', 'T', 'SNV', '')]],
-        15: ['CCC', [12,13,14, 3], []]
-    }
+            1:  ['AAA', ['RF0'], []],
+            2:  ['TA', [1], []],
+            3:  ['TG', [1], [(0, 'TA', 'T', 'INDEL', '')]],
+            4:  ['G', [2], []],
+            11: ['AAAT', ['RF1'], []],
+            12: ['AG', [11], []],
+            13: ['GG', [11], [(0, 'A', 'G', 'SNV', '')]],
+            14: ['AT', [11], [(1, 'G', 'T', 'SNV', '')]],
+            15: ['CCC', [12,13,14, 3], []]
+        }
 
         graph, nodes = create_three_frame_tvg(data, 'AAATAAATAAAT')
         graph.expand_alignments(nodes[11])
@@ -693,3 +693,19 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         received = {str(e.in_node.seq.seq) for e in nodes[15].in_edges}
         expected = {'TG', 'TGG', 'TAG', 'TAT'}
         self.assertEqual(received, expected)
+
+    def test_translate_mrna_end_nf(self):
+        """ Test that the UTR region is not translated with mrna_end_NF """
+        data = {
+            1: ['ATGAAA', ['RF0'], []],
+            2: ['AAAAAA', [1], []],
+            3: ['AAAAAA', [2], []]
+        }
+        graph, _ = create_three_frame_tvg(data, 'ATGAAAAAAAAAAAAAAA')
+        graph.mrna_end_nf = True
+        graph.has_known_orf = True
+        graph.seq.orf = FeatureLocation(start=0, end=15)
+        pgraph = graph.translate()
+        x = [x for x in pgraph.root.out_nodes if x.seq.seq == 'MK'][0]
+        node = list(list(x.out_nodes)[0].out_nodes)[0]
+        self.assertEqual(str(node.seq.seq), 'K')
