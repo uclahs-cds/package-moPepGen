@@ -94,7 +94,10 @@ class AminoAcidSeqDict(dict):
         protein = next(it, None)
         while protein:
             tx_id = protein.transcript_id
-            tx_model = anno.transcripts[tx_id]
+            if tx_id in anno.transcripts:
+                cds_start_nf = anno.transcripts[tx_id].is_cds_start_nf()
+            else:
+                cds_start_nf = False
             if protein.seq.startswith('X'):
                 protein.seq = protein.seq.lstrip('X')
             try:
@@ -105,7 +108,7 @@ class AminoAcidSeqDict(dict):
                     min_mw=min_mw,
                     min_length=min_length,
                     max_length=max_length,
-                    cds_start_nf=tx_model.is_cds_start_nf()
+                    cds_start_nf=cds_start_nf
                 )
             except ValueError as e:
                 msg = "'X' is not a valid unambiguous letter for protein"

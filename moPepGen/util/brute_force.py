@@ -1,6 +1,7 @@
 """ A brute forth algorithm for calling variant peptides from a GVF file. """
 import sys
 import argparse
+import copy
 from typing import List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
@@ -127,6 +128,7 @@ def brute_force(args):
                 cds_start_positions = [cds_start]
 
             for cds_start in cds_start_positions:
+                copy_canonical_peptides = copy.copy(canonical_peptides)
                 if not tx_model.is_protein_coding:
                     ref_cds_start = cds_start
                     ref_cds_end = len(tx_seq.seq)
@@ -137,8 +139,11 @@ def brute_force(args):
                     cur_cds_end = ref_cds_end - (ref_cds_end - cds_start) % 3
                     cds_seq = tx_seq[ref_cds_start:cur_cds_end]
                     canonical_seq = cds_seq.translate(to_stop=True)
-                    canonical_peptides = canonical_seq.enzymatic_cleave(
+                    more_canonical_peptides = canonical_seq.enzymatic_cleave(
                         'trypsin', 'trypsin_exception')
+                    more_canonical_peptides = {str(x.seq) for x in \
+                        more_canonical_peptides}
+                    copy_canonical_peptides.update(more_canonical_peptides)
                 else:
                     ref_cds_end = tx_seq.orf.end
 
@@ -150,7 +155,7 @@ def brute_force(args):
                 for peptide in peptides:
                     # if the first amino acid is M, it is already clipped, so
                     # no need to check the leading M again.
-                    is_valid = peptide_is_valid(peptide.seq, canonical_peptides,
+                    is_valid = peptide_is_valid(peptide.seq, copy_canonical_peptides,
                         args.min_length, args.max_length, args.min_mw)
                     if is_valid:
                         variant_peptides.add(str(peptide.seq))
@@ -163,7 +168,7 @@ def brute_force(args):
 def peptide_is_valid(peptide:str, canonical_peptides:str, min_length:int,
         max_length:int, min_mw:float) -> bool:
     """ Check whether the peptide is valid """
-    if canonical_peptides and peptide in [x.seq for x in canonical_peptides]:
+    if canonical_peptides and peptide in [x for x in canonical_peptides]:
         return False
     return min_length <= len(peptide) <= max_length and \
         SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
