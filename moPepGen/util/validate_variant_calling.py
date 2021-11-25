@@ -43,6 +43,12 @@ def add_subparser_validate_variant_callilng(subparsers:argparse._SubParsersActio
         ' the runtime is going to increase quickly after 10 variants.',
         default=False
     )
+    parser.add_argument(
+        '--varaint-ids',
+        type=str,
+        help='List of variant labels.',
+        nargs='*'
+    )
     add_args_reference(parser, proteome=True, index=False)
     parser.set_defaults(func=validate_variant_calling)
     print_help_if_missing_args(parser)
@@ -95,12 +101,14 @@ def call_variant(gvf_file:Path, ref_dir:Path, output_fasta:Path):
     args.max_length = 25
     call_variant_peptide(args=args)
 
-def call_brute_force(gvf_file:Path, ref_dir:Path, output_path, force):
+def call_brute_force(gvf_file:Path, ref_dir:Path, output_path:str, force:bool,
+        variant_ids:List[str]):
     """ call brute force """
     args = argparse.Namespace()
     args.input_gvf = [gvf_file]
     args.reference_dir = ref_dir
     args.force = force
+    args.variant_ids = variant_ids
     args.cleavage_rule = 'trypsin'
     args.miscleavage = 2
     args.min_mw = 500.
@@ -176,7 +184,8 @@ def validate_variant_calling(args:argparse.Namespace):
         gvf_file=temp_gvf,
         ref_dir=ref_dir,
         output_path=brute_force_txt,
-        force=args.force
+        force=args.force,
+        variant_ids=args.variant_ids
     )
 
     logger('Brute force completed.')
