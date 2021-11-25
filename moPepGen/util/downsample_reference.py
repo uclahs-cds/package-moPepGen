@@ -289,13 +289,6 @@ def downsample_reference(args:argparse.Namespace):
             if tx_id not in proteins:
                 aa_seqs = get_noncoding_translate(tx_id, anno, genome)
                 proteins.update(aa_seqs)
-                # tx_model = anno.transcripts[tx_id]
-                # gene_id = tx_model.transcript.gene_id
-                # for alt_tx_id, aa_seq in aa_seqs.items():
-                #     alt_protein_id = aa_seq.protein_id
-                #     model = create_dummy_tx_model(tx_model, alt_tx_id, alt_protein_id)
-                #     anno.transcripts[alt_tx_id] = model
-                #     anno.genes[gene_id].transcripts.append(alt_tx_id)
 
     GtfIO.write(output_dir/'annotation.gtf', anno)
 
