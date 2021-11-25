@@ -1,13 +1,18 @@
 """ Module for TVGNode class """
 from __future__ import annotations
-from typing import List, Set, Tuple, Dict, Deque
+from typing import List, Set, Tuple, Dict, Deque, TYPE_CHECKING
 import copy
 from collections import deque
+from functools import reduce
 import math
+import re
 from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph, aa
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
+
+if TYPE_CHECKING:
+    from Bio.Seq import Seq
 
 class TVGNode():
     """ Defines the nodes in the TranscriptVariantGraph
@@ -171,6 +176,32 @@ class TVGNode():
             if edge.type == 'reference':
                 return edge.in_node
         return None
+
+    def get_node_start_reference_index(self) -> int:
+        """ Get the referece index of node start """
+        if self.seq.locations and self.variants:
+            return min(
+                self.seq.locations[0].ref.start,
+                self.variants[0].variant.location.start
+            )
+
+        if self.seq.locations:
+            return self.variants[0].ref.start
+
+        return self.variants[0].variant.location.start
+
+    def get_node_end_reference_index(self) -> int:
+        """ Get the reference index of node end """
+        if self.seq.locations and self.variants:
+            return max(
+                self.seq.locations[-1].ref.end,
+                self.variants[-1].variant.location.end
+            )
+
+        if self.seq.locations:
+            return self.variants[-1].ref.end
+
+        return self.variants[-1].variant.location.end
 
     def copy(self) -> TVGNode:
         """ Create a copy of the node """
@@ -491,3 +522,53 @@ class TVGNode():
             orf=[None, None],
             reading_frame_index=self.reading_frame_index
         )
+
+    def get_ref_sequence(self) -> Seq:
+        """ Get the reference sequence """
+        if not self.variants:
+            return self.seq.seq
+
+        seq = self.seq.seq[:self.variants[0].location.start]
+        for i, variant in enumerate(self.variants):
+            seq += variant.variant.ref
+            if i + 1 >= len(self.variants):
+                seq += self.seq.seq[variant.location.end:]
+            else:
+                next_var = self.variants[i + 1]
+                seq += self.seq.seq[variant.location.end:next_var.location.start]
+
+        return seq
+
+    def check_stop_lost(self, cds_end:int=None):
+        """ Checks whether each variant is stop lost """
+        if not self.variants:
+            return
+
+        if cds_end:
+            stop_codon = FeatureLocation(start=cds_end, end=cds_end + 3)
+            if not self.get_node_start_reference_index() < cds_end < \
+                    self.get_node_end_reference_index():
+                return
+            for variant in self.variants:
+                if stop_codon.overlaps(variant.variant.location):
+                    variant.is_stop_altering = True
+            return
+
+        ref_seq = self.get_ref_sequence()
+        ref_seq = ref_seq[:math.floor(len(ref_seq)/3)*3]
+        ref_aa = ref_seq.translate(to_stop=False)
+        stop_positions = [x.start() for x in re.finditer(r'\*', str(ref_aa))]
+        if not stop_positions:
+            return
+
+        shifted = reduce(
+            lambda x,y: x+y,
+            [len(x.variant.alt) - len(x.variant.ref) for x in self.variants]
+        )
+
+        for stop in stop_positions:
+            pos = stop * 3 + shifted
+            stop_codon = FeatureLocation(start=pos, end=pos + 3)
+            for variant in self.variants:
+                if stop_codon.overlaps(variant.location):
+                    variant.is_stop_altering = True

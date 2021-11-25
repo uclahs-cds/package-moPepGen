@@ -120,26 +120,29 @@ def brute_force(args):
                 seq = seq[:start] + variant.alt + seq[end:]
 
             if not tx_model.is_protein_coding:
-                cds_start_positions = seq.find_all_start_codons()
+                alt_seq = dna.DNASeqRecord(seq)
+                cds_start_positions = alt_seq.find_all_start_codons()
             else:
                 cds_start = tx_seq.orf.start
                 cds_start_positions = [cds_start]
 
-            cds_end = tx_seq.orf.end
-
             for cds_start in cds_start_positions:
                 if not tx_model.is_protein_coding:
                     ref_cds_start = cds_start
+                    ref_cds_end = len(tx_seq.seq)
                     for variant in comb:
                         if cds_start - offset in variant.location:
                             ref_cds_start = ref_cds_start + len(variant.location) + \
                                 (3 - len(variant.location)%3)
-                    cur_cds_end = cds_end - (cds_end - cds_start) % 3
-                    cds_seq = tx_seq.seq[ref_cds_start:cur_cds_end]
+                    cur_cds_end = ref_cds_end - (ref_cds_end - cds_start) % 3
+                    cds_seq = tx_seq[ref_cds_start:cur_cds_end]
                     canonical_seq = cds_seq.translate(to_stop=True)
+                    canonical_peptides = canonical_seq.enzymatic_cleave(
+                        'trypsin', 'trypsin_exception')
                 else:
-                    canonical_seq = None
-                cur_cds_end = cds_end + offset
+                    ref_cds_end = tx_seq.orf.end
+
+                cur_cds_end = ref_cds_end + offset
                 cur_cds_end = cur_cds_end - (cur_cds_end - cds_start) % 3
                 aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=True)
                 aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
@@ -147,9 +150,9 @@ def brute_force(args):
                 for peptide in peptides:
                     # if the first amino acid is M, it is already clipped, so
                     # no need to check the leading M again.
-                    is_valid = peptide_is_valid(peptide.seq, canonical_seq,
+                    is_valid = peptide_is_valid(peptide.seq, canonical_peptides,
                         args.min_length, args.max_length, args.min_mw)
-                    if is_valid and str(peptide.seq) not in canonical_peptides:
+                    if is_valid:
                         variant_peptides.add(str(peptide.seq))
 
     variant_peptides = list(variant_peptides)
@@ -157,10 +160,10 @@ def brute_force(args):
     for peptide in variant_peptides:
         print(peptide, file=sys.stdout)
 
-def peptide_is_valid(peptide:str, canonical_seq:str, min_length:int,
+def peptide_is_valid(peptide:str, canonical_peptides:str, min_length:int,
         max_length:int, min_mw:float) -> bool:
     """ Check whether the peptide is valid """
-    if canonical_seq and peptide in canonical_seq:
+    if canonical_peptides and peptide in [x.seq for x in canonical_peptides]:
         return False
     return min_length <= len(peptide) <= max_length and \
         SeqUtils.molecular_weight(peptide, 'protein') >= min_mw

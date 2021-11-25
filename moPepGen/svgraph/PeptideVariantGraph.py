@@ -7,6 +7,7 @@ from functools import cmp_to_key
 import itertools
 from Bio.Seq import Seq
 from moPepGen import aa, seqvar
+from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
 
@@ -708,19 +709,21 @@ class PeptideVariantGraph():
         start_gain = cursor.start_gain
         orf = cursor.orf
 
-        node_list:List[Tuple[PVGNode, List[int,int], bool]] = []
+        node_list:List[Tuple[PVGNode, List[int,int], bool, List[VariantRecord]]] = []
         trash = set()
         stop_index = target_node.seq.seq.find('*')
         start_index = target_node.seq.seq.find('M')
 
         if in_cds and stop_index == -1:
-            node_list.append((target_node, orf, False))
+            additional_variants = start_gain + cursor.cleavage_gain
+            node_list.append((target_node, orf, False, additional_variants))
 
         if in_cds and stop_index > -1:
             cur_copy = target_node.copy()
             cur_copy.truncate_right(stop_index)
             cur_copy.remove_out_edges()
-            node_list.append((cur_copy, orf, False))
+            additional_variants = start_gain + cursor.cleavage_gain
+            node_list.append((cur_copy, orf, False, additional_variants))
             trash.add(cur_copy)
             if stop_index > start_index:
                 in_cds = False
@@ -737,7 +740,7 @@ class PeptideVariantGraph():
                 cur_orf = [orf_start, None]
                 self.add_stop(cur_copy)
                 self.update_orf(cur_orf)
-                node_list.append((cur_copy, cur_orf, True))
+                node_list.append((cur_copy, cur_orf, True, []))
                 trash.add(cur_copy)
             if start_index > -1 and stop_index == -1 \
                     and start_index != last_start_index:
@@ -749,14 +752,13 @@ class PeptideVariantGraph():
                 if not in_cds:
                     in_cds = True
                     orf = cur_orf
-                node_list.append((cur_copy, cur_orf, True))
+                node_list.append((cur_copy, cur_orf, True, []))
                 trash.add(cur_copy)
 
             if start_index != -1:
                 last_start_index = start_index
             if stop_index != -1:
                 last_stop_index = stop_index
-            # last_start_index, last_stop_index = start_index, stop_index
 
             if -1 < start_index < stop_index or (stop_index == -1 \
                     and start_index > -1):
@@ -789,6 +791,10 @@ class PeptideVariantGraph():
                     if last_stop_index > last_start_index:
                         start_gain = []
 
+                for variant in target_node.variants:
+                    if variant.is_stop_altering:
+                        start_gain.append(variant.variant)
+
                 cur_cleavage_gain = copy.copy(cleavage_gain)
                 cleavage_gain_down = out_node.get_cleavage_gain_from_downstream()
                 cur_cleavage_gain.extend(cleavage_gain_down)
@@ -797,9 +803,7 @@ class PeptideVariantGraph():
                     start_gain, cur_cleavage_gain)
                 traversal.stage(target_node, out_node, cursor)
 
-        additional_variants = start_gain + cursor.cleavage_gain
-
-        for node, orf, is_start_codon in node_list:
+        for node, orf, is_start_codon, additional_variants in node_list:
             traversal.pool.add_miscleaved_sequences(
                 node=node,
                 orf=tuple(orf),
