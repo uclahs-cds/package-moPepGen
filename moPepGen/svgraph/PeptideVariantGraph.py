@@ -742,6 +742,7 @@ class PeptideVariantGraph():
                 self.update_orf(cur_orf)
                 node_list.append((cur_copy, cur_orf, True, []))
                 trash.add(cur_copy)
+
             if start_index > -1 and stop_index == -1 \
                     and start_index != last_start_index:
                 cur_copy = target_node.copy()
@@ -755,9 +756,9 @@ class PeptideVariantGraph():
                 node_list.append((cur_copy, cur_orf, True, []))
                 trash.add(cur_copy)
 
-            if start_index != -1:
+            if start_index > -1 and (stop_index == -1 or stop_index > start_index):
                 last_start_index = start_index
-            if stop_index != -1:
+            elif stop_index > -1 and (start_index == -1 or start_index > stop_index):
                 last_stop_index = stop_index
 
             if -1 < start_index < stop_index or (stop_index == -1 \
