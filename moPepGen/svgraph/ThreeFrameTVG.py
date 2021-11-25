@@ -966,7 +966,7 @@ class ThreeFrameTVG():
                 else:
                     orf = out_node.orf
 
-                out_node.check_stop_lost(orf[1])
+                out_node.check_stop_altering(orf[1])
 
                 if orf[1] and out_node.has_ref_position(orf[1]):
                     out_node_copy = copy.copy(out_node)

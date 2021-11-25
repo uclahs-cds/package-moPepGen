@@ -1,7 +1,9 @@
 """ Test module for DNA Node """
 import unittest
-from test.unit import create_three_frame_tvg
-from moPepGen import svgraph
+from moPepGen.SeqFeature import FeatureLocation
+from test.unit import create_three_frame_tvg, create_dna_seq_with_coordinates,\
+    create_variant
+from moPepGen import seqvar, svgraph
 
 
 class TestTVGNode(unittest.TestCase):
@@ -137,3 +139,51 @@ class TestTVGNode(unittest.TestCase):
         _, nodes = create_three_frame_tvg(data, seq)
         node = nodes[1].find_farthest_node_with_overlap()
         self.assertIs(node, nodes[7])
+
+    def test_check_stop_altering_false(self):
+        """ Test that non stop altering variants are not affected. """
+        seq = create_dna_seq_with_coordinates(
+            seq='AAAAAAACTTTT',
+            locations=[((0,7),(0,7)), ((8,12), (8,12))],
+            orf=[0, 12]
+        )
+        variant = create_variant(7,8,'G', 'C', 'SNV', '')
+        variant = seqvar.VariantRecordWithCoordinate(
+            variant=variant,
+            location=FeatureLocation(start=7, end=8)
+        )
+        node = svgraph.TVGNode(seq, [variant])
+        node.check_stop_altering(12)
+        self.assertFalse(variant.is_stop_altering)
+
+    def test_check_stop_altering_true(self):
+        """ Test that stop altering variants are identified. """
+        seq = create_dna_seq_with_coordinates(
+            seq='AAAAAAAC',
+            locations=[((0,7),(0,7))],
+            orf=[0, 7]
+        )
+        variant = create_variant(7,8,'G', 'C', 'SNV', '')
+        variant = seqvar.VariantRecordWithCoordinate(
+            variant=variant,
+            location=FeatureLocation(start=7, end=8)
+        )
+        node = svgraph.TVGNode(seq, [variant])
+        node.check_stop_altering(7)
+        self.assertTrue(variant.is_stop_altering)
+
+    def test_check_stop_altering_true_noncoding(self):
+        """ Test that stop altering variants are identified. """
+        seq = create_dna_seq_with_coordinates(
+            seq='AAAAAATAC',
+            locations=[((0,8),(0,8))],
+            orf=[0, 9]
+        )
+        variant = create_variant(8,9,'G', 'C', 'SNV', '')
+        variant = seqvar.VariantRecordWithCoordinate(
+            variant=variant,
+            location=FeatureLocation(start=8, end=9)
+        )
+        node = svgraph.TVGNode(seq, [variant])
+        node.check_stop_altering(None)
+        self.assertTrue(variant.is_stop_altering)

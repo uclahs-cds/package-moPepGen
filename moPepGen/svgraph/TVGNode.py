@@ -539,7 +539,7 @@ class TVGNode():
 
         return seq
 
-    def check_stop_lost(self, cds_end:int=None):
+    def check_stop_altering(self, cds_end:int=None):
         """ Checks whether each variant is stop lost """
         if not self.variants:
             return
