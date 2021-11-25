@@ -218,3 +218,11 @@ class TestCallVariantPeptides(TestCaseIntegration):
             /'vep/CPCG0190_indel_ENST00000281589.4_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000281589.4'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case16(self):
+        """ Reported in issue #231 noncoding transcript """
+        gvf = self.data_dir/'vep/CPCG0100_ENST00000446393.2.gvf'
+        expected = self.data_dir \
+            /'vep/CPCG0100_ENST00000446393.2_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000446393.2'
+        self.default_test_case(gvf, reference, expected)

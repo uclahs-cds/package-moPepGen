@@ -9,10 +9,12 @@ class VariantRecordWithCoordinate():
     """ This class models the variant record and it's coordinate location at
     a sequence. This is used mainly in the graph, to keep track on the location
     of variants of a node when it expand forward or backward. """
-    def __init__(self, variant:seqvar.VariantRecord, location:FeatureLocation):
+    def __init__(self, variant:seqvar.VariantRecord, location:FeatureLocation,
+            is_stop_altering:bool=False):
         """ Constructor """
         self.variant = variant
         self.location = location
+        self.is_stop_altering = is_stop_altering
 
     def shift(self, index:int) -> VariantRecordWithCoordinate:
         """ Shift the coordinate of the object by a given number. """
@@ -21,7 +23,8 @@ class VariantRecordWithCoordinate():
             location=FeatureLocation(
                 start=self.location.start + index,
                 end=self.location.end + index
-            )
+            ),
+            is_stop_altering=self.is_stop_altering
         )
 
     def to_protein_coordinates(self) -> VariantRecordWithCoordinate:
@@ -31,5 +34,6 @@ class VariantRecordWithCoordinate():
         end = math.ceil(self.location.end / 3)
         return seqvar.VariantRecordWithCoordinate(
             variant=self.variant,
-            location=FeatureLocation(start=start, end=end)
+            location=FeatureLocation(start=start, end=end),
+            is_stop_altering=self.is_stop_altering
         )

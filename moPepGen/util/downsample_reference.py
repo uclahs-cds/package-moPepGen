@@ -18,8 +18,10 @@ command line usage:
         --output-dir path/to/downsampled_index
 """
 import argparse
+import copy
 from typing import List, Tuple, Iterable, Dict
 from pathlib import Path
+import math
 from Bio import SeqIO
 from moPepGen import gtf, dna, aa
 from moPepGen.gtf import GtfIO
@@ -56,6 +58,13 @@ def add_subparser_downsample_reference(subparsers:argparse._SubParsersAction):
         type=Path,
         help='Output directory',
         metavar=''
+    )
+    parser.add_argument(
+        '--translate-noncoding',
+        type=str,
+        choices=['true', 'false'],
+        help='Create translate sequences for noncoding at any possible ORF.',
+        default='true'
     )
     add_args_reference(parser, index=False)
     add_args_cleavage(parser)
@@ -214,6 +223,51 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
                 shift_seq_feature(utr, shift_offset, seqname)
     return genome, anno
 
+def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
+        genome:dna.DNASeqDict) -> Dict[str, aa.AminoAcidSeqRecord]:
+    """ Translate all possible ORF of a noncoding transcript """
+    tx_model = anno.transcripts[tx_id]
+    protein_id = tx_model.transcript.protein_id
+    gene_id = tx_model.transcript.gene_id
+    chrom = tx_model.transcript.chrom
+    tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+    start_positions = tx_seq.find_all_start_codons()
+
+    translates = {}
+    for start in start_positions:
+        end = start + math.floor((len(tx_seq) - start) / 3) * 3
+        aa_seq = tx_seq[start:end].translate(to_stop=True)
+        end = start + len(aa_seq) * 3
+        orf = f"ORF{start}:{end}"
+        alt_protein_id = f"{protein_id}-{orf}"
+        alt_tx_id = f"{tx_id}-{orf}"
+        description = f"{alt_protein_id}|{alt_tx_id}|{gene_id}"
+        aa_seq.id = alt_protein_id
+        aa_seq.protein_id = alt_protein_id
+        aa_seq.transcript_id = alt_tx_id
+        aa_seq.gene_id = gene_id
+        aa_seq.description = description
+        translates[alt_tx_id] = aa_seq
+    return translates
+
+def create_dummy_tx_model(tx_model:gtf.TranscriptAnnotationModel, tx_id:str,
+        protein_id:str):
+    """ Create dummy transcript model """
+    location = FeatureLocation(
+        start=tx_model.transcript.location.start,
+        end=tx_model.transcript.location.end,
+        strand=tx_model.transcript.location.strand
+    )
+    attrs = copy.deepcopy(tx_model.transcript.attributes)
+    attrs['protein_id'] = protein_id
+    attrs['transcript_id'] = tx_id
+    transcript = GTFSeqFeature(
+        location=location, chrom=tx_model.transcript.chrom,
+        attributes=attrs, type='transcript', strand=tx_model.transcript.strand
+    )
+    model = gtf.TranscriptAnnotationModel(transcript)
+    return model
+
 def downsample_reference(args:argparse.Namespace):
     """ Downsample reference FASTA and GTF """
     genome_fasta:Path = args.genome_fasta
@@ -222,6 +276,7 @@ def downsample_reference(args:argparse.Namespace):
     gene_list:List[str] = args.gene_list
     tx_list:List[str] = args.tx_list
     output_dir:Path = args.output_dir
+    translate_noncoding:bool = args.translate_noncoding == 'true'
 
     output_dir.mkdir(exist_ok=True)
 
@@ -229,6 +284,12 @@ def downsample_reference(args:argparse.Namespace):
     gene_seqs = get_gene_sequences(genome_fasta, anno)
     genome, anno = shift_reference(gene_seqs, anno)
     proteins = downsample_proteins(protein_fasta, anno)
+
+    if translate_noncoding:
+        for tx_id in copy.copy(list(anno.transcripts.keys())):
+            if tx_id not in proteins:
+                aa_seqs = get_noncoding_translate(tx_id, anno, genome)
+                proteins.update(aa_seqs)
 
     GtfIO.write(output_dir/'annotation.gtf', anno)
 
