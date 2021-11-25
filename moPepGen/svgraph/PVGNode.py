@@ -140,11 +140,11 @@ class PVGNode():
         cleavage_gain = []
         for node in self.out_nodes:
             if not node.variants:
-                return cleavage_gain
+                return []
             if node.variants[0].location.start != 0:
-                return cleavage_gain
+                return []
             if node.variants[0].is_stop_altering:
-                return cleavage_gain
+                return []
             if not cleavage_gain:
                 cleavage_gain.append(node.variants[0].variant)
         return cleavage_gain
