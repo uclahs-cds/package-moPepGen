@@ -38,6 +38,12 @@ def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
         ' the runtime is going to increase quickly after 10 variants.',
         default=False
     )
+    parser.add_argument(
+        '--varaint-ids',
+        type=str,
+        help='List of variant labels.',
+        nargs='*'
+    )
     add_args_cleavage(parser)
     parser.set_defaults(func=brute_force)
     print_help_if_missing_args(parser)
@@ -101,6 +107,9 @@ def brute_force(args):
             continue
         if tx_model.is_mrna_end_nf() and variant.location.end <= tx_seq.orf.end - 3:
             continue
+        if args.variant_ids:
+            if variant.id not in args.variant_ids:
+                continue
         if variant.location.start == start_index - 1:
             variant.to_end_inclusion(tx_seq)
         variants.append(variant)
