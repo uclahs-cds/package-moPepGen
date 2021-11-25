@@ -168,7 +168,7 @@ def brute_force(args):
 def peptide_is_valid(peptide:str, canonical_peptides:str, min_length:int,
         max_length:int, min_mw:float) -> bool:
     """ Check whether the peptide is valid """
-    if canonical_peptides and peptide in [x for x in canonical_peptides]:
+    if canonical_peptides and peptide in canonical_peptides:
         return False
     return min_length <= len(peptide) <= max_length and \
         SeqUtils.molecular_weight(peptide, 'protein') >= min_mw

@@ -225,7 +225,7 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
 
 def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
         genome:dna.DNASeqDict) -> Dict[str, aa.AminoAcidSeqRecord]:
-    """ """
+    """ Translate all possible ORF of a noncoding transcript """
     tx_model = anno.transcripts[tx_id]
     protein_id = tx_model.transcript.protein_id
     gene_id = tx_model.transcript.gene_id
@@ -252,6 +252,7 @@ def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
 
 def create_dummy_tx_model(tx_model:gtf.TranscriptAnnotationModel, tx_id:str,
         protein_id:str):
+    """ Create dummy transcript model """
     location = FeatureLocation(
         start=tx_model.transcript.location.start,
         end=tx_model.transcript.location.end,
