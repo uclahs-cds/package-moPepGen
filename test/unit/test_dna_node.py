@@ -1,8 +1,8 @@
 """ Test module for DNA Node """
 import unittest
-from moPepGen.SeqFeature import FeatureLocation
 from test.unit import create_three_frame_tvg, create_dna_seq_with_coordinates,\
     create_variant
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, svgraph
 
 
