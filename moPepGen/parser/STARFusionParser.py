@@ -92,7 +92,6 @@ class STARFusionRecord():
         left_breakpoint = int(self.left_breakpoint.split(':')[1]) - 1
         donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
         donor_position = anno.coordinate_genomic_to_gene(left_breakpoint, self.left_gene) + 1
-        seq = donor_model.get_gene_sequence(genome[donor_chrom])
         donor_transcripts = donor_model.transcripts
 
         accepter_model = anno.genes[self.right_gene]
@@ -106,6 +105,14 @@ class STARFusionRecord():
 
         fusion_id = f'FUSION-{self.left_gene}:{donor_position}'\
             f'-{self.right_gene}:{accepter_position}'
+
+        if donor_model.strand == 1:
+            ref_seq = genome[donor_chrom].seq[donor_genome_position + 1]
+        else:
+            ref_seq = genome[donor_chrom]\
+                .seq[donor_genome_position - 1:donor_genome_position]\
+                .reverse_complement()
+            ref_seq = str(ref_seq)
 
         perms = itertools.product(donor_transcripts, accepter_transcripts)
         for donor_tx, accepter_tx in perms:
@@ -127,7 +134,7 @@ class STARFusionRecord():
             }
             record = seqvar.VariantRecord(
                 location=location,
-                ref=seq[donor_position],
+                ref=ref_seq,
                 alt='<FUSION>',
                 _type='Fusion',
                 _id=fusion_id,

@@ -141,11 +141,16 @@ class FusionCatcherRecord():
 
         records = []
 
+        if donor_gene_model.strand == 1:
+            ref_seq = genome[donor_chrom].seq[left_breakpoint_genomic + 1]
+        else:
+            ref_seq = genome[donor_chrom]\
+                .seq[left_breakpoint_genomic - 1:left_breakpoint_genomic]\
+                .reverse_complement()
 
         perms = itertools.product(donor_transcripts.keys(), \
             accepter_transcripts.keys())
         for donor_id, accepter_id in perms:
-            seq = donor_gene_model.get_gene_sequence(genome[donor_chrom])
 
             location = FeatureLocation(
                 seqname=donor_gene_id,
@@ -162,9 +167,10 @@ class FusionCatcherRecord():
                 'ACCEPTER_POSITION': right_breakpoint_genetic,
                 'ACCEPTER_GENOMIC_POSITION': accepter_genome_position
             }
+
             record = seqvar.VariantRecord(
                 location=location,
-                ref=seq[left_breakpoint_genetic - 1],
+                ref=ref_seq,
                 alt='<FUSION>',
                 _type='Fusion',
                 _id=fusion_id,
