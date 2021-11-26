@@ -5,7 +5,7 @@ GVF file. The GVF file can be later used to call variant peptides using
 from typing import List
 from pathlib import Path
 import argparse
-from moPepGen import logger, seqvar, parser
+from moPepGen import logger, seqvar, parser, err
 from .common import add_args_reference, add_args_verbose, add_args_source,\
     add_args_output_prefix, print_start_message,print_help_if_missing_args,\
     load_references, generate_metadata
@@ -69,7 +69,10 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
             continue
         if record.spanning_unique_reads < args.min_spanning_unique:
             continue
-        var_records = record.convert_to_variant_records(anno, genome)
+        try:
+            var_records = record.convert_to_variant_records(anno, genome)
+        except err.GeneNotFoundError:
+            continue
         variants.extend(var_records)
 
     if args.verbose:

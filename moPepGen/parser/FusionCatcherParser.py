@@ -4,7 +4,7 @@ import re
 from typing import Iterable, List, Dict, Tuple
 import itertools
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import seqvar, gtf, dna
+from moPepGen import seqvar, gtf, dna, err
 
 
 def parse(path:str) -> Iterable[FusionCatcherRecord]:
@@ -45,7 +45,7 @@ def parse(path:str) -> Iterable[FusionCatcherRecord]:
 
 class FusionCatcherRecord():
     """ Defines a record of FusionCatcher's output. """
-    def __init__(self, five_end_gene_symbol:str, three_end_gene_symbol:int,
+    def __init__(self, five_end_gene_symbol:str, three_end_gene_symbol:str,
             fusion_descriptions:List[str], counts_of_common_mapping_reads:int,
             spanning_pairs:int, spanning_unique_reads:int,
             longest_anchor_found:int, fusion_finding_method:List[str],
@@ -88,8 +88,14 @@ class FusionCatcherRecord():
         if pattern.search(self.five_end_gene_id):
             donor_gene_id = self.five_end_gene_id
             accepter_gene_id = self.three_end_gene_id
-            donor_gene_model = anno.genes[self.five_end_gene_id]
-            accepter_gene_model = anno.genes[self.three_end_gene_id]
+            try:
+                donor_gene_model = anno.genes[self.five_end_gene_id]
+            except KeyError:
+                raise err.GeneNotFoundError(self.five_end_gene_id)
+            try:
+                accepter_gene_model = anno.genes[self.three_end_gene_id]
+            except KeyError:
+                raise err.GeneNotFoundError(self.three_end_gene_id)
         else:
             donor_gene_model = anno.get_gene_model_from_unversioned_id(
                 self.five_end_gene_id)
@@ -101,15 +107,7 @@ class FusionCatcherRecord():
         # in case the ensembl ID does not match those in annotation
         # and not the same gene is referered to
         donor_gene_symbol = donor_gene_model.gene_name
-        if donor_gene_symbol != self.five_end_gene_symbol:
-            raise ValueError(
-                'Annotation GTF version mismatch with FusionCatcher.'
-            )
         accepter_gene_symbol = accepter_gene_model.gene_name
-        if accepter_gene_symbol != self.three_end_gene_symbol:
-            raise ValueError(
-                'Annotation GTF version mismatch with FusionCatcher.'
-            )
 
         donor_transcripts:Dict[str, gtf.TranscriptAnnotationModel] = {
             tx_id: anno.transcripts[tx_id] \
@@ -166,7 +164,7 @@ class FusionCatcherRecord():
             }
             record = seqvar.VariantRecord(
                 location=location,
-                ref=seq[left_breakpoint_genetic],
+                ref=seq[left_breakpoint_genetic - 1],
                 alt='<FUSION>',
                 _type='Fusion',
                 _id=fusion_id,
