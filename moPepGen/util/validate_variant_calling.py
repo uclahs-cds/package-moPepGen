@@ -44,7 +44,7 @@ def add_subparser_validate_variant_callilng(subparsers:argparse._SubParsersActio
         default=False
     )
     parser.add_argument(
-        '--varaint-ids',
+        '--variant-ids',
         type=str,
         help='List of variant labels.',
         nargs='*'
