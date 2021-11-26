@@ -561,12 +561,12 @@ class ThreeFrameTVG():
                 break
 
             # skipping start lost mutations
-            start_index = self.seq.orf.start + 3 if self.has_known_orf else 2
+            start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
 
             if variant.location.start == start_index - 1 and variant.is_insertion():
                 variant.to_end_inclusion(self.seq)
 
-            if variant.location.start <= start_index:
+            if variant.location.start < start_index:
                 variant = next(variant_iter, None)
                 continue
 
