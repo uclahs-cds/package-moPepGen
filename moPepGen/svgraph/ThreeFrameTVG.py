@@ -566,7 +566,7 @@ class ThreeFrameTVG():
             if variant.location.start == start_index - 1 and variant.is_insertion():
                 variant.to_end_inclusion(self.seq)
 
-            if variant.location.start < start_index:
+            if variant.location.start <= start_index:
                 variant = next(variant_iter, None)
                 continue
 
