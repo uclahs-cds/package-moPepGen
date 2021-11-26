@@ -90,12 +90,12 @@ class FusionCatcherRecord():
             accepter_gene_id = self.three_end_gene_id
             try:
                 donor_gene_model = anno.genes[self.five_end_gene_id]
-            except KeyError:
-                raise err.GeneNotFoundError(self.five_end_gene_id)
+            except KeyError as error:
+                raise err.GeneNotFoundError(self.five_end_gene_id) from error
             try:
                 accepter_gene_model = anno.genes[self.three_end_gene_id]
-            except KeyError:
-                raise err.GeneNotFoundError(self.three_end_gene_id)
+            except KeyError as error:
+                raise err.GeneNotFoundError(self.three_end_gene_id) from error
         else:
             donor_gene_model = anno.get_gene_model_from_unversioned_id(
                 self.five_end_gene_id)
@@ -147,6 +147,7 @@ class FusionCatcherRecord():
             ref_seq = genome[donor_chrom]\
                 .seq[left_breakpoint_genomic - 1:left_breakpoint_genomic]\
                 .reverse_complement()
+            ref_seq = str(ref_seq)
 
         perms = itertools.product(donor_transcripts.keys(), \
             accepter_transcripts.keys())

@@ -369,8 +369,8 @@ class GenomicAnnotation():
 
         try:
             versioned_gene_id = self.gene_id_version_mapper[gene_id]
-        except KeyError:
-            raise err.GeneNotFoundError(gene_id)
+        except KeyError as error:
+            raise err.GeneNotFoundError(gene_id) from error
 
         return self.genes[versioned_gene_id]
 
