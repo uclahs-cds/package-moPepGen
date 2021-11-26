@@ -39,7 +39,7 @@ def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
         default=False
     )
     parser.add_argument(
-        '--varaint-ids',
+        '--variant-ids',
         type=str,
         help='List of variant labels.',
         nargs='*'
