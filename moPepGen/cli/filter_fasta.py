@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from typing import IO, Dict
 from moPepGen.aa import VariantPeptidePool
-from .common import add_args_reference, add_args_verbose, print_start_message,\
+from .common import add_args_reference, add_args_quiet, print_start_message,\
     print_help_if_missing_args, load_references, logger
 
 
@@ -78,7 +78,7 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     )
 
     add_args_reference(p, genome=False, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     print_help_if_missing_args(p)
     p.set_defaults(func=filter_fasta)
     return p
@@ -93,7 +93,7 @@ def filter_fasta(args:argparse.Namespace) -> None:
     with open(args.input_fasta, 'rt') as handle:
         pool = VariantPeptidePool.load(handle)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Peptide FASTA file loaded.')
 
     with open(args.exprs_table, 'rt') as handle:
@@ -105,7 +105,7 @@ def filter_fasta(args:argparse.Namespace) -> None:
             delim=args.delimiter
         )
 
-    if args.verbose:
+    if not args.quiet:
         logger('Gene expression table loaded.')
 
     filtered_pool = pool.filter(exprs, args.quant_cutoff, anno,
@@ -113,7 +113,7 @@ def filter_fasta(args:argparse.Namespace) -> None:
 
     filtered_pool.write(args.output_fasta)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Filtered FASTA file saved.')
 
 def load_expression_table(handle:IO, tx_col:int,quant_col:int, skip:int=0,

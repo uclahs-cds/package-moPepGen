@@ -10,7 +10,7 @@ import argparse
 from pathlib import Path
 import pickle
 from moPepGen import dna, aa, gtf, logger
-from .common import add_args_cleavage, add_args_reference, add_args_verbose, \
+from .common import add_args_cleavage, add_args_reference, add_args_quiet, \
     print_help_if_missing_args, print_start_message
 
 
@@ -34,7 +34,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     )
     add_args_reference(p, index=False)
     add_args_cleavage(p)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=generate_index)
     print_help_if_missing_args(p)
     return p
@@ -52,7 +52,7 @@ def generate_index(args:argparse.Namespace):
     min_length:int = int(args.min_length)
     max_length:int = int(args.max_length)
     exception = 'trypsin_exception' if rule == 'trypsin' else None
-    verbose:bool = args.verbose
+    quiet:bool = args.quiet
 
     output_dir:Path = args.output_dir
     output_genome = output_dir/"genome.pickle"
@@ -66,17 +66,17 @@ def generate_index(args:argparse.Namespace):
 
     genome = dna.DNASeqDict()
     genome.dump_fasta(path_genome)
-    if verbose:
+    if not quiet:
         logger('Genome FASTA loaded')
     with open(output_genome, 'wb') as handle:
         pickle.dump(genome, handle)
-    if verbose:
+    if not quiet:
         logger('Genome FASTA saved to disk.')
     del genome
 
     anno = gtf.GenomicAnnotation()
     anno.dump_gtf(path_gtf)
-    if verbose:
+    if not quiet:
         logger('Genome annotation GTF loaded.')
 
     proteome = aa.AminoAcidSeqDict()
@@ -86,23 +86,23 @@ def generate_index(args:argparse.Namespace):
 
     with open(output_anno, 'wb') as handle:
         pickle.dump(anno, handle)
-    if verbose:
+    if not quiet:
         logger('Genome annotation GTF saved to disk.')
 
-    if verbose:
+    if not quiet:
         logger('Proteome FASTA loaded.')
     with open(output_proteome, 'wb') as handle:
         pickle.dump(proteome, handle)
-    if verbose:
+    if not quiet:
         logger('Proteome FASTA saved to disk.')
 
     canonical_peptides = proteome.create_unique_peptide_pool(
         anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
         min_mw=min_mw, min_length = min_length, max_length = max_length
     )
-    if verbose:
+    if not quiet:
         logger('canonical peptide pool generated.')
     with open(output_peptides, 'wb') as handle:
         pickle.dump(canonical_peptides, handle)
-    if verbose:
+    if not quiet:
         logger('canonical peptide pool saved to disk.')

@@ -9,7 +9,7 @@ from typing import List, Dict
 from pathlib import Path
 from moPepGen import logger, circ, err
 from moPepGen.parser import CIRCexplorerParser
-from moPepGen.cli.common import add_args_reference, add_args_verbose, \
+from moPepGen.cli.common import add_args_reference, add_args_quiet, \
     add_args_source, add_args_output_prefix, print_start_message, \
     print_help_if_missing_args, load_references, generate_metadata, parse_range
 
@@ -78,7 +78,7 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=parse_circexplorer)
     print_help_if_missing_args(p)
     return p
@@ -135,5 +135,5 @@ def parse_circexplorer(args:argparse.Namespace):
     with open(output_path, 'w') as handle:
         circ.io.write(records, metadata, handle)
 
-    if args.verbose:
+    if not args.quiet:
         logger("CircRNA records written to disk.")

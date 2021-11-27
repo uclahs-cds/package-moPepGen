@@ -7,7 +7,7 @@ import argparse
 from typing import List
 from moPepGen import logger, seqvar, parser
 from .common import add_args_output_prefix, add_args_reference, \
-    add_args_verbose, add_args_source, print_start_message, \
+    add_args_quiet, add_args_source, print_start_message, \
     print_help_if_missing_args, load_references, generate_metadata
 
 
@@ -40,7 +40,7 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     )
     add_args_source(p)
     add_args_reference(p, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=parse_star_fusion)
     print_help_if_missing_args(p)
     return p
@@ -64,17 +64,17 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
         var_records = record.convert_to_variant_records(anno, genome)
         variants.extend(var_records)
 
-    if args.verbose:
+    if not args.quiet:
         logger(f'STAR-Fusion output {fusion} loaded.')
 
     variants.sort()
 
-    if args.verbose:
+    if not args.quiet:
         logger('Variants sorted.')
 
     metadata = generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Variant info written to disk.')

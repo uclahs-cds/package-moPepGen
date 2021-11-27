@@ -6,7 +6,7 @@ from typing import List
 from pathlib import Path
 import argparse
 from moPepGen import logger, seqvar, parser
-from .common import add_args_reference, add_args_verbose, add_args_source,\
+from .common import add_args_reference, add_args_quiet, add_args_source,\
     add_args_output_prefix, print_start_message,print_help_if_missing_args,\
     load_references, generate_metadata
 
@@ -46,7 +46,7 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
     add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=parse_fusion_catcher)
     print_help_if_missing_args(p)
     return p
@@ -72,17 +72,17 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
         var_records = record.convert_to_variant_records(anno, genome)
         variants.extend(var_records)
 
-    if args.verbose:
+    if not args.quiet:
         logger(f'FusionCatcher output {fusion} loaded.')
 
     variants.sort()
 
-    if args.verbose:
+    if not args.quiet:
         logger('Variants sorted.')
 
     metadata = generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 
-    if args.verbose:
+    if not args.quiet:
         logger("Variants written to disk.")

@@ -17,7 +17,7 @@ class TestParseREDItools(TestCaseIntegration):
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'reditools')
-        args.verbose = False
+        args.quiet = True
         cli.parse_reditools(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'reditools.gvf'}

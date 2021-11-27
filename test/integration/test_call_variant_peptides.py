@@ -21,7 +21,7 @@ def create_base_args() -> argparse.Namespace:
     args.min_mw = '500.'
     args.min_length = 7
     args.max_length = 25
-    args.verbose = False
+    args.quiet = True
     return args
 
 class TestCallVariantPeptides(TestCaseIntegration):

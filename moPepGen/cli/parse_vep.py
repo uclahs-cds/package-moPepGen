@@ -13,7 +13,7 @@ from moPepGen.err import TranscriptionStopSiteMutationError, \
     TranscriptionStartSiteMutationError
 from moPepGen import seqvar, logger
 from moPepGen.cli.common import add_args_output_prefix, add_args_reference, \
-    add_args_verbose, add_args_source, print_start_message, \
+    add_args_quiet, add_args_source, print_start_message, \
     print_help_if_missing_args, load_references, generate_metadata
 
 
@@ -42,7 +42,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=parse_vep)
     print_help_if_missing_args(p)
     return p
@@ -76,13 +76,13 @@ def parse_vep(args:argparse.Namespace) -> None:
 
             vep_records[transcript_id].append(record)
 
-        if args.verbose:
+        if not args.quiet:
             logger(f'VEP file {vep_file} loaded.')
 
     for records in vep_records.values():
         records.sort()
 
-    if args.verbose:
+    if not args.quiet:
         logger('VEP sorting done.')
 
     metadata = generate_metadata(args)
@@ -93,5 +93,5 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     seqvar.io.write(all_records, output_path, metadata)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Variant info written to disk.')

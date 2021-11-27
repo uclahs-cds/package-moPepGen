@@ -18,7 +18,7 @@ class TestGenerateIndex(TestCaseIntegration):
         args.min_length = 7
         args.max_length = 25
         args.miscleavage = 2
-        args.verbose = False
+        args.quiet = True
         args.output_dir = self.work_dir / 'index'
         args.output_dir.mkdir(parents=False, exist_ok=True)
         cli.generate_index(args)
