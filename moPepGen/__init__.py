@@ -2,9 +2,8 @@
 from datetime import datetime
 import itertools
 from typing import Iterable
+from moPepGen.version import __version__
 
-
-__version__ = '0.0.1'
 
 ## Error messages
 ERROR_INDEX_IN_INTRON = 'The genomic index seems to be in an intron'

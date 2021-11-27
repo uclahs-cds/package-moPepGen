@@ -2,6 +2,7 @@
 """
 from Bio import SeqIO
 from moPepGen.dna import DNASeqRecord
+from moPepGen.version import MetaVersion
 
 
 class DNASeqDict(dict):
@@ -12,6 +13,7 @@ class DNASeqDict(dict):
         for val in kwargs.values():
             self._validate(val)
         super().__init__(*args, **kwargs)
+        self.version = MetaVersion()
 
     @staticmethod
     def _validate(val):

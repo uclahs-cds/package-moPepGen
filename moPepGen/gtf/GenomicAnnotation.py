@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import List, Dict, Tuple, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar, err
+from moPepGen.version import MetaVersion
 from . import GtfIO
 from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TYPES
 from .GeneAnnotationModel import GeneAnnotationModel
@@ -37,6 +38,7 @@ class GenomicAnnotation():
         self.transcripts = transcripts
         self.source = source
         self.gene_id_version_mapper:Dict[str, str] = None
+        self.version = MetaVersion()
 
     def __repr__(self) -> str:
         """ Return a string representation """

@@ -1,12 +1,15 @@
 """ Common functions for cli """
+from __future__ import annotations
 import argparse
 import sys
 from typing import Tuple, Set, List
 from pathlib import Path
 import pickle
 import pkg_resources
-from moPepGen import aa, dna, gtf, logger, seqvar
+from moPepGen import aa, dna, gtf, logger, seqvar, err
 from moPepGen.aa.expasy_rules import EXPASY_RULES
+from moPepGen.dna.DNASeqDict import DNASeqDict
+from moPepGen.version import MetaVersion
 
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
@@ -147,17 +150,26 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
     annotation = None
     canonical_peptides = None
 
+    version = MetaVersion()
+
     if index_dir:
         if load_genome:
             with open(f'{index_dir}/genome.pickle', 'rb') as handle:
-                genome = pickle.load(handle)
+                genome:DNASeqDict = pickle.load(handle)
+                if version != genome.version:
+                    raise err.IndexVersionNotMatchError(version, genome.version)
 
         with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
-            annotation = pickle.load(handle)
+            annotation:gtf.GenomicAnnotation = pickle.load(handle)
+            if version != annotation.version:
+                raise err.IndexVersionNotMatchError(version, genome.version)
+
 
         if load_proteome:
             with open(f'{index_dir}/proteome.pickle', 'rb') as handle:
-                proteome = pickle.load(handle)
+                proteome:aa.AminoAcidSeqDict = pickle.load(handle)
+                if version != proteome.version:
+                    raise err.IndexVersionNotMatchError(version, genome.version)
 
         if load_canonical_peptides:
             with open(f"{index_dir}/canonical_peptides.pickle", 'rb') as handle:

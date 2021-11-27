@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Set, TYPE_CHECKING
 from Bio import SeqIO
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
+from moPepGen.version import MetaVersion
 
 
 # To avoid circular import
@@ -20,6 +21,7 @@ class AminoAcidSeqDict(dict):
                     'The value of a DNASeqDict must be AminoAcidSeqRecord.'
                 )
         super().__init__(*args, **kwargs)
+        self.version = MetaVersion()
 
     def __setitem__(self, k:str, v:AminoAcidSeqRecord)->None:
         """ set item """
