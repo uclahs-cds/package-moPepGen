@@ -17,9 +17,9 @@ class MetaVersion():
 
     def __eq__(self, other:MetaVersion):
         """ equal to """
-        self.python == other.python
-        self.biopython == other.biopython
-        self.mopepgen == other.mopepgen
+        return self.python == other.python and \
+            self.biopython == other.biopython and \
+            self.mopepgen == other.mopepgen
 
     def __ne__(self, other:MetaVersion):
         """ not equal to """
