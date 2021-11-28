@@ -2,8 +2,7 @@
 import copy
 import unittest
 from test.unit import create_genomic_annotation, create_dna_record_dict
-from Bio.Seq import Seq
-from moPepGen.parser.ArribaParser import ArribaRecord
+from moPepGen.parser.ArribaParser import ArribaConfidence, ArribaRecord
 
 GENOME_DATA = {
     'chr1':
@@ -93,7 +92,7 @@ class TestFusionCatcherParser(unittest.TestCase):
             discordant_mates = 2,
             coverage1 = 2,
             coverage2 = 2,
-            confidence = '',
+            confidence = ArribaConfidence('high'),
             reading_frame = '',
             tags = '',
             retained_protein_domains = '',
@@ -138,7 +137,7 @@ class TestFusionCatcherParser(unittest.TestCase):
             discordant_mates = 2,
             coverage1 = 2,
             coverage2 = 2,
-            confidence = '',
+            confidence = ArribaConfidence('high'),
             reading_frame = '',
             tags = '',
             retained_protein_domains = '',

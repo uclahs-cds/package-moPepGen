@@ -15,7 +15,7 @@ from .common import add_args_reference, add_args_verbose, add_args_source,\
 def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen parseArriba """
 
-    p = subparsers.add_parser(
+    p:argparse.ArgumentParser = subparsers.add_parser(
         name='parseArriba',
         help='Parse Arriba result for moPepGen to call variant peptides.',
         description='Parse the Arriba result to GVF format of variant'
@@ -28,6 +28,28 @@ def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
         help="Path to Arriba's output file.",
         metavar='<file>',
         required=True
+    )
+    p.add_argument(
+        '--min-split-read1',
+        type=int,
+        help='Minimal split_read1 value.',
+        metavar='<value>',
+        default=1
+    )
+    p.add_argument(
+        '--min-split-read2',
+        type=int,
+        help='Minimal split_read2 value.',
+        metavar='<value>',
+        default=1
+    )
+    p.add_argument(
+        '--min-confidence',
+        type=int,
+        choices=parser.ArribaParser.ArribaConfidence.levels.keys(),
+        help='Minimal confidence value.',
+        metavar='<value>',
+        default=1
     )
     add_args_output_prefix(p)
     add_args_source(p)
@@ -43,6 +65,9 @@ def parse_arriba(args:argparse.Namespace) -> None:
     fusion = args.fusion
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '.gvf'
+    min_split_read1:int = args.min_split_read1
+    min_split_read2:int = args.min_split_read2
+    min_confidence:str = args.min_confidence
 
     print_start_message(args)
 
@@ -52,6 +77,8 @@ def parse_arriba(args:argparse.Namespace) -> None:
 
     with open(fusion, 'rt') as handle:
         for record in parser.ArribaParser.parse(handle):
+            if not record.is_valid(min_split_read1, min_split_read2, min_confidence):
+                continue
             if record.transcript_on_antisense_strand(anno):
                 continue
             try:

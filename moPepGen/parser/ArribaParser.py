@@ -18,10 +18,49 @@ def parse(handle:IO) -> Iterable[ArribaRecord]:
         fields[11] = int(fields[11])
         fields[12] = int(fields[12])
         fields[13] = int(fields[13])
+        fields[14] = ArribaConfidence(fields[14])
         fields[26] = fields[26].split(',')
         fields[29] = fields[29].split(',')
 
         yield ArribaRecord(*fields)
+
+class ArribaConfidence():
+    """ Arriba's confidence """
+    levels = {'low': 0, 'medium': 1, 'high': 2}
+    """ Arriba's confidence """
+    def __init__(self, data:str):
+        """ constructor """
+        if data not in self.levels:
+            raise ValueError(f"Invalid confidence of {data}")
+        self.data = data
+
+    def to_int(self) -> int:
+        """ Convert to int """
+        return self.levels[self.data]
+
+    def __lt__(self, other:ArribaConfidence) -> bool:
+        """ larger than """
+        return self.to_int() > other.to_int()
+
+    def __le__(self, other:ArribaConfidence) -> bool:
+        """ larger or equal to """
+        return self == other or self > other
+
+    def __st__(self, other:ArribaConfidence) -> bool:
+        """ smaller than """
+        return not self >= other
+
+    def __se__(self, other:ArribaConfidence) -> bool:
+        """ smaller or equal to """
+        return not self > other
+
+    def __eq__(self, other:ArribaConfidence) -> bool:
+        """ equal to """
+        return self.data == other.data
+
+    def __ne__(self, other:ArribaConfidence) -> bool:
+        """ not equal to """
+        return not self == other
 
 class ArribaRecord():
     """ Arriba Record. More info see:
@@ -29,8 +68,8 @@ class ArribaRecord():
     def __init__(self, gene1:str, gene2:str, strand1:str, strand2:str,
             breakpoint1:str, breakpoint2:str, site1:str, site2:str, _type:str,
             split_reads1:str, split_reads2:str, discordant_mates:int,
-            coverage1:int, coverage2:int, confidence:str, reading_frame:str,
-            tags:str, retained_protein_domains:str,
+            coverage1:int, coverage2:int, confidence:ArribaConfidence,
+            reading_frame:str, tags:str, retained_protein_domains:str,
             closest_genomic_breakpoint1:str, closest_genomic_breakpoint2:str,
             gene_id1:str, gene_id2:str, transcript_id1:str, transcript_id2:str,
             direction1:str, direction2:str, filters:List[str],
@@ -128,6 +167,13 @@ class ArribaRecord():
         """ Get all possible donor transcripts """
         pos = self.breakpoint2_position - 1
         return anno.get_transcripts_with_position(self.gene_id2, pos)
+
+    def is_valid(self, min_split_reads1:int, min_split_reads2, confidence:str
+            ) -> bool:
+        """ Checks if the ArribaRecord is valid """
+        return self.split_reads1 >= min_split_reads1 and \
+            self.split_reads2 >= min_split_reads2 and \
+            self.confidence >= ArribaConfidence(confidence)
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
