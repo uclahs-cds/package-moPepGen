@@ -116,44 +116,54 @@ class ArribaRecord():
         return self.transcript_strand1 != gene_model1.strand or\
             self.transcript_strand2 != gene_model2.strand
 
+    def get_donor_transcripts(self, anno:gtf.GenomicAnnotation
+            ) -> List[gtf.TranscriptAnnotationModel]:
+        """ Get all possible donor transcripts """
+        pos = self.breakpoint1_position - 1
+        return anno.get_transcripts_with_position(self.gene_id1, pos)
+
+    def get_accepter_transcripts(self, anno:gtf.GenomicAnnotation
+            ) -> List[gtf.TranscriptAnnotationModel]:
+        """ Get all possible donor transcripts """
+        pos = self.breakpoint2_position - 1
+        return anno.get_transcripts_with_position(self.gene_id2, pos)
+
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         """ """
         try:
-            donor_gene_model = anno.genes[self.gene1]
+            donor_gene_model = anno.genes[self.gene_id1]
         except KeyError as error:
-            raise err.GeneNotFoundError(self.gene1) from error
+            raise err.GeneNotFoundError(self.gene_id1) from error
         try:
-            accepter_gene_model = anno.genes[self.gene2]
+            accepter_gene_model = anno.genes[self.gene_id2]
         except KeyError as error:
-            raise err.GeneNotFoundError(self.gene2) from error
+            raise err.GeneNotFoundError(self.gene_id2) from error
 
         donor_gene_symbol = donor_gene_model.gene_name
         donor_chrom = donor_gene_model.chrom
         left_breakpoint = self.breakpoint1_position
         donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
-        donor_position = anno.coordinate_genomic_to_gene(left_breakpoint - 1, self.gene1) + 1
-        donor_transcripts = [x for x in donor_gene_model.transcripts
-             if anno.transcripts[x].is_exonic(left_breakpoint - 1)]
+        donor_position = anno.coordinate_genomic_to_gene(left_breakpoint - 1, self.gene_id1) + 1
+        donor_transcripts = self.get_donor_transcripts(anno)
 
         accepter_gene_symbol = accepter_gene_model.gene_name
         accepter_chrom = accepter_gene_model.chrom
         right_breakpoint = self.breakpoint2_position
         accepter_genome_position = f'{accepter_chrom}:{right_breakpoint}:{right_breakpoint}'
-        accepter_position = anno.coordinate_genomic_to_gene(right_breakpoint - 1, self.gene1)
-        accepter_transcripts = [x for x in accepter_gene_model.transcripts
-            if anno.transcripts[x].is_exonic(right_breakpoint - 1)]
+        accepter_position = anno.coordinate_genomic_to_gene(right_breakpoint - 1, self.gene_id2)
+        accepter_transcripts = self.get_accepter_transcripts(anno)
 
         records = []
 
-        fusion_id = f'FUSION-{self.left_gene}:{donor_position}'\
-            f'-{self.right_gene}:{accepter_position}'
+        fusion_id = f'FUSION-{self.gene_id1}:{donor_position}'\
+            f'-{self.gene_id2}:{accepter_position}'
 
         if donor_gene_model.strand == 1:
-            ref_seq = genome[donor_chrom].seq[donor_genome_position + 1]
+            ref_seq = genome[donor_chrom].seq[left_breakpoint]
         else:
             ref_seq = genome[donor_chrom]\
-                .seq[donor_genome_position - 1:donor_genome_position]\
+                .seq[left_breakpoint:left_breakpoint + 1]\
                 .reverse_complement()
             ref_seq = str(ref_seq)
 
@@ -168,7 +178,7 @@ class ArribaRecord():
                 'TRANSCRIPT_ID': donor_tx,
                 'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
-                'ACCEPTER_GENE_ID': self.right_gene,
+                'ACCEPTER_GENE_ID': self.gene_id2,
                 'ACCEPTER_TRANSCRIPT_ID': accepter_tx,
                 'ACCEPTER_SYMBOL': accepter_gene_symbol,
                 'ACCEPTER_POSITION': accepter_position,

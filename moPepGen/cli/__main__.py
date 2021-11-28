@@ -13,7 +13,7 @@ CLI_MAIN_DESCRIPTION = """
    parseREDItools      Parse REDItools annotated output.
    parseSTARFusion     Parse STAR-Fusion output.
    parseFusionCatcher  Parse FusionCatcher output.
-   parserArriba        Parse Arriba output.
+   parseArriba        Parse Arriba output.
    parseRMATS          Parse rMATS output.
    parseCIRCexplorer   Parse CIRCexplorer known circRNA output.
 
