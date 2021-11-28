@@ -45,7 +45,7 @@ class ArribaRecord():
         self.breakpoint2 = breakpoint2
         self.site1 = site1
         self.site2 = site2
-        self.type = _type
+        self._type = _type
         self.split_reads1 = split_reads1
         self.split_reads2 = split_reads2
         self.discordant_mates = discordant_mates
