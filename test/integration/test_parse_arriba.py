@@ -1,9 +1,7 @@
 """ Test parseArriba """
 import argparse
-from pathlib import Path
-from test.unit import load_references
 from test.integration import TestCaseIntegration
-from moPepGen import cli, parser
+from moPepGen import cli
 
 
 class TestParseArriba(TestCaseIntegration):

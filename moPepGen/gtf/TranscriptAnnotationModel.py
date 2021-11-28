@@ -285,7 +285,8 @@ class TranscriptAnnotationModel():
         return length
 
     def is_exonic(self, pos:int) -> bool:
-        """ """
+        """ Checks if the given position is contained by any exon of the
+        current transcript model. """
         for exon in self.exon:
             if pos in exon:
                 return True

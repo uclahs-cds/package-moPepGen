@@ -1,7 +1,6 @@
 """ Module for Arriba parser """
 from __future__ import annotations
 import itertools
-from pathlib import Path
 from typing import Iterable, List, IO
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, gtf, dna, err
@@ -25,9 +24,10 @@ def parse(handle:IO) -> Iterable[ArribaRecord]:
         yield ArribaRecord(*fields)
 
 class ArribaRecord():
-    """ Arriba Record """
+    """ Arriba Record. More info see:
+    https://arriba.readthedocs.io/en/latest/output-files/ """
     def __init__(self, gene1:str, gene2:str, strand1:str, strand2:str,
-            breakpoint1:str, breakpoint2:str, site1:str, site2:str, type:str,
+            breakpoint1:str, breakpoint2:str, site1:str, site2:str, _type:str,
             split_reads1:str, split_reads2:str, discordant_mates:int,
             coverage1:int, coverage2:int, confidence:str, reading_frame:str,
             tags:str, retained_protein_domains:str,
@@ -45,7 +45,7 @@ class ArribaRecord():
         self.breakpoint2 = breakpoint2
         self.site1 = site1
         self.site2 = site2
-        self.type = type
+        self.type = _type
         self.split_reads1 = split_reads1
         self.split_reads2 = split_reads2
         self.discordant_mates = discordant_mates
@@ -110,7 +110,8 @@ class ArribaRecord():
         raise ValueError(f"Can not infer strand from {strand}")
 
     def transcript_on_antisense_strand(self, anno:gtf.GenomicAnnotation) -> bool:
-        """ """
+        """ Checks whether donor or accepter transcripts are on the antisense
+        strand (-) or if the strand can not be interpreted (.) by Arriba. """
         gene_model1 = anno.genes[self.gene_id1]
         gene_model2 = anno.genes[self.gene_id2]
         return self.transcript_strand1 != gene_model1.strand or\
@@ -130,7 +131,29 @@ class ArribaRecord():
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
-        """ """
+        """ Convert the Arriba fusion record to a VariantRecord.
+        Arriba uses a 1-based coordinate system.
+
+        For Arriba, `breakpoint1` is used to indicate the genomic location of
+        the breakpoint of the donor gene, while `breakpoint2` is to that of the
+        accepter gene. `direction1` and `direction2` are either 'upstream' or
+        'downstream' depends on donor/accepter and its strand. For example,
+        for a donor gene on + strand, the value of `direction1` would be
+        downstream meaning that the breakpoint is to the downstream side of
+        `breakpoint1`. While an acceptor gene on - strand will have the
+        `direction2` value being `downstream`. Noted that on genetic
+        coordinates, the breakpoint of donor gene will always be 'downstream'
+        and that of an accepter gene will always be 'upstream'.
+
+        Args:
+            anno (gtf.GenomicAnnotation): genomic annotation loaded from a GTF
+                file.
+            genome (dna.DNASeqDict): genome sequences loaded from a genome
+                FASTA file.
+
+        Return:
+            A list of seqvar.VaraintRecord.
+        """
         try:
             donor_gene_model = anno.genes[self.gene_id1]
         except KeyError as error:
