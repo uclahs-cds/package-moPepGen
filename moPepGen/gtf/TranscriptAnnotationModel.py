@@ -283,3 +283,10 @@ class TranscriptAnnotationModel():
         for exon in self.exon:
             length += exon.location.end - exon.location.start
         return length
+
+    def is_exonic(self, pos:int) -> bool:
+        """ """
+        for exon in self.exon:
+            if pos in exon:
+                return True
+        return False
