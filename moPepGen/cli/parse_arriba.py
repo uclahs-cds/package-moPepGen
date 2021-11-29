@@ -48,7 +48,7 @@ def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
         type=str,
         choices=parser.ArribaParser.ArribaConfidence.levels.keys(),
         help='Minimal confidence value.',
-        metavar='<value>',
+        metavar='<choice>',
         default='medium'
     )
     add_args_output_prefix(p)

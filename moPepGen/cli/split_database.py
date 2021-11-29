@@ -24,31 +24,36 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
     )
 
     p.add_argument(
-        '-g', '--variant-gvf',
+        '-i', '--input-variant',
         type=Path,
-        help='Path to the input GVF files',
+        help='Path to the input variant GVF files',
+        metavar='<file>',
         nargs='+'
     )
     p.add_argument(
         '-r', '--variant-peptides',
         type=Path,
-        help='Path to the variant peptide FASTA database file.'
+        help='Path to the variant peptide FASTA database file.',
+        metavar='<file>'
     )
     p.add_argument(
         '-n', '--noncoding-peptides',
         type=Path,
         help='Pth the the noncoding peptide FASTA databse file.',
+        metavar='<file>',
         default=None
     )
     p.add_argument(
         '--order-source',
         type=str,
-        help='Order of sources, separate by comma. E.g., SNP,SNV,Fusion'
+        help='Order of sources, separate by comma. E.g., SNP,SNV,Fusion',
+        metavar='<value>'
     )
     p.add_argument(
         '--group-source',
         type=str,
         help='Group sources. E.g., PointMutation:gSNP,sSNV INDEL:gINDEL,sINDEL',
+        metavar='<value>',
         nargs='*'
     )
     p.add_argument(
@@ -64,12 +69,14 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
         help='For peptides that were not already split into FASTAs up to'
         'max_source_groups, those involving the following source will be split'
         'into additional FASTAs with decreasing priority',
+        metavar='<value>',
         default=None
     )
     p.add_argument(
         '-o', '--output-prefix',
         type=Path,
-        help='Output prefix'
+        help='Output prefix',
+        metavar = '<value>'
     )
 
     add_args_reference(p, genome=False, proteome=False)

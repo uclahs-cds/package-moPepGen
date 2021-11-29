@@ -33,6 +33,6 @@ moPepGen callPeptide \
     --index-dir path/to/index \
     --cleavage-rule trypsin \
     --miscleavage 2 \
-    --min-mw 500  
+    --min-mw 500
     --output-fasta vep_moPepGen.fasta
 ```
