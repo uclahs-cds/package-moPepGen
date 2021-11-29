@@ -6,7 +6,7 @@ from typing import List
 from pathlib import Path
 import argparse
 from moPepGen import logger, seqvar, parser, err
-from .common import add_args_reference, add_args_verbose, add_args_source,\
+from .common import add_args_reference, add_args_quiet, add_args_source,\
     add_args_output_prefix, print_start_message,print_help_if_missing_args,\
     load_references, generate_metadata
 
@@ -54,7 +54,7 @@ def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
     add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=parse_arriba)
     print_help_if_missing_args(p)
     return p
@@ -87,17 +87,17 @@ def parse_arriba(args:argparse.Namespace) -> None:
                 continue
             variants.extend(var_records)
 
-    if args.verbose:
+    if args.quiet:
         logger(f'Arriba output {fusion} loaded.')
 
     variants.sort()
 
-    if args.verbose:
+    if args.quiet:
         logger('Variants sorted.')
 
     metadata = generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 
-    if args.verbose:
+    if args.quiet:
         logger("Variants written to disk.")
