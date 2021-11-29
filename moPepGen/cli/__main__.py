@@ -13,6 +13,7 @@ CLI_MAIN_DESCRIPTION = """
    parseREDItools      Parse REDItools annotated output.
    parseSTARFusion     Parse STAR-Fusion output.
    parseFusionCatcher  Parse FusionCatcher output.
+   parseArriba        Parse Arriba output.
    parseRMATS          Parse rMATS output.
    parseCIRCexplorer   Parse CIRCexplorer known circRNA output.
 
@@ -49,6 +50,7 @@ def main():
     cli.add_subparser_parse_reditools(subparsers)
     cli.add_subparser_parse_star_fusion(subparsers)
     cli.add_subparser_parse_fusion_catcher(subparsers)
+    cli.add_subparser_parse_arriba(subparsers)
     cli.add_subparser_parse_rmats(subparsers)
     cli.add_subparser_parse_circexplorer(subparsers)
     cli.add_subparser_call_variant(subparsers)

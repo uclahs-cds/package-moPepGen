@@ -490,3 +490,13 @@ class GenomicAnnotation():
                 if exon.location.end < feature.location.start:
                     break
         raise err.IntronNotFoundError(gene_id, feature)
+
+    def get_transcripts_with_position(self, gene_id:str, pos:int
+            ) -> List[TranscriptAnnotationModel]:
+        """ get all transcripts of a gene that contains a genomic position """
+        transcripts = []
+        for tx_id in self.genes[gene_id].transcripts:
+            tx_model = self.transcripts[tx_id]
+            if tx_model.is_exonic(pos):
+                transcripts.append(tx_model)
+        return transcripts

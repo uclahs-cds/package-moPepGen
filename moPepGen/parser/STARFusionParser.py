@@ -76,7 +76,7 @@ class STARFusionRecord():
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
-        """ COnvert a STAR-Fusion's record to VariantRecord.
+        """ Convert a STAR-Fusion's record to VariantRecord.
 
         Args:
             anno (Dict[str, Dict[str, gtf.TranscriptAnnotationModel]]): The
