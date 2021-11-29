@@ -566,7 +566,7 @@ preferred-modules=
 [DESIGN]
 
 # Maximum number of arguments for function / method.
-max-args=30
+max-args=35
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=30

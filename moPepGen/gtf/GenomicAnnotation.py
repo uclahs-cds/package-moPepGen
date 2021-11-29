@@ -344,7 +344,10 @@ class GenomicAnnotation():
         for versioned in self.genes.keys():
             unversioned = versioned.split('.')[0]
             if unversioned in self.gene_id_version_mapper:
-                raise ValueError('Unversioned gene ID collapsed.')
+                if '_PAR_Y' in versioned:
+                    continue
+                if '_PAR_Y' not in self.gene_id_version_mapper[unversioned]:
+                    raise ValueError('Unversioned gene ID collapsed.')
             self.gene_id_version_mapper[unversioned] = versioned
 
     def get_gene_model_from_unversioned_id(self, gene_id:str) -> GeneAnnotationModel:
@@ -366,7 +369,10 @@ class GenomicAnnotation():
         if self.gene_id_version_mapper is None:
             self.create_gene_id_version_mapper()
 
-        versioned_gene_id = self.gene_id_version_mapper[gene_id]
+        try:
+            versioned_gene_id = self.gene_id_version_mapper[gene_id]
+        except KeyError as error:
+            raise err.GeneNotFoundError(gene_id) from error
 
         return self.genes[versioned_gene_id]
 
@@ -486,3 +492,13 @@ class GenomicAnnotation():
                 if exon.location.end < feature.location.start:
                     break
         raise err.IntronNotFoundError(gene_id, feature)
+
+    def get_transcripts_with_position(self, gene_id:str, pos:int
+            ) -> List[TranscriptAnnotationModel]:
+        """ get all transcripts of a gene that contains a genomic position """
+        transcripts = []
+        for tx_id in self.genes[gene_id].transcripts:
+            tx_model = self.transcripts[tx_id]
+            if tx_model.is_exonic(pos):
+                transcripts.append(tx_model)
+        return transcripts

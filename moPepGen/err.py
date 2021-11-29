@@ -83,6 +83,11 @@ class IndexVersionNotMatchError(Exception):
         """ constructor """
         msg = "Current runtime environment does not match with the index." +\
             f"Current: {this}; Index: {other}"
+class GeneNotFoundError(Exception):
+    """ Error to be raised when a gene is not found from GTF """
+    def __init__(self, gene_id:str):
+        """ constructor """
+        msg = f"Gene {gene_id} not found."
         super().__init__(msg)
 
 def warning(msg:str) -> None:

@@ -5,7 +5,7 @@ GVF file. The GVF file can be later used to call variant peptides using
 from __future__ import annotations
 import argparse
 from typing import List
-from moPepGen import logger, seqvar, parser
+from moPepGen import logger, seqvar, parser, err
 from .common import add_args_output_prefix, add_args_reference, \
     add_args_quiet, add_args_source, print_start_message, \
     print_help_if_missing_args, load_references, generate_metadata
@@ -61,7 +61,10 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
     for record in parser.STARFusionParser.parse(fusion):
         if record.est_j < args.min_est_j:
             continue
-        var_records = record.convert_to_variant_records(anno, genome)
+        try:
+            var_records = record.convert_to_variant_records(anno, genome)
+        except err.GeneNotFoundError:
+            continue
         variants.extend(var_records)
 
     if not args.quiet:
