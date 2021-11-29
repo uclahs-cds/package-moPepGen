@@ -24,7 +24,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'rmats')
-        args.verbose = False
+        args.quiet = True
         return args
 
     def test_parse_rmats_se_case_1(self):

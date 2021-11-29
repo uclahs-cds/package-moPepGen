@@ -21,7 +21,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.min_read_number = 1
         args.intron_start_range = '-2,0'
         args.intron_end_range = '-100,2'
-        args.verbose = False
+        args.quiet = True
         cli.parse_circexplorer(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'circ.gvf'}
@@ -44,7 +44,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.min_circ_score = None
         args.intron_start_range = '-2,0'
         args.intron_end_range = '-100,2'
-        args.verbose = False
+        args.quiet = True
         cli.parse_circexplorer(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'circ.gvf'}

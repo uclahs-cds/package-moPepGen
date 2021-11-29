@@ -1,12 +1,15 @@
 """ Common functions for cli """
+from __future__ import annotations
 import argparse
 import sys
 from typing import Tuple, Set, List
 from pathlib import Path
 import pickle
 import pkg_resources
-from moPepGen import aa, dna, gtf, logger, seqvar
+from moPepGen import aa, dna, gtf, logger, seqvar, err
 from moPepGen.aa.expasy_rules import EXPASY_RULES
+from moPepGen.dna.DNASeqDict import DNASeqDict
+from moPepGen.version import MetaVersion
 
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
@@ -17,7 +20,7 @@ def print_help_if_missing_args(parser:argparse.ArgumentParser):
 
 def print_start_message(args:argparse.Namespace):
     """ Print the program start message """
-    if args.verbose:
+    if not args.quiet:
         logger(f'moPepGen {args.command} started')
 
 def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
@@ -106,19 +109,13 @@ def add_args_cleavage(parser:argparse.ArgumentParser):
         metavar='<number>'
     )
 
-def add_args_verbose(parser:argparse.ArgumentParser):
-    """ Add verbose """
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Verbose',
-        default=True
-    )
-    group.add_argument(
+def add_args_quiet(parser:argparse.ArgumentParser):
+    """ Add quiet """
+    parser.add_argument(
         '-q', '--quiet',
-        action='store_false',
-        help='Quiet'
+        action='store_true',
+        help='Quiet',
+        default=False
     )
 
 def add_args_output_prefix(parser:argparse.ArgumentParser):
@@ -147,23 +144,32 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
     index_dir:Path = args.index_dir
-    verbose:bool = args.verbose
+    quiet:bool = args.quiet
 
     genome = None
     annotation = None
     canonical_peptides = None
 
+    version = MetaVersion()
+
     if index_dir:
         if load_genome:
             with open(f'{index_dir}/genome.pickle', 'rb') as handle:
-                genome = pickle.load(handle)
+                genome:DNASeqDict = pickle.load(handle)
+                if version != genome.version:
+                    raise err.IndexVersionNotMatchError(version, genome.version)
 
         with open(f'{index_dir}/annotation.pickle', 'rb') as handle:
-            annotation = pickle.load(handle)
+            annotation:gtf.GenomicAnnotation = pickle.load(handle)
+            if version != annotation.version:
+                raise err.IndexVersionNotMatchError(version, genome.version)
+
 
         if load_proteome:
             with open(f'{index_dir}/proteome.pickle', 'rb') as handle:
-                proteome = pickle.load(handle)
+                proteome:aa.AminoAcidSeqDict = pickle.load(handle)
+                if version != proteome.version:
+                    raise err.IndexVersionNotMatchError(version, genome.version)
 
         if load_canonical_peptides:
             with open(f"{index_dir}/canonical_peptides.pickle", 'rb') as handle:
@@ -171,12 +177,12 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
     else:
         annotation = gtf.GenomicAnnotation()
         annotation.dump_gtf(args.annotation_gtf)
-        if verbose:
+        if not quiet:
             logger('Annotation GTF loaded.')
 
         proteome = aa.AminoAcidSeqDict()
         proteome.dump_fasta(args.proteome_fasta)
-        if verbose:
+        if not quiet:
             logger('Proteome FASTA loaded.')
 
         annotation.check_protein_coding(proteome)
@@ -184,7 +190,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if load_genome:
             genome = dna.DNASeqDict()
             genome.dump_fasta(args.genome_fasta)
-            if verbose:
+            if not quiet:
                 logger('Genome assembly FASTA loaded.')
 
         if load_canonical_peptides:
@@ -199,7 +205,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
                 miscleavage=miscleavage, min_mw=min_mw, min_length=min_length,
                 max_length=max_length
             )
-            if verbose:
+            if not quiet:
                 logger('canonical peptide pool generated.')
 
     if not load_proteome:

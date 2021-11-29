@@ -93,7 +93,7 @@ def call_variant(gvf_file:Path, ref_dir:Path, output_fasta:Path):
     args.proteome_fasta = ref_dir/'proteome.fasta'
     args.circ_rna_bed = None
     args.output_fasta = output_fasta
-    args.verbose = True
+    args.quiet = False
     args.cleavage_rule = 'trypsin'
     args.miscleavage = 2
     args.min_mw = 500.

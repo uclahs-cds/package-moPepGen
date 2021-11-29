@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 from typing import Dict, List
 from moPepGen import logger, seqvar, parser
-from .common import add_args_reference, add_args_verbose, add_args_source,\
+from .common import add_args_reference, add_args_quiet, add_args_source,\
     add_args_output_prefix, print_start_message,print_help_if_missing_args,\
     load_references, generate_metadata
 
@@ -42,7 +42,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
     add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=parse_reditools)
     print_help_if_missing_args(p)
     return p
@@ -69,13 +69,13 @@ def parse_reditools(args:argparse.Namespace) -> None:
                 variants[transcript_id] = []
             variants[transcript_id].append(variant)
 
-    if args.verbose:
+    if not args.quiet:
         logger(f'REDItools table {table_file} loaded.')
 
     for records in variants.values():
         records.sort()
 
-    if args.verbose:
+    if not args.quiet:
         logger('Variants sorted.')
 
     metadata = generate_metadata(args)
@@ -86,5 +86,5 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     seqvar.io.write(all_records, output_path, metadata)
 
-    if args.verbose:
+    if not args.quiet:
         logger("Variants written to disk.")

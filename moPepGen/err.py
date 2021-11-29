@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from moPepGen import logger
+from moPepGen.version import MetaVersion
 
 
 if TYPE_CHECKING:
@@ -73,6 +74,15 @@ class IntronNotFoundError(Exception):
         """ constructor """
         msg = f"The feature {str(feature.location)} is not a valid intron" +\
             f"from gene {gene_id}"
+        super().__init__(msg)
+
+class IndexVersionNotMatchError(Exception):
+    """ Error to be raised when the index version does not match with the
+    current environment """
+    def __init__(self, this:MetaVersion, other:MetaVersion):
+        """ constructor """
+        msg = "Current runtime environment does not match with the index." +\
+            f"Current: {this}; Index: {other}"
         super().__init__(msg)
 
 class GeneNotFoundError(Exception):

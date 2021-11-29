@@ -47,7 +47,7 @@ class TestParseFusionCatcher(TestCaseIntegration):
         args.output_prefix = str(self.work_dir/'fusion_catcher')
         args.max_common_mapping = 0
         args.min_spanning_unique = 5
-        args.verbose = False
+        args.quiet = True
         cli.parse_fusion_catcher(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'fusion_catcher.gvf'}

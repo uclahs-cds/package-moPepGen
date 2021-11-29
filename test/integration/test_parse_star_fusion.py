@@ -20,7 +20,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'star_fusion')
         args.min_est_j = 5.0
-        args.verbose = False
+        args.quiet = True
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'star_fusion.gvf'}

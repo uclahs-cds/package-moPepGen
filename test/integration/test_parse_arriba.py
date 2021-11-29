@@ -20,7 +20,7 @@ class TestParseArriba(TestCaseIntegration):
         args.min_split_read1 = 1
         args.min_split_read2 = 1
         args.min_confidence = 'medium'
-        args.verbose = False
+        args.quiet = False
         cli.parse_arriba(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'arriba.gvf'}

@@ -17,7 +17,7 @@ class TestSplitDatabase(TestCaseIntegration):
         args.additional_split = None
         args.output_prefix = self.work_dir/'test'
         args.index_dir = None
-        args.verbose = False
+        args.quiet = True
         return args
 
     def test_split_database_case1(self):

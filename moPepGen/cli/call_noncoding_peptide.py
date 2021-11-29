@@ -8,7 +8,7 @@ from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, aa, logger
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
-from moPepGen.cli.common import add_args_cleavage, add_args_verbose, add_args_reference, \
+from moPepGen.cli.common import add_args_cleavage, add_args_quiet, add_args_reference, \
     print_start_message, print_help_if_missing_args, load_references, \
     load_inclusion_exclusion_biotypes
 
@@ -56,7 +56,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
 
     add_args_reference(p)
     add_args_cleavage(p)
-    add_args_verbose(p)
+    add_args_quiet(p)
 
     p.set_defaults(func=call_noncoding_peptide)
     print_help_if_missing_args(p)
@@ -117,7 +117,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             logger(f'Exception raised from {tx_id}')
             raise
 
-        if args.verbose:
+        if not args.quiet:
             i += 1
             if i % 5000 == 0:
                 logger(f'{i} transcripts processed.')
@@ -126,7 +126,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
     with open(orf_fasta, 'w') as handle:
         write_orf(orf_pool, handle)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Noncanonical peptide FASTA file written to disk.')
 
 

@@ -14,7 +14,7 @@ from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
 from moPepGen.seqvar import GVFMetadata
-from moPepGen.cli.common import add_args_cleavage, add_args_verbose, \
+from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
     load_references
 
@@ -52,7 +52,7 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
 
     add_args_reference(p)
     add_args_cleavage(p)
-    add_args_verbose(p)
+    add_args_quiet(p)
 
     p.set_defaults(func=call_variant_peptide)
     print_help_if_missing_args(p)
@@ -62,7 +62,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     """ Main entry point for calling variant peptide """
     variant_files:List[str] = args.input_variant
     output_fasta:str = args.output_fasta
-    verbose:bool = args.verbose
+    quiet:bool = args.quiet
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
     min_mw:float = float(args.min_mw)
@@ -86,11 +86,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             else:
                 variant_pool.load_variants(handle, anno, genome)
 
-        if verbose:
+        if not quiet:
             logger(f'Variant file {file} loaded.')
 
     variant_pool.sort()
-    if verbose:
+    if not quiet:
         logger('Variant records sorted.')
 
     variant_peptides = aa.VariantPeptidePool()
@@ -109,7 +109,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
 
-        if verbose:
+        if not quiet:
             i += 1
             if i % 1000 == 0:
                 logger(f'{i} transcripts processed.')
@@ -122,12 +122,12 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
     if circ_rna_pool:
-        if verbose:
+        if not quiet:
             logger('circRNA processed')
 
     variant_peptides.write(output_fasta)
 
-    if verbose:
+    if not quiet:
         logger('Variant peptide FASTA file written to disk.')
 
 def call_peptide_main(variant_pool:seqvar.VariantRecordPool,

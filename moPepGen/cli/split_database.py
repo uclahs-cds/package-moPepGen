@@ -8,7 +8,7 @@ import argparse
 from pathlib import Path
 from moPepGen.aa import PeptidePoolSplitter
 from moPepGen import SPLIT_DATABASE_KEY_SEPARATER, logger
-from .common import add_args_reference, add_args_verbose, print_start_message,\
+from .common import add_args_reference, add_args_quiet, print_start_message,\
     print_help_if_missing_args, load_references
 
 
@@ -73,7 +73,7 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
     )
 
     add_args_reference(p, genome=False, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     print_help_if_missing_args(p)
     p.set_defaults(func=split_database)
     return p
@@ -113,10 +113,10 @@ def split_database(args:argparse.Namespace) -> None:
     additional_split = [{x.split(sep)} for x in additional_split]
     splitter.split(args.max_source_groups, additional_split, anno)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Database split finished')
 
     splitter.write(args.output_prefix)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Split databases saved to disk.')

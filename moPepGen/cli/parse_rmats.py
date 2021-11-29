@@ -13,7 +13,7 @@ from pathlib import Path
 from moPepGen import logger, seqvar
 from moPepGen.parser import RMATSParser
 from .common import add_args_output_prefix, add_args_reference, \
-    add_args_verbose, add_args_source, print_start_message, \
+    add_args_quiet, add_args_source, print_start_message, \
     print_help_if_missing_args, load_references, generate_metadata
 
 
@@ -92,7 +92,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=parse_rmats)
     print_help_if_missing_args(p)
     return p
@@ -140,11 +140,11 @@ def parse_rmats(args:argparse.Namespace) -> None:
         val.sort()
         variants_sorted.extend(val)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Variants sorted.')
 
     metadata = generate_metadata(args)
     seqvar.io.write(variants_sorted, output_path, metadata)
 
-    if args.verbose:
+    if not args.quiet:
         logger("Variants written to disk.")

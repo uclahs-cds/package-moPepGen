@@ -6,6 +6,7 @@ variant peptide sequences.
 """
 from __future__ import annotations
 import argparse
+import gzip
 from typing import Dict, List
 from pathlib import Path
 from moPepGen.parser import VEPParser
@@ -13,7 +14,7 @@ from moPepGen.err import TranscriptionStopSiteMutationError, \
     TranscriptionStartSiteMutationError
 from moPepGen import seqvar, logger
 from moPepGen.cli.common import add_args_output_prefix, add_args_reference, \
-    add_args_verbose, add_args_source, print_start_message, \
+    add_args_quiet, add_args_source, print_start_message, \
     print_help_if_missing_args, load_references, generate_metadata
 
 
@@ -42,7 +43,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
-    add_args_verbose(p)
+    add_args_quiet(p)
     p.set_defaults(func=parse_vep)
     print_help_if_missing_args(p)
     return p
@@ -50,7 +51,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
 def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """
     # unpack args
-    vep_files:List[str] = args.vep_txt
+    vep_files:List[Path] = args.vep_txt
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '.gvf'
 
@@ -61,28 +62,30 @@ def parse_vep(args:argparse.Namespace) -> None:
     vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
 
     for vep_file in vep_files:
-        for record in VEPParser.parse(vep_file):
-            transcript_id = record.feature
+        opener = gzip.open if vep_file.suffix == '.gz' else open
+        with opener(vep_file, 'rt') as handle:
+            for record in VEPParser.parse(handle):
+                transcript_id = record.feature
 
-            if transcript_id not in vep_records.keys():
-                vep_records[transcript_id] = []
+                if transcript_id not in vep_records.keys():
+                    vep_records[transcript_id] = []
 
-            try:
-                record = record.convert_to_variant_record(anno, genome)
-            except TranscriptionStopSiteMutationError:
-                continue
-            except TranscriptionStartSiteMutationError:
-                continue
+                try:
+                    record = record.convert_to_variant_record(anno, genome)
+                except TranscriptionStopSiteMutationError:
+                    continue
+                except TranscriptionStartSiteMutationError:
+                    continue
 
-            vep_records[transcript_id].append(record)
+                vep_records[transcript_id].append(record)
 
-        if args.verbose:
+        if not args.quiet:
             logger(f'VEP file {vep_file} loaded.')
 
     for records in vep_records.values():
         records.sort()
 
-    if args.verbose:
+    if not args.quiet:
         logger('VEP sorting done.')
 
     metadata = generate_metadata(args)
@@ -93,5 +96,5 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     seqvar.io.write(all_records, output_path, metadata)
 
-    if args.verbose:
+    if not args.quiet:
         logger('Variant info written to disk.')
