@@ -75,6 +75,13 @@ class IntronNotFoundError(Exception):
             f"from gene {gene_id}"
         super().__init__(msg)
 
+class GeneNotFoundError(Exception):
+    """ Error to be raised when a gene is not found from GTF """
+    def __init__(self, gene_id:str):
+        """ constructor """
+        msg = f"Gene {gene_id} not found."
+        super().__init__(msg)
+
 def warning(msg:str) -> None:
     """ print a warning message """
     logger(f"[ !!! moPepGen WARNING !!! ] {msg}")

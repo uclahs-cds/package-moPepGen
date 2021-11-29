@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, List
 import itertools
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import seqvar, gtf, dna
+from moPepGen import seqvar, gtf, dna, err
 
 
 def parse(path:str) -> Iterable[STARFusionRecord]:
@@ -86,16 +86,21 @@ class STARFusionRecord():
         Returns:
             List of VariantRecord
         """
-        donor_model = anno.genes[self.left_gene]
+        try:
+            donor_model = anno.genes[self.left_gene]
+        except KeyError as error:
+            raise err.GeneNotFoundError(self.left_gene) from error
         donor_gene_symbol = donor_model.gene_name
         donor_chrom = self.left_breakpoint.split(':')[0]
         left_breakpoint = int(self.left_breakpoint.split(':')[1]) - 1
         donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
         donor_position = anno.coordinate_genomic_to_gene(left_breakpoint, self.left_gene) + 1
-        seq = donor_model.get_gene_sequence(genome[donor_chrom])
         donor_transcripts = donor_model.transcripts
 
-        accepter_model = anno.genes[self.right_gene]
+        try:
+            accepter_model = anno.genes[self.right_gene]
+        except KeyError as error:
+            raise err.GeneNotFoundError(self.right_gene) from error
         accepter_gene_symbol = accepter_model.gene_name
         accepter_chrom = self.right_breakpoint.split(':')[0]
         right_breakpoint = int(self.right_breakpoint.split(':')[1]) - 1
@@ -106,6 +111,14 @@ class STARFusionRecord():
 
         fusion_id = f'FUSION-{self.left_gene}:{donor_position}'\
             f'-{self.right_gene}:{accepter_position}'
+
+        if donor_model.strand == 1:
+            ref_seq = genome[donor_chrom].seq[donor_genome_position + 1]
+        else:
+            ref_seq = genome[donor_chrom]\
+                .seq[donor_genome_position - 1:donor_genome_position]\
+                .reverse_complement()
+            ref_seq = str(ref_seq)
 
         perms = itertools.product(donor_transcripts, accepter_transcripts)
         for donor_tx, accepter_tx in perms:
@@ -127,7 +140,7 @@ class STARFusionRecord():
             }
             record = seqvar.VariantRecord(
                 location=location,
-                ref=seq[donor_position],
+                ref=ref_seq,
                 alt='<FUSION>',
                 _type='Fusion',
                 _id=fusion_id,
