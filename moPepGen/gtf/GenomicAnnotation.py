@@ -364,7 +364,10 @@ class GenomicAnnotation():
             The GeneAnnotationModel object of the gene.
         """
         if self.source == 'ENSEMBL':
-            return self.genes[gene_id]
+            try:
+                return self.genes[gene_id]
+            except KeyError as error:
+                raise err.GeneNotFoundError(gene_id) from error
 
         if self.gene_id_version_mapper is None:
             self.create_gene_id_version_mapper()
