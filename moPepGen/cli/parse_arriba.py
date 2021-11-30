@@ -89,17 +89,17 @@ def parse_arriba(args:argparse.Namespace) -> None:
                 continue
             variants.extend(var_records)
 
-    if args.quiet:
+    if not args.quiet:
         logger(f'Arriba output {fusion} loaded.')
 
     variants.sort()
 
-    if args.quiet:
+    if not args.quiet:
         logger('Variants sorted.')
 
     metadata = generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 
-    if args.quiet:
+    if not args.quiet:
         logger("Variants written to disk.")
