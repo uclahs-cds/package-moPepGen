@@ -2,9 +2,7 @@
 from __future__ import annotations
 import sys
 import Bio
-
-
-__version__ = '0.0.1'
+from moPepGen import __version__
 
 
 class MetaVersion():
