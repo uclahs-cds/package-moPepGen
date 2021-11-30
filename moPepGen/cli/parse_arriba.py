@@ -77,6 +77,8 @@ def parse_arriba(args:argparse.Namespace) -> None:
 
     with open(fusion, 'rt') as handle:
         for record in parser.ArribaParser.parse(handle):
+            if not record.gene_id1 in anno.genes or not record.gene_id2 in anno.genes:
+                continue
             if not record.is_valid(min_split_read1, min_split_read2, min_confidence):
                 continue
             if record.transcript_on_antisense_strand(anno):
@@ -87,17 +89,17 @@ def parse_arriba(args:argparse.Namespace) -> None:
                 continue
             variants.extend(var_records)
 
-    if args.quiet:
+    if not args.quiet:
         logger(f'Arriba output {fusion} loaded.')
 
     variants.sort()
 
-    if args.quiet:
+    if not args.quiet:
         logger('Variants sorted.')
 
     metadata = generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 
-    if args.quiet:
+    if not args.quiet:
         logger("Variants written to disk.")
