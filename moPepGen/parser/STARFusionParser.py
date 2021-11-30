@@ -113,10 +113,10 @@ class STARFusionRecord():
             f'-{self.right_gene}:{accepter_position}'
 
         if donor_model.strand == 1:
-            ref_seq = genome[donor_chrom].seq[donor_genome_position + 1]
+            ref_seq = genome[donor_chrom].seq[left_breakpoint + 1]
         else:
             ref_seq = genome[donor_chrom]\
-                .seq[donor_genome_position - 1:donor_genome_position]\
+                .seq[left_breakpoint - 1:left_breakpoint]\
                 .reverse_complement()
             ref_seq = str(ref_seq)
 

@@ -8,7 +8,7 @@ from moPepGen.cli.common import load_references
 class TestParseStarFusion(TestCaseIntegration):
     """ Test cases for moPepGen parseSTARFusion """
 
-    def test_parse_star_fusion_case1(self):
+    def test_star_fusion_record_case1(self):
         """ Test parseSTARFusion """
         args = argparse.Namespace()
         args.command = 'parseSTARFusion'
@@ -42,3 +42,21 @@ class TestParseStarFusion(TestCaseIntegration):
             gene_seq = gene_model.get_transcript_sequence(genome[gene_chr])
             x = record.get_accepter_position()
             self.assertEqual(str(gene_seq.seq[x-2:x]), 'AG')
+
+    def test_parse_star_fusion_case1(self):
+        """ test parseSTARFusion case1 """
+        args = argparse.Namespace()
+        args.command = 'parseSTARFusion'
+        args.fusion = self.data_dir/'fusion/star_fusion.txt'
+        args.source = 'Fusion'
+        args.index_dir = None
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.output_prefix = str(self.work_dir/'star_fusion')
+        args.min_est_j = 5.0
+        args.quiet = True
+        cli.parse_star_fusion(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'star_fusion.gvf'}
+        self.assertEqual(files, expected)
