@@ -100,6 +100,10 @@ class PVGNode():
         for node in copy.copy(self.out_nodes):
             self.remove_out_edge(node)
 
+    def is_orphan(self) -> bool:
+        """ Checks if the node is orphan (no inbond or outbond node) """
+        return not self.in_nodes and not self.out_nodes
+
     def is_bridge(self) -> None:
         """ Check if this is a bridge node to another reading frame """
         for node in self.out_nodes:
@@ -443,3 +447,30 @@ class PVGNode():
             return out_node.seq.locations[0].ref.start * 3 + k
         # raise ValueError('Can not find ORF')
         return -1
+
+    def is_identical(self, other:PVGNode) -> bool:
+        """ Checks if two nodes have the same sequence and same outbond node """
+        return self.seq == other.seq and \
+            self.out_nodes == other.out_nodes and \
+            self.cleavage == other.cleavage and \
+            self.reading_frame_index == other.reading_frame_index
+
+    def is_less_mutated(self, other:PVGNode) -> bool:
+        """ Checks if this node has less mutation than the other """
+        if len(self.variants) < len(self.variants):
+            return True
+        if len(self.variants) > len(self.variants):
+            return False
+        for x, y in zip(self.variants, other.variants):
+            if x.location < y.location:
+                return True
+            if x.location > y.location:
+                return False
+        return True
+
+    def transfer_in_nodes_to(self, other:PVGNode):
+        """ transfre all in nodes of current node to the other """
+        for in_node in copy.copy(self.in_nodes):
+            if in_node in other.in_nodes:
+                continue
+            in_node.add_out_edge(other)

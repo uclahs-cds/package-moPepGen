@@ -1,7 +1,7 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import Iterable, Set, Deque, Dict, List, Tuple
+from typing import FrozenSet, Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
 import itertools
@@ -195,6 +195,10 @@ class PeptideVariantGraph():
                     if node_is_bridge:
                         new_node.was_bridge = True
                     trash.add((route[i-1], node))
+                # if len(new_node.variants) > 1:
+                #     for in_node in copy.copy(new_node.in_nodes):
+                #         in_node.remove_out_edge(new_node)
+                #     break
 
             for in_node in route[0].in_nodes:
                 in_node.add_out_edge(new_node)
@@ -249,6 +253,47 @@ class PeptideVariantGraph():
                     downstreams.add(downstream)
         return downstreams
 
+    def update_unique_nodes(self, node:PVGNode, unique_nodes:Set[PVGNode]):
+        """ For a given node and a set of unique nodes, if the node has an
+        identical mate in the set, collpase them into one and keep all
+        inbond node to it. Otherwise, add the node to the set. """
+        node_collapsed  = False
+        for unique_node in copy.copy(unique_nodes):
+            if unique_node.is_identical(node):
+                node_collapsed = True
+                if node.is_less_mutated(unique_node):
+                    unique_nodes.remove(unique_node)
+                    unique_nodes.add(node)
+                    unique_node.transfer_in_nodes_to(node)
+                    self.remove_node(unique_node)
+                else:
+                    node.transfer_in_nodes_to(unique_node)
+                    self.remove_node(node)
+                break
+        if not node_collapsed:
+            unique_nodes.add(node)
+
+    def collapse_in_nodes(self, node:PVGNode) -> Set[PVGNode]:
+        """ Collapse all inbond nodes if they are identical. """
+        unique_nodes:Set[PVGNode] = set()
+        for in_node in copy.copy(node.in_nodes):
+            self.update_unique_nodes(in_node, unique_nodes)
+        return unique_nodes
+
+    def collapse_end_nodes(self, nodes:Iterable[PVGNode]):
+        """ Collapse nodes inthey are identifical. This function is called
+        after 'routes' are merged. Then redundant end nodes are collapsed. """
+        group:Dict[FrozenSet[PVGNode],Set[PVGNode]] = {}
+        for node in nodes:
+            out_nodes = frozenset(node.out_nodes)
+            unique_nodes = group.setdefault(out_nodes, set())
+            self.update_unique_nodes(node, unique_nodes)
+        collapsed_nodes = set(nodes)
+        for node in copy.copy(collapsed_nodes):
+            if node.is_orphan():
+                collapsed_nodes.remove(node)
+        return collapsed_nodes
+
     def expand_backward(self, node:PVGNode) -> T:
         r""" Expand the variant alignment bubble backward to the previous
         cleave site. The sequence of the input node is first prepended to each
@@ -274,6 +319,7 @@ class PeptideVariantGraph():
         reading_frame_index = node.reading_frame_index
         routes = self.find_routes_for_merging(node, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 
@@ -305,6 +351,7 @@ class PeptideVariantGraph():
         for in_node in node.in_nodes:
             routes.add((in_node, node))
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 
@@ -330,6 +377,7 @@ class PeptideVariantGraph():
         reading_frame_index = node.reading_frame_index
         routes = self.find_routes_for_merging(node)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 
@@ -354,6 +402,7 @@ class PeptideVariantGraph():
 
         routes = self.find_routes_for_merging(head, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 
@@ -714,8 +763,11 @@ class PeptideVariantGraph():
         stop_index = target_node.seq.seq.find('*')
         start_index = target_node.seq.seq.find('M')
 
+        cleavage_gain_down = target_node.get_cleavage_gain_from_downstream()
+
         if in_cds and stop_index == -1:
-            additional_variants = start_gain + cursor.cleavage_gain
+            additional_variants = start_gain + cursor.cleavage_gain + \
+                cleavage_gain_down
             node_list.append((target_node, orf, False, additional_variants))
 
         if in_cds and stop_index > -1:
@@ -753,7 +805,8 @@ class PeptideVariantGraph():
                 if not in_cds:
                     in_cds = True
                     orf = cur_orf
-                node_list.append((cur_copy, cur_orf, True, []))
+                additional_variants = copy.copy(cleavage_gain_down)
+                node_list.append((cur_copy, cur_orf, True, additional_variants))
                 trash.add(cur_copy)
 
             if start_index > -1 and (stop_index == -1 or stop_index > start_index):
@@ -797,8 +850,6 @@ class PeptideVariantGraph():
                         start_gain.append(variant.variant)
 
                 cur_cleavage_gain = copy.copy(cleavage_gain)
-                cleavage_gain_down = out_node.get_cleavage_gain_from_downstream()
-                cur_cleavage_gain.extend(cleavage_gain_down)
 
                 cursor = PVGCursor(target_node, out_node, in_cds, orf,
                     start_gain, cur_cleavage_gain)
