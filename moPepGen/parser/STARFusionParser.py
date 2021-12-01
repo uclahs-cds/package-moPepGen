@@ -88,13 +88,13 @@ class STARFusionRecord():
             ) -> List[gtf.TranscriptAnnotationModel]:
         """ Get all possible donor transcripts """
         pos = self.left_breakpoint_position - 1
-        return anno.get_transcripts_with_position(self.gene_id1, pos)
+        return anno.get_transcripts_with_position(self.left_gene, pos)
 
     def get_accepter_transcripts(self, anno:gtf.GenomicAnnotation
             ) -> List[gtf.TranscriptAnnotationModel]:
         """ Get all possible accepter transcripts """
         pos = self.right_breakpoint_position - 1
-        return anno.get_transcripts_with_position(self.gene_id1, pos)
+        return anno.get_transcripts_with_position(self.right_gene, pos)
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:

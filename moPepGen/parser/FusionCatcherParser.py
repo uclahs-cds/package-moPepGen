@@ -1,7 +1,7 @@
 """ Module for FusionCatcher parser """
 from __future__ import annotations
 import re
-from typing import Iterable, List, Dict, Tuple
+from typing import Iterable, List, Tuple
 import itertools
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, gtf, dna, err
