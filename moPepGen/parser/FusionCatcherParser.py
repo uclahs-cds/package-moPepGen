@@ -1,7 +1,7 @@
 """ Module for FusionCatcher parser """
 from __future__ import annotations
 import re
-from typing import Iterable, List, Dict, Tuple
+from typing import Iterable, List, Tuple
 import itertools
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import seqvar, gtf, dna, err
@@ -72,6 +72,28 @@ class FusionCatcherRecord():
         self.fusion_sequence = fusion_sequence
         self.predicted_effect = predicted_effect
 
+    @property
+    def left_breakpoint_position(self) -> int:
+        """ Get left breakpoint position """
+        return int(self.five_end_breakpoint.split(':')[1])
+
+    @property
+    def right_breakpoint_position(self) -> int:
+        """ Get right breakpoint position """
+        return int(self.three_end_breakpoint.split(':')[1])
+
+    def get_donor_transcripts(self, anno:gtf.GenomicAnnotation, gene_id:str
+            ) -> List[gtf.TranscriptAnnotationModel]:
+        """ Get all possible donor transcripts """
+        pos = self.left_breakpoint_position - 1
+        return anno.get_transcripts_with_position(gene_id, pos)
+
+    def get_accepter_transcripts(self, anno:gtf.GenomicAnnotation, gene_id:str
+            ) -> List[gtf.TranscriptAnnotationModel]:
+        """ Get all possible accepter transcripts """
+        pos = self.right_breakpoint_position - 1
+        return anno.get_transcripts_with_position(gene_id, pos)
+
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         """ COnvert a FusionCatcher's record to VariantRecord.
@@ -109,61 +131,55 @@ class FusionCatcherRecord():
         donor_gene_symbol = donor_gene_model.gene_name
         accepter_gene_symbol = accepter_gene_model.gene_name
 
-        donor_transcripts:Dict[str, gtf.TranscriptAnnotationModel] = {
-            tx_id: anno.transcripts[tx_id] \
-            for tx_id in donor_gene_model.transcripts
-        }
-        accepter_transcripts:Dict[str, gtf.TranscriptAnnotationModel] = {
-            tx_id: anno.transcripts[tx_id] \
-            for tx_id in accepter_gene_model.transcripts
-        }
-
         donor_chrom = donor_gene_model.chrom
         accepter_chrom = accepter_gene_model.chrom
 
         # fusion catcher uses 1-based coordinates
         # left breakpoint is the first nucleotide in the fusion transcript
         # after the breakpoint
-        left_breakpoint_genomic = int(self.five_end_breakpoint.split(':')[1]) - 1
-        right_breakpoint_genomic = int(self.three_end_breakpoint.split(':')[1]) - 1
+        left_breakpoint_genomic = self.left_breakpoint_position
+        right_breakpoint_genomic = self.right_breakpoint_position
         donor_genome_position = \
             f'{donor_chrom}:{left_breakpoint_genomic}:{left_breakpoint_genomic}'
         accepter_genome_position = \
             f'{accepter_chrom}:{right_breakpoint_genomic}:{right_breakpoint_genomic}'
         left_breakpoint_genetic = anno.coordinate_genomic_to_gene(
-            index=left_breakpoint_genomic, gene=donor_gene_id
+            index=left_breakpoint_genomic - 1, gene=donor_gene_id
         ) + 1
         right_breakpoint_genetic = anno.coordinate_genomic_to_gene(
-            index=right_breakpoint_genomic, gene=accepter_gene_id
+            index=right_breakpoint_genomic - 1, gene=accepter_gene_id
         )
         fusion_id = f'FUSION-{donor_gene_id}:{left_breakpoint_genetic}'+\
             f'-{accepter_gene_id}:{right_breakpoint_genetic}'
 
+        donor_transcripts = self.get_donor_transcripts(anno, donor_gene_id)
+        accepter_transcripts = self.get_accepter_transcripts(anno, accepter_gene_id)
+
         records = []
 
         if donor_gene_model.strand == 1:
-            ref_seq = genome[donor_chrom].seq[left_breakpoint_genomic + 1]
+            ref_seq = genome[donor_chrom].seq[left_breakpoint_genomic]
         else:
             ref_seq = genome[donor_chrom]\
-                .seq[left_breakpoint_genomic - 1:left_breakpoint_genomic]\
+                .seq[left_breakpoint_genomic:left_breakpoint_genomic + 1]\
                 .reverse_complement()
             ref_seq = str(ref_seq)
 
-        perms = itertools.product(donor_transcripts.keys(), \
-            accepter_transcripts.keys())
-        for donor_id, accepter_id in perms:
-
+        perms = itertools.product(donor_transcripts, accepter_transcripts)
+        for donor_tx, accepter_tx in perms:
+            donor_tx_id = donor_tx.transcript.transcript_id
+            accepter_tx_id = accepter_tx.transcript.transcript_id
             location = FeatureLocation(
                 seqname=donor_gene_id,
                 start=left_breakpoint_genetic,
                 end=left_breakpoint_genetic + 1
             )
             attrs = {
-                'TRANSCRIPT_ID': donor_id,
+                'TRANSCRIPT_ID': donor_tx_id,
                 'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
                 'ACCEPTER_GENE_ID': accepter_gene_id,
-                'ACCEPTER_TRANSCRIPT_ID': accepter_id,
+                'ACCEPTER_TRANSCRIPT_ID': accepter_tx_id,
                 'ACCEPTER_SYMBOL': accepter_gene_symbol,
                 'ACCEPTER_POSITION': right_breakpoint_genetic,
                 'ACCEPTER_GENOMIC_POSITION': accepter_genome_position

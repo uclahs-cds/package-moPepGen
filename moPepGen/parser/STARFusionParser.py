@@ -74,6 +74,28 @@ class STARFusionRecord():
         self.right_break_entropy = right_break_entropy
         self.annots = annots
 
+    @property
+    def left_breakpoint_position(self) -> int:
+        """ Get left breakpoint position """
+        return int(self.left_breakpoint.split(':')[1])
+
+    @property
+    def right_breakpoint_position(self) -> int:
+        """ Get right breakpoint position """
+        return int(self.right_breakpoint.split(':')[1])
+
+    def get_donor_transcripts(self, anno:gtf.GenomicAnnotation
+            ) -> List[gtf.TranscriptAnnotationModel]:
+        """ Get all possible donor transcripts """
+        pos = self.left_breakpoint_position - 1
+        return anno.get_transcripts_with_position(self.left_gene, pos)
+
+    def get_accepter_transcripts(self, anno:gtf.GenomicAnnotation
+            ) -> List[gtf.TranscriptAnnotationModel]:
+        """ Get all possible accepter transcripts """
+        pos = self.right_breakpoint_position - 1
+        return anno.get_transcripts_with_position(self.right_gene, pos)
+
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         """ Convert a STAR-Fusion's record to VariantRecord.
@@ -92,10 +114,10 @@ class STARFusionRecord():
             raise err.GeneNotFoundError(self.left_gene) from error
         donor_gene_symbol = donor_model.gene_name
         donor_chrom = self.left_breakpoint.split(':')[0]
-        left_breakpoint = int(self.left_breakpoint.split(':')[1]) - 1
+        left_breakpoint = self.left_breakpoint_position
         donor_genome_position = f'{donor_chrom}:{left_breakpoint}:{left_breakpoint}'
-        donor_position = anno.coordinate_genomic_to_gene(left_breakpoint, self.left_gene) + 1
-        donor_transcripts = donor_model.transcripts
+        donor_position = anno.coordinate_genomic_to_gene(left_breakpoint - 1, self.left_gene) + 1
+        donor_transcripts = self.get_donor_transcripts(anno)
 
         try:
             accepter_model = anno.genes[self.right_gene]
@@ -103,10 +125,10 @@ class STARFusionRecord():
             raise err.GeneNotFoundError(self.right_gene) from error
         accepter_gene_symbol = accepter_model.gene_name
         accepter_chrom = self.right_breakpoint.split(':')[0]
-        right_breakpoint = int(self.right_breakpoint.split(':')[1]) - 1
+        right_breakpoint = self.right_breakpoint_position
         accepter_genome_position = f'{accepter_chrom}:{right_breakpoint}:{right_breakpoint}'
-        accepter_position = anno.coordinate_genomic_to_gene(right_breakpoint, self.right_gene)
-        accepter_transcripts = accepter_model.transcripts
+        accepter_position = anno.coordinate_genomic_to_gene(right_breakpoint - 1, self.right_gene)
+        accepter_transcripts = self.get_accepter_transcripts(anno)
         records = []
 
         fusion_id = f'FUSION-{self.left_gene}:{donor_position}'\
@@ -116,24 +138,25 @@ class STARFusionRecord():
             ref_seq = genome[donor_chrom].seq[left_breakpoint + 1]
         else:
             ref_seq = genome[donor_chrom]\
-                .seq[left_breakpoint - 1:left_breakpoint]\
+                .seq[left_breakpoint:left_breakpoint + 1]\
                 .reverse_complement()
             ref_seq = str(ref_seq)
 
         perms = itertools.product(donor_transcripts, accepter_transcripts)
         for donor_tx, accepter_tx in perms:
-
+            donor_tx_id = donor_tx.transcript.transcript_id
+            accepter_tx_id = accepter_tx.transcript.transcript_id
             location = FeatureLocation(
                 seqname=self.left_gene,
                 start=donor_position,
                 end=donor_position + 1
             )
             attrs = {
-                'TRANSCRIPT_ID': donor_tx,
+                'TRANSCRIPT_ID': donor_tx_id,
                 'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
                 'ACCEPTER_GENE_ID': self.right_gene,
-                'ACCEPTER_TRANSCRIPT_ID': accepter_tx,
+                'ACCEPTER_TRANSCRIPT_ID': accepter_tx_id,
                 'ACCEPTER_SYMBOL': accepter_gene_symbol,
                 'ACCEPTER_POSITION': accepter_position,
                 'ACCEPTER_GENOMIC_POSITION': accepter_genome_position

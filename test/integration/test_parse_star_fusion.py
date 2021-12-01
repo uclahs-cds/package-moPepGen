@@ -19,7 +19,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'star_fusion')
-        args.min_est_j = 5.0
+        args.min_est_j = 3.0
         args.quiet = True
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
@@ -54,7 +54,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_prefix = str(self.work_dir/'star_fusion')
-        args.min_est_j = 5.0
+        args.min_est_j = 3.0
         args.quiet = True
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
