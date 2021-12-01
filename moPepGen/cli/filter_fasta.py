@@ -23,46 +23,54 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     p.add_argument(
         '-i', '--input-fasta',
         type=Path,
-        help='Input FASTA file, must be called by moPepGen.'
+        help='Input FASTA file, must be called by moPepGen.',
+        metavar='<file>'
     )
     p.add_argument(
         '-o', '--output-fasta',
         type=Path,
-        help='Output FASTA file.'
+        help='Output FASTA file.',
+        metavar='<file>'
     )
     p.add_argument(
         '--exprs-table',
         type=Path,
-        help="Path to the RNAseq quantification results."
+        help="Path to the RNAseq quantification results.",
+        metavar='<file>'
     )
     p.add_argument(
         '--skip-lines',
         type=int,
         help='Number of lines to skip when reading the expression table.'
         'Defaults to 0',
+        metavar='<value>',
         default=0
     )
     p.add_argument(
         '--delimiter',
         type=str,
         help='Delimiter of the expression table. Defaults to tab.',
+        metavar='<value>',
         default='\t'
     )
     p.add_argument(
         '--tx-id-col',
         type=int,
         help="The index for transcript ID in the RNAseq quantification results."
-        " Index is 1-based."
+        " Index is 1-based.",
+        metavar='<number>'
     )
     p.add_argument(
         '--quant-col',
         type=str,
-        help='The column index number for quantification. Index is 1-based.'
+        help='The column index number for quantification. Index is 1-based.',
+        metavar='<number>'
     )
     p.add_argument(
         '--quant-cutoff',
         type=float,
-        help='Quantification cutoff.'
+        help='Quantification cutoff.',
+        metavar='<number>'
     )
     p.add_argument(
         '--keep-all-coding',
