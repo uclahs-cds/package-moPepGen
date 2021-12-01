@@ -72,6 +72,28 @@ class FusionCatcherRecord():
         self.fusion_sequence = fusion_sequence
         self.predicted_effect = predicted_effect
 
+    @property
+    def left_breakpoint_position(self) -> int:
+        """ Get left breakpoint position """
+        return int(self.five_end_breakpoint.split(':')[1])
+
+    @property
+    def right_breakpoint_position(self) -> int:
+        """ Get right breakpoint position """
+        return int(self.three_end_breakpoint.split(':')[1])
+
+    def get_donor_transcript(self, anno:gtf.GenomicAnnotation
+            ) -> List[gtf.TranscriptAnnotationModel]:
+        """ Get all possible donor transcripts """
+        pos = self.left_breakpoint_position - 1
+        return anno.get_transcripts_with_position(self.gene_id1, pos)
+
+    def get_accepter_transcript(self, anno:gtf.GenomicAnnotation
+            ) -> List[gtf.TranscriptAnnotationModel]:
+        """ Get all possible accepter transcripts """
+        pos = self.right_breakpoint_position - 1
+        return anno.get_transcripts_with_position(self.gene_id1, pos)
+
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
         """ COnvert a FusionCatcher's record to VariantRecord.
@@ -124,17 +146,17 @@ class FusionCatcherRecord():
         # fusion catcher uses 1-based coordinates
         # left breakpoint is the first nucleotide in the fusion transcript
         # after the breakpoint
-        left_breakpoint_genomic = int(self.five_end_breakpoint.split(':')[1]) - 1
-        right_breakpoint_genomic = int(self.three_end_breakpoint.split(':')[1]) - 1
+        left_breakpoint_genomic = self.left_breakpoint_position
+        right_breakpoint_genomic = self.right_breakpoint_position
         donor_genome_position = \
             f'{donor_chrom}:{left_breakpoint_genomic}:{left_breakpoint_genomic}'
         accepter_genome_position = \
             f'{accepter_chrom}:{right_breakpoint_genomic}:{right_breakpoint_genomic}'
         left_breakpoint_genetic = anno.coordinate_genomic_to_gene(
-            index=left_breakpoint_genomic, gene=donor_gene_id
+            index=left_breakpoint_genomic - 1, gene=donor_gene_id
         ) + 1
         right_breakpoint_genetic = anno.coordinate_genomic_to_gene(
-            index=right_breakpoint_genomic, gene=accepter_gene_id
+            index=right_breakpoint_genomic - 1, gene=accepter_gene_id
         )
         fusion_id = f'FUSION-{donor_gene_id}:{left_breakpoint_genetic}'+\
             f'-{accepter_gene_id}:{right_breakpoint_genetic}'
@@ -142,10 +164,10 @@ class FusionCatcherRecord():
         records = []
 
         if donor_gene_model.strand == 1:
-            ref_seq = genome[donor_chrom].seq[left_breakpoint_genomic + 1]
+            ref_seq = genome[donor_chrom].seq[left_breakpoint_genomic]
         else:
             ref_seq = genome[donor_chrom]\
-                .seq[left_breakpoint_genomic - 1:left_breakpoint_genomic]\
+                .seq[left_breakpoint_genomic:left_breakpoint_genomic + 1]\
                 .reverse_complement()
             ref_seq = str(ref_seq)
 
