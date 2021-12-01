@@ -82,17 +82,17 @@ class FusionCatcherRecord():
         """ Get right breakpoint position """
         return int(self.three_end_breakpoint.split(':')[1])
 
-    def get_donor_transcript(self, anno:gtf.GenomicAnnotation
+    def get_donor_transcripts(self, anno:gtf.GenomicAnnotation, gene_id:str
             ) -> List[gtf.TranscriptAnnotationModel]:
         """ Get all possible donor transcripts """
         pos = self.left_breakpoint_position - 1
-        return anno.get_transcripts_with_position(self.gene_id1, pos)
+        return anno.get_transcripts_with_position(gene_id, pos)
 
-    def get_accepter_transcript(self, anno:gtf.GenomicAnnotation
+    def get_accepter_transcripts(self, anno:gtf.GenomicAnnotation, gene_id:str
             ) -> List[gtf.TranscriptAnnotationModel]:
         """ Get all possible accepter transcripts """
         pos = self.right_breakpoint_position - 1
-        return anno.get_transcripts_with_position(self.gene_id1, pos)
+        return anno.get_transcripts_with_position(gene_id, pos)
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> List[seqvar.VariantRecord]:
@@ -131,15 +131,6 @@ class FusionCatcherRecord():
         donor_gene_symbol = donor_gene_model.gene_name
         accepter_gene_symbol = accepter_gene_model.gene_name
 
-        donor_transcripts:Dict[str, gtf.TranscriptAnnotationModel] = {
-            tx_id: anno.transcripts[tx_id] \
-            for tx_id in donor_gene_model.transcripts
-        }
-        accepter_transcripts:Dict[str, gtf.TranscriptAnnotationModel] = {
-            tx_id: anno.transcripts[tx_id] \
-            for tx_id in accepter_gene_model.transcripts
-        }
-
         donor_chrom = donor_gene_model.chrom
         accepter_chrom = accepter_gene_model.chrom
 
@@ -161,6 +152,9 @@ class FusionCatcherRecord():
         fusion_id = f'FUSION-{donor_gene_id}:{left_breakpoint_genetic}'+\
             f'-{accepter_gene_id}:{right_breakpoint_genetic}'
 
+        donor_transcripts = self.get_donor_transcripts(anno, donor_gene_id)
+        accepter_transcripts = self.get_accepter_transcripts(anno, accepter_gene_id)
+
         records = []
 
         if donor_gene_model.strand == 1:
@@ -171,21 +165,21 @@ class FusionCatcherRecord():
                 .reverse_complement()
             ref_seq = str(ref_seq)
 
-        perms = itertools.product(donor_transcripts.keys(), \
-            accepter_transcripts.keys())
-        for donor_id, accepter_id in perms:
-
+        perms = itertools.product(donor_transcripts, accepter_transcripts)
+        for donor_tx, accepter_tx in perms:
+            donor_tx_id = donor_tx.transcript.transcript_id
+            accepter_tx_id = accepter_tx.transcript.transcript_id
             location = FeatureLocation(
                 seqname=donor_gene_id,
                 start=left_breakpoint_genetic,
                 end=left_breakpoint_genetic + 1
             )
             attrs = {
-                'TRANSCRIPT_ID': donor_id,
+                'TRANSCRIPT_ID': donor_tx_id,
                 'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
                 'ACCEPTER_GENE_ID': accepter_gene_id,
-                'ACCEPTER_TRANSCRIPT_ID': accepter_id,
+                'ACCEPTER_TRANSCRIPT_ID': accepter_tx_id,
                 'ACCEPTER_SYMBOL': accepter_gene_symbol,
                 'ACCEPTER_POSITION': right_breakpoint_genetic,
                 'ACCEPTER_GENOMIC_POSITION': accepter_genome_position

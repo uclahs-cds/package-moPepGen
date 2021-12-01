@@ -238,17 +238,20 @@ class ArribaRecord():
 
         perms = itertools.product(donor_transcripts, accepter_transcripts)
         for donor_tx, accepter_tx in perms:
+            donor_tx_id = donor_tx.transcript.transcript_id
+            accepter_tx_id = accepter_tx.transcript.transcript_id
+
             location = FeatureLocation(
                 seqname=self.gene_id1,
                 start=donor_position,
                 end=donor_position + 1
             )
             attrs = {
-                'TRANSCRIPT_ID': donor_tx,
+                'TRANSCRIPT_ID': donor_tx_id,
                 'GENE_SYMBOL': donor_gene_symbol,
                 'GENOMIC_POSITION': donor_genome_position,
                 'ACCEPTER_GENE_ID': self.gene_id2,
-                'ACCEPTER_TRANSCRIPT_ID': accepter_tx,
+                'ACCEPTER_TRANSCRIPT_ID': accepter_tx_id,
                 'ACCEPTER_SYMBOL': accepter_gene_symbol,
                 'ACCEPTER_POSITION': accepter_position,
                 'ACCEPTER_GENOMIC_POSITION': accepter_genome_position
