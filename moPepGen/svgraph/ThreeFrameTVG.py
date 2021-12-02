@@ -14,6 +14,7 @@ from moPepGen.svgraph.PVGNode import PVGNode
 
 if TYPE_CHECKING:
     from moPepGen import gtf
+    from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
 
 class ThreeFrameTVG():
     """ Defines the DAG data structure for the transcript and its variants.
@@ -371,7 +372,13 @@ class ThreeFrameTVG():
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             list(root.out_edges)[0].out_node.subgraph_id = branch.id
-        branch.create_variant_graph(accepter_variant_records, None, None, None)
+        branch.create_variant_graph(
+            variants=accepter_variant_records,
+            variant_pool=None,
+            genome=None,
+            anno=None,
+            force_three_frame=True
+        )
         for edge in branch.root.out_edges:
             edge.out_node.variants.append(variant)
 
@@ -421,7 +428,13 @@ class ThreeFrameTVG():
             is_frameshifting = False
             if var.variant.is_frameshifting():
                 is_frameshifting = True
-        branch.create_variant_graph(variants, None, None, None)
+        branch.create_variant_graph(
+            variants=variants,
+            variant_pool=None,
+            genome=None,
+            anno=None,
+            force_three_frame=True
+        )
 
         for i in range(3):
             var_head = branch.reading_frames[i].get_reference_next()
@@ -543,7 +556,8 @@ class ThreeFrameTVG():
 
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
-            variant_pool, genome, anno) -> None:
+            variant_pool:VariantRecordPool, genome:dna.DNASeqDict,
+            anno:gtf.GenomicAnnotation, force_three_frame:bool=False) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
@@ -560,7 +574,7 @@ class ThreeFrameTVG():
         variant = next(variant_iter, None)
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
 
-        if self.has_known_orf:
+        if self.has_known_orf and not force_three_frame:
             known_orf_index = self.get_known_reading_frame_index()
             active_frames = [False, False, False]
             active_frames[known_orf_index] = True
