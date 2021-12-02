@@ -149,7 +149,7 @@ class ThreeFrameTVG():
             edge = node.out_edges.pop()
             self.remove_edge(edge)
 
-    def get_known_reading_frame_index(self):
+    def get_known_reading_frame_index(self) -> int:
         """ get known reading frame index """
         return self.seq.orf.start % 3
 
@@ -556,6 +556,11 @@ class ThreeFrameTVG():
         variant = next(variant_iter, None)
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
 
+        if self.has_known_orf:
+            apply_three_frame = False
+        else:
+            apply_three_frame = True
+
         while variant:
             if not any(cursors):
                 break
@@ -584,6 +589,9 @@ class ThreeFrameTVG():
                 variant = next(variant_iter, None)
                 continue
 
+            if not apply_three_frame and variant.is_frameshifting():
+                apply_three_frame = True
+
             any_cursor_expired = False
             for i,cursor in enumerate(cursors):
                 if cursor.seq.locations[-1].ref.end <= variant.location.start:
@@ -608,9 +616,15 @@ class ThreeFrameTVG():
                     cursors[i], cursors[j] = self.apply_variant(cursors[i],
                         cursors[j], variant)
             else:
-                for i,_ in enumerate(cursors):
+                if apply_three_frame:
+                    for i,_ in enumerate(cursors):
+                        cursors[i], _ = self.apply_variant(cursors[i], cursors[i],
+                            variant)
+                else:
+                    i = self.get_known_reading_frame_index()
                     cursors[i], _ = self.apply_variant(cursors[i], cursors[i],
-                        variant)
+                            variant)
+
             variant = next(variant_iter, None)
 
     def copy_node(self, node:TVGNode) -> TVGNode:
