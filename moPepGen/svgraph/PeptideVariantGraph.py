@@ -10,6 +10,7 @@ from moPepGen import aa, seqvar
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
+from moPepGen.svgraph.PVGNodeCollapser import PVGNodeCollapser
 
 
 T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
@@ -90,13 +91,13 @@ class PeptideVariantGraph():
                 than last. Defaults to False
         """
         first_node = node
-        site = node.seq.find_first_enzymatic_cleave_site(
+        site = node.seq.find_first_cleave_or_stop_site(
             rule=self.rule,
             exception=self.exception
         )
         while site > -1:
             node = node.split_node(site, cleavage=True)
-            site = node.seq.find_first_enzymatic_cleave_site(
+            site = node.seq.find_first_cleave_or_stop_site(
                 rule=self.rule,
                 exception=self.exception
             )
@@ -136,7 +137,7 @@ class PeptideVariantGraph():
                 for y in x.in_nodes) for x in out_node.out_nodes if x is not self.stop)
             if is_sharing_downstream:
                 continue
-            site = out_node.seq.find_first_enzymatic_cleave_site(self.rule, self.exception)
+            site = out_node.seq.find_first_cleave_or_stop_site(self.rule, self.exception)
             if site > -1:
                 out_node.split_node(site, True)
 
@@ -283,11 +284,13 @@ class PeptideVariantGraph():
     def collapse_end_nodes(self, nodes:Iterable[PVGNode]):
         """ Collapse nodes inthey are identifical. This function is called
         after 'routes' are merged. Then redundant end nodes are collapsed. """
-        group:Dict[FrozenSet[PVGNode],Set[PVGNode]] = {}
+        group:Dict[Tuple[PVGNode],PVGNodeCollapser] = {}
         for node in nodes:
-            out_nodes = frozenset(node.out_nodes)
-            unique_nodes = group.setdefault(out_nodes, set())
-            self.update_unique_nodes(node, unique_nodes)
+            out_nodes = tuple(node.out_nodes)
+            collapser = group.setdefault(out_nodes, PVGNodeCollapser())
+            redundant_node = collapser.collapse(node)
+            if redundant_node:
+                self.remove_node(redundant_node)
         collapsed_nodes = set(nodes)
         for node in copy.copy(collapsed_nodes):
             if node.is_orphan():
@@ -463,7 +466,7 @@ class PeptideVariantGraph():
 
         if len(cur.out_nodes) == 1:
             downstream = list(cur.out_nodes)[0]
-            site = downstream.seq.find_first_enzymatic_cleave_site(
+            site = downstream.seq.find_first_cleave_or_stop_site(
                 self.rule, self.exception
             )
             if site > -1:
@@ -485,7 +488,7 @@ class PeptideVariantGraph():
         branches:Set[PVGNode] = set()
         inbridges:Dict[PVGNode,List[PVGNode]] = {}
 
-        sites = cur.seq.find_all_enzymatic_cleave_sites(rule=self.rule,
+        sites = cur.seq.find_all_cleave_and_stop_sites(rule=self.rule,
             exception=self.exception)
 
         if len(sites) == 0:
@@ -515,7 +518,7 @@ class PeptideVariantGraph():
             right = cur.split_node(sites[0], cleavage=True)
             if not cur.cleavage:
                 _,inbridges = self.expand_forward(cur)
-            site = right.seq.find_first_enzymatic_cleave_site(
+            site = right.seq.find_first_cleave_or_stop_site(
                 rule=self.rule, exception=self.exception)
             right = right.split_node(site, cleavage=True)
             branches = {right}
@@ -618,34 +621,29 @@ class PeptideVariantGraph():
         in_cds = cursor.in_cds
         orf = cursor.orf
         start_gain = cursor.start_gain
-        node_copy = target_node.copy()
 
-        stop_index = node_copy.seq.seq.find('*')
+        is_stop = target_node.seq.seq == '*'
 
-        if stop_index > -1:
-            node_copy.truncate_right(stop_index)
-            for out_node in copy.copy(node_copy.out_nodes):
-                node_copy.remove_out_edge(out_node)
-            for variant in target_node.variants:
-                if variant.location.start == stop_index:
-                    node_copy.variants.append(copy.copy(variant))
-        elif not node_copy.out_nodes:
-            node_copy.truncated = True
-
-        additional_variants = start_gain + cursor.cleavage_gain
-
-        traversal.pool.add_miscleaved_sequences(
-            node=node_copy,
-            orf=tuple(orf),
-            miscleavage=traversal.miscleavage,
-            check_variants=traversal.check_variants,
-            is_start_codon=False,
-            additional_variants=additional_variants
-        )
-        self.remove_node(node_copy)
-        if stop_index > -1:
+        if is_stop:
             in_cds = False
             orf = [None, None]
+        else:
+            node_copy = target_node.copy()
+
+            if not node_copy.out_nodes:
+                node_copy.truncated = True
+
+            additional_variants = start_gain + cursor.cleavage_gain
+
+            traversal.pool.add_miscleaved_sequences(
+                node=node_copy,
+                orf=tuple(orf),
+                miscleavage=traversal.miscleavage,
+                check_variants=traversal.check_variants,
+                is_start_codon=False,
+                additional_variants=additional_variants
+            )
+            self.remove_node(node_copy)
 
         cleavage_gain = target_node.get_cleavage_gain_variants()
 
@@ -702,20 +700,8 @@ class PeptideVariantGraph():
             start_gain.extend(target_node.get_variants_at(start_index))
             additional_variants = copy.copy(start_gain)
             node_copy = target_node.copy()
-            stop_index = node_copy.seq.seq.find('*')
-            if stop_index < start_index:
-                node_copy.truncate_left(start_index)
-                in_cds = True
-                more_stop_index = node_copy.seq.seq.find('*')
-                if more_stop_index > -1:
-                    # checks if there are more stop after start.
-                    node_copy.truncate_right(more_stop_index)
-                    in_cds = False
-                    for out_node in copy.copy(node_copy.out_nodes):
-                        node_copy.remove_out_edge(out_node)
-            else:
-                node_copy = node_copy[start_index:stop_index]
-                in_cds = False
+            in_cds = True
+            node_copy.truncate_left(start_index)
             orf = traversal.known_orf_tx
             traversal.pool.add_miscleaved_sequences(
                 node=node_copy,
@@ -747,7 +733,6 @@ class PeptideVariantGraph():
                     traversal.stage(target_node, out_node, cur)
             self.remove_node(node_copy)
 
-
     def call_and_stage_unknown_orf(self, cursor:PVGCursor,
             traversal:PVGTraversal) -> None:
         """ For a given node in the graph, call miscleavage peptides if it
@@ -760,68 +745,79 @@ class PeptideVariantGraph():
 
         node_list:List[Tuple[PVGNode, List[int,int], bool, List[VariantRecord]]] = []
         trash = set()
-        stop_index = target_node.seq.seq.find('*')
-        start_index = target_node.seq.seq.find('M')
+        is_stop = target_node.seq.seq == '*'
+        start_indices = target_node.seq.find_all_start_sites()
 
         cleavage_gain_down = target_node.get_cleavage_gain_from_downstream()
 
-        if in_cds and stop_index == -1:
-            additional_variants = start_gain + cursor.cleavage_gain + \
-                cleavage_gain_down
-            node_list.append((target_node, orf, False, additional_variants))
+        if is_stop:
+            in_cds = False
 
-        if in_cds and stop_index > -1:
+        if in_cds:
             cur_copy = target_node.copy()
-            cur_copy.truncate_right(stop_index)
-            cur_copy.remove_out_edges()
             additional_variants = start_gain + cursor.cleavage_gain
             node_list.append((cur_copy, orf, False, additional_variants))
             trash.add(cur_copy)
-            if stop_index > start_index:
-                in_cds = False
-                orf = [None, None]
 
-        last_stop_index, last_start_index = -1, -1
+        for start_index in start_indices:
+            cur_copy = target_node.copy()
+            cur_copy.truncate_left(start_index)
+            orf_start = cur_copy.get_orf_start()
+            cur_orf = [orf_start, None]
+            self.update_orf(cur_orf)
+            if not in_cds:
+                in_cds = True
+                orf = cur_orf
+            additional_variants = copy.copy(cleavage_gain_down)
+            node_list.append((cur_copy, cur_orf, True, additional_variants))
+            trash.add(cur_copy)
 
-        while stop_index > -1 or start_index > -1:
-            if 0 < start_index < stop_index and (start_index !=
-                    last_start_index or stop_index != last_stop_index):
-                cur_copy = target_node[start_index:stop_index]
-                orf_start = target_node.get_orf_start(start_index)
-                cur_copy.remove_out_edges()
-                cur_orf = [orf_start, None]
-                self.add_stop(cur_copy)
-                self.update_orf(cur_orf)
-                node_list.append((cur_copy, cur_orf, True, []))
-                trash.add(cur_copy)
+        # if in_cds and stop_index == -1:
+        #     additional_variants = start_gain + cursor.cleavage_gain + \
+        #         cleavage_gain_down
+        #     node_list.append((target_node, orf, False, additional_variants))
 
-            if start_index > -1 and stop_index == -1 \
-                    and start_index != last_start_index:
-                cur_copy = target_node.copy()
-                cur_copy.truncate_left(start_index)
-                orf_start = cur_copy.get_orf_start()
-                cur_orf = [orf_start, None]
-                self.update_orf(cur_orf)
-                if not in_cds:
-                    in_cds = True
-                    orf = cur_orf
-                additional_variants = copy.copy(cleavage_gain_down)
-                node_list.append((cur_copy, cur_orf, True, additional_variants))
-                trash.add(cur_copy)
+        # last_stop_index, last_start_index = -1, -1
 
-            if start_index > -1 and (stop_index == -1 or stop_index > start_index):
-                last_start_index = start_index
-            elif stop_index > -1 and (start_index == -1 or start_index > stop_index):
-                last_stop_index = stop_index
+        # while stop_index > -1 or start_index > -1:
+        #     if 0 < start_index < stop_index and (start_index !=
+        #             last_start_index or stop_index != last_stop_index):
+        #         cur_copy = target_node[start_index:stop_index]
+        #         orf_start = target_node.get_orf_start(start_index)
+        #         cur_copy.remove_out_edges()
+        #         cur_orf = [orf_start, None]
+        #         self.add_stop(cur_copy)
+        #         self.update_orf(cur_orf)
+        #         node_list.append((cur_copy, cur_orf, True, []))
+        #         trash.add(cur_copy)
 
-            if -1 < start_index < stop_index or (stop_index == -1 \
-                    and start_index > -1):
-                x = target_node.seq.seq[start_index+1:].find('M')
-                start_index = x + start_index + 1 if x > -1 else x
-            elif -1 < stop_index < start_index or (stop_index > -1 \
-                    and start_index == -1):
-                x = target_node.seq.seq[stop_index+1:].find('*')
-                stop_index = x + stop_index + 1 if x > -1 else x
+        #     if start_index > -1 and stop_index == -1 \
+        #             and start_index != last_start_index:
+        #         cur_copy = target_node.copy()
+        #         cur_copy.truncate_left(start_index)
+        #         orf_start = cur_copy.get_orf_start()
+        #         cur_orf = [orf_start, None]
+        #         self.update_orf(cur_orf)
+        #         if not in_cds:
+        #             in_cds = True
+        #             orf = cur_orf
+        #         additional_variants = copy.copy(cleavage_gain_down)
+        #         node_list.append((cur_copy, cur_orf, True, additional_variants))
+        #         trash.add(cur_copy)
+
+        #     if start_index > -1 and (stop_index == -1 or stop_index > start_index):
+        #         last_start_index = start_index
+        #     elif stop_index > -1 and (start_index == -1 or start_index > stop_index):
+        #         last_stop_index = stop_index
+
+        #     if -1 < start_index < stop_index or (stop_index == -1 \
+        #             and start_index > -1):
+        #         x = target_node.seq.seq[start_index+1:].find('M')
+        #         start_index = x + start_index + 1 if x > -1 else x
+        #     elif -1 < stop_index < start_index or (stop_index > -1 \
+        #             and start_index == -1):
+        #         x = target_node.seq.seq[stop_index+1:].find('*')
+        #         stop_index = x + stop_index + 1 if x > -1 else x
 
         cleavage_gain = target_node.get_cleavage_gain_variants()
 
@@ -831,18 +827,18 @@ class PeptideVariantGraph():
                 if target_node.is_bridge():
                     if not in_cds:
                         start_gain = []
-                    elif last_start_index > -1:
+                    elif start_index > -1:
                         # carry over variants from the target node to the next
                         # node if a start codon is found.
                         start_gain = target_node.get_variants_at(
-                            start=last_start_index,
-                            end=min(last_start_index + 3, len(target_node.seq.seq))
+                            start=start_index,
+                            end=min(start_index + 3, len(target_node.seq.seq))
                         )
                     else:
-                        start_gain = [v.variant for v in out_node.variants\
+                        start_gain = [v.variant for v in out_node.variants
                             if v.variant.is_frameshifting()]
                 else:
-                    if last_stop_index > last_start_index:
+                    if is_stop:
                         start_gain = []
 
                 for variant in target_node.variants:

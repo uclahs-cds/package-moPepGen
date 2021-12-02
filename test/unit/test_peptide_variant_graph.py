@@ -426,14 +426,17 @@ class TestPeptideVariantGraph(unittest.TestCase):
 
     def test_call_variant_peptides_stop_gain(self):
         """ test stop gain mutation is included """
-        variant_1 = (0, 3, 'TCT', 'T', 'INDEL', '0:TCT-T', 2, 3, True)
+        variant_1 = (25, 26, 'T', 'A', 'SNV', '0:T-A', 0, 1, True)
         locations = [((0,4),(0,4))]
         data = {
             1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
-            2: ('SS*SR', [1],[variant_1], [((0,2), (5,7)),((3,5),(8,10))], 0),
-            3: ('SSSIR', [1], [None], locations, 0),
-            4: ('SSSPK', [2,3], [None], locations, 0),
-            5: ('SSSVK', [4], [None], locations, 0)
+            2: ('SS', [1], [None], [((0,2), (5,7))], 0),
+            3: ('*', [2], [variant_1], [], 0),
+            4: ('SR', [3], [None], [((3,5),(8,10))], 0),
+            # 2: ('SS*SR', [1],[variant_1], [((0,2), (5,7)),((3,5),(8,10))], 0),
+            5: ('SSSIR', [1], [None], locations, 0),
+            6: ('SSSPK', [4,5], [None], locations, 0),
+            7: ('SSSVK', [6], [None], locations, 0)
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,60])
         peptides = graph.call_variant_peptides(1)
@@ -461,13 +464,19 @@ class TestPeptideVariantGraph(unittest.TestCase):
 
     def test_call_variant_peptides_small_orf(self):
         """ test very small ORF is handled """
-        variant_1 = (10, 11, 'C', 'T', 'SNV', '1:C-T', 3, 4, True)
+        variant_1 = (10, 11, 'C', 'T', 'SNV', '1:C-T', 0, 1, True)
         data = {
             1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
-            2: ('SMSS*R', [1],[variant_1], [((0,3),(5,8)), ((4,6),(9,11))], 0),
-            3: ('SMSI*R', [1], [None], [((0,6),(5,11))], 0),
-            4: ('SSSPK', [2,3], [None], [((0,5),(11,16))], 0),
-            5: ('SSSVK', [4], [None], [((0,5),(16,21))], 0)
+            2: ('SMSS', [1], [None], [((0,4),(5,9))], 0),
+            3: ('*', [2], [variant_1], [], 0),
+            4: ('R', [3], [None], [((5,6),(10,11))], 0),
+            # 2: ('SMSS*R', [1],[variant_1], [((0,3),(5,8)), ((4,6),(9,11))], 0),
+            5: ('SMSI', [1], [None], [((0,4),(5,9))], 0),
+            6: ('*', [5], [None], [((0,1),(9,10))], 0),
+            7: ('R', [6], [None], [((0,1),(10,11))], 0),
+            #3: ('SMSI*R', [1], [None], [((0,6),(5,11))], 0),
+            8: ('SSSPK', [4,7], [None], [((0,5),(11,16))], 0),
+            9: ('SSSVK', [8], [None], [((0,5),(16,21))], 0)
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[18, 27])
         peptides = graph.call_variant_peptides(0)
@@ -546,26 +555,6 @@ class TestPeptideVariantGraph(unittest.TestCase):
 
         self.assertTrue(traversal.queue[-1].in_cds)
 
-    def test_call_and_stage_known_orf_with_multiple_stop(self):
-        """ Test call and stage known orf """
-        variant_1 = (8, 9, 'T', 'A', 'INDEL', '8:TCT-T', 2, 3, True)
-        data = {
-            1: ('SSSSK', [0], [None], [((0,5),(0,5))], 0),
-            2: ('*MS*R', [1],[variant_1], [((0,3),(5,8)), ((4,5),(9,10))], 0),
-            3: ('*MSSK', [1], [None], [((0,5),(5,10))], 0),
-            4: ('SSXPK', [2,3], [None], [((0,5),(10,15))], 0)
-        }
-        graph, nodes = create_pgraph(data, 'ENST0001')
-        graph.known_orf = [0,30]
-        pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (18,60), (6,20))
-        cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
-        graph.call_and_stage_known_orf(cursor,  traversal)
-
-        received = {str(x.seq) for x in traversal.pool.peptides.keys()}
-        expected = {'MS', 'S'}
-        self.assertEqual(received, expected)
-
     def test_call_and_stage_known_orf_start_and_frameshift(self):
         """ Test when a frameshift mutation is in the same node as start codon
         """
@@ -636,12 +625,15 @@ class TestPeptideVariantGraph(unittest.TestCase):
         """ Test when the transcript is cds_start_NF, and the mutation is
         start altering.
         """
-        variant_1 = (4, 5, 'T', 'TCCC', 'INDEL', '8:T-TCCC', 0, 2, True)
+        variant_1 = (4, 5, 'T', 'A', 'SNV', '8:T-A', 0, 1, True)
         data = {
             1: ('SSSSK', [0], [None], [((0,5), (0,5))], 0),
             2: ('SMSMRK', [1], [None], [((0,6),(5,11))], 0),
             3: ('SSSPK', [2], [None], [((0,5),(11,16))], 0),
-            4: ('SS*PK', [2], [variant_1], [((0,2),(11,13)), ((3,5),(14,16))], 0)
+            4: ('SS', [2], [None], [((0,2), (11,13))], 0),
+            5: ('*', [4], [variant_1], [], 0),
+            6: ('PK', [5], [None], [((0,2), (14,16))], 0)
+            # 4: ('SS*PK', [2], [variant_1], [((0,2),(11,13)), ((3,5),(14,16))], 0)
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,90]
@@ -662,17 +654,19 @@ class TestPeptideVariantGraph(unittest.TestCase):
         data = {
             1: ('SSSSK', [0], [None], [((0,5), (0,5))], 0),
             2: ('SMSMRK', [1], [None], [((0,6),(5,11))], 0),
-            3: ('SS*PK', [2], [None], [((0,5),(11,16))], 0),
-            4: ('SSSPK', [2], [variant_1], [((0,2),(11,13)), ((3,5),(14,16))], 0),
-            5: ('SPPPK', [3,4], [None], [((0,5),(17,22))], 0)
+            3: ('SS', [2], [None], [((0,2), (11,13))], 0),
+            4: ('*', [3], [None], [((0,1),(13,14))], 0),
+            5: ('PK', [4], [None], [((0,2), (14,16))], 0),
+            6: ('SSSPK', [2], [variant_1], [((0,2),(11,13)), ((3,5),(14,16))], 0),
+            7: ('SPPPK', [5,6], [None], [((0,5),(17,22))], 0)
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,39]
         pool = VariantPeptideDict(graph.id)
         traversal = PVGTraversal(True, False, 0, pool, (0,42), (0,14))
-        cursor = PVGCursor(nodes[2], nodes[3], True, [0, None], [])
+        cursor = PVGCursor(nodes[4], nodes[5], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
-        cursor = PVGCursor(nodes[2], nodes[4], True, [0, None], [])
+        cursor = PVGCursor(nodes[2], nodes[6], True, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(traversal.queue[0].start_gain), 1)
 

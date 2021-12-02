@@ -39,12 +39,8 @@ class MiscleavedNodes():
                     if _node.truncated:
                         continue
                     new_batch = copy.copy(cur_batch)
-                    stop_index = _node.seq.seq.find('*')
-                    if stop_index > -1:
-                        left_node = _node[:stop_index + 1]
-                        left_node.seq = left_node.seq[:stop_index]
-                        new_batch.append(left_node)
-                        nodes.data.append(new_batch)
+                    is_stop = _node.seq.seq == '*'
+                    if is_stop:
                         continue
                     new_batch.append(_node)
                     next_cleavage.appendleft(new_batch)
