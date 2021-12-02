@@ -210,8 +210,9 @@ class AminoAcidSeqRecord(SeqRecord):
         """ Find all enzymatic lceave sites and stop sites """
         cleavage_sites = list(self.iter_enzymatic_cleave_sites(rule=rule,
             exception=exception))
-        stop_sites = list(self.iter_stop_sites())
-        sites = cleavage_sites + stop_sites
+        stop_sites_start = list(self.iter_stop_sites())
+        stop_sites_end = [i + 1 for i in stop_sites_start]
+        sites = cleavage_sites + stop_sites_start + stop_sites_end
         sites.sort()
         return sites
 

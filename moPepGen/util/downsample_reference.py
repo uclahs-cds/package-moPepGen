@@ -227,7 +227,7 @@ def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
         genome:dna.DNASeqDict) -> Dict[str, aa.AminoAcidSeqRecord]:
     """ Translate all possible ORF of a noncoding transcript """
     tx_model = anno.transcripts[tx_id]
-    protein_id = tx_model.transcript.protein_id
+    protein_id = tx_id.replace('ENST', 'ENSP')
     gene_id = tx_model.transcript.gene_id
     chrom = tx_model.transcript.chrom
     tx_seq = tx_model.get_transcript_sequence(genome[chrom])
