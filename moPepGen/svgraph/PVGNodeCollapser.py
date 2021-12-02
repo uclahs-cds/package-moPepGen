@@ -32,28 +32,26 @@ class PVGCollapseNode(PVGNode):
 
 class PVGNodeCollapser():
     """ Collapse PVGNode """
-    def __init__(self, pool:Set[PVGNode]=None, map:Dict[PVGNode, PVGNode]=None):
+    def __init__(self, pool:Set[PVGNode]=None, mapper:Dict[PVGNode, PVGNode]=None):
         """ constructor """
         self.pool = pool or set()
-        self.map = map or {}
+        self.mapper = mapper or {}
 
     def collapse(self, node:PVGNode) -> PVGNode:
         """ Collapse the given node if it has the same in the pool """
         collapse_node = PVGCollapseNode.from_pvg_node(node)
         same_collapse_node = get_equivalent(self.pool, collapse_node)
         if same_collapse_node:
-            same_node = self.map[same_collapse_node]
+            same_node = self.mapper[same_collapse_node]
             if node.is_less_mutated(same_node):
                 same_node.transfer_in_nodes_to(node)
                 self.pool.remove(same_collapse_node)
                 self.pool.add(collapse_node)
-                self.map.pop(same_collapse_node, None)
-                self.map[collapse_node] = node
+                self.mapper.pop(same_collapse_node, None)
+                self.mapper[collapse_node] = node
                 return same_node
-            else:
-                node.transfer_in_nodes_to(same_node)
-                return node
-        else:
-            self.pool.add(collapse_node)
-            self.map[collapse_node] = node
-            return None
+            node.transfer_in_nodes_to(same_node)
+            return node
+        self.pool.add(collapse_node)
+        self.mapper[collapse_node] = node
+        return None

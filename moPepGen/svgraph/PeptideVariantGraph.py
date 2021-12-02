@@ -1,7 +1,7 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import FrozenSet, Iterable, Set, Deque, Dict, List, Tuple
+from typing import Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
 import itertools
@@ -780,12 +780,12 @@ class PeptideVariantGraph():
                 if target_node.is_bridge():
                     if not in_cds:
                         start_gain = []
-                    elif start_index > -1:
+                    elif start_indices:
                         # carry over variants from the target node to the next
                         # node if a start codon is found.
                         start_gain = target_node.get_variants_at(
-                            start=start_index,
-                            end=min(start_index + 3, len(target_node.seq.seq))
+                            start=start_indices[-1],
+                            end=min(start_indices[-1] + 3, len(target_node.seq.seq))
                         )
                     else:
                         start_gain = [v.variant for v in out_node.variants

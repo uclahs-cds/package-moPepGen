@@ -5,7 +5,7 @@ from collections import deque
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from moPepGen import dna, seqvar, all_equal
+from moPepGen import dna, seqvar
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
