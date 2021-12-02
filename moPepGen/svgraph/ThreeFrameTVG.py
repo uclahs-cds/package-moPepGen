@@ -549,6 +549,10 @@ class ThreeFrameTVG():
         With a list of genomic variants, incorprate each variant into the
         graph.
 
+        For protein coding transcripts, in frame variants are not incorporated
+        into non-canonical reading frames until the first frameshifting mutate
+        shows up.
+
         Args:
             variant [seqvar.VariantRecord]: The variant record.
         """
@@ -557,9 +561,11 @@ class ThreeFrameTVG():
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
 
         if self.has_known_orf:
-            apply_three_frame = False
+            known_orf_index = self.get_known_reading_frame_index()
+            active_frames = [False, False, False]
+            active_frames[known_orf_index] = True
         else:
-            apply_three_frame = True
+            active_frames = [True, True, True]
 
         while variant:
             if not any(cursors):
@@ -580,17 +586,14 @@ class ThreeFrameTVG():
             if self.mrna_end_nf and variant.location.start <= self.seq.orf.end - 3:
                 continue
 
-            if not any(any(y.is_inbond_of(x) for y in self.reading_frames) \
-                    for x in cursors) and not \
-                    all_equal([x.seq.locations[0].ref.start for x in cursors]):
-                raise ValueError('Not all cursors are equal. Somthing messed up.')
-
             if any(c.seq.locations[0].ref.start > variant.location.start for c in cursors):
                 variant = next(variant_iter, None)
                 continue
 
-            if not apply_three_frame and variant.is_frameshifting():
-                apply_three_frame = True
+            if any(not x for x in active_frames) and variant.is_frameshifting():
+                frames_shifted = variant.frames_shifted()
+                i = (known_orf_index + frames_shifted) % 3
+                active_frames[i] = True
 
             any_cursor_expired = False
             for i,cursor in enumerate(cursors):
@@ -616,14 +619,11 @@ class ThreeFrameTVG():
                     cursors[i], cursors[j] = self.apply_variant(cursors[i],
                         cursors[j], variant)
             else:
-                if apply_three_frame:
-                    for i,_ in enumerate(cursors):
-                        cursors[i], _ = self.apply_variant(cursors[i], cursors[i],
-                            variant)
-                else:
-                    i = self.get_known_reading_frame_index()
+                for i,_ in enumerate(cursors):
+                    if not active_frames[i]:
+                        continue
                     cursors[i], _ = self.apply_variant(cursors[i], cursors[i],
-                            variant)
+                        variant)
 
             variant = next(variant_iter, None)
 

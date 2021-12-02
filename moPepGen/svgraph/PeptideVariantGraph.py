@@ -772,53 +772,6 @@ class PeptideVariantGraph():
             node_list.append((cur_copy, cur_orf, True, additional_variants))
             trash.add(cur_copy)
 
-        # if in_cds and stop_index == -1:
-        #     additional_variants = start_gain + cursor.cleavage_gain + \
-        #         cleavage_gain_down
-        #     node_list.append((target_node, orf, False, additional_variants))
-
-        # last_stop_index, last_start_index = -1, -1
-
-        # while stop_index > -1 or start_index > -1:
-        #     if 0 < start_index < stop_index and (start_index !=
-        #             last_start_index or stop_index != last_stop_index):
-        #         cur_copy = target_node[start_index:stop_index]
-        #         orf_start = target_node.get_orf_start(start_index)
-        #         cur_copy.remove_out_edges()
-        #         cur_orf = [orf_start, None]
-        #         self.add_stop(cur_copy)
-        #         self.update_orf(cur_orf)
-        #         node_list.append((cur_copy, cur_orf, True, []))
-        #         trash.add(cur_copy)
-
-        #     if start_index > -1 and stop_index == -1 \
-        #             and start_index != last_start_index:
-        #         cur_copy = target_node.copy()
-        #         cur_copy.truncate_left(start_index)
-        #         orf_start = cur_copy.get_orf_start()
-        #         cur_orf = [orf_start, None]
-        #         self.update_orf(cur_orf)
-        #         if not in_cds:
-        #             in_cds = True
-        #             orf = cur_orf
-        #         additional_variants = copy.copy(cleavage_gain_down)
-        #         node_list.append((cur_copy, cur_orf, True, additional_variants))
-        #         trash.add(cur_copy)
-
-        #     if start_index > -1 and (stop_index == -1 or stop_index > start_index):
-        #         last_start_index = start_index
-        #     elif stop_index > -1 and (start_index == -1 or start_index > stop_index):
-        #         last_stop_index = stop_index
-
-        #     if -1 < start_index < stop_index or (stop_index == -1 \
-        #             and start_index > -1):
-        #         x = target_node.seq.seq[start_index+1:].find('M')
-        #         start_index = x + start_index + 1 if x > -1 else x
-        #     elif -1 < stop_index < start_index or (stop_index > -1 \
-        #             and start_index == -1):
-        #         x = target_node.seq.seq[stop_index+1:].find('*')
-        #         stop_index = x + stop_index + 1 if x > -1 else x
-
         cleavage_gain = target_node.get_cleavage_gain_variants()
 
         for out_node in target_node.out_nodes:
