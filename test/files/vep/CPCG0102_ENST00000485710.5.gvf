@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=/data/Index/GRCh38-EBI-GENCODE34
+##genome_fasta=
+##annotation_gtf=
+##source=gsnp
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000127054.21	10881	SNV-10881-C-T	C	T	.	.	TRANSCRIPT_ID=ENST00000485710.5;GENOMIC_POSITION=chr1:1313807;GENE_SYMBOL=INTS11
+ENSG00000127054.21	12574	SNV-12574-A-G	A	G	.	.	TRANSCRIPT_ID=ENST00000485710.5;GENOMIC_POSITION=chr1:1312114;GENE_SYMBOL=INTS11

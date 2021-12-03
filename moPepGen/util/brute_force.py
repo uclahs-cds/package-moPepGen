@@ -100,7 +100,10 @@ def brute_force(args):
 
     variant_peptides = set()
 
-    start_index = tx_seq.orf.start + 3
+    if tx_seq.orf:
+        start_index = tx_seq.orf.start + 3
+    else:
+        start_index = 3
     variants:List[VariantRecord] = []
 
     for variant in variant_pool.transcriptional[tx_id]:

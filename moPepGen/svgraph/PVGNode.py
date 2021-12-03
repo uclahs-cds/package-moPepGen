@@ -7,7 +7,6 @@ from moPepGen import aa, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 
 
-
 class PVGNode():
     """ The PVGNode class is used in the svgraph.PeptideVariantGraph, that
     stores the sequence in a Node.

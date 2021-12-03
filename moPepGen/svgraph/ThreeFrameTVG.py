@@ -5,7 +5,7 @@ from collections import deque
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from moPepGen import dna, seqvar, all_equal
+from moPepGen import dna, seqvar
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
@@ -14,6 +14,7 @@ from moPepGen.svgraph.PVGNode import PVGNode
 
 if TYPE_CHECKING:
     from moPepGen import gtf
+    from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
 
 class ThreeFrameTVG():
     """ Defines the DAG data structure for the transcript and its variants.
@@ -149,7 +150,7 @@ class ThreeFrameTVG():
             edge = node.out_edges.pop()
             self.remove_edge(edge)
 
-    def get_known_reading_frame_index(self):
+    def get_known_reading_frame_index(self) -> int:
         """ get known reading frame index """
         return self.seq.orf.start % 3
 
@@ -333,7 +334,8 @@ class ThreeFrameTVG():
 
     def apply_fusion(self, cursors:List[TVGNode], variant:seqvar.VariantRecord,
             variant_pool:seqvar.VariantRecordPool, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation) -> List[TVGNode]:
+            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None
+            ) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
 
@@ -371,7 +373,13 @@ class ThreeFrameTVG():
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             list(root.out_edges)[0].out_node.subgraph_id = branch.id
-        branch.create_variant_graph(accepter_variant_records, None, None, None)
+        branch.create_variant_graph(
+            variants=accepter_variant_records,
+            variant_pool=None,
+            genome=None,
+            anno=None,
+            active_frames=active_frames
+        )
         for edge in branch.root.out_edges:
             edge.out_node.variants.append(variant)
 
@@ -409,7 +417,8 @@ class ThreeFrameTVG():
     def _apply_insertion(self, cursors:List[TVGNode],
             var:seqvar.VariantRecordWithCoordinate,
             seq:dna.DNASeqRecordWithCoordinates,
-            variants:List[seqvar.VariantRecord]
+            variants:List[seqvar.VariantRecord],
+            active_frames:List[bool]
         ) -> List[TVGNode]:
         """ Apply insertion """
         cursors = copy.copy(cursors)
@@ -421,7 +430,13 @@ class ThreeFrameTVG():
             is_frameshifting = False
             if var.variant.is_frameshifting():
                 is_frameshifting = True
-        branch.create_variant_graph(variants, None, None, None)
+        branch.create_variant_graph(
+            variants=variants,
+            variant_pool=None,
+            genome=None,
+            anno=None,
+            active_frames=active_frames
+        )
 
         for i in range(3):
             var_head = branch.reading_frames[i].get_reference_next()
@@ -486,7 +501,8 @@ class ThreeFrameTVG():
     def apply_insertion(self, cursors:List[TVGNode],
             variant:seqvar.VariantRecord,
             variant_pool:seqvar.VariantRecordPool,
-            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation
+            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
+            active_frames:List[bool]=None
             ) -> List[TVGNode]:
         """ Apply an insertion into the the TVG graph. """
         gene_id = variant.attrs['DONOR_GENE_ID']
@@ -517,12 +533,19 @@ class ThreeFrameTVG():
             variant=variant,
             location=FeatureLocation(start=1, end=len(insert_seq.seq))
         )
-        return self._apply_insertion(cursors, var, insert_seq, insert_variants)
+        return self._apply_insertion(
+            cursors=cursors,
+            var=var,
+            seq=insert_seq,
+            variants=insert_variants,
+            active_frames=active_frames
+        )
 
     def apply_substitution(self, cursors:List[TVGNode],
             variant:seqvar.VariantRecord,
             variant_pool:seqvar.VariantRecordPool,
-            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation
+            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
+            active_frames:List[bool]=None
             ) -> List[TVGNode]:
         """ Apply a substitution variant into the graph """
         gene_id = variant.attrs['DONOR_GENE_ID']
@@ -539,15 +562,26 @@ class ThreeFrameTVG():
             variant=variant,
             location=FeatureLocation(start=0, end=len(sub_seq.seq))
         )
-        return self._apply_insertion(cursors, var, sub_seq, sub_variants)
+        return self._apply_insertion(
+            cursors=cursors,
+            var=var,
+            seq=sub_seq,
+            variants=sub_variants,
+            active_frames=active_frames
+        )
 
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
-            variant_pool, genome, anno) -> None:
+            variant_pool:VariantRecordPool, genome:dna.DNASeqDict,
+            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
         graph.
+
+        For protein coding transcripts, in frame variants are not incorporated
+        into non-canonical reading frames until the first frameshifting mutate
+        shows up.
 
         Args:
             variant [seqvar.VariantRecord]: The variant record.
@@ -555,6 +589,14 @@ class ThreeFrameTVG():
         variant_iter = iter(variants)
         variant = next(variant_iter, None)
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
+
+        if active_frames is None:
+            if self.has_known_orf:
+                known_orf_index = self.get_known_reading_frame_index()
+                active_frames = [False, False, False]
+                active_frames[known_orf_index] = True
+            else:
+                active_frames = [True, True, True]
 
         while variant:
             if not any(cursors):
@@ -575,14 +617,14 @@ class ThreeFrameTVG():
             if self.mrna_end_nf and variant.location.start <= self.seq.orf.end - 3:
                 continue
 
-            if not any(any(y.is_inbond_of(x) for y in self.reading_frames) \
-                    for x in cursors) and not \
-                    all_equal([x.seq.locations[0].ref.start for x in cursors]):
-                raise ValueError('Not all cursors are equal. Somthing messed up.')
-
             if any(c.seq.locations[0].ref.start > variant.location.start for c in cursors):
                 variant = next(variant_iter, None)
                 continue
+
+            if any(not x for x in active_frames) and variant.is_frameshifting():
+                frames_shifted = variant.frames_shifted()
+                i = (known_orf_index + frames_shifted) % 3
+                active_frames[i] = True
 
             any_cursor_expired = False
             for i,cursor in enumerate(cursors):
@@ -593,13 +635,37 @@ class ThreeFrameTVG():
                 continue
 
             if variant.type == 'Fusion':
-                cursors = self.apply_fusion(cursors, variant, variant_pool, genome, anno)
+                # for fusion, whether there is any frameshifting mutation does
+                # not affect the main sequence, so a copy of active frames
+                # are parsed to the apply_fusion function.
+                cursors = self.apply_fusion(
+                    cursors=cursors,
+                    variant=variant,
+                    variant_pool=variant_pool,
+                    genome=genome,
+                    anno=anno,
+                    active_frames=copy.copy(active_frames)
+                )
 
             elif variant.type == 'Insertion':
-                cursors = self.apply_insertion(cursors, variant, variant_pool, genome, anno)
+                cursors = self.apply_insertion(
+                    cursors=cursors,
+                    variant=variant,
+                    variant_pool=variant_pool,
+                    genome=genome,
+                    anno=anno,
+                    active_frames=active_frames
+                )
 
             elif variant.type == 'Substitution':
-                cursors = self.apply_substitution(cursors, variant, variant_pool, genome, anno)
+                cursors = self.apply_substitution(
+                    cursors=cursors,
+                    variant=variant,
+                    variant_pool=variant_pool,
+                    genome=genome,
+                    anno=anno,
+                    active_frames=active_frames
+                )
 
             elif variant.is_frameshifting():
                 frames_shifted = variant.frames_shifted()
@@ -609,8 +675,11 @@ class ThreeFrameTVG():
                         cursors[j], variant)
             else:
                 for i,_ in enumerate(cursors):
+                    if not active_frames[i]:
+                        continue
                     cursors[i], _ = self.apply_variant(cursors[i], cursors[i],
                         variant)
+
             variant = next(variant_iter, None)
 
     def copy_node(self, node:TVGNode) -> TVGNode:

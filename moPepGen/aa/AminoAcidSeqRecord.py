@@ -149,6 +149,11 @@ class AminoAcidSeqRecord(SeqRecord):
         self.protein_id = protein_id.split('.')[0]
         self.transcript_id = transcript_id.split('.')[0]
 
+    def iter_stop_sites(self) -> Iterable[int]:
+        """ Create a generator for stop sites """
+        for occ in re.finditer(r'\*', str(self.seq)):
+            yield occ.start()
+
     def iter_enzymatic_cleave_sites(self, rule:str, exception:str=None
             ) -> Iterable[int]:
         """ Create a generator of the cleave sites """
@@ -160,6 +165,25 @@ class AminoAcidSeqRecord(SeqRecord):
         for it in re.finditer(rule, str(self.seq)):
             if it not in exceptions:
                 yield it.end()
+
+    def find_first_cleave_or_stop_site(self, rule:str, exception:str=None
+            ) -> Iterable[int]:
+        """ Create a generator for cleave or stop sites """
+        it_cleavage = self.iter_enzymatic_cleave_sites(rule=rule, exception=exception)
+        sites = []
+        first_cleave_site = next(it_cleavage, None)
+        if first_cleave_site is not None:
+            sites.append(first_cleave_site)
+        it_stop = self.iter_stop_sites()
+        first_stop_site = next(it_stop, None)
+        if first_stop_site is not None:
+            if first_stop_site == 0:
+                sites.append(first_stop_site + 1)
+            else:
+                sites.append(first_stop_site)
+        if not sites:
+            return -1
+        return min(sites)
 
     def find_first_enzymatic_cleave_site(self, rule:str, exception:str=None,
             start:int=0) -> int:
@@ -176,6 +200,21 @@ class AminoAcidSeqRecord(SeqRecord):
         """ Find all enzymatic cleave sites. """
         return list(self.iter_enzymatic_cleave_sites(rule=rule,
             exception=exception))
+
+    def find_all_start_sites(self) -> List[int]:
+        """ Find all start positions """
+        return [x.start() for x in re.finditer('M', str(self.seq))]
+
+    def find_all_cleave_and_stop_sites(self, rule:str, exception:str=None
+            ) -> List[int]:
+        """ Find all enzymatic lceave sites and stop sites """
+        cleavage_sites = list(self.iter_enzymatic_cleave_sites(rule=rule,
+            exception=exception))
+        stop_sites_start = list(self.iter_stop_sites())
+        stop_sites_end = [i + 1 for i in stop_sites_start]
+        sites = cleavage_sites + stop_sites_start + stop_sites_end
+        sites.sort()
+        return sites
 
     def enzymatic_cleave(self, rule:str, exception:str=None,
             miscleavage:int=2, min_mw:float=500.0, min_length:int=7,
