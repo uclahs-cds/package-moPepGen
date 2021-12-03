@@ -281,7 +281,8 @@ class PeptideVariantGraph():
             self.update_unique_nodes(in_node, unique_nodes)
         return unique_nodes
 
-    def collapse_end_nodes(self, nodes:Iterable[PVGNode]):
+    def collapse_end_nodes(self, nodes:Iterable[PVGNode],
+            inbridge_list:Dict[PVGNode, List[PVGNode]]):
         """ Collapse nodes inthey are identifical. This function is called
         after 'routes' are merged. Then redundant end nodes are collapsed. """
         group:Dict[Tuple[PVGNode],PVGNodeCollapser] = {}
@@ -295,7 +296,9 @@ class PeptideVariantGraph():
         for node in copy.copy(collapsed_nodes):
             if node.is_orphan():
                 collapsed_nodes.remove(node)
-        return collapsed_nodes
+        for key in inbridge_list.keys():
+            inbridge_list[key] = [x for x in inbridge_list[key] if x in collapsed_nodes]
+        return collapsed_nodes, inbridge_list
 
     def expand_backward(self, node:PVGNode) -> T:
         r""" Expand the variant alignment bubble backward to the previous
@@ -322,7 +325,7 @@ class PeptideVariantGraph():
         reading_frame_index = node.reading_frame_index
         routes = self.find_routes_for_merging(node, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
-        new_nodes = self.collapse_end_nodes(new_nodes)
+        new_nodes, inbridge_list = self.collapse_end_nodes(new_nodes, inbridge_list)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 
@@ -354,7 +357,7 @@ class PeptideVariantGraph():
         for in_node in node.in_nodes:
             routes.add((in_node, node))
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
-        new_nodes = self.collapse_end_nodes(new_nodes)
+        new_nodes, inbridge_list = self.collapse_end_nodes(new_nodes, inbridge_list)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 
@@ -380,7 +383,7 @@ class PeptideVariantGraph():
         reading_frame_index = node.reading_frame_index
         routes = self.find_routes_for_merging(node)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
-        new_nodes = self.collapse_end_nodes(new_nodes)
+        new_nodes, inbridge_list = self.collapse_end_nodes(new_nodes, inbridge_list)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 
@@ -405,7 +408,7 @@ class PeptideVariantGraph():
 
         routes = self.find_routes_for_merging(head, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
-        new_nodes = self.collapse_end_nodes(new_nodes)
+        new_nodes, inbridge_list = self.collapse_end_nodes(new_nodes, inbridge_list)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 

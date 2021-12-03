@@ -19,7 +19,8 @@ class PVGCollapseNode(PVGNode):
         return self.seq.seq == other.seq.seq and \
             self.out_nodes == other.out_nodes and \
             self.cleavage == other.cleavage and \
-            self.reading_frame_index == other.reading_frame_index
+            self.reading_frame_index == other.reading_frame_index and \
+            self.was_bridge == other.was_bridge
 
     def __ne__(self, other:PVGCollapseNode):
         """ not equal to """
@@ -28,7 +29,7 @@ class PVGCollapseNode(PVGNode):
     def __hash__(self):
         """ hash """
         return hash((self.seq.seq, frozenset(self.out_nodes), self.cleavage,
-            self.truncated, self.reading_frame_index))
+            self.truncated, self.reading_frame_index, self.was_bridge))
 
 class PVGNodeCollapser():
     """ Collapse PVGNode """
