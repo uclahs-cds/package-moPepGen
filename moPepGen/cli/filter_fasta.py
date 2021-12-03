@@ -62,7 +62,7 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     )
     p.add_argument(
         '--quant-col',
-        type=str,
+        type=int,
         help='The column index number for quantification. Index is 1-based.',
         metavar='<number>'
     )
