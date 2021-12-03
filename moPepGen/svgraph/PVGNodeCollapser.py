@@ -19,6 +19,7 @@ class PVGCollapseNode(PVGNode):
         return self.seq.seq == other.seq.seq and \
             self.out_nodes == other.out_nodes and \
             self.cleavage == other.cleavage and \
+            self.truncated == other.truncated and \
             self.reading_frame_index == other.reading_frame_index and \
             self.was_bridge == other.was_bridge
 
