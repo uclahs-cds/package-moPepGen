@@ -2,7 +2,6 @@
 import unittest
 from test.unit import create_variant, create_genomic_annotation, \
     create_dna_record_dict
-from moPepGen import seqvar
 
 
 GENOME_DATA = {
