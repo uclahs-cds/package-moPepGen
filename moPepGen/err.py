@@ -92,6 +92,15 @@ class GeneNotFoundError(Exception):
         msg = f"Gene {gene_id} not found."
         super().__init__(msg)
 
+class FusionBreakpointIsEndOfTranscript(Exception):
+    """ Error to be raised when the fusion donor breakpoint is the end of the
+    last exon """
+    def __init__(self, fusion_id:str):
+        """ constructor """
+        msg = f"The left breakpoint of fusion record {fusion_id} is the end of" +\
+            " the last exon."
+        super().__init__()
+
 def warning(msg:str) -> None:
     """ print a warning message """
     logger(f"[ !!! moPepGen WARNING !!! ] {msg}")

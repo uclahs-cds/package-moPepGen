@@ -6,6 +6,7 @@ from moPepGen import ERROR_NO_TX_AVAILABLE, \
     ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
         ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
 from moPepGen.SeqFeature import FeatureLocation
+from moPepGen import err
 
 
 # To avoid circular import
@@ -289,33 +290,34 @@ class VariantRecord():
         chrom = tx_model.transcript.chrom
         tx_seq = tx_model.get_transcript_sequence(genome[chrom])
         tx_start = tx_model.transcript.location.start
-        start_genomic = anno.coordinate_gene_to_genomic(
-            self.location.start, self.location.seqname
-        )
-        end_genomic = anno.coordinate_gene_to_genomic(
-            self.location.end - 1, self.location.seqname
-        )
+        gene_id = self.location.seqname
+
+        var_start = self.location.start
+        var_end = self.location.end
+
+        start_genomic = anno.coordinate_gene_to_genomic(var_start, gene_id)
+        end_genomic = anno.coordinate_gene_to_genomic(var_end - 1, gene_id)
         if tx_model.transcript.strand == -1:
             start_genomic, end_genomic = end_genomic, start_genomic
         end_genomic += 1
+
         if start_genomic < tx_start:
             if end_genomic < tx_start:
                 raise ValueError(
                     'Variant not associated with the given transcript'
                 )
             start = 0
-            end = anno.coordinate_gene_to_transcript(
-                self.location.end + 1, self.location.seqname, tx_id
-            )
+            end = anno.coordinate_gene_to_transcript(var_end, gene_id, tx_id) + 1
             ref = str(tx_seq.seq[0:end])
             alt = str(self.alt[1:] + ref[-1])
         else:
-            start = anno.coordinate_gene_to_transcript(
-                self.location.start, self.location.seqname, tx_id
-            )
-            end = anno.coordinate_gene_to_transcript(
-                self.location.end - 1, self.location.seqname, tx_id
-            ) + 1
+            start = anno.coordinate_gene_to_transcript(var_start, gene_id, tx_id)
+            end = anno.coordinate_gene_to_transcript(var_end - 1, gene_id, tx_id) + 1
+            if self.is_fusion():
+                start += 1
+                end = start + 1
+                if start == len(tx_seq):
+                    raise err.FusionBreakpointIsEndOfTranscript(self.id)
             ref = self.ref
             alt = self.alt
             # If the distance from start to end on the transcript does not

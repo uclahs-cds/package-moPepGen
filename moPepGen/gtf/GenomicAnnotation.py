@@ -505,3 +505,6 @@ class GenomicAnnotation():
             if tx_model.is_exonic(pos):
                 transcripts.append(tx_model)
         return transcripts
+
+    def get_protein_coding_transcripts(self) -> List[TranscriptAnnotationModel]:
+        """ """

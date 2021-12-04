@@ -171,8 +171,8 @@ class FusionCatcherRecord():
             accepter_tx_id = accepter_tx.transcript.transcript_id
             location = FeatureLocation(
                 seqname=donor_gene_id,
-                start=left_breakpoint_genetic,
-                end=left_breakpoint_genetic + 1
+                start=left_breakpoint_genetic - 1,
+                end=left_breakpoint_genetic
             )
             attrs = {
                 'TRANSCRIPT_ID': donor_tx_id,

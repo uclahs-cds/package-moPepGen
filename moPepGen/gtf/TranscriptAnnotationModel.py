@@ -291,3 +291,16 @@ class TranscriptAnnotationModel():
             if pos in exon:
                 return True
         return False
+
+    def get_next_exon(self, pos:int) -> GTFSeqFeature:
+        """ Get the next exon downstream to the position. The position given
+        must be genomic position """
+        if self.transcript.strand == 1:
+            for exon in self.exon:
+                if exon.location.start > pos:
+                    return exon
+        else:
+            for exon in reversed(self.transcript.exon):
+                if exon.location.start <= pos:
+                    return exon
+        return None

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING
 from moPepGen import ERROR_INDEX_IN_INTRON
 from . import VariantRecord, io
+from moPepGen import err
 
 
 # To avoid circular import
@@ -92,6 +93,8 @@ class VariantRecordPool():
             try:
                 tx_record = record.to_transcript_variant(anno, genome, tx_id)
                 self.add_transcriptional_variant(tx_record, tx_id)
+            except err.FusionBreakpointIsEndOfTranscript as e:
+                continue
             except ValueError as e:
                 if e.args[0] == ERROR_INDEX_IN_INTRON:
                     self.add_intronic_variant(record, tx_id)
@@ -134,11 +137,11 @@ class VariantRecordPool():
                     if segment.location.is_superset(x.location):
                         return True
                 return False
-        elif start and end:
+        elif start is not None and end is not None:
             _filter = lambda x: x.location.start > start and x.location.end < end
-        elif start:
+        elif start is not None:
             _filter = lambda x: x.location.start > start
-        elif end:
+        elif end is not None:
             _filter = lambda x: x.location.end < end
         else:
             raise ValueError('Arguments provided do not match requirement.')
