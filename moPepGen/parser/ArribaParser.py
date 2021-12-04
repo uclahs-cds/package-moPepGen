@@ -243,8 +243,8 @@ class ArribaRecord():
 
             location = FeatureLocation(
                 seqname=self.gene_id1,
-                start=donor_position - 1,
-                end=donor_position
+                start=donor_position,
+                end=donor_position + 1
             )
             attrs = {
                 'TRANSCRIPT_ID': donor_tx_id,

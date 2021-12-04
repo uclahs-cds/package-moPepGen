@@ -20,7 +20,7 @@ class TestParseFusionCatcher(TestCaseIntegration):
                 gene1_model = anno.genes[gene1_id]
                 chrom1 = gene1_model.chrom
                 gene1_seq =  gene1_model.get_gene_sequence(genome[chrom1])
-                _end1 = variant.location.start + 1
+                _end1 = variant.location.start
                 _start1 = _end1 - len(fusion_seq[0])
                 left_seq = gene1_seq.seq[_start1:_end1]
                 self.assertEqual(str(left_seq), fusion_seq[0])

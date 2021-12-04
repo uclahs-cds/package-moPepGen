@@ -257,8 +257,12 @@ class VariantRecord():
         gene_id = self.location.seqname
         if gene_id not in anno.genes:
             raise ValueError(ERROR_VARIANT_NOT_IN_GENE_COORDINATE)
-        start = self.location.start
-        end = self.location.end
+        if self.is_fusion():
+            start = self.location.start - 1
+            end = self.location.end - 1
+        else:
+            start = self.location.start
+            end = self.location.end
 
         try:
             anno.coordinate_gene_to_transcript(start, gene_id, transcript_id)
@@ -289,20 +293,28 @@ class VariantRecord():
         tx_model = anno.transcripts[tx_id]
         chrom = tx_model.transcript.chrom
         tx_seq = tx_model.get_transcript_sequence(genome[chrom])
-        tx_start = tx_model.transcript.location.start
         gene_id = self.location.seqname
+        strand = tx_model.transcript.strand
+
+        tx_start = tx_model.transcript.location.start if strand == 1 else \
+            tx_model.transcript.location.end - 1
 
         var_start = self.location.start
         var_end = self.location.end
 
         start_genomic = anno.coordinate_gene_to_genomic(var_start, gene_id)
         end_genomic = anno.coordinate_gene_to_genomic(var_end - 1, gene_id)
-        if tx_model.transcript.strand == -1:
-            start_genomic, end_genomic = end_genomic, start_genomic
         end_genomic += 1
 
-        if start_genomic < tx_start:
-            if end_genomic < tx_start:
+        variant_start_before_tx_start = \
+            (strand == 1 and start_genomic < tx_start) or \
+            (strand == -1 and tx_start < start_genomic)
+        variant_end_before_tx_start = \
+            (strand == 1 and end_genomic <= tx_start) or \
+            (strand == -1 and tx_start <= end_genomic)
+
+        if variant_start_before_tx_start:
+            if variant_end_before_tx_start:
                 raise ValueError(
                     'Variant not associated with the given transcript'
                 )
@@ -311,13 +323,14 @@ class VariantRecord():
             ref = str(tx_seq.seq[0:end])
             alt = str(self.alt[1:] + ref[-1])
         else:
-            start = anno.coordinate_gene_to_transcript(var_start, gene_id, tx_id)
-            end = anno.coordinate_gene_to_transcript(var_end - 1, gene_id, tx_id) + 1
             if self.is_fusion():
-                start += 1
+                start = anno.coordinate_gene_to_transcript(var_start - 1, gene_id, tx_id) + 1
                 end = start + 1
                 if start == len(tx_seq):
                     raise err.FusionBreakpointIsEndOfTranscript(self.id)
+            else:
+                start = anno.coordinate_gene_to_transcript(var_start, gene_id, tx_id)
+                end = anno.coordinate_gene_to_transcript(var_end - 1, gene_id, tx_id) + 1
             ref = self.ref
             alt = self.alt
             # If the distance from start to end on the transcript does not

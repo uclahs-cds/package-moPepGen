@@ -71,7 +71,7 @@ ANNOTATION_DATA = {
     }]
 }
 
-class TestFusionCatcherParser(unittest.TestCase):
+class TestArribaParser(unittest.TestCase):
     """ Test cases for FusionCatcherParser """
     def test_convert_to_variant(self):
         """ Test convert to variant """
@@ -197,6 +197,6 @@ class TestFusionCatcherParser(unittest.TestCase):
         )
         variants = fusion_record.convert_to_variant_records(anno, genome)
         self.assertEqual(len(variants), 1)
-        self.assertEqual(variants[0].location.start, 22)
+        self.assertEqual(variants[0].location.start, 23)
         tx_variant = variants[0].to_transcript_variant(anno, genome)
         self.assertEqual(tx_variant.location.start, 13)

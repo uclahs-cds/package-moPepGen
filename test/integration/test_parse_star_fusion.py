@@ -33,7 +33,7 @@ class TestParseStarFusion(TestCaseIntegration):
             gene_model = anno.genes[gene_id]
             gene_chr = gene_model.chrom
             gene_seq = gene_model.get_gene_sequence(genome[gene_chr])
-            x = record.location.start + 1
+            x = record.location.start
             self.assertEqual(str(gene_seq.seq[x:x+2]), 'GT')
 
             gene_id = record.attrs['ACCEPTER_TRANSCRIPT_ID']

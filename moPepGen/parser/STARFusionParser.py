@@ -148,8 +148,8 @@ class STARFusionRecord():
             accepter_tx_id = accepter_tx.transcript.transcript_id
             location = FeatureLocation(
                 seqname=self.left_gene,
-                start=donor_position - 1,
-                end=donor_position
+                start=donor_position,
+                end=donor_position + 1
             )
             attrs = {
                 'TRANSCRIPT_ID': donor_tx_id,
