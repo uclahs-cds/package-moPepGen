@@ -1,9 +1,8 @@
 """ Variant Record Pool """
 from __future__ import annotations
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING
-from moPepGen import ERROR_INDEX_IN_INTRON
+from moPepGen import err, ERROR_INDEX_IN_INTRON
 from . import VariantRecord, io
-from moPepGen import err
 
 
 # To avoid circular import

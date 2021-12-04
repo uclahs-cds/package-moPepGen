@@ -99,7 +99,7 @@ class FusionBreakpointIsEndOfTranscript(Exception):
         """ constructor """
         msg = f"The left breakpoint of fusion record {fusion_id} is the end of" +\
             " the last exon."
-        super().__init__()
+        super().__init__(msg)
 
 def warning(msg:str) -> None:
     """ print a warning message """
