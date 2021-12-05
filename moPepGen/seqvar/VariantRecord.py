@@ -6,7 +6,6 @@ from moPepGen import ERROR_NO_TX_AVAILABLE, \
     ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
         ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import err
 
 
 # To avoid circular import
@@ -326,8 +325,8 @@ class VariantRecord():
             if self.is_fusion():
                 start = anno.coordinate_gene_to_transcript(var_start - 1, gene_id, tx_id) + 1
                 end = start + 1
-                if start == len(tx_seq):
-                    raise err.FusionBreakpointIsEndOfTranscript(self.id)
+                # if start == len(tx_seq):
+                #     raise err.FusionBreakpointIsEndOfTranscript(self.id)
             else:
                 start = anno.coordinate_gene_to_transcript(var_start, gene_id, tx_id)
                 end = anno.coordinate_gene_to_transcript(var_end - 1, gene_id, tx_id) + 1
