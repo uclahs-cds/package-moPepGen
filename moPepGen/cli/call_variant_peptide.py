@@ -121,6 +121,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 variant_pool, rule, exception, miscleavage)
         except:
             logger(f"Exception raised from {circ_rna.id}")
+            raise
 
         for peptide in peptides:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,

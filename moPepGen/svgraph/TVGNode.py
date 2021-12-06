@@ -144,7 +144,7 @@ class TVGNode():
         """ check if it is reference (no variants) """
         if self.global_variant is None:
             return not self.variants
-        return not any(v.variant is not self.circ for v in self.variants)
+        return not any(v.variant is not self.global_variant for v in self.variants)
 
     def has_in_bridge(self) -> bool:
         """ check if it has any in node from different reading frame """

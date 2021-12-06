@@ -2,7 +2,7 @@
 """
 from __future__ import annotations
 import copy
-from typing import Dict, Union, List, TYPE_CHECKING, Set
+from typing import Dict, Union, List, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import svgraph, seqvar
 from moPepGen.svgraph.TVGNode import TVGNode
