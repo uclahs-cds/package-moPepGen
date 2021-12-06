@@ -6,6 +6,7 @@ import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import dna, seqvar
+from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
@@ -165,6 +166,11 @@ class ThreeFrameTVG():
         new_root = TVGNode(None)
         self.root = new_root
         self.add_edge(self.root, original_root, 'reference')
+
+    def add_stop_node(self, node:TVGNode):
+        """ Add stop node after the given node """
+        stop = TVGNode(DNASeqRecordWithCoordinates('', []))
+        self.add_edge(node, stop, 'reference')
 
     def count_nodes(self):
         """ Count nodes """
@@ -397,6 +403,7 @@ class ThreeFrameTVG():
 
             node = cursors[i]
             node_start = node.seq.locations[0].ref.start
+            node_end = node.seq.locations[-1].ref.end
 
             if variant_start < node_start:
                 raise ValueError('Variant out of range')
@@ -404,6 +411,11 @@ class ThreeFrameTVG():
             if variant_start == node_start:
                 prev = node.get_reference_prev()
                 self.add_edge(prev, var_node, 'variant_start')
+                continue
+
+            if variant_start == node_end == len(self.seq) and variant.is_fusion():
+                self.add_stop_node(node)
+                self.add_edge(node, var_node, 'variant_start')
                 continue
 
             index = node.seq.get_query_index(variant_start)
@@ -628,6 +640,9 @@ class ThreeFrameTVG():
 
             any_cursor_expired = False
             for i,cursor in enumerate(cursors):
+                if cursor.seq.locations[-1].ref.end == variant.location.start and \
+                        variant.is_fusion() and variant.location.start == len(self.seq):
+                    continue
                 if cursor.seq.locations[-1].ref.end <= variant.location.start:
                     cursors[i] = cursors[i].get_reference_next()
                     any_cursor_expired = True

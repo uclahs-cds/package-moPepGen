@@ -2,7 +2,7 @@
 import unittest
 from test.unit import create_variant, create_variants, \
     create_genomic_annotation, create_dna_record_dict, create_three_frame_tvg
-from moPepGen import seqvar
+from moPepGen import seqvar, svgraph
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
 
@@ -709,3 +709,39 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         x = [x for x in pgraph.root.out_nodes if x.seq.seq == 'MK'][0]
         node = list(list(x.out_nodes)[0].out_nodes)[0]
         self.assertEqual(str(node.seq.seq), 'K')
+
+    def test_fusion_breakpoint_end_of_transcript(self):
+        """ Test case for fusion that the donor breakpoint is the end of the
+        transcript """
+        # pylint: disable=C0415
+        from test.unit.test_arriba_parser import \
+            ANNOTATION_DATA as annotation_data, \
+            GENOME_DATA as genomic_data
+
+        genome = create_dna_record_dict(genomic_data)
+        anno = create_genomic_annotation(annotation_data)
+
+        fusion_attrs = {
+            'TRANSCRIPT_ID': 'ENST0001.1',
+            'GENE_SYMBOL': 'SYMBO1',
+            'GENOMIC_POSITION': 'chr1-36:36',
+            'ACCEPTER_GENE_ID': 'ENSG0002',
+            'ACCEPTER_TRANSCRIPT_ID': 'ENST0002.1',
+            'ACCEPTER_SYMBOL': 'SYMB2',
+            'ACCEPTER_POSITION': 17,
+            'ACCEPTER_GENOMIC_POSITION': 'chr1-78:78'
+        }
+        fusion = create_variant(21, 22, 'A', '<FUS>', 'Fusion', 'FUSION-XXX', fusion_attrs)
+        variant_pool = seqvar.VariantRecordPool()
+        tx_model = anno.transcripts['ENST0001.1']
+        tx_seq = tx_model.get_transcript_sequence(genome['chr1'])
+        tgraph = svgraph.ThreeFrameTVG(tx_seq, 'ENST0001.1')
+        tgraph.init_three_frames()
+        tgraph.create_variant_graph([fusion], variant_pool, genome, anno)
+        node = list(tgraph.reading_frames[0].out_edges)[0].out_node
+        self.assertTrue(any(x.out_node.seq.seq == '' for x in node.out_edges))
+        tgraph.fit_into_codons()
+        pgraph = tgraph.translate()
+        peptides = pgraph.call_variant_peptides()
+        expected = {'MGPSFCEF', 'GPSFCEF', 'SFCEF'}
+        self.assertEqual({str(x.seq) for x in peptides}, expected)
