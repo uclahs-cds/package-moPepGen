@@ -30,7 +30,7 @@ class TVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
             orf:List[int]=None, reading_frame_index:int=None,
-            subgraph_id:str=None):
+            subgraph_id:str=None, global_variant:seqvar.VariantRecord=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -47,13 +47,13 @@ class TVGNode():
         self.orf = orf or [None, None]
         self.reading_frame_index = reading_frame_index
         self.subgraph_id = subgraph_id
+        self.global_variant = global_variant
 
-    @classmethod
-    def create_node(cls, seq:DNASeqRecordWithCoordinates,
+    def create_node(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
             orf:List[int]=None, reading_frame_index:int=None,
-            subgraph_id:str=None):
+            subgraph_id:str=None, global_variant:seqvar.VariantRecord=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -61,14 +61,15 @@ class TVGNode():
             variant (VariantRecord | None): The variant record or None for
                 reference.
         """
-        return cls(
+        return self.__class__(
             seq=seq,
             variants=variants,
             frameshifts=frameshifts,
             branch=branch,
             orf=orf,
             reading_frame_index=reading_frame_index,
-            subgraph_id=subgraph_id
+            subgraph_id=subgraph_id,
+            global_variant=global_variant or self.global_variant
         )
 
     def __hash__(self):
@@ -141,7 +142,9 @@ class TVGNode():
 
     def is_reference(self) -> bool:
         """ check if it is reference (no variants) """
-        return not self.variants
+        if self.global_variant is None:
+            return not self.variants
+        return not any(v.variant is not self.circ for v in self.variants)
 
     def has_in_bridge(self) -> bool:
         """ check if it has any in node from different reading frame """
@@ -235,7 +238,8 @@ class TVGNode():
             branch=self.branch,
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            global_variant=self.global_variant
         )
 
     def deepcopy(self) -> TVGNode:
@@ -415,7 +419,8 @@ class TVGNode():
             branch=self.branch,
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            global_variant=self.global_variant
         )
 
         self.seq = self.seq[i:]
@@ -479,7 +484,16 @@ class TVGNode():
 
         variants = copy.copy(other.variants)
         for variant in self.variants:
-            variants.append(variant.shift(len(other.seq.seq)))
+            should_combine_variants = variants and \
+                variants[-1].location.end == variant.location.start and \
+                variants[-1] == variant.variant
+            if should_combine_variants:
+                variant.location = FeatureLocation(
+                    start=other.variants[-1].location.start,
+                    end=variant.location.end
+                )
+            else:
+                variants.append(variant.shift(len(other.seq.seq)))
         self.variants = variants
 
     def append_right(self, other:TVGNode) -> None:
@@ -487,7 +501,16 @@ class TVGNode():
         new_seq = self.seq + other.seq
 
         for variant in other.variants:
-            self.variants.append(variant.shift(len(self.seq.seq)))
+            should_combine_variants = self.variants and \
+                self.variants[-1].location.end == variant.location.start and \
+                self.variants[-1].variant == variant.variant
+            if should_combine_variants:
+                self.variants[-1].location = FeatureLocation(
+                    start=self.variants[-1].location.start,
+                    end=variant.location.end
+                )
+            else:
+                self.variants.append(variant.shift(len(self.seq.seq)))
 
         self.seq = new_seq
 

@@ -32,7 +32,7 @@ class ThreeFrameTVG():
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
-            mrna_end_nf:bool=False):
+            mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -54,6 +54,7 @@ class ThreeFrameTVG():
         else:
             self.has_known_orf = has_known_orf
         self.mrna_end_nf = mrna_end_nf
+        self.global_variant = global_variant
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -63,7 +64,7 @@ class ThreeFrameTVG():
         )]
 
     def init_three_frames(self, truncate_head:bool=True):
-        """ Initiate the three reading frames as empty nodes.
+        """ Initiate the three reading-frame graph.
 
         Args:
             truncated_head (bool): If true, the first x nucleotides are
@@ -437,7 +438,7 @@ class ThreeFrameTVG():
         ) -> List[TVGNode]:
         """ Apply insertion """
         cursors = copy.copy(cursors)
-        branch = ThreeFrameTVG(seq, self.id)
+        branch = ThreeFrameTVG(seq, self.id, global_variant=var.variant)
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             node = list(root.out_edges)[0].out_node

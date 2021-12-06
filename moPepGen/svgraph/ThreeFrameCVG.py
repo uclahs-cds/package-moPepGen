@@ -5,7 +5,7 @@ import copy
 from typing import Dict, Union, List, TYPE_CHECKING, Set
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import svgraph, seqvar
-from moPepGen.svgraph.CVGNode import CVGNode
+from moPepGen.svgraph.TVGNode import TVGNode
 
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         attrs (dict): additional attributes
     """
     def __init__(self, seq:Union[DNASeqRecordWithCoordinates,None],
-            _id:str, root:CVGNode=None, reading_frames:List[CVGNode]=None,
+            _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=False,
             circ_record:circ.CircRNAModel=None, attrs:dict=None):
         """ Construct a CircularVariantGraph
@@ -48,31 +48,31 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             start=seq.locations[0].ref.start,
             end=seq.locations[0].ref.end
         )
-        self.circ_variant = seqvar.VariantRecord(
+        circ_variant = seqvar.VariantRecord(
             location=location,
             ref=seq.seq[0],
             alt='<circRNA>',
             _type='circRNA',
             _id=_id
         )
-        super().__init__(seq, _id, root, reading_frames, cds_start_nf, has_known_orf)
+        super().__init__(seq, _id, root, reading_frames, cds_start_nf,
+            has_known_orf, global_variant=circ_variant)
 
-    def create_node(self, seq:DNASeqRecordWithCoordinates,
-            variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None,
-            branch:bool=False, orf:List[int]=None,
-            reading_frame_index:int=None, subgraph_id:str=None) -> CVGNode:
-        """ Helper function to create a CVGNode """
-        return CVGNode(
-            circ=self.circ_variant,
-            seq=seq,
-            variants=variants,
-            frameshifts=frameshifts,
-            branch=branch,
-            orf=orf,
-            reading_frame_index=reading_frame_index,
-            subgraph_id=subgraph_id or self.id
-        )
+    # def create_node(self, seq:DNASeqRecordWithCoordinates,
+    #         variants:List[seqvar.VariantRecordWithCoordinate]=None,
+    #         frameshifts:Set[seqvar.VariantRecord]=None,
+    #         branch:bool=False, orf:List[int]=None,
+    #         reading_frame_index:int=None, subgraph_id:str=None) -> TVGNode:
+    #     """ Helper function to create a TVGNode """
+    #     return TVGNode(
+    #         seq=seq,
+    #         variants=variants,
+    #         frameshifts=frameshifts,
+    #         branch=branch,
+    #         orf=orf,
+    #         reading_frame_index=reading_frame_index,
+    #         subgraph_id=subgraph_id or self.id
+    #     )
 
     def get_circ_variant_with_coordinate(self) -> seqvar.VariantRecordWithCoordinate:
         """ Add a variant record to the frameshifting of the root node. This
@@ -82,7 +82,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             start=0,
             end=len(self.seq)
         )
-        return seqvar.VariantRecordWithCoordinate(self.circ_variant, location)
+        return seqvar.VariantRecordWithCoordinate(self.global_variant, location)
 
     def init_three_frames(self, truncate_head:bool=False):
         """ Initiate the three reading-frame graph. """
@@ -114,7 +114,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
 
     def extend_loop(self):
         """ Extend each reading frame for one more loop. """
-        frame_map:Dict[CVGNode, CVGNode] = {}
+        frame_map:Dict[TVGNode, TVGNode] = {}
         for root in self.reading_frames:
             if len(root.in_edges) > 2:
                 raise ValueError('CVG should not have any stop altering mutation')
