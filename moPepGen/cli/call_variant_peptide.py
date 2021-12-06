@@ -13,6 +13,7 @@ import argparse
 from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
+from moPepGen.circ.CircRNA import CircRNAModel
 from moPepGen.seqvar import GVFMetadata
 from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
@@ -75,7 +76,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     genome, anno, _, canonical_peptides = load_references(args=args)
 
     variant_pool = seqvar.VariantRecordPool()
-    circ_rna_pool = []
+    circ_rna_pool:List[CircRNAModel] = []
 
     for file in variant_files:
         with open(file, 'rt') as handle:
@@ -115,8 +116,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 logger(f'{i} transcripts processed.')
 
     for circ_rna in circ_rna_pool:
-        peptides = call_peptide_circ_rna(circ_rna, anno, genome,
-            variant_pool, rule, exception, miscleavage)
+        try:
+            peptides = call_peptide_circ_rna(circ_rna, anno, genome,
+                variant_pool, rule, exception, miscleavage)
+        except:
+            logger(f"Exception raised from {circ_rna.id}")
 
         for peptide in peptides:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
