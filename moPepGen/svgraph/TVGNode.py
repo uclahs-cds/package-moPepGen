@@ -48,6 +48,29 @@ class TVGNode():
         self.reading_frame_index = reading_frame_index
         self.subgraph_id = subgraph_id
 
+    @classmethod
+    def create_node(cls, seq:DNASeqRecordWithCoordinates,
+            variants:List[seqvar.VariantRecordWithCoordinate]=None,
+            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
+            orf:List[int]=None, reading_frame_index:int=None,
+            subgraph_id:str=None):
+        """ Constructor for TVGNode.
+
+        Args:
+            seq (DNASeqRecord): The sequence.
+            variant (VariantRecord | None): The variant record or None for
+                reference.
+        """
+        return cls(
+            seq=seq,
+            variants=variants,
+            frameshifts=frameshifts,
+            branch=branch,
+            orf=orf,
+            reading_frame_index=reading_frame_index,
+            subgraph_id=subgraph_id
+        )
+
     def __hash__(self):
         """ hash """
         if self.seq:
@@ -80,7 +103,7 @@ class TVGNode():
                 variants.append(new_variant)
             elif variant.location.start >= stop and variant.varint in frameshifts:
                 frameshifts.remove(variant.variant)
-        return TVGNode(
+        return self.create_node(
             seq=seq,
             variants=variants,
             frameshifts=frameshifts,
@@ -206,7 +229,7 @@ class TVGNode():
     def copy(self) -> TVGNode:
         """ Create a copy of the node """
         return TVGNode(
-            seq=self.seq,
+            seq=copy.copy(self.seq),
             variants=copy.copy(self.variants),
             frameshifts=copy.copy(self.frameshifts),
             branch=self.branch,
@@ -221,15 +244,7 @@ class TVGNode():
         Args:
             propagate_frameshifts (bool):
         """
-        new_node = self.__class__(
-            seq=self.seq,
-            variants=copy.copy(self.variants),
-            frameshifts=copy.copy(self.frameshifts),
-            branch=self.branch,
-            orf=self.orf,
-            reading_frame_index=self.reading_frame_index,
-            subgraph_id=self.subgraph_id
-        )
+        new_node = self.copy()
 
         queue:Deque[Tuple[TVGNode, TVGNode]] = deque([(self, new_node)])
         visited:Dict[TVGNode, TVGNode] = {}
@@ -243,15 +258,7 @@ class TVGNode():
                     new_out_node = visited[source_out_node]
                     visited_this = True
                 else:
-                    new_out_node = source_out_node.__class__(
-                        seq=source_out_node.seq,
-                        variants=copy.copy(source_out_node.variants),
-                        frameshifts=copy.copy(source_out_node.frameshifts),
-                        branch=source_out_node.branch,
-                        orf=source_out_node.orf,
-                        reading_frame_index=source_out_node.reading_frame_index,
-                        subgraph_id=source_out_node.subgraph_id
-                    )
+                    new_out_node = source_out_node.copy()
                     visited[source_out_node] = new_out_node
                 new_edge = svgraph.TVGEdge(target, new_out_node,
                     _type=edge.type)
@@ -309,12 +316,12 @@ class TVGNode():
                             queue.append(edge.out_node)
                 continue
 
-            if farthest is None and not cur.variants:
+            if farthest is None and cur.is_reference():
                 farthest = cur
                 queue.append(cur)
                 continue
 
-            if cur.variants:
+            if not cur.is_reference():
                 next_ref = cur.get_reference_next()
                 queue.append(next_ref)
                 continue
@@ -401,7 +408,7 @@ class TVGNode():
                         variant.variant.is_frameshifting():
                     left_frameshifts.remove(variant.variant)
 
-        left_node = TVGNode(
+        left_node = self.create_node(
             seq=left_seq,
             variants=left_variants,
             frameshifts=left_frameshifts,
@@ -451,7 +458,7 @@ class TVGNode():
                         variant.variant.is_frameshifting():
                     self.frameshifts.discard(variant.variant)
 
-        right_node = TVGNode(
+        right_node = self.create_node(
             seq=right_seq,
             variants=right_variants,
             frameshifts=right_frameshifts,
@@ -470,10 +477,6 @@ class TVGNode():
         """ Combine the other node the the left. """
         self.seq = other.seq + self.seq
 
-        frameshifts = copy.copy(other.frameshifts)
-        frameshifts.update(self.variants)
-        self.frameshifts = frameshifts
-
         variants = copy.copy(other.variants)
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
@@ -485,8 +488,6 @@ class TVGNode():
 
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
-            if variant.variant.is_frameshifting():
-                self.frameshifts.add(variant)
 
         self.seq = new_seq
 
