@@ -1,4 +1,4 @@
-""" Module to generate fast data """
+""" Module to generate fake data """
 import random
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.dna.DNASeqDict import DNASeqDict
