@@ -21,8 +21,8 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
     chrom = gene_model.chrom
     gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-    var_size = random.randint(1, max_size)
-    var_type = 'SNV' if var_size == 1 else 'INDEL'
+    frames_shifted = random.randint(-max_size + 1, max_size - 1)
+    var_type = 'SNV' if frames_shifted == 0 else 'INDEL'
     tx_start = tx_model.transcript.location.start
     tx_end = tx_model.transcript.location.end
     if tx_model.transcript.strand == -1:
@@ -30,33 +30,46 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
     tx_start = anno.coordinate_genomic_to_gene(tx_start, gene_id)
     tx_end = anno.coordinate_genomic_to_gene(tx_end - 1, gene_id) + 1
 
-    start = random.randint(tx_start, tx_end - var_size)
-    end = start + var_size
-    start_genomic = anno.coordinate_gene_to_genomic(start, gene_id)
-    end_genomic = anno.coordinate_gene_to_genomic(end - 1, gene_id) + 1
-
-    if exonic_only:
-        while not tx_model.is_exonic(start_genomic) or not tx_model.is_exonic(end_genomic):
-            start = random.randint(tx_start, tx_end - var_size)
-            end = start + var_size
-            start_genomic = anno.coordinate_gene_to_genomic(start, gene_id)
-            end_genomic = anno.coordinate_gene_to_genomic(end - 1, gene_id) + 1
+    while True:
+        if frames_shifted > 0:
+            start = random.randint(tx_start, tx_end - 1)
+            var_end = start + frames_shifted + 1
+            ref_end = start + 1
+        else:
+            start = random.randint(tx_start, tx_end - frames_shifted - 1)
+            var_end = start + frames_shifted + 1
+            ref_end = start + 1
+        start_genomic = anno.coordinate_gene_to_genomic(start, gene_id)
+        var_end_genomic = anno.coordinate_gene_to_genomic(var_end - 1, gene_id) + 1
+        ref_end_genomic = anno.coordinate_gene_to_genomic(ref_end - 1, gene_id) + 1
+        if not exonic_only:
+            break
+        if all(tx_model.is_exonic(x) for x in [start_genomic, var_end_genomic,
+                ref_end_genomic]):
+            break
 
     location = FeatureLocation(
         start=start,
-        end=start + 1,
+        end=ref_end,
         seqname=gene_id
     )
 
-    ref_seq = str(gene_seq.seq[start])
-    alt_seq = create_random_dna_sequence(var_size)
-    while alt_seq == ref_seq:
-        alt_seq = create_random_dna_sequence(var_size)
+    ref_seq = str(gene_seq.seq[start:ref_end])
+    if frames_shifted > 0:
+        alt_seq = create_random_dna_sequence(frames_shifted)
+        alt_seq = ref_seq + alt_seq
+    elif frames_shifted == 0:
+        alt_seq = create_random_dna_sequence(frames_shifted)
+    else:
+        alt_seq = ref_seq[0]
 
-    var_id = f"{gene_id}-{start}:{end}"
+    while alt_seq == ref_seq:
+        alt_seq = create_random_dna_sequence(frames_shifted)
+
+    var_id = f"{gene_id}-{start}-{ref_seq}-{alt_seq}"
 
     genomic_start = anno.coordinate_gene_to_genomic(start, gene_id)
-    genomic_end = anno.coordinate_gene_to_genomic(end - 1, gene_id) + 1
+    genomic_end = anno.coordinate_gene_to_genomic(ref_end - 1, gene_id) + 1
     genomic_position = f"{chrom}-{genomic_start}:{genomic_end}"
 
     attrs = {

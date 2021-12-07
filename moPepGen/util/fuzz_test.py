@@ -91,8 +91,8 @@ def plain_logger(msg:str):
 class FuzzRecord():
     """ Record of the fuzz test result for a single test case """
     def __init__(self, _id:str, status:str, submitted:datetime,
-            completed:datetime, work_dir:Path=None, num_var:int=None,
-            num_exonic:int=None, call_variant_start:datetime=None,
+            completed:datetime, work_dir:Path=None, n_var:int=None,
+            n_exonic:int=None, call_variant_start:datetime=None,
             call_variant_end:datetime=None, brute_force_start:datetime=None,
             brute_force_end:datetime=None):
         """ constructor """
@@ -101,8 +101,8 @@ class FuzzRecord():
         self.submitted = submitted
         self.completed = completed
         self.work_dir = work_dir
-        self.num_var = num_var
-        self.num_exonic = num_exonic
+        self.n_var = n_var
+        self.n_exonic = n_exonic
         self.call_variant_start = call_variant_start
         self.call_variant_end = call_variant_end
         self.brute_force_start = brute_force_start
@@ -197,7 +197,7 @@ class FuzzRecord():
         brute_force_time = str(self.brute_force_end - self.brute_force_start) \
             if self.brute_force_start and self.brute_force_end else '-'
         return '\t'.join([
-            self.id, self.status, str(self.num_var), str(self.num_exonic),
+            self.id, self.status, str(self.n_var), str(self.n_exonic),
             submitted, completed,
             call_variant_start, call_variant_end, call_variant_time,
             brute_force_start, brute_force_end, brute_force_time
@@ -265,12 +265,12 @@ class FuzzTestCase():
             record = fake_variant_record(anno, genome, self.config.tx_id,
                 self.config.max_size, self.config.exonic_only)
             records.append(record)
-        self.record.num_var = n_variants
-        self.record.num_exonic = 0
+        self.record.n_var = n_variants
+        self.record.n_exonic = 0
         for variant in records:
             try:
                 variant.to_transcript_variant(anno, genome, self.config.tx_id)
-                self.record.num_exonic += 1
+                self.record.n_exonic += 1
             except ValueError as e:
                 if e.args[0] == ERROR_INDEX_IN_INTRON:
                     continue
