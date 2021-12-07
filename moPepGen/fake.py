@@ -31,45 +31,43 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
     tx_end = anno.coordinate_genomic_to_gene(tx_end - 1, gene_id) + 1
 
     while True:
-        if frames_shifted > 0:
+        if frames_shifted >= 0:
             start = random.randint(tx_start, tx_end - 1)
-            var_end = start + frames_shifted + 1
-            ref_end = start + 1
+            end = start + 1
         else:
             start = random.randint(tx_start, tx_end - frames_shifted - 1)
-            var_end = start + frames_shifted + 1
-            ref_end = start + 1
+            end = start - frames_shifted + 1
         start_genomic = anno.coordinate_gene_to_genomic(start, gene_id)
-        var_end_genomic = anno.coordinate_gene_to_genomic(var_end - 1, gene_id) + 1
-        ref_end_genomic = anno.coordinate_gene_to_genomic(ref_end - 1, gene_id) + 1
+        end_genomic = anno.coordinate_gene_to_genomic(end - 1, gene_id) + 1
         if not exonic_only:
             break
-        if all(tx_model.is_exonic(x) for x in [start_genomic, var_end_genomic,
-                ref_end_genomic]):
+        if all(tx_model.is_exonic(x) for x in [start_genomic, end_genomic]):
             break
 
     location = FeatureLocation(
         start=start,
-        end=ref_end,
+        end=end,
         seqname=gene_id
     )
 
-    ref_seq = str(gene_seq.seq[start:ref_end])
-    if frames_shifted > 0:
-        alt_seq = create_random_dna_sequence(frames_shifted)
-        alt_seq = ref_seq + alt_seq
-    elif frames_shifted == 0:
-        alt_seq = create_random_dna_sequence(frames_shifted)
-    else:
-        alt_seq = ref_seq[0]
+    ref_seq = str(gene_seq.seq[start:end])
 
-    while alt_seq == ref_seq:
-        alt_seq = create_random_dna_sequence(frames_shifted)
+    while True:
+        if frames_shifted > 0:
+            alt_seq = create_random_dna_sequence(frames_shifted)
+            alt_seq = ref_seq + alt_seq
+        elif frames_shifted == 0:
+            alt_seq = create_random_dna_sequence(1)
+        else:
+            alt_seq = ref_seq[0]
+
+        if alt_seq != ref_seq:
+            break
 
     var_id = f"{gene_id}-{start}-{ref_seq}-{alt_seq}"
 
     genomic_start = anno.coordinate_gene_to_genomic(start, gene_id)
-    genomic_end = anno.coordinate_gene_to_genomic(ref_end - 1, gene_id) + 1
+    genomic_end = anno.coordinate_gene_to_genomic(end - 1, gene_id) + 1
     genomic_position = f"{chrom}-{genomic_start}:{genomic_end}"
 
     attrs = {
