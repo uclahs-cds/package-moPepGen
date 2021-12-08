@@ -55,14 +55,14 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     )
     p.add_argument(
         '--tx-id-col',
-        type=int,
+        type=str,
         help="The index for transcript ID in the RNAseq quantification results."
         " Index is 1-based.",
         metavar='<number>'
     )
     p.add_argument(
         '--quant-col',
-        type=int,
+        type=str,
         help='The column index number for quantification. Index is 1-based.',
         metavar='<number>'
     )
@@ -105,11 +105,29 @@ def filter_fasta(args:argparse.Namespace) -> None:
         logger('Peptide FASTA file loaded.')
 
     with open(args.exprs_table, 'rt') as handle:
+        i = 0
+        while i < args.skip_lines:
+            handle.readline()
+            i += 1
+        tx_id_col:str = args.tx_id_col
+        quant_col:str = args.quant_col
+        if any(not x.isdecimal() for x in [tx_id_col, quant_col]):
+            header = handle.readline().rstrip().split(args.delimiter)
+
+        if tx_id_col.isdecimal():
+            tx_id_col = int(tx_id_col) - 1
+        else:
+            tx_id_col = header.index(tx_id_col)
+
+        if quant_col.isdecimal():
+            quant_col = int(quant_col) - 1
+        else:
+            quant_col = header.index(quant_col)
+
         exprs = load_expression_table(
             handle=handle,
-            tx_col=args.tx_id_col - 1,
-            quant_col=args.quant_col - 1,
-            skip=args.skip_lines,
+            tx_col=tx_id_col,
+            quant_col=quant_col,
             delim=args.delimiter
         )
 
@@ -124,16 +142,10 @@ def filter_fasta(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Filtered FASTA file saved.')
 
-def load_expression_table(handle:IO, tx_col:int,quant_col:int, skip:int=0,
+def load_expression_table(handle:IO, tx_col:int,quant_col:int,
         delim:str='\t') -> Dict[str,float]:
     """ Load the gene expression quantification table """
-    i = 0
-    while i < skip:
-        handle.readline()
-        i += 1
-
     data = {}
-
     line:str
     for line in handle:
         fields = line.rstrip().split(delim)
