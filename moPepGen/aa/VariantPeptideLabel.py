@@ -119,6 +119,35 @@ class VariantPeptideInfo():
 
 
     @staticmethod
+    def from_variant_peptide_minimal(peptide:AminoAcidSeqRecord
+            ) -> List[VariantPeptideInfo]:
+        """ Create list of VariantPeptideInfo with minimal information. """
+        info_list:List[VariantPeptideInfo] = []
+        variant_ids = pi.parse_variant_peptide_id(peptide.description)
+        for variant_id in variant_ids:
+            if isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
+                gene_ids = None
+                var_ids = {}
+
+            elif isinstance(variant_id, pi.FusionVariantPeptideIdentifier):
+                first_gene_id = variant_id.first_gene_id
+                second_gene_id = variant_id.second_gene_id
+                gene_ids = None
+                var_ids = {
+                    first_gene_id: variant_id.first_variants + [variant_id.fusion_id],
+                    second_gene_id: variant_id.second_variants
+                }
+
+            elif isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
+                gene_ids = None
+                var_ids = {}
+
+            info = VariantPeptideInfo(str(variant_id), gene_ids, var_ids, variant_id.index)
+
+            info_list.append(info)
+        return info_list
+
+    @staticmethod
     def from_variant_peptide(peptide:AminoAcidSeqRecord,
             anno:GenomicAnnotation, label_map:LabelSourceMapping=None,
             check_source:bool=True
@@ -132,6 +161,7 @@ class VariantPeptideInfo():
                 tx_id = circ_rna_id.split('-', 2)[1]
                 gene_ids = [anno.transcripts[tx_id].transcript.gene_id]
                 var_ids = {gene_ids[0]: [circ_rna_id, *variant_id.variant_ids]}
+
             elif isinstance(variant_id, pi.FusionVariantPeptideIdentifier):
                 first_gene_id = variant_id.first_gene_id
                 second_gene_id = variant_id.second_gene_id
@@ -140,10 +170,12 @@ class VariantPeptideInfo():
                     first_gene_id: variant_id.first_variants + [variant_id.fusion_id],
                     second_gene_id: variant_id.second_variants
                 }
+
             elif isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
                 gene_id = anno.transcripts[variant_id.transcript_id].transcript.gene_id
                 gene_ids = [gene_id]
                 var_ids = {gene_id: variant_id.variant_ids}
+
             info = VariantPeptideInfo(str(variant_id), gene_ids, var_ids, variant_id.index)
 
             if check_source:

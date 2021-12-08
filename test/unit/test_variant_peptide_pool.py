@@ -1,7 +1,6 @@
 """ Test Module for VariantPeptidePool """
 import unittest
-from test.unit import create_aa_record, create_genomic_annotation
-from test.unit.test_peptide_pool_splitter import ANNOTATION_DATA
+from test.unit import create_aa_record
 from moPepGen.aa import VariantPeptidePool
 
 
@@ -36,12 +35,12 @@ class TestVariantPeptidePool(unittest.TestCase):
             'ENST0003':5,
             'ENST0004':10,
         }
-        anno = create_genomic_annotation(ANNOTATION_DATA)
+        coding_tx = ['ENST0001', 'ENST0002', 'ENST0003']
         peptides = {create_aa_record(*x) for x in data}
         pool = VariantPeptidePool(peptides=peptides)
         filtered = pool.filter(
-            exprs=exprs, cutoff=8, anno=anno, keep_all_coding=False,
-            keep_all_noncoding=False
+            exprs=exprs, cutoff=8, coding_transcripts=coding_tx,
+            keep_all_coding=False, keep_all_noncoding=False
         )
         self.assertEqual(len(filtered.peptides), 3)
         seqs = {str(x.seq) for x in filtered.peptides}
@@ -62,19 +61,19 @@ class TestVariantPeptidePool(unittest.TestCase):
             'ENST0003':5,
             'ENST0004':10,
         }
-        anno = create_genomic_annotation(ANNOTATION_DATA)
         peptides = {create_aa_record(*x) for x in data}
+        coding_tx = ['ENST0001', 'ENST0002', 'ENST0003']
         pool = VariantPeptidePool(peptides=peptides)
         filtered = pool.filter(
-            exprs=exprs, cutoff=8, anno=anno, keep_all_coding=False,
-            keep_all_noncoding=False
+            exprs=exprs, cutoff=8, coding_transcripts=coding_tx,
+            keep_all_coding=False, keep_all_noncoding=False
         )
         self.assertEqual(len(filtered.peptides), 4)
 
         exprs['ENST0002'] = 4
         filtered = pool.filter(
-            exprs=exprs, cutoff=8, anno=anno, keep_all_coding=False,
-            keep_all_noncoding=False
+            exprs=exprs, cutoff=8, coding_transcripts=coding_tx,
+            keep_all_coding=False, keep_all_noncoding=False
         )
         self.assertEqual(len(filtered.peptides), 2)
 
@@ -92,12 +91,12 @@ class TestVariantPeptidePool(unittest.TestCase):
             'ENST0003':5,
             'ENST0004':10,
         }
-        anno = create_genomic_annotation(ANNOTATION_DATA)
+        coding_tx = ['ENST0001', 'ENST0002', 'ENST0003']
         peptides = {create_aa_record(*x) for x in data}
         pool = VariantPeptidePool(peptides=peptides)
         filtered = pool.filter(
-            exprs=exprs, cutoff=8, anno=anno, keep_all_coding=True,
-            keep_all_noncoding=False
+            exprs=exprs, cutoff=8, coding_transcripts=coding_tx,
+            keep_all_coding=True, keep_all_noncoding=False
         )
         self.assertEqual(len(filtered.peptides), 4)
 
@@ -115,11 +114,11 @@ class TestVariantPeptidePool(unittest.TestCase):
             'ENST0003':10,
             'ENST0004':5,
         }
-        anno = create_genomic_annotation(ANNOTATION_DATA)
+        coding_tx = ['ENST0001', 'ENST0002', 'ENST0003']
         peptides = {create_aa_record(*x) for x in data}
         pool = VariantPeptidePool(peptides=peptides)
         filtered = pool.filter(
-            exprs=exprs, cutoff=8, anno=anno, keep_all_coding=False,
-            keep_all_noncoding=True
+            exprs=exprs, cutoff=8, coding_transcripts=coding_tx,
+            keep_all_coding=False, keep_all_noncoding=True
         )
         self.assertEqual(len(filtered.peptides), 4)

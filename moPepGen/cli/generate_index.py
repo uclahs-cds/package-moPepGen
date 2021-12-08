@@ -55,10 +55,11 @@ def generate_index(args:argparse.Namespace):
     quiet:bool = args.quiet
 
     output_dir:Path = args.output_dir
-    output_genome = output_dir/"genome.pickle"
-    output_proteome = output_dir/"proteome.pickle"
-    output_anno = output_dir/"annotation.pickle"
-    output_peptides = output_dir/"canonical_peptides.pickle"
+    output_genome = output_dir/"genome.pkl"
+    output_proteome = output_dir/"proteome.pkl"
+    output_anno = output_dir/"annotation.pkl"
+    output_peptides = output_dir/"canonical_peptides.pkl"
+    output_coding_tx = output_dir/"coding_transcripts.pkl"
 
     print_start_message(args)
 
@@ -96,6 +97,7 @@ def generate_index(args:argparse.Namespace):
     if not quiet:
         logger('Proteome FASTA saved to disk.')
 
+    # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(
         anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
         min_mw=min_mw, min_length = min_length, max_length = max_length
@@ -106,3 +108,9 @@ def generate_index(args:argparse.Namespace):
         pickle.dump(canonical_peptides, handle)
     if not quiet:
         logger('canonical peptide pool saved to disk.')
+
+    # create list of coding transcripts
+    coding_tx = [tx_id for tx_id, tx_model in anno.transcripts.items()
+        if tx_model.is_protein_coding]
+    with open(output_coding_tx, 'wb') as handle:
+        pickle.dump(coding_tx, handle)

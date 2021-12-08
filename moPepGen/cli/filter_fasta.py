@@ -4,10 +4,12 @@ or TSV. """
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from typing import IO, Dict
+import pickle
+from typing import IO, Dict, List
 from moPepGen.aa import VariantPeptidePool
+from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from .common import add_args_reference, add_args_quiet, print_start_message,\
-    print_help_if_missing_args, load_references, logger
+    print_help_if_missing_args, logger
 
 
 # pylint: disable=W0212
@@ -55,14 +57,14 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     )
     p.add_argument(
         '--tx-id-col',
-        type=int,
+        type=str,
         help="The index for transcript ID in the RNAseq quantification results."
         " Index is 1-based.",
         metavar='<number>'
     )
     p.add_argument(
         '--quant-col',
-        type=int,
+        type=str,
         help='The column index number for quantification. Index is 1-based.',
         metavar='<number>'
     )
@@ -95,8 +97,7 @@ def filter_fasta(args:argparse.Namespace) -> None:
     """ Filter noncanonical peptide FASTA """
     print_start_message(args)
 
-    _, anno, *_ = load_references(args, load_genome=False, \
-        load_proteome=False, load_canonical_peptides=False)
+    coding_tx = load_coding_transcripts(args)
 
     with open(args.input_fasta, 'rt') as handle:
         pool = VariantPeptidePool.load(handle)
@@ -105,18 +106,36 @@ def filter_fasta(args:argparse.Namespace) -> None:
         logger('Peptide FASTA file loaded.')
 
     with open(args.exprs_table, 'rt') as handle:
+        i = 0
+        while i < args.skip_lines:
+            handle.readline()
+            i += 1
+        tx_id_col:str = args.tx_id_col
+        quant_col:str = args.quant_col
+        if any(not x.isdecimal() for x in [tx_id_col, quant_col]):
+            header = handle.readline().rstrip().split(args.delimiter)
+
+        if tx_id_col.isdecimal():
+            tx_id_col = int(tx_id_col) - 1
+        else:
+            tx_id_col = header.index(tx_id_col)
+
+        if quant_col.isdecimal():
+            quant_col = int(quant_col) - 1
+        else:
+            quant_col = header.index(quant_col)
+
         exprs = load_expression_table(
             handle=handle,
-            tx_col=args.tx_id_col - 1,
-            quant_col=args.quant_col - 1,
-            skip=args.skip_lines,
+            tx_col=tx_id_col,
+            quant_col=quant_col,
             delim=args.delimiter
         )
 
     if not args.quiet:
         logger('Gene expression table loaded.')
 
-    filtered_pool = pool.filter(exprs, args.quant_cutoff, anno,
+    filtered_pool = pool.filter(exprs, args.quant_cutoff, coding_tx,
         args.keep_all_noncoding, args.keep_all_coding)
 
     filtered_pool.write(args.output_fasta)
@@ -124,21 +143,27 @@ def filter_fasta(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Filtered FASTA file saved.')
 
-def load_expression_table(handle:IO, tx_col:int,quant_col:int, skip:int=0,
+def load_expression_table(handle:IO, tx_col:int,quant_col:int,
         delim:str='\t') -> Dict[str,float]:
     """ Load the gene expression quantification table """
-    i = 0
-    while i < skip:
-        handle.readline()
-        i += 1
-
     data = {}
-
     line:str
     for line in handle:
         fields = line.rstrip().split(delim)
         tx_id = fields[tx_col]
-        quant = fields[quant_col]
+        quant = float(fields[quant_col])
         data[tx_id] = quant
 
     return data
+
+def load_coding_transcripts(args:argparse.Namespace) -> List[str]:
+    """ load and get the protein coding transcripts """
+    if args.index_dir:
+        with open(args.index_dir/'coding.pkl', 'rb') as handle:
+            return pickle.loads(handle)
+
+    anno = GenomicAnnotation()
+    anno.dump_gtf(args.annotation_gtf)
+
+    return [tx_id for tx_id, tx_model in anno.transcripts.items()
+        if tx_model.is_protein_coding]
