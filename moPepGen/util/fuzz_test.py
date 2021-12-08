@@ -46,7 +46,8 @@ def add_subparser_fuzz_test(subparsers:argparse._SubParsersAction
     parser.add_argument(
         '-s', '--max-size',
         type=int,
-        help='Max size of variants.',
+        help='Maximal number of nucleotides being inserted or deleted. Only'
+        ' SNVs are generated when setting it to 0.',
         metavar='<number>'
     )
     parser.add_argument(
