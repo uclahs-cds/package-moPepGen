@@ -6,9 +6,10 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
 from Bio import SeqUtils
-from moPepGen import seqvar, aa, gtf, dna
+from moPepGen import seqvar, aa, dna
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
 from moPepGen.seqvar.VariantRecord import VariantRecord
+from moPepGen.util.common import load_references
 
 
 # pylint: disable=W0212
@@ -69,16 +70,11 @@ def parse_variant_exclusion(exclusions:List[str]) -> Dict[Tuple,List[Tuple]]:
 def brute_force(args):
     """ main """
 
-    anno = gtf.GenomicAnnotation()
-    anno.dump_gtf(args.reference_dir/'annotation.gtf')
-
-    genome = dna.DNASeqDict()
-    genome.dump_fasta(args.reference_dir/'genome.fasta')
-
-    proteome = aa.AminoAcidSeqDict()
-    proteome.dump_fasta(args.reference_dir/'proteome.fasta')
-
-    anno.check_protein_coding(proteome)
+    anno, genome, proteome = load_references(
+        path_anno=args.reference_dir/'annotation.gtf',
+        path_genome=args.reference_dir/'genome.fasta',
+        path_proteome=args.reference_dir/'proteome.fasta'
+    )
 
     rule = args.cleavage_rule
     exception = 'trypsin_exception' if rule == 'trypsin' else None
@@ -92,6 +88,9 @@ def brute_force(args):
     for gvf_file in args.input_gvf:
         with open(gvf_file) as handle:
             variant_pool.load_variants(handle, anno, genome)
+
+    if not variant_pool.transcriptional:
+        return
 
     tx_id = list(variant_pool.transcriptional.keys())[0]
 

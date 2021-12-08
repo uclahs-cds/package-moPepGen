@@ -6,3 +6,5 @@ from moPepGen.util.validate_variant_calling import \
     add_subparser_validate_variant_callilng, validate_variant_calling
 from moPepGen.util.brute_force_noncoding import \
     add_subparser_brute_force_noncoding, brute_force_noncoding
+from moPepGen.util.fuzz_test import \
+    add_subparser_fuzz_test, fuzz_test
