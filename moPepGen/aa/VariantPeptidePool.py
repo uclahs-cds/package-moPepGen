@@ -1,6 +1,6 @@
 """ Module for variant peptide pool (unique) """
 from __future__ import annotations
-from typing import Set, IO, Dict, TYPE_CHECKING
+from typing import Set, IO, Dict, List, TYPE_CHECKING
 from pathlib import Path
 from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
@@ -73,21 +73,25 @@ class VariantPeptidePool():
             pool.peptides.add(seq)
         return pool
 
-    def filter(self, exprs:Dict[str,int], cutoff:float, anno:GenomicAnnotation,
-            keep_all_noncoding:bool, keep_all_coding:bool
+    def filter(self, exprs:Dict[str,int], cutoff:float,
+            coding_transcripts:List[str]=None, keep_all_noncoding:bool=False,
+            keep_all_coding:bool=False
             ) -> VariantPeptidePool:
         """ Filiter variant peptides according to gene expression. """
         label_delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         filtered_pool = VariantPeptidePool()
         for peptide in self.peptides:
-            peptide_entries = VariantPeptideInfo.from_variant_peptide(
-                peptide, anno, check_source=False
-            )
+            peptide_entries = VariantPeptideInfo.from_variant_peptide_minimal(peptide)
             keep = []
             for entry in peptide_entries:
-                if keep_all_noncoding and entry.all_noncoding(anno):
+                all_noncoding = not any(x in coding_transcripts
+                    for x in entry.get_transcript_ids())
+                all_coding = all(x in coding_transcripts
+                    for x in entry.get_transcript_ids())
+
+                if keep_all_noncoding and all_noncoding:
                     should_keep = True
-                elif keep_all_coding and entry.all_coding(anno):
+                elif keep_all_coding and all_coding:
                     should_keep = True
                 else:
                     tx_ids = entry.get_transcript_ids()

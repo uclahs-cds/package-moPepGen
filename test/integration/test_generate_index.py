@@ -22,7 +22,7 @@ class TestGenerateIndex(TestCaseIntegration):
         args.output_dir = self.work_dir / 'index'
         args.output_dir.mkdir(parents=False, exist_ok=True)
         cli.generate_index(args)
-        files = {str(file.name) for file in args.output_dir.glob('*.pickle')}
-        expected = {'genome.pickle', 'proteome.pickle', 'annotation.pickle',
-            'canonical_peptides.pickle'}
+        files = {str(file.name) for file in args.output_dir.glob('*.pkl')}
+        expected = {'genome.pkl', 'proteome.pkl', 'annotation.pkl',
+            'canonical_peptides.pkl', 'coding_transcripts.pkl'}
         self.assertEqual(files, expected)

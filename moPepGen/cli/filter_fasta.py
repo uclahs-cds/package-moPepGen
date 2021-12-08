@@ -4,10 +4,12 @@ or TSV. """
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from typing import IO, Dict
+import pickle
+from typing import IO, Dict, List
 from moPepGen.aa import VariantPeptidePool
+from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from .common import add_args_reference, add_args_quiet, print_start_message,\
-    print_help_if_missing_args, load_references, logger
+    print_help_if_missing_args, logger
 
 
 # pylint: disable=W0212
@@ -95,8 +97,7 @@ def filter_fasta(args:argparse.Namespace) -> None:
     """ Filter noncanonical peptide FASTA """
     print_start_message(args)
 
-    _, anno, *_ = load_references(args, load_genome=False, \
-        load_proteome=False, load_canonical_peptides=False)
+    coding_tx = load_coding_transcripts(args)
 
     with open(args.input_fasta, 'rt') as handle:
         pool = VariantPeptidePool.load(handle)
@@ -134,7 +135,7 @@ def filter_fasta(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Gene expression table loaded.')
 
-    filtered_pool = pool.filter(exprs, args.quant_cutoff, anno,
+    filtered_pool = pool.filter(exprs, args.quant_cutoff, coding_tx,
         args.keep_all_noncoding, args.keep_all_coding)
 
     filtered_pool.write(args.output_fasta)
@@ -154,3 +155,15 @@ def load_expression_table(handle:IO, tx_col:int,quant_col:int,
         data[tx_id] = quant
 
     return data
+
+def load_coding_transcripts(args:argparse.Namespace) -> List[str]:
+    """ load and get the protein coding transcripts """
+    if args.index_dir:
+        with open(args.index_dir/'coding.pkl', 'rb') as handle:
+            return pickle.loads(handle)
+
+    anno = GenomicAnnotation()
+    anno.dump_gtf(args.annotation_gtf)
+
+    return [tx_id for tx_id, tx_model in anno.transcripts.items()
+        if tx_model.is_protein_coding]

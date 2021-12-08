@@ -15,9 +15,9 @@ def load_references(base_dir:Path=None, index:bool=False
     """ Load reference files """
     genome, anno = None, None
     if index:
-        with open(base_dir/'genome.pickle', 'rb') as handle:
+        with open(base_dir/'genome.pkl', 'rb') as handle:
             genome = pickle.load(handle)
-        with open(base_dir/'annotation.pickle', 'rb') as handle:
+        with open(base_dir/'annotation.pkl', 'rb') as handle:
             anno = pickle.load(handle)
     else:
         genome = dna.DNASeqDict()
