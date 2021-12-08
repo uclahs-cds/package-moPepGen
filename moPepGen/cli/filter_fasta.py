@@ -138,7 +138,7 @@ def load_expression_table(handle:IO, tx_col:int,quant_col:int, skip:int=0,
     for line in handle:
         fields = line.rstrip().split(delim)
         tx_id = fields[tx_col]
-        quant = fields[quant_col]
+        quant = float(fields[quant_col])
         data[tx_id] = quant
 
     return data
