@@ -58,7 +58,7 @@ class PeptideVariantGraph():
 
     def next_is_stop(self, node:PVGNode) -> bool:
         """ Checks if stop is linked as a outbound node. """
-        return self.stop in node.out_nodes
+        return len(node.out_nodes) == 1 and self.stop in node.out_nodes
 
     @staticmethod
     def remove_node(node:PVGNode) -> None:

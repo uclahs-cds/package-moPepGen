@@ -169,7 +169,10 @@ class ThreeFrameTVG():
 
     def add_stop_node(self, node:TVGNode):
         """ Add stop node after the given node """
-        stop = TVGNode(DNASeqRecordWithCoordinates('', []))
+        stop = TVGNode(
+            DNASeqRecordWithCoordinates('', []),
+            reading_frame_index=node.reading_frame_index
+        )
         self.add_edge(node, stop, 'reference')
 
     def count_nodes(self):

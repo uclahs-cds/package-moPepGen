@@ -152,7 +152,9 @@ def get_gene_sequences(path:Path, anno:gtf.GenomicAnnotation) -> dna.DNASeqDict:
             continue
         for gene_model in chrom_genes[record.id]:
             gene_id = gene_model.gene_id
-            gene_seqs[gene_id] = gene_model.get_gene_sequence(record)
+            seq = gene_model.get_gene_sequence(record)
+            seq.__class__ = dna.DNASeqRecord
+            gene_seqs[gene_id] = seq
     return gene_seqs
 
 def downsample_proteins(path:Path, anno:gtf.GenomicAnnotation
