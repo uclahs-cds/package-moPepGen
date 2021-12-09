@@ -160,7 +160,7 @@ def load_coding_transcripts(args:argparse.Namespace) -> List[str]:
     """ load and get the protein coding transcripts """
     if args.index_dir:
         with open(args.index_dir/'coding_transcripts.pkl', 'rb') as handle:
-            return pickle.loads(handle)
+            return pickle.load(handle)
 
     anno = GenomicAnnotation()
     anno.dump_gtf(args.annotation_gtf)
