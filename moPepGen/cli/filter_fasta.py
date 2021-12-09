@@ -165,5 +165,5 @@ def load_coding_transcripts(args:argparse.Namespace) -> List[str]:
     anno = GenomicAnnotation()
     anno.dump_gtf(args.annotation_gtf)
 
-    return [tx_id for tx_id, tx_model in anno.transcripts.items()
-        if tx_model.is_protein_coding]
+    return {tx_id for tx_id, tx_model in anno.transcripts.items()
+        if tx_model.is_protein_coding}
