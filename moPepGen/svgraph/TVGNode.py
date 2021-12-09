@@ -146,6 +146,10 @@ class TVGNode():
             return not self.variants
         return not any(v.variant is not self.global_variant for v in self.variants)
 
+    def is_stop_node(self) -> bool:
+        """ check if it is a stop node """
+        return self.seq.seq == '' and not self.out_edges
+
     def has_in_bridge(self) -> bool:
         """ check if it has any in node from different reading frame """
         return any(e.in_node.reading_frame_index != self.reading_frame_index
@@ -330,7 +334,7 @@ class TVGNode():
                 queue.append(next_ref)
                 continue
 
-            if cur.seq.locations[0] < farthest.seq.locations[0]:
+            if cur.is_stop_node() or cur.seq.locations[0] < farthest.seq.locations[0]:
                 for edge in cur.out_edges:
                     queue.append(edge.out_node)
                 continue
