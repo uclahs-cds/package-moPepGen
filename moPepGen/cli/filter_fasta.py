@@ -159,7 +159,7 @@ def load_expression_table(handle:IO, tx_col:int,quant_col:int,
 def load_coding_transcripts(args:argparse.Namespace) -> List[str]:
     """ load and get the protein coding transcripts """
     if args.index_dir:
-        with open(args.index_dir/'coding.pkl', 'rb') as handle:
+        with open(args.index_dir/'coding_transcripts.pkl', 'rb') as handle:
             return pickle.loads(handle)
 
     anno = GenomicAnnotation()
