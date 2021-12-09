@@ -33,7 +33,7 @@ class ThreeFrameTVG():
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
-            mrna_end_nf:bool=False):
+            mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -44,8 +44,8 @@ class ThreeFrameTVG():
         self.seq = seq
         if self.seq and not self.seq.locations:
             self.add_default_sequence_locations()
-        self.root = root or TVGNode(None)
         self.id = _id
+        self.root = root or self.create_node(seq=None)
         self.reading_frames = reading_frames or [None, None, None]
         if reading_frames and len(reading_frames) != 3:
             raise ValueError('The length of reading_frames must be exactly 3.')
@@ -55,6 +55,7 @@ class ThreeFrameTVG():
         else:
             self.has_known_orf = has_known_orf
         self.mrna_end_nf = mrna_end_nf
+        self.global_variant = global_variant
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -64,7 +65,7 @@ class ThreeFrameTVG():
         )]
 
     def init_three_frames(self, truncate_head:bool=True):
-        """ Initiate the three reading frames as empty nodes.
+        """ Initiate the three reading-frame graph.
 
         Args:
             truncated_head (bool): If true, the first x nucleotides are
@@ -163,7 +164,7 @@ class ThreeFrameTVG():
     def add_null_root(self):
         """ Adds a null node to the root. """
         original_root = self.root
-        new_root = TVGNode(None)
+        new_root = self.create_node(seq=None)
         self.root = new_root
         self.add_edge(self.root, original_root, 'reference')
 
@@ -200,6 +201,22 @@ class ThreeFrameTVG():
         """ Find the ORF index of a given node at given position of its
         sequence """
         return node.get_orf_start(i) % 3
+
+    def create_node(self, seq:dna.DNASeqRecordWithCoordinates,
+            variants:List[seqvar.VariantRecordWithCoordinate]=None,
+            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
+            orf:List[int]=None, reading_frame_index:int=None,
+            subgraph_id:str=None) -> TVGNode:
+        """ create a node """
+        return TVGNode(
+            seq=seq,
+            variants=variants,
+            frameshifts=frameshifts,
+            branch=branch,
+            orf=orf,
+            reading_frame_index=reading_frame_index,
+            subgraph_id=subgraph_id or self.id
+        )
 
     def splice(self, node:TVGNode, i:int, _type:str
             ) -> Tuple[TVGNode, TVGNode]:
@@ -284,10 +301,9 @@ class ThreeFrameTVG():
             variant=variant,
             location=FeatureLocation(start=0, end=len(seq))
         )
-        var_node = TVGNode(
+        var_node = self.create_node(
             seq=seq,
             variants=[variant_with_coordinates],
-            subgraph_id=self.id,
             reading_frame_index=source.reading_frame_index,
             orf=source.orf
         )
@@ -437,7 +453,7 @@ class ThreeFrameTVG():
         ) -> List[TVGNode]:
         """ Apply insertion """
         cursors = copy.copy(cursors)
-        branch = ThreeFrameTVG(seq, self.id)
+        branch = ThreeFrameTVG(seq, self.id, global_variant=var.variant)
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             node = list(root.out_edges)[0].out_node
@@ -709,13 +725,7 @@ class ThreeFrameTVG():
         Return:
             The replicate of the node.
         """
-        node_copy = TVGNode(
-            seq=copy.copy(node.seq),
-            variants=copy.copy(node.variants),
-            frameshifts=copy.copy(node.frameshifts),
-            branch=node.branch,
-            subgraph_id=node.subgraph_id
-        )
+        node_copy = node.copy()
         for edge in node.in_edges:
             self.add_edge(edge.in_node, node_copy, edge.type)
         for edge in node.out_edges:
@@ -821,7 +831,7 @@ class ThreeFrameTVG():
             for e in bridge.out_edges:
                 end_nodes.append(e.out_node)
 
-        new_nodes = set()
+        new_nodes:Set[TVGNode] = set()
         queue = deque()
         trash = set()
         bridge_map:Dict[TVGNode, TVGNode] = {x:x for x in bridge_ins}
@@ -849,15 +859,7 @@ class ThreeFrameTVG():
                 out_node:TVGNode = out_edge.out_node
 
                 if out_node in end_nodes:
-                    new_node = TVGNode(
-                        seq=cur.seq,
-                        variants=copy.copy(cur.variants),
-                        frameshifts=copy.copy(cur.frameshifts),
-                        branch=cur.branch,
-                        orf=cur.orf,
-                        reading_frame_index=cur.reading_frame_index,
-                        subgraph_id=cur.subgraph_id
-                    )
+                    new_node = cur.copy()
                     trash.add(cur)
                     for edge in cur.out_edges:
                         self.add_edge(new_node, edge.out_node, _type=edge.type)
@@ -870,27 +872,13 @@ class ThreeFrameTVG():
 
                 trash.add(out_node)
 
-                # If the next node has any variants, shift the location by the
-                # length of the cur node's sequence.
-                new_variants = copy.copy(cur.variants)
-                for variant in out_node.variants:
-                    new_variants.append(variant.shift(len(cur.seq)))
-
                 # create new node with the combined sequence
-                frameshifts = copy.copy(cur.frameshifts)
-                new_node = TVGNode(
-                    seq=cur.seq + out_node.seq,
-                    variants=new_variants,
-                    frameshifts=frameshifts,
-                    branch=cur.branch,
-                    reading_frame_index=cur.reading_frame_index,
-                    orf=cur.orf,
-                    subgraph_id=cur.subgraph_id
-                )
+                new_node = cur.copy()
+                new_node.append_right(out_node)
 
                 for edge in copy.copy(out_node.out_edges):
-                    edge_type = 'variant_end' if new_node.variants \
-                        else 'reference'
+                    edge_type = 'reference' if new_node.is_reference() \
+                        else 'variant_end'
                     self.add_edge(new_node, edge.out_node, _type=edge_type)
 
                 if out_node not in end_nodes:
@@ -902,12 +890,12 @@ class ThreeFrameTVG():
             if cur not in bridge_map:
                 self.remove_node(cur)
 
-        # add now nodes to the graph
+        # add new nodes to the graph
         for new_node in new_nodes:
-            if new_node.variants:
-                in_edge_type = 'variant_start'
-            else:
+            if new_node.is_reference():
                 in_edge_type = 'reference'
+            else:
+                in_edge_type = 'variant_start'
             self.add_edge(start_node, new_node, in_edge_type)
 
         for bridge in new_bridges:
@@ -921,8 +909,7 @@ class ThreeFrameTVG():
 
         return start_node, end_node
 
-    @staticmethod
-    def expand_alignments(start:TVGNode) -> TVGNode:
+    def expand_alignments(self, start:TVGNode) -> TVGNode:
         r""" Expand the aligned variants into the range of codons. For
         frameshifting mutations, a copy of each downstream node will be
         created and branched out. Exclusive nodes are merged.
@@ -950,8 +937,8 @@ class ThreeFrameTVG():
             left_over = start.truncate_right(left_index)
         else:
             left_over_seq = dna.DNASeqRecordWithCoordinates(Seq(''), [])
-            left_over = TVGNode(
-                left_over_seq,
+            left_over = self.create_node(
+                seq=left_over_seq,
                 subgraph_id=start.subgraph_id
             )
 
