@@ -34,7 +34,7 @@ class ThreeFrameTVG():
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
-            max_varaints_per_node:int=5):
+            max_variants_per_node:int=5):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -57,7 +57,7 @@ class ThreeFrameTVG():
             self.has_known_orf = has_known_orf
         self.mrna_end_nf = mrna_end_nf
         self.global_variant = global_variant
-        self.max_variants_per_node = max_varaints_per_node
+        self.max_variants_per_node = max_variants_per_node
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """

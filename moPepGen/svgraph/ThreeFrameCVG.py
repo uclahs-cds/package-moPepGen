@@ -27,7 +27,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=False,
             circ_record:circ.CircRNAModel=None, attrs:dict=None,
-            max_varaints_per_node:int=5):
+            max_variants_per_node:int=5):
         """ Construct a CircularVariantGraph
 
         Args:
@@ -60,7 +60,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             seq=seq, _id=_id, root=root, reading_frames=reading_frames,
             cds_start_nf=cds_start_nf, has_known_orf=has_known_orf,
             global_variant=circ_variant,
-            max_varaints_per_node=max_varaints_per_node
+            max_variants_per_node=max_variants_per_node
         )
 
     def get_circ_variant_with_coordinate(self) -> seqvar.VariantRecordWithCoordinate:
