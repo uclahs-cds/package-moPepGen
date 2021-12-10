@@ -130,6 +130,11 @@ class VariantRecordPool():
                 f"{return_coord}. return_coord must be either 'gene' or "
                 "'transcript'"
             )
+        if return_coord == 'transcript' and intron is True:
+            raise ValueError(
+                "Don't know how to return intronic variants in transcript"
+                "coordinates."
+            )
         if segments:
             def _filter(x):
                 for segment in segments:
@@ -166,8 +171,6 @@ class VariantRecordPool():
                     if _filter(record):
                         if return_coord == 'gene':
                             records.add(record)
-                        else:
-                            records.add(record.to_transcript_variant(anno, genome))
         records = list(records)
         records.sort()
         return records
