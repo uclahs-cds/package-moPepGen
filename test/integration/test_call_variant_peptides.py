@@ -14,6 +14,7 @@ def create_base_args() -> argparse.Namespace:
     args.annotation_gtf = None
     args.proteome_fasta = None
     args.output_fasta = None
+    args.max_variants_per_node = 5
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
     args.cleavage_rule = 'trypsin'
