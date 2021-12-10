@@ -78,13 +78,28 @@ class ThreeFrameTVG():
         root1 = TVGNode(None, reading_frame_index=1)
         root2 = TVGNode(None, reading_frame_index=2)
 
-        node0 = TVGNode(self.seq, reading_frame_index=0, subgraph_id=self.id)
+        node0 = TVGNode(
+            seq=self.seq, reading_frame_index=0, subgraph_id=self.id,
+            global_variant=self.global_variant
+        )
         if truncate_head:
-            node1 = TVGNode(self.seq[1:], reading_frame_index=1, subgraph_id=self.id)
-            node2 = TVGNode(self.seq[2:], reading_frame_index=2, subgraph_id=self.id)
+            node1 = TVGNode(
+                seq=self.seq[1:], reading_frame_index=1, subgraph_id=self.id,
+                global_variant=self.global_variant
+            )
+            node2 = TVGNode(
+                self.seq[2:], reading_frame_index=2, subgraph_id=self.id,
+                global_variant=self.global_variant
+            )
         else:
-            node1 = TVGNode(self.seq, reading_frame_index=1, subgraph_id=self.id)
-            node2 = TVGNode(self.seq, reading_frame_index=2, subgraph_id=self.id)
+            node1 = TVGNode(
+                self.seq, reading_frame_index=1, subgraph_id=self.id,
+                global_variant=self.global_variant
+            )
+            node2 = TVGNode(
+                self.seq, reading_frame_index=2, subgraph_id=self.id,
+                global_variant=self.global_variant
+            )
 
         self.add_edge(root0, node0, 'reference')
         self.add_edge(self.root, root0, 'reference')
