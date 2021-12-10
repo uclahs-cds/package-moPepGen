@@ -139,8 +139,15 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0001.1'),
             (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
         }
-        variants = {'ENST0001.1': create_variants(var_data)}
-        variant_pool = seqvar.VariantRecordPool(transcriptional=variants)
+        tx_variants = {'ENST0001.1': create_variants(var_data)}
+        var_data2 = {
+            (25, 26, 'T', 'A', 'SNV', '' , None, 'ENSG0001')
+        }
+        it_variants = {'ENST0001.1': create_variants(var_data2)}
+        variant_pool = seqvar.VariantRecordPool(
+            transcriptional=tx_variants,
+            intronic=it_variants
+        )
 
         end_nodes = graph.apply_fusion([nodes[i] for i in [4,14,24]],
             var_fusion, variant_pool, genome, anno)
