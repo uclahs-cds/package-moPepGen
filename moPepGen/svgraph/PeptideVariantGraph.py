@@ -39,7 +39,8 @@ class PeptideVariantGraph():
     def __init__(self, root:PVGNode, _id:str,
             known_orf:List[int,int], rule:str=None, exception:str=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
-            orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False):
+            orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
+            max_variants_per_node:int=5):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
@@ -51,6 +52,7 @@ class PeptideVariantGraph():
         self.reading_frames = reading_frames or [None, None, None]
         self.orf_id_map = orf_id_map or {}
         self.cds_start_nf = cds_start_nf
+        self.max_variants_per_node = max_variants_per_node
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -120,7 +122,7 @@ class PeptideVariantGraph():
         return found
 
     def find_routes_for_merging(self, node:PVGNode, cleavage:bool=False
-            ) -> Set[Tuple[PVGNode]]:
+            ) -> Tuple[Set[Tuple[PVGNode]], Set[PVGNode]]:
         """ Find all start and end nodes for merging.
 
         Args:
@@ -148,6 +150,9 @@ class PeptideVariantGraph():
                 visited.add(out_node)
         else:
             for in_node, out_node in itertools.product(node.in_nodes, node.out_nodes):
+                if len(in_node.variants) + len(out_node.variants) > \
+                        self.max_variants_per_node:
+                    continue
                 route = (in_node, node, out_node)
                 routes.add(route)
                 visited.add(in_node)
@@ -160,7 +165,7 @@ class PeptideVariantGraph():
                         new_route = (in_node, cur[-1],)
                         routes.add(new_route)
                         visited.add(in_node)
-        return routes
+        return routes, visited
 
     def merge_nodes_routes(self, routes:Set[Tuple[PVGNode]]
             ) -> Tuple[Set[PVGNode], Dict[PVGNode, List[PVGNode]]]:
@@ -196,10 +201,6 @@ class PeptideVariantGraph():
                     if node_is_bridge:
                         new_node.was_bridge = True
                     trash.add((route[i-1], node))
-                # if len(new_node.variants) > 1:
-                #     for in_node in copy.copy(new_node.in_nodes):
-                #         in_node.remove_out_edge(new_node)
-                #     break
 
             for in_node in route[0].in_nodes:
                 in_node.add_out_edge(new_node)
@@ -320,10 +321,12 @@ class PeptideVariantGraph():
             singleton, or the downstream node otherwise.
         """
         reading_frame_index = node.reading_frame_index
-        routes = self.find_routes_for_merging(node, True)
+        routes, trash = self.find_routes_for_merging(node, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
         new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
+        for trash_node in trash:
+            self.remove_node(trash_node)
         return downstreams, inbridge_list
 
     def expand_forward(self, node:PVGNode) -> T:
@@ -349,13 +352,17 @@ class PeptideVariantGraph():
         Returns:
             The end node is returned.
         """
-        routes = set()
+        routes:Set[PVGNode] = set()
+        trash:Set[PVGNode] = set([node])
         reading_frame_index = node.reading_frame_index
         for in_node in node.in_nodes:
             routes.add((in_node, node))
+            trash.add(in_node)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
         new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
+        for trash_node in trash:
+            self.remove_node(trash_node)
         return downstreams, inbridge_list
 
     def merge_join(self, node:PVGNode) -> T:
@@ -378,10 +385,12 @@ class PeptideVariantGraph():
             singleton, or the downstream node otherwise.
         """
         reading_frame_index = node.reading_frame_index
-        routes = self.find_routes_for_merging(node)
+        routes, trash = self.find_routes_for_merging(node)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
         new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
+        for trash_node in trash:
+            self.remove_node(trash_node)
         return downstreams, inbridge_list
 
     def cross_join(self, node:PVGNode, site:int) -> T:
@@ -403,10 +412,12 @@ class PeptideVariantGraph():
         # there shouldn't have any bridge out in inbond nodes
         self.expand_forward(node)
 
-        routes = self.find_routes_for_merging(head, True)
+        routes, trash = self.find_routes_for_merging(head, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
         new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
+        for trash_node in trash:
+            self.remove_node(trash_node)
         return downstreams, inbridge_list
 
     def create_cleavage_graph(self, rule:str, exception:str=None) -> None:
