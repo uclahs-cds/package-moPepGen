@@ -129,6 +129,10 @@ class PeptideVariantGraph():
             node (PVGNode)
             cleavage (bool): When True, the input node is treated as the start
                 node, so it's in-bond nodes are not looked.
+
+        Returns:
+            A tuple of two. The first is lists of nodes that should be merged,
+            and the second is all the original nodes that should be removed.
         """
         routes:Set[Tuple[PVGNode]] = set()
         visited:Set[PVGNode] = {node}
