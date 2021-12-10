@@ -110,7 +110,7 @@ class VariantRecordPool():
             val.sort()
 
     def filter_variants(self, gene_id:str, anno:GenomicAnnotation,
-            genome:DNASeqDict, exclude_type:List[str], start:int=None,
+            exclude_type:List[str], start:int=None,
             end:int=None, intron:bool=True,
             segments:Iterable[VariantRecord]=None, return_coord:str='gene'
             ) -> List[VariantRecord]:

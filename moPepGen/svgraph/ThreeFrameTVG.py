@@ -395,7 +395,7 @@ class ThreeFrameTVG():
             accepter_gene_id, accepter_tx_id)
 
         accepter_variant_records = variant_pool.filter_variants(
-            accepter_gene_id, anno, genome, exclude_type=['Fusion'],
+            gene_id=accepter_gene_id, anno=anno, exclude_type=['Fusion'],
             start=breakpoint_tx, return_coord='transcript', intron=False
         )
 
@@ -549,8 +549,10 @@ class ThreeFrameTVG():
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
         insert_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-        insert_variants = variant_pool.filter_variants(gene_id, anno, genome,
-            exclude_type, start=donor_start, end=donor_end)
+        insert_variants = variant_pool.filter_variants(
+            gene_id=gene_id, anno=anno, exclude_type=exclude_type,
+            start=donor_start, end=donor_end
+        )
         # add the reference sequence to the insertion sequence.
         ref_seq_location = MatchedLocation(
             query=FeatureLocation(start=0, end=1),
@@ -592,8 +594,10 @@ class ThreeFrameTVG():
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
         sub_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-        sub_variants = variant_pool.filter_variants(gene_id, anno, genome,
-            exclude_type, start=donor_start, end=donor_end)
+        sub_variants = variant_pool.filter_variants(
+            gene_id=gene_id, anno=anno, exclude_type=exclude_type,
+            start=donor_start, end=donor_end
+        )
         var = seqvar.VariantRecordWithCoordinate(
             variant=variant,
             location=FeatureLocation(start=0, end=len(sub_seq.seq))
