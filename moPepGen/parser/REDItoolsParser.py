@@ -129,7 +129,7 @@ class REDItoolsRecord():
                 if gene_model.strand == -1:
                     ref = str(Seq(ref).complement())
                     alt = str(Seq(alt).complement())
-                _id = f'RNA_editing_site-{ref}-{alt}'
+                _id = f'RES-{ref}-{alt}'
                 attrs = {
                     'TRANSCRIPT_ID': tx_id
                 }
