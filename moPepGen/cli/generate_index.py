@@ -110,7 +110,7 @@ def generate_index(args:argparse.Namespace):
         logger('canonical peptide pool saved to disk.')
 
     # create list of coding transcripts
-    coding_tx = [tx_id for tx_id, tx_model in anno.transcripts.items()
-        if tx_model.is_protein_coding]
+    coding_tx = {tx_id for tx_id, tx_model in anno.transcripts.items()
+        if tx_model.is_protein_coding}
     with open(output_coding_tx, 'wb') as handle:
         pickle.dump(coding_tx, handle)
