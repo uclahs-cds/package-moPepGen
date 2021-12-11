@@ -40,7 +40,7 @@ class PeptideVariantGraph():
             known_orf:List[int,int], rule:str=None, exception:str=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
-            max_variants_per_node:int=5):
+            max_variants_per_node:int=-1):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
@@ -123,6 +123,8 @@ class PeptideVariantGraph():
 
     def nodes_have_too_many_variants(self, nodes:Iterable[PVGNode]) -> bool:
         """ Check the total number of variants of given nodes """
+        if self.max_variants_per_node == -1:
+            return False
         variants = set()
         for node in nodes:
             for variant in node.variants:

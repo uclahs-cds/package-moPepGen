@@ -53,8 +53,11 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--max-variants-per-node',
         type=int,
-        help='Maximal number of variants per node.',
-        default=5,
+        help='Maximal number of variants per node. This argument can be useful'
+        ' when there are local regions that are heavily mutated. When creating'
+        ' the cleavage graph, nodes containing variants larger than this value'
+        ' are skipped. Setting to -1 will avoid checking for this.',
+        default=-1,
         metavar='<number>'
     )
 
