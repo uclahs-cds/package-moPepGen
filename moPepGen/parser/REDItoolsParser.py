@@ -96,7 +96,7 @@ class REDItoolsRecord():
         }
 
     def get_valid_subs(self, min_read_count:int, min_frequency:float) -> bool:
-        """ """
+        """ Get all valid substitutions. """
         total_count = sum(self.base_count)
         valid_subs = []
         for sub in self.all_subs:
