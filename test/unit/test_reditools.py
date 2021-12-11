@@ -52,12 +52,14 @@ class TestREDItoolsParser(unittest.TestCase):
             strand=1,
             coverage_q30=15,
             mean_quality=40.47,
-            base_count=[0, 2, 0, 13],
+            base_count=[0, 5, 0, 13],
             all_subs=[('C', 'T')],
             frequency=0.87,
             transcript_id=[('ENST0001', 'transcript')]
         )
-        variants = record.convert_to_variant_records(anno)
+        variants = record.convert_to_variant_records(
+            anno=anno, min_read_count=3, min_frequency=0.1
+        )
         self.assertEqual(variants[0].location.start, 174)
         self.assertEqual(variants[0].location.end, 175)
         self.assertEqual(variants[0].ref, 'C')
@@ -71,12 +73,14 @@ class TestREDItoolsParser(unittest.TestCase):
             strand=1,
             coverage_q30=15,
             mean_quality=40.47,
-            base_count=[0, 2, 0, 13],
+            base_count=[0, 5, 0, 13],
             all_subs=[('C', 'T')],
             frequency=0.87,
             transcript_id=[('ENST0001', 'transcript')]
         )
-        variants = record.convert_to_variant_records(anno)
+        variants = record.convert_to_variant_records(
+            anno=anno, min_read_count=3, min_frequency=0.1
+        )
         self.assertEqual(variants[0].location.start, 249)
         self.assertEqual(variants[0].location.end, 250)
         self.assertEqual(variants[0].ref, 'C')
@@ -97,12 +101,14 @@ class TestREDItoolsParser(unittest.TestCase):
             strand=-1,
             coverage_q30=15,
             mean_quality=40.47,
-            base_count=[0, 2, 0, 13],
+            base_count=[0, 5, 0, 13],
             all_subs=[('C', 'T')],
             frequency=0.87,
             transcript_id=[('ENST0001', 'transcript')]
         )
-        variants = record.convert_to_variant_records(anno)
+        variants = record.convert_to_variant_records(
+            anno=anno, min_read_count=3, min_frequency=0.1
+        )
         self.assertEqual(variants[0].location.start, 75)
         self.assertEqual(variants[0].location.end, 76)
         self.assertEqual(variants[0].ref, 'G')
@@ -116,12 +122,14 @@ class TestREDItoolsParser(unittest.TestCase):
             strand=-1,
             coverage_q30=15,
             mean_quality=40.47,
-            base_count=[0, 2, 0, 13],
+            base_count=[0, 5, 0, 13],
             all_subs=[('C', 'T')],
             frequency=0.87,
             transcript_id=[('ENST0001', 'transcript')]
         )
-        variants = record.convert_to_variant_records(anno)
+        variants = record.convert_to_variant_records(
+            anno=anno, min_read_count=3, min_frequency=0.1
+        )
         self.assertEqual(variants[0].location.start, 150)
         self.assertEqual(variants[0].location.end, 151)
         self.assertEqual(variants[0].ref, 'G')

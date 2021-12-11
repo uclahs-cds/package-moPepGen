@@ -121,6 +121,14 @@ class PeptideVariantGraph():
                 queue.append(out_node)
         return found
 
+    def nodes_have_too_many_variants(self, nodes:Iterable[PVGNode]) -> bool:
+        """ Check the total number of variants of given nodes """
+        variants = set()
+        for node in nodes:
+            for variant in node.variants:
+                variants.add(variant.variant)
+        return len(variants) > self.max_variants_per_node
+
     def find_routes_for_merging(self, node:PVGNode, cleavage:bool=False
             ) -> Tuple[Set[Tuple[PVGNode]], Set[PVGNode]]:
         """ Find all start and end nodes for merging.
@@ -154,8 +162,7 @@ class PeptideVariantGraph():
                 visited.add(out_node)
         else:
             for in_node, out_node in itertools.product(node.in_nodes, node.out_nodes):
-                if len(in_node.variants) + len(out_node.variants) > \
-                        self.max_variants_per_node:
+                if self.nodes_have_too_many_variants([in_node, out_node]):
                     continue
                 route = (in_node, node, out_node)
                 routes.add(route)

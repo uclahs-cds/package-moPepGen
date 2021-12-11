@@ -342,26 +342,33 @@ class TestPeptideVariantGraph(unittest.TestCase):
         a local region and makes sure that nodes with too many variants are not
         joined together.
         """
-        var_data = (0, 1, 'A', 'T', 'SNV', '', 0, 1, False)
+        var_data = [
+            (0, 1, 'A', 'T', 'SNV', '', 0, 1, False),
+            (1, 2, 'A', 'T', 'SNV', '', 0, 1, False),
+            (2, 3, 'A', 'T', 'SNV', '', 0, 1, False),
+            (3, 4, 'A', 'T', 'SNV', '', 0, 1, False),
+            (4, 5, 'A', 'T', 'SNV', '', 0, 1, False),
+            (5, 6, 'A', 'T', 'SNV', '', 0, 1, False)
+        ]
         locations = [((0,4),(0,4))]
         data = {
             1:  ('SSSG', [0], [None], locations, 0),
             2:  ('SSHG', [1], [None], locations, 0),
-            3:  ('SSJG', [1], [var_data], locations, 0),
-            4:  ('SSOG', [1], [var_data], locations, 0),
-            5:  ('SSPG', [1], [var_data], locations, 0),
-            6:  ('SSWG', [1], [var_data, var_data], locations, 0),
-            7:  ('SSTG', [1], [var_data, var_data], locations, 0),
-            8:  ('SSQG', [1], [var_data, var_data, var_data], locations, 0),
+            3:  ('SSJG', [1], [var_data[0]], locations, 0),
+            4:  ('SSOG', [1], [var_data[1]], locations, 0),
+            5:  ('SSPG', [1], [var_data[2]], locations, 0),
+            6:  ('SSWG', [1], [var_data[0], var_data[1]], locations, 0),
+            7:  ('SSTG', [1], [var_data[0], var_data[2]], locations, 0),
+            8:  ('SSQG', [1], [var_data[0], var_data[1], var_data[2]], locations, 0),
             9:  ('SSCG', [2,3,4,5,6,7,8], [None], locations, 0),
             10: ('SSHG', [9], [None], locations, 0),
-            11: ('SSVG', [9], [var_data], locations, 0),
-            12: ('SSLG', [9], [var_data], locations, 0),
-            13: ('SSIG', [9], [var_data], locations, 0),
-            14: ('SSBG', [9], [var_data, var_data], locations, 0),
-            15: ('SSCG', [9], [var_data, var_data], locations, 0),
-            16: ('SSMG', [9], [var_data, var_data], locations, 0),
-            17: ('SSEG', [9], [var_data, var_data, var_data], locations, 0),
+            11: ('SSVG', [9], [var_data[3]], locations, 0),
+            12: ('SSLG', [9], [var_data[4]], locations, 0),
+            13: ('SSIG', [9], [var_data[5]], locations, 0),
+            14: ('SSBG', [9], [var_data[3], var_data[4]], locations, 0),
+            15: ('SSCG', [9], [var_data[3], var_data[5]], locations, 0),
+            16: ('SSMG', [9], [var_data[4], var_data[5]], locations, 0),
+            17: ('SSEG', [9], [var_data[3], var_data[4], var_data[5]], locations, 0),
             18: ('SSHG', [10,11,12,13,14,15,16,17,18], [None], locations, 0)
         }
         graph, nodes = create_pgraph(data, 'ENST0001')

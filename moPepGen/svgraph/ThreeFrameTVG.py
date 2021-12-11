@@ -1,6 +1,6 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING
+from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING, Iterable
 from collections import deque
 import copy
 from Bio.Seq import Seq
@@ -823,6 +823,14 @@ class ThreeFrameTVG():
                     queue.appendleft(e.out_node)
         return bridge_in, bridge_out
 
+    def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode]) -> bool:
+        """ Check the total number of variants of given nodes """
+        variants = set()
+        for node in nodes:
+            for variant in node.variants:
+                variants.add(variant.variant)
+        return len(variants) > self.max_variants_per_node
+
     def align_variants(self, node:TVGNode) -> Tuple[TVGNode, TVGNode]:
         r""" Aligns all variants at that overlaps to the same start and end
         position. Frameshifting mutations will be brached out
@@ -894,8 +902,7 @@ class ThreeFrameTVG():
 
                 trash.add(out_node)
 
-                if len(cur.variants) + len(out_node.variants) > \
-                        self.max_variants_per_node:
+                if self.nodes_have_too_many_variants([cur, out_node]):
                     continue
 
                 # create new node with the combined sequence

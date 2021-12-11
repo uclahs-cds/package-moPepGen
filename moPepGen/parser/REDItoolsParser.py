@@ -88,10 +88,29 @@ class REDItoolsRecord():
         self.all_subs = all_subs
         self.frequency = frequency
         self.transcript_id = transcript_id
+        self.base_count_order = {
+            'A': 0,
+            'C': 1,
+            'G': 2,
+            'T': 3
+        }
 
+    def get_valid_subs(self, min_read_count:int, min_frequency:float) -> bool:
+        """ """
+        total_count = sum(self.base_count)
+        valid_subs = []
+        for sub in self.all_subs:
+            alt = sub[1]
+            read_count = self.base_count[self.base_count_order[alt]]
+            if read_count < min_read_count:
+                continue
+            if read_count / total_count < min_frequency:
+                continue
+            valid_subs.append(sub)
+        return valid_subs
 
-    def convert_to_variant_records(self, anno:gtf.GenomicAnnotation
-            ) -> List[seqvar.VariantRecord]:
+    def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
+            min_read_count:int, min_frequency:float) -> List[seqvar.VariantRecord]:
         """ Convert to VariantRecord.
 
         Args:
@@ -108,6 +127,7 @@ class REDItoolsRecord():
                 _ids.append(tx_id)
 
         records = []
+        genomic_location = f"{self.region}:{self.position}"
         for tx_id in _ids:
             tx_model:gtf.TranscriptAnnotationModel = anno.transcripts[tx_id]
             try:
@@ -117,13 +137,14 @@ class REDItoolsRecord():
                     continue
             gene_id = tx_model.transcript.gene_id
             gene_model = anno.genes[gene_id]
+            strand = gene_model.strand
             position = anno.coordinate_genomic_to_gene(self.position - 1, gene_id)
             location = FeatureLocation(
                 seqname=gene_id,
                 start=position,
                 end=position + 1
             )
-            for sub in self.all_subs:
+            for sub in self.get_valid_subs(min_read_count, min_frequency):
                 ref = sub[0]
                 alt = sub[1]
                 if gene_model.strand == -1:
@@ -131,7 +152,9 @@ class REDItoolsRecord():
                     alt = str(Seq(alt).complement())
                 _id = f'RES-{ref}-{alt}'
                 attrs = {
-                    'TRANSCRIPT_ID': tx_id
+                    'TRANSCRIPT_ID': tx_id,
+                    'GENOMIC_POSITION': genomic_location,
+                    'STRAND': strand
                 }
                 record = VariantRecord(
                     location=location,
