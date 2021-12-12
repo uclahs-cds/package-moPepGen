@@ -14,6 +14,7 @@ def create_base_args() -> argparse.Namespace:
     args.annotation_gtf = None
     args.proteome_fasta = None
     args.output_fasta = None
+    args.max_variants_per_node = 5
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
     args.cleavage_rule = 'trypsin'
@@ -90,6 +91,26 @@ class TestCallVariantPeptides(TestCaseIntegration):
             str(self.data_dir/'vep'/'vep_gSNP.gvf'),
             str(self.data_dir/'fusion'/'fusion.gvf'),
             str(self.data_dir/'circRNA'/'circ_rna.gvf')
+        ]
+        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_all_sources(self):
+        """ Test variant peptide calling with fusion and circRNA,
+        RNAEditing, gSNP and gINDEL """
+        args = create_base_args()
+        args.input_variant = [
+            str(self.data_dir/'vep/vep_gSNP.gvf'),
+            str(self.data_dir/'vep/vep_gINDEL.gvf'),
+            str(self.data_dir/'fusion/fusion.gvf'),
+            str(self.data_dir/'circRNA/circ_rna.gvf'),
+            str(self.data_dir/'reditools/reditools.gvf')
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'

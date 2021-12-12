@@ -16,7 +16,7 @@ from .common import add_args_reference, add_args_quiet, add_args_source,\
 def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen parseREDItools """
 
-    p = subparsers.add_parser(
+    p:argparse.ArgumentParser = subparsers.add_parser(
         name='parseREDItools',
         help='Parse REDItools result for moPepGen to call variant peptides.',
         description='Parse the REDItools result to a GVF format of variant'
@@ -39,6 +39,28 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         default=16,
         metavar='<number>'
     )
+    p.add_argument(
+        '--min-coverage-alt',
+        type=int,
+        help='Minimal read coverage of alterations to be parsed.',
+        default=3,
+        metavar='<number>'
+    )
+    p.add_argument(
+        '--min-frequency-alt',
+        type=float,
+        help='Minimal frequency of alteration to be parsed.',
+        default=0.1,
+        metavar='<value>'
+    )
+    p.add_argument(
+        '--min-coverage-dna',
+        type=int,
+        help='Minimal read coverage at the alteration site of WGS. Set it to'
+        ' -1 to skip checking this.',
+        default=10,
+        metavar='<number>'
+    )
     add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
@@ -54,6 +76,9 @@ def parse_reditools(args:argparse.Namespace) -> None:
     transcript_id_column = args.transcript_id_column
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '.gvf'
+    min_coverage_alt:int = args.min_coverage_alt
+    min_frequency_alt:int = args.min_frequency_alt
+    min_coverage_dna:int = args.min_coverage_dna
 
     print_start_message(args)
 
@@ -62,7 +87,12 @@ def parse_reditools(args:argparse.Namespace) -> None:
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
 
     for record in parser.REDItoolsParser.parse(table_file, transcript_id_column):
-        _vars = record.convert_to_variant_records(anno)
+        _vars = record.convert_to_variant_records(
+            anno=anno,
+            min_coverage_alt=min_coverage_alt,
+            min_frequency_alt=min_frequency_alt,
+            min_coverage_dna=min_coverage_dna
+        )
         for variant in _vars:
             transcript_id = variant.location.seqname
             if transcript_id not in variants:

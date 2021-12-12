@@ -1,6 +1,6 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING
+from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING, Iterable
 from collections import deque
 import copy
 from Bio.Seq import Seq
@@ -23,17 +23,21 @@ class ThreeFrameTVG():
     Attributes:
         seq (DNASeqRecordWithCoordinates): The original sequence of the
             transcript (reference).
-        root (TVGNode)
-        reading_frames (List[TVGNode])
-        has_known_orf (bool)
+        root (TVGNode): The root of the graph. The sequence of the root node
+            must be None.
+        reading_frames (List[TVGNode]): List of three null nodes. Each node is
+            the root to the subgraph of the corresponding reading frame.
+        has_known_orf (bool): whether
         cds_start_nf (bool)
         mrna_end_nf (bool)
+        global_variant (VariantRecord)
         id (str)
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
-            mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None):
+            mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
+            max_variants_per_node:int=-1):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -56,6 +60,7 @@ class ThreeFrameTVG():
             self.has_known_orf = has_known_orf
         self.mrna_end_nf = mrna_end_nf
         self.global_variant = global_variant
+        self.max_variants_per_node = max_variants_per_node
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -76,13 +81,28 @@ class ThreeFrameTVG():
         root1 = TVGNode(None, reading_frame_index=1)
         root2 = TVGNode(None, reading_frame_index=2)
 
-        node0 = TVGNode(self.seq, reading_frame_index=0, subgraph_id=self.id)
+        node0 = TVGNode(
+            seq=self.seq, reading_frame_index=0, subgraph_id=self.id,
+            global_variant=self.global_variant
+        )
         if truncate_head:
-            node1 = TVGNode(self.seq[1:], reading_frame_index=1, subgraph_id=self.id)
-            node2 = TVGNode(self.seq[2:], reading_frame_index=2, subgraph_id=self.id)
+            node1 = TVGNode(
+                seq=self.seq[1:], reading_frame_index=1, subgraph_id=self.id,
+                global_variant=self.global_variant
+            )
+            node2 = TVGNode(
+                self.seq[2:], reading_frame_index=2, subgraph_id=self.id,
+                global_variant=self.global_variant
+            )
         else:
-            node1 = TVGNode(self.seq, reading_frame_index=1, subgraph_id=self.id)
-            node2 = TVGNode(self.seq, reading_frame_index=2, subgraph_id=self.id)
+            node1 = TVGNode(
+                self.seq, reading_frame_index=1, subgraph_id=self.id,
+                global_variant=self.global_variant
+            )
+            node2 = TVGNode(
+                self.seq, reading_frame_index=2, subgraph_id=self.id,
+                global_variant=self.global_variant
+            )
 
         self.add_edge(root0, node0, 'reference')
         self.add_edge(self.root, root0, 'reference')
@@ -810,6 +830,16 @@ class ThreeFrameTVG():
                     queue.appendleft(e.out_node)
         return bridge_in, bridge_out
 
+    def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode]) -> bool:
+        """ Check the total number of variants of given nodes """
+        if self.max_variants_per_node == -1:
+            return False
+        variants = set()
+        for node in nodes:
+            for variant in node.variants:
+                variants.add(variant.variant)
+        return len(variants) > self.max_variants_per_node
+
     def align_variants(self, node:TVGNode) -> Tuple[TVGNode, TVGNode]:
         r""" Aligns all variants at that overlaps to the same start and end
         position. Frameshifting mutations will be brached out
@@ -880,6 +910,9 @@ class ThreeFrameTVG():
                     continue
 
                 trash.add(out_node)
+
+                if self.nodes_have_too_many_variants([cur, out_node]):
+                    continue
 
                 # create new node with the combined sequence
                 new_node = cur.copy()
@@ -1026,7 +1059,8 @@ class ThreeFrameTVG():
             root=root,
             _id=self.id,
             known_orf=known_orf,
-            cds_start_nf=self.cds_start_nf
+            cds_start_nf=self.cds_start_nf,
+            max_variants_per_node=self.max_variants_per_node
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])

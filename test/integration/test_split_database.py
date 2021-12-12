@@ -35,5 +35,7 @@ class TestSplitDatabase(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.split_database(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'test_gINDEL.fasta','test_gSNP.fasta','test_RNAEditing.fasta'}
+        expected = {'test_gINDEL.fasta','test_gSNP.fasta',
+            'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
+            'test_Remaining.fasta', 'test_circRNA.fasta'}
         self.assertEqual(files, expected)
