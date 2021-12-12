@@ -1,6 +1,6 @@
 """ Module for variant peptide pool (unique) """
 from __future__ import annotations
-from typing import Set, IO, Dict, List, TYPE_CHECKING
+from typing import Set, IO, Dict, List
 from pathlib import Path
 from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
@@ -9,9 +9,6 @@ from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from moPepGen import get_equivalent, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from .VariantPeptideLabel import VariantPeptideInfo
 
-
-if TYPE_CHECKING:
-    from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 
 class VariantPeptidePool():
     """ Varaint Peptide Pool """
@@ -77,7 +74,7 @@ class VariantPeptidePool():
             coding_transcripts:List[str]=None, keep_all_noncoding:bool=False,
             keep_all_coding:bool=False
             ) -> VariantPeptidePool:
-        """ Filiter variant peptides according to gene expression. """
+        """ Filter variant peptides according to gene expression. """
         label_delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         filtered_pool = VariantPeptidePool()
         for peptide in self.peptides:

@@ -26,7 +26,8 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
     def __init__(self, seq:Union[DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=False,
-            circ_record:circ.CircRNAModel=None, attrs:dict=None):
+            circ_record:circ.CircRNAModel=None, attrs:dict=None,
+            max_variants_per_node:int=5):
         """ Construct a CircularVariantGraph
 
         Args:
@@ -55,24 +56,12 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             _type='circRNA',
             _id=_id
         )
-        super().__init__(seq, _id, root, reading_frames, cds_start_nf,
-            has_known_orf, global_variant=circ_variant)
-
-    # def create_node(self, seq:DNASeqRecordWithCoordinates,
-    #         variants:List[seqvar.VariantRecordWithCoordinate]=None,
-    #         frameshifts:Set[seqvar.VariantRecord]=None,
-    #         branch:bool=False, orf:List[int]=None,
-    #         reading_frame_index:int=None, subgraph_id:str=None) -> TVGNode:
-    #     """ Helper function to create a TVGNode """
-    #     return TVGNode(
-    #         seq=seq,
-    #         variants=variants,
-    #         frameshifts=frameshifts,
-    #         branch=branch,
-    #         orf=orf,
-    #         reading_frame_index=reading_frame_index,
-    #         subgraph_id=subgraph_id or self.id
-    #     )
+        super().__init__(
+            seq=seq, _id=_id, root=root, reading_frames=reading_frames,
+            cds_start_nf=cds_start_nf, has_known_orf=has_known_orf,
+            global_variant=circ_variant,
+            max_variants_per_node=max_variants_per_node
+        )
 
     def get_circ_variant_with_coordinate(self) -> seqvar.VariantRecordWithCoordinate:
         """ Add a variant record to the frameshifting of the root node. This

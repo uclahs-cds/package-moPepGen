@@ -634,6 +634,48 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         expected = {'GG', 'AG', 'AT', 'TG'}
         self.assertEqual(received, expected)
 
+    def test_align_variantes_max_variants(self):
+        r""" Tests for aligning variants in heavily mutated local region
+
+            G
+           / \
+          | T |   T   A
+          |/ \|  / \ / \
+        AAT-A-C-C-C-T-T-G
+           \ /
+            C
+
+        """
+        var_data = [
+            (0, 'A', 'T', 'SNV', ''),
+            (0, 'A', 'G', 'SNV', ''),
+            (0, 'A', 'C', 'SNV', ''),
+            (0, 'C', 'G', 'SNV', ''),
+            (0, 'C', 'G', 'SNV', ''),
+            (0, 'T', 'A', 'SNV', ''),
+        ]
+        data = {
+            1:  ['AAT', ['RF0'], [], 1],
+            2:  ['A', [1], []],
+            3:  ['T', [1], [var_data[0]]],
+            4:  ['G', [1], [var_data[1]]],
+            5:  ['C', [1], [var_data[2]]],
+            6:  ['C', [2,3,4,5], []],
+            7:  ['C', [6], []],
+            8:  ['C', [6], [var_data[3]]],
+            9:  ['T', [7,8], []],
+            10: ['T', [9], []],
+            11: ['A', [9], [var_data[4]]],
+            12: ['G', [10,11], []]
+        }
+
+        graph, nodes = create_three_frame_tvg(data, 'AATACCTTG')
+        graph.max_variants_per_node = 2
+        graph.align_variants(nodes[1])
+        for edge in nodes[1].out_edges:
+            out_node = edge.out_node
+            self.assertTrue(len(out_node.variants) <= graph.max_variants_per_node)
+
     def test_expand_alignments(self):
         r""" find_known_orf wihtout mutation
 
