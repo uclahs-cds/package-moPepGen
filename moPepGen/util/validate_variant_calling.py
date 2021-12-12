@@ -66,6 +66,7 @@ def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
     args.output_dir = output_dir
     args.miscleavage = 2
     args.min_mw = 500.
+    args.translate_noncoding = 'true'
     downsample_reference(args)
 
 def extract_gvf(tx_id:str, gvf_files:List[Path], output_path:Path):
