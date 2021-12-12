@@ -40,18 +40,26 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         metavar='<number>'
     )
     p.add_argument(
-        '--min-read-count',
+        '--min-coverage-alt',
         type=int,
-        help='Minimal read count of alterations to be parsed.',
+        help='Minimal read coverage of alterations to be parsed.',
         default=3,
         metavar='<number>'
     )
     p.add_argument(
-        '--min-frequency',
+        '--min-frequency-alt',
         type=float,
         help='Minimal frequency of alteration to be parsed.',
         default=0.1,
         metavar='<value>'
+    )
+    p.add_argument(
+        '--min-coverage-dna',
+        type=int,
+        help='Minimal read coverage at the alteration site of WGS. Set it to'
+        ' -1 to skip checking this.',
+        default=10,
+        metavar='<number>'
     )
     add_args_output_prefix(p)
     add_args_source(p)
@@ -68,8 +76,9 @@ def parse_reditools(args:argparse.Namespace) -> None:
     transcript_id_column = args.transcript_id_column
     output_prefix:str = args.output_prefix
     output_path = output_prefix + '.gvf'
-    min_read_count:int = args.min_read_count
-    min_frequency:int = args.min_frequency
+    min_coverage_alt:int = args.min_coverage_alt
+    min_frequency_alt:int = args.min_frequency_alt
+    min_coverage_dna:int = args.min_coverage_dna
 
     print_start_message(args)
 
@@ -79,8 +88,10 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     for record in parser.REDItoolsParser.parse(table_file, transcript_id_column):
         _vars = record.convert_to_variant_records(
-            anno=anno, min_read_count=min_read_count,
-            min_frequency=min_frequency
+            anno=anno,
+            min_coverage_alt=min_coverage_alt,
+            min_frequency_alt=min_frequency_alt,
+            min_coverage_dna=min_coverage_dna
         )
         for variant in _vars:
             transcript_id = variant.location.seqname

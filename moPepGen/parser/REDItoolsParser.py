@@ -36,6 +36,11 @@ def parse(path:str, transcript_id_column:int=16
                     raise ValueError('length of sub larger than 2')
                 all_subs.append((sub[0], sub[1]))
 
+            try:
+                g_coverage_q = int(fields[9])
+            except ValueError:
+                g_coverage_q = None
+
             if len(fields) <= transcript_id_column:
                 raise ValueError('transcript_id_column invalid.')
             _data = re.split(r',|&|\$', fields[transcript_id_column])
@@ -46,11 +51,12 @@ def parse(path:str, transcript_id_column:int=16
                 position=int(fields[1]),
                 reference=fields[2],
                 strand=int(fields[3]),
-                coverage_q30=int(fields[4]),
+                coverage_q=int(fields[4]),
                 mean_quality=float(fields[5]),
                 base_count=base_count,
                 all_subs=all_subs,
                 frequency=float(fields[8]),
+                g_coverage_q=g_coverage_q,
                 transcript_id=transcript_ids
             )
             line = next(handle, None)
@@ -73,20 +79,21 @@ class REDItoolsRecord():
         transcirpt_id (List[Tuple[str,str]]): transcript IDs.
     """
     def __init__(self, region:str, position:int, reference:str, strand:int,
-            coverage_q30:int, mean_quality:float, base_count:List[int],
-            all_subs:List[Tuple[str, str]], frequency=int,
-            transcript_id=List[Tuple[str, str]]):
+            coverage_q:int, mean_quality:float, base_count:List[int],
+            all_subs:List[Tuple[str, str]], frequency:int, g_coverage_q:int,
+            transcript_id:List[Tuple[str, str]]):
         """ constructor """
         self.region = region
         self.position = position
         self.reference = reference
         self.starnd = strand
         self.all_subs = all_subs
-        self.coverage_q30 = coverage_q30
+        self.coverage_q = coverage_q
         self.mean_quality = mean_quality
         self.base_count = base_count
         self.all_subs = all_subs
         self.frequency = frequency
+        self.g_coverage_q = g_coverage_q
         self.transcript_id = transcript_id
         self.base_count_order = {
             'A': 0,
@@ -95,22 +102,29 @@ class REDItoolsRecord():
             'T': 3
         }
 
-    def get_valid_subs(self, min_read_count:int, min_frequency:float) -> bool:
+    def get_valid_subs(self, min_coverage_alt:int, min_frequency_alt:float,
+            min_coverage_dna:int) -> bool:
         """ Get all valid substitutions. """
         total_count = sum(self.base_count)
         valid_subs = []
+
+        if self.g_coverage_q != -1:
+            if self.g_coverage_q is None or self.g_coverage_q < min_coverage_dna:
+                return valid_subs
+
         for sub in self.all_subs:
             alt = sub[1]
             read_count = self.base_count[self.base_count_order[alt]]
-            if read_count < min_read_count:
+            if read_count < min_coverage_alt:
                 continue
-            if read_count / total_count < min_frequency:
+            if read_count / total_count < min_frequency_alt:
                 continue
             valid_subs.append(sub)
         return valid_subs
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
-            min_read_count:int, min_frequency:float) -> List[seqvar.VariantRecord]:
+            min_coverage_alt:int, min_frequency_alt:float,
+            min_coverage_dna:int) -> List[seqvar.VariantRecord]:
         """ Convert to VariantRecord.
 
         Args:
@@ -144,7 +158,12 @@ class REDItoolsRecord():
                 start=position,
                 end=position + 1
             )
-            for sub in self.get_valid_subs(min_read_count, min_frequency):
+            valid_subs = self.get_valid_subs(
+                min_coverage_alt=min_coverage_alt,
+                min_frequency_alt=min_frequency_alt,
+                min_coverage_dna=min_coverage_dna
+            )
+            for sub in valid_subs:
                 ref = sub[0]
                 alt = sub[1]
                 if gene_model.strand == -1:

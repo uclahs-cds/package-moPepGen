@@ -23,11 +23,14 @@ class ThreeFrameTVG():
     Attributes:
         seq (DNASeqRecordWithCoordinates): The original sequence of the
             transcript (reference).
-        root (TVGNode)
-        reading_frames (List[TVGNode])
-        has_known_orf (bool)
+        root (TVGNode): The root of the graph. The sequence of the root node
+            must be None.
+        reading_frames (List[TVGNode]): List of three null nodes. Each node is
+            the root to the subgraph of the corresponding reading frame.
+        has_known_orf (bool): whether
         cds_start_nf (bool)
         mrna_end_nf (bool)
+        global_variant (VariantRecord)
         id (str)
     """
     def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
