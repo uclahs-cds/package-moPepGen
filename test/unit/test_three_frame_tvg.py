@@ -130,7 +130,11 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             'ACCEPTER_GENE_ID': 'ENSG0001',
             'ACCEPTER_TRANSCRIPT_ID': 'ENST0001.1',
             'ACCEPTER_POSITION': 20,
-            'ACCEPTER_CHROM': 'chr1'
+            'ACCEPTER_CHROM': 'chr1',
+            'LEFT_INSERTION_START': None,
+            'LEFT_INSERTION_END': None,
+            'RIGHT_INSERTION_START': None,
+            'RIGHT_INSERTION_END': None
         }
         var_fusion = create_variant(8, 9, 'C', '<FUSION>', 'Fusion',
             'FUSIONXXX', attrs=attrs)
@@ -778,7 +782,11 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             'ACCEPTER_TRANSCRIPT_ID': 'ENST0002.1',
             'ACCEPTER_SYMBOL': 'SYMB2',
             'ACCEPTER_POSITION': 17,
-            'ACCEPTER_GENOMIC_POSITION': 'chr1-78:78'
+            'ACCEPTER_GENOMIC_POSITION': 'chr1-78:78',
+            'LEFT_INSERTION_START': None,
+            'LEFT_INSERTION_END': None,
+            'RIGHT_INSERTION_START': None,
+            'RIGHT_INSERTION_END': None
         }
         fusion = create_variant(21, 22, 'A', '<FUS>', 'Fusion', 'FUSION-XXX', fusion_attrs)
         variant_pool = seqvar.VariantRecordPool()

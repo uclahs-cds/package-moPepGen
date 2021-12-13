@@ -285,8 +285,12 @@ class TranscriptAnnotationModel():
         return length
 
     def is_exonic(self, pos:int) -> bool:
-        """ Checks if the given position is contained by any exon of the
-        current transcript model. """
+        """ Checks if the given genomic position is contained by any exon of
+        the current transcript model.
+
+        Args:
+            pos (int): A genomic position
+        """
         for exon in self.exon:
             if pos in exon:
                 return True
@@ -304,3 +308,38 @@ class TranscriptAnnotationModel():
                 if exon.location.start <= pos:
                     return exon
         return None
+
+    def find_upstream_exon_end(self, pos:int) -> int:
+        """ Find the upstream exon end """
+        ind = -1
+        if self.transcript.strand == 1:
+            for exon in self.exon:
+                if exon.location.ned > pos:
+                    break
+                ind = exon.location.end
+        else:
+            for exon in reversed(self.exon):
+                if exon.location.start <= pos:
+                    break
+                ind = exon.location.start
+        if ind == -1:
+            raise ValueError("Could not find the upstream exon end.")
+        return ind
+
+    def find_downstream_exon_end(self, pos:int) -> int:
+        """ Find the downstream exon end """
+        ind = -1
+        if self.transcript.strand == 1:
+            for exon in self.exon:
+                if exon.location.start >= pos:
+                    ind = exon.location.end
+                    break
+        else:
+            for exon in reversed(self.exon):
+                if exon.location.end < pos:
+                    ind = exon.location.end
+                    break
+        if ind == -1:
+            raise ValueError("Could not find the upstream exon end.")
+        return ind
+

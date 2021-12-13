@@ -496,12 +496,24 @@ class GenomicAnnotation():
                     break
         raise err.IntronNotFoundError(gene_id, feature)
 
-    def get_transcripts_with_position(self, gene_id:str, pos:int
+    def get_transcripts_with_exonic_position(self, gene_id:str, pos:int
             ) -> List[TranscriptAnnotationModel]:
-        """ get all transcripts of a gene that contains a genomic position """
-        transcripts = []
+        """ get all transcripts of a gene that the given genomic position is
+        exonic """
+        transcripts:List[TranscriptAnnotationModel] = []
         for tx_id in self.genes[gene_id].transcripts:
             tx_model = self.transcripts[tx_id]
             if tx_model.is_exonic(pos):
+                transcripts.append(tx_model)
+        return transcripts
+
+    def get_transcripts_with_position(self, gene_id:str, pos:str
+            ) -> List[TranscriptAnnotationModel]:
+        """ Get all transcripts of a gene that contains the genomic posision in
+        exon or intron """
+        transcripts:List[TranscriptAnnotationModel] = []
+        for tx_id in self.genes[gene_id].transcripts:
+            tx_model = self.transcripts[tx_id]
+            if pos in tx_model.transcript:
                 transcripts.append(tx_model)
         return transcripts

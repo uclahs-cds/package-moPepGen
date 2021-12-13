@@ -84,6 +84,9 @@ class VariantRecordPool():
                 self.add_genetic_variant(record, gene_id)
                 continue
 
+            if record.is_fusion():
+                record.shift_breakpoint_to_closest_exon(anno)
+
             tx_id = record.attrs['TRANSCRIPT_ID']
             if record.is_spanning_over_splicing_site(anno, tx_id):
                 self.add_genetic_variant(record, tx_id)

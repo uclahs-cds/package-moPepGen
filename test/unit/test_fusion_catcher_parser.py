@@ -63,7 +63,7 @@ ANNOTATION_DATA = {
         'transcript_id': ANNOTATION_ATTRS[1]['transcripts'][0]['transcript_id'],
         'chrom': 'chr1',
         'strand': 1,
-        'transcript': (5, 35, ANNOTATION_ATTRS[1]['transcripts'][0]),
+        'transcript': (65, 95, ANNOTATION_ATTRS[1]['transcripts'][0]),
         'exon': [
             (65, 72, ANNOTATION_ATTRS[1]['transcripts'][0]),
             (77, 83, ANNOTATION_ATTRS[1]['transcripts'][0]),

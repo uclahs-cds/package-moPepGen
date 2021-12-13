@@ -410,6 +410,63 @@ class ThreeFrameTVG():
         accepter_chrom = accepter_tx_model.transcript.location.seqname
         accepter_tx_seq = accepter_tx_model.get_transcript_sequence(
             genome[accepter_chrom])
+
+        # create subgraph for the left insertion
+        if variant.attrs['LEFT_INSERTION_START'] is not None:
+            tx_id = variant.location.seqname
+            tx_model = anno.transcripts[tx_id]
+            gene_id = tx_model.transcript.gene_id
+            gene_model = anno.genes[gene_id]
+            chrom = gene_model.chrom
+            seq = gene_model.get_gene_sequence(genome[chrom])
+            start = variant.attrs['LEFT_INSERTION_START']
+            end = variant.attrs['LEFT_INSERTION_END']
+            insert_seq = seq[start:end]
+            insertion_variants = variant_pool.filter_variants(
+                gene_id=gene_id, anno=anno, exclude_type=['Fusion'],
+                start=start, end=end, intron=True, return_coord='gene'
+            )
+            var = seqvar.VariantRecordWithCoordinate(
+                variant=variant,
+                location=FeatureLocation(start=0, end=len(insert_seq.seq))
+            )
+            cursors = self._apply_insertion(
+                cursors=cursors,
+                var=var,
+                seq=insert_seq,
+                variants=insertion_variants,
+                active_frames=active_frames,
+                open_end=True
+            )
+
+        # create subgraph for the right insertion
+        if variant.attrs['RIGHT_INSERTION_START'] is not None:
+            tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
+            tx_model = anno.transcripts[tx_id]
+            gene_id = tx_model.transcript.gene_id
+            gene_model = anno.genes[gene_id]
+            chrom = gene_model.chrom
+            seq = gene_model.get_gene_sequence(genome[chrom])
+            start = variant.attrs['RIGHT_INSERTION_START']
+            end = variant.attrs['RIGHT_INSERTION_END']
+            insert_seq = seq[start:end]
+            insertion_variants = variant_pool.filter_variants(
+                gene_id=gene_id, anno=anno, exclude_type=['Fusion'],
+                start=start, end=end, intron=True, return_coord='gene'
+            )
+            var = seqvar.VariantRecordWithCoordinate(
+                variant=variant,
+                location=FeatureLocation(start=0, end=len(insert_seq.seq))
+            )
+            cursors = self._apply_insertion(
+                cursors=cursors,
+                var=var,
+                seq=insert_seq,
+                variants=insertion_variants,
+                active_frames=active_frames,
+                open_end=True
+            )
+
         breakpoint_gene = variant.get_accepter_position()
         breakpoint_tx = anno.coordinate_gene_to_transcript(breakpoint_gene,
             accepter_gene_id, accepter_tx_id)
@@ -474,9 +531,25 @@ class ThreeFrameTVG():
             var:seqvar.VariantRecordWithCoordinate,
             seq:dna.DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecord],
-            active_frames:List[bool]
+            active_frames:List[bool],
+            open_end:bool=False
         ) -> List[TVGNode]:
-        """ Apply insertion """
+        """ This is a wrapper function to apply insertions to the graph. It can
+        be used for actual Insertion, and also Substituteion. It is also used
+        in apply_fusion to to insert intronic sequences if the breakpoint is
+        intronic.
+
+        Args:
+            cursors (List[TVGNode]): A list of three nodes that of the cursors
+                during create_variant_graph.
+            var (VariantRecordWithCoordinate): The variant object to be added
+                to the inserted nodes.
+            variants (List[VariantRecord]): Additional variants that the
+                insertion sequence carries.
+            active_frames (List[bool]): Whether each reading frame is active.
+            open_end (bool): When True, the inserted node won't be merged to
+                the downstream of the graph, and will be hanging.
+        """
         cursors = copy.copy(cursors)
         branch = ThreeFrameTVG(seq, self.id, global_variant=var.variant)
         branch.init_three_frames(truncate_head=False)
@@ -530,6 +603,12 @@ class ThreeFrameTVG():
                 self.add_edge(source, var_head, 'variant_start')
                 if not is_frameshifting:
                     target = tail
+
+            # `open_end` is set to True when the head of an insertion is applied
+            # to the graph but not the tail.
+            if open_end:
+                cursors[i] = var_tail
+                continue
 
             if var_end < target_end:
                 index = target.seq.get_query_index(var_end)
