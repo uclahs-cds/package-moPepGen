@@ -123,6 +123,13 @@ class VariantRecord():
         """ less or equal to """
         return not self > other
 
+    @property
+    def transcript_id(self) -> str:
+        """ Transcript ID """
+        if 'TRANSCRIPT_ID' in self.attrs:
+            return self.attrs['TRANSCRIPT_ID']
+        return self.location.seqname
+
     def get_donor_start(self) -> int:
         """ Get donor start position """
         if self.type in ['Insertion', 'Substitution']:

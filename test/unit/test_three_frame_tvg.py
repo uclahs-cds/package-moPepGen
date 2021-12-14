@@ -914,16 +914,11 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
     def test_fusion_breakpoint_end_of_transcript(self):
         """ Test case for fusion that the donor breakpoint is the end of the
         transcript """
-        # pylint: disable=C0415
-        from test.unit.test_arriba_parser import \
-            ANNOTATION_DATA as annotation_data, \
-            GENOME_DATA as genomic_data
-
-        genome = create_dna_record_dict(genomic_data)
-        anno = create_genomic_annotation(annotation_data)
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
 
         fusion_attrs = {
-            'TRANSCRIPT_ID': 'ENST0001.1',
+            'GENE_ID': 'ENSG0001',
             'GENE_SYMBOL': 'SYMBO1',
             'GENOMIC_POSITION': 'chr1-36:36',
             'ACCEPTER_GENE_ID': 'ENSG0002',
@@ -936,7 +931,8 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             'RIGHT_INSERTION_START': None,
             'RIGHT_INSERTION_END': None
         }
-        fusion = create_variant(21, 22, 'A', '<FUS>', 'Fusion', 'FUSION-XXX', fusion_attrs)
+        fusion = create_variant(21, 22, 'A', '<FUS>', 'Fusion', 'FUSION-XXX',
+            fusion_attrs, 'ENST0001.1')
         variant_pool = seqvar.VariantRecordPool()
         tx_model = anno.transcripts['ENST0001.1']
         tx_seq = tx_model.get_transcript_sequence(genome['chr1'])

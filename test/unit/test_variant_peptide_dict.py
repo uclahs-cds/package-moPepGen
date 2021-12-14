@@ -25,8 +25,13 @@ class TestCaseVariantPeptideDict(unittest.TestCase):
         data = [
             (
                 ('SSSSSSSSSR', tx_id), [
-                    ([(100, 101, 'A', 'T', 'SNV', 'SNV-100-A-T')], [0, None]),
-                    ([(200, 201, 'G', 'C', 'SNV', 'SNV-200-G-C')], [0, None])
+                    (
+                        [(100, 101, 'A', 'T', 'SNV', 'SNV-100-A-T', {}, 'ENST0001')],
+                        [0, None]
+                    ), (
+                        [(200, 201, 'G', 'C', 'SNV', 'SNV-200-G-C', {}, 'ENST0001')],
+                        [0, None]
+                    )
                 ]
             )
         ]
