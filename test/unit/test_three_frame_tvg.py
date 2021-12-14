@@ -1,46 +1,11 @@
 """ Test module for ThreeFrameTVG """
 import unittest
 from test.unit import create_variant, create_variants, \
-    create_genomic_annotation, create_dna_record_dict, create_three_frame_tvg
+    create_genomic_annotation, create_dna_record_dict, create_three_frame_tvg, \
+    ANNOTATION_DATA, GENOME_DATA
 from moPepGen import seqvar, svgraph
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
-
-GENOME_DATA = {
-    'chr1': 'ATGTACTGGTCCTTCTGCCTATGTACTGGTCCTTCTGCCTATGTACTGGTCCTTCTGCCT'
-}
-ANNOTATION_ATTRS = [
-    {
-        'gene_id': 'ENSG0001',
-        'gene_name': 'SYMBO'
-    },{
-        'transcript_id': 'ENST0001.1',
-        'gene_id': 'ENSG0001',
-        'protein_id': 'ENSP0001',
-        'gene_name': 'SYMBO'
-    }
-]
-ANNOTATION_DATA = {
-    'genes': [{
-        'gene_id': ANNOTATION_ATTRS[0]['gene_id'],
-        'chrom': 'chr1',
-        'strand': 1,
-        'gene': (0, 40, ANNOTATION_ATTRS[0]),
-        'transcripts': ['ENST0001.1']
-    }],
-    'transcripts': [{
-        # seq: CTGGT CCCCT ATGGG TCCTT C
-        'transcript_id': ANNOTATION_ATTRS[1]['transcript_id'],
-        'chrom': 'chr1',
-        'strand': 1,
-        'transcript': (5, 35, ANNOTATION_ATTRS[1]),
-        'exon': [
-            (5, 12, ANNOTATION_ATTRS[1]),
-            (17, 23, ANNOTATION_ATTRS[1]),
-            (27, 35, ANNOTATION_ATTRS[1])
-        ]
-    }]
-}
 
 class TestCaseThreeFrameTVG(unittest.TestCase):
     """ Test case for ThreeFrameTVG """
@@ -168,6 +133,189 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             # also test alignment will treat the first fusioned node as reference
             graph.align_variants(end_node)
             self.assertEqual(str(end_node.seq.seq), 'TGG')
+
+    def test_apply_fusion_intronic_donor(self):
+        r""" Test fusion that the donor breakpoint is intronic
+        """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        genome = create_dna_record_dict(GENOME_DATA)
+        data = {
+            1: ('AACC', ['RF0'], []),
+            2: ('T', [1], []),
+            3: ('C', [1], [(0, 'C', 'T', 'SNV', '')]),
+            4: ('TGGCGGTTCGACCGTG', [2,3], []),
+            11: ('AACC', ['RF1'], []),
+            12: ('T', [11], []),
+            13: ('C', [11], [(0, 'C', 'T', 'SNV', '')]),
+            14: ('TGGCGGTTCGACCGTG', [12,13], []),
+            21: ('AACC', ['RF0'], []),
+            22: ('T', [21], []),
+            23: ('C', [21], [(0, 'C', 'T', 'SNV', '')]),
+            24: ('TGGCGGTTCGACCGTG', [22,23], [])
+        }
+        seq = 'AACCTCTGGCGGTTC'
+        graph, nodes = create_three_frame_tvg(data, seq)
+
+        attrs = {
+            'TRANSCRIPT_ID': 'ENST0001.1',
+            'ACCEPTER_GENE_ID': 'ENSG0002',
+            'ACCEPTER_TRANSCRIPT_ID': 'ENST0002.1',
+            'ACCEPTER_POSITION': 20,
+            'ACCEPTER_CHROM': 'chr1'
+        }
+        var_fusion = create_variant(15, 16, 'C', '<FUSION>', 'Fusion',
+            'FUSIONXXX', attrs=attrs)
+        var_fusion.location.seqname= 'ENSG0001'
+        var_fusion.shift_breakpoint_to_closest_exon(anno)
+        var_fusion = var_fusion.to_transcript_variant(anno, genome, 'ENST0001.1')
+        var_data = {
+            ( 3,  4, 'T', 'A', 'SNV', '', None, 'ENST0002.1'),
+            (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0002.1'),
+            (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0002.1')
+        }
+        tx_variants = {'ENST0002.1': create_variants(var_data)}
+        var_data2 = {
+            (14, 15, 'T', 'A', 'SNV', '' , None, 'ENSG0001')
+        }
+        it_variants = {'ENST0001.1': create_variants(var_data2)}
+        variant_pool = seqvar.VariantRecordPool(
+            transcriptional=tx_variants,
+            intronic=it_variants
+        )
+
+        end_nodes = graph.apply_fusion([nodes[i] for i in [4,14,24]],
+            var_fusion, variant_pool, genome, anno)
+
+        gene_model = anno.genes['ENSG0001']
+        gene_seq = gene_model.get_gene_sequence(genome['chr1'])
+        insert_seq = str(gene_seq.seq[12:15])
+
+        for node in end_nodes:
+            self.assertEqual(str(node.seq.seq), 'TG')
+            received = {str(x.out_node.seq.seq) for x in node.out_edges}
+            self.assertEqual(received, {insert_seq, 'GCGGTTCGACCGTG'})
+
+    def test_apply_fusion_intronic_accepter(self):
+        r""" Test fusion that the accepter breakpoint is intronic
+        """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        genome = create_dna_record_dict(GENOME_DATA)
+        data = {
+            1: ('AACC', ['RF0'], []),
+            2: ('T', [1], []),
+            3: ('C', [1], [(0, 'C', 'T', 'SNV', '')]),
+            4: ('TGGCGGTTCGACCGTG', [2,3], []),
+            11: ('AACC', ['RF1'], []),
+            12: ('T', [11], []),
+            13: ('C', [11], [(0, 'C', 'T', 'SNV', '')]),
+            14: ('TGGCGGTTCGACCGTG', [12,13], []),
+            21: ('AACC', ['RF0'], []),
+            22: ('T', [21], []),
+            23: ('C', [21], [(0, 'C', 'T', 'SNV', '')]),
+            24: ('TGGCGGTTCGACCGTG', [22,23], [])
+        }
+        seq = 'AACCTCTGGCGGTTC'
+        graph, nodes = create_three_frame_tvg(data, seq)
+
+        attrs = {
+            'TRANSCRIPT_ID': 'ENST0001.1',
+            'ACCEPTER_GENE_ID': 'ENSG0002',
+            'ACCEPTER_TRANSCRIPT_ID': 'ENST0002.1',
+            'ACCEPTER_POSITION': 14,
+            'ACCEPTER_CHROM': 'chr1'
+        }
+        var_fusion = create_variant(20, 21, 'C', '<FUSION>', 'Fusion',
+            'FUSIONXXX', attrs=attrs)
+        var_fusion.location.seqname= 'ENSG0001'
+        var_fusion.shift_breakpoint_to_closest_exon(anno)
+        var_fusion = var_fusion.to_transcript_variant(anno, genome, 'ENST0001.1')
+        var_data = {
+            ( 3,  4, 'T', 'A', 'SNV', '', None, 'ENST0002.1'),
+            (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0002.1'),
+            (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0002.1')
+        }
+        tx_variants = {'ENST0002.1': create_variants(var_data)}
+        var_data2 = {
+            (16, 17, 'T', 'A', 'SNV', '' , None, 'ENSG0002')
+        }
+        it_variants = {'ENST0002.1': create_variants(var_data2)}
+        variant_pool = seqvar.VariantRecordPool(
+            transcriptional=tx_variants,
+            intronic=it_variants
+        )
+
+        end_nodes = graph.apply_fusion([nodes[i] for i in [4,14,24]],
+            var_fusion, variant_pool, genome, anno)
+
+        gene_model = anno.genes['ENSG0002']
+        gene_seq = gene_model.get_gene_sequence(genome['chr1'])
+        insert_seq = str(gene_seq.seq[14:16])
+
+        for node in end_nodes:
+            self.assertEqual(str(node.seq.seq), 'TGGCG')
+            received = {str(x.out_node.seq.seq) for x in node.out_edges}
+            self.assertEqual(received, {insert_seq, 'GTTCGACCGTG'})
+
+    def test_apply_fusion_intronic_both(self):
+        r""" Test fusion that the both donor and accepter breakpoint are
+        intronic """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        genome = create_dna_record_dict(GENOME_DATA)
+        data = {
+            1: ('AACC', ['RF0'], []),
+            2: ('T', [1], []),
+            3: ('C', [1], [(0, 'C', 'T', 'SNV', '')]),
+            4: ('TGGCGGTTCGACCGTG', [2,3], []),
+            11: ('AACC', ['RF1'], []),
+            12: ('T', [11], []),
+            13: ('C', [11], [(0, 'C', 'T', 'SNV', '')]),
+            14: ('TGGCGGTTCGACCGTG', [12,13], []),
+            21: ('AACC', ['RF0'], []),
+            22: ('T', [21], []),
+            23: ('C', [21], [(0, 'C', 'T', 'SNV', '')]),
+            24: ('TGGCGGTTCGACCGTG', [22,23], [])
+        }
+        seq = 'AACCTCTGGCGGTTC'
+        graph, nodes = create_three_frame_tvg(data, seq)
+
+        attrs = {
+            'TRANSCRIPT_ID': 'ENST0001.1',
+            'ACCEPTER_GENE_ID': 'ENSG0002',
+            'ACCEPTER_TRANSCRIPT_ID': 'ENST0002.1',
+            'ACCEPTER_POSITION': 14,
+            'ACCEPTER_CHROM': 'chr1'
+        }
+        var_fusion = create_variant(15, 16, 'C', '<FUSION>', 'Fusion',
+            'FUSIONXXX', attrs=attrs)
+        var_fusion.location.seqname= 'ENSG0001'
+        var_fusion.shift_breakpoint_to_closest_exon(anno)
+        var_fusion = var_fusion.to_transcript_variant(anno, genome, 'ENST0001.1')
+        var_data = {
+            ( 3,  4, 'T', 'A', 'SNV', '', None, 'ENST0002.1'),
+            (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0002.1'),
+            (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0002.1')
+        }
+        tx_variants = {'ENST0002.1': create_variants(var_data)}
+        var_data2 = {
+            (16, 17, 'T', 'A', 'SNV', '' , None, 'ENSG0002')
+        }
+        it_variants = {'ENST0002.1': create_variants(var_data2)}
+        variant_pool = seqvar.VariantRecordPool(
+            transcriptional=tx_variants,
+            intronic=it_variants
+        )
+
+        end_nodes = graph.apply_fusion([nodes[i] for i in [4,14,24]],
+            var_fusion, variant_pool, genome, anno)
+
+        gene_model = anno.genes['ENSG0001']
+        gene_seq = gene_model.get_gene_sequence(genome['chr1'])
+        insert_seq = str(gene_seq.seq[12:15])
+
+        for node in end_nodes:
+            self.assertEqual(str(node.seq.seq), 'TG')
+            received = {str(x.out_node.seq.seq) for x in node.out_edges}
+            self.assertEqual(received, {insert_seq, 'GCGGTTCGACCGTG'})
 
     def test_apply_variant_inframe(self):
         """ apply_variant """

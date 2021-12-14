@@ -309,12 +309,12 @@ class TranscriptAnnotationModel():
                     return exon
         return None
 
-    def find_upstream_exon_end(self, pos:int) -> int:
+    def get_upstream_exon_end(self, pos:int) -> int:
         """ Find the upstream exon end """
         ind = -1
         if self.transcript.strand == 1:
             for exon in self.exon:
-                if exon.location.ned > pos:
+                if exon.location.end > pos:
                     break
                 ind = exon.location.end
         else:
@@ -326,7 +326,7 @@ class TranscriptAnnotationModel():
             raise ValueError("Could not find the upstream exon end.")
         return ind
 
-    def find_downstream_exon_end(self, pos:int) -> int:
+    def get_downstream_exon_end(self, pos:int) -> int:
         """ Find the downstream exon end """
         ind = -1
         if self.transcript.strand == 1:
@@ -342,4 +342,3 @@ class TranscriptAnnotationModel():
         if ind == -1:
             raise ValueError("Could not find the upstream exon end.")
         return ind
-

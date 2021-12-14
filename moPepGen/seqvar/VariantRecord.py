@@ -375,7 +375,7 @@ class VariantRecord():
     def shift_breakpoint_to_closest_exon(self, anno:GenomicAnnotation):
         """ """
         donor_gene_id = self.location.seqname
-        donor_tx_id = self.attrs['TRANSCRIPT']
+        donor_tx_id = self.attrs['TRANSCRIPT_ID']
         donor_tx_model = anno.transcripts[donor_tx_id]
         left_breakpoint = anno.coordinate_gene_to_genomic(
             index=self.location.start - 1, gene=donor_gene_id
@@ -405,14 +405,20 @@ class VariantRecord():
             right_insertion_start = None
             right_insertion_end = None
         else:
-            downstream_exon_start = accepter_tx_model.get_downstream_exon_end(right_breakpoint)
+            downstream_exon_start = accepter_tx_model.get_downstream_exon_end(
+                pos=right_breakpoint
+            )
             right_insertion_start = self.attrs['ACCEPTER_POSITION']
-            right_insertion_end = anno.coordinate_genomic_to_gene()
+            right_insertion_end = anno.coordinate_genomic_to_gene(
+                downstream_exon_start, accepter_gene_id
+            )
+            self.attrs['ACCEPTER_POSITION'] = anno.coordinate_genomic_to_gene(
+                index=downstream_exon_start, gene=accepter_gene_id
+            )
 
         self.attrs.update({
             'LEFT_INSERTION_START': left_insertion_start,
             'LEFT_INSERTION_END': left_insertion_end,
             'RIGHT_INSERTION_START': right_insertion_start,
-            'RIGHT_INSERTION_END': right_insertion_end,
-            'ACCEPTER_POSITION': downstream_exon_start
+            'RIGHT_INSERTION_END': right_insertion_end
         })
