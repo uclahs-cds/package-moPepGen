@@ -373,7 +373,12 @@ class VariantRecord():
         self.alt = alt
 
     def shift_breakpoint_to_closest_exon(self, anno:GenomicAnnotation):
-        """ """
+        """ Shift fusion breakpoints to the closest exon. Donor breakpoint will
+        shift to the upstream and accepter breakpoint to the downstream. """
+        if not self.is_fusion():
+            raise ValueError(
+                "Don't know how to shift breakpoint for non-fusion variants."
+            )
         donor_gene_id = self.location.seqname
         donor_tx_id = self.attrs['TRANSCRIPT_ID']
         donor_tx_model = anno.transcripts[donor_tx_id]
