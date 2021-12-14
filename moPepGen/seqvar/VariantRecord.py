@@ -404,7 +404,7 @@ class VariantRecord():
         accepter_tx_id = self.attrs['ACCEPTER_TRANSCRIPT_ID']
         accepter_tx_model = anno.transcripts[accepter_tx_id]
         right_breakpoint = anno.coordinate_gene_to_genomic(
-            index=self.attrs['ACCEPTER_POSITION'], gene=accepter_gene_id
+            index=self.get_accepter_position(), gene=accepter_gene_id
         )
         if accepter_tx_model.is_exonic(right_breakpoint):
             right_insertion_start = None
@@ -413,7 +413,7 @@ class VariantRecord():
             downstream_exon_start = accepter_tx_model.get_downstream_exon_end(
                 pos=right_breakpoint
             )
-            right_insertion_start = self.attrs['ACCEPTER_POSITION']
+            right_insertion_start = self.get_accepter_position()
             right_insertion_end = anno.coordinate_genomic_to_gene(
                 downstream_exon_start, accepter_gene_id
             )

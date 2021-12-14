@@ -622,8 +622,8 @@ class ThreeFrameTVG():
             active_frames:List[bool]
         ) -> List[TVGNode]:
         """ This is a wrapper function to apply insertions to the graph. It can
-        be used for actual Insertion, and also Substituteion. It is also used
-        in apply_fusion to to insert intronic sequences if the breakpoint is
+        be used for actual Insertion, and also Substitution. It is also used
+        in `apply_fusion` to to insert intronic sequences if the breakpoint is
         intronic.
 
         Args:
