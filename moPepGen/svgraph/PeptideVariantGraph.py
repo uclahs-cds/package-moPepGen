@@ -798,8 +798,12 @@ class PeptideVariantGraph():
 
         cleavage_gain = target_node.get_cleavage_gain_variants()
 
-        for out_node in target_node.out_nodes:
-            if out_node is not self.stop:
+        stop_call_and_stage = any(x.variant.is_real_fusion for x in target_node.variants)
+
+        if not stop_call_and_stage:
+            for out_node in target_node.out_nodes:
+                if out_node is self.stop:
+                    continue
                 out_node.orf = orf
                 if target_node.is_bridge():
                     if not in_cds:

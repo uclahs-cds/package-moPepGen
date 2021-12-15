@@ -501,8 +501,10 @@ class ThreeFrameTVG():
                 gene_id=gene_id, anno=anno, exclude_type=['Fusion'],
                 start=start, end=end, intron=True, return_coord='gene'
             )
+            var = copy.deepcopy(variant)
+            var.is_real_fusion = False
             var = seqvar.VariantRecordWithCoordinate(
-                variant=variant,
+                variant=var,
                 location=FeatureLocation(start=0, end=len(insert_seq.seq))
             )
             cursors = self.insert_flanking_variant(
@@ -529,8 +531,10 @@ class ThreeFrameTVG():
                 gene_id=gene_id, anno=anno, exclude_type=['Fusion'],
                 start=start, end=end, intron=True, return_coord='gene'
             )
+            var = copy.deepcopy(variant)
+            var.is_real_fusion = False
             var = seqvar.VariantRecordWithCoordinate(
-                variant=variant,
+                variant=var,
                 location=FeatureLocation(start=0, end=len(insert_seq.seq))
             )
             if variant.attrs['LEFT_INSERTION_START'] is None:

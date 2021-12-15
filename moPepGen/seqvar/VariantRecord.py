@@ -79,6 +79,7 @@ class VariantRecord():
         self.type = _type
         self.id = _id
         self.attrs = attrs if attrs else {}
+        self.is_real_fusion = self.is_fusion()
 
     def __hash__(self):
         """ hash """
