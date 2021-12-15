@@ -582,7 +582,7 @@ class ThreeFrameTVG():
                 branch.remove_edge(edge)
             var = seqvar.VariantRecordWithCoordinate(
                 variant=variant,
-                location=FeatureLocation(start=0, end=0)
+                location=FeatureLocation(start=0, end=1)
             )
             var_node.variants.append(var)
             variant_start = variant.location.start

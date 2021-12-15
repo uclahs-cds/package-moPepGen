@@ -83,6 +83,10 @@ class TranscriptAnnotationModel():
             else:
                 self.three_utr.append(utr)
 
+    def remove_cached_seq(self):
+        """ Remove the cased sequence """
+        self._seq = None
+
     def sort_records(self):
         """ sort records """
         self.cds.sort()
@@ -125,8 +129,8 @@ class TranscriptAnnotationModel():
             return end - (end - start) % 3
         return len(seq) - (len(seq) - start) % 3
 
-    def get_transcript_sequence(self, chrom:dna.DNASeqRecord
-            ) -> dna.DNASeqRecordWithCoordinates:
+    def get_transcript_sequence(self, chrom:dna.DNASeqRecord,
+            cache:bool=False) -> dna.DNASeqRecordWithCoordinates:
         """ Returns the transcript sequence. The is done by concating all the
         exon sequences. If the gene is on the negatice strand, the reverse
         complement is returned.
@@ -177,8 +181,9 @@ class TranscriptAnnotationModel():
         if 'protein_id' in self.transcript.attributes:
             transcript.description += '|' + \
                 self.transcript.protein_id
-        self._seq = transcript
-        return self._seq
+        if cache:
+            self._seq = transcript
+        return transcript
 
     def get_cdna_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:

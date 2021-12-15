@@ -299,7 +299,7 @@ class VariantRecord():
             raise ValueError(ERROR_NO_TX_AVAILABLE)
         tx_model = anno.transcripts[tx_id]
         chrom = tx_model.transcript.chrom
-        tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+        tx_seq = tx_model.get_transcript_sequence(genome[chrom], cache=True)
         gene_id = self.location.seqname
         strand = tx_model.transcript.strand
 

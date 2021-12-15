@@ -101,6 +101,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         if not quiet:
             logger(f'Variant file {file} loaded.')
 
+    for tx_model in anno.transcripts.values():
+        tx_model.remove_cached_seq()
+
     variant_pool.sort()
     if not quiet:
         logger('Variant records sorted.')
@@ -109,7 +112,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     i = 0
     for tx_id in variant_pool.transcriptional:
-
+        logger(tx_id)
         try:
             peptides = call_peptide_main(
                 variant_pool=variant_pool, tx_id=tx_id, anno=anno,

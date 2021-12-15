@@ -463,9 +463,6 @@ class TVGNode():
                 )
                 new_variant = new_variant.shift(-i)
                 right_variants.append(new_variant)
-                if variant.location.start >= i and \
-                        variant.variant.is_frameshifting():
-                    self.frameshifts.discard(variant.variant)
 
         right_node = self.create_node(
             seq=right_seq,

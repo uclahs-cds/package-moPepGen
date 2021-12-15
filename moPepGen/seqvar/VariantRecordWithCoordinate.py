@@ -21,7 +21,7 @@ class VariantRecordWithCoordinate():
         return self.__class__(
             variant=self.variant,
             location=FeatureLocation(
-                start=self.location.start + index,
+                start=max(self.location.start + index, 0),
                 end=self.location.end + index
             ),
             is_stop_altering=self.is_stop_altering
@@ -36,4 +36,13 @@ class VariantRecordWithCoordinate():
             variant=self.variant,
             location=FeatureLocation(start=start, end=end),
             is_stop_altering=self.is_stop_altering
+        )
+
+    def __getitem__(self, index) -> VariantRecordWithCoordinate:
+        """ Get item """
+        start, stop, _ = index.indices(len(self.location))
+        location = FeatureLocation(start=0, end=stop-start)
+        return VariantRecordWithCoordinate(
+            variant=self.variant,
+            location=location
         )

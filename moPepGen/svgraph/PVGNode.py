@@ -271,14 +271,14 @@ class PVGNode():
 
         left_variants = []
         right_variants = []
-        variants_to_pop = set()
         for variant in self.variants:
             if variant.location.start < index:
-                left_variants.append(variant)
+                if variant.location.end <= index:
+                    left_variants.append(variant)
+                else:
+                    left_variants.append(variant[:index])
             if variant.location.end > index:
                 right_variants.append(variant.shift(-index))
-                if variant.location.start >= index:
-                    variants_to_pop.add(variant.variant)
         self.seq = left_seq
         self.variants = left_variants
 
@@ -297,11 +297,6 @@ class PVGNode():
 
         # we only keep the last node to be was_bridge
         self.was_bridge = False
-
-        # need to remove the frameshift variant if it is no longer ther after
-        # splitting the node.
-        for variant in variants_to_pop:
-            self.frameshifts.discard(variant)
 
         while self.out_nodes:
             node = self.out_nodes.pop()
@@ -322,9 +317,6 @@ class PVGNode():
                 left_variants.append(variant)
             if variant.location.end > i:
                 right_variants.append(variant.shift(-i))
-                if variant.location.start >= i and \
-                        variant.variant.is_frameshifting():
-                    self.frameshifts.discard(variant.variant)
 
         right_node = PVGNode(
             seq=right_seq,
@@ -373,13 +365,6 @@ class PVGNode():
     def append_left(self, other:PVGNode) -> None:
         """ Combine the other node the the left. """
         self.seq = other.seq + self.seq
-
-        frameshifts = copy.copy(other.frameshifts)
-        for variant in self.variants:
-            if variant.variant.is_frameshifting():
-                frameshifts.add(variant.variant)
-        self.frameshifts = frameshifts
-
         variants = copy.copy(other.variants)
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
@@ -388,12 +373,8 @@ class PVGNode():
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
         new_seq = self.seq + other.seq
-
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
-            if variant.variant.is_frameshifting():
-                self.frameshifts.add(variant)
-
         self.seq = new_seq
 
     def find_start_index(self) -> int:
