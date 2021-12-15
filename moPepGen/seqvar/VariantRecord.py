@@ -399,11 +399,11 @@ class VariantRecord():
             upstream_exon_end = donor_tx_model.get_upstream_exon_end(left_breakpoint)
             left_insertion_start = anno.coordinate_genomic_to_gene(
                 index=upstream_exon_end, gene=donor_gene_id
-            )
+            ) + 1
             left_insertion_end = self.location.start
             self.location = FeatureLocation(
-                start=upstream_exon_end,
-                end=upstream_exon_end + 1,
+                start=left_insertion_start,
+                end=left_insertion_start + 1,
                 seqname = donor_gene_id
             )
 
@@ -417,7 +417,7 @@ class VariantRecord():
             right_insertion_start = None
             right_insertion_end = None
         else:
-            downstream_exon_start = accepter_tx_model.get_downstream_exon_end(
+            downstream_exon_start = accepter_tx_model.get_downstream_exon_start(
                 pos=right_breakpoint
             )
             right_insertion_start = self.get_accepter_position()

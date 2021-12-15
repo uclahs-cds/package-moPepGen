@@ -249,7 +249,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
 
         gene_model = anno.genes['ENSG0002']
         gene_seq = gene_model.get_gene_sequence(genome['chr1'])
-        insert_seq = str(gene_seq.seq[14:16])
+        insert_seq = str(gene_seq.seq[14:17])
 
         for node in end_nodes:
             self.assertEqual(str(node.seq.seq), 'TGGCG')

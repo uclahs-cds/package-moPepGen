@@ -101,10 +101,8 @@ def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
         transcript_id = record.transcript_id
         if transcript_id not in transcripts:
             transcripts[transcript_id] = gtf.TranscriptAnnotationModel()
-        transcripts[transcript_id].add_record(feature, record)
-        if transcript_id not in transcripts:
             gene.transcripts.append(transcript_id)
-
+        transcripts[transcript_id].add_record(feature, record)
 
 def downsample_gtf(path:Path, gene_list=None, tx_list=None
         ) -> gtf.GeneAnnotationModel:
