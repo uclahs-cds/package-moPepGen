@@ -384,7 +384,7 @@ class ThreeFrameTVG():
             var:seqvar.VariantRecordWithCoordinate,
             seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecord], position:int,
-            attach_directly:bool=False
+            attach_directly:bool=False, known_orf_index:int=None
             ) -> List[TVGNode]:
         """ Insert flanking variant node into the graph. This function is used
         in apply_fusion to insert the intronic sequences.
@@ -416,7 +416,8 @@ class ThreeFrameTVG():
             variant_pool=None,
             genome=None,
             anno=None,
-            active_frames=[True, True, True]
+            active_frames=[True, True, True],
+            known_orf_index=known_orf_index
         )
 
         for i in range(3):
@@ -456,8 +457,8 @@ class ThreeFrameTVG():
 
     def apply_fusion(self, cursors:List[TVGNode], variant:seqvar.VariantRecord,
             variant_pool:seqvar.VariantRecordPool, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None
-            ) -> List[TVGNode]:
+            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
+            known_orf_index:int=None) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
 
@@ -511,7 +512,8 @@ class ThreeFrameTVG():
                 seq=insert_seq,
                 variants=insertion_variants,
                 position=variant.location.start,
-                attach_directly=False
+                attach_directly=False,
+                known_orf_index=known_orf_index
             )
 
         # create subgraph for the right insertion
@@ -547,7 +549,8 @@ class ThreeFrameTVG():
                 seq=insert_seq,
                 variants=insertion_variants,
                 position=position,
-                attach_directly=attach_directly
+                attach_directly=attach_directly,
+                known_orf_index=known_orf_index
             )
 
         breakpoint_gene = variant.get_accepter_position()
@@ -568,7 +571,8 @@ class ThreeFrameTVG():
             variant_pool=None,
             genome=None,
             anno=None,
-            active_frames=active_frames
+            active_frames=active_frames,
+            known_orf_index=known_orf_index
         )
         for edge in branch.root.out_edges:
             edge.out_node.variants.append(variant)
@@ -797,7 +801,8 @@ class ThreeFrameTVG():
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
             variant_pool:VariantRecordPool, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None) -> None:
+            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
+            known_orf_index:int=None) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
@@ -816,7 +821,8 @@ class ThreeFrameTVG():
 
         if active_frames is None:
             if self.has_known_orf:
-                known_orf_index = self.get_known_reading_frame_index()
+                if known_orf_index is None:
+                    known_orf_index = self.get_known_reading_frame_index()
                 active_frames = [False, False, False]
                 active_frames[known_orf_index] = True
             else:
@@ -871,7 +877,8 @@ class ThreeFrameTVG():
                     variant_pool=variant_pool,
                     genome=genome,
                     anno=anno,
-                    active_frames=copy.copy(active_frames)
+                    active_frames=copy.copy(active_frames),
+                    known_orf_index=known_orf_index
                 )
 
             elif variant.type == 'Insertion':
