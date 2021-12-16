@@ -229,14 +229,12 @@ class ThreeFrameTVG():
 
     def create_node(self, seq:dna.DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
-            orf:List[int]=None, reading_frame_index:int=None,
+            branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None) -> TVGNode:
         """ create a node """
         return TVGNode(
             seq=seq,
             variants=variants,
-            frameshifts=frameshifts,
             branch=branch,
             orf=orf,
             reading_frame_index=reading_frame_index,

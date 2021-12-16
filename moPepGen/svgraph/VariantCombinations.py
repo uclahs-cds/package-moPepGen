@@ -60,16 +60,3 @@ class VariantCombinations():
                 singleton = frozenset([variant.variant])
                 if singleton not in self.data:
                     self.data.add(singleton)
-
-    def add_singelton_frameshift(self, variants:List[Union[seqvar.VariantRecord,
-            seqvar.VariantRecordWithCoordinate]]):
-        """ add singleton """
-        frameshifts = set()
-        for variant in variants:
-            if isinstance(variant, seqvar.VariantRecordWithCoordinate):
-                variant = variant.variant
-            if variant.is_frameshifting():
-                frameshifts.add(variant)
-        if frameshifts:
-            frameshifts = frozenset(frameshifts)
-            self.data.add(frameshifts)

@@ -77,7 +77,6 @@ class MiscleavedNodes():
                 else:
                     seq = seq + other
                 if check_variants:
-                    # metadata.variants.update(node.frameshifts)
                     for variant in node.variants:
                         metadata.variants.add(variant.variant)
                     metadata.variants.update(additional_variants)
