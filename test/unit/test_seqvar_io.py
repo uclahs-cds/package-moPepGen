@@ -66,5 +66,5 @@ class TestSeqvarIO(unittest.TestCase):
             records = list(seqvar.io.parse(handle))
         self.assertEqual(metadata.source, 'gSNP')
         self.assertEqual(metadata.parser, 'parseVEP')
-        self.assertEqual(metadata.info[0]['ID'], 'TRANSCRIPT_ID')
+        self.assertIn('TRANSCRIPT_ID', metadata.info)
         self.assertEqual(len(records), 8)
