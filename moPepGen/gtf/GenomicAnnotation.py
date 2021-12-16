@@ -516,8 +516,8 @@ class GenomicAnnotation():
             tx_model = self.transcripts[tx_id]
             if not tx_model.exon:
                 continue
-            start = tx_model.exon[0].location.start
-            end = tx_model.exon[-1].location.end
+            start = tx_model.transcript.location.start
+            end = tx_model.transcript.location.end
             if start <= pos < end:
                 transcripts.append(tx_model)
         return transcripts

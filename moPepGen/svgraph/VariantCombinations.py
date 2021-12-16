@@ -1,7 +1,7 @@
 """ Frameshifting mutations of a node """
 from __future__ import annotations
 import copy
-from typing import FrozenSet, List, Set, Union
+from typing import FrozenSet, List, Set
 from moPepGen import seqvar
 
 
