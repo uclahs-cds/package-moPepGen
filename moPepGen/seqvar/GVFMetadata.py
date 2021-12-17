@@ -136,13 +136,19 @@ class GVFMetadata():
             elif key == 'INFO':
                 key = key.lower()
                 if key not in metadata:
-                    metadata[key] = [{}]
-                else:
-                    metadata[key].append({})
+                    metadata[key] = {}
+                info_key = None
+                info_val = {}
                 for it in val.strip('<>').split(','):
                     k,v = it.split('=')
                     v = v.strip('"')
-                    metadata[key][-1][k] = v
+                    if k == 'ID':
+                        info_key = v
+                    else:
+                        info_val[k] = v
+                if info_key is None:
+                    raise ValueError('Could not find the key.')
+                metadata[key][info_key] = info_val
             elif key in ['ALT', 'POS']:
                 pass
             elif key == 'mopepgen_version':
