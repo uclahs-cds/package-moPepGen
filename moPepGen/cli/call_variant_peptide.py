@@ -60,7 +60,13 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         default=-1,
         metavar='<number>'
     )
-
+    p.add_argument(
+        '--verbose-level',
+        type=int,
+        help='Level of verbose for logging.',
+        default=1,
+        metavar='<number>'
+    )
     add_args_reference(p)
     add_args_cleavage(p)
     add_args_quiet(p)
@@ -81,6 +87,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     min_length:int = args.min_length
     max_length:int = args.max_length
     max_variants_per_node:int = args.max_variants_per_node
+    verbose = args.verbose_level
+    if quiet is True:
+        verbose = 0
 
     print_start_message(args)
 
@@ -98,21 +107,22 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             else:
                 variant_pool.load_variants(handle, anno, genome)
 
-        if not quiet:
+        if verbose >= 1:
             logger(f'Variant file {file} loaded.')
 
     for tx_model in anno.transcripts.values():
         tx_model.remove_cached_seq()
 
     variant_pool.sort()
-    if not quiet:
+    if verbose > 1:
         logger('Variant records sorted.')
 
     variant_peptides = aa.VariantPeptidePool()
 
     i = 0
     for tx_id in variant_pool.transcriptional:
-        logger(tx_id)
+        if verbose >= 2:
+            logger(tx_id)
         try:
             peptides = call_peptide_main(
                 variant_pool=variant_pool, tx_id=tx_id, anno=anno,
@@ -128,13 +138,14 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
 
-        if not quiet:
+        if verbose >= 1:
             i += 1
             if i % 1000 == 0:
                 logger(f'{i} transcripts processed.')
 
     for variant in variant_pool.fusion:
-        logger(variant.id)
+        if verbose >= 2:
+            logger(variant.id)
         try:
             peptides = call_peptide_fusion(
                 variant=variant, variant_pool=variant_pool, anno=anno,
@@ -150,7 +161,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
 
-    if not quiet:
+    if verbose >= 1:
         logger('Fusion processed.')
 
     for circ_rna in circ_rna_pool:
@@ -169,12 +180,12 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
     if circ_rna_pool:
-        if not quiet:
+        if verbose >= 1:
             logger('circRNA processed')
 
     variant_peptides.write(output_fasta)
 
-    if not quiet:
+    if verbose >= 1:
         logger('Variant peptide FASTA file written to disk.')
 
 def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
