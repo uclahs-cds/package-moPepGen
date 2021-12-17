@@ -24,6 +24,7 @@ def main():
     util.add_subparser_downsample_reference(subparsers)
     util.add_subparser_validate_variant_callilng(subparsers)
     util.add_subparser_fuzz_test(subparsers)
+    util.add_subparser_extract_gvf(subparsers)
 
     args = parser.parse_args()
 

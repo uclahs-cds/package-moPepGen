@@ -44,20 +44,20 @@ def add_subparser_downsample_reference(subparsers:argparse._SubParsersAction):
         type=str,
         help='Gene list to filter.',
         nargs='*',
-        metavar=''
+        metavar='<value>'
     )
     parser.add_argument(
         '--tx-list',
         type=str,
         help='Transcript list to filter.',
         nargs='*',
-        metavar=''
+        metavar='<value>'
     )
     parser.add_argument(
         '--output-dir',
         type=Path,
         help='Output directory',
-        metavar=''
+        metavar='<file>'
     )
     parser.add_argument(
         '--translate-noncoding',
