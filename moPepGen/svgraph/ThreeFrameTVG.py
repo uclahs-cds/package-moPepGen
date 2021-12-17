@@ -163,7 +163,8 @@ class ThreeFrameTVG():
                 return True
         return False
 
-    def is_reference_edge(self, in_node:TVGNode, out_node:TVGNode):
+    @staticmethod
+    def is_reference_edge(in_node:TVGNode, out_node:TVGNode):
         """ checks if this is a reference edge """
         return out_node.is_reference() and out_node.subgraph_id == in_node.subgraph_id
 
