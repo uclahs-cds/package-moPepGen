@@ -1,4 +1,5 @@
 """ Test module for ThreeFrameTVG """
+import copy
 import unittest
 from test.unit import create_variant, create_variants, \
     create_genomic_annotation, create_dna_record_dict, create_three_frame_tvg, \
@@ -793,6 +794,36 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         expected = {'GG', 'AG', 'AT', 'TG'}
         self.assertEqual(received, expected)
 
+    def test_align_variant_sub(self):
+        r""" when there is a subgraph out node
+
+        0: AAAAA-TA-GTT            0: AAAAA-TA-GTT
+                \                          \
+                 TGCTGC-T-GC                TGCTGC-T-GC
+                       \ /                        \ /
+                        A                          A
+        """
+        data = {
+            1:  ['AAAAA', ['RF0'], []],
+            2:  ['TA', [1], []],
+            3:  ['GTT', [2], []]
+        }
+        graph, nodes = create_three_frame_tvg(data, 'AAAAATAGTT', 'ENST01')
+        data = {
+            11: ['TGCTGC', ['RF0'], []],
+            12: ['T', [11], []],
+            13: ['A', [12], [(0, 'A', 'G', 'SNV', '')]],
+            14: ['GC', [12, 13], []]
+        }
+        graph2, nodes2 = create_three_frame_tvg(data, 'TGCTGCTAGC')
+        for edge in copy.copy(nodes2[11].in_edges):
+            graph2.remove_edge(edge)
+        graph2.add_edge(nodes[1], nodes2[11], 'variant_start')
+        graph.align_variants(nodes[1])
+        out_node_seqs = {x.out_node.seq.seq for x in nodes[1].out_edges}
+        expected = {'TA', 'TGCTGC'}
+        self.assertEqual(out_node_seqs, expected)
+
     def test_align_variantes_max_variants(self):
         r""" Tests for aligning variants in heavily mutated local region
 
@@ -894,6 +925,37 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         received = {str(e.in_node.seq.seq) for e in nodes[15].in_edges}
         expected = {'TG', 'TGG', 'TAG', 'TAT'}
         self.assertEqual(received, expected)
+
+    def test_expand_variants_sub(self):
+        r""" when there is a subgraph out node
+
+        0: AAAAA-TA-GTT            0: AAA-AATAGT-T
+                \                        \
+                 TGCTGC-T-GC              AATGCTGC-T-GC
+                       \ /                        \ /
+                        A                          A
+        """
+        data = {
+            1:  ['AAAAA', ['RF0'], []],
+            2:  ['TA', [1], []],
+            3:  ['GTT', [2], []]
+        }
+        graph, nodes = create_three_frame_tvg(data, 'AAAAATAGTT', 'ENST01')
+        data = {
+            11: ['TGCTGC', ['RF0'], []],
+            12: ['T', [11], []],
+            13: ['A', [12], [(0, 'A', 'G', 'SNV', '')]],
+            14: ['GC', [12, 13], []]
+        }
+        graph2, nodes2 = create_three_frame_tvg(data, 'TGCTGCTAGC')
+        for edge in copy.copy(nodes2[11].in_edges):
+            graph2.remove_edge(edge)
+        graph2.add_edge(nodes[1], nodes2[11], 'variant_start')
+        graph.expand_alignments(nodes[1])
+        self.assertEqual(nodes[1].seq.seq, 'AAA')
+        out_node_seqs = {x.out_node.seq.seq for x in nodes[1].out_edges}
+        expected = {'AATAGT', 'AATGCTGC'}
+        self.assertEqual(out_node_seqs, expected)
 
     def test_translate_mrna_end_nf(self):
         """ Test that the UTR region is not translated with mrna_end_NF """

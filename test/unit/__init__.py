@@ -96,7 +96,7 @@ def load_references(base_dir:Path=None, index:bool=False
 
 Type = Tuple[Union[svgraph.ThreeFrameTVG, svgraph.ThreeFrameCVG],
         Dict[int, svgraph.TVGNode]]
-def create_three_frame_tvg(nodes:Dict[int,list], seq:str) -> Type:
+def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Type:
     """ Create a ThreeFrameTVG
 
     Args:
@@ -115,7 +115,7 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str) -> Type:
     node_list:Dict[int,svgraph.TVGNode] = {}
     raw_seq = Seq(seq)
     seq = dna.DNASeqRecordWithCoordinates(raw_seq, [])
-    graph = svgraph.ThreeFrameTVG(seq, _id='')
+    graph = svgraph.ThreeFrameTVG(seq, _id=graph_id)
     for edge in copy.copy(graph.root.out_edges):
         graph.remove_edge(edge)
     graph.reading_frames[0] = svgraph.TVGNode(None, reading_frame_index=0,
