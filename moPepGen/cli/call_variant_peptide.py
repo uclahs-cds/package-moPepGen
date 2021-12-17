@@ -133,6 +133,26 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             if i % 1000 == 0:
                 logger(f'{i} transcripts processed.')
 
+    for variant in variant_pool.fusion:
+        logger(variant.id)
+        try:
+            peptides = call_peptide_fusion(
+                variant=variant, variant_pool=variant_pool, anno=anno,
+                genome=genome, rule=rule, exception=exception,
+                miscleavage=miscleavage,
+                max_variants_per_node=max_variants_per_node
+            )
+        except:
+            logger(f"Exception raised from fusion {variant.id}")
+            raise
+
+        for peptide in peptides:
+            variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
+                min_length, max_length)
+
+    if not quiet:
+        logger('Fusion processed.')
+
     for circ_rna in circ_rna_pool:
         try:
             peptides = call_peptide_circ_rna(
@@ -180,6 +200,40 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
 
+    pgraph.create_cleavage_graph(rule=rule, exception=exception)
+    return pgraph.call_variant_peptides(miscleavage=miscleavage)
+
+def call_peptide_fusion(variant:seqvar.VariantRecord,
+    variant_pool:seqvar.VariantRecordPool, anno:gtf.GenomicAnnotation,
+    genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int,
+    max_variants_per_node:int) -> Set[aa.AminoAcidSeqRecord]:
+    """ Call variant peptides for fusion """
+    tx_id = variant.location.seqname
+    tx_model = anno.transcripts[tx_id]
+    chrom = tx_model.transcript.chrom
+    tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+    tx_seq = tx_seq[:variant.location.end]
+
+    if tx_id in variant_pool.transcriptional:
+        tx_variants = [x for x in variant_pool.transcriptional[tx_id]
+            if x.location.end < variant.location.end]
+    else:
+        tx_variants = []
+
+    tx_variants.append(variant)
+
+    dgraph = svgraph.ThreeFrameTVG(
+        seq=tx_seq,
+        _id=tx_id,
+        cds_start_nf=tx_model.is_cds_start_nf(),
+        has_known_orf=tx_model.is_protein_coding,
+        mrna_end_nf=tx_model.is_mrna_end_nf(),
+        max_variants_per_node=max_variants_per_node
+    )
+    dgraph.init_three_frames()
+    dgraph.create_variant_graph(tx_variants, variant_pool, genome, anno)
+    dgraph.fit_into_codons()
+    pgraph = dgraph.translate()
     pgraph.create_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 

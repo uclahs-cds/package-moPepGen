@@ -83,8 +83,8 @@ class VariantRecord():
 
     def __hash__(self):
         """ hash """
-        return hash((self.location.seqname, self.location.start,
-             self.location.end, self.ref, self.alt, self.type))
+        return hash((self.location.start, self.location.end, self.ref, self.alt,
+            self.type))
 
     def __repr__(self) -> str:
         """Return representation of the VEP record."""
@@ -246,7 +246,7 @@ class VariantRecord():
         """ get number of nucleotide shifted
         TODO: tests needed """
         if self.type == 'Fusion':
-            return True
+            return 0
         ref_len = len(self.location)
         if self.type in ['Insertion', 'Substritution']:
             end = int(self.attrs['DONOR_END'])

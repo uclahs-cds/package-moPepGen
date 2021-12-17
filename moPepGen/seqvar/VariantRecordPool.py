@@ -26,7 +26,8 @@ class VariantRecordPool():
         genetic (Dict[str, List[VariantRecord]]): Variant records without a
             transcript ID (e.g., UTR). In gene coordinates.
     """
-    def __init__(self, transcriptional:T=None, intronic:T=None, genetic:T=None):
+    def __init__(self, transcriptional:T=None, intronic:T=None, genetic:T=None,
+            fusion:List[VariantRecord]=None):
         """ Constructor
 
         Args:
@@ -41,6 +42,8 @@ class VariantRecordPool():
         self.transcriptional = transcriptional or {}
         self.intronic = intronic or {}
         self.genetic = genetic or {}
+        self.fusion = fusion or []
+
 
     def add_genetic_variant(self, record:VariantRecord, gene_id:str=None):
         """ Add a variant with genetic coordinate """
@@ -75,6 +78,10 @@ class VariantRecordPool():
         else:
             self.transcriptional[tx_id].append(record)
 
+    def add_fusion_variant(self, record:VariantRecord):
+        """ Add a fuction variant """
+        self.fusion.append(record)
+
     def load_variants(self, handle:IO, anno:GenomicAnnotation,
             genome:DNASeqDict):
         """ Load variants """
@@ -84,10 +91,13 @@ class VariantRecordPool():
                 self.add_genetic_variant(record, gene_id)
                 continue
 
+            tx_id = record.attrs['TRANSCRIPT_ID']
             if record.is_fusion():
                 record.shift_breakpoint_to_closest_exon(anno)
+                tx_record = record.to_transcript_variant(anno, genome, tx_id)
+                self.add_fusion_variant(tx_record)
+                continue
 
-            tx_id = record.attrs['TRANSCRIPT_ID']
             if record.is_spanning_over_splicing_site(anno, tx_id):
                 self.add_genetic_variant(record, tx_id)
                 continue

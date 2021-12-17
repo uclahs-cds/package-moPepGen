@@ -733,9 +733,9 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
         seq = 'ATGGAGCCCT'
         graph, nodes = create_three_frame_tvg(data, seq)
-        node = graph.expand_alignments(nodes[1])
+        end_nodes = graph.expand_alignments(nodes[1])
         self.assertEqual(str(nodes[4].seq.seq), 'CCT')
-        self.assertIs(nodes[4], node)
+        self.assertIs(nodes[4], end_nodes[0])
 
 
     def test_align_variants(self):

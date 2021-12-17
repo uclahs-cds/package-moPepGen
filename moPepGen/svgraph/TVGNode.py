@@ -148,6 +148,10 @@ class TVGNode():
         return any(e.in_node.reading_frame_index != self.reading_frame_index
             for e in self.in_edges)
 
+    def is_bridge_to_subgraph(self) -> bool:
+        """ check if it is a bridge node to a subgraph """
+        return any(e.in_node.subgraph_id != self.subgraph_id for e in self.in_edges)
+
     def has_bridge_from_reading_frame(self, other_reading_frame_index:int):
         """ Check if it has a in bridge node from another reading frame """
         return any(x.reading_frame_index == other_reading_frame_index\
