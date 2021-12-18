@@ -258,10 +258,23 @@ class PeptideVariantGraph():
                 continue
             if node.is_bridge():
                 continue
+            if len(node.out_nodes) > 1:
+                downstreams.add(node)
+                continue
             is_sharing_downstream = any(any(y is not node and y in nodes \
                 for y in x.in_nodes) for x in node.out_nodes if x is not self.stop)
+
             if not is_sharing_downstream:
-                downstreams.add(node)
+                is_single_out = len(node.out_nodes) == 1 and \
+                    len(list(node.out_nodes)[0].in_nodes) == 1 and \
+                    node.cleavage and list(node.out_nodes)[0].cleavage
+                if is_single_out:
+                    out_node = list(node.out_nodes)[0]
+                    if out_node.is_bridge():
+                        continue
+                    downstreams.add(out_node)
+                else:
+                    downstreams.add(node)
             else:
                 for downstream in node.out_nodes:
                     if downstream is self.stop:
@@ -524,7 +537,7 @@ class PeptideVariantGraph():
             if cur.cleavage:
                 branches,inbridges = self.expand_backward(cur)
             elif len(cur.out_nodes) == 1:
-                branches,inbridges = self.expand_forward(cur)
+                branches,inbridges = self.merge_join(cur)
             else:
                 branches,inbridges = self.merge_join(cur)
 

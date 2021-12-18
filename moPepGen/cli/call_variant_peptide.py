@@ -161,7 +161,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
 
-    if verbose >= 1:
+    if variant_pool.fusion and verbose >= 1:
         logger('Fusion processed.')
 
     for circ_rna in circ_rna_pool:
@@ -179,9 +179,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         for peptide in peptides:
             variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
                 min_length, max_length)
-    if circ_rna_pool:
-        if verbose >= 1:
-            logger('circRNA processed')
+
+    if circ_rna_pool and verbose >= 1:
+        logger('circRNA processed')
 
     variant_peptides.write(output_fasta)
 

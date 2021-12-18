@@ -1,5 +1,6 @@
 """ Test the command line interface """
 import argparse
+from typing import List
 from pathlib import Path
 from test.integration import TestCaseIntegration
 from Bio import SeqIO
@@ -29,7 +30,7 @@ def create_base_args() -> argparse.Namespace:
 class TestCallVariantPeptides(TestCaseIntegration):
     """ Test cases for moPepGen callPeptides """
 
-    def default_test_case(self, gvf:Path, reference:Path, expect:Path):
+    def default_test_case(self, gvf:List[Path], reference:Path, expect:Path):
         """ Wrapper function to test actual cases.
 
         Args:
@@ -41,7 +42,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
                 test/call_variant_peptide_brute_force.py script.
         """
         args = create_base_args()
-        args.input_variant = [str(gvf)]
+        args.input_variant = gvf
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = reference/'genome.fasta'
         args.annotation_gtf = reference/'annotation.gtf'
@@ -140,86 +141,96 @@ class TestCallVariantPeptides(TestCaseIntegration):
 
     def test_call_varaint_peptide_case5(self):
         """ A test case reported in issue #25, with 3 indel. """
-        tvf = self.data_dir \
-            /'vep/CPCG0100_gencode_aa_indel_ENST00000308182.9.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0100_gencode_aa_indel_ENST00000308182.9.gvf'
+        ]
         expect = self.data_dir \
             /'vep/CPCG0100_gencode_aa_indel_ENST00000308182.9_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000308182.9'
-        self.default_test_case(tvf, reference, expect)
+        self.default_test_case(gvf, reference, expect)
 
     def test_call_varaint_peptide_case6(self):
         """ A test case reported in issue #33, with 3 indel (insertion).
         """
-        tvf = self.data_dir \
-            /'vep/CPCG0102_gencode_aa_indel_ENST00000542218.1.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0102_gencode_aa_indel_ENST00000542218.1.gvf'
+        ]
         expect = self.data_dir \
             /'vep/CPCG0102_gencode_aa_indel_ENST00000542218.1_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000542218.1'
-        self.default_test_case(tvf, reference, expect)
+        self.default_test_case(gvf, reference, expect)
 
     def test_call_varaint_peptide_case7(self):
         """ A test case reported in issue #33, with 3 indel (insertion).
         """
-        tvf = self.data_dir \
-            /'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.gvf'
+        ]
         expect = self.data_dir \
             /'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
-        self.default_test_case(tvf, reference, expect)
+        self.default_test_case(gvf, reference, expect)
 
     def test_call_varaint_peptide_case8(self):
         """ A test case reported in PR #36.
         """
-        tvf = self.data_dir \
-            /'vep/CPCG0184_gencode_aa_indel_ENST00000314675.11.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0184_gencode_aa_indel_ENST00000314675.11.gvf'
+        ]
         expect = self.data_dir \
             /'vep/CPCG0184_gencode_aa_indel_ENST00000314675.11_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
-        self.default_test_case(tvf, reference, expect)
+        self.default_test_case(gvf, reference, expect)
 
     def test_call_varaint_peptide_case9(self):
         """ A test case reported in PR #36.
         """
-        tvf = self.data_dir \
-            /'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5.gvf'
+        ]
         expect = self.data_dir \
             /'vep/CPCG0102_gencode_aa_indel_ENST00000360004.5_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000360004.5'
-        self.default_test_case(tvf, reference, expect)
+        self.default_test_case(gvf, reference, expect)
 
     def test_call_varaint_peptide_case10(self):
         """ A test case reported in PR #36.
         """
-        tvf = self.data_dir \
-            /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2.gvf'
+        ]
         expect = self.data_dir \
             /'vep/CPCG0361_gencode_aa_indel_ENST00000390283.2_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000390283.2'
-        self.default_test_case(tvf, reference, expect)
+        self.default_test_case(gvf, reference, expect)
 
     def test_call_varaint_peptide_case11(self):
         """ A test case reported in PR #36. Testing the variant in the end
         of the sequence is included.
         """
-        tvf = self.data_dir \
-            /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5.gvf'
+        ]
         expect = self.data_dir \
             /'vep/CPCG0100_gencode_aa_indel_ENST00000515757.5_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000515757.5'
-        self.default_test_case(tvf, reference, expect)
+        self.default_test_case(gvf, reference, expect)
 
     def test_call_variant_peptide_case12(self):
         """ A test case that failed to find any variant peptide """
-        tvf = self.data_dir \
-            /'vep/CPCG0100_indel_ENST00000317799.10.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0100_indel_ENST00000317799.10.gvf'
+        ]
         expect = self.data_dir \
             /'vep/CPCG0100_indel_ENST00000317799.10_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000317799.10'
-        self.default_test_case(tvf, reference, expect)
+        self.default_test_case(gvf, reference, expect)
 
     def test_call_variant_peptide_case13(self):
         """ Reported in issue #165 """
-        gvf = self.data_dir/'vep/CPCG0339_indel_ENST00000360004.5.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0339_indel_ENST00000360004.5.gvf'
+        ]
         expected = self.data_dir \
             /'vep/CPCG0339_indel_ENST00000360004.5_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000360004.5'
@@ -227,7 +238,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
 
     def test_call_variant_peptide_case14(self):
         """ Reported in issue # """
-        gvf = self.data_dir/'vep/CPCG0233_indel_ENST00000314675.11.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0233_indel_ENST00000314675.11.gvf'
+        ]
         expected = self.data_dir \
             /'vep/CPCG0233_indel_ENST00000314675.11_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
@@ -235,7 +248,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
 
     def test_call_variant_peptide_case15(self):
         """ Reported in issue #171 """
-        gvf = self.data_dir/'vep/CPCG0190_indel_ENST00000281589.4.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0190_indel_ENST00000281589.4.gvf'
+        ]
         expected = self.data_dir \
             /'vep/CPCG0190_indel_ENST00000281589.4_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000281589.4'
@@ -243,7 +258,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
 
     def test_call_variant_peptide_case16(self):
         """ Reported in issue #231 noncoding transcript """
-        gvf = self.data_dir/'vep/CPCG0100_ENST00000446393.2.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0100_ENST00000446393.2.gvf'
+        ]
         expected = self.data_dir \
             /'vep/CPCG0100_ENST00000446393.2_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000446393.2'
@@ -251,8 +268,41 @@ class TestCallVariantPeptides(TestCaseIntegration):
 
     def test_call_variant_peptide_case17(self):
         """ Another noncoding transcript """
-        gvf = self.data_dir/'vep/CPCG0102_ENST00000485710.5.gvf'
+        gvf = [
+            self.data_dir/'vep/CPCG0102_ENST00000485710.5.gvf'
+        ]
         expected = self.data_dir \
             /'vep/CPCG0100_ENST00000485710.5_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000485710.5'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case18(self):
+        """ snv + indel reported in #302. This test case has a region of its
+        peptide graph that looks like below when creating the cleavage graph.
+        The node 'MSKNIH' has two incoming nodes and two outgoing nodes. One
+        of the incoming and one of the outgoing node is bridge to/from other
+        reading frame. When the cursor is at node 'IIFFFWYLTLALNGQLFFFL', merge
+        backwards will be applied and mergeing it with MSGNIH. The incoming 'L'
+        of MSGNIH will also merge with it. The returned downstream nodes must
+        be the merged 'IIFFFWYLTLALNGQLFFFLMSGNIH', rather than it's actual
+        outgoing F and L, otherwise the downstream MNCRCLRNK*YSRARWLMLVI...IFI
+        may remain unprocessed to cause * in the amino acid sequence, which
+        causes the issue.
+
+                                         /
+                                        F
+                                       /
+        1:  IIFFFWYLTLALNGQLFFFL-MSGNIH-L-MNCRCLRNK*YSRARWLMLVI...IFI
+                                /        /
+                               L   *VEIFIL
+                               |  / 219
+        2:  -*FSFFGT*HWL*TDNFFFF-*-*VEIFIY-
+
+        """
+        gvf = [
+            self.data_dir/'vep/CPCG0100_ENST00000623909.1/gindel.gvf',
+            self.data_dir/'vep/CPCG0100_ENST00000623909.1/gsnp.gvf'
+        ]
+        expected = self.data_dir/'vep/CPCG0100_ENST00000623909.1_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000623909.1/'
         self.default_test_case(gvf, reference, expected)
