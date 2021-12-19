@@ -214,7 +214,9 @@ class AminoAcidSeqRecord(SeqRecord):
             exception=exception))
         stop_sites_start = list(self.iter_stop_sites())
         stop_sites_end = [i + 1 for i in stop_sites_start if i < len(self.seq) - 1]
+        stop_sites_start = [i for i in stop_sites_start if i > 0]
         sites = cleavage_sites + stop_sites_start + stop_sites_end
+        sites = list(set(sites))
         sites.sort()
         return sites
 

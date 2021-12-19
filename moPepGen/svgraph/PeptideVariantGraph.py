@@ -258,9 +258,7 @@ class PeptideVariantGraph():
                 continue
             if node.is_bridge():
                 continue
-            if len(node.out_nodes) > 1:
-                downstreams.add(node)
-                continue
+
             is_sharing_downstream = any(any(y is not node and y in nodes \
                 for y in x.in_nodes) for x in node.out_nodes if x is not self.stop)
 
@@ -276,6 +274,9 @@ class PeptideVariantGraph():
                 else:
                     downstreams.add(node)
             else:
+                if len(node.out_nodes) > 1:
+                    downstreams.add(node)
+                    continue
                 for downstream in node.out_nodes:
                     if downstream is self.stop:
                         continue
