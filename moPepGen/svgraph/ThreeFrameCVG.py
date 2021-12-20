@@ -40,7 +40,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
 
         """
         self.seq = seq
-        if self.seq and not self.seq.letter_annotations:
+        if self.seq and not self.seq.locations:
             self.add_default_sequence_locations()
         self.attrs = attrs
         self.circ = circ_record
@@ -94,9 +94,14 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         for variant in variants:
             if variant.type == 'Fusion':
                 continue
-            for location in self.seq.locations:
-                if variant.location.start > location.ref.start + 3 and \
-                        variant.location.end < location.ref.end:
+
+            circ_start = self.circ.fragments[0].location.start
+            if circ_start <= variant.location.start < circ_start + 3:
+                continue
+
+            for fragment in self.circ.fragments:
+                location = fragment.location
+                if location.start <= variant.location.start < location.end:
                     filtered_variants.append(variant)
                     break
         super().create_variant_graph(filtered_variants, None, None, None)
