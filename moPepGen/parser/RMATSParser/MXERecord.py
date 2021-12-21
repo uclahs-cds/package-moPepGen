@@ -153,7 +153,7 @@ class MXERecord(RMATSRecord):
                 ref = str(gene_seq.seq[first_start])
                 alt = '<SUB>'
                 attrs = {
-                    'GENE_ID': tx_id,
+                    'TRANSCRIPT_ID': tx_id,
                     'START': first_start,
                     'END': first_end,
                     'DONOR_START': second_start,
