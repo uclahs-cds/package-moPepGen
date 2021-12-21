@@ -438,7 +438,8 @@ class PeptideVariantGraph():
         head = node.split_node(site, cleavage=True)
 
         # there shouldn't have any bridge out in inbond nodes
-        self.expand_forward(node)
+        left_nodes, _ = self.expand_forward(node)
+        self.collapse_end_nodes(left_nodes)
 
         routes, trash = self.find_routes_for_merging(head, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
@@ -477,6 +478,9 @@ class PeptideVariantGraph():
             if cur in inbridge_list:
                 for node in inbridge_list[cur]:
                     queue.appendleft(node)
+                continue
+
+            if cur.cleavage and all(x.cleavage for x in cur.out_nodes):
                 continue
 
             if len(cur.in_nodes) == 1:
