@@ -480,7 +480,8 @@ class PeptideVariantGraph():
                     queue.appendleft(node)
                 continue
 
-            if cur.cleavage and all(x.cleavage for x in cur.out_nodes):
+            if cur.cleavage and all(x.cleavage for x in cur.out_nodes) and\
+                    all(all(y.cleavage for y in x.in_nodes) for x in cur.out_nodes):
                 continue
 
             if len(cur.in_nodes) == 1:
