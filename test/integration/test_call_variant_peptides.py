@@ -25,6 +25,7 @@ def create_base_args() -> argparse.Namespace:
     args.max_length = 25
     args.quiet = True
     args.verbose_level = 1
+    args.noncanonical_transcripts = False
     return args
 
 class TestCallVariantPeptides(TestCaseIntegration):
