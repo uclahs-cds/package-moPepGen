@@ -54,7 +54,7 @@ class CircRNAModel():
                 transcript where the circRNA comes from.
         """
         circ = None
-        for fragment in self.fragments:
+        for fragment in sorted(self.fragments):
             new_seq = seq[int(fragment.location.start):int(fragment.location.end)]
             circ = circ + new_seq if circ else new_seq
         return circ
