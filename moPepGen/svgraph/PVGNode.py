@@ -24,7 +24,7 @@ class PVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
-            was_bridge:bool=False):
+            was_bridge:bool=False, pre_cleave:bool=False):
         """ Construct a PVGNode object.
 
         Args:
@@ -47,6 +47,7 @@ class PVGNode():
         self.orf = orf or [None, None]
         self.reading_frame_index = reading_frame_index
         self.was_bridge = was_bridge
+        self.pre_cleave = pre_cleave
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -242,7 +243,8 @@ class PVGNode():
 
         return sorted(self.out_nodes, key=cmp_to_key(sort_func))[0]
 
-    def split_node(self, index:int, cleavage:bool=False) -> PVGNode:
+    def split_node(self, index:int, cleavage:bool=False, pre_cleave:bool=False
+            ) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
         as the outbound edge. Variants will also be adjusted. For example:
 
@@ -279,7 +281,8 @@ class PVGNode():
             reading_frame_index=self.reading_frame_index,
             variants=right_variants,
             orf=self.orf,
-            was_bridge=self.was_bridge
+            was_bridge=self.was_bridge,
+            pre_cleave=pre_cleave
         )
         new_node.orf = self.orf
 
@@ -437,3 +440,10 @@ class PVGNode():
             if in_node in other.in_nodes:
                 continue
             in_node.add_out_edge(other)
+
+    def is_already_cleaved(self):
+        """ Check if the node is already cleaved """
+        return (self.cleavage and not self.pre_cleave) and \
+            all(x.cleavage and not x.pre_cleave for x in self.out_nodes) and\
+            all(all(y.cleavage and not y.pre_cleave for y in x.in_nodes)
+                for x in self.out_nodes)

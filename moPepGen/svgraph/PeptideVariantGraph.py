@@ -156,7 +156,7 @@ class PeptideVariantGraph():
                 continue
             site = out_node.seq.find_first_cleave_or_stop_site(self.rule, self.exception)
             if site > -1:
-                out_node.split_node(site, True)
+                out_node.split_node(site, cleavage=True, pre_cleave=True)
 
         if cleavage:
             for out_node in node.out_nodes:
@@ -480,8 +480,7 @@ class PeptideVariantGraph():
                     queue.appendleft(node)
                 continue
 
-            if cur.cleavage and all(x.cleavage for x in cur.out_nodes) and\
-                    all(all(y.cleavage for y in x.in_nodes) for x in cur.out_nodes):
+            if cur.is_already_cleaved():
                 continue
 
             if len(cur.in_nodes) == 1:
