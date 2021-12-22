@@ -26,7 +26,8 @@ class VariantRecordPool():
         genetic (Dict[str, List[VariantRecord]]): Variant records without a
             transcript ID (e.g., UTR). In gene coordinates.
     """
-    def __init__(self, transcriptional:T=None, intronic:T=None, genetic:T=None):
+    def __init__(self, transcriptional:T=None, intronic:T=None, genetic:T=None,
+            fusion:List[VariantRecord]=None):
         """ Constructor
 
         Args:
@@ -41,6 +42,8 @@ class VariantRecordPool():
         self.transcriptional = transcriptional or {}
         self.intronic = intronic or {}
         self.genetic = genetic or {}
+        self.fusion = fusion or []
+
 
     def add_genetic_variant(self, record:VariantRecord, gene_id:str=None):
         """ Add a variant with genetic coordinate """
@@ -75,6 +78,10 @@ class VariantRecordPool():
         else:
             self.transcriptional[tx_id].append(record)
 
+    def add_fusion_variant(self, record:VariantRecord):
+        """ Add a fuction variant """
+        self.fusion.append(record)
+
     def load_variants(self, handle:IO, anno:GenomicAnnotation,
             genome:DNASeqDict):
         """ Load variants """
@@ -85,6 +92,12 @@ class VariantRecordPool():
                 continue
 
             tx_id = record.attrs['TRANSCRIPT_ID']
+            if record.is_fusion():
+                record.shift_breakpoint_to_closest_exon(anno)
+                tx_record = record.to_transcript_variant(anno, genome, tx_id)
+                self.add_fusion_variant(tx_record)
+                continue
+
             if record.is_spanning_over_splicing_site(anno, tx_id):
                 self.add_genetic_variant(record, tx_id)
                 continue
@@ -109,8 +122,8 @@ class VariantRecordPool():
         for val in self.transcriptional.values():
             val.sort()
 
-    def filter_variants(self, gene_id:str, anno:GenomicAnnotation,
-            genome:DNASeqDict, exclude_type:List[str], start:int=None,
+    def filter_variants(self, anno:GenomicAnnotation, gene_id:str=None,
+            tx_ids:List[str]=None, exclude_type:List[str]=None, start:int=None,
             end:int=None, intron:bool=True,
             segments:Iterable[VariantRecord]=None, return_coord:str='gene'
             ) -> List[VariantRecord]:
@@ -130,6 +143,11 @@ class VariantRecordPool():
                 f"{return_coord}. return_coord must be either 'gene' or "
                 "'transcript'"
             )
+        if return_coord == 'transcript' and intron is True:
+            raise ValueError(
+                "Don't know how to return intronic variants in transcript"
+                "coordinates."
+            )
         if segments:
             def _filter(x):
                 for segment in segments:
@@ -146,7 +164,14 @@ class VariantRecordPool():
             raise ValueError('Arguments provided do not match requirement.')
 
         records = set()
-        for tx_id in anno.genes[gene_id].transcripts:
+        if tx_ids:
+            _tx_ids = set(tx_ids)
+        else:
+            _tx_ids = set()
+        if gene_id:
+            _tx_ids.update(anno.genes[gene_id].transcripts)
+        for tx_id in _tx_ids:
+            gene_id = anno.transcripts[tx_id].transcript.gene_id
             if tx_id in self.transcriptional:
                 for record in self.transcriptional[tx_id]:
                     if record.type in exclude_type:
@@ -166,8 +191,6 @@ class VariantRecordPool():
                     if _filter(record):
                         if return_coord == 'gene':
                             records.add(record)
-                        else:
-                            records.add(record.to_transcript_variant(anno, genome))
         records = list(records)
         records.sort()
         return records

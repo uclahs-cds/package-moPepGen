@@ -40,7 +40,8 @@ class PeptideVariantGraph():
             known_orf:List[int,int], rule:str=None, exception:str=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
-            max_variants_per_node:int=-1):
+            max_variants_per_node:int=-1
+            ):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
@@ -155,7 +156,7 @@ class PeptideVariantGraph():
                 continue
             site = out_node.seq.find_first_cleave_or_stop_site(self.rule, self.exception)
             if site > -1:
-                out_node.split_node(site, True)
+                out_node.split_node(site, cleavage=True, pre_cleave=True)
 
         if cleavage:
             for out_node in node.out_nodes:
@@ -257,11 +258,25 @@ class PeptideVariantGraph():
                 continue
             if node.is_bridge():
                 continue
+
             is_sharing_downstream = any(any(y is not node and y in nodes \
                 for y in x.in_nodes) for x in node.out_nodes if x is not self.stop)
+
             if not is_sharing_downstream:
-                downstreams.add(node)
+                is_single_out = len(node.out_nodes) == 1 and \
+                    len(list(node.out_nodes)[0].in_nodes) == 1 and \
+                    node.cleavage and list(node.out_nodes)[0].cleavage
+                if is_single_out:
+                    out_node = list(node.out_nodes)[0]
+                    if out_node.is_bridge():
+                        continue
+                    downstreams.add(out_node)
+                else:
+                    downstreams.add(node)
             else:
+                if len(node.out_nodes) > 1:
+                    downstreams.add(node)
+                    continue
                 for downstream in node.out_nodes:
                     if downstream is self.stop:
                         continue
@@ -423,7 +438,8 @@ class PeptideVariantGraph():
         head = node.split_node(site, cleavage=True)
 
         # there shouldn't have any bridge out in inbond nodes
-        self.expand_forward(node)
+        left_nodes, _ = self.expand_forward(node)
+        self.collapse_end_nodes(left_nodes)
 
         routes, trash = self.find_routes_for_merging(head, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes)
@@ -462,6 +478,9 @@ class PeptideVariantGraph():
             if cur in inbridge_list:
                 for node in inbridge_list[cur]:
                     queue.appendleft(node)
+                continue
+
+            if cur.is_already_cleaved():
                 continue
 
             if len(cur.in_nodes) == 1:
@@ -523,7 +542,7 @@ class PeptideVariantGraph():
             if cur.cleavage:
                 branches,inbridges = self.expand_backward(cur)
             elif len(cur.out_nodes) == 1:
-                branches,inbridges = self.expand_forward(cur)
+                branches,inbridges = self.merge_join(cur)
             else:
                 branches,inbridges = self.merge_join(cur)
 
@@ -770,7 +789,6 @@ class PeptideVariantGraph():
         node_list:List[Tuple[PVGNode, List[int,int], bool, List[VariantRecord]]] = []
         trash = set()
         is_stop = target_node.seq.seq == '*'
-        start_indices = target_node.seq.find_all_start_sites()
 
         cleavage_gain_down = target_node.get_cleavage_gain_from_downstream()
 
@@ -783,50 +801,55 @@ class PeptideVariantGraph():
             node_list.append((cur_copy, orf, False, additional_variants))
             trash.add(cur_copy)
 
-        for start_index in start_indices:
-            cur_copy = target_node.copy()
-            cur_copy.truncate_left(start_index)
-            orf_start = cur_copy.get_orf_start()
-            cur_orf = [orf_start, None]
-            self.update_orf(cur_orf)
-            if not in_cds:
-                in_cds = True
-                orf = cur_orf
-            additional_variants = copy.copy(cleavage_gain_down)
-            node_list.append((cur_copy, cur_orf, True, additional_variants))
-            trash.add(cur_copy)
+        stop_start_finding = any(x.variant.is_real_fusion for x in target_node.variants)
+        start_indices = []
+        if not stop_start_finding:
+            start_indices = target_node.seq.find_all_start_sites()
+            for start_index in start_indices:
+                cur_copy = target_node.copy()
+                cur_copy.truncate_left(start_index)
+                orf_start = cur_copy.get_orf_start()
+                cur_orf = [orf_start, None]
+                self.update_orf(cur_orf)
+                if not in_cds:
+                    in_cds = True
+                    orf = cur_orf
+                additional_variants = copy.copy(cleavage_gain_down)
+                node_list.append((cur_copy, cur_orf, True, additional_variants))
+                trash.add(cur_copy)
 
         cleavage_gain = target_node.get_cleavage_gain_variants()
 
         for out_node in target_node.out_nodes:
-            if out_node is not self.stop:
-                out_node.orf = orf
-                if target_node.is_bridge():
-                    if not in_cds:
-                        start_gain = []
-                    elif start_indices:
-                        # carry over variants from the target node to the next
-                        # node if a start codon is found.
-                        start_gain = target_node.get_variants_at(
-                            start=start_indices[-1],
-                            end=min(start_indices[-1] + 3, len(target_node.seq.seq))
-                        )
-                    else:
-                        start_gain = [v.variant for v in out_node.variants
-                            if v.variant.is_frameshifting()]
+            if out_node is self.stop:
+                continue
+            out_node.orf = orf
+            if target_node.is_bridge():
+                if not in_cds:
+                    start_gain = []
+                elif start_indices:
+                    # carry over variants from the target node to the next
+                    # node if a start codon is found.
+                    start_gain = target_node.get_variants_at(
+                        start=start_indices[-1],
+                        end=min(start_indices[-1] + 3, len(target_node.seq.seq))
+                    )
                 else:
-                    if is_stop:
-                        start_gain = []
+                    start_gain = [v.variant for v in out_node.variants
+                        if v.variant.is_frameshifting()]
+            else:
+                if is_stop:
+                    start_gain = []
 
-                for variant in target_node.variants:
-                    if variant.is_stop_altering:
-                        start_gain.append(variant.variant)
+            for variant in target_node.variants:
+                if variant.is_stop_altering:
+                    start_gain.append(variant.variant)
 
-                cur_cleavage_gain = copy.copy(cleavage_gain)
+            cur_cleavage_gain = copy.copy(cleavage_gain)
 
-                cursor = PVGCursor(target_node, out_node, in_cds, orf,
-                    start_gain, cur_cleavage_gain)
-                traversal.stage(target_node, out_node, cursor)
+            cursor = PVGCursor(target_node, out_node, in_cds, orf,
+                start_gain, cur_cleavage_gain)
+            traversal.stage(target_node, out_node, cursor)
 
         for node, orf, is_start_codon, additional_variants in node_list:
             traversal.pool.add_miscleaved_sequences(

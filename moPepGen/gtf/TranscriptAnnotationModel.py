@@ -83,6 +83,10 @@ class TranscriptAnnotationModel():
             else:
                 self.three_utr.append(utr)
 
+    def remove_cached_seq(self):
+        """ Remove the cased sequence """
+        self._seq = None
+
     def sort_records(self):
         """ sort records """
         self.cds.sort()
@@ -125,8 +129,8 @@ class TranscriptAnnotationModel():
             return end - (end - start) % 3
         return len(seq) - (len(seq) - start) % 3
 
-    def get_transcript_sequence(self, chrom:dna.DNASeqRecord
-            ) -> dna.DNASeqRecordWithCoordinates:
+    def get_transcript_sequence(self, chrom:dna.DNASeqRecord,
+            cache:bool=False) -> dna.DNASeqRecordWithCoordinates:
         """ Returns the transcript sequence. The is done by concating all the
         exon sequences. If the gene is on the negatice strand, the reverse
         complement is returned.
@@ -177,8 +181,9 @@ class TranscriptAnnotationModel():
         if 'protein_id' in self.transcript.attributes:
             transcript.description += '|' + \
                 self.transcript.protein_id
-        self._seq = transcript
-        return self._seq
+        if cache:
+            self._seq = transcript
+        return transcript
 
     def get_cdna_sequence(self, chrom:dna.DNASeqRecord
             ) -> dna.DNASeqRecordWithCoordinates:
@@ -285,8 +290,12 @@ class TranscriptAnnotationModel():
         return length
 
     def is_exonic(self, pos:int) -> bool:
-        """ Checks if the given position is contained by any exon of the
-        current transcript model. """
+        """ Checks if the given genomic position is contained by any exon of
+        the current transcript model.
+
+        Args:
+            pos (int): A genomic position
+        """
         for exon in self.exon:
             if pos in exon:
                 return True
@@ -304,3 +313,37 @@ class TranscriptAnnotationModel():
                 if exon.location.start <= pos:
                     return exon
         return None
+
+    def get_upstream_exon_end(self, pos:int) -> int:
+        """ Find the upstream exon end """
+        ind = -1
+        if self.transcript.strand == 1:
+            for exon in self.exon:
+                if exon.location.end > pos:
+                    break
+                ind = exon.location.end - 1
+        else:
+            for exon in reversed(self.exon):
+                if exon.location.start <= pos:
+                    break
+                ind = exon.location.start
+        if ind == -1:
+            raise ValueError("Could not find the upstream exon end.")
+        return ind
+
+    def get_downstream_exon_start(self, pos:int) -> int:
+        """ Find the downstream exon end """
+        ind = -1
+        if self.transcript.strand == 1:
+            for exon in self.exon:
+                if exon.location.start >= pos:
+                    ind = exon.location.start
+                    break
+        else:
+            for exon in reversed(self.exon):
+                if exon.location.end < pos:
+                    ind = exon.location.end - 1
+                    break
+        if ind == -1:
+            raise ValueError("Could not find the upstream exon end.")
+        return ind

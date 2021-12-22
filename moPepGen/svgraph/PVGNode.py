@@ -15,7 +15,6 @@ class PVGNode():
         seq (aa.AminoAcidSeqRecord): The amino acid sequence.
         variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
             carried in the sequence.
-        frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
         in_nodes (Set[PVGNode]): Inbound nodes.
         out_nodes (Set[PVGNode]): Outbound nodes
         cleavage (bool): Whether the start of the node is a cleavage site.
@@ -24,9 +23,8 @@ class PVGNode():
             reading_frame_index:int,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
-            was_bridge:bool=False):
+            was_bridge:bool=False, pre_cleave:bool=False):
         """ Construct a PVGNode object.
 
         Args:
@@ -34,7 +32,6 @@ class PVGNode():
                 with the coordinates reading frame
             variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
                 carried in the sequence.
-            frameshifts (Set[seqvar.VariantRecord]): Frameshifting variants.
             in_nodes (Set[PVGNode]): Inbound nodes.
             ou_nodes (Set[PVGNode]): Outbound nodes
             cleavage (bool): Whether the start of the node is a cleavage site.
@@ -45,12 +42,12 @@ class PVGNode():
         self.variants = variants or []
         self.in_nodes = in_nodes or set()
         self.out_nodes = out_nodes or set()
-        self.frameshifts = frameshifts or set()
         self.cleavage = cleavage
         self.truncated = truncated
         self.orf = orf or [None, None]
         self.reading_frame_index = reading_frame_index
         self.was_bridge = was_bridge
+        self.pre_cleave = pre_cleave
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -58,17 +55,13 @@ class PVGNode():
         location = FeatureLocation(start=start, end=stop)
         seq = self.seq.__getitem__(index)
         variants = []
-        frameshifts = copy.copy(self.frameshifts)
 
         for variant in self.variants:
             if variant.location.overlaps(location):
                 variants.append(variant.shift(-start))
-            elif variant.location.start >= stop and variant.variant.is_frameshifting():
-                frameshifts.discard(variant.variant)
         return PVGNode(
             seq=seq,
             variants=variants,
-            frameshifts=frameshifts,
             cleavage=self.cleavage,
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
@@ -250,7 +243,8 @@ class PVGNode():
 
         return sorted(self.out_nodes, key=cmp_to_key(sort_func))[0]
 
-    def split_node(self, index:int, cleavage:bool=False) -> PVGNode:
+    def split_node(self, index:int, cleavage:bool=False, pre_cleave:bool=False
+            ) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
         as the outbound edge. Variants will also be adjusted. For example:
 
@@ -271,14 +265,14 @@ class PVGNode():
 
         left_variants = []
         right_variants = []
-        variants_to_pop = set()
         for variant in self.variants:
             if variant.location.start < index:
-                left_variants.append(variant)
+                if variant.location.end <= index:
+                    left_variants.append(variant)
+                else:
+                    left_variants.append(variant[:index])
             if variant.location.end > index:
                 right_variants.append(variant.shift(-index))
-                if variant.location.start >= index:
-                    variants_to_pop.add(variant.variant)
         self.seq = left_seq
         self.variants = left_variants
 
@@ -287,9 +281,9 @@ class PVGNode():
             reading_frame_index=self.reading_frame_index,
             variants=right_variants,
             orf=self.orf,
-            was_bridge=self.was_bridge
+            was_bridge=self.was_bridge,
+            pre_cleave=pre_cleave
         )
-        new_node.frameshifts = copy.copy(self.frameshifts)
         new_node.orf = self.orf
 
         if cleavage:
@@ -297,11 +291,6 @@ class PVGNode():
 
         # we only keep the last node to be was_bridge
         self.was_bridge = False
-
-        # need to remove the frameshift variant if it is no longer ther after
-        # splitting the node.
-        for variant in variants_to_pop:
-            self.frameshifts.discard(variant)
 
         while self.out_nodes:
             node = self.out_nodes.pop()
@@ -315,21 +304,16 @@ class PVGNode():
         right_seq = self.seq[i:]
         left_variants = []
         right_variants = []
-        right_frameshifts = copy.copy(self.frameshifts)
 
         for variant in self.variants:
             if variant.location.start < i:
                 left_variants.append(variant)
             if variant.location.end > i:
                 right_variants.append(variant.shift(-i))
-                if variant.location.start >= i and \
-                        variant.variant.is_frameshifting():
-                    self.frameshifts.discard(variant.variant)
 
         right_node = PVGNode(
             seq=right_seq,
             variants=right_variants,
-            frameshifts=right_frameshifts,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge
         )
@@ -346,21 +330,16 @@ class PVGNode():
         left_seq = self.seq[:i]
         left_variants = []
         right_variants = []
-        left_frameshifts = copy.copy(self.frameshifts)
 
         for variant in self.variants:
             if variant.location.start < i:
                 left_variants.append(variant)
             if variant.location.end > i:
                 right_variants.append(variant.shift(-i))
-                if variant.location.start >= i and \
-                        variant.variant.is_frameshifting():
-                    left_frameshifts.discard(variant.variant)
 
         left_node = PVGNode(
             seq=left_seq,
             variants=left_variants,
-            frameshifts=left_frameshifts,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge
         )
@@ -373,13 +352,6 @@ class PVGNode():
     def append_left(self, other:PVGNode) -> None:
         """ Combine the other node the the left. """
         self.seq = other.seq + self.seq
-
-        frameshifts = copy.copy(other.frameshifts)
-        for variant in self.variants:
-            if variant.variant.is_frameshifting():
-                frameshifts.add(variant.variant)
-        self.frameshifts = frameshifts
-
         variants = copy.copy(other.variants)
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
@@ -388,12 +360,8 @@ class PVGNode():
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
         new_seq = self.seq + other.seq
-
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
-            if variant.variant.is_frameshifting():
-                self.frameshifts.add(variant)
-
         self.seq = new_seq
 
     def find_start_index(self) -> int:
@@ -409,7 +377,6 @@ class PVGNode():
             variants=copy.copy(self.variants),
             in_nodes=new_in_nodes,
             out_nodes=new_out_nodes,
-            frameshifts=copy.copy(self.frameshifts),
             cleavage=self.cleavage,
             truncated=self.truncated,
             orf=self.orf,
@@ -473,3 +440,10 @@ class PVGNode():
             if in_node in other.in_nodes:
                 continue
             in_node.add_out_edge(other)
+
+    def is_already_cleaved(self):
+        """ Check if the node is already cleaved """
+        return (self.cleavage and not self.pre_cleave) and \
+            all(x.cleavage and not x.pre_cleave for x in self.out_nodes) and\
+            all(all(y.cleavage and not y.pre_cleave for y in x.in_nodes)
+                for x in self.out_nodes)

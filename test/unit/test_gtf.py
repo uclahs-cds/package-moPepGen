@@ -230,7 +230,7 @@ class TestGTF(unittest.TestCase):
         transcript_model = create_transcript_model(data)
         transcript_model.transcript.strand = 1
         gene_model = gtf.GeneAnnotationModel(
-            location=FeatureLocation(seqname='chr22', start=0, end=350),
+            location=FeatureLocation(seqname='chr22', start=0, end=350, strand=1),
             chrom='chr22',
             transcripts=[attributes['transcript_id']],
             attributes={}
@@ -264,7 +264,7 @@ class TestGTF(unittest.TestCase):
         transcript_model = create_transcript_model(data)
         transcript_model.transcript.strand = 1
         gene_model = gtf.GeneAnnotationModel(
-            location=FeatureLocation(seqname='chr22', start=0, end=350),
+            location=FeatureLocation(seqname='chr22', start=0, end=350, strand=1),
             chrom='chr22',
             transcripts=[attributes['transcript_id']],
             attributes={}

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
         orf_id:str=None, index:int=None) -> str:
     """ Create variant peptide ID """
-    variant_ids:Dict[str,List[VariantRecord]] = {}
+    variant_id_map:Dict[str,List[VariantRecord]] = {}
     is_fusion = False
     is_circ_rna = False
     for variant in variants:
@@ -21,28 +21,36 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
             is_circ_rna = True
             circ_rna_id = variant.id
         else:
-            gene_id = variant.location.seqname
-            if gene_id not in variant_ids:
-                variant_ids[gene_id] = []
-            variant_ids[gene_id].append(variant.id)
+            seqname = variant.location.seqname
+            if seqname is not transcript_id:
+                if 'TRANSCRIPT_ID' in variant.attrs:
+                    tx_id = variant.attrs['TRANSCRIPT_ID']
+                    if tx_id == transcript_id:
+                        seqname = tx_id
+            if seqname not in variant_id_map:
+                variant_id_map[seqname] = []
+            variant_id_map[seqname].append(variant.id)
     if is_fusion:
         fusion_id = fusion_variant.id
-        first_gene_id = fusion_variant.location.seqname
+        first_tx_id = fusion_variant.location.seqname
+        first_gene_id = fusion_variant.attrs['GENE_ID']
+        second_tx_id = fusion_variant.attrs['ACCEPTER_TRANSCRIPT_ID']
         second_gene_id = fusion_variant.attrs['ACCEPTER_GENE_ID']
 
-        first_variant_ids = variant_ids.get(first_gene_id, [])
-        second_variant_ids = variant_ids.get(second_gene_id, [])
+        first_variant_ids = variant_id_map.get(first_gene_id, [])
+        first_variant_ids += variant_id_map.get(first_tx_id, [])
+        second_variant_ids = variant_id_map.get(second_gene_id, [])
+        second_variant_ids += variant_id_map.get(second_tx_id, [])
 
         label = FusionVariantPeptideIdentifier(fusion_id, first_variant_ids,
             second_variant_ids, orf_id, index)
         return str(label)
-    gene_ids = list(variant_ids.keys())
-    if len(gene_ids) > 1:
-        raise ValueError('Variants should all have the same gene ID')
-    if len(gene_ids) == 0:
-        variant_ids = []
-    else:
-        variant_ids = variant_ids[gene_ids[0]]
+    variant_ids = []
+    for key, val in variant_id_map.items():
+        if key == transcript_id:
+            variant_ids += val
+        else:
+            variant_ids += [f"{key}-{x}" for x in val]
     if is_circ_rna:
         label = CircRNAVariantPeptideIdentifier(circ_rna_id, variant_ids, orf_id, index)
     else:

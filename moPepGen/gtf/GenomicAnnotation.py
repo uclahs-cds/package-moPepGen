@@ -218,67 +218,16 @@ class GenomicAnnotation():
             raise ValueError("The variant isn't associated with the gene.")
 
         transcript_model = self.transcripts[transcript_id]
-        start_genomic, end_genomic = None, None
-
-        if transcript_model.transcript.location.strand == 1:
-            it = iter(transcript_model.exon)
-            exon = next(it, None)
-            left = 0
-            while exon:
-                right = left + exon.location.end - exon.location.start
-                if right <= start:
-                    left = right
-                    exon = next(it, None)
-                    continue
-                start_genomic = start - left + exon.location.start
-                break
-
-            while exon:
-                right = left + exon.location.end - exon.location.start
-                if right < end:
-                    left = right
-                    exon = next(it, None)
-                    continue
-                end_genomic = end - left + exon.location.start
-                break
-
-            if start_genomic is None or end_genomic is None:
-                raise ValueError('The variant is not is the range of the gene.')
-
-            start_gene = start_genomic - self.genes[gene_id].location.start
-            end_gene = end_genomic - self.genes[gene_id].location.start
-
-        elif transcript_model.transcript.location.strand == -1:
-            it = reversed(transcript_model.exon)
-            exon = next(it, None)
-            right = 0
-            while exon:
-                left = right + exon.location.end - exon.location.start
-                if left <= start:
-                    right = left
-                    exon = next(it, None)
-                    continue
-                start_genomic = left - start + exon.location.start
-                break
-
-            while exon:
-                left = right + exon.location.end - exon.location.start
-                if left <= end:
-                    right = left
-                    exon = next(it, None)
-                    continue
-                end_genomic = left - end + exon.location.start
-                break
-
-            start_gene = self.genes[gene_id].location.start - start_genomic
-            end_gene = self.genes[gene_id].location.start - end_genomic
-
-        else:
-            raise ValueError('Transcript should not be unstranded.')
-
-        if start_genomic is None or end_genomic is None:
-            raise ValueError('The variant is out off the range of the '
-            'transcript.')
+        start_genomic = self.coordinate_transcript_to_genomic(start, transcript_id)
+        end_genomic = self.coordinate_transcript_to_genomic(end - 1, transcript_id)
+        if transcript_model.transcript.strand == -1:
+            start_genomic, end_genomic = end_genomic, start_genomic
+        end_genomic += 1
+        start_gene = self.coordinate_genomic_to_gene(start_genomic, gene_id)
+        end_gene = self.coordinate_genomic_to_gene(end_genomic - 1, gene_id)
+        if transcript_model.transcript.strand == -1:
+            start_gene, end_gene = end_gene, start_gene
+        end_gene += 1
 
         if end_gene - start_gene != end - start:
             raise ValueError('Variant seems to be over a splice site.')
@@ -496,12 +445,28 @@ class GenomicAnnotation():
                     break
         raise err.IntronNotFoundError(gene_id, feature)
 
-    def get_transcripts_with_position(self, gene_id:str, pos:int
+    def get_transcripts_with_exonic_position(self, gene_id:str, pos:int
             ) -> List[TranscriptAnnotationModel]:
-        """ get all transcripts of a gene that contains a genomic position """
-        transcripts = []
+        """ get all transcripts of a gene that the given genomic position is
+        exonic """
+        transcripts:List[TranscriptAnnotationModel] = []
         for tx_id in self.genes[gene_id].transcripts:
             tx_model = self.transcripts[tx_id]
             if tx_model.is_exonic(pos):
+                transcripts.append(tx_model)
+        return transcripts
+
+    def get_transcripts_with_position(self, gene_id:str, pos:str
+            ) -> List[TranscriptAnnotationModel]:
+        """ Get all transcripts of a gene that contains the genomic posision in
+        exon or intron """
+        transcripts:List[TranscriptAnnotationModel] = []
+        for tx_id in self.genes[gene_id].transcripts:
+            tx_model = self.transcripts[tx_id]
+            if not tx_model.exon:
+                continue
+            start = tx_model.transcript.location.start
+            end = tx_model.transcript.location.end
+            if start <= pos < end:
                 transcripts.append(tx_model)
         return transcripts

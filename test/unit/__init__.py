@@ -10,6 +10,73 @@ from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen.seqvar import VariantRecordPool
 
 
+GENOME_DATA = {
+    'chr1':
+    'ATGTACTGGTCCTTCTGCCTATGTACTGGTCCTTCTGCCTATGTACTGGTCCTTCTGCCT'
+    'CCTCCCAATAAAGTCGAATTTTGGAACCGAATTCCCTTTTTTCGGGAAAAGCTACTAGGG'
+}
+ANNOTATION_ATTRS = [
+    {
+        'gene': {
+            'gene_id'  : 'ENSG0001',
+            'gene_name': 'SYMBO1'
+        },
+        'transcripts': [{
+            'transcript_id': 'ENST0001.1',
+            'gene_id'      : 'ENSG0001',
+            'protein_id'   : 'ENSP0001',
+            'gene_name'    : 'SYMBO1'
+        }]
+    }, {
+        'gene': {
+            'gene_id'  : 'ENSG0002',
+            'gene_name': 'SYMBO2'
+        },
+        'transcripts': [{
+            'transcript_id': 'ENST0002.1',
+            'gene_id'      : 'ENSG0002',
+            'protein_id'   : 'ENSP0002',
+            'gene_name'    : 'SYMBO2'
+        }]
+    }
+]
+ANNOTATION_DATA = {
+    'genes': [{
+        'gene_id': ANNOTATION_ATTRS[0]['gene']['gene_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'gene': (0, 40, ANNOTATION_ATTRS[0]['gene']),
+        'transcripts': ['ENST0001.1']
+    }, {
+        'gene_id': ANNOTATION_ATTRS[1]['gene']['gene_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'gene': (60, 100, ANNOTATION_ATTRS[1]['gene']),
+        'transcripts': ['ENST0002.1']
+    }],
+    'transcripts': [{
+        'transcript_id': ANNOTATION_ATTRS[0]['transcripts'][0]['transcript_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'transcript': (5, 35, ANNOTATION_ATTRS[0]['transcripts'][0]),
+        'exon': [
+            (5,  12, ANNOTATION_ATTRS[0]['transcripts'][0]),
+            (17, 23, ANNOTATION_ATTRS[0]['transcripts'][0]),
+            (27, 35, ANNOTATION_ATTRS[0]['transcripts'][0])
+        ]
+    }, {
+        'transcript_id': ANNOTATION_ATTRS[1]['transcripts'][0]['transcript_id'],
+        'chrom': 'chr1',
+        'strand': 1,
+        'transcript': (65, 95, ANNOTATION_ATTRS[1]['transcripts'][0]),
+        'exon': [
+            (65, 72, ANNOTATION_ATTRS[1]['transcripts'][0]),
+            (77, 83, ANNOTATION_ATTRS[1]['transcripts'][0]),
+            (87, 95, ANNOTATION_ATTRS[1]['transcripts'][0])
+        ]
+    }]
+}
+
 def load_references(base_dir:Path=None, index:bool=False
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation]:
     """ Load reference files """
@@ -29,7 +96,7 @@ def load_references(base_dir:Path=None, index:bool=False
 
 Type = Tuple[Union[svgraph.ThreeFrameTVG, svgraph.ThreeFrameCVG],
         Dict[int, svgraph.TVGNode]]
-def create_three_frame_tvg(nodes:Dict[int,list], seq:str) -> Type:
+def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Type:
     """ Create a ThreeFrameTVG
 
     Args:
@@ -48,7 +115,7 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str) -> Type:
     node_list:Dict[int,svgraph.TVGNode] = {}
     raw_seq = Seq(seq)
     seq = dna.DNASeqRecordWithCoordinates(raw_seq, [])
-    graph = svgraph.ThreeFrameTVG(seq, _id='')
+    graph = svgraph.ThreeFrameTVG(seq, _id=graph_id)
     for edge in copy.copy(graph.root.out_edges):
         graph.remove_edge(edge)
     graph.reading_frames[0] = svgraph.TVGNode(None, reading_frame_index=0,

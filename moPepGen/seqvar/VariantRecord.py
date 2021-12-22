@@ -79,11 +79,12 @@ class VariantRecord():
         self.type = _type
         self.id = _id
         self.attrs = attrs if attrs else {}
+        self.is_real_fusion = self.is_fusion()
 
     def __hash__(self):
         """ hash """
-        return hash((self.location.seqname, self.location.start,
-             self.location.end, self.ref, self.alt, self.type))
+        return hash((self.location.start, self.location.end, self.ref, self.alt,
+            self.type))
 
     def __repr__(self) -> str:
         """Return representation of the VEP record."""
@@ -122,6 +123,13 @@ class VariantRecord():
     def __le__(self, other:VariantRecord) -> bool:
         """ less or equal to """
         return not self > other
+
+    @property
+    def transcript_id(self) -> str:
+        """ Transcript ID """
+        if 'TRANSCRIPT_ID' in self.attrs:
+            return self.attrs['TRANSCRIPT_ID']
+        return self.location.seqname
 
     def get_donor_start(self) -> int:
         """ Get donor start position """
@@ -238,7 +246,7 @@ class VariantRecord():
         """ get number of nucleotide shifted
         TODO: tests needed """
         if self.type == 'Fusion':
-            return True
+            return 0
         ref_len = len(self.location)
         if self.type in ['Insertion', 'Substritution']:
             end = int(self.attrs['DONOR_END'])
@@ -291,7 +299,7 @@ class VariantRecord():
             raise ValueError(ERROR_NO_TX_AVAILABLE)
         tx_model = anno.transcripts[tx_id]
         chrom = tx_model.transcript.chrom
-        tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+        tx_seq = tx_model.get_transcript_sequence(genome[chrom], cache=True)
         gene_id = self.location.seqname
         strand = tx_model.transcript.strand
 
@@ -371,3 +379,59 @@ class VariantRecord():
         self.location = location
         self.ref = ref
         self.alt = alt
+
+    def shift_breakpoint_to_closest_exon(self, anno:GenomicAnnotation):
+        """ Shift fusion breakpoints to the closest exon. Donor breakpoint will
+        shift to the upstream and accepter breakpoint to the downstream. """
+        if not self.is_fusion():
+            raise ValueError(
+                "Don't know how to shift breakpoint for non-fusion variants."
+            )
+        donor_gene_id = self.location.seqname
+        donor_tx_id = self.attrs['TRANSCRIPT_ID']
+        donor_tx_model = anno.transcripts[donor_tx_id]
+        left_breakpoint = anno.coordinate_gene_to_genomic(
+            index=self.location.start - 1, gene=donor_gene_id
+        )
+        if donor_tx_model.is_exonic(left_breakpoint):
+            left_insertion_start = None
+            left_insertion_end = None
+        else:
+            upstream_exon_end = donor_tx_model.get_upstream_exon_end(left_breakpoint)
+            left_insertion_start = anno.coordinate_genomic_to_gene(
+                index=upstream_exon_end, gene=donor_gene_id
+            ) + 1
+            left_insertion_end = self.location.start
+            self.location = FeatureLocation(
+                start=left_insertion_start,
+                end=left_insertion_start + 1,
+                seqname = donor_gene_id
+            )
+
+        accepter_gene_id = self.attrs['ACCEPTER_GENE_ID']
+        accepter_tx_id = self.attrs['ACCEPTER_TRANSCRIPT_ID']
+        accepter_tx_model = anno.transcripts[accepter_tx_id]
+        right_breakpoint = anno.coordinate_gene_to_genomic(
+            index=self.get_accepter_position(), gene=accepter_gene_id
+        )
+        if accepter_tx_model.is_exonic(right_breakpoint):
+            right_insertion_start = None
+            right_insertion_end = None
+        else:
+            downstream_exon_start = accepter_tx_model.get_downstream_exon_start(
+                pos=right_breakpoint
+            )
+            right_insertion_start = self.get_accepter_position()
+            right_insertion_end = anno.coordinate_genomic_to_gene(
+                downstream_exon_start, accepter_gene_id
+            )
+            self.attrs['ACCEPTER_POSITION'] = anno.coordinate_genomic_to_gene(
+                index=downstream_exon_start, gene=accepter_gene_id
+            )
+
+        self.attrs.update({
+            'LEFT_INSERTION_START': left_insertion_start,
+            'LEFT_INSERTION_END': left_insertion_end,
+            'RIGHT_INSERTION_START': right_insertion_start,
+            'RIGHT_INSERTION_END': right_insertion_end
+        })

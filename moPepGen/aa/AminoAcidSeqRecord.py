@@ -178,6 +178,8 @@ class AminoAcidSeqRecord(SeqRecord):
         first_stop_site = next(it_stop, None)
         if first_stop_site is not None:
             if first_stop_site == 0:
+                if len(self.seq) == 1:
+                    return -1
                 sites.append(first_stop_site + 1)
             else:
                 sites.append(first_stop_site)
@@ -211,8 +213,10 @@ class AminoAcidSeqRecord(SeqRecord):
         cleavage_sites = list(self.iter_enzymatic_cleave_sites(rule=rule,
             exception=exception))
         stop_sites_start = list(self.iter_stop_sites())
-        stop_sites_end = [i + 1 for i in stop_sites_start]
+        stop_sites_end = [i + 1 for i in stop_sites_start if i < len(self.seq) - 1]
+        stop_sites_start = [i for i in stop_sites_start if i > 0]
         sites = cleavage_sites + stop_sites_start + stop_sites_end
+        sites = list(set(sites))
         sites.sort()
         return sites
 

@@ -13,7 +13,6 @@ import argparse
 from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
-from moPepGen.circ.CircRNA import CircRNAModel
 from moPepGen.seqvar import GVFMetadata
 from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
@@ -22,6 +21,7 @@ from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
 
 if TYPE_CHECKING:
     from moPepGen import dna, gtf
+    from moPepGen.circ.CircRNA import CircRNAModel
 
 # pylint: disable=W0212
 def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
@@ -60,7 +60,19 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         default=-1,
         metavar='<number>'
     )
-
+    p.add_argument(
+        '--noncanonical-transcripts',
+        action='store_true',
+        help='Process only noncanonical transcripts of fusion transcripts and'
+        'circRNA. Canonical transcripts are skipped.'
+    )
+    p.add_argument(
+        '--verbose-level',
+        type=int,
+        help='Level of verbose for logging.',
+        default=1,
+        metavar='<number>'
+    )
     add_args_reference(p)
     add_args_cleavage(p)
     add_args_quiet(p)
@@ -69,90 +81,155 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     print_help_if_missing_args(p)
     return p
 
+class VariantPeptideCaller():
+    """ Helper class to call variant peptides """
+    def __init__(self, args:argparse.Namespace):
+        """ constructor """
+        self.args = args
+        self.variant_files:List[str] = args.input_variant
+        self.output_fasta:str = args.output_fasta
+        self.quiet:bool = args.quiet
+        self.rule:str = args.cleavage_rule
+        self.miscleavage:int = int(args.miscleavage)
+        self.min_mw:float = float(args.min_mw)
+        self.exception = 'trypsin_exception' if self.rule == 'trypsin' else None
+        self.min_length:int = args.min_length
+        self.max_length:int = args.max_length
+        self.max_variants_per_node:int = args.max_variants_per_node
+        self.verbose = args.verbose_level
+        if self.quiet is True:
+            self.verbose = 0
+        self.genome:dna.DNASeqDict = None
+        self.anno:gtf.GenomicAnnotation = None
+        self.canonical_peptides:Set[str] = None
+        self.variant_pool = seqvar.VariantRecordPool()
+        self.circ_rna_pool:List[CircRNAModel] = []
+        self.variant_peptides = aa.VariantPeptidePool()
+
+    def load_reference(self):
+        """ load reference genome, annotation, and canonical peptides """
+        self.genome, self.anno, _, self.canonical_peptides = load_references(self.args)
+
+    def remove_cached_sequences(self):
+        """ remove chaced transcript sequences to reduce memory usage. """
+        for tx_model in self.anno.transcripts.values():
+            tx_model.remove_cached_seq()
+
+    def load_variants(self):
+        """ load variant from GVF files """
+        for file in self.variant_files:
+            with open(file, 'rt') as handle:
+                metadata = GVFMetadata.parse(handle)
+                if metadata.is_circ_rna():
+                    for record in circ.io.parse(handle):
+                        self.circ_rna_pool.append(record)
+                else:
+                    self.variant_pool.load_variants(handle, self.anno, self.genome)
+
+            if self.verbose >= 1:
+                logger(f'Variant file {file} loaded.')
+
+        self.variant_pool.sort()
+        if self.verbose > 1:
+            logger('Variant records sorted.')
+
+    def call_variants_main(self):
+        """ main variant peptide caller """
+        i = 0
+        for tx_id in self.variant_pool.transcriptional:
+            if self.verbose >= 2:
+                logger(tx_id)
+            try:
+                peptides = call_peptide_main(
+                    variant_pool=self.variant_pool, tx_id=tx_id, anno=self.anno,
+                    genome=self.genome, rule=self.rule, exception=self.exception,
+                    miscleavage=self.miscleavage,
+                    max_variants_per_node=self.max_variants_per_node
+                )
+            except:
+                logger(f'Exception raised from {tx_id}')
+                raise
+
+            for peptide in peptides:
+                self.variant_peptides.add_peptide(
+                    peptide=peptide, canonical_peptides=self.canonical_peptides,
+                    min_mw=self.min_mw, min_length=self.min_length,
+                    max_length=self.max_length
+                )
+
+            if self.verbose >= 1:
+                i += 1
+                if i % 1000 == 0:
+                    logger(f'{i} transcripts processed.')
+
+    def call_variants_fusion(self):
+        """ call variant pepptides from fusion transcripts """
+        for variant in self.variant_pool.fusion:
+            if self.verbose >= 2:
+                logger(variant.id)
+            try:
+                peptides = call_peptide_fusion(
+                    variant=variant, variant_pool=self.variant_pool,
+                    anno=self.anno, genome=self.genome, rule=self.rule,
+                    exception=self.exception, miscleavage=self.miscleavage,
+                    max_variants_per_node=self.max_variants_per_node
+                )
+            except:
+                logger(f"Exception raised from fusion {variant.id}")
+                raise
+
+            for peptide in peptides:
+                self.variant_peptides.add_peptide(
+                    peptide=peptide, canonical_peptides=self.canonical_peptides,
+                    min_mw=self.min_mw, min_length=self.min_length,
+                    max_length=self.max_length
+                )
+
+        if self.variant_pool.fusion and self.verbose >= 1:
+            logger('Fusion processed.')
+
+    def call_variants_circ_rna(self):
+        """ call variant peptides from circRNA """
+        for circ_rna in self.circ_rna_pool:
+            try:
+                peptides = call_peptide_circ_rna(
+                    record=circ_rna, annotation=self.anno, genome=self.genome,
+                    variant_pool=self.variant_pool, rule=self.rule,
+                    exception=self.exception, miscleavage=self.miscleavage,
+                    max_variants_per_node=self.max_variants_per_node
+                )
+            except:
+                logger(f"Exception raised from {circ_rna.id}")
+                raise
+
+            for peptide in peptides:
+                self.variant_peptides.add_peptide(
+                    peptide=peptide, canonical_peptides=self.canonical_peptides,
+                    min_mw=self.min_mw,min_length=self.min_length,
+                    max_length=self.max_length
+                )
+        if self.circ_rna_pool and self.verbose >= 1:
+            logger('circRNA processed.')
+
+    def write_fasta(self):
+        """ write variant peptides to fasta. """
+        self.variant_peptides.write(self.output_fasta)
+        if self.verbose >= 1:
+            logger('Variant peptide FASTA file written to disk.')
+
 def call_variant_peptide(args:argparse.Namespace) -> None:
     """ Main entry point for calling variant peptide """
-    variant_files:List[str] = args.input_variant
-    output_fasta:str = args.output_fasta
-    quiet:bool = args.quiet
-    rule:str = args.cleavage_rule
-    miscleavage:int = int(args.miscleavage)
-    min_mw:float = float(args.min_mw)
-    exception = 'trypsin_exception' if rule == 'trypsin' else None
-    min_length:int = args.min_length
-    max_length:int = args.max_length
-    max_variants_per_node:int = args.max_variants_per_node
+    caller = VariantPeptideCaller(args)
 
     print_start_message(args)
-
-    genome, anno, _, canonical_peptides = load_references(args=args)
-
-    variant_pool = seqvar.VariantRecordPool()
-    circ_rna_pool:List[CircRNAModel] = []
-
-    for file in variant_files:
-        with open(file, 'rt') as handle:
-            metadata = GVFMetadata.parse(handle)
-            if metadata.is_circ_rna():
-                for record in circ.io.parse(handle):
-                    circ_rna_pool.append(record)
-            else:
-                variant_pool.load_variants(handle, anno, genome)
-
-        if not quiet:
-            logger(f'Variant file {file} loaded.')
-
-    variant_pool.sort()
-    if not quiet:
-        logger('Variant records sorted.')
-
-    variant_peptides = aa.VariantPeptidePool()
-
-    i = 0
-    for tx_id in variant_pool.transcriptional:
-
-        try:
-            peptides = call_peptide_main(
-                variant_pool=variant_pool, tx_id=tx_id, anno=anno,
-                genome=genome, rule=rule, exception=exception,
-                miscleavage=miscleavage,
-                max_variants_per_node=max_variants_per_node
-            )
-        except:
-            logger(f'Exception raised from {tx_id}')
-            raise
-
-        for peptide in peptides:
-            variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
-                min_length, max_length)
-
-        if not quiet:
-            i += 1
-            if i % 1000 == 0:
-                logger(f'{i} transcripts processed.')
-
-    for circ_rna in circ_rna_pool:
-        try:
-            peptides = call_peptide_circ_rna(
-                record=circ_rna, annotation=anno, genome=genome,
-                variant_pool=variant_pool, rule=rule, exception=exception,
-                miscleavage=miscleavage,
-                max_variants_per_node=max_variants_per_node
-            )
-        except:
-            logger(f"Exception raised from {circ_rna.id}")
-            raise
-
-        for peptide in peptides:
-            variant_peptides.add_peptide(peptide, canonical_peptides, min_mw,
-                min_length, max_length)
-    if circ_rna_pool:
-        if not quiet:
-            logger('circRNA processed')
-
-    variant_peptides.write(output_fasta)
-
-    if not quiet:
-        logger('Variant peptide FASTA file written to disk.')
+    caller.load_reference()
+    caller.load_variants()
+    caller.remove_cached_sequences()
+    if not args.noncanonical_transcripts:
+        caller.call_variants_main()
+    caller.call_variants_fusion()
+    caller.call_variants_circ_rna()
+    caller.write_fasta()
 
 def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
         tx_id:str, anno:gtf.GenomicAnnotation,
@@ -180,6 +257,40 @@ def call_peptide_main(variant_pool:seqvar.VariantRecordPool,
     pgraph.create_cleavage_graph(rule=rule, exception=exception)
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
+def call_peptide_fusion(variant:seqvar.VariantRecord,
+    variant_pool:seqvar.VariantRecordPool, anno:gtf.GenomicAnnotation,
+    genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int,
+    max_variants_per_node:int) -> Set[aa.AminoAcidSeqRecord]:
+    """ Call variant peptides for fusion """
+    tx_id = variant.location.seqname
+    tx_model = anno.transcripts[tx_id]
+    chrom = tx_model.transcript.chrom
+    tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+    tx_seq = tx_seq[:variant.location.end]
+
+    if tx_id in variant_pool.transcriptional:
+        tx_variants = [x for x in variant_pool.transcriptional[tx_id]
+            if x.location.end < variant.location.end]
+    else:
+        tx_variants = []
+
+    tx_variants.append(variant)
+
+    dgraph = svgraph.ThreeFrameTVG(
+        seq=tx_seq,
+        _id=tx_id,
+        cds_start_nf=tx_model.is_cds_start_nf(),
+        has_known_orf=tx_model.is_protein_coding,
+        mrna_end_nf=tx_model.is_mrna_end_nf(),
+        max_variants_per_node=max_variants_per_node
+    )
+    dgraph.init_three_frames()
+    dgraph.create_variant_graph(tx_variants, variant_pool, genome, anno)
+    dgraph.fit_into_codons()
+    pgraph = dgraph.translate()
+    pgraph.create_cleavage_graph(rule=rule, exception=exception)
+    return pgraph.call_variant_peptides(miscleavage=miscleavage)
+
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
         variant_pool:seqvar.VariantRecordPool, rule:str,
@@ -196,8 +307,10 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     # represented as Insertion, Deletion or Substitution.
     exclusion_variant_types = ['Insertion', 'Deletion', 'Substitution']
 
-    variant_records = variant_pool.filter_variants(gene_id, annotation, genome,
-        exclusion_variant_types, intron=False, segments=record.fragments)
+    variant_records = variant_pool.filter_variants(
+        gene_id=gene_id, anno=annotation, exclude_type=exclusion_variant_types,
+        intron=False, segments=record.fragments
+    )
 
     cgraph = svgraph.ThreeFrameCVG(
         circ_seq, _id=record.id, circ_record=record,

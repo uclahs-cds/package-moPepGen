@@ -11,7 +11,7 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
     def test_create_variant_id_single_snv(self):
         """ single SNV variant """
         variant_data = [
-            (101, 102, 'A', 'T', 'SNV', 'SNV-101-A-T', None, 'ENSG0001')
+            (101, 102, 'A', 'T', 'SNV', 'SNV-101-A-T', None, 'ENST0001')
         ]
         variants = create_variants(variant_data)
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=1)
@@ -20,8 +20,8 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
     def test_create_variant_id_multiple_snv(self):
         """ multiple snv """
         variant_data = [
-            (101, 102, 'A', 'T', 'SNV', 'SNV-101-A-T', None, 'ENSG0001'),
-            (111, 112, 'A', 'T', 'SNV', 'SNV-111-A-T', None, 'ENSG0001')
+            (101, 102, 'A', 'T', 'SNV', 'SNV-101-A-T', None, 'ENST0001'),
+            (111, 112, 'A', 'T', 'SNV', 'SNV-111-A-T', None, 'ENST0001')
         ]
         variants = create_variants(variant_data)
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=1)
@@ -32,8 +32,9 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
         variant_data = [
             (101, 102, 'A', 'T', 'Fusion', 'FUSION-ENSG0001:101-ENSG0002:201', {
                 'GENE_ID': 'ENSG0001',
-                'ACCEPTER_GENE_ID': 'ENSG0002'
-            }, 'ENSG0001')
+                'ACCEPTER_GENE_ID': 'ENSG0002',
+                'ACCEPTER_TRANSCRIPT_ID': 'ENST0002'
+            }, 'ENST0001')
         ]
         variants = create_variants(variant_data)
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=1)
@@ -44,9 +45,10 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
         variant_data = [
             (101, 102, 'A', 'T', 'Fusion', 'FUSION-ENSG0001:101-ENSG0002:201', {
                 'GENE_ID': 'ENSG0001',
-                'ACCEPTER_GENE_ID': 'ENSG0002'
-            }, 'ENSG0001'),
-            (98, 99, 'A', 'T', 'SNV', 'SNV-98-A-T', None, 'ENSG0001')
+                'ACCEPTER_GENE_ID': 'ENSG0002',
+                'ACCEPTER_TRANSCRIPT_ID': 'ENST0002'
+            }, 'ENST0001'),
+            (98, 99, 'A', 'T', 'SNV', 'SNV-98-A-T', None, 'ENST0001')
         ]
         variants = create_variants(variant_data)
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=1)
@@ -58,9 +60,10 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
         variant_data = [
             (101, 102, 'A', 'T', 'Fusion', 'FUSION-ENSG0001:101-ENSG0002:201', {
                 'GENE_ID': 'ENSG0001',
-                'ACCEPTER_GENE_ID': 'ENSG0002'
-            }, 'ENSG0001'),
-            (210, 211, 'A', 'T', 'SNV', 'SNV-210-A-T', None, 'ENSG0002')
+                'ACCEPTER_GENE_ID': 'ENSG0002',
+                'ACCEPTER_TRANSCRIPT_ID': 'ENST0002'
+            }, 'ENST0001'),
+            (210, 211, 'A', 'T', 'SNV', 'SNV-210-A-T', None, 'ENST0002')
         ]
         variants = create_variants(variant_data)
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=1)
@@ -72,13 +75,15 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
         variant_data = [
             (101, 102, 'A', 'T', 'Fusion', 'FUSION-ENSG0001:101-ENSG0002:201', {
                 'GENE_ID': 'ENSG0001',
-                'ACCEPTER_GENE_ID': 'ENSG0002'
-            }, 'ENSG0001'),
-            (98, 99, 'A', 'T', 'SNV', 'SNV-98-A-T', None, 'ENSG0001'),
+                'ACCEPTER_GENE_ID': 'ENSG0002',
+                'ACCEPTER_TRANSCRIPT_ID': 'ENST0002'
+            }, 'ENST0001'),
+            (98, 99, 'A', 'T', 'SNV', 'SNV-98-A-T', None, 'ENST0001'),
             (210, 211, 'A', 'T', 'SNV', 'SNV-210-A-T', None, 'ENSG0002'),
-            (215, 216, 'A', 'T', 'SNV', 'SNV-215-A-T', None, 'ENSG0002')
+            (215, 216, 'A', 'T', 'SNV', 'SNV-215-A-T', None, 'ENST0002')
         ]
         variants = create_variants(variant_data)
+        variants[2].attrs['TRANSCRIPT_ID'] = 'ENST0002'
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=1)
         expected = 'FUSION-ENSG0001:101-ENSG0002:201|1-SNV-98-A-T|' +\
             '2-SNV-210-A-T|2-SNV-215-A-T|1'
@@ -97,7 +102,7 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
         """ circRNA & snv """
         variant_data = [
             (101, 102, 'A', '<circRNA>', 'circRNA', 'CIRC-ENSG0001-E2-E3', None, 'ENSG0001'),
-            (111, 112, 'A', 'T', 'SNV', 'SNV-111-A-T', None, 'ENSG0001')
+            (111, 112, 'A', 'T', 'SNV', 'SNV-111-A-T', None, 'ENST0001')
         ]
         variants = create_variants(variant_data)
         peptide_id = aa.create_variant_peptide_id('ENST0001', variants, index=2)

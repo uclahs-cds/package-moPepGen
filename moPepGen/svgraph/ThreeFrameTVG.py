@@ -163,6 +163,11 @@ class ThreeFrameTVG():
                 return True
         return False
 
+    @staticmethod
+    def is_reference_edge(in_node:TVGNode, out_node:TVGNode):
+        """ checks if this is a reference edge """
+        return out_node.is_reference() and out_node.subgraph_id == in_node.subgraph_id
+
     def remove_node(self, node:TVGNode):
         """ Remove a node from its inboud and outbound node. """
         while node.in_edges:
@@ -229,14 +234,12 @@ class ThreeFrameTVG():
 
     def create_node(self, seq:dna.DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            frameshifts:Set[seqvar.VariantRecord]=None, branch:bool=False,
-            orf:List[int]=None, reading_frame_index:int=None,
+            branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None) -> TVGNode:
         """ create a node """
         return TVGNode(
             seq=seq,
             variants=variants,
-            frameshifts=frameshifts,
             branch=branch,
             orf=orf,
             reading_frame_index=reading_frame_index,
@@ -382,10 +385,85 @@ class ThreeFrameTVG():
         # returns the node with the first nucleotide of the input node.
         return returns
 
+    def insert_flanking_variant(self, cursors:List[TVGNode],
+            var:seqvar.VariantRecordWithCoordinate,
+            seq:DNASeqRecordWithCoordinates, subgraph_id:str,
+            variants:List[seqvar.VariantRecord], position:int,
+            attach_directly:bool=False, known_orf_index:int=None
+            ) -> List[TVGNode]:
+        """ Insert flanking variant node into the graph. This function is used
+        in apply_fusion to insert the intronic sequences.
+
+        Args:
+            cursors (List[TVGNode]): A list of three nodes that of the cursors
+                during create_variant_graph.
+            var (VariantRecordWithCoordinate): The variant object to be added
+                to the inserted nodes. This should be the original variant to
+                be applied, e.g. the fusion.
+            variants (List[VariantRecord]): Additional variants that the
+                insertion sequence carries.
+            position (int): The position where the variant should be inserted.
+                Only useful when `attach_directly` is false.
+            attach_directly (bool): Whether attach the subgraph directly to
+                cursors instead of checking for the position of insertion. This
+                is useful to insert the fusion subgraph when an intronic
+                subgraph is already inserted.
+        """
+        cursors = copy.copy(cursors)
+        var_tails = []
+        branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
+        branch.init_three_frames(truncate_head=False)
+        for root in branch.reading_frames:
+            node = list(root.out_edges)[0].out_node
+            node.variants.append(var)
+        branch.create_variant_graph(
+            variants=variants,
+            variant_pool=None,
+            genome=None,
+            anno=None,
+            active_frames=[True, True, True],
+            known_orf_index=known_orf_index
+        )
+
+        for i in range(3):
+            var_head = branch.reading_frames[i].get_reference_next()
+            var_tail = var_head
+            next_node = var_tail.get_reference_next()
+            while next_node:
+                var_tail = next_node
+                next_node = var_tail.get_reference_next()
+            var_tails.append(var_tail)
+            while var_head.in_edges:
+                edge = var_head.in_edges.pop()
+                branch.remove_edge(edge)
+
+            source = cursors[i]
+            source_start = source.seq.locations[0].ref.start
+
+            if attach_directly:
+                self.add_edge(source, var_head, 'variant_start')
+                continue
+
+            if position < source_start:
+                raise ValueError(
+                    'The location of cursor is behind the variant. Something'
+                    ' must have messed up during creating the variant graph.'
+                )
+
+            if position == source_start:
+                prev = source.get_reference_prev()
+                self.add_edge(prev, var_head, 'variant_start')
+            else:
+                index = source.seq.get_query_index(position)
+                source, _ = self.splice(source, index, 'reference')
+                self.add_edge(source, var_head, 'variant_start')
+
+        return var_tails
+
     def apply_fusion(self, cursors:List[TVGNode], variant:seqvar.VariantRecord,
             variant_pool:seqvar.VariantRecordPool, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None
-            ) -> List[TVGNode]:
+            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
+            known_orf_index:int=None) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
 
@@ -403,6 +481,7 @@ class ThreeFrameTVG():
                 associated with the donor transcript. Variants before the
                 breakpoint won't be applied.
         """
+        original_cursors = cursors
         cursors = copy.copy(cursors)
         accepter_gene_id = variant.attrs['ACCEPTER_GENE_ID']
         accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
@@ -410,16 +489,87 @@ class ThreeFrameTVG():
         accepter_chrom = accepter_tx_model.transcript.location.seqname
         accepter_tx_seq = accepter_tx_model.get_transcript_sequence(
             genome[accepter_chrom])
+
+        # create subgraph for the left insertion
+        if variant.attrs['LEFT_INSERTION_START'] is not None:
+            tx_id = variant.location.seqname
+            tx_model = anno.transcripts[tx_id]
+            gene_id = tx_model.transcript.gene_id
+            gene_model = anno.genes[gene_id]
+            chrom = gene_model.chrom
+            seq = gene_model.get_gene_sequence(genome[chrom])
+            start = variant.attrs['LEFT_INSERTION_START']
+            end = variant.attrs['LEFT_INSERTION_END']
+            insert_seq = seq[start:end]
+            insertion_variants = variant_pool.filter_variants(
+                gene_id=gene_id, anno=anno, exclude_type=['Fusion'],
+                start=start, end=end, intron=True, return_coord='gene'
+            )
+            var = copy.deepcopy(variant)
+            var.is_real_fusion = False
+            var = seqvar.VariantRecordWithCoordinate(
+                variant=var,
+                location=FeatureLocation(start=0, end=len(insert_seq.seq))
+            )
+            cursors = self.insert_flanking_variant(
+                cursors=cursors,
+                var=var,
+                seq=insert_seq,
+                subgraph_id=gene_id,
+                variants=insertion_variants,
+                position=variant.location.start,
+                attach_directly=False,
+                known_orf_index=known_orf_index
+            )
+
+        # create subgraph for the right insertion
+        if variant.attrs['RIGHT_INSERTION_START'] is not None:
+            tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
+            tx_model = anno.transcripts[tx_id]
+            gene_id = tx_model.transcript.gene_id
+            gene_model = anno.genes[gene_id]
+            chrom = gene_model.chrom
+            seq = gene_model.get_gene_sequence(genome[chrom])
+            start = variant.attrs['RIGHT_INSERTION_START']
+            end = variant.attrs['RIGHT_INSERTION_END']
+            insert_seq = seq[start:end]
+            insertion_variants = variant_pool.filter_variants(
+                gene_id=gene_id, anno=anno, exclude_type=['Fusion'],
+                start=start, end=end, intron=True, return_coord='gene'
+            )
+            var = copy.deepcopy(variant)
+            var.is_real_fusion = False
+            var = seqvar.VariantRecordWithCoordinate(
+                variant=var,
+                location=FeatureLocation(start=0, end=len(insert_seq.seq))
+            )
+            if variant.attrs['LEFT_INSERTION_START'] is None:
+                position = variant.location.start
+                attach_directly = False
+            else:
+                position = None
+                attach_directly = True
+            cursors = self.insert_flanking_variant(
+                cursors=cursors,
+                var=var,
+                seq=insert_seq,
+                subgraph_id=gene_id,
+                variants=insertion_variants,
+                position=position,
+                attach_directly=attach_directly,
+                known_orf_index=known_orf_index
+            )
+
         breakpoint_gene = variant.get_accepter_position()
         breakpoint_tx = anno.coordinate_gene_to_transcript(breakpoint_gene,
             accepter_gene_id, accepter_tx_id)
 
         accepter_variant_records = variant_pool.filter_variants(
-            accepter_gene_id, anno, genome, exclude_type=['Fusion'],
-            start=breakpoint_tx, return_coord='transcript'
+            tx_ids=[accepter_tx_id], anno=anno, exclude_type=['Fusion'],
+            start=breakpoint_tx, return_coord='transcript', intron=False
         )
 
-        branch = ThreeFrameTVG(accepter_tx_seq[breakpoint_tx:], self.id)
+        branch = ThreeFrameTVG(accepter_tx_seq[breakpoint_tx:], accepter_tx_id)
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             list(root.out_edges)[0].out_node.subgraph_id = branch.id
@@ -428,7 +578,8 @@ class ThreeFrameTVG():
             variant_pool=None,
             genome=None,
             anno=None,
-            active_frames=active_frames
+            active_frames=active_frames,
+            known_orf_index=known_orf_index
         )
         for edge in branch.root.out_edges:
             edge.out_node.variants.append(variant)
@@ -440,12 +591,19 @@ class ThreeFrameTVG():
                 branch.remove_edge(edge)
             var = seqvar.VariantRecordWithCoordinate(
                 variant=variant,
-                location=FeatureLocation(start=0, end=0)
+                location=FeatureLocation(start=0, end=1)
             )
             var_node.variants.append(var)
             variant_start = variant.location.start
 
             node = cursors[i]
+
+            if variant.attrs['LEFT_INSERTION_START'] is not None or \
+                    variant.attrs['RIGHT_INSERTION_START'] is not None:
+                self.add_edge(node, var_node, 'variant_start')
+                cursors[i] = original_cursors[i]
+                continue
+
             node_start = node.seq.locations[0].ref.start
             node_end = node.seq.locations[-1].ref.end
 
@@ -476,7 +634,20 @@ class ThreeFrameTVG():
             variants:List[seqvar.VariantRecord],
             active_frames:List[bool]
         ) -> List[TVGNode]:
-        """ Apply insertion """
+        """ This is a wrapper function to apply insertions to the graph. It can
+        be used for actual Insertion, and also Substitution. It is also used
+        in `apply_fusion` to to insert intronic sequences if the breakpoint is
+        intronic.
+
+        Args:
+            cursors (List[TVGNode]): A list of three nodes that of the cursors
+                during create_variant_graph.
+            var (VariantRecordWithCoordinate): The variant object to be added
+                to the inserted nodes.
+            variants (List[VariantRecord]): Additional variants that the
+                insertion sequence carries.
+            active_frames (List[bool]): Whether each reading frame is active.
+        """
         cursors = copy.copy(cursors)
         branch = ThreeFrameTVG(seq, self.id, global_variant=var.variant)
         branch.init_three_frames(truncate_head=False)
@@ -508,6 +679,7 @@ class ThreeFrameTVG():
             var_start = var.variant.location.start
             var_end = var.variant.location.end
             source = cursors[i]
+
             if is_frameshifting:
                 frame_shifted = var.variant.frames_shifted()
                 j = (frame_shifted + i) % 3
@@ -519,7 +691,10 @@ class ThreeFrameTVG():
             target_end = target.seq.locations[-1].ref.end
 
             if var_start < source_start:
-                raise ValueError('Variant out of range')
+                raise ValueError(
+                    'The location of cursor is behind the variant. Something'
+                    ' must have messed up during creating the variant graph.'
+                )
 
             if var_start == source_start:
                 prev = source.get_reference_prev()
@@ -569,8 +744,10 @@ class ThreeFrameTVG():
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
         insert_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-        insert_variants = variant_pool.filter_variants(gene_id, anno, genome,
-            exclude_type, start=donor_start, end=donor_end)
+        insert_variants = variant_pool.filter_variants(
+            gene_id=gene_id, anno=anno, exclude_type=exclude_type,
+            start=donor_start, end=donor_end
+        )
         # add the reference sequence to the insertion sequence.
         ref_seq_location = MatchedLocation(
             query=FeatureLocation(start=0, end=1),
@@ -612,8 +789,10 @@ class ThreeFrameTVG():
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
         sub_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
-        sub_variants = variant_pool.filter_variants(gene_id, anno, genome,
-            exclude_type, start=donor_start, end=donor_end)
+        sub_variants = variant_pool.filter_variants(
+            gene_id=gene_id, anno=anno, exclude_type=exclude_type,
+            start=donor_start, end=donor_end
+        )
         var = seqvar.VariantRecordWithCoordinate(
             variant=variant,
             location=FeatureLocation(start=0, end=len(sub_seq.seq))
@@ -629,7 +808,8 @@ class ThreeFrameTVG():
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
             variant_pool:VariantRecordPool, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None) -> None:
+            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
+            known_orf_index:int=None) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
@@ -648,7 +828,8 @@ class ThreeFrameTVG():
 
         if active_frames is None:
             if self.has_known_orf:
-                known_orf_index = self.get_known_reading_frame_index()
+                if known_orf_index is None:
+                    known_orf_index = self.get_known_reading_frame_index()
                 active_frames = [False, False, False]
                 active_frames[known_orf_index] = True
             else:
@@ -703,7 +884,8 @@ class ThreeFrameTVG():
                     variant_pool=variant_pool,
                     genome=genome,
                     anno=anno,
-                    active_frames=copy.copy(active_frames)
+                    active_frames=copy.copy(active_frames),
+                    known_orf_index=known_orf_index
                 )
 
             elif variant.type == 'Insertion':
@@ -800,12 +982,13 @@ class ThreeFrameTVG():
 
     @staticmethod
     def find_bridge_nodes_between(start:TVGNode, end=TVGNode
-            ) -> Tuple[List[TVGNode], List[TVGNode]]:
+            ) -> Tuple[List[TVGNode], List[TVGNode], List[TVGNode]]:
         """ Find all bridge in and bridge out nodes between a start and a
         end node. """
         this_id = start.reading_frame_index
         bridge_in = []
         bridge_out = []
+        bridge_sub = []
         visited = set()
         queue:Deque[TVGNode] = deque([e.out_node for e in start.out_edges])
         while queue:
@@ -815,7 +998,12 @@ class ThreeFrameTVG():
             len_after = len(visited)
             if len_before == len_after:
                 continue
-            if any(e.out_node.reading_frame_index != this_id for e in cur.out_edges):
+            if cur.is_bridge_to_subgraph():
+                bridge_sub.append(cur)
+                continue
+            is_bridge_out = any(e.out_node.reading_frame_index != this_id for e
+                in cur.out_edges)
+            if is_bridge_out:
                 bridge_out.append(cur)
                 continue
             for e in cur.in_edges:
@@ -824,7 +1012,7 @@ class ThreeFrameTVG():
             if cur is not end:
                 for e in cur.out_edges:
                     queue.appendleft(e.out_node)
-        return bridge_in, bridge_out
+        return bridge_in, bridge_out, bridge_sub
 
     def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode]) -> bool:
         """ Check the total number of variants of given nodes """
@@ -860,11 +1048,14 @@ class ThreeFrameTVG():
         start_node = node
         end_node = node.find_farthest_node_with_overlap()
         end_nodes = [end_node]
-        bridge_ins, bridge_outs = self.find_bridge_nodes_between(start_node, end_node)
+        bridges = self.find_bridge_nodes_between(start_node, end_node)
+        bridge_ins, bridge_outs, bridge_sub = bridges
 
         for bridge in bridge_outs:
             for e in bridge.out_edges:
                 end_nodes.append(e.out_node)
+
+        end_nodes.append(bridge_sub)
 
         new_nodes:Set[TVGNode] = set()
         queue = deque()
@@ -873,8 +1064,10 @@ class ThreeFrameTVG():
         new_bridges:Set[TVGNode] = set()
 
         # start by removing the out edges from the start node.
-        for edge in copy.copy(start_node.out_edges) :
+        for edge in copy.copy(start_node.out_edges):
             out_node = edge.out_node
+            if out_node in bridge_sub:
+                continue
             self.remove_edge(edge)
             queue.appendleft(out_node)
 
@@ -915,7 +1108,8 @@ class ThreeFrameTVG():
                 new_node.append_right(out_node)
 
                 for edge in copy.copy(out_node.out_edges):
-                    edge_type = 'reference' if new_node.is_reference() \
+                    edge_type = 'reference' \
+                        if self.is_reference_edge(new_node, edge.out_node) \
                         else 'variant_end'
                     self.add_edge(new_node, edge.out_node, _type=edge_type)
 
@@ -930,7 +1124,7 @@ class ThreeFrameTVG():
 
         # add new nodes to the graph
         for new_node in new_nodes:
-            if new_node.is_reference():
+            if self.is_reference_edge(start_node, new_node):
                 in_edge_type = 'reference'
             else:
                 in_edge_type = 'variant_start'
@@ -980,17 +1174,24 @@ class ThreeFrameTVG():
                 subgraph_id=start.subgraph_id
             )
 
+        end_nodes:List[TVGNode] = []
+
         for out_edge in start.out_edges:
             out_node = out_edge.out_node
             out_node.append_left(left_over)
 
+        for edge in start.out_edges:
+            out_node = edge.out_node
+            if out_node.is_bridge_to_subgraph():
+                end_nodes.append(out_node)
 
         ref_node = start.get_reference_next()
         if not ref_node.out_edges:
-            return None
+            return end_nodes
 
         if len(ref_node.out_edges) > 1:
-            return ref_node
+            end_nodes.append(ref_node)
+            return end_nodes
 
         end = ref_node.get_reference_next()
         right_index = (3 - len(ref_node.seq) % 3) % 3
@@ -1000,7 +1201,8 @@ class ThreeFrameTVG():
             in_node = in_edge.in_node
             in_node.append_right(right_over)
 
-        return end
+        end_nodes.append(end)
+        return end_nodes
 
     def fit_into_codons(self) -> None:
         r""" This takes the variant graph, and fit all cleave sites into the
@@ -1031,8 +1233,8 @@ class ThreeFrameTVG():
 
             self.align_variants(cur)
             if cur.out_edges:
-                node = self.expand_alignments(cur)
-                if node is not None:
+                end_nodes = self.expand_alignments(cur)
+                for node in end_nodes:
                     queue.appendleft(node)
 
     def translate(self) -> PeptideVariantGraph:
