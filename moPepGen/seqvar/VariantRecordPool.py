@@ -122,8 +122,8 @@ class VariantRecordPool():
         for val in self.transcriptional.values():
             val.sort()
 
-    def filter_variants(self, gene_id:str, anno:GenomicAnnotation,
-            exclude_type:List[str], start:int=None,
+    def filter_variants(self, anno:GenomicAnnotation, gene_id:str=None,
+            tx_ids:List[str]=None, exclude_type:List[str]=None, start:int=None,
             end:int=None, intron:bool=True,
             segments:Iterable[VariantRecord]=None, return_coord:str='gene'
             ) -> List[VariantRecord]:
@@ -164,7 +164,14 @@ class VariantRecordPool():
             raise ValueError('Arguments provided do not match requirement.')
 
         records = set()
-        for tx_id in anno.genes[gene_id].transcripts:
+        if tx_ids:
+            _tx_ids = set(tx_ids)
+        else:
+            _tx_ids = set()
+        if gene_id:
+            _tx_ids.update(anno.genes[gene_id].transcripts)
+        for tx_id in _tx_ids:
+            gene_id = anno.transcripts[tx_id].transcript.gene_id
             if tx_id in self.transcriptional:
                 for record in self.transcriptional[tx_id]:
                     if record.type in exclude_type:
