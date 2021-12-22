@@ -802,6 +802,7 @@ class PeptideVariantGraph():
             trash.add(cur_copy)
 
         stop_start_finding = any(x.variant.is_real_fusion for x in target_node.variants)
+        start_indices = []
         if not stop_start_finding:
             start_indices = target_node.seq.find_all_start_sites()
             for start_index in start_indices:
