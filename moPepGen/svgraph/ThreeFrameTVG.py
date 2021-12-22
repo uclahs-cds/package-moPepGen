@@ -565,7 +565,7 @@ class ThreeFrameTVG():
             accepter_gene_id, accepter_tx_id)
 
         accepter_variant_records = variant_pool.filter_variants(
-            gene_id=accepter_gene_id, anno=anno, exclude_type=['Fusion'],
+            tx_ids=[accepter_tx_id], anno=anno, exclude_type=['Fusion'],
             start=breakpoint_tx, return_coord='transcript', intron=False
         )
 
