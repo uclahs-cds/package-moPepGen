@@ -307,8 +307,6 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     # represented as Insertion, Deletion or Substitution.
     exclusion_variant_types = ['Insertion', 'Deletion', 'Substitution']
 
-    # TODO(Trevor): we should leave out alternative splicing and only keep
-    # SNV and INDEL. Please point it out if you see this!
     variant_records = variant_pool.filter_variants(
         gene_id=gene_id, anno=annotation, exclude_type=exclusion_variant_types,
         intron=False, segments=record.fragments
