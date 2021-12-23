@@ -14,6 +14,7 @@ from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
 from moPepGen.seqvar import GVFMetadata
+from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
     load_references
@@ -96,6 +97,7 @@ class VariantPeptideCaller():
         self.min_length:int = args.min_length
         self.max_length:int = args.max_length
         self.max_variants_per_node:int = args.max_variants_per_node
+        self.noncanonical_transcripts = args.noncanonical_transcripts
         self.verbose = args.verbose_level
         if self.quiet is True:
             self.verbose = 0
@@ -137,6 +139,11 @@ class VariantPeptideCaller():
         """ main variant peptide caller """
         i = 0
         for tx_id in self.variant_pool.transcriptional:
+            if self.noncanonical_transcripts:
+                has_ass = any(x.type in ALTERNATIVE_SPLICING_TYPES for x in
+                    self.variant_pool.transcriptional[tx_id])
+                if not has_ass:
+                    continue
             if self.verbose >= 2:
                 logger(tx_id)
             try:
@@ -225,8 +232,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     caller.load_reference()
     caller.load_variants()
     caller.remove_cached_sequences()
-    if not args.noncanonical_transcripts:
-        caller.call_variants_main()
+    caller.call_variants_main()
     caller.call_variants_fusion()
     caller.call_variants_circ_rna()
     caller.write_fasta()

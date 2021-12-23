@@ -317,7 +317,9 @@ class ThreeFrameTVG():
         if variant_start < target_start or variant_start > target_end:
             raise ValueError('Variant out of source range of target')
 
-        if variant.type == 'Deletion':
+        is_deletion = variant.type == 'Deletion'
+
+        if is_deletion:
             seq = self.seq[variant.location.start:variant.location.start+1]
         else:
             seq = dna.DNASeqRecordWithCoordinates(
@@ -335,6 +337,10 @@ class ThreeFrameTVG():
             reading_frame_index=source.reading_frame_index,
             orf=source.orf
         )
+
+        if is_deletion:
+            var_node.subgraph_id = variant.attrs['GENE_ID']
+
         returns = [None, None]
         # variant start
         if variant_start == source_start:
@@ -628,7 +634,7 @@ class ThreeFrameTVG():
 
         return cursors
 
-    def _apply_insertion(self, cursors:List[TVGNode],
+    def _apply_insertion(self, cursors:List[TVGNode], subgraph_id:str,
             var:seqvar.VariantRecordWithCoordinate,
             seq:dna.DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecord],
@@ -649,7 +655,7 @@ class ThreeFrameTVG():
             active_frames (List[bool]): Whether each reading frame is active.
         """
         cursors = copy.copy(cursors)
-        branch = ThreeFrameTVG(seq, self.id, global_variant=var.variant)
+        branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             node = list(root.out_edges)[0].out_node
@@ -657,12 +663,15 @@ class ThreeFrameTVG():
             is_frameshifting = False
             if var.variant.is_frameshifting():
                 is_frameshifting = True
+        known_orf_index=self.get_known_reading_frame_index() \
+                if self.has_known_orf else None
         branch.create_variant_graph(
             variants=variants,
             variant_pool=None,
             genome=None,
             anno=None,
-            active_frames=active_frames
+            active_frames=active_frames,
+            known_orf_index=known_orf_index
         )
 
         for i in range(3):
@@ -768,6 +777,7 @@ class ThreeFrameTVG():
         )
         return self._apply_insertion(
             cursors=cursors,
+            subgraph_id=gene_id,
             var=var,
             seq=insert_seq,
             variants=insert_variants,
@@ -799,6 +809,7 @@ class ThreeFrameTVG():
         )
         return self._apply_insertion(
             cursors=cursors,
+            subgraph_id=gene_id,
             var=var,
             seq=sub_seq,
             variants=sub_variants,
@@ -982,13 +993,14 @@ class ThreeFrameTVG():
 
     @staticmethod
     def find_bridge_nodes_between(start:TVGNode, end=TVGNode
-            ) -> Tuple[List[TVGNode], List[TVGNode], List[TVGNode]]:
+            ) -> Tuple[Set[TVGNode], Set[TVGNode], Set[TVGNode], Set[TVGNode]]:
         """ Find all bridge in and bridge out nodes between a start and a
         end node. """
         this_id = start.reading_frame_index
-        bridge_in = []
-        bridge_out = []
-        bridge_sub = []
+        bridge_in:Set[TVGNode] = set()
+        bridge_out:Set[TVGNode] = set()
+        subgraph_in:Set[TVGNode] = set()
+        subgraph_out:Set[TVGNode] = set()
         visited = set()
         queue:Deque[TVGNode] = deque([e.out_node for e in start.out_edges])
         while queue:
@@ -998,21 +1010,23 @@ class ThreeFrameTVG():
             len_after = len(visited)
             if len_before == len_after:
                 continue
-            if cur.is_bridge_to_subgraph():
-                bridge_sub.append(cur)
-                continue
             is_bridge_out = any(e.out_node.reading_frame_index != this_id for e
                 in cur.out_edges)
             if is_bridge_out:
-                bridge_out.append(cur)
+                bridge_out.add(cur)
+                continue
+            if cur.subgraph_id != start.subgraph_id:
+                subgraph_out.add(cur)
                 continue
             for e in cur.in_edges:
                 if e.in_node.reading_frame_index != this_id:
-                    bridge_in.append(e.in_node)
+                    bridge_in.add(e.in_node)
+                elif e.in_node.subgraph_id != cur.subgraph_id:
+                    subgraph_in.add(e.in_node)
             if cur is not end:
                 for e in cur.out_edges:
                     queue.appendleft(e.out_node)
-        return bridge_in, bridge_out, bridge_sub
+        return bridge_in, bridge_out, subgraph_in, subgraph_out
 
     def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode]) -> bool:
         """ Check the total number of variants of given nodes """
@@ -1049,13 +1063,15 @@ class ThreeFrameTVG():
         end_node = node.find_farthest_node_with_overlap()
         end_nodes = [end_node]
         bridges = self.find_bridge_nodes_between(start_node, end_node)
-        bridge_ins, bridge_outs, bridge_sub = bridges
+        bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges
 
         for bridge in bridge_outs:
             for e in bridge.out_edges:
                 end_nodes.append(e.out_node)
 
-        end_nodes.append(bridge_sub)
+        for subgraph in subgraph_outs:
+            for e in subgraph.out_edges:
+                end_nodes.append(e.out_node)
 
         new_nodes:Set[TVGNode] = set()
         queue = deque()
@@ -1066,13 +1082,16 @@ class ThreeFrameTVG():
         # start by removing the out edges from the start node.
         for edge in copy.copy(start_node.out_edges):
             out_node = edge.out_node
-            if out_node in bridge_sub:
+            if out_node in subgraph_outs:
                 continue
             self.remove_edge(edge)
             queue.appendleft(out_node)
 
         for bridge in bridge_ins:
             queue.appendleft(bridge)
+
+        for subgraph_in in subgraph_ins:
+            queue.appendleft(subgraph_in)
 
         while queue:
             cur:TVGNode = queue.pop()
@@ -1132,6 +1151,8 @@ class ThreeFrameTVG():
 
         for bridge in new_bridges:
             original_bridge = bridge_map[bridge]
+            if original_bridge is bridge:
+                continue
             for edge in original_bridge.in_edges:
                 self.add_edge(edge.in_node, bridge, edge.type)
             trash.add(original_bridge)
@@ -1182,7 +1203,9 @@ class ThreeFrameTVG():
 
         for edge in start.out_edges:
             out_node = edge.out_node
-            if out_node.is_bridge_to_subgraph():
+            if start.subgraph_id != out_node.subgraph_id and\
+                    not any(x.out_node.subgraph_id == start.subgraph_id \
+                        for x in out_node.out_edges):
                 end_nodes.append(out_node)
 
         ref_node = start.get_reference_next()
@@ -1201,6 +1224,9 @@ class ThreeFrameTVG():
             in_node = in_edge.in_node
             in_node.append_right(right_over)
 
+        if end.subgraph_id != self.id and any(x.out_node.subgraph_id == self.id
+                for x in end.out_edges):
+            return end_nodes
         end_nodes.append(end)
         return end_nodes
 
@@ -1247,7 +1273,7 @@ class ThreeFrameTVG():
                \      /              \  /
                 GTCTAC                VY
         """
-        root = PVGNode(None, None)
+        root = PVGNode(None, None, subgraph_id=self.id)
         if self.has_known_orf:
             known_orf = [int(self.seq.orf.start), int(self.seq.orf.end)]
         else:

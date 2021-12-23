@@ -152,6 +152,14 @@ class TVGNode():
         """ check if it is a bridge node to a subgraph """
         return any(e.in_node.subgraph_id != self.subgraph_id for e in self.in_edges)
 
+    def is_subgraph_bridge(self, out_node:TVGNode) -> bool:
+        """ check if it is a subgraph bridge node """
+        return self.subgraph_id != out_node.subgraph_id
+
+    def is_orf_bridge(self, out_node:TVGNode) -> bool:
+        """ check if it is a orf bridge node """
+        return self.reading_frame_index != out_node.reading_frame_index
+
     def has_bridge_from_reading_frame(self, other_reading_frame_index:int):
         """ Check if it has a in bridge node from another reading frame """
         return any(x.reading_frame_index == other_reading_frame_index\
@@ -301,18 +309,23 @@ class TVGNode():
             if cur.reading_frame_index != self.reading_frame_index:
                 continue
 
+            if cur.subgraph_id != self.subgraph_id:
+                continue
+
             visited_len_before = len(visited)
             visited.add(cur)
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
                 if cur is farthest and cur is not self:
-                    if cur.out_edges and cur.get_reference_next().has_in_bridge():
+                    if not cur.out_edges:
+                        continue
+                    if cur.get_reference_next().has_in_bridge():
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
                     # if the farthest has less than 6 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
-                    if len(cur.seq) < min_size:
+                    elif len(cur.seq) < min_size:
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
                 continue
@@ -530,7 +543,8 @@ class TVGNode():
             seq=seq,
             variants=variants,
             orf=[None, None],
-            reading_frame_index=self.reading_frame_index
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
     def get_ref_sequence(self) -> Seq:

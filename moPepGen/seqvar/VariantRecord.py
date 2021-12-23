@@ -17,6 +17,7 @@ _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution', 'circRNA']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'RNAEditingSite']
 ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
+ALTERNATIVE_SPLICING_TYPES = ['Insertion', 'Deletion', 'Substitution']
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
