@@ -4,7 +4,7 @@ import itertools
 from typing import Iterable
 
 
-__version__ = '0.0.1'
+__version__ = '0.1.0-beta.1'
 
 ## Error messages
 ERROR_INDEX_IN_INTRON = 'The genomic index seems to be in an intron'
