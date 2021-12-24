@@ -69,7 +69,6 @@ class MXERecord(RMATSRecord):
         strand = gene_model.location.strand
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        ref_has_both:List[str] = []
         ref_has_first:List[str] = []
         ref_has_second:List[str] = []
 
@@ -99,8 +98,6 @@ class MXERecord(RMATSRecord):
                         exon = next(it, None)
                         if not exon:
                             break
-                        if int(exon.location.start) == self.downstream_exon_start:
-                            ref_has_both.append(tx_id)
                 elif int(exon.location.start) == self.second_exon_start and \
                         int(exon.location.end) == self.second_exon_end:
                     exon = next(it, None)
@@ -113,7 +110,7 @@ class MXERecord(RMATSRecord):
                             ref_has_first.append(tx_id)
 
         if (ref_has_first and ref_has_second) or \
-                (not ref_has_first and not ref_has_second and not ref_has_both):
+                (not ref_has_first and not ref_has_second):
             return variants
 
         if strand == 1:
@@ -125,10 +122,6 @@ class MXERecord(RMATSRecord):
                 self.second_exon_start, self.gene_id)
             second_end = anno.coordinate_genomic_to_gene(
                 self.second_exon_end - 1, self.gene_id) + 1
-            first_genomic_position = f'{chrom}:{self.first_exon_start + 1}'+\
-                f'-{self.first_exon_end}'
-            second_genomic_position = f'{chrom}:{self.second_exon_start + 1}'+\
-                f'-{self.second_exon_end}'
         else:
             first_start = anno.coordinate_genomic_to_gene(
                 self.second_exon_end - 1, self.gene_id)
@@ -138,10 +131,6 @@ class MXERecord(RMATSRecord):
                 self.first_exon_end - 1, self.gene_id)
             second_end = anno.coordinate_genomic_to_gene(
                 self.first_exon_start, self.gene_id) + 1
-            second_genomic_position = f'{chrom}:{self.first_exon_start + 1}'+\
-                f'-{self.first_exon_end}'
-            first_genomic_position = f'{chrom}:{self.second_exon_end + 1}'+\
-                f'-{self.second_exon_end}'
 
         _id = f'MXE_{first_start + 1}-{first_end}:' +\
             f'{second_start}-{second_end}'
@@ -168,22 +157,6 @@ class MXERecord(RMATSRecord):
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
-            location = FeatureLocation(seqname=self.gene_id, start=first_start,
-                    end=first_end)
-            for tx_id in ref_has_both:
-                ref = str(gene_seq.seq[first_start])
-                alt = '<DEL>'
-                attrs = {
-                    'TRANSCRIPT_ID': tx_id,
-                    'START': first_start,
-                    'END': first_end,
-                    'GENE_SYMBOL': gene_model.gene_name,
-                    'GENOMIC_POSITION': first_genomic_position
-                }
-                _type = 'Deletion'
-                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-                variants.append(record)
-
         # For MXE, the first exon is 'inclusion' and second is 'skipped'.
         if not ref_has_first and self.ijc_sample_1 >= min_ijc:
             location = FeatureLocation(seqname=self.gene_id, start=second_start,
@@ -203,22 +176,6 @@ class MXERecord(RMATSRecord):
                     f'{first_start + 1}:{first_end}'
                 }
                 _type = 'Substitution'
-                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-                variants.append(record)
-
-            location = FeatureLocation(seqname=self.gene_id, start=second_start,
-                end=second_end)
-            for tx_id in ref_has_both:
-                ref = str(gene_seq.seq[second_start])
-                alt = '<DEL>'
-                attrs = {
-                    'TRANSCRIPT_ID': tx_id,
-                    'START': second_start,
-                    'END': second_end,
-                    'GENE_SYMBOL': gene_model.gene_name,
-                    'GENOMIC_POSITION': second_genomic_position
-                }
-                _type = 'Deletion'
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
 
