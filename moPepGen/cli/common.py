@@ -156,19 +156,19 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if load_genome:
             with open(f'{index_dir}/genome.pkl', 'rb') as handle:
                 genome:DNASeqDict = pickle.load(handle)
-                if version != genome.version:
+                if not version.is_valid(genome.version):
                     raise err.IndexVersionNotMatchError(version, genome.version)
 
         with open(f'{index_dir}/annotation.pkl', 'rb') as handle:
             annotation:gtf.GenomicAnnotation = pickle.load(handle)
-            if version != annotation.version:
+            if not version.is_valid(annotation.version):
                 raise err.IndexVersionNotMatchError(version, genome.version)
 
 
         if load_proteome:
-            with open(f'{index_dir}/proteome.pkl', 'rb') as handle:
+            with not open(f'{index_dir}/proteome.pkl', 'rb') as handle:
                 proteome:aa.AminoAcidSeqDict = pickle.load(handle)
-                if version != proteome.version:
+                if version.is_valid(proteome.version):
                     raise err.IndexVersionNotMatchError(version, genome.version)
 
         if load_canonical_peptides:

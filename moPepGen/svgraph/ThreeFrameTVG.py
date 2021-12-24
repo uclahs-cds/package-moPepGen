@@ -1060,7 +1060,7 @@ class ThreeFrameTVG():
             The original input node.
         """
         start_node = node
-        end_node = node.find_farthest_node_with_overlap()
+        end_node = node.find_farthest_node_with_overlap(self.id)
         end_nodes = [end_node]
         bridges = self.find_bridge_nodes_between(start_node, end_node)
         bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges
@@ -1076,7 +1076,14 @@ class ThreeFrameTVG():
         new_nodes:Set[TVGNode] = set()
         queue = deque()
         trash = set()
-        bridge_map:Dict[TVGNode, TVGNode] = {x:x for x in bridge_ins}
+        bridge_map:Dict[TVGNode, TVGNode] = {}
+        for bridge_in in list(bridge_ins) + list(subgraph_ins):
+            new_bridge = bridge_in.copy()
+            for edge in bridge_in.out_edges:
+                self.add_edge(new_bridge, edge.out_node, edge.type)
+            bridge_map[new_bridge] = bridge_in
+            trash.add(bridge_in)
+
         new_bridges:Set[TVGNode] = set()
 
         # start by removing the out edges from the start node.
@@ -1087,11 +1094,8 @@ class ThreeFrameTVG():
             self.remove_edge(edge)
             queue.appendleft(out_node)
 
-        for bridge in bridge_ins:
+        for bridge in bridge_map:
             queue.appendleft(bridge)
-
-        for subgraph_in in subgraph_ins:
-            queue.appendleft(subgraph_in)
 
         while queue:
             cur:TVGNode = queue.pop()
@@ -1151,8 +1155,6 @@ class ThreeFrameTVG():
 
         for bridge in new_bridges:
             original_bridge = bridge_map[bridge]
-            if original_bridge is bridge:
-                continue
             for edge in original_bridge.in_edges:
                 self.add_edge(edge.in_node, bridge, edge.type)
             trash.add(original_bridge)

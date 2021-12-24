@@ -83,6 +83,10 @@ class PeptideVariantGraph():
         """ Check if it has a known ORF """
         return self.known_orf[0] is not None
 
+    def node_is_subgraph_end(self, node:PVGNode) -> bool:
+        """ check if a node is the last node of a subgraph """
+        return node.subgraph_id != self.id and node.is_subgraph_end()
+
     def cleave_if_possible(self, node:PVGNode,
             return_first:bool=False) -> PVGNode:
         """ For a given node, it checks whether there is any cleave site and
@@ -148,7 +152,7 @@ class PeptideVariantGraph():
         routes:Set[Tuple[PVGNode]] = set()
         visited:Set[PVGNode] = {node}
         for out_node in node.out_nodes:
-            if out_node.is_bridge() or out_node.is_subgraph_end():
+            if out_node.is_bridge() or self.node_is_subgraph_end(out_node):
                 continue
             is_sharing_downstream = any(any(y is not out_node and y in node.out_nodes \
                 for y in x.in_nodes) for x in out_node.out_nodes if x is not self.stop)
@@ -174,7 +178,8 @@ class PeptideVariantGraph():
 
         for cur in copy.copy(routes):
             for in_node in cur[-1].in_nodes:
-                if (in_node.is_bridge() or in_node.is_subgraph_end()) and in_node not in visited:
+                if (in_node.is_bridge() or self.node_is_subgraph_end(in_node)) \
+                        and in_node not in visited:
                     for out_node in cur[-1].out_nodes:
                         new_route = (in_node, cur[-1],)
                         routes.add(new_route)
@@ -224,7 +229,7 @@ class PeptideVariantGraph():
 
             new_nodes.add(new_node)
 
-            if route[0].is_bridge() or route[0].is_subgraph_end():
+            if route[0].is_bridge() or self.node_is_subgraph_end(route[0]):
                 val = inbridge_list.setdefault(route[0], [])
                 val.append(new_node)
 
@@ -256,7 +261,7 @@ class PeptideVariantGraph():
         for node in nodes:
             if node.reading_frame_index != reading_frame_index:
                 continue
-            if node.is_bridge() or node.is_subgraph_end():
+            if node.is_bridge() or self.node_is_subgraph_end(node):
                 continue
 
             is_sharing_downstream = any(any(y is not node and y in nodes \
@@ -268,7 +273,7 @@ class PeptideVariantGraph():
                     node.cleavage and list(node.out_nodes)[0].cleavage
                 if is_single_out:
                     out_node = list(node.out_nodes)[0]
-                    if out_node.is_bridge() or out_node.is_subgraph_end():
+                    if out_node.is_bridge() or self.node_is_subgraph_end(out_node):
                         continue
                     downstreams.add(out_node)
                 else:
@@ -502,7 +507,7 @@ class PeptideVariantGraph():
                 return self.expand_backward(cur)
             return set(), {}
 
-        if cur.is_bridge() or cur.is_subgraph_end():
+        if cur.is_bridge() or self.node_is_subgraph_end(cur):
             return set(), {}
 
         i = cur.reading_frame_index
@@ -522,7 +527,7 @@ class PeptideVariantGraph():
         else:
             branches, inbridges = self.expand_backward(cur)
             branches = {x for x in branches if x.reading_frame_index == i and\
-                not (x.is_bridge() or x.is_subgraph_end())}
+                not (x.cleavage and (x.is_bridge() or self.node_is_subgraph_end(x)))}
         return branches, inbridges
 
     def fit_into_cleavage_multiple_upstream(self, cur:PVGNode) -> T:
@@ -535,7 +540,8 @@ class PeptideVariantGraph():
             exception=self.exception)
 
         if len(sites) == 0:
-            if self.next_is_stop(cur) or cur.is_bridge() or cur.is_subgraph_end():
+            if self.next_is_stop(cur) or cur.is_bridge() or \
+                    self.node_is_subgraph_end(cur):
                 if not cur.cleavage:
                     _,inbridges = self.expand_forward(cur)
                 return branches, inbridges
@@ -547,7 +553,8 @@ class PeptideVariantGraph():
                 branches,inbridges = self.merge_join(cur)
 
         elif len(sites) == 1:
-            if self.next_is_stop(cur) or cur.is_bridge() or cur.is_subgraph_end():
+            if self.next_is_stop(cur) or cur.is_bridge() or \
+                    self.node_is_subgraph_end(cur):
                 cur.split_node(sites[0], cleavage=True)
                 branches, inbridges = self.expand_forward(cur)
             elif len(cur.out_nodes) == 1:

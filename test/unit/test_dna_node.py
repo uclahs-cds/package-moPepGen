@@ -49,8 +49,8 @@ class TestTVGNode(unittest.TestCase):
             6: ('CCCT', [4,5], [])
         }
         seq = 'ATGGTCTGACCCT'
-        _, nodes = create_three_frame_tvg(data, seq)
-        node = nodes[1].find_farthest_node_with_overlap()
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = nodes[1].find_farthest_node_with_overlap(graph.id)
         self.assertIs(node, nodes[6])
 
     def test_find_farthest_node_with_overlap_case2(self):
@@ -74,8 +74,8 @@ class TestTVGNode(unittest.TestCase):
             9: ('CT', [8], [])
         }
         seq = 'ATGGTCTGCCCT'
-        _, nodes = create_three_frame_tvg(data, seq)
-        node = nodes[1].find_farthest_node_with_overlap()
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = nodes[1].find_farthest_node_with_overlap(graph.id)
         print(node.seq.seq)
         self.assertIs(node, nodes[9])
 
@@ -92,8 +92,8 @@ class TestTVGNode(unittest.TestCase):
             3: ['C', [1], [(0, 'T', 'C', 'SNV', '')]]
         }
         seq = 'ATGGT'
-        _, nodes = create_three_frame_tvg(data, seq)
-        node = nodes[1].find_farthest_node_with_overlap()
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = nodes[1].find_farthest_node_with_overlap(graph.id)
         self.assertEqual(str(node.seq.seq), 'T')
 
 
@@ -114,8 +114,8 @@ class TestTVGNode(unittest.TestCase):
             8: ('CCCT', [6, 7], [])
         }
         seq = 'ATGGTCTGACGCCCT'
-        _, nodes = create_three_frame_tvg(data, seq)
-        node = nodes[1].find_farthest_node_with_overlap()
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = nodes[1].find_farthest_node_with_overlap(graph.id)
         self.assertIs(node, nodes[5])
 
     def test_find_farthest_node_with_exclusive_outbond(self):
@@ -136,8 +136,8 @@ class TestTVGNode(unittest.TestCase):
             7: ('GTTGGCCC', [5,6], []),
         }
         seq = 'ATGGTCTCGCCCTGTTGGCCC'
-        _, nodes = create_three_frame_tvg(data, seq)
-        node = nodes[1].find_farthest_node_with_overlap()
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = nodes[1].find_farthest_node_with_overlap(graph.id)
         self.assertIs(node, nodes[7])
 
     def test_check_stop_altering_false(self):

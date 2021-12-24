@@ -278,7 +278,28 @@ class TVGNode():
 
         return new_node
 
-    def find_farthest_node_with_overlap(self, min_size:int=6) -> TVGNode:
+    @staticmethod
+    def first_node_is_smaller(first:TVGNode, second:TVGNode, graph_id:str,
+            in_subgraph:bool) -> bool:
+        """ Check if the first node is larger """
+        if in_subgraph:
+            if first.subgraph_id == second.subgraph_id:
+                return first.seq.locations[0] < second.seq.locations[0]
+
+            if first.subgraph_id == graph_id:
+                first_start = first.seq.locations[0].ref.start
+            else:
+                first_start = first.global_variant.location.end
+            if second.subgraph_id == graph_id:
+                second_start = second.seq.locations[0].ref.start
+            else:
+                second_start = second.global_variant.location.end
+            return first_start < second_start
+
+        return first.seq.locations[0] < second.seq.locations[0]
+
+    def find_farthest_node_with_overlap(self, graph_id:str, min_size:int=6
+            ) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
         reference sequence. If the farthest node found has an exclusive single
@@ -293,7 +314,8 @@ class TVGNode():
                     \ /
                      A
         """
-         # find the range of overlaps
+        in_subgraph = self.subgraph_id != graph_id
+        # find the range of overlaps
         farthest = None
         if not self.get_reference_next():
             return None
@@ -309,7 +331,7 @@ class TVGNode():
             if cur.reading_frame_index != self.reading_frame_index:
                 continue
 
-            if cur.subgraph_id != self.subgraph_id:
+            if not in_subgraph and cur.subgraph_id != self.subgraph_id:
                 continue
 
             visited_len_before = len(visited)
@@ -336,20 +358,24 @@ class TVGNode():
                 continue
 
             if not cur.is_reference():
-                next_ref = cur.get_reference_next()
-                queue.append(next_ref)
+                for edge in cur.out_edges:
+                    queue.append(edge.out_node)
+                # next_ref = cur.get_reference_next()
+                # queue.append(next_ref)
                 continue
 
-            if cur.is_stop_node() or cur.seq.locations[0] < farthest.seq.locations[0]:
+            if cur.is_stop_node():
+                continue
+
+            if self.first_node_is_smaller(cur, farthest, graph_id, in_subgraph):
                 for edge in cur.out_edges:
                     queue.append(edge.out_node)
                 continue
 
-            if cur.seq.locations[0] > farthest.seq.locations[0]:
-                farthest, cur = cur, farthest
-                queue.append(cur)
-                visited.remove(cur)
-                continue
+            farthest, cur = cur, farthest
+            queue.append(cur)
+            visited.remove(cur)
+            continue
         return farthest
 
     def stringify(self, k:int=None) -> None:
