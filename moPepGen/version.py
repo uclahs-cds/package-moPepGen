@@ -24,7 +24,7 @@ class MetaVersion():
 
     @staticmethod
     def get_semver(version:str) -> Tuple[int, int, int]:
-        """ """
+        """ Get major, minor and patch number from semver """
         return tuple(int(x) for x in version.split('-')[0].split('.'))
 
     def is_valid_mpg_version(self, version:str) -> bool:
