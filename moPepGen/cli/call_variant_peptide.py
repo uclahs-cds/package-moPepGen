@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
+from pathos.multiprocessing import ProcessPool
 from moPepGen import svgraph, aa, seqvar, logger, circ
 from moPepGen.seqvar import GVFMetadata
 from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
@@ -74,6 +75,13 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         default=1,
         metavar='<number>'
     )
+    p.add_argument(
+        '--threads',
+        type=int,
+        help='Set number of threads to be used.',
+        default=1,
+        metavar='<number>'
+    )
     add_args_reference(p)
     add_args_cleavage(p)
     add_args_quiet(p)
@@ -99,6 +107,7 @@ class VariantPeptideCaller():
         self.max_variants_per_node:int = args.max_variants_per_node
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.verbose = args.verbose_level
+        self.threads = args.threads
         if self.quiet is True:
             self.verbose = 0
         self.genome:dna.DNASeqDict = None
@@ -107,6 +116,7 @@ class VariantPeptideCaller():
         self.variant_pool = seqvar.VariantRecordPool()
         self.circ_rna_pool:List[CircRNAModel] = []
         self.variant_peptides = aa.VariantPeptidePool()
+        self.process_pool = ProcessPool(nodes=self.threads)
 
     def load_reference(self):
         """ load reference genome, annotation, and canonical peptides """
@@ -137,45 +147,64 @@ class VariantPeptideCaller():
 
     def call_variants_main(self):
         """ main variant peptide caller """
-        i = 0
-        for tx_id in self.variant_pool.transcriptional:
-            if self.noncanonical_transcripts:
+        if self.noncanonical_transcripts:
+            tx_variants = {}
+            for tx_id, variants in self.variant_pool.transcriptional.items():
                 has_ass = any(x.type in ALTERNATIVE_SPLICING_TYPES for x in
                     self.variant_pool.transcriptional[tx_id])
-                if not has_ass:
-                    continue
-            if self.verbose >= 2:
-                logger(tx_id)
+                if has_ass:
+                    tx_variants[tx_id] = variants
+        else:
+            tx_variants = self.variant_pool.transcriptional
+
+        def wrapper(tx_id):
             try:
+                if self.verbose >= 2:
+                    logger(tx_id)
                 peptides = call_peptide_main(
                     variant_pool=self.variant_pool, tx_id=tx_id, anno=self.anno,
                     genome=self.genome, rule=self.rule, exception=self.exception,
                     miscleavage=self.miscleavage,
                     max_variants_per_node=self.max_variants_per_node
                 )
+                if self.verbose >=3:
+                    logger(f"{tx_id} is done")
+                return peptides
             except:
                 logger(f'Exception raised from {tx_id}')
                 raise
 
-            for peptide in peptides:
-                self.variant_peptides.add_peptide(
-                    peptide=peptide, canonical_peptides=self.canonical_peptides,
-                    min_mw=self.min_mw, min_length=self.min_length,
-                    max_length=self.max_length
-                )
+        i = 0
+        block = []
+        for j, tx_id in enumerate(tx_variants.keys()):
+            if len(block) < self.threads:
+                block.append(tx_id)
+
+            if len(block) < self.threads and j < len(tx_variants) - 1:
+                continue
+
+            block_results = self.process_pool.map(wrapper, block)
+
+            for peptides in block_results:
+                for peptide in peptides:
+                    self.variant_peptides.add_peptide(
+                        peptide=peptide, canonical_peptides=self.canonical_peptides,
+                        min_mw=self.min_mw, min_length=self.min_length,
+                        max_length=self.max_length
+                    )
+
+            block = []
 
             if self.verbose >= 1:
-                i += 1
+                i += self.threads
                 if i % 1000 == 0:
                     logger(f'{i} transcripts processed.')
 
     def call_variants_fusion(self):
         """ call variant pepptides from fusion transcripts """
-        for variant in self.variant_pool.fusion:
-            if self.verbose >= 2:
-                logger(variant.id)
+        def wrapper(variant):
             try:
-                peptides = call_peptide_fusion(
+                return call_peptide_fusion(
                     variant=variant, variant_pool=self.variant_pool,
                     anno=self.anno, genome=self.genome, rule=self.rule,
                     exception=self.exception, miscleavage=self.miscleavage,
@@ -185,22 +214,38 @@ class VariantPeptideCaller():
                 logger(f"Exception raised from fusion {variant.id}")
                 raise
 
-            for peptide in peptides:
-                self.variant_peptides.add_peptide(
-                    peptide=peptide, canonical_peptides=self.canonical_peptides,
-                    min_mw=self.min_mw, min_length=self.min_length,
-                    max_length=self.max_length
-                )
+        block = []
+        for i, variant in enumerate(self.variant_pool.fusion):
+            if self.verbose >= 2:
+                logger(variant.id)
+
+            if len(block) < self.threads:
+                block.append(variant)
+
+            if len(block) < self.threads and i < len(self.variant_pool.fusion) - 1:
+                continue
+
+            blcok_results = self.process_pool.map(wrapper, block)
+
+            for peptides in blcok_results:
+                for peptide in peptides:
+                    self.variant_peptides.add_peptide(
+                        peptide=peptide, canonical_peptides=self.canonical_peptides,
+                        min_mw=self.min_mw, min_length=self.min_length,
+                        max_length=self.max_length
+                    )
+
+            block = []
 
         if self.variant_pool.fusion and self.verbose >= 1:
             logger('Fusion processed.')
 
     def call_variants_circ_rna(self):
         """ call variant peptides from circRNA """
-        for circ_rna in self.circ_rna_pool:
+        def wrapper(record):
             try:
-                peptides = call_peptide_circ_rna(
-                    record=circ_rna, annotation=self.anno, genome=self.genome,
+                return call_peptide_circ_rna(
+                    record=record, annotation=self.anno, genome=self.genome,
                     variant_pool=self.variant_pool, rule=self.rule,
                     exception=self.exception, miscleavage=self.miscleavage,
                     max_variants_per_node=self.max_variants_per_node
@@ -209,12 +254,29 @@ class VariantPeptideCaller():
                 logger(f"Exception raised from {circ_rna.id}")
                 raise
 
-            for peptide in peptides:
-                self.variant_peptides.add_peptide(
-                    peptide=peptide, canonical_peptides=self.canonical_peptides,
-                    min_mw=self.min_mw,min_length=self.min_length,
-                    max_length=self.max_length
-                )
+        block = []
+        for i, circ_rna in enumerate(self.circ_rna_pool):
+            if self.verbose >= 2:
+                logger(circ_rna.id)
+
+            if len(block) < self.threads:
+                block.append(circ_rna)
+
+            if len(block) < self.threads and i < len(self.circ_rna_pool) - 1:
+                continue
+
+            block_results = self.process_pool.map(wrapper, block)
+
+            for peptides in block_results:
+                for peptide in peptides:
+                    self.variant_peptides.add_peptide(
+                        peptide=peptide, canonical_peptides=self.canonical_peptides,
+                        min_mw=self.min_mw,min_length=self.min_length,
+                        max_length=self.max_length
+                    )
+
+            block = []
+
         if self.circ_rna_pool and self.verbose >= 1:
             logger('circRNA processed.')
 
