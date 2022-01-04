@@ -518,6 +518,8 @@ class PeptideVariantGraph():
             )
             if site > -1:
                 downstream.split_node(site, True)
+            # It's important that if the only downstream is bridge, we only
+            # do a simple expand forward. Issue #
             if len(downstream.out_nodes) == 1 or downstream.is_bridge():
                 branches, inbridges = self.expand_forward(downstream)
             else:
