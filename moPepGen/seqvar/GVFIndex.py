@@ -11,10 +11,11 @@ if TYPE_CHECKING:
     from moPepGen.seqvar import VariantRecord
 
 
-class FilePointer():
+class GVFPointer():
     """ File pointer """
-    def __init__(self, start:int=None, end:int=None):
+    def __init__(self, key:str, start:int=None, end:int=None):
         """ constructor """
+        self.key = key
         self.start = start
         self.end = end
 
@@ -22,9 +23,47 @@ class FilePointer():
         """ length """
         return self.end - self.start
 
+    def to_line(self) -> str:
+        """ to line """
+        return f"{self.key}\t{int(self.start)}\t{str(len(self))}"
+
+def iterate_pointer(handle, is_circ_rna:bool) -> Iterable[GVFPointer]:
+    """ """
+    cur_key = None
+    line_end = 0
+    pointer = None
+    for line in handle:
+
+        line_start = line_end
+        line_end += len(line)
+
+        if line.startswith('#'):
+            continue
+
+        if is_circ_rna:
+            record = circ.io.line_to_circ_model(line)
+            key = record.id
+        else:
+            record = io.line_to_variant_record(line)
+            if record.type == 'Fusion':
+                key = record.id
+            else:
+                key = record.transcript_id
+
+        if cur_key != key:
+            if not cur_key is None:
+                yield pointer
+            cur_key = key
+            pointer = GVFPointer(key=cur_key, start=line_start, end=line_end)
+        else:
+            pointer.end = line_end
+
+    if pointer is not None:
+        yield pointer
+
 class GVFIndex():
     """ This class holds the index of a GVF file. """
-    def __init__(self, handle:IO, pointers:Dict[str, FilePointer]=None,
+    def __init__(self, handle:IO, pointers:Dict[str, GVFPointer]=None,
             is_circ_rna:bool=False):
         """ Constructor """
         self.handle = handle
@@ -34,32 +73,8 @@ class GVFIndex():
     def generate_indices(self):
         """ Generate indices from the GVF file that the file handle is pointing
         to. """
-        cur_key = None
-        line_end = 0
-        for line in self.handle:
-
-            line_start = line_end
-            line_end += line_start + len(line)
-
-            if line.startswith('#'):
-                continue
-            if self.is_circ_rna:
-                record = circ.io.line_to_circ_model(line)
-                key = record.id
-            else:
-                record = io.line_to_variant_record(line)
-                if record.type == 'Fusion':
-                    key = record.id
-                else:
-                    key = record.transcript_id
-            if cur_key != key:
-                cur_key = key
-                pointer = FilePointer(start=line_start, end=line_end)
-                if cur_key in self.pointers:
-                    raise ValueError('GVF file seems to be unsorted.')
-                self.pointers[cur_key] = pointer
-            else:
-                self.pointers[cur_key].end = line_end
+        for pointer in iterate_pointer(self.handle, self.is_circ_rna):
+            self.pointers[pointer.key] = pointer
 
     def write(self, handle:IO):
         """ Write indices to file """

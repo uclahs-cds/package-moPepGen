@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from moPepGen import logger
-from moPepGen.seqvar.GVFIndex import GVFIndex
+from moPepGen.seqvar import GVFIndex
 from moPepGen.seqvar import GVFMetadata
 from .common import add_args_cleavage, add_args_reference, add_args_quiet, \
     print_help_if_missing_args, print_start_message
@@ -38,12 +38,12 @@ def index_gvf(args:argparse.Namespace):
 
     print_start_message(args)
 
-    with open(input_file, 'rt') as handle:
-        metadata = GVFMetadata.parse(handle)
+    with open(input_file, 'rt') as in_handle:
+        metadata = GVFMetadata.parse(in_handle)
         is_circ_rna = metadata.is_circ_rna()
-        index = GVFIndex(handle=handle, is_circ_rna=is_circ_rna)
-        index.generate_indices()
         with open(output_file, 'wt') as out_handle:
-            index.write(out_handle)
+            it = GVFIndex.iterate_pointer(handle=in_handle, is_circ_rna=is_circ_rna)
+            for pointer in it:
+                out_handle.write(pointer.to_line() + '\n')
 
     logger('GVF index generated.')
