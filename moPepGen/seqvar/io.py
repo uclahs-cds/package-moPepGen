@@ -46,53 +46,56 @@ def iterate(handle:IO) -> Iterable[VariantRecord]:
     for line in handle:
         if line.startswith('#'):
             continue
-        fields = line.rstrip().split('\t')
-        gene_id = fields[0]
-        start=int(fields[1]) - 1
-        ref = fields[3]
-        alt = fields[4]
-        attrs = {}
-        for field in fields[7].split(';'):
-            key, val = field.split('=')
-            val = val.strip('"')
-            if key in ATTRS_POSITION:
-                val = str(int(val) - 1)
-            attrs[key] = val
+        yield line_to_variant_record(line)
 
-        if not alt.startswith('<'):
-            end = start + len(ref)
-            _type = 'SNV' if len(ref) == len(alt) else 'INDEL'
-        elif alt == '<FUSION>':
-            end = start + 1
-            _type = 'Fusion'
-        elif alt == '<DEL>':
-            end = int(attrs['END'])
-            _type = 'Deletion'
-        elif alt == '<INS>':
-            end = start + 1
-            _type = 'Insertion'
-        elif alt == '<SUB>':
-            end = int(attrs['END'])
-            _type = 'Substitution'
-        else:
-            raise ValueError('Alt type not supported.')
 
-        _id = fields[2]
+def line_to_variant_record(line:str) -> VariantRecord:
+    """ """
+    fields = line.rstrip().split('\t')
+    gene_id = fields[0]
+    start=int(fields[1]) - 1
+    ref = fields[3]
+    alt = fields[4]
+    attrs = {}
+    for field in fields[7].split(';'):
+        key, val = field.split('=')
+        val = val.strip('"')
+        if key in ATTRS_POSITION:
+            val = str(int(val) - 1)
+        attrs[key] = val
 
-        record = VariantRecord(
-            location=FeatureLocation(
-                seqname=gene_id,
-                start=start,
-                end=end
-            ),
-            ref=ref,
-            alt=alt,
-            _type=_type,
-            _id=_id,
-            attrs=attrs
-        )
-        yield record
+    if not alt.startswith('<'):
+        end = start + len(ref)
+        _type = 'SNV' if len(ref) == len(alt) else 'INDEL'
+    elif alt == '<FUSION>':
+        end = start + 1
+        _type = 'Fusion'
+    elif alt == '<DEL>':
+        end = int(attrs['END'])
+        _type = 'Deletion'
+    elif alt == '<INS>':
+        end = start + 1
+        _type = 'Insertion'
+    elif alt == '<SUB>':
+        end = int(attrs['END'])
+        _type = 'Substitution'
+    else:
+        raise ValueError('Alt type not supported.')
 
+    _id = fields[2]
+
+    return VariantRecord(
+        location=FeatureLocation(
+            seqname=gene_id,
+            start=start,
+            end=end
+        ),
+        ref=ref,
+        alt=alt,
+        _type=_type,
+        _id=_id,
+        attrs=attrs
+    )
 
 def write(variants:Iterable[VariantRecord], output_path:str,
         metadata:GVFMetadata):
