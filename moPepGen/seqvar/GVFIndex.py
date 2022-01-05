@@ -52,19 +52,19 @@ class GVFIndex():
                     key = record.id
                 else:
                     key = record.transcript_id
-        if cur_key != key:
-            cur_key = key
-            pointer = FilePointer(start=line_start, end=line_end)
-            if cur_key in self.pointers:
-                raise ValueError('GVF file seems to be unsorted.')
-            self.pointers[cur_key] = pointer
-        else:
-            self.pointers[cur_key].end = line_end
+            if cur_key != key:
+                cur_key = key
+                pointer = FilePointer(start=line_start, end=line_end)
+                if cur_key in self.pointers:
+                    raise ValueError('GVF file seems to be unsorted.')
+                self.pointers[cur_key] = pointer
+            else:
+                self.pointers[cur_key].end = line_end
 
     def write(self, handle:IO):
         """ Write indices to file """
         for key, pointer in self.pointers.items():
-            line = f"{key}\t{int(pointer.start)}\t{int(pointer.end)}\n"
+            line = f"{key}\t{int(pointer.start)}\t{len(pointer)}\n"
             handle.write(line)
 
     def iterate_records(self, key:str) -> Iterable[Union[VariantRecord, CircRNAModel]]:
