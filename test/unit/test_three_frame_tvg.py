@@ -441,7 +441,6 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             2: ['AATAAATAAAT',  ['RF1'], [], 1],
             3: ['ATAAATAAAT',   ['RF2'], [], 2]
         }
-        gene_id = 'ENSG0001'
         ins_attrs = {
             'DONOR_GENE_ID': 'ENSG0001',
             'DONOR_START': 17,
