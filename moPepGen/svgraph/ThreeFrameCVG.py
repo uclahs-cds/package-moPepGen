@@ -84,7 +84,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             node.variants.append(var)
             self.add_edge(node, root, 'reference')
 
-    def create_variant_circ_graph(self, variants: List[seqvar.VariantRecord]):
+    def create_variant_circ_graph(self, variants:List[seqvar.VariantRecord]):
         """ Apply a list of variants to the graph. Variants not in the
         range are ignored. Variants at the first nucleotide of each fragment
         of the sequence are also ignored, because it causes the exon splice

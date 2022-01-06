@@ -5,8 +5,7 @@ from pathlib import Path
 from moPepGen import logger
 from moPepGen.seqvar import GVFIndex
 from moPepGen.seqvar import GVFMetadata
-from .common import add_args_cleavage, add_args_reference, add_args_quiet, \
-    print_help_if_missing_args, print_start_message
+from .common import add_args_quiet, print_help_if_missing_args, print_start_message
 
 
 # pylint: disable=W0212

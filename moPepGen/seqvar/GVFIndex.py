@@ -1,6 +1,6 @@
 """ In disk class for VariantRecordPool """
 from __future__ import annotations
-from typing import Dict, IO, Iterable, TYPE_CHECKING, Union
+from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from moPepGen import circ
 from . import io
 
@@ -13,11 +13,14 @@ if TYPE_CHECKING:
 
 class GVFPointer():
     """ File pointer """
-    def __init__(self, key:str, start:int=None, end:int=None):
+    def __init__(self, handle:IO, key:str, start:int=None, end:int=None,
+            is_circ_rna:bool=False):
         """ constructor """
+        self.handle = handle
         self.key = key
         self.start = start
         self.end = end
+        self.is_circ_rna = is_circ_rna
 
     def __len__(self) -> int:
         """ length """
@@ -26,6 +29,30 @@ class GVFPointer():
     def to_line(self) -> str:
         """ to line """
         return f"{self.key}\t{int(self.start)}\t{str(len(self))}"
+
+    def __iter__(self) -> Iterable[Union[VariantRecord, CircRNAModel]]:
+        """ Iterate variant records from handle """
+        self.handle.seek(self.start)
+        for line in self.handle.read(len(self)).rstrip().split('\n'):
+            if self.is_circ_rna:
+                yield circ.io.line_to_circ_model(line)
+            else:
+                yield io.line_to_variant_record(line)
+
+    def load(self) -> List[Union[VariantRecord, CircRNAModel]]:
+        """ Load variant records from handle """
+        return list(iter(self))
+
+    @classmethod
+    def parse(cls, index_handle:IO, gvf_handle:IO, is_circ_rna) -> Iterable[GVFPointer]:
+        """ parse """
+        line:str
+        for line in index_handle:
+            key, start, length = line.rstrip().split('\t')
+            start = int(start)
+            end = start + int(length)
+            yield cls(handle=gvf_handle, key=key, start=start, end=end,
+                is_circ_rna=is_circ_rna)
 
 def iterate_pointer(handle, is_circ_rna:bool) -> Iterable[GVFPointer]:
     """ """
@@ -54,7 +81,10 @@ def iterate_pointer(handle, is_circ_rna:bool) -> Iterable[GVFPointer]:
             if not cur_key is None:
                 yield pointer
             cur_key = key
-            pointer = GVFPointer(key=cur_key, start=line_start, end=line_end)
+            pointer = GVFPointer(
+                handle=handle, key=cur_key, start=line_start, end=line_end,
+                is_circ_rna=is_circ_rna
+            )
         else:
             pointer.end = line_end
 
@@ -63,12 +93,9 @@ def iterate_pointer(handle, is_circ_rna:bool) -> Iterable[GVFPointer]:
 
 class GVFIndex():
     """ This class holds the index of a GVF file. """
-    def __init__(self, handle:IO, pointers:Dict[str, GVFPointer]=None,
-            is_circ_rna:bool=False):
+    def __init__(self, pointers:Dict[str, GVFPointer]=None):
         """ Constructor """
-        self.handle = handle
         self.pointers = pointers or {}
-        self.is_circ_rna = is_circ_rna
 
     def generate_indices(self):
         """ Generate indices from the GVF file that the file handle is pointing
