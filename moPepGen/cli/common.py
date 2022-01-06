@@ -1,8 +1,9 @@
 """ Common functions for cli """
 from __future__ import annotations
 import argparse
+import hashlib
 import sys
-from typing import Tuple, Set, List
+from typing import Tuple, Set, List, IO
 from pathlib import Path
 import pickle
 import pkg_resources

@@ -48,6 +48,8 @@ class GVFPointer():
         """ parse """
         line:str
         for line in index_handle:
+            if line.startswith('#'):
+                continue
             key, start, length = line.rstrip().split('\t')
             start = int(start)
             end = start + int(length)

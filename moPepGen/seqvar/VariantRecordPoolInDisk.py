@@ -1,8 +1,9 @@
 """ Variant Record Pool """
 from __future__ import annotations
+import hashlib
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from pathlib import Path
-from moPepGen import ERROR_INDEX_IN_INTRON
+from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512
 from moPepGen.circ.CircRNA import CircRNAModel
 from moPepGen.seqvar.GVFIndex import GVFPointer, iterate_pointer
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
@@ -56,6 +57,7 @@ class VariantRecordPoolInDisk():
             self.gvf_handles.append(gvf_handle)
             gvf_idx = file.with_suffix(file.suffix + '.idx')
             if gvf_idx.exists():
+                self.validate_gvf_index(file, gvf_idx)
                 self.load_index(gvf_idx, gvf_handle)
             else:
                 self.generate_index(gvf_handle)
@@ -125,9 +127,9 @@ class VariantRecordPoolInDisk():
         metadata = GVFMetadata.parse(gvf_handle)
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
-        with open(index_file, 'rt') as index_handle:
+        with open(index_file, 'rt') as idx_handle:
             reader = GVFPointer.parse(
-                index_handle=index_handle, gvf_handle=gvf_handle,
+                index_handle=idx_handle, gvf_handle=gvf_handle,
                 is_circ_rna=is_circ_rna
             )
             for pointer in reader:
@@ -147,6 +149,31 @@ class VariantRecordPoolInDisk():
             else:
                 self.pointers[pointer.key] = [pointer]
         gvf_handle.seek(0)
+
+    def validate_gvf_index(self, gvf_file:Path, idx_file:Path):
+        """ Validate the GVF file with index """
+        sum_expect = None
+        with open(gvf_file, 'rb') as gvf_handle:
+            sum_actual = check_sha512(gvf_handle)
+
+        with open(idx_file, 'rt') as idx_handle:
+            for line in idx_handle:
+                line:str
+                if line.startswith('#'):
+                    line = line.rstrip().lstrip('# ')
+                    if line.startswith('CHECKSUM='):
+                        sum_expect = line.split('=')[1]
+
+                        break
+                else:
+                    break
+
+        if sum_expect is None:
+            raise ValueError('Cannot find checksum value from the idx file.')
+        if sum_actual == sum_expect:
+            return True
+
+        raise ValueError("GVF checksum don't match.")
 
     def filter_variants(self, gene_id:str=None, tx_ids:List[str]=None,
             exclude_type:List[str]=None, start:int=None, end:int=None,
