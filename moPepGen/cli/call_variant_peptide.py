@@ -115,14 +115,14 @@ class VariantPeptideCaller():
             tx_model.remove_cached_seq()
 
     def create_in_disk_vairant_pool(self):
-        """ """
+        """ Create in disk variant pool """
         self.variant_pool = seqvar.VariantRecordPoolInDisk(
             pointers=None, gvf_files=self.variant_files,
             anno=self.anno, genome=self.genome
         )
 
     def call_variant_peptides(self):
-        """ """
+        """ call variant peptides """
         with seqvar.VariantRecordPoolInDisk(pointers=None, gvf_files=self.variant_files,
                 anno=self.anno, genome=self.genome) as pool:
             i = 0
@@ -146,24 +146,6 @@ class VariantPeptideCaller():
                     i += 1
                     if i % 1000 == 0:
                         logger(f'{i} transcripts processed.')
-
-    def load_variants(self):
-        """ load variant from GVF files """
-        for file in self.variant_files:
-            with open(file, 'rt') as handle:
-                metadata = seqvar.GVFMetadata.parse(handle)
-                if metadata.is_circ_rna():
-                    for record in circ.io.parse(handle):
-                        self.circ_rna_pool.append(record)
-                else:
-                    self.variant_pool.load_variants(handle, self.anno, self.genome)
-
-            if self.verbose >= 1:
-                logger(f'Variant file {file} loaded.')
-
-        self.variant_pool.sort()
-        if self.verbose > 1:
-            logger('Variant records sorted.')
 
     def call_variants_main(self, tx_id:str, tx_variants:List[seqvar.VariantRecord],
             pool:seqvar.VariantRecordPoolInDisk):

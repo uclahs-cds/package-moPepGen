@@ -1,6 +1,6 @@
 """ In disk class for VariantRecordPool """
 from __future__ import annotations
-from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
+from typing import IO, Iterable, List, TYPE_CHECKING, Union
 from moPepGen import circ
 from . import io
 
@@ -55,7 +55,7 @@ class GVFPointer():
                 is_circ_rna=is_circ_rna)
 
 def iterate_pointer(handle, is_circ_rna:bool) -> Iterable[GVFPointer]:
-    """ """
+    """ Generate GVF file poitners """
     cur_key = None
     line_end = 0
     pointer = None
@@ -90,31 +90,3 @@ def iterate_pointer(handle, is_circ_rna:bool) -> Iterable[GVFPointer]:
 
     if pointer is not None:
         yield pointer
-
-class GVFIndex():
-    """ This class holds the index of a GVF file. """
-    def __init__(self, pointers:Dict[str, GVFPointer]=None):
-        """ Constructor """
-        self.pointers = pointers or {}
-
-    def generate_indices(self):
-        """ Generate indices from the GVF file that the file handle is pointing
-        to. """
-        for pointer in iterate_pointer(self.handle, self.is_circ_rna):
-            self.pointers[pointer.key] = pointer
-
-    def write(self, handle:IO):
-        """ Write indices to file """
-        for key, pointer in self.pointers.items():
-            line = f"{key}\t{int(pointer.start)}\t{len(pointer)}\n"
-            handle.write(line)
-
-    def iterate_records(self, key:str) -> Iterable[Union[VariantRecord, CircRNAModel]]:
-        """ Load and iterate variant records """
-        pointer = self.pointers[key]
-        self.handle.seek(pointer.start)
-        for line in self.handle.read(len(pointer)):
-            if self.is_circ_rna:
-                yield circ.io.line_to_circ_model(line)
-            else:
-                yield io.line_to_variant_record(line)

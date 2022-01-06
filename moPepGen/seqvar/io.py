@@ -50,7 +50,7 @@ def iterate(handle:IO) -> Iterable[VariantRecord]:
 
 
 def line_to_variant_record(line:str) -> VariantRecord:
-    """ """
+    """ Convert line from GVF file to VariantRecord """
     fields = line.rstrip().split('\t')
     gene_id = fields[0]
     start=int(fields[1]) - 1

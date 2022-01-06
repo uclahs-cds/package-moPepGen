@@ -63,16 +63,6 @@ class VariantRecordPool():
         for key in self.data:
             yield key
 
-    def add_genetic_variant(self, record:VariantRecord, gene_id:str=None):
-        """ Add a variant with genetic coordinate """
-        if not gene_id:
-            gene_id = record.location.seqname
-
-        if gene_id not in self.genetic:
-            self.genetic[gene_id] = [record]
-        else:
-            self.genetic[gene_id].append(record)
-
     def add_intronic_variant(self, record:VariantRecord, tx_id:str=None):
         """ Add a variant with genetic coordinate that is in the intron of
         a transcript """
@@ -115,7 +105,6 @@ class VariantRecordPool():
                 continue
 
             if record.is_spanning_over_splicing_site(anno, tx_id):
-                self.add_genetic_variant(record, tx_id)
                 continue
 
             try:
@@ -148,7 +137,6 @@ class VariantRecordPool():
             start (int): Start position with genetic coordinates.
             end (int): End position with genetic coordinates. If
             exclude_type (List[str]): Variant types that should be excluded.
-            anno (GenomicAnnotation): The genomic annotation object.
         """
         if return_coord not in ['gene', 'transcript']:
             raise ValueError(

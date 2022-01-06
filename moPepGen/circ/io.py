@@ -15,7 +15,7 @@ def parse(handle:IO) -> Iterable[CircRNAModel]:
         yield line_to_circ_model(line)
 
 def line_to_circ_model(line) -> CircRNAModel:
-    """ """
+    """ Convert GVF line to CircRNAModel """
     fields = line.rstrip().split('\t')
 
     gene_id = fields[0]

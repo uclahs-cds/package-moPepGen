@@ -152,7 +152,7 @@ class VariantRecordPoolInDisk():
             exclude_type:List[str]=None, start:int=None, end:int=None,
             intron:bool=True, segments:Iterable[VariantRecord]=None,
             return_coord:str='gene') -> List[VariantRecord]:
-        """ """
+        """ filter variants """
         if return_coord not in ['gene', 'transcript']:
             raise ValueError(
                 "Don't know how to return variants in coordinate of "
