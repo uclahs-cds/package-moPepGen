@@ -62,7 +62,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """
         args = create_base_args()
-        args.input_variant = [str(self.data_dir/'vep'/'vep_gSNP.gvf')]
+        args.input_variant = [self.data_dir/'vep'/'vep_gSNP.gvf']
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
@@ -76,8 +76,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep'/'vep_gSNP.gvf'),
-            str(self.data_dir/'fusion'/'fusion.gvf')
+            self.data_dir/'vep'/'vep_gSNP.gvf',
+            self.data_dir/'fusion'/'fusion.gvf'
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -92,9 +92,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion and circRNA """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep'/'vep_gSNP.gvf'),
-            str(self.data_dir/'fusion'/'fusion.gvf'),
-            str(self.data_dir/'circRNA'/'circ_rna.gvf')
+            self.data_dir/'vep'/'vep_gSNP.gvf',
+            self.data_dir/'fusion'/'fusion.gvf',
+            self.data_dir/'circRNA'/'circ_rna.gvf'
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -110,11 +110,11 @@ class TestCallVariantPeptides(TestCaseIntegration):
         RNAEditing, gSNP and gINDEL """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep/vep_gSNP.gvf'),
-            str(self.data_dir/'vep/vep_gINDEL.gvf'),
-            str(self.data_dir/'fusion/fusion.gvf'),
-            str(self.data_dir/'circRNA/circ_rna.gvf'),
-            str(self.data_dir/'reditools/reditools.gvf')
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'fusion/fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf',
+            self.data_dir/'reditools/reditools.gvf'
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -129,8 +129,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with alternative splicing """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep/vep_gSNP.gvf'),
-            str(self.data_dir/'alternative_splicing/alternative_splicing.gvf')
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'alternative_splicing/alternative_splicing.gvf'
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'

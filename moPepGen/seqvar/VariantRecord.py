@@ -301,6 +301,7 @@ class VariantRecord():
         tx_model = anno.transcripts[tx_id]
         chrom = tx_model.transcript.chrom
         tx_seq = tx_model.get_transcript_sequence(genome[chrom], cache=True)
+        anno.add_cached_tx_seq(tx_id)
         gene_id = self.location.seqname
         strand = tx_model.transcript.strand
 

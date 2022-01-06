@@ -89,10 +89,10 @@ def brute_force(args):
         with open(gvf_file) as handle:
             variant_pool.load_variants(handle, anno, genome)
 
-    if not variant_pool.transcriptional:
+    if not variant_pool.data:
         return
 
-    tx_id = list(variant_pool.transcriptional.keys())[0]
+    tx_id = list(variant_pool.data.keys())[0]
 
     tx_model = anno.transcripts[tx_id]
     tx_seq = tx_model.get_transcript_sequence(genome['chr1'])
@@ -105,7 +105,9 @@ def brute_force(args):
         start_index = 3
     variants:List[VariantRecord] = []
 
-    for variant in variant_pool.transcriptional[tx_id]:
+    series = variant_pool[tx_id]
+
+    for variant in series.transcriptional:
         if variant.location.start < start_index -1:
             continue
         if tx_model.is_mrna_end_nf() and variant.location.end <= tx_seq.orf.end - 3:

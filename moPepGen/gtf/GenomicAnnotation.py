@@ -39,6 +39,7 @@ class GenomicAnnotation():
         self.source = source
         self.gene_id_version_mapper:Dict[str, str] = None
         self.version = MetaVersion()
+        self._cached_tx_seqs = []
 
     def __repr__(self) -> str:
         """ Return a string representation """
@@ -94,6 +95,15 @@ class GenomicAnnotation():
             raise ValueError(f'Gene ID {gene_id} not found')
         if transcript_id not in self.genes[gene_id].transcripts:
             self.genes[gene_id].transcripts.append(transcript_id)
+
+    def add_cached_tx_seq(self, tx_id:str):
+        """ Add tx_id of cached transcript sequences """
+        self._cached_tx_seqs.append(tx_id)
+
+    def remove_cached_tx_seq(self):
+        """ Remove all cached tx sequences """
+        for tx_id in self._cached_tx_seqs:
+            self.transcripts[tx_id].remove_cached_seq()
 
     def dump_gtf(self, path:str, biotype:List[str]=None, source:str=None)->None:
         """ Dump a GTF file into a GenomicAnnotation

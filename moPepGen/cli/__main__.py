@@ -7,6 +7,7 @@ CLI_MAIN_USAGE = "moPopGen [-h] [-V] <command> [options]"
 CLI_MAIN_DESCRIPTION = """
 -- Indexing
    generateIndex       Generate genome and proteome index files for moPepGen.
+   indexGVF            Generate index for GVF files.
 
 -- Parsing
    parseVEP            Parse VEP output.
@@ -57,6 +58,7 @@ def main():
     cli.add_subparser_call_noncoding(subparsers)
     cli.add_subparser_split_database(subparsers)
     cli.add_subparser_filter_fasta(subparsers)
+    cli.add_subparser_index_gvf(subparsers)
 
     # allowing values to start with -, such as -100,3
     # https://stackoverflow.com/a/21446783/11081630
