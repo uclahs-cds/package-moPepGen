@@ -1,6 +1,5 @@
 """ Variant Record Pool """
 from __future__ import annotations
-import hashlib
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from pathlib import Path
 from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512
@@ -150,7 +149,8 @@ class VariantRecordPoolInDisk():
                 self.pointers[pointer.key] = [pointer]
         gvf_handle.seek(0)
 
-    def validate_gvf_index(self, gvf_file:Path, idx_file:Path):
+    @staticmethod
+    def validate_gvf_index(gvf_file:Path, idx_file:Path):
         """ Validate the GVF file with index """
         sum_expect = None
         with open(gvf_file, 'rb') as gvf_handle:

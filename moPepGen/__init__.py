@@ -1,9 +1,8 @@
 """ moPepGen """
 from datetime import datetime
 import hashlib
-from typing import IO
 import itertools
-from typing import Iterable
+from typing import Iterable, IO
 
 
 __version__ = '0.1.0-beta.1'
