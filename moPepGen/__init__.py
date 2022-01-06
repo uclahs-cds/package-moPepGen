@@ -1,7 +1,8 @@
 """ moPepGen """
 from datetime import datetime
+import hashlib
 import itertools
-from typing import Iterable
+from typing import Iterable, IO
 
 
 __version__ = '0.1.0-beta.1'
@@ -83,3 +84,11 @@ def all_equal(iterable:Iterable) -> bool:
     """ Check if all elements are equal """
     it = itertools.groupby(iterable)
     return next(it, True) and not next(it, False)
+
+def check_sha512(handle:IO):
+    """ check sha512sum. Handle must be readable """
+    sum_val = hashlib.sha512()
+    # pylint: disable=W0640
+    for byte_block in iter(lambda: handle.read(4096), b""):
+        sum_val.update(byte_block)
+    return sum_val.hexdigest()
