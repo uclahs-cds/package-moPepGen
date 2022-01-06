@@ -151,8 +151,6 @@ class VariantPeptideCaller():
                     for fusion_variant in series.fusion:
                         self.call_variants_fusion(fusion_variant, pool)
 
-                self.anno.remove_cached_tx_seq()
-
                 if self.verbose >= 1:
                     i += 1
                     if i % 1000 == 0:

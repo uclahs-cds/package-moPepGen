@@ -47,7 +47,7 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
         return str(label)
     variant_ids = []
     for key, val in variant_id_map.items():
-        if key == transcript_id:
+        if key == transcript_id or is_circ_rna:
             variant_ids += val
         else:
             variant_ids += [f"{key}-{x}" for x in val]

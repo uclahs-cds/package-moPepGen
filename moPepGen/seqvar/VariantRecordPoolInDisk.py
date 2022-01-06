@@ -12,7 +12,7 @@ from . import VariantRecord
 # To avoid circular import
 if TYPE_CHECKING:
     from moPepGen.gtf import GenomicAnnotation
-    from moPepGen.dna import DNASeqDict
+    from moPepGen.dna import DNASeqDict, DNASeqRecordWithCoordinates
 
 
 class TranscriptionalVariantSeries():
@@ -91,12 +91,13 @@ class VariantRecordPoolInDisk():
             return CircRNAModelSeries(records)
 
         series = TranscriptionalVariantSeries()
+        cached_seqs:Dict[str, DNASeqRecordWithCoordinates] = {}
         for record in records:
             tx_id = record.transcript_id
             if record.is_fusion():
                 record.shift_breakpoint_to_closest_exon(self.anno)
                 tx_record = record.to_transcript_variant(
-                    self.anno, self.genome, tx_id
+                    self.anno, self.genome, tx_id, cached_seqs
                 )
                 series.fusion.append(tx_record)
                 continue
