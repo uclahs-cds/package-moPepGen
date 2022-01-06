@@ -42,7 +42,7 @@ def run_task():
         seqvar.GVFMetadata.parse(handle)
         variant_pool.load_variants(handle, anno, None)
 
-    tx_variants = variant_pool.transcriptional[transcript_id]
+    tx_variants = variant_pool[transcript_id].transcriptional
 
     dgraph = svgraph.ThreeFrameTVG(
         seq=transcript_seq,

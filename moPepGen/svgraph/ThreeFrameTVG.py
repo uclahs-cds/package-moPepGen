@@ -7,6 +7,7 @@ from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import dna, seqvar
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
+from moPepGen.seqvar.VariantRecordPoolInDisk import VariantRecordPoolInDisk
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
@@ -461,7 +462,7 @@ class ThreeFrameTVG():
         return var_tails
 
     def apply_fusion(self, cursors:List[TVGNode], variant:seqvar.VariantRecord,
-            variant_pool:seqvar.VariantRecordPool, genome:dna.DNASeqDict,
+            variant_pool:VariantRecordPoolInDisk, genome:dna.DNASeqDict,
             anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
             known_orf_index:int=None) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
@@ -502,7 +503,7 @@ class ThreeFrameTVG():
             end = variant.attrs['LEFT_INSERTION_END']
             insert_seq = seq[start:end]
             insertion_variants = variant_pool.filter_variants(
-                gene_id=gene_id, anno=anno, exclude_type=['Fusion'],
+                gene_id=gene_id, exclude_type=['Fusion'],
                 start=start, end=end, intron=True, return_coord='gene'
             )
             var = copy.deepcopy(variant)
@@ -534,7 +535,7 @@ class ThreeFrameTVG():
             end = variant.attrs['RIGHT_INSERTION_END']
             insert_seq = seq[start:end]
             insertion_variants = variant_pool.filter_variants(
-                gene_id=gene_id, anno=anno, exclude_type=['Fusion'],
+                gene_id=gene_id, exclude_type=['Fusion'],
                 start=start, end=end, intron=True, return_coord='gene'
             )
             var = copy.deepcopy(variant)
@@ -565,7 +566,7 @@ class ThreeFrameTVG():
             accepter_gene_id, accepter_tx_id)
 
         accepter_variant_records = variant_pool.filter_variants(
-            tx_ids=[accepter_tx_id], anno=anno, exclude_type=['Fusion'],
+            tx_ids=[accepter_tx_id], exclude_type=['Fusion'],
             start=breakpoint_tx, return_coord='transcript', intron=False
         )
 
@@ -731,7 +732,7 @@ class ThreeFrameTVG():
 
     def apply_insertion(self, cursors:List[TVGNode],
             variant:seqvar.VariantRecord,
-            variant_pool:seqvar.VariantRecordPool,
+            variant_pool:VariantRecordPoolInDisk,
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             active_frames:List[bool]=None
             ) -> List[TVGNode]:
@@ -745,7 +746,7 @@ class ThreeFrameTVG():
         insert_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
         insert_variants = variant_pool.filter_variants(
-            gene_id=gene_id, anno=anno, exclude_type=exclude_type,
+            gene_id=gene_id, exclude_type=exclude_type,
             start=donor_start, end=donor_end
         )
         # add the reference sequence to the insertion sequence.
@@ -776,7 +777,7 @@ class ThreeFrameTVG():
 
     def apply_substitution(self, cursors:List[TVGNode],
             variant:seqvar.VariantRecord,
-            variant_pool:seqvar.VariantRecordPool,
+            variant_pool:VariantRecordPoolInDisk,
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             active_frames:List[bool]=None
             ) -> List[TVGNode]:
@@ -790,7 +791,7 @@ class ThreeFrameTVG():
         sub_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
         sub_variants = variant_pool.filter_variants(
-            gene_id=gene_id, anno=anno, exclude_type=exclude_type,
+            gene_id=gene_id, exclude_type=exclude_type,
             start=donor_start, end=donor_end
         )
         var = seqvar.VariantRecordWithCoordinate(
@@ -807,7 +808,7 @@ class ThreeFrameTVG():
 
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
-            variant_pool:VariantRecordPool, genome:dna.DNASeqDict,
+            variant_pool:VariantRecordPoolInDisk, genome:dna.DNASeqDict,
             anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
             known_orf_index:int=None) -> None:
         """ Create a variant graph.
