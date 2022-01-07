@@ -40,9 +40,12 @@ def index_gvf(args:argparse.Namespace):
 
     print_start_message(args)
 
-    with open(input_file, 'rt') as in_handle:
-        metadata = GVFMetadata.parse(in_handle)
-        is_circ_rna = metadata.is_circ_rna()
+    with open(input_file, 'rt') as handle:
+        metadata = GVFMetadata.parse(handle)
+
+    is_circ_rna = metadata.is_circ_rna()
+
+    with open(input_file, 'rb') as in_handle:
         with tempfile.TemporaryFile(mode='w+t') as temp_file:
             temp_file.write(f"# CHECKSUM={sum_val}\n")
             in_handle.seek(0)

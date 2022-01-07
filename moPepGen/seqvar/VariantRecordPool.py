@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from moPepGen import ERROR_INDEX_IN_INTRON
-from moPepGen.seqvar.VariantRecordPoolInDisk import CircRNAModelSeries, \
+from moPepGen.seqvar.VariantRecordPoolOnDisk import CircRNAModelSeries, \
     TranscriptionalVariantSeries
 from . import VariantRecord, io
 
