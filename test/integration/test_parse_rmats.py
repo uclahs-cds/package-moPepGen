@@ -1,5 +1,6 @@
 """ Test the moPepGen parseRMATS """
 import argparse
+from pathlib import Path
 from test.integration import TestCaseIntegration
 from moPepGen import cli, seqvar
 
@@ -39,6 +40,7 @@ class TestParseRMATS(TestCaseIntegration):
         self.assertTrue(int(record.attrs['START']), 323)
         self.assertTrue(int(record.attrs['END']), 405)
         self.assertTrue(record.type, 'Deletion')
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
 
     def test_parse_rmats_se_case_2(self):
         """ rMATS skipped exon when the skipped version is annotated. This
@@ -52,6 +54,7 @@ class TestParseRMATS(TestCaseIntegration):
         self.assertTrue(int(record.attrs['DONOR_START']), 870)
         self.assertTrue(int(record.attrs['DONOR_END']), 1097)
         self.assertTrue(record.type, 'Insertion')
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
 
     def test_parse_rmats_a5ss_case_1(self):
         """ rMATS A5SS when the longer version is annotated. This should
@@ -61,6 +64,7 @@ class TestParseRMATS(TestCaseIntegration):
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Deletion')
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
 
     def test_parse_rmats_a5ss_case_2(self):
         """ rMATS A5SS when the shorter version is annotated. This should
@@ -70,6 +74,7 @@ class TestParseRMATS(TestCaseIntegration):
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Insertion')
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
 
     def test_parse_rmats_a3ss_case_1(self):
         """ rMATS A3SS when the longer version is annotated. This should
@@ -79,6 +84,7 @@ class TestParseRMATS(TestCaseIntegration):
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Deletion')
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
 
     def test_parse_rmats_a3ss_case_2(self):
         """ rMATS A3SS when the shorter version is annotated. This should
@@ -88,6 +94,7 @@ class TestParseRMATS(TestCaseIntegration):
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Insertion')
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
 
     def test_parse_rmats_mxe_case_1(self):
         """ rMATS MXE when one exon is annotated. This should results a
@@ -97,6 +104,7 @@ class TestParseRMATS(TestCaseIntegration):
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
         self.assertTrue(record.type, 'Substitution')
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
 
     def test_parse_rmats_mxe_case_2(self):
         """ rMATS MXE when both exons are annotated. This should results two
@@ -106,6 +114,7 @@ class TestParseRMATS(TestCaseIntegration):
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
         self.assertTrue(len(records), 2)
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
         for record in records:
             self.assertEqual(record.type, 'Deletion')
 
@@ -116,5 +125,6 @@ class TestParseRMATS(TestCaseIntegration):
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
         self.assertTrue(len(records), 2)
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
         for record in records:
             self.assertEqual(record.type, 'Insertion')

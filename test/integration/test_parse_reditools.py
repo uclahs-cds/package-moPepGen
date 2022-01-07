@@ -25,3 +25,4 @@ class TestParseREDItools(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'reditools.gvf'}
         self.assertEqual(files, expected)
+        self.assert_gvf_order(self.work_dir/'reditools.gvf', args.annotation_gtf)
