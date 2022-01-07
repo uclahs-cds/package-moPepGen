@@ -32,8 +32,12 @@ class GVFPointer():
 
     def __iter__(self) -> Iterable[Union[VariantRecord, CircRNAModel]]:
         """ Iterate variant records from handle """
-        self.handle.seek(self.start)
-        for line in self.handle.read(len(self)).rstrip().split('\n'):
+        cur = self.handle.tell()
+        offset = self.start - cur
+        self.handle.seek(offset, 1)
+        buffer:bytes = self.handle.read(len(self))
+        buffer = buffer.decode('utf-8')
+        for line in buffer.rstrip().split('\n'):
             if self.is_circ_rna:
                 yield circ.io.line_to_circ_model(line)
             else:
@@ -62,9 +66,10 @@ def iterate_pointer(handle, is_circ_rna:bool) -> Iterable[GVFPointer]:
     line_end = 0
     pointer = None
     for line in handle:
-
+        line:bytes
         line_start = line_end
         line_end += len(line)
+        line = line.decode('utf-8')
 
         if line.startswith('#'):
             continue
