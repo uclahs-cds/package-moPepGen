@@ -37,7 +37,7 @@ class CircRNAModelSeries():
         """ constructor """
         self.records = records
 
-class VariantRecordPoolOnDisk():
+class VariantRecordPoolInDisk():
     """ Variant record pool in disk """
     def __init__(self, pointers:Dict[str, List[GVFPointer]]=None,
             gvf_files:List[Path]=None, gvf_handles:List[IO]=None,
@@ -52,14 +52,14 @@ class VariantRecordPoolOnDisk():
     def __enter__(self):
         """ enter """
         for file in self.gvf_files:
-            gvf_handle = file.open('rb')
+            gvf_handle = file.open('rt')
             self.gvf_handles.append(gvf_handle)
-            idx_path = file.with_suffix(file.suffix + '.idx')
-            if idx_path.exists():
-                self.validate_gvf_index(file, idx_path)
-                self.load_index(idx_path, file, gvf_handle)
+            gvf_idx = file.with_suffix(file.suffix + '.idx')
+            if gvf_idx.exists():
+                self.validate_gvf_index(file, gvf_idx)
+                self.load_index(gvf_idx, gvf_handle)
             else:
-                self.generate_index(file, gvf_handle)
+                self.generate_index(gvf_handle)
         return self
 
     def __exit__(self, exception_type, exception_value, exception_traceback):
@@ -121,10 +121,9 @@ class VariantRecordPoolOnDisk():
         series.sort()
         return series
 
-    def load_index(self, index_file:Path, gvf_file:Path, gvf_handle:IO):
+    def load_index(self, index_file:Path, gvf_handle:IO):
         """ Load index file """
-        with open(gvf_file, 'rt') as handle:
-            metadata = GVFMetadata.parse(handle)
+        metadata = GVFMetadata.parse(gvf_handle)
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
         with open(index_file, 'rt') as idx_handle:
@@ -138,10 +137,9 @@ class VariantRecordPoolOnDisk():
                 else:
                     self.pointers[pointer.key] = [pointer]
 
-    def generate_index(self, gvf_file:Path, gvf_handle:IO):
+    def generate_index(self, gvf_handle:IO):
         """ generate index """
-        with open(gvf_file, 'rt') as handle:
-            metadata = GVFMetadata.parse(handle)
+        metadata = GVFMetadata.parse(gvf_handle)
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
         for pointer in iterate_pointer(gvf_handle, is_circ_rna):
