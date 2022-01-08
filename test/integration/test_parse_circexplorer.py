@@ -26,6 +26,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'circ.gvf'}
         self.assertEqual(files, expected)
+        self.assert_gvf_order(self.work_dir/'circ.gvf', args.annotation_gtf)
 
     def test_parse_circexplorer3(self):
         """ Test parseCIRCexplorer for CIRCexplorer3 """
@@ -49,6 +50,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'circ.gvf'}
         self.assertEqual(files, expected)
+        self.assert_gvf_order(self.work_dir/'circ.gvf', args.annotation_gtf)
 
         args.min_fbr_circ = 1
         args.min_circ_score = 1
@@ -56,3 +58,4 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'circ.gvf'}
         self.assertEqual(files, expected)
+        self.assert_gvf_order(self.work_dir/'circ.gvf', args.annotation_gtf)

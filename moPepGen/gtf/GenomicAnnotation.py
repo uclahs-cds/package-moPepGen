@@ -487,3 +487,21 @@ class GenomicAnnotation():
             if start <= pos < end:
                 transcripts.append(tx_model)
         return transcripts
+
+    def get_genes_rank(self) -> Dict[str, int]:
+        """ Get the genes rank """
+        i = 0
+        rank = {}
+        for gene_id in self.genes:
+            rank[gene_id] = i
+            i += 1
+        return rank
+
+    def get_transcirpt_rank(self) -> Dict[str, int]:
+        """ Get the transcripts rank """
+        i = 0
+        rank = {}
+        for tx_id in self.transcripts:
+            rank[tx_id] = i
+            i += 1
+        return rank

@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from pathlib import Path
-from moPepGen import ERROR_INDEX_IN_INTRON
+from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512
 from moPepGen.circ.CircRNA import CircRNAModel
 from moPepGen.seqvar.GVFIndex import GVFPointer, iterate_pointer
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
@@ -18,12 +18,14 @@ if TYPE_CHECKING:
 class TranscriptionalVariantSeries():
     """ Variants associated with a particular transcript """
     def __init__(self, transcriptional:List[VariantRecord]=None,
-            intronic:List[VariantRecord]=None, fusion:List[VariantRecord]=None
+            intronic:List[VariantRecord]=None, fusion:List[VariantRecord]=None,
+            circ_rna:List[CircRNAModel]=None
             ) -> None:
         """ constructor """
         self.transcriptional = transcriptional or []
         self.intronic = intronic or []
         self.fusion = fusion or []
+        self.circ_rna = circ_rna or []
 
     def sort(self):
         """ sort """
@@ -31,13 +33,7 @@ class TranscriptionalVariantSeries():
         self.intronic.sort()
         self.fusion.sort()
 
-class CircRNAModelSeries():
-    """ CircRNAs series """
-    def __init__(self, records:List[CircRNAModel]):
-        """ constructor """
-        self.records = records
-
-class VariantRecordPoolInDisk():
+class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
     def __init__(self, pointers:Dict[str, List[GVFPointer]]=None,
             gvf_files:List[Path]=None, gvf_handles:List[IO]=None,
@@ -52,13 +48,14 @@ class VariantRecordPoolInDisk():
     def __enter__(self):
         """ enter """
         for file in self.gvf_files:
-            gvf_handle = file.open('rt')
+            gvf_handle = file.open('rb')
             self.gvf_handles.append(gvf_handle)
-            gvf_idx = file.with_suffix(file.suffix + '.idx')
-            if gvf_idx.exists():
-                self.load_index(gvf_idx, gvf_handle)
+            idx_path = file.with_suffix(file.suffix + '.idx')
+            if idx_path.exists():
+                self.validate_gvf_index(file, idx_path)
+                self.load_index(idx_path, file, gvf_handle)
             else:
-                self.generate_index(gvf_handle)
+                self.generate_index(file, gvf_handle)
         return self
 
     def __exit__(self, exception_type, exception_value, exception_traceback):
@@ -75,25 +72,20 @@ class VariantRecordPoolInDisk():
         for key in self.pointers:
             yield key
 
-    def __getitem__(self, key:str) -> Union[TranscriptionalVariantSeries,CircRNAModelSeries]:
+    def __getitem__(self, key:str) -> TranscriptionalVariantSeries:
         """ Load variants and return as a TranscriptVariants object """
-        records:List[VariantRecord] = []
-        is_circ_rna = None
+        records:List[Union[VariantRecord, CircRNAModel]] = []
         for pointer in self.pointers[key]:
-            if is_circ_rna is None:
-                is_circ_rna = pointer.is_circ_rna
-            elif is_circ_rna != pointer.is_circ_rna:
-                raise ValueError(
-                    'circRNA and regular variants are mixed together.'
-                )
             records += pointer.load()
-        if is_circ_rna is True:
-            return CircRNAModelSeries(records)
-
         series = TranscriptionalVariantSeries()
         cached_seqs:Dict[str, DNASeqRecordWithCoordinates] = {}
         for record in records:
+            if isinstance(record, CircRNAModel):
+                series.circ_rna.append(record)
+                continue
+
             tx_id = record.transcript_id
+
             if record.is_fusion():
                 record.shift_breakpoint_to_closest_exon(self.anno)
                 tx_record = record.to_transcript_variant(
@@ -121,14 +113,15 @@ class VariantRecordPoolInDisk():
         series.sort()
         return series
 
-    def load_index(self, index_file:Path, gvf_handle:IO):
+    def load_index(self, index_file:Path, gvf_file:Path, gvf_handle:IO):
         """ Load index file """
-        metadata = GVFMetadata.parse(gvf_handle)
+        with open(gvf_file, 'rt') as handle:
+            metadata = GVFMetadata.parse(handle)
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
-        with open(index_file, 'rt') as index_handle:
+        with open(index_file, 'rt') as idx_handle:
             reader = GVFPointer.parse(
-                index_handle=index_handle, gvf_handle=gvf_handle,
+                index_handle=idx_handle, gvf_handle=gvf_handle,
                 is_circ_rna=is_circ_rna
             )
             for pointer in reader:
@@ -137,9 +130,10 @@ class VariantRecordPoolInDisk():
                 else:
                     self.pointers[pointer.key] = [pointer]
 
-    def generate_index(self, gvf_handle:IO):
+    def generate_index(self, gvf_file:Path, gvf_handle:IO):
         """ generate index """
-        metadata = GVFMetadata.parse(gvf_handle)
+        with open(gvf_file, 'rt') as handle:
+            metadata = GVFMetadata.parse(handle)
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
         for pointer in iterate_pointer(gvf_handle, is_circ_rna):
@@ -148,6 +142,32 @@ class VariantRecordPoolInDisk():
             else:
                 self.pointers[pointer.key] = [pointer]
         gvf_handle.seek(0)
+
+    @staticmethod
+    def validate_gvf_index(gvf_file:Path, idx_file:Path):
+        """ Validate the GVF file with index """
+        sum_expect = None
+        with open(gvf_file, 'rb') as gvf_handle:
+            sum_actual = check_sha512(gvf_handle)
+
+        with open(idx_file, 'rt') as idx_handle:
+            for line in idx_handle:
+                line:str
+                if line.startswith('#'):
+                    line = line.rstrip().lstrip('# ')
+                    if line.startswith('CHECKSUM='):
+                        sum_expect = line.split('=')[1]
+
+                        break
+                else:
+                    break
+
+        if sum_expect is None:
+            raise ValueError('Cannot find checksum value from the idx file.')
+        if sum_actual == sum_expect:
+            return True
+
+        raise ValueError("GVF checksum don't match.")
 
     def filter_variants(self, gene_id:str=None, tx_ids:List[str]=None,
             exclude_type:List[str]=None, start:int=None, end:int=None,

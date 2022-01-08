@@ -111,7 +111,7 @@ class VariantPeptideCaller():
         self.genome:dna.DNASeqDict = None
         self.anno:gtf.GenomicAnnotation = None
         self.canonical_peptides:Set[str] = None
-        self.variant_pool:seqvar.VariantRecordPoolInDisk = None
+        self.variant_pool:seqvar.VariantRecordPoolOnDisk = None
         self.circ_rna_pool:List[CircRNAModel] = []
         self.variant_peptides = aa.VariantPeptidePool()
         self.process_pool = ProcessPool(nodes=self.threads)
@@ -127,29 +127,31 @@ class VariantPeptideCaller():
 
     def create_in_disk_vairant_pool(self):
         """ Create in disk variant pool """
-        self.variant_pool = seqvar.VariantRecordPoolInDisk(
+        self.variant_pool = seqvar.VariantRecordPoolOnDisk(
             pointers=None, gvf_files=self.variant_files,
             anno=self.anno, genome=self.genome
         )
 
     def call_variant_peptides(self):
         """ call variant peptides """
-        with seqvar.VariantRecordPoolInDisk(pointers=None, gvf_files=self.variant_files,
+        with seqvar.VariantRecordPoolOnDisk(pointers=None, gvf_files=self.variant_files,
                 anno=self.anno, genome=self.genome) as pool:
+            tx_rank = self.anno.get_transcirpt_rank()
+            sorted_key = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
             i = 0
-            for key in pool:
-                i += 1
+            for key in sorted_key:
                 if self.verbose >= 2:
                     logger(key)
                 series = pool[key]
-                if isinstance(series, seqvar.CircRNAModelSeries):
-                    for circ_model in series.records:
-                        self.call_variants_circ_rna(circ_model, pool)
-                else:
-                    if series.transcriptional:
-                        self.call_variants_main(key, series.transcriptional, pool)
-                    for fusion_variant in series.fusion:
-                        self.call_variants_fusion(fusion_variant, pool)
+
+                if series.transcriptional:
+                    self.call_variants_main(key, series.transcriptional, pool)
+
+                for fusion_variant in series.fusion:
+                    self.call_variants_fusion(fusion_variant, pool)
+
+                for circ_model in series.circ_rna:
+                    self.call_variants_circ_rna(circ_model, pool)
 
                 if self.verbose >= 1:
                     i += 1
@@ -157,7 +159,7 @@ class VariantPeptideCaller():
                         logger(f'{i} transcripts processed.')
 
     def call_variants_main(self, tx_id:str, tx_variants:List[seqvar.VariantRecord],
-            pool:seqvar.VariantRecordPoolInDisk):
+            pool:seqvar.VariantRecordPoolOnDisk):
         """ main variant peptide caller """
         try:
             peptides = call_peptide_main(
@@ -178,7 +180,7 @@ class VariantPeptideCaller():
             )
 
     def call_variants_fusion(self, variant:seqvar.VariantRecord,
-            pool:seqvar.VariantRecordPoolInDisk):
+            pool:seqvar.VariantRecordPoolOnDisk):
         """ call variant peptides from fusion transcripts """
         if self.verbose >= 2:
             logger(variant.id)
@@ -201,7 +203,7 @@ class VariantPeptideCaller():
             )
 
     def call_variants_circ_rna(self, circ_model:CircRNAModel,
-            pool:seqvar.VariantRecordPoolInDisk):
+            pool:seqvar.VariantRecordPoolOnDisk):
         """ call variant peptides from circRNA """
         try:
             peptides = call_peptide_circ_rna(
@@ -239,7 +241,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     caller.write_fasta()
 
 def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
-        variant_pool:seqvar.VariantRecordPoolInDisk, anno:gtf.GenomicAnnotation,
+        variant_pool:seqvar.VariantRecordPoolOnDisk, anno:gtf.GenomicAnnotation,
         genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int,
         max_variants_per_node:int) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
@@ -264,7 +266,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 def call_peptide_fusion(variant:seqvar.VariantRecord,
-    variant_pool:seqvar.VariantRecordPoolInDisk, anno:gtf.GenomicAnnotation,
+    variant_pool:seqvar.VariantRecordPoolOnDisk, anno:gtf.GenomicAnnotation,
     genome:dna.DNASeqDict, rule:str, exception:str, miscleavage:int,
     max_variants_per_node:int) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for fusion """

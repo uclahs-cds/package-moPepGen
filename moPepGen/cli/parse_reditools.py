@@ -94,10 +94,10 @@ def parse_reditools(args:argparse.Namespace) -> None:
             min_coverage_dna=min_coverage_dna
         )
         for variant in _vars:
-            transcript_id = variant.location.seqname
-            if transcript_id not in variants:
-                variants[transcript_id] = []
-            variants[transcript_id].append(variant)
+            gene_id = variant.location.seqname
+            if gene_id not in variants:
+                variants[gene_id] = []
+            variants[gene_id].append(variant)
 
     if not args.quiet:
         logger(f'REDItools table {table_file} loaded.')
@@ -110,8 +110,12 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     metadata = generate_metadata(args)
 
+    genes_rank = anno.get_genes_rank()
+    ordered_keys = sorted(variants.keys(), key=lambda x:genes_rank[x])
+
     all_records = []
-    for records in variants.values():
+    for key in ordered_keys:
+        records = variants[key]
         all_records.extend(records)
 
     seqvar.io.write(all_records, output_path, metadata)

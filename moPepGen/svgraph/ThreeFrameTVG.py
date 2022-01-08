@@ -7,7 +7,7 @@ from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import dna, seqvar
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
-from moPepGen.seqvar.VariantRecordPoolInDisk import VariantRecordPoolInDisk
+from moPepGen.seqvar.VariantRecordPoolOnDisk import VariantRecordPoolOnDisk
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
@@ -468,7 +468,7 @@ class ThreeFrameTVG():
         return var_tails
 
     def apply_fusion(self, cursors:List[TVGNode], variant:seqvar.VariantRecord,
-            variant_pool:VariantRecordPoolInDisk, genome:dna.DNASeqDict,
+            variant_pool:VariantRecordPoolOnDisk, genome:dna.DNASeqDict,
             anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
             known_orf_index:int=None) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
@@ -741,7 +741,7 @@ class ThreeFrameTVG():
 
     def apply_insertion(self, cursors:List[TVGNode],
             variant:seqvar.VariantRecord,
-            variant_pool:VariantRecordPoolInDisk,
+            variant_pool:VariantRecordPoolOnDisk,
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             active_frames:List[bool]=None
             ) -> List[TVGNode]:
@@ -787,7 +787,7 @@ class ThreeFrameTVG():
 
     def apply_substitution(self, cursors:List[TVGNode],
             variant:seqvar.VariantRecord,
-            variant_pool:VariantRecordPoolInDisk,
+            variant_pool:VariantRecordPoolOnDisk,
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             active_frames:List[bool]=None
             ) -> List[TVGNode]:
@@ -819,7 +819,7 @@ class ThreeFrameTVG():
 
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
-            variant_pool:VariantRecordPoolInDisk, genome:dna.DNASeqDict,
+            variant_pool:VariantRecordPoolOnDisk, genome:dna.DNASeqDict,
             anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
             known_orf_index:int=None) -> None:
         """ Create a variant graph.

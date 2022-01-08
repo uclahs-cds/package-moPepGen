@@ -1005,7 +1005,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
         fusion = create_variant(21, 22, 'A', '<FUS>', 'Fusion', 'FUSION-XXX',
             fusion_attrs, 'ENST0001.1')
-        variant_pool = seqvar.VariantRecordPoolInDisk(
+        variant_pool = seqvar.VariantRecordPoolOnDisk(
             pointers=None, anno=anno, genome=genome
         )
         tx_model = anno.transcripts['ENST0001.1']

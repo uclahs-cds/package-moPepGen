@@ -126,8 +126,12 @@ def parse_circexplorer(args:argparse.Namespace):
             circ_records[gene_id] = []
         circ_records[gene_id].append(circ_record)
 
+    genes_rank = anno.get_genes_rank()
+    ordered_keys = sorted(circ_records.keys(), key=lambda x:genes_rank[x])
+
     records = []
-    for val in circ_records.values():
+    for key in ordered_keys:
+        val = circ_records[key]
         records.extend(val)
 
     metadata = generate_metadata(args)

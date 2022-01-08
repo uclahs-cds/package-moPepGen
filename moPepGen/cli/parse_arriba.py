@@ -92,7 +92,8 @@ def parse_arriba(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger(f'Arriba output {fusion} loaded.')
 
-    variants.sort()
+    genes_rank = anno.get_genes_rank()
+    variants = sorted(variants, key=lambda x: genes_rank[x.location.seqname])
 
     if not args.quiet:
         logger('Variants sorted.')
