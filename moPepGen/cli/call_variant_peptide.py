@@ -10,18 +10,24 @@ at least one variant, and do not present in the canonical peptide pool.
  """
 from __future__ import annotations
 import argparse
+import inspect
 from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from pathos.multiprocessing import ProcessPool
+from multiprocessing.managers import BaseManager, NamespaceProxy
 from moPepGen import svgraph, aa, seqvar, logger, circ
 from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
     load_references
+from moPepGen.dna.DNASeqDict import DNASeqDict
+from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
+from moPepGen.seqvar.VariantRecordPoolOnDisk import TranscriptionalVariantSeries, VariantRecordPoolOnDisk, VariantRecordPoolOnDiskOpener
 
 
 if TYPE_CHECKING:
     from moPepGen import dna, gtf
     from moPepGen.circ.CircRNA import CircRNAModel
+
 
 # pylint: disable=W0212
 def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
@@ -88,6 +94,34 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     print_help_if_missing_args(p)
     return p
 
+class ProxyBase(NamespaceProxy):
+    _exposed_ = ('__getattribute__', '__setattr__', '__delattr__')
+
+class ReferenceBundleProxy(ProxyBase): pass
+
+class VariantRecordPoolOnDiskProxy(ProxyBase): pass
+
+def register_proxy(name, cls, proxy, additional_attrs=None):
+    if additional_attrs is None:
+        additional_attrs = []
+    for attr in dir(cls):
+        if (inspect.ismethod(getattr(cls, attr)) and not attr.startswith("__")) \
+                or attr in additional_attrs:
+            proxy._exposed_ += (attr,)
+            setattr(proxy, attr,
+                    lambda s: object.__getattribute__(s, '_callmethod')(attr))
+    BaseManager.register(name, cls, proxy)
+class ReferenceBundle():
+    """ """
+    def __init__(self, genome:DNASeqDict, anno:GenomicAnnotation):
+        self.genome = genome
+        self.anno = anno
+
+class VariantRecordPoolOnDiskWrapper():
+    def __init__(self, pool:VariantRecordPoolOnDisk):
+        """ """
+        self.pool = pool
+
 class VariantPeptideCaller():
     """ Helper class to call variant peptides """
     def __init__(self, args:argparse.Namespace):
@@ -108,76 +142,71 @@ class VariantPeptideCaller():
         self.threads = args.threads
         if self.quiet is True:
             self.verbose = 0
-        self.genome:dna.DNASeqDict = None
-        self.anno:gtf.GenomicAnnotation = None
+        self.reference_bundle:ReferenceBundle = None
+        self.genome:DNASeqDict = None
+        self.anno:GenomicAnnotation = None
         self.canonical_peptides:Set[str] = None
-        self.variant_pool:seqvar.VariantRecordPoolOnDisk = None
-        self.circ_rna_pool:List[CircRNAModel] = []
+        self.variant_pools:List[seqvar.VariantRecordPoolOnDisk] = None
+        self.variant_pool_wrappers:List[VariantRecordPoolOnDiskWrapper] = None
         self.variant_peptides = aa.VariantPeptidePool()
-        self.process_pool = ProcessPool(nodes=self.threads)
+        self.tx_ids:List[str] = []
 
-    def load_reference(self):
+    def load_reference(self, manager:BaseManager):
         """ load reference genome, annotation, and canonical peptides """
         self.genome, self.anno, _, self.canonical_peptides = load_references(self.args)
-
-    def remove_cached_sequences(self):
-        """ remove chaced transcript sequences to reduce memory usage. """
-        for tx_model in self.anno.transcripts.values():
-            tx_model.remove_cached_seq()
+        self.reference_bundle = manager.ReferenceBundle(self.genome, self.anno)
 
     def create_in_disk_vairant_pool(self):
         """ Create in disk variant pool """
-        self.variant_pool = seqvar.VariantRecordPoolOnDisk(
-            pointers=None, gvf_files=self.variant_files,
-            anno=self.anno, genome=self.genome
+        pool = VariantRecordPoolOnDisk(
+            gvf_files=self.variant_files, anno=self.anno, genome=self.genome
         )
+        with VariantRecordPoolOnDiskOpener(pool):
+            tx_ids = pool.pointers.keys()
+        tx_rank = self.anno.get_transcirpt_rank()
+        self.tx_ids = sorted(tx_ids, key=lambda x:tx_rank[x])
 
-    def call_variant_peptides(self):
-        """ call variant peptides """
-        with seqvar.VariantRecordPoolOnDisk(pointers=None, gvf_files=self.variant_files,
-                anno=self.anno, genome=self.genome) as pool:
-            tx_rank = self.anno.get_transcirpt_rank()
-            sorted_key = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
-            i = 0
-            for key in sorted_key:
-                if self.verbose >= 2:
-                    logger(key)
-                series = pool[key]
+        self.variant_pools = []
+        for _ in range(self.threads):
+            pool = VariantRecordPoolOnDisk(
+                pointers=None, gvf_files=self.variant_files,
+                anno=self.anno, genome=self.genome
+            )
+            self.variant_pools.append(pool)
 
-                if series.transcriptional:
-                    self.call_variants_main(key, series.transcriptional, pool)
+    def call_variant_peptides_wrapper(self, i:int, tx_id:str
+            ) -> List[Set[aa.AminoAcidSeqRecord]]:
+        """ """
+        pool = self.variant_pool_wrappers[i].pool
+        series = pool[tx_id]
+        peptide_pool = []
+        if series.transcriptional:
+            peptides = self.call_variants_main(tx_id, series.transcriptional, pool)
+            peptide_pool.append(peptides)
 
-                for fusion_variant in series.fusion:
-                    self.call_variants_fusion(fusion_variant, pool)
+        for fusion_variant in series.fusion:
+            peptides = self.call_variants_fusion(fusion_variant, pool)
+            peptide_pool.append(peptides)
 
-                for circ_model in series.circ_rna:
-                    self.call_variants_circ_rna(circ_model, pool)
+        for circ_model in series.circ_rna:
+            peptides = self.call_variants_circ_rna(circ_model, pool)
+            peptide_pool.append(peptides)
 
-                if self.verbose >= 1:
-                    i += 1
-                    if i % 1000 == 0:
-                        logger(f'{i} transcripts processed.')
+        return peptide_pool
 
     def call_variants_main(self, tx_id:str, tx_variants:List[seqvar.VariantRecord],
             pool:seqvar.VariantRecordPoolOnDisk):
         """ main variant peptide caller """
         try:
-            peptides = call_peptide_main(
+            return call_peptide_main(
                 tx_id=tx_id, tx_variants=tx_variants, variant_pool=pool,
-                anno=self.anno, genome=self.genome, rule=self.rule,
-                exception=self.exception, miscleavage=self.miscleavage,
+                anno=self.reference_bundle.anno, genome=self.reference_bundle.genome,
+                rule=self.rule, exception=self.exception, miscleavage=self.miscleavage,
                 max_variants_per_node=self.max_variants_per_node
             )
         except:
             logger(f'Exception raised from {tx_id}')
             raise
-
-        for peptide in peptides:
-            self.variant_peptides.add_peptide(
-                peptide=peptide, canonical_peptides=self.canonical_peptides,
-                min_mw=self.min_mw, min_length=self.min_length,
-                max_length=self.max_length
-            )
 
     def call_variants_fusion(self, variant:seqvar.VariantRecord,
             pool:seqvar.VariantRecordPoolOnDisk):
@@ -185,45 +214,29 @@ class VariantPeptideCaller():
         if self.verbose >= 2:
             logger(variant.id)
         try:
-            peptides = call_peptide_fusion(
+            return call_peptide_fusion(
                 variant=variant, variant_pool=pool,
-                anno=self.anno, genome=self.genome, rule=self.rule,
-                exception=self.exception, miscleavage=self.miscleavage,
+                anno=self.reference_bundle.anno, genome=self.reference_bundle.genome,
+                rule=self.rule, exception=self.exception, miscleavage=self.miscleavage,
                 max_variants_per_node=self.max_variants_per_node
             )
         except:
             logger(f"Exception raised from fusion {variant.id}")
             raise
 
-        for peptide in peptides:
-            self.variant_peptides.add_peptide(
-                peptide=peptide, canonical_peptides=self.canonical_peptides,
-                min_mw=self.min_mw, min_length=self.min_length,
-                max_length=self.max_length
-            )
-
     def call_variants_circ_rna(self, circ_model:CircRNAModel,
             pool:seqvar.VariantRecordPoolOnDisk):
         """ call variant peptides from circRNA """
         try:
-            peptides = call_peptide_circ_rna(
-                record=circ_model, annotation=self.anno, genome=self.genome,
-                variant_pool=pool, rule=self.rule,
-                exception=self.exception, miscleavage=self.miscleavage,
+            return call_peptide_circ_rna(
+                record=circ_model, variant_pool=pool,
+                anno=self.reference_bundle.anno, genome=self.reference_bundle.genome,
+                rule=self.rule, exception=self.exception, miscleavage=self.miscleavage,
                 max_variants_per_node=self.max_variants_per_node
             )
         except:
             logger(f"Exception raised from {circ_model.id}")
             raise
-
-        for peptide in peptides:
-            self.variant_peptides.add_peptide(
-                peptide=peptide, canonical_peptides=self.canonical_peptides,
-                min_mw=self.min_mw,min_length=self.min_length,
-                max_length=self.max_length
-            )
-        if self.circ_rna_pool and self.verbose >= 1:
-            logger('circRNA processed.')
 
     def write_fasta(self):
         """ write variant peptides to fasta. """
@@ -231,14 +244,75 @@ class VariantPeptideCaller():
         if self.verbose >= 1:
             logger('Variant peptide FASTA file written to disk.')
 
+class VariantPeptideCallerOpener():
+    """ """
+    def __init__(self, caller:VariantPeptideCaller,
+            pool_openers:List[VariantRecordPoolOnDiskOpener]=None):
+        """ constructor """
+        self.caller = caller
+        self.pool_openers = pool_openers or []
+
+    def __enter__(self):
+        """ enter """
+        for pool in self.caller.variant_pools:
+            opener = VariantRecordPoolOnDiskOpener(pool)
+            opener.open()
+            self.pool_openers.append(opener)
+        return self.caller
+
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        """ """
+        for opener in self.pool_openers:
+            opener.close()
+
+def call_variant_peptides(caller):
+    """ call variant peptides """
+    process_pool = ProcessPool(caller.threads)
+    tx_bench = []
+    for i,key in enumerate(caller.tx_ids):
+        if caller.verbose >= 2:
+            logger(key)
+        tx_bench.append(key)
+        if len(tx_bench) >= caller.threads or i == len(caller.tx_ids) - 1:
+            results = process_pool.map(
+                caller.call_variant_peptides_wrapper,
+                list(range(len(tx_bench))), tx_bench
+            )
+            for peptide_series in results:
+                for peptides in peptide_series:
+                    for peptide in peptides:
+                        caller.variant_peptides.add_peptide(
+                            peptide=peptide,
+                            canonical_peptides=caller.canonical_peptides,
+                            min_mw=caller.min_mw, min_length=caller.min_length,
+                            max_length=caller.max_length
+                        )
+            tx_bench = []
+
+        if caller.verbose >= 1:
+            if i % 1000 == 0:
+                logger(f'{i} transcripts processed.')
+
 def call_variant_peptide(args:argparse.Namespace) -> None:
     """ Main entry point for calling variant peptide """
+    register_proxy('ReferenceBundle', ReferenceBundle, ReferenceBundleProxy)
+    register_proxy(
+        'VariantRecordPoolOnDiskWrapper', VariantRecordPoolOnDiskWrapper,
+        VariantRecordPoolOnDiskProxy
+    )
+    manager = BaseManager()
+    manager.start()
     caller = VariantPeptideCaller(args)
-
     print_start_message(args)
-    caller.load_reference()
-    caller.call_variant_peptides()
-    caller.write_fasta()
+    caller.load_reference(manager)
+    caller.create_in_disk_vairant_pool()
+    with VariantPeptideCallerOpener(caller):
+        caller.variant_pool_wrappers = []
+        for pool in caller.variant_pools:
+            pool_wrapper = manager.VariantRecordPoolOnDiskWrapper(pool)
+            caller.variant_pool_wrappers.append(pool_wrapper)
+        call_variant_peptides(caller)
+        caller.write_fasta()
 
 def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         variant_pool:seqvar.VariantRecordPoolOnDisk, anno:gtf.GenomicAnnotation,
@@ -300,8 +374,9 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     return pgraph.call_variant_peptides(miscleavage=miscleavage)
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
+        variant_pool:seqvar.VariantRecordPool,
         annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
-        variant_pool:seqvar.VariantRecordPool, rule:str,
+        rule:str,
         exception:str, miscleavage:int, max_variants_per_node:int
         )-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """

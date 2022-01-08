@@ -45,24 +45,6 @@ class VariantRecordPoolOnDisk():
         self.anno = anno
         self.genome = genome
 
-    def __enter__(self):
-        """ enter """
-        for file in self.gvf_files:
-            gvf_handle = file.open('rb')
-            self.gvf_handles.append(gvf_handle)
-            idx_path = file.with_suffix(file.suffix + '.idx')
-            if idx_path.exists():
-                self.validate_gvf_index(file, idx_path)
-                self.load_index(idx_path, file, gvf_handle)
-            else:
-                self.generate_index(file, gvf_handle)
-        return self
-
-    def __exit__(self, exception_type, exception_value, exception_traceback):
-        """ """
-        for handle in self.gvf_handles:
-            handle.close()
-
     def __contains__(self, key:str):
         """ conteins """
         return key in self.pointers
@@ -236,3 +218,33 @@ class VariantRecordPoolOnDisk():
         records = list(records)
         records.sort()
         return records
+
+class VariantRecordPoolOnDiskOpener():
+    def __init__(self, pool:VariantRecordPoolOnDisk):
+        self.pool = pool
+
+    def __enter__(self):
+        """ enter """
+        self.open()
+        return self.pool
+
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        """ """
+        self.close()
+
+    def open(self):
+        """ """
+        for file in self.pool.gvf_files:
+            gvf_handle = file.open('rb')
+            self.pool.gvf_handles.append(gvf_handle)
+            idx_path = file.with_suffix(file.suffix + '.idx')
+            if idx_path.exists():
+                self.pool.validate_gvf_index(file, idx_path)
+                self.pool.load_index(idx_path, file, gvf_handle)
+            else:
+                self.pool.generate_index(file, gvf_handle)
+
+    def close(self):
+        """ close """
+        for handle in self.pool.gvf_handles:
+            handle.close()
