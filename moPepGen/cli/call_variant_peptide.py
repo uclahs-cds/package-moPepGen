@@ -125,19 +125,22 @@ class VariantPeptideCaller():
         """ call variant peptides """
         with seqvar.VariantRecordPoolOnDisk(pointers=None, gvf_files=self.variant_files,
                 anno=self.anno, genome=self.genome) as pool:
+            tx_rank = self.anno.get_transcirpt_rank()
+            sorted_key = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
             i = 0
-            for key in pool:
+            for key in sorted_key:
                 if self.verbose >= 2:
                     logger(key)
                 series = pool[key]
-                if isinstance(series, seqvar.CircRNAModelSeries):
-                    for circ_model in series.records:
-                        self.call_variants_circ_rna(circ_model, pool)
-                else:
-                    if series.transcriptional:
-                        self.call_variants_main(key, series.transcriptional, pool)
-                    for fusion_variant in series.fusion:
-                        self.call_variants_fusion(fusion_variant, pool)
+
+                if series.transcriptional:
+                    self.call_variants_main(key, series.transcriptional, pool)
+
+                for fusion_variant in series.fusion:
+                    self.call_variants_fusion(fusion_variant, pool)
+
+                for circ_model in series.circ_rna:
+                    self.call_variants_circ_rna(circ_model, pool)
 
                 self.anno.remove_cached_tx_seq()
 
