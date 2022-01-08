@@ -28,7 +28,7 @@ class TestCaseIntegration(unittest.TestCase):
 
 
     def assert_gvf_order(self, gvf_file:Path, anno_gtf:Path) -> None:
-        """ """
+        """ Assert the GVF file is in the order as the GTF file. """
         anno = gtf.GenomicAnnotation()
         anno.dump_gtf(anno_gtf)
 
