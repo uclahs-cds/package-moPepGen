@@ -60,7 +60,7 @@ class GenomicAnnotation():
         i = 0
         it = iter(self.transcripts.keys())
         key = next(it, None)
-        while i < len(self) and key:
+        while i < len(self.transcripts) and key:
             result += f"'{key}': {self.transcripts[key].__repr__()}\n"
             if i == 3 and len(self.transcripts) > 7:
                 result += "...\n"

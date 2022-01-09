@@ -16,6 +16,7 @@ from pathlib import Path
 from pathos.multiprocessing import ProcessPool
 from multiprocessing.managers import BaseManager, NamespaceProxy
 from moPepGen import svgraph, aa, seqvar, logger, circ
+from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
     load_references
@@ -99,8 +100,6 @@ class ProxyBase(NamespaceProxy):
 
 class ReferenceBundleProxy(ProxyBase): pass
 
-class VariantRecordPoolOnDiskProxy(ProxyBase): pass
-
 def register_proxy(name, cls, proxy, additional_attrs=None):
     if additional_attrs is None:
         additional_attrs = []
@@ -113,14 +112,20 @@ def register_proxy(name, cls, proxy, additional_attrs=None):
     BaseManager.register(name, cls, proxy)
 class ReferenceBundle():
     """ """
-    def __init__(self, genome:DNASeqDict, anno:GenomicAnnotation):
+    def __init__(self, genome:DNASeqDict, anno:GenomicAnnotation,
+            canonical_peptides:aa.VariantPeptidePool):
         self.genome = genome
         self.anno = anno
+        self.canonical_peptides = canonical_peptides
 
-class VariantRecordPoolOnDiskWrapper():
-    def __init__(self, pool:VariantRecordPoolOnDisk):
-        """ """
-        self.pool = pool
+    def get_genome(self):
+        return self.genome
+
+    def get_anno(self):
+        return self.anno
+
+    def get_canonical_peptides(self):
+        return self.canonical_peptides
 
 class VariantPeptideCaller():
     """ Helper class to call variant peptides """
@@ -146,15 +151,15 @@ class VariantPeptideCaller():
         self.genome:DNASeqDict = None
         self.anno:GenomicAnnotation = None
         self.canonical_peptides:Set[str] = None
-        self.variant_pools:List[seqvar.VariantRecordPoolOnDisk] = None
-        self.variant_pool_wrappers:List[VariantRecordPoolOnDiskWrapper] = None
         self.variant_peptides = aa.VariantPeptidePool()
         self.tx_ids:List[str] = []
 
     def load_reference(self, manager:BaseManager):
         """ load reference genome, annotation, and canonical peptides """
         self.genome, self.anno, _, self.canonical_peptides = load_references(self.args)
-        self.reference_bundle = manager.ReferenceBundle(self.genome, self.anno)
+        self.reference_bundle = manager.ReferenceBundle(
+            self.genome, self.anno, self.canonical_peptides
+        )
 
     def create_in_disk_vairant_pool(self):
         """ Create in disk variant pool """
@@ -166,33 +171,76 @@ class VariantPeptideCaller():
         tx_rank = self.anno.get_transcirpt_rank()
         self.tx_ids = sorted(tx_ids, key=lambda x:tx_rank[x])
 
-        self.variant_pools = []
-        for _ in range(self.threads):
-            pool = VariantRecordPoolOnDisk(
-                pointers=None, gvf_files=self.variant_files,
-                anno=self.anno, genome=self.genome
-            )
-            self.variant_pools.append(pool)
+    def call_variant_peptides(self, process_pool:ProcessPool):
+        """ call variant peptides """
+        tx_dispatch = self.dispatch_transcripts()
+        results:List[aa.VariantPeptidePool] = process_pool.map(
+            self.call_variant_peptides_wrapper,
+            tx_dispatch, list(range(self.threads))
+        )
+        for pool in results:
+            for peptide in pool.peptides:
+                self.variant_peptides.add_peptide(
+                    peptide=peptide,
+                    canonical_peptides=self.canonical_peptides,
+                    min_mw=self.min_mw, min_length=self.min_length,
+                    max_length=self.max_length
+                )
 
-    def call_variant_peptides_wrapper(self, i:int, tx_id:str
+    def dispatch_transcripts(self) -> List[List[str]]:
+        """ """
+        dispatch:List[List[str]] = []
+        for i,tx_id in enumerate(self.tx_ids):
+            if len(dispatch) < self.threads:
+                dispatch.append([])
+            ind = i % self.threads
+            dispatch[ind].append(tx_id)
+        return dispatch
+
+    def call_variant_peptides_wrapper(self, tx_ids:str, process_ind:int
             ) -> List[Set[aa.AminoAcidSeqRecord]]:
         """ """
-        pool = self.variant_pool_wrappers[i].pool
-        series = pool[tx_id]
-        peptide_pool = []
-        if series.transcriptional:
-            peptides = self.call_variants_main(tx_id, series.transcriptional, pool)
-            peptide_pool.append(peptides)
+        pool = VariantRecordPoolOnDisk(
+            gvf_files=self.variant_files,
+            anno=self.reference_bundle.get_anno(),
+            genome=self.reference_bundle.get_genome()
+        )
+        variant_peptide_pool = aa.VariantPeptidePool()
+        i = 0
+        with VariantRecordPoolOnDiskOpener(pool):
+            for tx_id in tx_ids:
+                if self.verbose >= 2:
+                    logger(tx_id)
+                series = pool[tx_id]
+                peptide_pool:List[Set[AminoAcidSeqRecord]] = []
+                if series.transcriptional:
+                    peptides = self.call_variants_main(tx_id,
+                        series.transcriptional, pool)
+                    peptide_pool.append(peptides)
 
-        for fusion_variant in series.fusion:
-            peptides = self.call_variants_fusion(fusion_variant, pool)
-            peptide_pool.append(peptides)
+                for fusion_variant in series.fusion:
+                    peptides = self.call_variants_fusion(fusion_variant, pool)
+                    peptide_pool.append(peptides)
 
-        for circ_model in series.circ_rna:
-            peptides = self.call_variants_circ_rna(circ_model, pool)
-            peptide_pool.append(peptides)
+                for circ_model in series.circ_rna:
+                    peptides = self.call_variants_circ_rna(circ_model, pool)
+                    peptide_pool.append(peptides)
 
-        return peptide_pool
+                for peptides in peptide_pool:
+                    for peptide in peptides:
+                        variant_peptide_pool.add_peptide(
+                            peptide=peptide,
+                            canonical_peptides=self.reference_bundle.get_canonical_peptides(),
+                            min_mw=self.min_mw, min_length=self.min_length,
+                            max_length=self.max_length
+                        )
+
+                if self.verbose >= 1:
+                    i += 1
+                    if i % 1000 == 0:
+                        logger(f'Process No. {process_ind}: {i} transcripts processed.')
+
+        return variant_peptide_pool
 
     def call_variants_main(self, tx_id:str, tx_variants:List[seqvar.VariantRecord],
             pool:seqvar.VariantRecordPoolOnDisk):
@@ -200,7 +248,8 @@ class VariantPeptideCaller():
         try:
             return call_peptide_main(
                 tx_id=tx_id, tx_variants=tx_variants, variant_pool=pool,
-                anno=self.reference_bundle.anno, genome=self.reference_bundle.genome,
+                anno=self.reference_bundle.get_anno(),
+                genome=self.reference_bundle.get_genome(),
                 rule=self.rule, exception=self.exception, miscleavage=self.miscleavage,
                 max_variants_per_node=self.max_variants_per_node
             )
@@ -216,7 +265,8 @@ class VariantPeptideCaller():
         try:
             return call_peptide_fusion(
                 variant=variant, variant_pool=pool,
-                anno=self.reference_bundle.anno, genome=self.reference_bundle.genome,
+                anno=self.reference_bundle.get_anno(),
+                genome=self.reference_bundle.get_genome(),
                 rule=self.rule, exception=self.exception, miscleavage=self.miscleavage,
                 max_variants_per_node=self.max_variants_per_node
             )
@@ -230,7 +280,8 @@ class VariantPeptideCaller():
         try:
             return call_peptide_circ_rna(
                 record=circ_model, variant_pool=pool,
-                anno=self.reference_bundle.anno, genome=self.reference_bundle.genome,
+                anno=self.reference_bundle.get_anno(),
+                genome=self.reference_bundle.get_genome(),
                 rule=self.rule, exception=self.exception, miscleavage=self.miscleavage,
                 max_variants_per_node=self.max_variants_per_node
             )
@@ -244,75 +295,18 @@ class VariantPeptideCaller():
         if self.verbose >= 1:
             logger('Variant peptide FASTA file written to disk.')
 
-class VariantPeptideCallerOpener():
-    """ """
-    def __init__(self, caller:VariantPeptideCaller,
-            pool_openers:List[VariantRecordPoolOnDiskOpener]=None):
-        """ constructor """
-        self.caller = caller
-        self.pool_openers = pool_openers or []
-
-    def __enter__(self):
-        """ enter """
-        for pool in self.caller.variant_pools:
-            opener = VariantRecordPoolOnDiskOpener(pool)
-            opener.open()
-            self.pool_openers.append(opener)
-        return self.caller
-
-    def __exit__(self, exception_type, exception_value, exception_traceback):
-        """ """
-        for opener in self.pool_openers:
-            opener.close()
-
-def call_variant_peptides(caller):
-    """ call variant peptides """
-    process_pool = ProcessPool(caller.threads)
-    tx_bench = []
-    for i,key in enumerate(caller.tx_ids):
-        if caller.verbose >= 2:
-            logger(key)
-        tx_bench.append(key)
-        if len(tx_bench) >= caller.threads or i == len(caller.tx_ids) - 1:
-            results = process_pool.map(
-                caller.call_variant_peptides_wrapper,
-                list(range(len(tx_bench))), tx_bench
-            )
-            for peptide_series in results:
-                for peptides in peptide_series:
-                    for peptide in peptides:
-                        caller.variant_peptides.add_peptide(
-                            peptide=peptide,
-                            canonical_peptides=caller.canonical_peptides,
-                            min_mw=caller.min_mw, min_length=caller.min_length,
-                            max_length=caller.max_length
-                        )
-            tx_bench = []
-
-        if caller.verbose >= 1:
-            if i % 1000 == 0:
-                logger(f'{i} transcripts processed.')
-
 def call_variant_peptide(args:argparse.Namespace) -> None:
     """ Main entry point for calling variant peptide """
-    register_proxy('ReferenceBundle', ReferenceBundle, ReferenceBundleProxy)
-    register_proxy(
-        'VariantRecordPoolOnDiskWrapper', VariantRecordPoolOnDiskWrapper,
-        VariantRecordPoolOnDiskProxy
-    )
+    BaseManager.register('ReferenceBundle', ReferenceBundle)
     manager = BaseManager()
     manager.start()
     caller = VariantPeptideCaller(args)
     print_start_message(args)
     caller.load_reference(manager)
     caller.create_in_disk_vairant_pool()
-    with VariantPeptideCallerOpener(caller):
-        caller.variant_pool_wrappers = []
-        for pool in caller.variant_pools:
-            pool_wrapper = manager.VariantRecordPoolOnDiskWrapper(pool)
-            caller.variant_pool_wrappers.append(pool_wrapper)
-        call_variant_peptides(caller)
-        caller.write_fasta()
+    process_pool = ProcessPool(caller.threads)
+    caller.call_variant_peptides(process_pool)
+    caller.write_fasta()
 
 def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         variant_pool:seqvar.VariantRecordPoolOnDisk, anno:gtf.GenomicAnnotation,
@@ -375,13 +369,13 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
-        annotation:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
+        anno:gtf.GenomicAnnotation, genome:dna.DNASeqDict,
         rule:str,
         exception:str, miscleavage:int, max_variants_per_node:int
         )-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
-    gene_model = annotation.genes[gene_id]
+    gene_model = anno.genes[gene_id]
     chrom = gene_model.location.seqname
     gene_seq = gene_model.get_gene_sequence(genome[chrom])
     circ_seq = record.get_circ_rna_sequence(gene_seq)
