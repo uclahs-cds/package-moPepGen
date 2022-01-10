@@ -89,6 +89,14 @@ class PVGNode():
         self.out_nodes.discard(node)
         node.in_nodes.discard(self)
 
+    def get_out_nodes(self) -> List[PVGNode]:
+        """ Get outgoing nodes as a list. """
+        return list(self.out_nodes)
+
+    def get_in_nodes(self) -> List[PVGNode]:
+        """ Get incoming nodes as a list """
+        return list(self.in_nodes)
+
     def remove_out_edges(self) -> None:
         """ remove output nodes """
         for node in copy.copy(self.out_nodes):
