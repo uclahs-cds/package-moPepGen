@@ -48,6 +48,11 @@ class TranscriptionalVariantSeries():
         return len(self.fusion) > 0 or len(self.circ_rna) > 0 or \
             any(x.type in ['Insertion', 'Substitution'] for x in self.transcriptional)
 
+    def is_empty(self) -> bool:
+        """ check if the series is empty """
+        return len(self.transcriptional) == 0 and len(self.fusion) == 0 and \
+            len(self.circ_rna) == 0
+
 class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
     def __init__(self, pointers:Dict[str, List[GVFPointer]]=None,

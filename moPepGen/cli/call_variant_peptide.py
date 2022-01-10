@@ -208,13 +208,13 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         tx_rank = caller.anno.get_transcirpt_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
         dispatches = []
-        for i, tx_id in enumerate(tx_sorted):
-            if caller.verbose >= 1:
-                if i % 1000 == 0:
-                    logger(f'{i} transcripts processed.')
+        i = 0
+        for tx_id in tx_sorted:
             tx_ids = [tx_id]
             tx_model = caller.anno.transcripts[tx_id]
             variant_series = pool[tx_id]
+            if variant_series.is_empty():
+                continue
             tx_ids += variant_series.get_additional_transcripts()
             tx_ids = list(set(tx_ids))
 
@@ -282,6 +282,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                                 max_length=caller.max_length
                             )
                 dispatches = []
+
+            if caller.verbose >= 1:
+                i += 1
+                if i % 1000 == 0:
+                    logger(f'{i} transcripts processed.')
 
     caller.write_fasta()
 
