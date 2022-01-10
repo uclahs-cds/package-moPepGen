@@ -18,24 +18,20 @@ if TYPE_CHECKING:
 class TranscriptionalVariantSeries():
     """ Variants associated with a particular transcript """
     def __init__(self, transcriptional:List[VariantRecord]=None,
-            intronic:List[VariantRecord]=None, fusion:List[VariantRecord]=None
+            intronic:List[VariantRecord]=None, fusion:List[VariantRecord]=None,
+            circ_rna:List[CircRNAModel]=None
             ) -> None:
         """ constructor """
         self.transcriptional = transcriptional or []
         self.intronic = intronic or []
         self.fusion = fusion or []
+        self.circ_rna = circ_rna or []
 
     def sort(self):
         """ sort """
         self.transcriptional.sort()
         self.intronic.sort()
         self.fusion.sort()
-
-class CircRNAModelSeries():
-    """ CircRNAs series """
-    def __init__(self, records:List[CircRNAModel]):
-        """ constructor """
-        self.records = records
 
 class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
@@ -76,24 +72,19 @@ class VariantRecordPoolOnDisk():
         for key in self.pointers:
             yield key
 
-    def __getitem__(self, key:str) -> Union[TranscriptionalVariantSeries,CircRNAModelSeries]:
+    def __getitem__(self, key:str) -> TranscriptionalVariantSeries:
         """ Load variants and return as a TranscriptVariants object """
-        records:List[VariantRecord] = []
-        is_circ_rna = None
+        records:List[Union[VariantRecord, CircRNAModel]] = []
         for pointer in self.pointers[key]:
-            if is_circ_rna is None:
-                is_circ_rna = pointer.is_circ_rna
-            elif is_circ_rna != pointer.is_circ_rna:
-                raise ValueError(
-                    'circRNA and regular variants are mixed together.'
-                )
             records += pointer.load()
-        if is_circ_rna is True:
-            return CircRNAModelSeries(records)
-
         series = TranscriptionalVariantSeries()
         for record in records:
+            if isinstance(record, CircRNAModel):
+                series.circ_rna.append(record)
+                continue
+
             tx_id = record.transcript_id
+
             if record.is_fusion():
                 record.shift_breakpoint_to_closest_exon(self.anno)
                 tx_record = record.to_transcript_variant(

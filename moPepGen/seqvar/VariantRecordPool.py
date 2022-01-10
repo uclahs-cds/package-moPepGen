@@ -2,8 +2,7 @@
 from __future__ import annotations
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from moPepGen import ERROR_INDEX_IN_INTRON
-from moPepGen.seqvar.VariantRecordPoolOnDisk import CircRNAModelSeries, \
-    TranscriptionalVariantSeries
+from moPepGen.seqvar.VariantRecordPoolOnDisk import TranscriptionalVariantSeries
 from . import VariantRecord, io
 
 
@@ -28,8 +27,8 @@ class VariantRecordPool():
         genetic (Dict[str, List[VariantRecord]]): Variant records without a
             transcript ID (e.g., UTR). In gene coordinates.
     """
-    def __init__(self, data:Dict[str, Union[TranscriptionalVariantSeries,
-            CircRNAModelSeries]]=None, anno:GenomicAnnotation=None):
+    def __init__(self, data:Dict[str, TranscriptionalVariantSeries]=None,
+            anno:GenomicAnnotation=None):
         """ Constructor
 
         Args:
@@ -48,13 +47,11 @@ class VariantRecordPool():
         """ in """
         return key in self.data
 
-    def __getitem__(self, key:str) -> Union[TranscriptionalVariantSeries,
-            CircRNAModelSeries]:
+    def __getitem__(self, key:str) -> Union[TranscriptionalVariantSeries]:
         """ get item """
         return self.data[key]
 
-    def __setitem__(self, key:str, val:Union[TranscriptionalVariantSeries,
-            CircRNAModelSeries]):
+    def __setitem__(self, key:str, val:Union[TranscriptionalVariantSeries]):
         """ setitem """
         self.data[key] = val
 

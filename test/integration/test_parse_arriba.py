@@ -25,3 +25,4 @@ class TestParseArriba(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'arriba.gvf'}
         self.assertEqual(files, expected)
+        self.assert_gvf_order(self.work_dir/'arriba.gvf', args.annotation_gtf)

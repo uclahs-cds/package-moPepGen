@@ -129,14 +129,17 @@ def parse_rmats(args:argparse.Namespace) -> None:
                     logger(record.gene_id)
                     raise
                 for var_record in var_records:
-                    transcript_id = var_record.location.seqname
-                    if transcript_id not in variants:
-                        variants[transcript_id] = set()
-                    variants[transcript_id].add(var_record)
+                    gene_id = var_record.location.seqname
+                    if gene_id not in variants:
+                        variants[gene_id] = set()
+                    variants[gene_id].add(var_record)
 
+
+    genes_rank = anno.get_genes_rank()
+    ordered_keys = sorted(variants.keys(), key=lambda x:genes_rank[x])
     variants_sorted = []
-    for val in variants.values():
-        val = list(val)
+    for key in ordered_keys:
+        val = list(variants[key])
         val.sort()
         variants_sorted.extend(val)
 

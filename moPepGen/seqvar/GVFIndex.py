@@ -76,13 +76,10 @@ def iterate_pointer(handle, is_circ_rna:bool) -> Iterable[GVFPointer]:
 
         if is_circ_rna:
             record = circ.io.line_to_circ_model(line)
-            key = record.id
         else:
             record = io.line_to_variant_record(line)
-            if record.type == 'Fusion':
-                key = record.id
-            else:
-                key = record.transcript_id
+
+        key = record.transcript_id
 
         if cur_key != key:
             if not cur_key is None:
