@@ -78,7 +78,8 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger(f'FusionCatcher output {fusion} loaded.')
 
-    variants.sort()
+    genes_rank = anno.get_genes_rank()
+    variants = sorted(variants, key=lambda x: genes_rank[x.location.seqname])
 
     if not args.quiet:
         logger('Variants sorted.')

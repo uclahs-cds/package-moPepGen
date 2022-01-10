@@ -90,9 +90,12 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     metadata = generate_metadata(args)
 
+    tx_rank = anno.get_transcirpt_rank()
+    ordered_keys = sorted(vep_records.keys(), key=lambda x:tx_rank[x])
+
     all_records = []
-    for records in vep_records.values():
-        all_records.extend(records)
+    for key in ordered_keys:
+        all_records.extend(vep_records[key])
 
     seqvar.io.write(all_records, output_path, metadata)
 

@@ -109,15 +109,16 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0001.1'),
             (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
         }
-        tx_variants = {'ENST0001.1': create_variants(var_data)}
+        tx_variants = create_variants(var_data)
         var_data2 = {
             (25, 26, 'T', 'A', 'SNV', '' , None, 'ENSG0001')
         }
-        it_variants = {'ENST0001.1': create_variants(var_data2)}
-        variant_pool = seqvar.VariantRecordPool(
-            transcriptional=tx_variants,
-            intronic=it_variants
-        )
+        it_variants = create_variants(var_data2)
+        variant_pool = seqvar.VariantRecordPool(anno=anno)
+        for variant in tx_variants:
+            variant_pool.add_transcriptional_variant(variant)
+        for variant in it_variants:
+            variant_pool.add_intronic_variant(variant)
 
         end_nodes = graph.apply_fusion([nodes[i] for i in [4,14,24]],
             var_fusion, variant_pool, genome, anno)
@@ -174,15 +175,16 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0002.1'),
             (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0002.1')
         }
-        tx_variants = {'ENST0002.1': create_variants(var_data)}
+        tx_variants = create_variants(var_data)
         var_data2 = {
             (14, 15, 'T', 'A', 'SNV', '' , None, 'ENSG0001')
         }
-        it_variants = {'ENST0001.1': create_variants(var_data2)}
-        variant_pool = seqvar.VariantRecordPool(
-            transcriptional=tx_variants,
-            intronic=it_variants
-        )
+        it_variants = create_variants(var_data2)
+        variant_pool = seqvar.VariantRecordPool(anno=anno)
+        for variant in tx_variants:
+            variant_pool.add_transcriptional_variant(variant)
+        for variant in it_variants:
+            variant_pool.add_intronic_variant(variant)
 
         end_nodes = graph.apply_fusion([nodes[i] for i in [4,14,24]],
             var_fusion, variant_pool, genome, anno)
@@ -235,15 +237,16 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0002.1'),
             (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0002.1')
         }
-        tx_variants = {'ENST0002.1': create_variants(var_data)}
+        tx_variants = create_variants(var_data)
         var_data2 = {
             (16, 17, 'T', 'A', 'SNV', '' , None, 'ENSG0002')
         }
-        it_variants = {'ENST0002.1': create_variants(var_data2)}
-        variant_pool = seqvar.VariantRecordPool(
-            transcriptional=tx_variants,
-            intronic=it_variants
-        )
+        it_variants = create_variants(var_data2)
+        variant_pool = seqvar.VariantRecordPool(anno=anno)
+        for variant in tx_variants:
+            variant_pool.add_transcriptional_variant(variant)
+        for variant in it_variants:
+            variant_pool.add_intronic_variant(variant)
 
         end_nodes = graph.apply_fusion([nodes[i] for i in [4,14,24]],
             var_fusion, variant_pool, genome, anno)
@@ -296,15 +299,16 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             (14, 15, 'G', 'A', 'SNV', '', None, 'ENST0002.1'),
             (18, 19, 'T', 'A', 'SNV', '', None, 'ENST0002.1')
         }
-        tx_variants = {'ENST0002.1': create_variants(var_data)}
+        tx_variants = create_variants(var_data)
         var_data2 = {
             (16, 17, 'T', 'A', 'SNV', '' , None, 'ENSG0002')
         }
-        it_variants = {'ENST0002.1': create_variants(var_data2)}
-        variant_pool = seqvar.VariantRecordPool(
-            transcriptional=tx_variants,
-            intronic=it_variants
-        )
+        it_variants = create_variants(var_data2)
+        variant_pool = seqvar.VariantRecordPool(anno=anno)
+        for variant in tx_variants:
+            variant_pool.add_transcriptional_variant(variant)
+        for variant in it_variants:
+            variant_pool.add_intronic_variant(variant)
 
         end_nodes = graph.apply_fusion([nodes[i] for i in [4,14,24]],
             var_fusion, variant_pool, genome, anno)
@@ -437,7 +441,6 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             2: ['AATAAATAAAT',  ['RF1'], [], 1],
             3: ['ATAAATAAAT',   ['RF2'], [], 2]
         }
-        gene_id = 'ENSG0001'
         ins_attrs = {
             'DONOR_GENE_ID': 'ENSG0001',
             'DONOR_START': 17,
@@ -447,7 +450,9 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
 
         var_data = [(10, 11, 'A', 'T', 'SNV', '')]
         variants = create_variants(var_data)
-        var_pool = seqvar.VariantRecordPool(genetic={gene_id: variants})
+        var_pool = seqvar.VariantRecordPool(anno=anno)
+        for variant in variants:
+            var_pool.add_transcriptional_variant(variant)
 
         graph, nodes = create_three_frame_tvg(data, 'AAATAAATAAAT')
         cursors = [nodes[1], nodes[2], nodes[3]]
@@ -488,8 +493,10 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             (8, 9, 'C', 'T', 'SNV', '', None, 'ENST0001.1'),
             (11, 12, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
         }
-        variants = {'ENST0001.1': create_variants(var_data)}
-        variant_pool = seqvar.VariantRecordPool(transcriptional=variants)
+        variants = create_variants(var_data)
+        variant_pool = seqvar.VariantRecordPool(anno=anno)
+        for variant in variants:
+            variant_pool.add_transcriptional_variant(variant)
 
         cursors = [nodes[i] for i in [1,11,21]]
         end_nodes = graph.apply_insertion(cursors, var_insertion,
@@ -548,8 +555,10 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             (19, 20, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
         }
 
-        variants = {'ENST0001.1': create_variants(var_data)}
-        variant_pool = seqvar.VariantRecordPool(transcriptional=variants)
+        variants = create_variants(var_data)
+        variant_pool = seqvar.VariantRecordPool(anno=anno)
+        for variant in variants:
+            variant_pool.add_transcriptional_variant(variant)
 
         cursors = [nodes[i] for i in [1,11,21]]
         end_nodes = graph.apply_substitution(cursors, var_sub, variant_pool,
@@ -996,7 +1005,9 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
         fusion = create_variant(21, 22, 'A', '<FUS>', 'Fusion', 'FUSION-XXX',
             fusion_attrs, 'ENST0001.1')
-        variant_pool = seqvar.VariantRecordPool()
+        variant_pool = seqvar.VariantRecordPoolOnDisk(
+            pointers=None, anno=anno, genome=genome
+        )
         tx_model = anno.transcripts['ENST0001.1']
         tx_seq = tx_model.get_transcript_sequence(genome['chr1'])
         tgraph = svgraph.ThreeFrameTVG(tx_seq, 'ENST0001.1')

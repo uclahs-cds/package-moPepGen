@@ -31,6 +31,7 @@ class TestParseVEP(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep.gvf'}
         self.assertEqual(files, expected)
+        self.assert_gvf_order(f"{args.output_prefix}.gvf", args.annotation_gtf)
 
     def test_parse_vep_gz(self):
         """ Test parsing gzipped VEP output into GVF """
@@ -43,3 +44,4 @@ class TestParseVEP(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep.gvf'}
         self.assertEqual(files, expected)
+        self.assert_gvf_order(f"{args.output_prefix}.gvf", args.annotation_gtf)

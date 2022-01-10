@@ -186,7 +186,8 @@ class PeptideVariantGraph():
                         visited.add(in_node)
         return routes, visited
 
-    def merge_nodes_routes(self, routes:Set[Tuple[PVGNode]]
+    def merge_nodes_routes(self, routes:Set[Tuple[PVGNode]],
+            reading_frame_index:int
             ) -> Tuple[Set[PVGNode], Dict[PVGNode, List[PVGNode]]]:
         """ For any nodes between given serious of start and end nodes, merge
         them if they are connected. The total number of resulted merged nodes
@@ -229,7 +230,10 @@ class PeptideVariantGraph():
 
             new_nodes.add(new_node)
 
-            if route[0].is_bridge() or self.node_is_subgraph_end(route[0]):
+            is_in_bridge = route[0].reading_frame_index != reading_frame_index
+            is_out_bridge = route[-1].is_bridge() and \
+                route[-1].reading_frame_index == reading_frame_index
+            if is_in_bridge and not is_out_bridge or self.node_is_subgraph_end(route[0]):
                 val = inbridge_list.setdefault(route[0], [])
                 val.append(new_node)
 
@@ -355,7 +359,7 @@ class PeptideVariantGraph():
         """
         reading_frame_index = node.reading_frame_index
         routes, trash = self.find_routes_for_merging(node, True)
-        new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
@@ -391,7 +395,7 @@ class PeptideVariantGraph():
         for in_node in node.in_nodes:
             routes.add((in_node, node))
             trash.add(in_node)
-        new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
@@ -419,7 +423,7 @@ class PeptideVariantGraph():
         """
         reading_frame_index = node.reading_frame_index
         routes, trash = self.find_routes_for_merging(node)
-        new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
@@ -447,7 +451,7 @@ class PeptideVariantGraph():
         self.collapse_end_nodes(left_nodes)
 
         routes, trash = self.find_routes_for_merging(head, True)
-        new_nodes, inbridge_list = self.merge_nodes_routes(routes)
+        new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
@@ -519,7 +523,9 @@ class PeptideVariantGraph():
             )
             if site > -1:
                 downstream.split_node(site, True)
-            if len(downstream.out_nodes) == 1:
+            # It's important that if the only downstream is bridge, we only
+            # do a simple expand forward. Issue #
+            if len(downstream.out_nodes) == 1 or downstream.is_bridge():
                 branches, inbridges = self.expand_forward(downstream)
             else:
                 branches, inbridges = self.merge_join(downstream)
@@ -678,7 +684,7 @@ class PeptideVariantGraph():
             in_cds = False
             orf = [None, None]
         else:
-            node_copy = target_node.copy()
+            node_copy = target_node.copy(in_nodes=False)
 
             if not node_copy.out_nodes:
                 node_copy.truncated = True
@@ -749,7 +755,7 @@ class PeptideVariantGraph():
         else:
             start_gain.extend(target_node.get_variants_at(start_index))
             additional_variants = copy.copy(start_gain)
-            node_copy = target_node.copy()
+            node_copy = target_node.copy(in_nodes=False)
             in_cds = True
             node_copy.truncate_left(start_index)
             orf = traversal.known_orf_tx
@@ -803,7 +809,7 @@ class PeptideVariantGraph():
             in_cds = False
 
         if in_cds:
-            cur_copy = target_node.copy()
+            cur_copy = target_node.copy(in_nodes=False)
             additional_variants = start_gain + cursor.cleavage_gain
             node_list.append((cur_copy, orf, False, additional_variants))
             trash.add(cur_copy)
@@ -813,7 +819,7 @@ class PeptideVariantGraph():
         if not stop_start_finding:
             start_indices = target_node.seq.find_all_start_sites()
             for start_index in start_indices:
-                cur_copy = target_node.copy()
+                cur_copy = target_node.copy(in_nodes=False)
                 cur_copy.truncate_left(start_index)
                 orf_start = cur_copy.get_orf_start()
                 cur_orf = [orf_start, None]

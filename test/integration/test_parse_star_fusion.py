@@ -60,3 +60,4 @@ class TestParseStarFusion(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'star_fusion.gvf'}
         self.assertEqual(files, expected)
+        self.assert_gvf_order(self.work_dir/f'{args.output_prefix}.gvf', args.annotation_gtf)

@@ -61,7 +61,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """
         args = create_base_args()
-        args.input_variant = [str(self.data_dir/'vep'/'vep_gSNP.gvf')]
+        args.input_variant = [self.data_dir/'vep'/'vep_gSNP.gvf']
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
@@ -75,8 +75,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep'/'vep_gSNP.gvf'),
-            str(self.data_dir/'fusion'/'fusion.gvf')
+            self.data_dir/'vep'/'vep_gSNP.gvf',
+            self.data_dir/'fusion'/'fusion.gvf'
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -91,9 +91,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion and circRNA """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep'/'vep_gSNP.gvf'),
-            str(self.data_dir/'fusion'/'fusion.gvf'),
-            str(self.data_dir/'circRNA'/'circ_rna.gvf')
+            self.data_dir/'vep'/'vep_gSNP.gvf',
+            self.data_dir/'fusion'/'fusion.gvf',
+            self.data_dir/'circRNA'/'circ_rna.gvf'
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -109,11 +109,11 @@ class TestCallVariantPeptides(TestCaseIntegration):
         RNAEditing, gSNP and gINDEL """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep/vep_gSNP.gvf'),
-            str(self.data_dir/'vep/vep_gINDEL.gvf'),
-            str(self.data_dir/'fusion/fusion.gvf'),
-            str(self.data_dir/'circRNA/circ_rna.gvf'),
-            str(self.data_dir/'reditools/reditools.gvf')
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'fusion/fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf',
+            self.data_dir/'reditools/reditools.gvf'
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -128,8 +128,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with alternative splicing """
         args = create_base_args()
         args.input_variant = [
-            str(self.data_dir/'vep/vep_gSNP.gvf'),
-            str(self.data_dir/'alternative_splicing/alternative_splicing.gvf')
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'alternative_splicing/alternative_splicing.gvf'
         ]
         args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -320,3 +320,33 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'comb/CPCG0100_ENST00000265138.4_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptides_case20(self):
+        """ Issue reported in #313. In this test case, some nodes are missed
+        when creating the cleavage graph, and they remained uncleaved,
+        resulting * in the peptide sequence. The solution is just to use
+        `merge_forward` when the only outgoing node is a bridge, instead of
+        `merge_join`. However, 5 peptides are sometimes not called. The graph
+        is too complicated to figure out where is the cause. Going to leave it
+        here for now.
+        """
+        gvf = [
+            self.data_dir/'comb/CPCG0235_ENST00000480694.2/gsnp.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000480694.2/gindel.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0235_ENST00000480694.2_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000480694.2'
+        args = create_base_args()
+        args.input_variant = gvf
+        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = reference/'genome.fasta'
+        args.annotation_gtf = reference/'annotation.gtf'
+        args.proteome_fasta = reference/'proteome.fasta'
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        self.assertEqual(files, {'vep_moPepGen.fasta'})
+        peptides = list(SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'))
+        seqs = {str(seq.seq) for seq in peptides}
+        with open(expected, 'rt') as handle:
+            expect_seqs = {line.strip() for line in handle}
+        self.assertTrue(seqs.issuperset(expect_seqs))
