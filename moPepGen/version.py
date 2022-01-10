@@ -25,5 +25,5 @@ class MetaVersion():
 
     def __repr__(self) -> str:
         """ str representation """
-        python = '.'.join(self.python)
+        python = '.'.join([str(x) for x in self.python])
         return f"python={python}, biopython={self.biopython}, moPepGen={self.mopepgen}"
