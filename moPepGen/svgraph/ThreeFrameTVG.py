@@ -7,6 +7,7 @@ from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import dna, seqvar
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
+from moPepGen.seqvar import VariantRecordWithCoordinate
 from moPepGen.seqvar.VariantRecordPoolOnDisk import VariantRecordPoolOnDisk
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
@@ -469,8 +470,11 @@ class ThreeFrameTVG():
 
     def apply_fusion(self, cursors:List[TVGNode], variant:seqvar.VariantRecord,
             variant_pool:VariantRecordPoolOnDisk, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
-            known_orf_index:int=None) -> List[TVGNode]:
+            anno:gtf.GenomicAnnotation,
+            tx_seqs:Dict[str,dna.DNASeqRecordWithCoordinates]=None,
+            gene_seqs:Dict[str,dna.DNASeqRecordWithCoordinates]=None,
+            active_frames:List[bool]=None, known_orf_index:int=None
+            ) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
 
@@ -494,8 +498,11 @@ class ThreeFrameTVG():
         accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
         accepter_tx_model = anno.transcripts[accepter_tx_id]
         accepter_chrom = accepter_tx_model.transcript.location.seqname
-        accepter_tx_seq = accepter_tx_model.get_transcript_sequence(
-            genome[accepter_chrom])
+        if tx_seqs and accepter_tx_id in tx_seqs:
+            accepter_tx_seq = tx_seqs[accepter_tx_id]
+        else:
+            accepter_tx_seq = accepter_tx_model.get_transcript_sequence(
+                genome[accepter_chrom])
 
         # create subgraph for the left insertion
         if variant.attrs['LEFT_INSERTION_START'] is not None:
@@ -504,7 +511,10 @@ class ThreeFrameTVG():
             gene_id = tx_model.transcript.gene_id
             gene_model = anno.genes[gene_id]
             chrom = gene_model.chrom
-            seq = gene_model.get_gene_sequence(genome[chrom])
+            if gene_seqs and gene_id in gene_seqs:
+                seq = gene_seqs[gene_id]
+            else:
+                seq = gene_model.get_gene_sequence(genome[chrom])
             start = variant.attrs['LEFT_INSERTION_START']
             end = variant.attrs['LEFT_INSERTION_END']
             insert_seq = seq[start:end]
@@ -536,7 +546,10 @@ class ThreeFrameTVG():
             gene_id = tx_model.transcript.gene_id
             gene_model = anno.genes[gene_id]
             chrom = gene_model.chrom
-            seq = gene_model.get_gene_sequence(genome[chrom])
+            if gene_seqs and gene_id in gene_seqs:
+                seq = gene_seqs[gene_id]
+            else:
+                seq = gene_model.get_gene_sequence(genome[chrom])
             start = variant.attrs['RIGHT_INSERTION_START']
             end = variant.attrs['RIGHT_INSERTION_END']
             insert_seq = seq[start:end]
@@ -743,6 +756,7 @@ class ThreeFrameTVG():
             variant:seqvar.VariantRecord,
             variant_pool:VariantRecordPoolOnDisk,
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
+            gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
             active_frames:List[bool]=None
             ) -> List[TVGNode]:
         """ Apply an insertion into the the TVG graph. """
@@ -751,7 +765,10 @@ class ThreeFrameTVG():
         chrom = gene_model.chrom
         donor_start = variant.get_donor_start()
         donor_end = variant.get_donor_end()
-        gene_seq = gene_model.get_gene_sequence(genome[chrom])
+        if gene_seqs and gene_id in gene_seqs:
+            gene_seq = gene_seqs[gene_id]
+        else:
+            gene_seq = gene_model.get_gene_sequence(genome[chrom])
         insert_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
         insert_variants = variant_pool.filter_variants(
@@ -789,6 +806,7 @@ class ThreeFrameTVG():
             variant:seqvar.VariantRecord,
             variant_pool:VariantRecordPoolOnDisk,
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
+            gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
             active_frames:List[bool]=None
             ) -> List[TVGNode]:
         """ Apply a substitution variant into the graph """
@@ -797,7 +815,10 @@ class ThreeFrameTVG():
         chrom = gene_model.chrom
         donor_start = variant.get_donor_start()
         donor_end = variant.get_donor_end()
-        gene_seq = gene_model.get_gene_sequence(genome[chrom])
+        if gene_seqs and gene_id in gene_seqs:
+            gene_seq = gene_seqs[gene_id]
+        else:
+            gene_seq = gene_model.get_gene_sequence(genome[chrom])
         sub_seq = gene_seq[donor_start:donor_end]
         exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
         sub_variants = variant_pool.filter_variants(
@@ -819,8 +840,11 @@ class ThreeFrameTVG():
 
 
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
-            variant_pool:VariantRecordPoolOnDisk, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation, active_frames:List[bool]=None,
+            variant_pool:Union[VariantRecordWithCoordinate, VariantRecordPoolOnDisk],
+            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
+            tx_seqs:dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            gene_seqs:dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            active_frames:List[bool]=None,
             known_orf_index:int=None) -> None:
         """ Create a variant graph.
 
@@ -896,6 +920,8 @@ class ThreeFrameTVG():
                     variant_pool=variant_pool,
                     genome=genome,
                     anno=anno,
+                    tx_seqs=tx_seqs,
+                    gene_seqs=gene_seqs,
                     active_frames=copy.copy(active_frames),
                     known_orf_index=known_orf_index
                 )
@@ -907,6 +933,7 @@ class ThreeFrameTVG():
                     variant_pool=variant_pool,
                     genome=genome,
                     anno=anno,
+                    gene_seqs=gene_seqs,
                     active_frames=active_frames
                 )
 
@@ -917,6 +944,7 @@ class ThreeFrameTVG():
                     variant_pool=variant_pool,
                     genome=genome,
                     anno=anno,
+                    gene_seqs=gene_seqs,
                     active_frames=active_frames
                 )
 

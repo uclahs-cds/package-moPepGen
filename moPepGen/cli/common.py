@@ -174,6 +174,8 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if load_canonical_peptides:
             with open(f"{index_dir}/canonical_peptides.pkl", 'rb') as handle:
                 canonical_peptides = pickle.load(handle)
+        if not quiet:
+            logger('Reference indices loaded.')
     else:
         annotation = gtf.GenomicAnnotation()
         annotation.dump_gtf(args.annotation_gtf)

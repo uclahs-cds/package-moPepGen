@@ -113,7 +113,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_2.txt'
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
-        self.assertTrue(len(records), 2)
+        self.assertEqual(len(records), 0)
         self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
         for record in records:
             self.assertEqual(record.type, 'Deletion')

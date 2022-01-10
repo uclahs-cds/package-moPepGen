@@ -28,10 +28,25 @@ class TranscriptionalVariantSeries():
         self.circ_rna = circ_rna or []
 
     def sort(self):
-        """ sort """
+        """ Sort each slot of variants in order """
         self.transcriptional.sort()
         self.intronic.sort()
         self.fusion.sort()
+
+    def get_additional_transcripts(self) -> List[str]:
+        """ Get any additioanl transcript IDs that are associated with any
+        variants, for example, fusion. """
+        transcripts = []
+        for variant in self.fusion:
+            transcripts.append(variant.attrs['ACCEPTER_TRANSCRIPT_ID'])
+        return transcripts
+
+    def is_gene_sequence_needed(self) -> bool:
+        """ Check if the gene sequence is needed when calling variant peptides.
+        Usually for variants that invole retaining of a complete or partial
+        intron. """
+        return len(self.fusion) > 0 or len(self.circ_rna) > 0 or \
+            any(x.type in ['Insertion', 'Substitution'] for x in self.transcriptional)
 
 class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
@@ -220,7 +235,9 @@ class VariantRecordPoolOnDisk():
         return records
 
 class VariantRecordPoolOnDiskOpener():
+    """ Helper class to open all GVF files of a VariantRecordPoolOnDisk. """
     def __init__(self, pool:VariantRecordPoolOnDisk):
+        """ Constructor """
         self.pool = pool
 
     def __enter__(self):
@@ -229,11 +246,11 @@ class VariantRecordPoolOnDiskOpener():
         return self.pool
 
     def __exit__(self, exception_type, exception_value, exception_traceback):
-        """ """
+        """ exit """
         self.close()
 
     def open(self):
-        """ """
+        """ Open all GVF files """
         for file in self.pool.gvf_files:
             gvf_handle = file.open('rb')
             self.pool.gvf_handles.append(gvf_handle)
@@ -245,6 +262,6 @@ class VariantRecordPoolOnDiskOpener():
                 self.pool.generate_index(file, gvf_handle)
 
     def close(self):
-        """ close """
+        """ Close all file handles """
         for handle in self.pool.gvf_handles:
             handle.close()
