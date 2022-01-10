@@ -233,7 +233,7 @@ class PeptideVariantGraph():
             is_in_bridge = route[0].reading_frame_index != reading_frame_index
             is_out_bridge = route[-1].is_bridge() and \
                 route[-1].reading_frame_index == reading_frame_index
-            if is_in_bridge and not is_out_bridge:
+            if is_in_bridge and not is_out_bridge or self.node_is_subgraph_end(route[0]):
                 val = inbridge_list.setdefault(route[0], [])
                 val.append(new_node)
 

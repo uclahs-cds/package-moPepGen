@@ -13,8 +13,7 @@ import argparse
 from typing import List, Set, TYPE_CHECKING, Dict
 from pathlib import Path
 from pathos.pools import ParallelPool
-from moPepGen import svgraph, aa, seqvar, logger, gtf
-from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
+from moPepGen import svgraph, aa, seqvar, logger, gtf, circ
 from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
     load_references
@@ -137,8 +136,9 @@ def call_variant_peptides_wrapper(tx_id:str,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         anno:gtf.GenomicAnnotation, pool:seqvar.VariantRecordPool,
-        rule:str, exception:str, miscleavage:int, max_variants_per_node:int
-        ) -> List[Set[AminoAcidSeqRecord]]:
+        rule:str, exception:str, miscleavage:int, max_variants_per_node:int,
+        noncanonical_transcripts:bool
+        ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
     if variant_series.transcriptional:
@@ -203,6 +203,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     exception = caller.exception
     miscleavage = caller.miscleavage
     max_variants_per_node = caller.max_variants_per_node
+    noncanonical_transcripts = caller.noncanonical_transcripts
 
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
         tx_rank = caller.anno.get_transcirpt_rank()
@@ -214,6 +215,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             tx_model = caller.anno.transcripts[tx_id]
             variant_series = pool[tx_id]
             if variant_series.is_empty():
+                continue
+            if noncanonical_transcripts and \
+                    variant_series.has_any_noncanonical_transcripts():
                 continue
             tx_ids += variant_series.get_additional_transcripts()
             tx_ids = list(set(tx_ids))
@@ -258,7 +262,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
             dispatch = (
                 tx_id, variant_series, tx_seqs, gene_seqs, dummy_anno,
-                dummy_pool, rule, exception, miscleavage, max_variants_per_node
+                dummy_pool, rule, exception, miscleavage, max_variants_per_node,
+                noncanonical_transcripts
             )
             dispatches.append(dispatch)
 

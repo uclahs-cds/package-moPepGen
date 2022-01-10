@@ -6,6 +6,7 @@ from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512
 from moPepGen.circ.CircRNA import CircRNAModel
 from moPepGen.seqvar.GVFIndex import GVFPointer, iterate_pointer
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
+from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 from . import VariantRecord
 
 
@@ -52,6 +53,11 @@ class TranscriptionalVariantSeries():
         """ check if the series is empty """
         return len(self.transcriptional) == 0 and len(self.fusion) == 0 and \
             len(self.circ_rna) == 0
+
+    def has_any_noncanonical_transcripts(self) -> bool:
+        """ check if the series has any noncanonical transcripts """
+        return len(self.fusion) > 0 or len(self.circ_rna) > 0 or \
+            any(x.type in ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
 
 class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
