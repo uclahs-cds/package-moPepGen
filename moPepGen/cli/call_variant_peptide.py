@@ -13,7 +13,7 @@ import argparse
 from typing import List, Set, TYPE_CHECKING, Dict
 from pathlib import Path
 from pathos.pools import ParallelPool
-from moPepGen import svgraph, aa, seqvar, logger, gtf, circ
+from moPepGen import svgraph, aa, seqvar, logger, gtf
 from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
     load_references
@@ -136,8 +136,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         anno:gtf.GenomicAnnotation, pool:seqvar.VariantRecordPool,
-        rule:str, exception:str, miscleavage:int, max_variants_per_node:int,
-        noncanonical_transcripts:bool
+        rule:str, exception:str, miscleavage:int, max_variants_per_node:int
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
@@ -262,8 +261,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
             dispatch = (
                 tx_id, variant_series, tx_seqs, gene_seqs, dummy_anno,
-                dummy_pool, rule, exception, miscleavage, max_variants_per_node,
-                noncanonical_transcripts
+                dummy_pool, rule, exception, miscleavage, max_variants_per_node
             )
             dispatches.append(dispatch)
 
