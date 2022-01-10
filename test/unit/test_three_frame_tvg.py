@@ -590,6 +590,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             21: [seq[2:], ['RF0'], [], 2]
         }
         del_var = create_variant(3,8,'C','<DEL>','Deletion','')
+        del_var.attrs['GENE_ID'] = 'ENSG0001'
         graph, nodes = create_three_frame_tvg(data, seq)
 
         cursors = [nodes[i] for i in [1,11,21]]

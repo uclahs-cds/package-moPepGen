@@ -20,7 +20,7 @@ class PVGNode():
         cleavage (bool): Whether the start of the node is a cleavage site.
     """
     def __init__(self, seq:aa.AminoAcidSeqRecordWithCoordinates,
-            reading_frame_index:int,
+            reading_frame_index:int, subgraph_id:str,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
@@ -48,6 +48,7 @@ class PVGNode():
         self.reading_frame_index = reading_frame_index
         self.was_bridge = was_bridge
         self.pre_cleave = pre_cleave
+        self.subgraph_id = subgraph_id
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -65,7 +66,8 @@ class PVGNode():
             cleavage=self.cleavage,
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
-            was_bridge=self.was_bridge
+            was_bridge=self.was_bridge,
+            subgraph_id=self.subgraph_id
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -113,6 +115,16 @@ class PVGNode():
         if self.was_bridge:
             return True
         return False
+
+    def is_subgraph_end(self) -> bool:
+        """ Check if this is the end node of a subgraph """
+        return all(x.subgraph_id == self.subgraph_id for x in self.in_nodes) and \
+            any(x.subgraph_id != self.subgraph_id for x in self.out_nodes)
+
+    def is_subgraph_start(self) -> bool:
+        """ Check if this is the start node of a subgraph """
+        return any(x.subgraph_id != self.subgraph_id for x in self.in_nodes) and \
+            all(x.subgraph_id == self.subgraph_id for x in self.out_nodes)
 
     def has_any_in_bridge(self) -> None:
         """ Check if it has any incoming node that is bridge """
@@ -290,7 +302,8 @@ class PVGNode():
             variants=right_variants,
             orf=self.orf,
             was_bridge=self.was_bridge,
-            pre_cleave=pre_cleave
+            pre_cleave=pre_cleave,
+            subgraph_id=self.subgraph_id
         )
         new_node.orf = self.orf
 
@@ -323,7 +336,8 @@ class PVGNode():
             seq=right_seq,
             variants=right_variants,
             reading_frame_index=self.reading_frame_index,
-            was_bridge=self.was_bridge
+            was_bridge=self.was_bridge,
+            subgraph_id=self.subgraph_id
         )
 
         self.seq = self.seq[:i]
@@ -349,7 +363,8 @@ class PVGNode():
             seq=left_seq,
             variants=left_variants,
             reading_frame_index=self.reading_frame_index,
-            was_bridge=self.was_bridge
+            was_bridge=self.was_bridge,
+            subgraph_id=self.subgraph_id
         )
 
         self.seq = self.seq[i:]
@@ -389,7 +404,8 @@ class PVGNode():
             truncated=self.truncated,
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
-            was_bridge=self.was_bridge
+            was_bridge=self.was_bridge,
+            subgraph_id=self.subgraph_id
         )
 
     def get_nearest_next_ref_index(self) -> int:

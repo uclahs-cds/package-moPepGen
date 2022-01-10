@@ -11,7 +11,7 @@ from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
         ) -> Tuple[svgraph.PeptideVariantGraph,Dict[int, svgraph.PVGNode]]:
     """ Create a peptide variant graph from data """
-    root = svgraph.PVGNode(None, None)
+    root = svgraph.PVGNode(None, None, subgraph_id=_id)
     if not known_orf:
         known_orf = [None, None]
     graph = svgraph.PeptideVariantGraph(root, _id, known_orf)
@@ -55,7 +55,7 @@ def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
 
             variants.append(variant)
 
-        node = svgraph.PVGNode(seq, val[4], variants=variants)
+        node = svgraph.PVGNode(seq, val[4], variants=variants, subgraph_id=_id)
 
         node_list[key] = node
         for i in val[1]:

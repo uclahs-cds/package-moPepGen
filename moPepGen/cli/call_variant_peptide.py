@@ -13,6 +13,7 @@ import argparse
 from typing import List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen import svgraph, aa, seqvar, logger, circ
+from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 from moPepGen.cli.common import add_args_cleavage, add_args_quiet, \
     print_start_message, print_help_if_missing_args, add_args_reference, \
     load_references
@@ -95,6 +96,7 @@ class VariantPeptideCaller():
         self.min_length:int = args.min_length
         self.max_length:int = args.max_length
         self.max_variants_per_node:int = args.max_variants_per_node
+        self.noncanonical_transcripts = args.noncanonical_transcripts
         self.verbose = args.verbose_level
         if self.quiet is True:
             self.verbose = 0
@@ -134,7 +136,11 @@ class VariantPeptideCaller():
                 series = pool[key]
 
                 if series.transcriptional:
-                    self.call_variants_main(key, series.transcriptional, pool)
+                    if self.noncanonical_transcripts:
+                        has_alt_splice = any(x.type in ALTERNATIVE_SPLICING_TYPES
+                            for x in self.variant_pool[key].transcriptional[key])
+                    if not self.noncanonical_transcripts or has_alt_splice:
+                        self.call_variants_main(key, series.transcriptional, pool)
 
                 for fusion_variant in series.fusion:
                     self.call_variants_fusion(fusion_variant, pool)

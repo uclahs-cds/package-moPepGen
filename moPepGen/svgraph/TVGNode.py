@@ -152,6 +152,14 @@ class TVGNode():
         """ check if it is a bridge node to a subgraph """
         return any(e.in_node.subgraph_id != self.subgraph_id for e in self.in_edges)
 
+    def is_subgraph_bridge(self, out_node:TVGNode) -> bool:
+        """ check if it is a subgraph bridge node """
+        return self.subgraph_id != out_node.subgraph_id
+
+    def is_orf_bridge(self, out_node:TVGNode) -> bool:
+        """ check if it is a orf bridge node """
+        return self.reading_frame_index != out_node.reading_frame_index
+
     def has_bridge_from_reading_frame(self, other_reading_frame_index:int):
         """ Check if it has a in bridge node from another reading frame """
         return any(x.reading_frame_index == other_reading_frame_index\
@@ -270,7 +278,28 @@ class TVGNode():
 
         return new_node
 
-    def find_farthest_node_with_overlap(self, min_size:int=6) -> TVGNode:
+    @staticmethod
+    def first_node_is_smaller(first:TVGNode, second:TVGNode, graph_id:str,
+            in_subgraph:bool) -> bool:
+        """ Check if the first node is larger """
+        if in_subgraph:
+            if first.subgraph_id == second.subgraph_id:
+                return first.seq.locations[0] < second.seq.locations[0]
+
+            if first.subgraph_id == graph_id:
+                first_start = first.seq.locations[0].ref.start
+            else:
+                first_start = first.global_variant.location.end
+            if second.subgraph_id == graph_id:
+                second_start = second.seq.locations[0].ref.start
+            else:
+                second_start = second.global_variant.location.end
+            return first_start < second_start
+
+        return first.seq.locations[0] < second.seq.locations[0]
+
+    def find_farthest_node_with_overlap(self, graph_id:str, min_size:int=6
+            ) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
         reference sequence. If the farthest node found has an exclusive single
@@ -285,7 +314,8 @@ class TVGNode():
                     \ /
                      A
         """
-         # find the range of overlaps
+        in_subgraph = self.subgraph_id != graph_id
+        # find the range of overlaps
         farthest = None
         if not self.get_reference_next():
             return None
@@ -301,18 +331,23 @@ class TVGNode():
             if cur.reading_frame_index != self.reading_frame_index:
                 continue
 
+            if not in_subgraph and cur.subgraph_id != self.subgraph_id:
+                continue
+
             visited_len_before = len(visited)
             visited.add(cur)
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
                 if cur is farthest and cur is not self:
-                    if cur.out_edges and cur.get_reference_next().has_in_bridge():
+                    if not cur.out_edges:
+                        continue
+                    if cur.get_reference_next().has_in_bridge():
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
                     # if the farthest has less than 6 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
-                    if len(cur.seq) < min_size:
+                    elif len(cur.seq) < min_size:
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
                 continue
@@ -323,20 +358,24 @@ class TVGNode():
                 continue
 
             if not cur.is_reference():
-                next_ref = cur.get_reference_next()
-                queue.append(next_ref)
+                for edge in cur.out_edges:
+                    queue.append(edge.out_node)
+                # next_ref = cur.get_reference_next()
+                # queue.append(next_ref)
                 continue
 
-            if cur.is_stop_node() or cur.seq.locations[0] < farthest.seq.locations[0]:
+            if cur.is_stop_node():
+                continue
+
+            if self.first_node_is_smaller(cur, farthest, graph_id, in_subgraph):
                 for edge in cur.out_edges:
                     queue.append(edge.out_node)
                 continue
 
-            if cur.seq.locations[0] > farthest.seq.locations[0]:
-                farthest, cur = cur, farthest
-                queue.append(cur)
-                visited.remove(cur)
-                continue
+            farthest, cur = cur, farthest
+            queue.append(cur)
+            visited.remove(cur)
+            continue
         return farthest
 
     def stringify(self, k:int=None) -> None:
@@ -530,7 +569,8 @@ class TVGNode():
             seq=seq,
             variants=variants,
             orf=[None, None],
-            reading_frame_index=self.reading_frame_index
+            reading_frame_index=self.reading_frame_index,
+            subgraph_id=self.subgraph_id
         )
 
     def get_ref_sequence(self) -> Seq:

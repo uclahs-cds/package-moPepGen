@@ -107,14 +107,13 @@ class TestParseRMATS(TestCaseIntegration):
         self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
 
     def test_parse_rmats_mxe_case_2(self):
-        """ rMATS MXE when both exons are annotated. This should results two
-        deletions. """
+        """ rMATS MXE when both exons are annotated. MXE on transcript that
+        contains both, no records should be kept. """
         args = self.create_base_args()
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_2.txt'
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
-        self.assertTrue(len(records), 2)
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assertEqual(len(records), 0)
         for record in records:
             self.assertEqual(record.type, 'Deletion')
 
