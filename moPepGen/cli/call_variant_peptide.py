@@ -138,7 +138,7 @@ class VariantPeptideCaller():
                 if series.transcriptional:
                     if self.noncanonical_transcripts:
                         has_alt_splice = any(x.type in ALTERNATIVE_SPLICING_TYPES
-                            for x in self.variant_pool.transcriptional[key])
+                            for x in self.variant_pool[key].transcriptional[key])
                     if not self.noncanonical_transcripts or has_alt_splice:
                         self.call_variants_main(key, series.transcriptional, pool)
 
