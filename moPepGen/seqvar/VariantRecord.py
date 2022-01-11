@@ -1,7 +1,7 @@
 """ Module for generic variant record """
 from __future__ import annotations
 import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 from moPepGen import ERROR_NO_TX_AVAILABLE, \
     ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
         ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
@@ -11,7 +11,7 @@ from moPepGen.SeqFeature import FeatureLocation
 # To avoid circular import
 if TYPE_CHECKING:
     from moPepGen.gtf import GenomicAnnotation
-    from moPepGen.dna import DNASeqDict, DNASeqRecord
+    from moPepGen.dna import DNASeqDict, DNASeqRecord, DNASeqRecordWithCoordinates
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution', 'circRNA']
@@ -292,16 +292,23 @@ class VariantRecord():
                 or (start_in_intron and (not end_in_intron))
 
     def to_transcript_variant(self, anno:GenomicAnnotation, genome:DNASeqDict,
-            tx_id:str=None) -> VariantRecord:
+            tx_id:str=None, cached_seqs:Dict[str, DNASeqRecordWithCoordinates]=None
+            ) -> VariantRecord:
         """ Get variant records with transcription coordinates """
+        if cached_seqs is None:
+            cached_seqs = {}
         if not tx_id:
             tx_id = self.attrs['TRANSCRIPT_ID']
         if not tx_id:
             raise ValueError(ERROR_NO_TX_AVAILABLE)
         tx_model = anno.transcripts[tx_id]
         chrom = tx_model.transcript.chrom
-        tx_seq = tx_model.get_transcript_sequence(genome[chrom], cache=True)
-        anno.add_cached_tx_seq(tx_id)
+        if tx_id not in cached_seqs:
+            tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+            cached_seqs[tx_id] = tx_seq
+        else:
+            tx_seq = cached_seqs[tx_id]
+
         gene_id = self.location.seqname
         strand = tx_model.transcript.strand
 

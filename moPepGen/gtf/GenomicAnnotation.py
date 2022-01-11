@@ -1,6 +1,7 @@
 """ This module defines the class logic for the GTF annotations.
 """
 from __future__ import annotations
+import copy
 from typing import List, Dict, Tuple, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar, err
@@ -59,7 +60,7 @@ class GenomicAnnotation():
         i = 0
         it = iter(self.transcripts.keys())
         key = next(it, None)
-        while i < len(self) and key:
+        while i < len(self.transcripts) and key:
             result += f"'{key}': {self.transcripts[key].__repr__()}\n"
             if i == 3 and len(self.transcripts) > 7:
                 result += "...\n"
@@ -242,6 +243,11 @@ class GenomicAnnotation():
         if end_gene - start_gene != end - start:
             raise ValueError('Variant seems to be over a splice site.')
 
+        attrs = copy.copy(variant.attrs)
+        if 'GENE_ID' in attrs:
+            attrs.pop('GENE_ID')
+        attrs['TRANSCRIPT_ID'] = transcript_id
+
         return seqvar.VariantRecord(
             location=FeatureLocation(
                 seqname=gene_id,
@@ -251,7 +257,8 @@ class GenomicAnnotation():
             ref=variant.ref,
             alt=variant.alt,
             _type=variant.type,
-            _id=variant.id
+            _id=variant.id,
+            attrs=attrs
         )
 
     def feature_coordinate_gene_to_genomic(self, feature:SeqFeature,

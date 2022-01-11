@@ -114,6 +114,7 @@ class TestParseRMATS(TestCaseIntegration):
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
         self.assertEqual(len(records), 0)
+        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
         for record in records:
             self.assertEqual(record.type, 'Deletion')
 

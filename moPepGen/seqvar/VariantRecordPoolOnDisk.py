@@ -6,13 +6,14 @@ from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512
 from moPepGen.circ.CircRNA import CircRNAModel
 from moPepGen.seqvar.GVFIndex import GVFPointer, iterate_pointer
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
+from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 from . import VariantRecord
 
 
 # To avoid circular import
 if TYPE_CHECKING:
     from moPepGen.gtf import GenomicAnnotation
-    from moPepGen.dna import DNASeqDict
+    from moPepGen.dna import DNASeqDict, DNASeqRecordWithCoordinates
 
 
 class TranscriptionalVariantSeries():
@@ -28,10 +29,35 @@ class TranscriptionalVariantSeries():
         self.circ_rna = circ_rna or []
 
     def sort(self):
-        """ sort """
+        """ Sort each slot of variants in order """
         self.transcriptional.sort()
         self.intronic.sort()
         self.fusion.sort()
+
+    def get_additional_transcripts(self) -> List[str]:
+        """ Get any additioanl transcript IDs that are associated with any
+        variants, for example, fusion. """
+        transcripts = []
+        for variant in self.fusion:
+            transcripts.append(variant.attrs['ACCEPTER_TRANSCRIPT_ID'])
+        return transcripts
+
+    def is_gene_sequence_needed(self) -> bool:
+        """ Check if the gene sequence is needed when calling variant peptides.
+        Usually for variants that invole retaining of a complete or partial
+        intron. """
+        return len(self.fusion) > 0 or len(self.circ_rna) > 0 or \
+            any(x.type in ['Insertion', 'Substitution'] for x in self.transcriptional)
+
+    def is_empty(self) -> bool:
+        """ check if the series is empty """
+        return len(self.transcriptional) == 0 and len(self.fusion) == 0 and \
+            len(self.circ_rna) == 0
+
+    def has_any_noncanonical_transcripts(self) -> bool:
+        """ check if the series has any noncanonical transcripts """
+        return len(self.fusion) > 0 or len(self.circ_rna) > 0 or \
+            any(x.type in ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
 
 class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
@@ -44,24 +70,6 @@ class VariantRecordPoolOnDisk():
         self.gvf_handles = gvf_handles or []
         self.anno = anno
         self.genome = genome
-
-    def __enter__(self):
-        """ enter """
-        for file in self.gvf_files:
-            gvf_handle = file.open('rb')
-            self.gvf_handles.append(gvf_handle)
-            idx_path = file.with_suffix(file.suffix + '.idx')
-            if idx_path.exists():
-                self.validate_gvf_index(file, idx_path)
-                self.load_index(idx_path, file, gvf_handle)
-            else:
-                self.generate_index(file, gvf_handle)
-        return self
-
-    def __exit__(self, exception_type, exception_value, exception_traceback):
-        """ """
-        for handle in self.gvf_handles:
-            handle.close()
 
     def __contains__(self, key:str):
         """ conteins """
@@ -78,6 +86,7 @@ class VariantRecordPoolOnDisk():
         for pointer in self.pointers[key]:
             records += pointer.load()
         series = TranscriptionalVariantSeries()
+        cached_seqs:Dict[str, DNASeqRecordWithCoordinates] = {}
         for record in records:
             if isinstance(record, CircRNAModel):
                 series.circ_rna.append(record)
@@ -88,7 +97,7 @@ class VariantRecordPoolOnDisk():
             if record.is_fusion():
                 record.shift_breakpoint_to_closest_exon(self.anno)
                 tx_record = record.to_transcript_variant(
-                    self.anno, self.genome, tx_id
+                    self.anno, self.genome, tx_id, cached_seqs
                 )
                 series.fusion.append(tx_record)
                 continue
@@ -235,3 +244,35 @@ class VariantRecordPoolOnDisk():
         records = list(records)
         records.sort()
         return records
+
+class VariantRecordPoolOnDiskOpener():
+    """ Helper class to open all GVF files of a VariantRecordPoolOnDisk. """
+    def __init__(self, pool:VariantRecordPoolOnDisk):
+        """ Constructor """
+        self.pool = pool
+
+    def __enter__(self):
+        """ enter """
+        self.open()
+        return self.pool
+
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        """ exit """
+        self.close()
+
+    def open(self):
+        """ Open all GVF files """
+        for file in self.pool.gvf_files:
+            gvf_handle = file.open('rb')
+            self.pool.gvf_handles.append(gvf_handle)
+            idx_path = file.with_suffix(file.suffix + '.idx')
+            if idx_path.exists():
+                self.pool.validate_gvf_index(file, idx_path)
+                self.pool.load_index(idx_path, file, gvf_handle)
+            else:
+                self.pool.generate_index(file, gvf_handle)
+
+    def close(self):
+        """ Close all file handles """
+        for handle in self.pool.gvf_handles:
+            handle.close()
