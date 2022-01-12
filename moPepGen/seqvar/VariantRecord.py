@@ -446,7 +446,7 @@ class VariantRecord():
         })
 
     def shift_deletion_up(self, tx_seq:DNASeqRecord):
-        """ """
+        """ shift deletion variant up exact one position """
         location = FeatureLocation(
             start=self.location.start - 1,
             end = self.location.end
