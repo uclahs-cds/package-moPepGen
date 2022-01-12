@@ -320,7 +320,6 @@ class ThreeFrameTVG():
             raise ValueError('Variant out of source range of target')
 
         is_deletion = variant.type == 'Deletion'
-
         if is_deletion:
             seq = self.seq[variant.location.start:variant.location.start+1]
         else:

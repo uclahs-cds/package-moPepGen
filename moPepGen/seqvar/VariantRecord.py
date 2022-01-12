@@ -444,3 +444,13 @@ class VariantRecord():
             'RIGHT_INSERTION_START': right_insertion_start,
             'RIGHT_INSERTION_END': right_insertion_end
         })
+
+    def shift_deletion_up(self, tx_seq:DNASeqRecord):
+        """ """
+        location = FeatureLocation(
+            start=self.location.start - 1,
+            end = self.location.end
+        )
+        ref = str(tx_seq.seq[location.start])
+        self.location = location
+        self.ref = ref

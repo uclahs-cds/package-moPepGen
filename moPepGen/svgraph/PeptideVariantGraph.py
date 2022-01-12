@@ -571,13 +571,19 @@ class PeptideVariantGraph():
                 branches, inbridges = self.cross_join(cur, sites[0])
 
         else:
-            right = cur.split_node(sites[0], cleavage=True)
-            if not cur.cleavage:
-                _,inbridges = self.expand_forward(cur)
-            site = right.seq.find_first_cleave_or_stop_site(
-                rule=self.rule, exception=self.exception)
-            right = right.split_node(site, cleavage=True)
-            branches = {right}
+            if self.next_is_stop(cur) or cur.is_bridge() or \
+                    self.node_is_subgraph_end(cur):
+                cur = self.cleave_if_possible(cur, return_first=True)
+                if not cur.cleavage:
+                    _,inbridges = self.expand_forward(cur)
+            else:
+                right = cur.split_node(sites[0], cleavage=True)
+                if not cur.cleavage:
+                    _,inbridges = self.expand_forward(cur)
+                site = right.seq.find_first_cleave_or_stop_site(
+                    rule=self.rule, exception=self.exception)
+                right = right.split_node(site, cleavage=True)
+                branches = {right}
 
         return branches, inbridges
 
