@@ -109,6 +109,14 @@ class VariantRecordPoolOnDisk():
                 tx_record = record.to_transcript_variant(
                     self.anno, self.genome, tx_id
                 )
+                if tx_record.type == 'Deletion':
+                    if tx_id in cached_seqs:
+                        tx_seq = cached_seqs[tx_id]
+                    else:
+                        tx_model = self.anno.transcripts[tx_id]
+                        chrom = tx_model.transcript.chrom
+                        tx_seq = tx_model.get_transcript_sequence(self.genome[chrom])
+                    tx_record.shift_deletion_up(tx_seq)
                 series.transcriptional.append(tx_record)
             # except err.FusionBreakpointIsEndOfTranscript as e:
             #     continue

@@ -351,3 +351,16 @@ class TestCallVariantPeptides(TestCaseIntegration):
         with open(expected, 'rt') as handle:
             expect_seqs = {line.strip() for line in handle}
         self.assertTrue(seqs.issuperset(expect_seqs))
+
+    def test_call_variant_peptide_case21(self):
+        """ Alternative splicing only, reported in #333.
+        NOTE: The expected sequence is created by running callVariant because
+        bruteForce does not support for alternative splicing at this point.
+        This is just to ensure callVariant runs on this situation.
+        """
+        gvf = [
+            self.data_dir/'alternative_splicing/CPCG0486_ENST00000481806.1.gvf'
+        ]
+        expected = self.data_dir/'alternative_splicing/CPCG0486_ENST00000481806.1_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000481806.1'
+        self.default_test_case(gvf, reference, expected)

@@ -1,0 +1,20 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.1.0-beta.1
+##parser=parseRMATS
+##reference_index=/data/Index/GRCh38-EBI-GENCODE34
+##genome_fasta=
+##annotation_gtf=
+##source=rMATs
+##CHROM=<Description='{'Description': "'Gene ID'"}'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000115598.10	920	SE_2070	G	<INS>	.	.	TRANSCRIPT_ID=ENST00000481806.1;DONOR_START=2071;DONOR_END=2305;DONOR_GENE_ID=ENSG00000115598.10;GENE_SYMBOL=IL1RL2;GENOMIC_POSITION=chr2:102189076:102189310
+ENSG00000115598.10	14551	MXE_2071-2305:14550-14710	G	<SUB>	.	.	TRANSCRIPT_ID=ENST00000481806.1;START=14551;END=14710;DONOR_START=2071;DONOR_END=2305;DONOR_GENE_ID=ENSG00000115598.10;GENE_SYMBOL=IL1RL2;GENOMIC_POSITION=chr2-14551:14710-2071:2305
+ENSG00000115598.10	25095	SE_25094	C	<DEL>	.	.	TRANSCRIPT_ID=ENST00000481806.1;START=25095;END=25169;GENE_SYMBOL=IL1RL2;GENOMIC_POSITION=chr2:102212100:102212174

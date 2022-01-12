@@ -104,8 +104,7 @@ def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
             gene.transcripts.append(transcript_id)
         transcripts[transcript_id].add_record(feature, record)
 
-def downsample_gtf(path:Path, gene_list=None, tx_list=None
-        ) -> gtf.GeneAnnotationModel:
+def downsample_gtf(path:Path, gene_list=None, tx_list=None) -> gtf.GeneAnnotationModel:
     """ Downsample a GTF file """
     anno = gtf.GenomicAnnotation()
 
@@ -267,6 +266,71 @@ def create_dummy_tx_model(tx_model:gtf.TranscriptAnnotationModel, tx_id:str,
     )
     model = gtf.TranscriptAnnotationModel(transcript)
     return model
+
+def subset_genome(genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
+        start:int, end:int) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation]:
+    """ Subset genome """
+    if anno.genes > 1:
+        raise ValueError(
+            "Don't know how to subset the genome when there are multiple genes."
+        )
+    gene_id = list(anno.genes.keys())[0]
+    gene_model = anno.genes[gene_id]
+    if start > gene_model.location.end or end <= gene_model.location.start:
+        raise ValueError("Subset location is invalid.")
+
+    for tx_id in list(anno.transcripts.keys()):
+        tx_model = anno.transcripts[tx_id]
+        if tx_model.transcript.location.end < start:
+            anno.transcripts.pop(tx_id)
+            continue
+        original_start = tx_model.transcript.location.start
+        original_end = tx_model.transcript.location.end
+        tx_start = max(original_start - start, 0)
+        tx_end = min(original_end - start, end - start)
+        tx_model.transcript.location = FeatureLocation(
+            start=tx_start, end=tx_end, seqname=tx_model.transcript.seqname
+        )
+
+        tx_model.exon = subset_and_filter(tx_model.exon, start, end)
+        tx_model.cds = subset_and_filter(tx_model.cds, start, end, True)
+        tx_model.utr = subset_and_filter(tx_model.utr, start, end)
+
+    seqname = list(genome.keys())[0]
+    if len(genome[seqname]) < start or len(genome[seqname]) < end:
+        raise ValueError("Don't know how to subset genome like this.")
+
+    genome[seqname] = genome[seqname][start:end]
+
+def subset_and_filter(features:List[SeqFeature], start:int, end:int,
+        cds:bool=False) -> List[SeqFeature]:
+    """ Subset and filter SeqFeatures """
+    new_features = []
+    for i, feature in enumerate(features):
+        original_start = feature.location.start
+        original_end = feature.location.end
+        if original_start > end or start > original_end:
+            continue
+        new_start = max(original_start - start, 0)
+        new_end = min(original_end - start, end - start)
+        if cds:
+            if i == 0 and feature.strand == 1:
+                if new_start == 0:
+                    new_start += (3 - (start - original_start) % 3) % 3
+            if i == len(features) and feature.strand == -1:
+                if new_end == end - start:
+                    new_end -= (3 - (original_end - end) % 3) % 3
+        location = FeatureLocation(
+            start=new_start, end=new_end, seqname=feature.seqname
+        )
+        new_feature = SeqFeature(
+            chrom=feature.chrom,
+            attributes=feature.attributes,
+            location=location
+        )
+        new_features.append(new_feature)
+    return new_features
+
 
 def downsample_reference(args:argparse.Namespace):
     """ Downsample reference FASTA and GTF """

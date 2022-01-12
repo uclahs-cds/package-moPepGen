@@ -121,6 +121,14 @@ class TVGNode():
                 return edge
         raise ValueError('TVGEdge not found')
 
+    def get_out_nodes(self) -> List[TVGNode]:
+        """ get outbonding nodes as a list """
+        return [x.out_node for x in self.out_edges]
+
+    def get_in_nodes(self) -> List[TVGNode]:
+        """ get incoming nodes as a list """
+        return [x.in_node for x in self.in_edges]
+
     def is_inbond_of(self, node:svgraph.TVGEdge) -> bool:
         """ Checks if this node is a inbound node of the other node. """
         for edge in self.out_edges:
