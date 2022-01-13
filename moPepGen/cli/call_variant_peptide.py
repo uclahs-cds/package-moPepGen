@@ -216,7 +216,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             if variant_series.is_empty():
                 continue
             if noncanonical_transcripts and \
-                    variant_series.has_any_noncanonical_transcripts():
+                    not variant_series.has_any_noncanonical_transcripts():
                 continue
             tx_ids += variant_series.get_additional_transcripts()
             tx_ids = list(set(tx_ids))
