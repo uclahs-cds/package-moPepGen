@@ -109,7 +109,7 @@ class PVGNode():
     def is_bridge(self) -> None:
         """ Check if this is a bridge node to another reading frame """
         for node in self.out_nodes:
-            if node.out_nodes and \
+            if not (not node.out_nodes and node.seq.seq == '*') and \
                     node.reading_frame_index != self.reading_frame_index:
                 return True
         if self.was_bridge:
