@@ -364,3 +364,15 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'alternative_splicing/CPCG0486_ENST00000481806.1_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000481806.1'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case22(self):
+        """ Fusion + gSNP, reported in #320.
+        NOTE: The expected sequence is created by running callVariant
+        """
+        gvf = [
+            self.data_dir/'comb/CPCG0464_ENST00000370143.5_ENST00000370165.7/arriba.gvf',
+            self.data_dir/'comb/CPCG0464_ENST00000370143.5_ENST00000370165.7/gsnp.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0464_ENST00000370143.5_ENST00000370165.7_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000370143.5_ENST00000370165.7'
+        self.default_test_case(gvf, reference, expected)
