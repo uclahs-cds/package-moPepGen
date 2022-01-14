@@ -136,6 +136,20 @@ class TestPeptideVariantGraph(unittest.TestCase):
         _,nodes = create_pgraph(data, '')
         self.assertEqual(nodes[2].get_orf_start(), 15)
 
+    def test_node_is_subgraph_end_case1(self):
+        """ Test case that the node should not be identified as subgraph end
+        if it's next node is the stop node """
+        data = {
+            1:  ('VLR',          [0],   [None], [((0,3),(0,3))],    1),
+            2:  ('NG',           [1],   [None], [((0,2),(3,5))],    1),
+            3:  ('NGALT',        [2],   [None], [((0,5),(3,8))],    1)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.add_stop(nodes[3])
+        nodes[2].subgraph_id = 'ENSG0002'
+        nodes[3].subgraph_id = 'ENSG0002'
+        self.assertFalse(graph.node_is_subgraph_end(nodes[3]))
+
     def test_expand_backward_no_inbound(self):
         r""" > Test expand backward when the node has no inbound nodes.
 
@@ -417,6 +431,35 @@ class TestPeptideVariantGraph(unittest.TestCase):
         self.assertTrue(len(nodes[2].in_nodes) == 0)
         self.assertTrue(len(nodes[3].out_nodes) == 0)
         self.assertTrue(len(nodes[3].in_nodes) == 0)
+
+    def test_fit_into_cleavage_multiple_upstream_case1(self):
+        """ Test case when a node has multiple splicing site and multiple
+        upstream
+
+                            WHRTWHR-CYKLTLT
+                                   /
+                  AGGL-DKQLRAARQYQQ
+                 /    /
+            NGALR-ALGL
+           /
+        VLR-NG
+
+        """
+        data = {
+            1:  ('VLR',          [0],   [None], [((0,3),(0,3))],    1),
+            2:  ('NG',           [1],   [None], [((0,2),(3,5))],    1),
+            3:  ('NGALT',        [1],   [None], [((0,5),(3,8))],    1),
+            4:  ('ALGL',         [3],   [None], [((0,4),(8,12))],   1),
+            5:  ('AGGL',         [3],   [None], [((0,4),(8,12))],   1),
+            6:  ('DKQLRAARQYQQ', [4,5], [None], [((0,12),(12,24))], 1),
+            10: ('WHRWHR',       [0],   [None], [], 0),
+            11: ('CYKLTLT',      [6,10],[None], [], 0)
+        }
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        graph.rule = 'trypsin'
+        downstreams,_ = graph.fit_into_cleavage_multiple_upstream(nodes[6])
+        self.assertTrue(any(x.seq.seq == 'QYQQ' for x in nodes[11].in_nodes))
+        self.assertEqual(len(downstreams), 0)
 
     def test_call_variant_peptides_ambiguous_amino_acid(self):
         """ test call peptides with ambiguous amino acid """
