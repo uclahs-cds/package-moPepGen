@@ -154,8 +154,8 @@ class VariantRecordPool():
         if segments:
             def _filter(x):
                 for segment in segments:
-                    if segment.location.is_superset(x.location) and \
-                            segment.location.end != x.location.end:
+                    if segment.location.start < x.location.start < \
+                            x.location.end < segment.location.end:
                         return True
                 return False
         elif start is not None and end is not None:
