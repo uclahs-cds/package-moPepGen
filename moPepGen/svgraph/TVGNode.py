@@ -143,6 +143,8 @@ class TVGNode():
 
     def is_reference(self) -> bool:
         """ check if it is reference (no variants) """
+        if len(self.variants) == 1 and self.variants[0].variant.is_real_fusion:
+            return True
         if self.global_variant is None:
             return not self.variants
         return not any(v.variant is not self.global_variant for v in self.variants)
@@ -294,14 +296,19 @@ class TVGNode():
             if first.subgraph_id == second.subgraph_id:
                 return first.seq.locations[0] < second.seq.locations[0]
 
-            if first.subgraph_id == graph_id:
+            if first.subgraph_id == graph_id or not first.global_variant:
                 first_start = first.seq.locations[0].ref.start
             else:
                 first_start = first.global_variant.location.end
-            if second.subgraph_id == graph_id:
+            if second.subgraph_id == graph_id or not second.global_variant:
                 second_start = second.seq.locations[0].ref.start
             else:
                 second_start = second.global_variant.location.end
+            if first.subgraph_id != second.subgraph_id != graph_id:
+                if any(x.variant.is_real_fusion for x in first.variants):
+                    return False
+                if any(x.variant.is_real_fusion for x in second.variants):
+                    return True
             return first_start < second_start
 
         return first.seq.locations[0] < second.seq.locations[0]

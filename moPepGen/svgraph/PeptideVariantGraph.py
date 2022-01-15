@@ -87,7 +87,7 @@ class PeptideVariantGraph():
         """ check if a node is the last node of a subgraph """
         return node.subgraph_id != self.id and \
             all(x.subgraph_id == node.subgraph_id for x in node.in_nodes) and \
-            any(x.subgraph_id != node.subgraph_id and x is not self.stop for
+            any(x.subgraph_id == self.id and x is not self.stop for
                 x in node.out_nodes)
 
     def cleave_if_possible(self, node:PVGNode,
