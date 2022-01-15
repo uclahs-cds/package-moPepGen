@@ -448,7 +448,7 @@ class ThreeFrameTVG():
             source_start = source.seq.locations[0].ref.start
 
             if attach_directly:
-                self.add_edge(source, var_head, 'variant_start')
+                self.add_edge(source, var_head, 'reference')
                 continue
 
             if position < source_start:
@@ -462,8 +462,15 @@ class ThreeFrameTVG():
                 self.add_edge(prev, var_head, 'variant_start')
             else:
                 index = source.seq.get_query_index(position)
-                source, _ = self.splice(source, index, 'reference')
-                self.add_edge(source, var_head, 'variant_start')
+                if index == -1:
+                    if source.seq.locations[-1].ref.end != position:
+                        raise ValueError(
+                            'Fusion position is not in the range of the transcript'
+                        )
+                    self.add_edge(source, var_head, 'reference')
+                else:
+                    source, _ = self.splice(source, index, 'reference')
+                    self.add_edge(source, var_head, 'variant_start')
 
         return var_tails
 
@@ -608,6 +615,8 @@ class ThreeFrameTVG():
             while var_node.in_edges:
                 edge = var_node.in_edges.pop()
                 branch.remove_edge(edge)
+            variant = copy.deepcopy(variant)
+            variant.is_real_fusion = True
             var = seqvar.VariantRecordWithCoordinate(
                 variant=variant,
                 location=FeatureLocation(start=0, end=1)
@@ -619,7 +628,7 @@ class ThreeFrameTVG():
 
             if variant.attrs['LEFT_INSERTION_START'] is not None or \
                     variant.attrs['RIGHT_INSERTION_START'] is not None:
-                self.add_edge(node, var_node, 'variant_start')
+                self.add_edge(node, var_node, 'reference')
                 cursors[i] = original_cursors[i]
                 continue
 
@@ -634,9 +643,9 @@ class ThreeFrameTVG():
                 self.add_edge(prev, var_node, 'variant_start')
                 continue
 
-            if variant_start == node_end == len(self.seq) and variant.is_fusion():
+            if variant_start == node_end == len(self.seq):
                 self.add_stop_node(node)
-                self.add_edge(node, var_node, 'variant_start')
+                self.add_edge(node, var_node, 'reference')
                 continue
 
             index = node.seq.get_query_index(variant_start)

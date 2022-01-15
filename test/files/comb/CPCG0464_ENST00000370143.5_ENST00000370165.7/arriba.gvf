@@ -1,0 +1,16 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseArriba
+##reference_index=/data/Index/GRCh38-EBI-GENCODE34
+##genome_fasta=
+##annotation_gtf=
+##source=arriba
+##CHROM=<Description='{'Description': "'Gene ID'"}'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=ACCEPTER_GENE_ID,Number=1,Type=String,Description="3' Accepter Transcript's Gene ID">
+##INFO=<ID=ACCEPTER_TRANSCRIPT_ID,Number=1,Type=String,Description="3' Accepter Transcript's Transcript ID">
+##INFO=<ID=ACCEPTER_POSITION,Number=1,Type=Integer,Description="Position of the break point of the 3' accepter transcript">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000122435.10	3780	FUSION-ENSG00000122435.10:3779-ENSG00000162688.17:614	G	<FUSION>	.	.	TRANSCRIPT_ID=ENST00000370143.5;GENE_SYMBOL=TRMT13;GENOMIC_POSITION=chr1:100136928:100136928;ACCEPTER_GENE_ID=ENSG00000162688.17;ACCEPTER_TRANSCRIPT_ID=ENST00000370165.7;ACCEPTER_SYMBOL=AGL;ACCEPTER_POSITION=615;ACCEPTER_GENOMIC_POSITION=chr1:99850975:99850975

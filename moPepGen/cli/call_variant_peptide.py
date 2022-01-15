@@ -136,20 +136,22 @@ def call_variant_peptides_wrapper(tx_id:str,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         anno:gtf.GenomicAnnotation, pool:seqvar.VariantRecordPool,
-        rule:str, exception:str, miscleavage:int, max_variants_per_node:int
-        ) -> List[Set[aa.AminoAcidSeqRecord]]:
+        rule:str, exception:str, miscleavage:int, max_variants_per_node:int,
+        noncanonical_transcripts:bool) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
     if variant_series.transcriptional:
         try:
-            peptides = call_peptide_main(
-                tx_id=tx_id, tx_variants=variant_series.transcriptional,
-                variant_pool=pool, anno=anno, genome=None, tx_seqs=tx_seqs,
-                gene_seqs=gene_seqs, rule=rule, exception=exception,
-                miscleavage=miscleavage,
-                max_variants_per_node=max_variants_per_node
-            )
-            peptide_pool.append(peptides)
+            if not noncanonical_transcripts or \
+                    variant_series.has_any_noncanonical_transcripts():
+                peptides = call_peptide_main(
+                    tx_id=tx_id, tx_variants=variant_series.transcriptional,
+                    variant_pool=pool, anno=anno, genome=None, tx_seqs=tx_seqs,
+                    gene_seqs=gene_seqs, rule=rule, exception=exception,
+                    miscleavage=miscleavage,
+                    max_variants_per_node=max_variants_per_node
+                )
+                peptide_pool.append(peptides)
         except:
             logger(f'Exception raised from {tx_id}')
             raise
@@ -219,7 +221,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     not variant_series.has_any_noncanonical_transcripts():
                 continue
             tx_ids += variant_series.get_additional_transcripts()
-            tx_ids = list(set(tx_ids))
+            tx_ids = set(tx_ids)
 
             gene_seqs = {}
             if variant_series.is_gene_sequence_needed():
@@ -228,7 +230,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 gene_model = caller.anno.genes[gene_id]
                 gene_seq = gene_model.get_gene_sequence(caller.genome[_chrom])
                 gene_seqs[gene_id] = gene_seq
-                tx_ids += gene_model.transcripts
+                tx_ids.update(gene_model.transcripts)
 
             tx_seqs = {}
             for _tx_id in tx_ids:
@@ -242,6 +244,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     gene_seqs[_gene_id] = _gene_seq
 
             gene_ids = list({caller.anno.transcripts[x].transcript.gene_id for x in tx_ids})
+            for gene_id in gene_ids:
+                tx_ids.update(caller.anno.genes[gene_id].transcripts)
+            tx_ids = list(tx_ids)
 
             dummy_anno = gtf.GenomicAnnotation(
                 genes={gene_id:caller.anno.genes[gene_id] for gene_id in gene_ids},
@@ -261,7 +266,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
             dispatch = (
                 tx_id, variant_series, tx_seqs, gene_seqs, dummy_anno,
-                dummy_pool, rule, exception, miscleavage, max_variants_per_node
+                dummy_pool, rule, exception, miscleavage, max_variants_per_node,
+                noncanonical_transcripts
             )
             dispatches.append(dispatch)
 
@@ -335,7 +341,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     tx_id = variant.location.seqname
     tx_model = anno.transcripts[tx_id]
     tx_seq = tx_seqs[tx_id]
-    tx_seq = tx_seq[:variant.location.end]
+    tx_seq = tx_seq[:variant.location.start]
 
     if tx_id in variant_pool:
         tx_variants = [x for x in variant_pool[tx_id].transcriptional
