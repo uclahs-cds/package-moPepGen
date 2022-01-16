@@ -29,7 +29,7 @@ class TVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
-            level:int=0, subgraphs:Dict[str,FeatureLocation]=None):
+            level:int=0):
         """ Constructor for TVGNode.
 
         Args:

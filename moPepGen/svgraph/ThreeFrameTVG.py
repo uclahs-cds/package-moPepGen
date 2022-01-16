@@ -13,7 +13,7 @@ from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
 from moPepGen.svgraph.PVGNode import PVGNode
-from moPepGen.svgraph.SubgraphMapper import SubgraphMapper
+from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ class ThreeFrameTVG():
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
-            max_variants_per_node:int=-1, subgraphs:SubgraphMapper=None):
+            max_variants_per_node:int=-1, subgraphs:SubgraphTree=None):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -64,7 +64,7 @@ class ThreeFrameTVG():
         self.mrna_end_nf = mrna_end_nf
         self.global_variant = global_variant
         self.max_variants_per_node = max_variants_per_node
-        self.subgraphs = subgraphs or SubgraphMapper()
+        self.subgraphs = subgraphs or SubgraphTree()
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -358,7 +358,14 @@ class ThreeFrameTVG():
         )
 
         if is_deletion:
-            var_node.subgraph_id = variant.attrs['GENE_ID']
+            subgraph_id = self.subgraphs.generate_subgraph_id()
+            var_node.subgraph_id = subgraph_id
+            level = self.root.level + 1
+            var_node.level = level
+            self.subgraphs.add_subgraph(
+                child_id=subgraph_id, parent_id=self.id, level=level,
+                start=variant.location.start, end=variant.location.end
+            )
 
         returns = [None, None]
         # variant start
@@ -436,17 +443,14 @@ class ThreeFrameTVG():
         """
         cursors = copy.copy(cursors)
         var_tails = []
-        subgraph_id = self.subgraphs.get_subgraph_id()
+        subgraph_id = self.subgraphs.generate_subgraph_id()
         branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
         level = cursors[0].level + 1
         branch.update_node_level(level)
         parent_id = cursors[0].subgraph_id
-        location = FeatureLocation(
-            seqname=parent_id, start=var.location.start, end=var.location.end
-        )
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
-            location=location
+            start=var.location.start, end=var.location.end
         )
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
@@ -624,24 +628,22 @@ class ThreeFrameTVG():
             start=breakpoint_tx, return_coord='transcript', intron=False
         )
 
-        subgraph_id = self.subgraphs.get_subgraph_id()
+        subgraph_id = self.subgraphs.generate_subgraph_id()
         branch = ThreeFrameTVG(accepter_tx_seq[breakpoint_tx:], subgraph_id)
         level = cursors[0].level + 1
         branch.update_node_level(level)
         parent_id = cursors[0].subgraph_id
         if variant.attrs['LEFT_INSERTION_START'] is not None or \
                 variant.attrs['RIGHT_INSERTION_START'] is not None:
-            location = FeatureLocation(
-                seqname=parent_id, start=insertion_start, end=insertion_end
+            self.subgraphs.add_subgraph(
+                child_id=subgraph_id, parent_id=parent_id, level=level,
+                start=insertion_start, end=insertion_end
             )
         else:
-            location = FeatureLocation(
-                seqname=parent_id, start=variant.location.start, end=variant.location.start
+            self.subgraphs.add_subgraph(
+                child_id=subgraph_id, parent_id=parent_id, level=level,
+                start=variant.location.start, end=variant.location.start
             )
-        self.subgraphs.add_subgraph(
-            child_id=subgraph_id, parent_id=parent_id, level=level,
-            location=location
-        )
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             list(root.out_edges)[0].out_node.subgraph_id = branch.id
@@ -723,17 +725,14 @@ class ThreeFrameTVG():
             active_frames (List[bool]): Whether each reading frame is active.
         """
         cursors = copy.copy(cursors)
-        subgraph_id = self.subgraphs.get_subgraph_id()
+        subgraph_id = self.subgraphs.generate_subgraph_id()
         branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
         level = cursors[0].level + 1
         branch.update_node_level(level)
         parent_id = cursors[0].subgraph_id
-        location = FeatureLocation(
-            seqname=parent_id, start=var.location.start, end=var.location.end
-        )
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
-            location=location
+            start=var.location.start, end=var.location.end
         )
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
