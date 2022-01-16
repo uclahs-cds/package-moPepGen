@@ -13,6 +13,7 @@ from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
 from moPepGen.svgraph.PVGNode import PVGNode
+from moPepGen.svgraph.SubgraphMapper import SubgraphMapper
 
 
 if TYPE_CHECKING:
@@ -39,7 +40,7 @@ class ThreeFrameTVG():
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
-            max_variants_per_node:int=-1):
+            max_variants_per_node:int=-1, subgraphs:SubgraphMapper=None):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -63,6 +64,7 @@ class ThreeFrameTVG():
         self.mrna_end_nf = mrna_end_nf
         self.global_variant = global_variant
         self.max_variants_per_node = max_variants_per_node
+        self.subgraphs = subgraphs or SubgraphMapper()
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -434,8 +436,18 @@ class ThreeFrameTVG():
         """
         cursors = copy.copy(cursors)
         var_tails = []
+        subgraph_id = self.subgraphs.get_subgraph_id()
         branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
-        branch.update_node_level(cursors[0].level + 1)
+        level = cursors[0].level + 1
+        branch.update_node_level(level)
+        parent_id = cursors[0].subgraph_id
+        location = FeatureLocation(
+            seqname=parent_id, start=var.location.start, end=var.location.end
+        )
+        self.subgraphs.add_subgraph(
+            child_id=subgraph_id, parent_id=parent_id, level=level,
+            location=location
+        )
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             node = list(root.out_edges)[0].out_node
@@ -538,12 +550,12 @@ class ThreeFrameTVG():
                 seq = gene_seqs[gene_id]
             else:
                 seq = gene_model.get_gene_sequence(genome[chrom])
-            start = variant.attrs['LEFT_INSERTION_START']
-            end = variant.attrs['LEFT_INSERTION_END']
-            insert_seq = seq[start:end]
+            insertion_start = variant.attrs['LEFT_INSERTION_START']
+            insertion_end = variant.attrs['LEFT_INSERTION_END']
+            insert_seq = seq[insertion_start:insertion_end]
             insertion_variants = variant_pool.filter_variants(
                 gene_id=gene_id, exclude_type=['Fusion'],
-                start=start, end=end, intron=True, return_coord='gene'
+                start=insertion_start, end=insertion_end, intron=True, return_coord='gene'
             )
             var = copy.deepcopy(variant)
             var.is_real_fusion = False
@@ -573,12 +585,12 @@ class ThreeFrameTVG():
                 seq = gene_seqs[gene_id]
             else:
                 seq = gene_model.get_gene_sequence(genome[chrom])
-            start = variant.attrs['RIGHT_INSERTION_START']
-            end = variant.attrs['RIGHT_INSERTION_END']
-            insert_seq = seq[start:end]
+            insertion_start = variant.attrs['RIGHT_INSERTION_START']
+            insertion_end = variant.attrs['RIGHT_INSERTION_END']
+            insert_seq = seq[insertion_start:insertion_end]
             insertion_variants = variant_pool.filter_variants(
                 gene_id=gene_id, exclude_type=['Fusion'],
-                start=start, end=end, intron=True, return_coord='gene'
+                start=insertion_start, end=insertion_end, intron=True, return_coord='gene'
             )
             var = copy.deepcopy(variant)
             var.is_real_fusion = False
@@ -612,8 +624,24 @@ class ThreeFrameTVG():
             start=breakpoint_tx, return_coord='transcript', intron=False
         )
 
-        branch = ThreeFrameTVG(accepter_tx_seq[breakpoint_tx:], accepter_tx_id)
-        branch.update_node_level(cursors[0].level + 1)
+        subgraph_id = self.subgraphs.get_subgraph_id()
+        branch = ThreeFrameTVG(accepter_tx_seq[breakpoint_tx:], subgraph_id)
+        level = cursors[0].level + 1
+        branch.update_node_level(level)
+        parent_id = cursors[0].subgraph_id
+        if variant.attrs['LEFT_INSERTION_START'] is not None or \
+                variant.attrs['RIGHT_INSERTION_START'] is not None:
+            location = FeatureLocation(
+                seqname=parent_id, start=insertion_start, end=insertion_end
+            )
+        else:
+            location = FeatureLocation(
+                seqname=parent_id, start=variant.location.start, end=variant.location.start
+            )
+        self.subgraphs.add_subgraph(
+            child_id=subgraph_id, parent_id=parent_id, level=level,
+            location=location
+        )
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             list(root.out_edges)[0].out_node.subgraph_id = branch.id
@@ -695,8 +723,18 @@ class ThreeFrameTVG():
             active_frames (List[bool]): Whether each reading frame is active.
         """
         cursors = copy.copy(cursors)
+        subgraph_id = self.subgraphs.get_subgraph_id()
         branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
-        branch.update_node_level(cursors[0].level + 1)
+        level = cursors[0].level + 1
+        branch.update_node_level(level)
+        parent_id = cursors[0].subgraph_id
+        location = FeatureLocation(
+            seqname=parent_id, start=var.location.start, end=var.location.end
+        )
+        self.subgraphs.add_subgraph(
+            child_id=subgraph_id, parent_id=parent_id, level=level,
+            location=location
+        )
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             node = list(root.out_edges)[0].out_node
@@ -1084,6 +1122,108 @@ class ThreeFrameTVG():
                     queue.appendleft(e.out_node)
         return bridge_in, bridge_out, subgraph_in, subgraph_out
 
+    def find_farthest_node_with_overlap(self, node:TVGNode, min_size:int=6
+            ) -> TVGNode:
+        r""" Find the farthest node, that within the range between the current
+        node and it, there is at least one varint at any position of the
+        reference sequence. If the farthest node found has an exclusive single
+        out node, it extends to. For circular graph, this extension won't
+        continue if the exclusive single node is root.
+
+        For example, in a graph like below, the node ATGG's farthest node
+        with overlap would be node 'CCCT'
+                 T--
+                /   \
+            ATGG-TCT-G-CCCT
+                    \ /
+                     A
+        """
+        in_subgraph = node.subgraph_id != self.id
+        # find the range of overlaps
+        farthest = None
+        if not node.get_reference_next():
+            return None
+        if not node.get_reference_next().out_edges:
+            return node.get_reference_next()
+        queue = deque([edge.out_node for edge in node.out_edges])
+        visited = {node}
+        while queue:
+            cur:TVGNode = queue.popleft()
+            if cur is None:
+                continue
+
+            if cur.reading_frame_index != node.reading_frame_index:
+                continue
+
+            if not in_subgraph and cur.subgraph_id != node.subgraph_id:
+                continue
+
+            visited_len_before = len(visited)
+            visited.add(cur)
+            visited_len_after = len(visited)
+            if visited_len_before == visited_len_after:
+                if cur is farthest and cur is not node:
+                    if not cur.out_edges:
+                        continue
+                    if cur.get_reference_next().has_in_bridge():
+                        for edge in cur.out_edges:
+                            queue.append(edge.out_node)
+                    # if the farthest has less than 6 neucleotides, continue
+                    # searching, because it's likely not able to keep one amino
+                    # acid after translation.
+                    elif len(cur.seq) < min_size:
+                        for edge in cur.out_edges:
+                            queue.append(edge.out_node)
+                continue
+
+            if farthest is None and cur.is_reference():
+                farthest = cur
+                queue.append(cur)
+                continue
+
+            if not cur.is_reference():
+                for edge in cur.out_edges:
+                    queue.append(edge.out_node)
+                # next_ref = cur.get_reference_next()
+                # queue.append(next_ref)
+                continue
+
+            if cur.is_stop_node():
+                continue
+
+            if self.first_node_is_smaller(cur, farthest):
+                for edge in cur.out_edges:
+                    queue.append(edge.out_node)
+                continue
+
+            farthest, cur = cur, farthest
+            queue.append(cur)
+            visited.remove(cur)
+            continue
+        return farthest
+
+    def first_node_is_smaller(self, first:TVGNode, second:TVGNode) -> bool:
+        """ Check if the first node is larger """
+        if first.subgraph_id == second.subgraph_id:
+            return first.seq.locations[0] < second.seq.locations[0]
+
+        subgraph1 = self.subgraphs[first.subgraph_id]
+        subgraph2 = self.subgraphs[second.subgraph_id]
+
+        while subgraph1.id != subgraph2.id:
+            level1 = subgraph1.level
+            level2 = subgraph2.level
+            if level1 >= level2:
+                subgraph1 = self.subgraphs[subgraph1.parent_id]
+            if level2 >= level1:
+                subgraph2 = self.subgraphs[subgraph2.parent_id]
+
+        if subgraph1.id == first.subgraph_id:
+            return first.seq.locations[0].ref.start < subgraph2.location.end
+        if subgraph2.id == second.subgraph_id:
+            return subgraph1.location.end < second.seq.locations[0].ref.start
+        return subgraph1.location < subgraph2.location
+
     def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode]) -> bool:
         """ Check the total number of variants of given nodes """
         if self.max_variants_per_node == -1:
@@ -1116,7 +1256,7 @@ class ThreeFrameTVG():
             The original input node.
         """
         start_node = node
-        end_node = node.find_farthest_node_with_overlap(self.id)
+        end_node = self.find_farthest_node_with_overlap(node)
         end_nodes = [end_node]
         bridges = self.find_bridge_nodes_between(start_node, end_node)
         bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges

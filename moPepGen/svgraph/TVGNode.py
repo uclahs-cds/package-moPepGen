@@ -29,7 +29,7 @@ class TVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
-            level:int=0):
+            level:int=0, subgraphs:Dict[str,FeatureLocation]=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -291,95 +291,6 @@ class TVGNode():
                     queue.appendleft((edge.out_node, new_out_node))
 
         return new_node
-
-    @staticmethod
-    def first_node_is_smaller(first:TVGNode, second:TVGNode) -> bool:
-        """ Check if the first node is larger """
-        if first.level < second.level:
-            return True
-        if first.level > second.level:
-            return False
-        return first.seq.locations[0] < second.seq.locations[0]
-
-    def find_farthest_node_with_overlap(self, graph_id:str, min_size:int=6
-            ) -> TVGNode:
-        r""" Find the farthest node, that within the range between the current
-        node and it, there is at least one varint at any position of the
-        reference sequence. If the farthest node found has an exclusive single
-        out node, it extends to. For circular graph, this extension won't
-        continue if the exclusive single node is root.
-
-        For example, in a graph like below, the node ATGG's farthest node
-        with overlap would be node 'CCCT'
-                 T--
-                /   \
-            ATGG-TCT-G-CCCT
-                    \ /
-                     A
-        """
-        in_subgraph = self.subgraph_id != graph_id
-        # find the range of overlaps
-        farthest = None
-        if not self.get_reference_next():
-            return None
-        if not self.get_reference_next().out_edges:
-            return self.get_reference_next()
-        queue = deque([edge.out_node for edge in self.out_edges])
-        visited = {self}
-        while queue:
-            cur:TVGNode = queue.popleft()
-            if cur is None:
-                continue
-
-            if cur.reading_frame_index != self.reading_frame_index:
-                continue
-
-            if not in_subgraph and cur.subgraph_id != self.subgraph_id:
-                continue
-
-            visited_len_before = len(visited)
-            visited.add(cur)
-            visited_len_after = len(visited)
-            if visited_len_before == visited_len_after:
-                if cur is farthest and cur is not self:
-                    if not cur.out_edges:
-                        continue
-                    if cur.get_reference_next().has_in_bridge():
-                        for edge in cur.out_edges:
-                            queue.append(edge.out_node)
-                    # if the farthest has less than 6 neucleotides, continue
-                    # searching, because it's likely not able to keep one amino
-                    # acid after translation.
-                    elif len(cur.seq) < min_size:
-                        for edge in cur.out_edges:
-                            queue.append(edge.out_node)
-                continue
-
-            if farthest is None and cur.is_reference():
-                farthest = cur
-                queue.append(cur)
-                continue
-
-            if not cur.is_reference():
-                for edge in cur.out_edges:
-                    queue.append(edge.out_node)
-                # next_ref = cur.get_reference_next()
-                # queue.append(next_ref)
-                continue
-
-            if cur.is_stop_node():
-                continue
-
-            if self.first_node_is_smaller(cur, farthest):
-                for edge in cur.out_edges:
-                    queue.append(edge.out_node)
-                continue
-
-            farthest, cur = cur, farthest
-            queue.append(cur)
-            visited.remove(cur)
-            continue
-        return farthest
 
     def stringify(self, k:int=None) -> None:
         """ Get a str representation of a subgraph """
