@@ -27,9 +27,9 @@ class TVGNode():
     """
     def __init__(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            branch:bool=False,
-            orf:List[int]=None, reading_frame_index:int=None,
-            subgraph_id:str=None, global_variant:seqvar.VariantRecord=None):
+            branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
+            subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
+            level:int=0):
         """ Constructor for TVGNode.
 
         Args:
@@ -46,12 +46,13 @@ class TVGNode():
         self.reading_frame_index = reading_frame_index
         self.subgraph_id = subgraph_id
         self.global_variant = global_variant
+        self.level = level
 
     def create_node(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
-            branch:bool=False,
-            orf:List[int]=None, reading_frame_index:int=None,
-            subgraph_id:str=None, global_variant:seqvar.VariantRecord=None):
+            branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
+            subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
+            level:int=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -66,7 +67,8 @@ class TVGNode():
             orf=orf,
             reading_frame_index=reading_frame_index,
             subgraph_id=subgraph_id,
-            global_variant=global_variant or self.global_variant
+            global_variant=global_variant or self.global_variant,
+            level=level or self.level
         )
 
     def __hash__(self):
@@ -104,7 +106,8 @@ class TVGNode():
             orf=self.orf,
             branch=self.branch,
             reading_frame_index=self.reading_frame_index,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            level=self.level
         )
 
     def get_edge_to(self, other:TVGNode) -> svgraph.TVGEdge:
@@ -257,7 +260,8 @@ class TVGNode():
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
-            global_variant=self.global_variant
+            global_variant=self.global_variant,
+            level=self.level
         )
 
     def deepcopy(self) -> TVGNode:
@@ -289,28 +293,12 @@ class TVGNode():
         return new_node
 
     @staticmethod
-    def first_node_is_smaller(first:TVGNode, second:TVGNode, graph_id:str,
-            in_subgraph:bool) -> bool:
+    def first_node_is_smaller(first:TVGNode, second:TVGNode) -> bool:
         """ Check if the first node is larger """
-        if in_subgraph:
-            if first.subgraph_id == second.subgraph_id:
-                return first.seq.locations[0] < second.seq.locations[0]
-
-            if first.subgraph_id == graph_id or not first.global_variant:
-                first_start = first.seq.locations[0].ref.start
-            else:
-                first_start = first.global_variant.location.end
-            if second.subgraph_id == graph_id or not second.global_variant:
-                second_start = second.seq.locations[0].ref.start
-            else:
-                second_start = second.global_variant.location.end
-            if first.subgraph_id != second.subgraph_id != graph_id:
-                if any(x.variant.is_real_fusion for x in first.variants):
-                    return False
-                if any(x.variant.is_real_fusion for x in second.variants):
-                    return True
-            return first_start < second_start
-
+        if first.level < second.level:
+            return True
+        if first.level > second.level:
+            return False
         return first.seq.locations[0] < second.seq.locations[0]
 
     def find_farthest_node_with_overlap(self, graph_id:str, min_size:int=6
@@ -382,7 +370,7 @@ class TVGNode():
             if cur.is_stop_node():
                 continue
 
-            if self.first_node_is_smaller(cur, farthest, graph_id, in_subgraph):
+            if self.first_node_is_smaller(cur, farthest):
                 for edge in cur.out_edges:
                     queue.append(edge.out_node)
                 continue
@@ -466,7 +454,8 @@ class TVGNode():
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
-            global_variant=self.global_variant
+            global_variant=self.global_variant,
+            level=self.level
         )
 
         self.seq = self.seq[i:]
@@ -511,7 +500,8 @@ class TVGNode():
             branch=False,
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            level=self.level
         )
 
         self.seq = self.seq[:i]
@@ -585,7 +575,8 @@ class TVGNode():
             variants=variants,
             orf=[None, None],
             reading_frame_index=self.reading_frame_index,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            level=self.level
         )
 
     def get_ref_sequence(self) -> Seq:

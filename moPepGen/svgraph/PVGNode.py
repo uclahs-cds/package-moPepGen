@@ -24,7 +24,7 @@ class PVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
-            was_bridge:bool=False, pre_cleave:bool=False):
+            was_bridge:bool=False, pre_cleave:bool=False, level:int=0):
         """ Construct a PVGNode object.
 
         Args:
@@ -49,6 +49,7 @@ class PVGNode():
         self.was_bridge = was_bridge
         self.pre_cleave = pre_cleave
         self.subgraph_id = subgraph_id
+        self.level = level
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -67,7 +68,8 @@ class PVGNode():
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            level=self.level
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -303,7 +305,8 @@ class PVGNode():
             orf=self.orf,
             was_bridge=self.was_bridge,
             pre_cleave=pre_cleave,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            level=self.level
         )
         new_node.orf = self.orf
 
@@ -337,7 +340,8 @@ class PVGNode():
             variants=right_variants,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            level=self.level
         )
 
         self.seq = self.seq[:i]
@@ -364,7 +368,8 @@ class PVGNode():
             variants=left_variants,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            level=self.level
         )
 
         self.seq = self.seq[i:]
@@ -405,7 +410,8 @@ class PVGNode():
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
-            subgraph_id=self.subgraph_id
+            subgraph_id=self.subgraph_id,
+            level=self.level
         )
 
     def get_nearest_next_ref_index(self) -> int:

@@ -71,6 +71,19 @@ class ThreeFrameTVG():
             ref=FeatureLocation(start=0, end=len(self.seq))
         )]
 
+    def update_node_level(self, level:int):
+        """ Update the level of all nodes """
+        queue:Deque[TVGNode] = deque([self.root])
+        visited:Set[TVGNode] = set()
+        while queue:
+            cur = queue.pop()
+            if cur in visited:
+                continue
+            visited.add(cur)
+            cur.level = level
+            for edge in cur.out_edges:
+                queue.appendleft(edge.out_node)
+
     def init_three_frames(self, truncate_head:bool=True):
         """ Initiate the three reading-frame graph.
 
@@ -79,31 +92,32 @@ class ThreeFrameTVG():
                 stripped off, to simulate how reading frames work. Defaults to
                 True.
         """
-        root0 = TVGNode(None, reading_frame_index=0)
-        root1 = TVGNode(None, reading_frame_index=1)
-        root2 = TVGNode(None, reading_frame_index=2)
+        level = self.root.level
+        root0 = TVGNode(None, reading_frame_index=0, level=level)
+        root1 = TVGNode(None, reading_frame_index=1, level=level)
+        root2 = TVGNode(None, reading_frame_index=2, level=level)
 
         node0 = TVGNode(
             seq=self.seq, reading_frame_index=0, subgraph_id=self.id,
-            global_variant=self.global_variant
+            global_variant=self.global_variant, level=level
         )
         if truncate_head:
             node1 = TVGNode(
                 seq=self.seq[1:], reading_frame_index=1, subgraph_id=self.id,
-                global_variant=self.global_variant
+                global_variant=self.global_variant, level=level
             )
             node2 = TVGNode(
                 self.seq[2:], reading_frame_index=2, subgraph_id=self.id,
-                global_variant=self.global_variant
+                global_variant=self.global_variant, level=level
             )
         else:
             node1 = TVGNode(
                 self.seq, reading_frame_index=1, subgraph_id=self.id,
-                global_variant=self.global_variant
+                global_variant=self.global_variant, level=level
             )
             node2 = TVGNode(
                 self.seq, reading_frame_index=2, subgraph_id=self.id,
-                global_variant=self.global_variant
+                global_variant=self.global_variant, level=level
             )
 
         self.add_edge(root0, node0, 'reference')
@@ -191,7 +205,7 @@ class ThreeFrameTVG():
     def add_null_root(self):
         """ Adds a null node to the root. """
         original_root = self.root
-        new_root = self.create_node(seq=None)
+        new_root = self.create_node(seq=None, level=original_root.level)
         self.root = new_root
         self.add_edge(self.root, original_root, 'reference')
 
@@ -237,7 +251,7 @@ class ThreeFrameTVG():
     def create_node(self, seq:dna.DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
-            subgraph_id:str=None) -> TVGNode:
+            subgraph_id:str=None, level:int=0) -> TVGNode:
         """ create a node """
         return TVGNode(
             seq=seq,
@@ -245,7 +259,8 @@ class ThreeFrameTVG():
             branch=branch,
             orf=orf,
             reading_frame_index=reading_frame_index,
-            subgraph_id=subgraph_id or self.id
+            subgraph_id=subgraph_id or self.id,
+            level=level
         )
 
     def splice(self, node:TVGNode, i:int, _type:str
@@ -336,7 +351,8 @@ class ThreeFrameTVG():
             seq=seq,
             variants=[variant_with_coordinates],
             reading_frame_index=source.reading_frame_index,
-            orf=source.orf
+            orf=source.orf,
+            level=self.root.level
         )
 
         if is_deletion:
@@ -419,6 +435,7 @@ class ThreeFrameTVG():
         cursors = copy.copy(cursors)
         var_tails = []
         branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
+        branch.update_node_level(cursors[0].level + 1)
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             node = list(root.out_edges)[0].out_node
@@ -596,6 +613,7 @@ class ThreeFrameTVG():
         )
 
         branch = ThreeFrameTVG(accepter_tx_seq[breakpoint_tx:], accepter_tx_id)
+        branch.update_node_level(cursors[0].level + 1)
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             list(root.out_edges)[0].out_node.subgraph_id = branch.id
@@ -678,6 +696,7 @@ class ThreeFrameTVG():
         """
         cursors = copy.copy(cursors)
         branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
+        branch.update_node_level(cursors[0].level + 1)
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
             node = list(root.out_edges)[0].out_node
@@ -1231,7 +1250,8 @@ class ThreeFrameTVG():
             left_over_seq = dna.DNASeqRecordWithCoordinates(Seq(''), [])
             left_over = self.create_node(
                 seq=left_over_seq,
-                subgraph_id=start.subgraph_id
+                subgraph_id=start.subgraph_id,
+                level=start.level
             )
 
         end_nodes:List[TVGNode] = []
@@ -1312,7 +1332,7 @@ class ThreeFrameTVG():
                \      /              \  /
                 GTCTAC                VY
         """
-        root = PVGNode(None, None, subgraph_id=self.id)
+        root = PVGNode(None, None, subgraph_id=self.id, level=self.root.level)
         if self.has_known_orf:
             known_orf = [int(self.seq.orf.start), int(self.seq.orf.end)]
         else:
