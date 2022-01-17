@@ -143,7 +143,7 @@ def call_variant_peptides_wrapper(tx_id:str,
     if variant_series.transcriptional:
         try:
             if not noncanonical_transcripts or \
-                    variant_series.has_any_noncanonical_transcripts():
+                    variant_series.has_any_alternative_splicing():
                 peptides = call_peptide_main(
                     tx_id=tx_id, tx_variants=variant_series.transcriptional,
                     variant_pool=pool, anno=anno, genome=None, tx_seqs=tx_seqs,

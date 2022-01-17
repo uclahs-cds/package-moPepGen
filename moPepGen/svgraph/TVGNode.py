@@ -264,7 +264,7 @@ class TVGNode():
             level=self.level
         )
 
-    def deepcopy(self) -> TVGNode:
+    def deepcopy(self, subgraph_id:str=None, level_increment:int=None) -> TVGNode:
         """ Create a deep copy of the node and all its downstream nodes.
         """
         new_node = self.copy()
@@ -282,6 +282,10 @@ class TVGNode():
                     visited_this = True
                 else:
                     new_out_node = source_out_node.copy()
+                    if subgraph_id:
+                        new_out_node.subgraph_id = subgraph_id
+                    if level_increment is not None:
+                        new_out_node.level += level_increment
                     visited[source_out_node] = new_out_node
                 new_edge = svgraph.TVGEdge(target, new_out_node,
                     _type=edge.type)
