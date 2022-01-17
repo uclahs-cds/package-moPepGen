@@ -59,6 +59,9 @@ class TranscriptionalVariantSeries():
         return len(self.fusion) > 0 or len(self.circ_rna) > 0 or \
             any(x.type in ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
 
+    def has_any_alternative_splicing(self) -> bool:
+        """ Check if there is any alternative splicing """
+        return any(x.type in ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
 class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
     def __init__(self, pointers:Dict[str, List[GVFPointer]]=None,

@@ -1020,3 +1020,110 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         peptides = pgraph.call_variant_peptides()
         expected = {'MGPSFCEF', 'GPSFCEF', 'SFCEF'}
         self.assertEqual({str(x.seq) for x in peptides}, expected)
+
+    def test_find_farthest_node_with_overlap_case1(self):
+        r"""
+                 T--
+                /   \
+            ATGG-TCT-G-CCCT
+                    \ /
+                     A
+        """
+        data = {
+            1: ('ATGG', ['RF0'], []),
+            2: ('T', [1], [(0, 'TCT', 'T', 'INDEL', '')]),
+            3: ('TCT', [1], []),
+            4: ('G', [2,3], []),
+            5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
+            6: ('CCCT', [4,5], [])
+        }
+        seq = 'ATGGTCTGACCCT'
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = graph.find_farthest_node_with_overlap(nodes[1])
+        self.assertIs(node, nodes[6])
+
+    def test_find_farthest_node_with_overlap_case2(self):
+        r""" Test case for the last node is too short. Should include the
+        following node.
+                 T--   T
+                /   \ / \
+            ATGG-TCT-G-C-C-CT
+                    \ /
+                     A
+        """
+        data = {
+            1: ('ATGG', ['RF0'], []),
+            2: ('T', [1], [(0, 'TCT', 'T', 'INDEL', '')]),
+            3: ('TCT', [1], []),
+            4: ('G', [2,3], []),
+            5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
+            6: ('T', [4], [(0, 'C', 'T', 'SNV', '')]),
+            7: ('C', [4,5], []),
+            8: ('C', [6,7], []),
+            9: ('CT', [8], [])
+        }
+        seq = 'ATGGTCTGCCCT'
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = graph.find_farthest_node_with_overlap(nodes[1])
+        print(node.seq.seq)
+        self.assertIs(node, nodes[9])
+
+    def test_find_farthest_node_with_overlap_case3(self):
+        r""" For a bubble that do not merge, should return None. This would  be
+        the case of mutation at the last nucleotide.
+                 C
+                /
+            ATGG-T
+        """
+        data = {
+            1: ('ATGG', ['RF0'], []),
+            2: ('T', [1], []),
+            3: ['C', [1], [(0, 'T', 'C', 'SNV', '')]]
+        }
+        seq = 'ATGGT'
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = graph.find_farthest_node_with_overlap(nodes[1])
+        self.assertEqual(str(node.seq.seq), 'T')
+
+    def test_find_farthest_node_with_overlap_case5_with_branch(self):
+        r"""
+                 T-G-CCCT
+                /
+            ATGG-TCTGAC-G-CCCT
+                       \ /
+                        A
+        """
+        data = {
+            1: ('ATGG', ['RF0'], []),
+            2: ('T', [1], [(0, 'TCTGAC', 'T', 'INDEL', '')], True),
+            5: ('TCTGAC', [1], []),
+            6: ('G', [5], []),
+            7: ('A', [5], [(0, 'G', 'T', 'SNV', '')]),
+            8: ('CCCT', [6, 7], [])
+        }
+        seq = 'ATGGTCTGACGCCCT'
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = graph.find_farthest_node_with_overlap(nodes[1])
+        self.assertIs(node, nodes[5])
+
+    def test_find_farthest_node_with_exclusive_outbond(self):
+        r"""
+                 T--
+                /    \
+            ATGG-TCTC-G-CCCT-GTTGGCCC
+                     \ /
+                      A
+        """
+        data = {
+            1: ('ATGG', ['RF0'], []),
+            2: ('T', [1], [(0, 'TCTGAC', 'T', 'INDEL', '')], True),
+            3: ('TCTC', [1], []),
+            4: ('G', [2,3], []),
+            5: ('A', [3], [(0, 'G', 'T', 'SNV', '')]),
+            6: ('CCCT', [4,5], []),
+            7: ('GTTGGCCC', [5,6], []),
+        }
+        seq = 'ATGGTCTCGCCCTGTTGGCCC'
+        graph, nodes = create_three_frame_tvg(data, seq)
+        node = graph.find_farthest_node_with_overlap(nodes[1])
+        self.assertIs(node, nodes[7])

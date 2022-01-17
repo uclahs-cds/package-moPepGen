@@ -6,6 +6,7 @@ from typing import Dict, Union, List, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen import svgraph, seqvar
 from moPepGen.svgraph.TVGNode import TVGNode
+from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
 
 if TYPE_CHECKING:
@@ -27,7 +28,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=False,
             circ_record:circ.CircRNAModel=None, attrs:dict=None,
-            max_variants_per_node:int=5):
+            max_variants_per_node:int=5, subgraphs:SubgraphTree=None):
         """ Construct a CircularVariantGraph
 
         Args:
@@ -60,7 +61,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             seq=seq, _id=_id, root=root, reading_frames=reading_frames,
             cds_start_nf=cds_start_nf, has_known_orf=has_known_orf,
             global_variant=circ_variant,
-            max_variants_per_node=max_variants_per_node
+            max_variants_per_node=max_variants_per_node, subgraphs=subgraphs
         )
 
     def get_circ_variant_with_coordinate(self) -> seqvar.VariantRecordWithCoordinate:
@@ -121,7 +122,13 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             frame_map[root] = in_edge.in_node
             self.remove_edge(in_edge)
 
-        root_copy = self.root.deepcopy()
+        subgraph_id = self.subgraphs.generate_subgraph_id()
+        level = self.root.level + 1
+        self.subgraphs.add_subgraph(
+            child_id=subgraph_id, parent_id=self.id, level=level,
+            start=self.seq.locations[-1].ref.end, end=self.seq.locations[-1].ref.end
+        )
+        root_copy = self.root.deepcopy(subgraph_id, 1)
         for edge in root_copy.out_edges:
             root = edge.out_node
             if len(root.out_edges) > 1:
