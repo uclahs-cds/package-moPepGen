@@ -94,7 +94,12 @@ class VariantPeptideCaller():
     def __init__(self, args:argparse.Namespace):
         """ constructor """
         self.args = args
-        self.variant_files:List[str] = args.input_variant
+        self.variant_files:List[Path] = args.input_variant
+
+        for file in self.variant_files:
+            if not file.exists():
+                raise FileNotFoundError(f"GVF file not found: {file}")
+
         self.output_fasta:str = args.output_fasta
         self.quiet:bool = args.quiet
         self.rule:str = args.cleavage_rule
