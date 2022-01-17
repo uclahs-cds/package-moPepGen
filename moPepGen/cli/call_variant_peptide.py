@@ -199,7 +199,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     caller.load_reference()
     caller.create_in_disk_vairant_pool()
     if caller.threads > 1:
-        process_pool = ParallelPool(caller.threads)
+        process_pool = ParallelPool(ncpus=caller.threads)
     rule = caller.rule
     exception = caller.exception
     miscleavage = caller.miscleavage
