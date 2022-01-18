@@ -1508,7 +1508,6 @@ class ThreeFrameTVG():
                 out_node.check_stop_altering(orf[1])
 
                 if orf[1] and out_node.has_ref_position(orf[1]):
-                    hit_stop = True
                     out_node_copy = copy.copy(out_node)
                     pos = out_node.seq.get_query_index(orf[1])
                     out_node_copy.truncate_right(pos)
@@ -1525,7 +1524,6 @@ class ThreeFrameTVG():
                         )
                         new_pnode.seq += fake_stop
                 else:
-                    hit_stop = False
                     new_pnode = out_node.translate()
 
                 new_pnode.orf = orf
