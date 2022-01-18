@@ -213,7 +213,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         tx_rank = caller.anno.get_transcirpt_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
         # tx_sorted = pool.get_transcript_order()
-        logger('Variants sorted')
+        if caller.verbose >= 1:
+            logger('Variants sorted')
         if caller.threads > 1:
             process_pool = ParallelPool(ncpus=caller.threads)
         dispatches = []

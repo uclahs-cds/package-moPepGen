@@ -376,3 +376,17 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'comb/CPCG0464_ENST00000370143.5_ENST00000370165.7_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000370143.5_ENST00000370165.7'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case23(self):
+        """ SNP only variant from fuzz test. This test case is used to fix two
+        issues:
+        1. When calculating the orf stop site, it did not consider when it's
+        on the negative strand
+        2. The raised by stop codon is not included in the sequence when
+        the sequence is truncated at the orf stop site. """
+        gvf = [
+            self.data_dir/'fuzz/01/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/01/brute_force.fasta'
+        reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
+        self.default_test_case(gvf, reference, expected)
