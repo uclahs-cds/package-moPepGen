@@ -1,7 +1,8 @@
 """ Test module for VariantRecord """
+from moPepGen import seqvar
 import unittest
 from test.unit import create_variant, create_genomic_annotation, \
-    create_dna_record_dict
+    create_dna_record_dict, create_variants
 
 
 GENOME_DATA = {
@@ -66,3 +67,30 @@ class TestVariantRecord(unittest.TestCase):
         variant = create_variant(*variant_data)
         variant_tx = variant.to_transcript_variant(anno, genome, 'ENST0001')
         self.assertEqual(variant_tx.ref, 'GTCCCCT')
+
+class TestVariantRecordSeries(unittest.TestCase):
+    """ Test cases for VariantRecordSeries """
+    def test_highest_hypermutated_region_complexity(self):
+        """ Test calculating the highest hypermutated region complexity """
+        var_data = {
+            (3, 4, 'T', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (4, 5, 'G', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (5, 6, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
+        }
+        variants = create_variants(var_data)
+        series = seqvar.TranscriptionalVariantSeries(transcriptional=variants)
+        series.sort()
+        x = series.get_highest_hypermutated_region_complexity()
+        self.assertEqual(x, 3)
+
+        var_data = {
+            (3, 4, 'T', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (4, 5, 'G', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (5, 6, 'T', 'A', 'SNV', '', None, 'ENST0001.1'),
+            (20, 21, 'T', 'A', 'SNV', '', None, 'ENST0001.1')
+        }
+        variants = create_variants(var_data)
+        series = seqvar.TranscriptionalVariantSeries(transcriptional=variants)
+        series.sort()
+        x = series.get_highest_hypermutated_region_complexity()
+        self.assertEqual(x, 3)

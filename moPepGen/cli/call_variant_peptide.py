@@ -203,8 +203,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     print_start_message(args)
     caller.load_reference()
     caller.create_in_disk_vairant_pool()
-    if caller.threads > 1:
-        process_pool = ParallelPool(ncpus=caller.threads)
     rule = caller.rule
     exception = caller.exception
     miscleavage = caller.miscleavage
@@ -214,6 +212,10 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
         tx_rank = caller.anno.get_transcirpt_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
+        # tx_sorted = pool.get_transcript_order()
+        logger('Variants sorted')
+        if caller.threads > 1:
+            process_pool = ParallelPool(ncpus=caller.threads)
         dispatches = []
         i = 0
         for tx_id in tx_sorted:

@@ -62,6 +62,25 @@ class TranscriptionalVariantSeries():
     def has_any_alternative_splicing(self) -> bool:
         """ Check if there is any alternative splicing """
         return any(x.type in ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
+
+    def get_highest_hypermutated_region_complexity(self, distance:int=6):
+        """ Calculate the number of variants in the most hypermutated region """
+        end = 0
+        max_n = 0
+        cur_n = 0
+        for variant in self.transcriptional:
+            if variant.type in ALTERNATIVE_SPLICING_TYPES:
+                continue
+            if variant.location.start - end >= distance:
+                end = variant.location.end
+                if max_n < cur_n:
+                    max_n = cur_n
+                cur_n = 1
+                continue
+            cur_n += 1
+            end = variant.location.end
+        return max(max_n, cur_n)
+
 class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
     def __init__(self, pointers:Dict[str, List[GVFPointer]]=None,
@@ -255,6 +274,11 @@ class VariantRecordPoolOnDisk():
         records = list(records)
         records.sort()
         return records
+
+    def get_transcript_order(self) -> List[str]:
+        def sort_key(key:str):
+            return self[key].get_highest_hypermutated_region_complexity()
+        return sorted(self.pointers.keys(), key=sort_key, reverse=True)
 
 class VariantRecordPoolOnDiskOpener():
     """ Helper class to open all GVF files of a VariantRecordPoolOnDisk. """
