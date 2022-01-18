@@ -73,8 +73,7 @@ class TranscriptionalVariantSeries():
                 continue
             if variant.location.start - end >= distance:
                 end = variant.location.end
-                if max_n < cur_n:
-                    max_n = cur_n
+                max_n = max(max_n, cur_n)
                 cur_n = 1
                 continue
             cur_n += 1
@@ -276,6 +275,7 @@ class VariantRecordPoolOnDisk():
         return records
 
     def get_transcript_order(self) -> List[str]:
+        """ Get the order of transcripts to call variant peptides """
         def sort_key(key:str):
             return self[key].get_highest_hypermutated_region_complexity()
         return sorted(self.pointers.keys(), key=sort_key, reverse=True)
