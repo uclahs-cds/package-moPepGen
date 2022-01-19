@@ -301,6 +301,10 @@ class FuzzTestCase():
         args.min_mw = 500.
         args.min_length = 7
         args.max_length = 25
+        args.threads = 1
+        args.max_variants_per_node = -1
+        args.noncanonical_transcripts = False
+        args.verbose_level = 0
         call_variant_peptide(args=args)
 
     def brute_force(self):

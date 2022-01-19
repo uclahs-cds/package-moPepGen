@@ -140,9 +140,16 @@ def brute_force(args):
 
             seq = tx_seq.seq
             offset = 0
+            if tx_model.is_protein_coding:
+                cur_cds_end = tx_seq.orf.end
+            else:
+                cur_cds_end = len(tx_seq.seq)
             for variant in comb:
+                if variant.location.end >= cur_cds_end:
+                    continue
                 start = variant.location.start + offset
                 end = variant.location.end + offset
+                cur_cds_end += len(variant.alt) - len(variant.ref)
                 offset = offset + len(variant.alt) - len(variant.ref)
                 seq = seq[:start] + variant.alt + seq[end:]
 
@@ -170,11 +177,10 @@ def brute_force(args):
                     more_canonical_peptides = {str(x.seq) for x in \
                         more_canonical_peptides}
                     copy_canonical_peptides.update(more_canonical_peptides)
+                    cur_cds_end = ref_cds_end + offset
                 else:
-                    ref_cds_end = tx_seq.orf.end
+                    cur_cds_end = cur_cds_end - (cur_cds_end - cds_start) % 3
 
-                cur_cds_end = ref_cds_end + offset
-                cur_cds_end = cur_cds_end - (cur_cds_end - cds_start) % 3
                 aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=True)
                 aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
                 peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')

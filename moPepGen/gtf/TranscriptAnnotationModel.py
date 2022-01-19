@@ -125,7 +125,10 @@ class TranscriptAnnotationModel():
     def get_cds_end_index(self, seq:Seq, start:int) -> int:
         """ Returns the CDS stop index of the transcript. """
         if self.three_utr:
-            end = self.get_transcript_index(self.three_utr[0].location.start)
+            if self.transcript.strand == 1:
+                end = self.get_transcript_index(self.three_utr[0].location.start)
+            else:
+                end = self.get_transcript_index(self.three_utr[-1].location.end - 1)
             return end - (end - start) % 3
         return len(seq) - (len(seq) - start) % 3
 
