@@ -10,6 +10,7 @@ at least one variant, and do not present in the canonical peptide pool.
  """
 from __future__ import annotations
 import argparse
+import copy
 from typing import List, Set, TYPE_CHECKING, Dict
 from pathlib import Path
 from pathos.pools import ParallelPool
@@ -221,7 +222,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     not variant_series.has_any_noncanonical_transcripts():
                 continue
             tx_ids += variant_series.get_additional_transcripts()
-            tx_ids = set(tx_ids)
 
             gene_seqs = {}
             if variant_series.is_gene_sequence_needed():
@@ -242,14 +242,17 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     _gene_model = caller.anno.genes[_gene_id]
                     _gene_seq = _gene_model.get_gene_sequence(caller.genome[_chrom])
                     gene_seqs[_gene_id] = _gene_seq
-
             gene_ids = list({caller.anno.transcripts[x].transcript.gene_id for x in tx_ids})
+
+            gene_models = {}
             for gene_id in gene_ids:
-                tx_ids.update(caller.anno.genes[gene_id].transcripts)
-            tx_ids = list(tx_ids)
+                dummy_gene_model = copy.deepcopy(caller.anno.genes[gene_id])
+                dummy_gene_model.transcripts = [x for x in dummy_gene_model.transcripts
+                    if x in tx_ids]
+                gene_models[gene_id] = dummy_gene_model
 
             dummy_anno = gtf.GenomicAnnotation(
-                genes={gene_id:caller.anno.genes[gene_id] for gene_id in gene_ids},
+                genes=gene_models,
                 transcripts={tx_id:caller.anno.transcripts[tx_id] for tx_id in tx_ids},
                 source=caller.anno.source
             )
