@@ -58,7 +58,7 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         ' when there are local regions that are heavily mutated. When creating'
         ' the cleavage graph, nodes containing variants larger than this value'
         ' are skipped. Setting to -1 will avoid checking for this.',
-        default=-1,
+        default=7,
         metavar='<number>'
     )
     p.add_argument(
