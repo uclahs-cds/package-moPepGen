@@ -1512,13 +1512,26 @@ class ThreeFrameTVG():
                     pos = out_node.seq.get_query_index(orf[1])
                     out_node_copy.truncate_right(pos)
                     new_pnode = out_node_copy.translate()
+                    # this adds the * to the end of the sequence unless the
+                    # transcript is mRNA_end_nf to force the * to be included.
+                    if not self.mrna_end_nf:
+                        location = MatchedLocation(
+                            query=FeatureLocation(start=0, end=1),
+                            ref=FeatureLocation(start=orf[1], end=orf[1] + 1)
+                        )
+                        fake_stop = DNASeqRecordWithCoordinates(
+                            seq='*', locations=[location]
+                        )
+                        new_pnode.seq += fake_stop
                 else:
                     new_pnode = out_node.translate()
 
                 new_pnode.orf = orf
                 pnode.add_out_edge(new_pnode)
                 visited[out_node] = new_pnode
+                #if not hit_stop:
                 queue.appendleft((out_node, new_pnode))
+
         for i, dnode in enumerate(self.reading_frames):
             dnode = dnode.get_reference_next()
             if dnode:

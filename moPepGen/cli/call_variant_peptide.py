@@ -95,7 +95,12 @@ class VariantPeptideCaller():
     def __init__(self, args:argparse.Namespace):
         """ constructor """
         self.args = args
-        self.variant_files:List[str] = args.input_variant
+        self.variant_files:List[Path] = args.input_variant
+
+        for file in self.variant_files:
+            if not file.exists():
+                raise FileNotFoundError(f"GVF file not found: {file}")
+
         self.output_fasta:str = args.output_fasta
         self.quiet:bool = args.quiet
         self.rule:str = args.cleavage_rule
@@ -199,8 +204,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     print_start_message(args)
     caller.load_reference()
     caller.create_in_disk_vairant_pool()
-    if caller.threads > 1:
-        process_pool = ParallelPool(ncpus=caller.threads)
     rule = caller.rule
     exception = caller.exception
     miscleavage = caller.miscleavage
@@ -210,6 +213,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
         tx_rank = caller.anno.get_transcirpt_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
+        # tx_sorted = pool.get_transcript_order()
+        if caller.verbose >= 1:
+            logger('Variants sorted')
+        if caller.threads > 1:
+            process_pool = ParallelPool(ncpus=caller.threads)
         dispatches = []
         i = 0
         for tx_id in tx_sorted:
