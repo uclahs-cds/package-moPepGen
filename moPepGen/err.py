@@ -97,12 +97,14 @@ def warning(msg:str) -> None:
     logger(f"[ !!! moPepGen WARNING !!! ] {msg}")
 
 class MoPepGenWarning():
+    """ Base warning class """
     def __init__(self, msg):
+        """ constructor """
         self.msg = msg
         self.warn()
 
     def warn(self):
-        """ print the warning message """
+        """ Print warning message """
         warning(self.msg)
 
 class HypermutatedRegionWarning(MoPepGenWarning):
