@@ -238,7 +238,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 gene_model = caller.anno.genes[gene_id]
                 gene_seq = gene_model.get_gene_sequence(caller.genome[_chrom])
                 gene_seqs[gene_id] = gene_seq
-                tx_ids.update(gene_model.transcripts)
 
             tx_seqs = {}
             for _tx_id in tx_ids:
