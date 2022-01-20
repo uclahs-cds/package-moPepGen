@@ -95,3 +95,24 @@ class GeneNotFoundError(Exception):
 def warning(msg:str) -> None:
     """ print a warning message """
     logger(f"[ !!! moPepGen WARNING !!! ] {msg}")
+
+class MoPepGenWarning():
+    """ Base warning class """
+    def __init__(self, msg):
+        """ constructor """
+        self.msg = msg
+        self.warn()
+
+    def warn(self):
+        """ Print warning message """
+        warning(self.msg)
+
+class HypermutatedRegionWarning(MoPepGenWarning):
+    """ Warning to be printed when hyper mutated region is detected. """
+    def __init__(self, graph_id:str, max_variants_per_node:int):
+        """ constructor """
+        self.max_variants_per_node = max_variants_per_node
+        msg = f"Hypermutated region detected from graph: '{graph_id}'. The" +\
+            f" argument max_variants_per_node = {max_variants_per_node} was used" + \
+            " to reduce complexity."
+        super().__init__(msg)

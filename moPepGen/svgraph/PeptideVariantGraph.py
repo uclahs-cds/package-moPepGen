@@ -6,7 +6,7 @@ from collections import deque
 from functools import cmp_to_key
 import itertools
 from Bio.Seq import Seq
-from moPepGen import aa, seqvar
+from moPepGen import aa, seqvar, err
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
@@ -40,7 +40,7 @@ class PeptideVariantGraph():
             known_orf:List[int,int], rule:str=None, exception:str=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
-            max_variants_per_node:int=-1
+            max_variants_per_node:int=-1, hypermutated_region_warned:bool=False
             ):
         """ Construct a PeptideVariantGraph """
         self.root = root
@@ -54,6 +54,7 @@ class PeptideVariantGraph():
         self.orf_id_map = orf_id_map or {}
         self.cds_start_nf = cds_start_nf
         self.max_variants_per_node = max_variants_per_node
+        self.hypermutated_region_warned = hypermutated_region_warned
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -173,6 +174,9 @@ class PeptideVariantGraph():
         else:
             for in_node, out_node in itertools.product(node.in_nodes, node.out_nodes):
                 if self.nodes_have_too_many_variants([in_node, out_node]):
+                    if not self.hypermutated_region_warned:
+                        err.HypermutatedRegionWarning(self.id, self.max_variants_per_node)
+                        self.hypermutated_region_warned = True
                     continue
                 route = (in_node, node, out_node)
                 routes.add(route)

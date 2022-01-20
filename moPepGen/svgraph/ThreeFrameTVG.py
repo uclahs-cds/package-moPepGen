@@ -5,7 +5,7 @@ from collections import deque
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from moPepGen import dna, seqvar
+from moPepGen import dna, seqvar, err
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.seqvar import VariantRecordWithCoordinate
 from moPepGen.seqvar.VariantRecordPoolOnDisk import VariantRecordPoolOnDisk
@@ -40,7 +40,8 @@ class ThreeFrameTVG():
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
-            max_variants_per_node:int=-1, subgraphs:SubgraphTree=None):
+            max_variants_per_node:int=-1, subgraphs:SubgraphTree=None,
+            hypermutated_region_warned:bool=False):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -65,6 +66,7 @@ class ThreeFrameTVG():
         self.global_variant = global_variant
         self.max_variants_per_node = max_variants_per_node
         self.subgraphs = subgraphs or SubgraphTree()
+        self.hypermutated_region_warned = hypermutated_region_warned
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -1319,6 +1321,9 @@ class ThreeFrameTVG():
                 trash.add(out_node)
 
                 if self.nodes_have_too_many_variants([cur, out_node]):
+                    if not self.hypermutated_region_warned:
+                        err.HypermutatedRegionWarning(self.id, self.max_variants_per_node)
+                        self.hypermutated_region_warned = True
                     continue
 
                 # create new node with the combined sequence
@@ -1482,7 +1487,8 @@ class ThreeFrameTVG():
             _id=self.id,
             known_orf=known_orf,
             cds_start_nf=self.cds_start_nf,
-            max_variants_per_node=self.max_variants_per_node
+            max_variants_per_node=self.max_variants_per_node,
+            hypermutated_region_warned=self.hypermutated_region_warned
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
