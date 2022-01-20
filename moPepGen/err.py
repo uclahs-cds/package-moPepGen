@@ -112,7 +112,7 @@ class HypermutatedRegionWarning(MoPepGenWarning):
     def __init__(self, graph_id:str, max_variants_per_node:int):
         """ constructor """
         self.max_variants_per_node = max_variants_per_node
-        msg = f"Hyper mutated region detected from graph: '{graph_id}'. The" +\
+        msg = f"Hypermutated region detected from graph: '{graph_id}'. The" +\
             f" argument max_variants_per_node = {max_variants_per_node} was used" + \
             " to reduce complexity."
         super().__init__(msg)
