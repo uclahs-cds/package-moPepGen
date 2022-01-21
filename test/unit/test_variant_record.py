@@ -72,7 +72,7 @@ class TestVariantRecord(unittest.TestCase):
         """ Check if the variant is spanning over a splicing site """
         anno = create_genomic_annotation(ANNOTATION_DATA)
         variant_data = [
-            21, 24, 'CCC', 'C', 'INDEL', 'INDLE-20-CCC-C',
+            21, 24, 'CCC', 'C', 'INDEL', 'INDEL-20-CCC-C',
             {'TRANSCRIPT_ID': 'ENST0001'}, 'ENSG0001'
         ]
         variant = create_variant(*variant_data)
