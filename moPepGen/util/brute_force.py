@@ -135,23 +135,30 @@ def brute_force(args):
                     if left.location.end >= right.location.start:
                         skip = True
 
+            if tx_model.is_mrna_end_nf():
+                for variant in comb:
+                    if variant.location.end >= tx_seq.orf.end:
+                        skip = True
+                        break
+
             if skip:
                 continue
 
             seq = tx_seq.seq
             offset = 0
-            if tx_model.is_protein_coding:
+            if tx_model.is_protein_coding and tx_model.is_mrna_end_nf():
                 cur_cds_end = tx_seq.orf.end
-            else:
-                cur_cds_end = len(tx_seq.seq)
+
             for variant in comb:
-                if variant.location.end >= cur_cds_end:
-                    continue
                 start = variant.location.start + offset
                 end = variant.location.end + offset
-                cur_cds_end += len(variant.alt) - len(variant.ref)
+                if tx_model.is_protein_coding and tx_model.is_mrna_end_nf():
+                    cur_cds_end += len(variant.alt) - len(variant.ref)
                 offset = offset + len(variant.alt) - len(variant.ref)
                 seq = seq[:start] + variant.alt + seq[end:]
+
+            if not (tx_model.is_protein_coding and tx_model.is_mrna_end_nf()):
+                cur_cds_end = len(seq)
 
             if not tx_model.is_protein_coding:
                 alt_seq = dna.DNASeqRecord(seq)
