@@ -281,7 +281,7 @@ class VariantRecord():
             else:
                 raise e
         try:
-            anno.coordinate_gene_to_transcript(end, gene_id, transcript_id)
+            anno.coordinate_gene_to_transcript(end - 1, gene_id, transcript_id)
             end_in_intron = False
         except ValueError as e:
             if e.args[0] == ERROR_INDEX_IN_INTRON:

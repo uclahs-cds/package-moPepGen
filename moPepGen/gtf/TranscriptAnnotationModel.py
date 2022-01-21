@@ -238,13 +238,15 @@ class TranscriptAnnotationModel():
         if self.transcript.strand == 1:
             index = 0
             if genomic_index < self.exon[0].location.start \
-                    or genomic_index > self.exon[-1].location.end:
+                    or genomic_index >= self.exon[-1].location.end:
                 raise ValueError(
                     r'The genomic index isn\'t in the range of this transcript'
                 )
             for exon in self.exon:
                 if exon.location.end < genomic_index:
                     index += exon.location.end - exon.location.start
+                elif exon.location.end == genomic_index:
+                    raise ValueError(ERROR_INDEX_IN_INTRON)
                 elif exon.location.start <= genomic_index:
                     index += genomic_index - exon.location.start
                     break
@@ -252,7 +254,7 @@ class TranscriptAnnotationModel():
                     raise ValueError(ERROR_INDEX_IN_INTRON)
         elif self.transcript.strand == -1:
             index = -1
-            if genomic_index < self.exon[0].location.start \
+            if genomic_index <= self.exon[0].location.start \
                     or genomic_index > self.exon[-1].location.end:
                 raise ValueError(
                     r'The genomic index isn\'t in the range of this transcript'
@@ -260,13 +262,13 @@ class TranscriptAnnotationModel():
             for exon in reversed(self.exon):
                 if exon.location.start > genomic_index:
                     index += exon.location.end - exon.location.start
+                elif exon.location.start == genomic_index:
+                    raise ValueError(ERROR_INDEX_IN_INTRON)
                 elif exon.location.end > genomic_index:
                     index += exon.location.end - genomic_index
                     break
                 else:
-                    raise ValueError(
-                        'The genomic index seems to be in an intron'
-                    )
+                    raise ValueError(ERROR_INDEX_IN_INTRON)
         return index
 
     def get_transcript_start_genomic_coordinate(self) -> int:
