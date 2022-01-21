@@ -169,7 +169,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
             self.data_dir/'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11.gvf'
         ]
         expect = self.data_dir \
-            /'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11_expect2.txt'
+            /'vep/CPCG0103_gencode_aa_indel_ENST00000314675.11_expect.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
         self.default_test_case(gvf, reference, expect)
 
