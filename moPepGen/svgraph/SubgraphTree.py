@@ -72,4 +72,3 @@ class SubgraphTree():
                 subgraph2 = self[subgraph2.parent_id]
 
         return subgraph1, subgraph2
-
