@@ -54,6 +54,9 @@ class SubgraphTree():
 
     def find_compatible_parents(self, first:str, second:str
             ) -> Tuple[SubgraphLocation, SubgraphLocation]:
+        """ For two given subgraphs, find their parent graphs that are
+        compatible. Compatible means either they share the same parent subgraph,
+        or one is the parent of the other subgraph. """
         subgraph1 = self[first.subgraph_id]
         subgraph2 = self[second.subgraph_id]
 
