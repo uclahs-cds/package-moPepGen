@@ -185,12 +185,11 @@ class PeptideVariantGraph():
 
         for cur in copy.copy(routes):
             for in_node in cur[-1].in_nodes:
-                if (in_node.is_bridge() or self.node_is_subgraph_end(in_node)) \
-                        and in_node not in visited:
-                    for out_node in cur[-1].out_nodes:
-                        new_route = (in_node, cur[-1],)
-                        routes.add(new_route)
-                        visited.add(in_node)
+                if (in_node.is_bridge() or self.node_is_subgraph_end(in_node)):
+                    #for out_node in cur[-1].out_nodes:
+                    new_route = (in_node, cur[-1],)
+                    routes.add(new_route)
+                    visited.add(in_node)
         return routes, visited
 
     def merge_nodes_routes(self, routes:Set[Tuple[PVGNode]],

@@ -390,3 +390,26 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/01/brute_force.fasta'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case24(self):
+        """ INDEL only variant from fuzz test. This test case ensures that
+        when frameshifting mutations are incorporated to the TVG graph, not only
+        the target reading frame from canonical reading frame is activated,
+        but also from the other active reading frames. """
+        gvf = [
+            self.data_dir/'fuzz/02/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/02/brute_force.fasta'
+        reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case25(self):
+        """ INDEL only variant from fuzz test. This test case ensures that
+        when finding nodes to merge during creating the cleavage graph, all
+        inbridge nodes are also included. """
+        gvf = [
+            self.data_dir/'fuzz/03/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/03/brute_force.fasta'
+        reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
+        self.default_test_case(gvf, reference, expected)

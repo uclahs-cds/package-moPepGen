@@ -6,6 +6,7 @@ import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import dna, seqvar, err
+from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecordWithCoordinates
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.seqvar import VariantRecordWithCoordinate
 from moPepGen.seqvar.VariantRecordPoolOnDisk import VariantRecordPoolOnDisk
@@ -961,10 +962,18 @@ class ThreeFrameTVG():
                 variant = next(variant_iter, None)
                 continue
 
-            if any(not x for x in active_frames) and variant.is_frameshifting():
-                frames_shifted = variant.frames_shifted()
-                i = (known_orf_index + frames_shifted) % 3
-                active_frames[i] = True
+            if variant.is_frameshifting():
+                for i in range(3):
+                    if not active_frames[i]:
+                        continue
+                    frames_shifted = variant.frames_shifted()
+                    j = (i + frames_shifted) % 3
+                    active_frames[j] = True
+
+            # if any(not x for x in active_frames) and variant.is_frameshifting():
+            #     frames_shifted = variant.frames_shifted()
+            #     i = (known_orf_index + frames_shifted) % 3
+            #     active_frames[i] = True
 
             any_cursor_expired = False
             for i,cursor in enumerate(cursors):
@@ -1018,6 +1027,8 @@ class ThreeFrameTVG():
             elif variant.is_frameshifting():
                 frames_shifted = variant.frames_shifted()
                 for i in range(3):
+                    if not active_frames[i]:
+                        continue
                     j = (i + frames_shifted) % 3
                     cursors[i], cursors[j] = self.apply_variant(cursors[i],
                         cursors[j], variant)
@@ -1494,6 +1505,7 @@ class ThreeFrameTVG():
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
         visited = dict()
+        terminal_node = None
 
         while queue:
             dnode, pnode = queue.pop()
@@ -1514,24 +1526,13 @@ class ThreeFrameTVG():
 
                 out_node.check_stop_altering(orf[1])
 
-                if orf[1] and out_node.has_ref_position(orf[1]):
-                    out_node_copy = copy.copy(out_node)
-                    pos = out_node.seq.get_query_index(orf[1])
-                    out_node_copy.truncate_right(pos)
-                    new_pnode = out_node_copy.translate()
-                    # this adds the * to the end of the sequence unless the
-                    # transcript is mRNA_end_nf to force the * to be included.
-                    if not self.mrna_end_nf:
-                        location = MatchedLocation(
-                            query=FeatureLocation(start=0, end=1),
-                            ref=FeatureLocation(start=orf[1], end=orf[1] + 1)
-                        )
-                        fake_stop = DNASeqRecordWithCoordinates(
-                            seq='*', locations=[location]
-                        )
-                        new_pnode.seq += fake_stop
-                else:
-                    new_pnode = out_node.translate()
+                new_pnode = out_node.translate()
+
+                if orf[1] and out_node.reading_frame_index == \
+                        self.get_known_reading_frame_index() and \
+                        out_node.has_ref_position(orf[1]):
+                    terminal_node = new_pnode
+                    stop_site = int(out_node.seq.get_query_index(orf[1]) / 3)
 
                 new_pnode.orf = orf
                 pnode.add_out_edge(new_pnode)
@@ -1543,4 +1544,23 @@ class ThreeFrameTVG():
             dnode = dnode.get_reference_next()
             if dnode:
                 pgraph.reading_frames[i] = visited[dnode]
+
+        # Sometimes the annotated cds end isn't in fact a stop codon. If so,
+        # a fake stop codon is added so the node won't be called as variant
+        # peptide.
+        if terminal_node:
+            right_part = terminal_node.split_node(stop_site)
+            if(len(right_part.seq.seq) > 1 and right_part.seq.seq[0] == '*'):
+                right_part.split_node(1)
+            else:
+                fake_stop = AminoAcidSeqRecordWithCoordinates(
+                    seq='*', locations=[]
+                )
+                fake_stop_node = PVGNode(
+                    seq=fake_stop,
+                    reading_frame_index=terminal_node.reading_frame_index,
+                    subgraph_id=self.id
+                )
+                terminal_node.add_out_edge(fake_stop_node)
+
         return pgraph
