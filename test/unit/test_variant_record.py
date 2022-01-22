@@ -68,6 +68,15 @@ class TestVariantRecord(unittest.TestCase):
         variant_tx = variant.to_transcript_variant(anno, genome, 'ENST0001')
         self.assertEqual(variant_tx.ref, 'GTCCCCT')
 
+    def test_is_spanning_over_splicing_site(self):
+        """ Check if the variant is spanning over a splicing site """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        variant_data = [
+            21, 24, 'CCC', 'C', 'INDEL', 'INDEL-20-CCC-C',
+            {'TRANSCRIPT_ID': 'ENST0001'}, 'ENSG0001'
+        ]
+        variant = create_variant(*variant_data)
+        self.assertTrue(variant.is_spanning_over_splicing_site(anno, 'ENST0001'))
 class TestTranscriptionalVariantSeries(unittest.TestCase):
     """ Test cases for VariantRecordSeries """
     def test_highest_hypermutated_region_complexity(self):

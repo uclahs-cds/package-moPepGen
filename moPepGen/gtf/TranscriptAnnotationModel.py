@@ -235,16 +235,18 @@ class TranscriptAnnotationModel():
 
     def get_transcript_index(self, genomic_index:int) -> int:
         """ Get the transcript index from a genomic index. """
+        if genomic_index < self.exon[0].location.start \
+                or genomic_index >= self.exon[-1].location.end:
+            raise ValueError(
+                r'The genomic index isn\'t in the range of this transcript'
+            )
         if self.transcript.strand == 1:
             index = 0
-            if genomic_index < self.exon[0].location.start \
-                    or genomic_index > self.exon[-1].location.end:
-                raise ValueError(
-                    r'The genomic index isn\'t in the range of this transcript'
-                )
             for exon in self.exon:
                 if exon.location.end < genomic_index:
                     index += exon.location.end - exon.location.start
+                elif exon.location.end == genomic_index:
+                    raise ValueError(ERROR_INDEX_IN_INTRON)
                 elif exon.location.start <= genomic_index:
                     index += genomic_index - exon.location.start
                     break
@@ -252,21 +254,16 @@ class TranscriptAnnotationModel():
                     raise ValueError(ERROR_INDEX_IN_INTRON)
         elif self.transcript.strand == -1:
             index = -1
-            if genomic_index < self.exon[0].location.start \
-                    or genomic_index > self.exon[-1].location.end:
-                raise ValueError(
-                    r'The genomic index isn\'t in the range of this transcript'
-                )
             for exon in reversed(self.exon):
-                if exon.location.start > genomic_index:
+                if exon.location.start >= genomic_index:
                     index += exon.location.end - exon.location.start
+                    if exon.location.start == genomic_index:
+                        break
                 elif exon.location.end > genomic_index:
                     index += exon.location.end - genomic_index
                     break
                 else:
-                    raise ValueError(
-                        'The genomic index seems to be in an intron'
-                    )
+                    raise ValueError(ERROR_INDEX_IN_INTRON)
         return index
 
     def get_transcript_start_genomic_coordinate(self) -> int:
@@ -300,7 +297,7 @@ class TranscriptAnnotationModel():
             pos (int): A genomic position
         """
         for exon in self.exon:
-            if pos in exon:
+            if exon.location.start <= pos < exon.location.end:
                 return True
         return False
 
@@ -319,7 +316,7 @@ class TranscriptAnnotationModel():
 
     def get_upstream_exon_end(self, pos:int) -> int:
         """ Find the upstream exon end """
-        ind = -1
+
         if self.transcript.strand == 1:
             for exon in self.exon:
                 if exon.location.end > pos:
@@ -327,7 +324,7 @@ class TranscriptAnnotationModel():
                 ind = exon.location.end - 1
         else:
             for exon in reversed(self.exon):
-                if exon.location.start <= pos:
+                if exon.location.start < pos:
                     break
                 ind = exon.location.start
         if ind == -1:
