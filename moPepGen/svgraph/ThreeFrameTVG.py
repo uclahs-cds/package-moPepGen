@@ -962,10 +962,18 @@ class ThreeFrameTVG():
                 variant = next(variant_iter, None)
                 continue
 
-            if any(not x for x in active_frames) and variant.is_frameshifting():
-                frames_shifted = variant.frames_shifted()
-                i = (known_orf_index + frames_shifted) % 3
-                active_frames[i] = True
+            if variant.is_frameshifting():
+                for i in range(3):
+                    if not active_frames[i]:
+                        continue
+                    frames_shifted = variant.frames_shifted()
+                    j = (i + frames_shifted) % 3
+                    active_frames[j] = True
+
+            # if any(not x for x in active_frames) and variant.is_frameshifting():
+            #     frames_shifted = variant.frames_shifted()
+            #     i = (known_orf_index + frames_shifted) % 3
+            #     active_frames[i] = True
 
             any_cursor_expired = False
             for i,cursor in enumerate(cursors):
@@ -1019,6 +1027,8 @@ class ThreeFrameTVG():
             elif variant.is_frameshifting():
                 frames_shifted = variant.frames_shifted()
                 for i in range(3):
+                    if not active_frames[i]:
+                        continue
                     j = (i + frames_shifted) % 3
                     cursors[i], cursors[j] = self.apply_variant(cursors[i],
                         cursors[j], variant)
