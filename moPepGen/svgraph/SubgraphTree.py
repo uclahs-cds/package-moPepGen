@@ -67,9 +67,9 @@ class SubgraphTree():
             level1 = subgraph1.level
             level2 = subgraph2.level
             if level1 >= level2:
-                subgraph1 = self.subgraphs[subgraph1.parent_id]
+                subgraph1 = self[subgraph1.parent_id]
             if level2 >= level1:
-                subgraph2 = self.subgraphs[subgraph2.parent_id]
+                subgraph2 = self[subgraph2.parent_id]
 
         return subgraph1, subgraph2
 
