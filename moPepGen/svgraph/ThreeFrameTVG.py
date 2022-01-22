@@ -66,6 +66,7 @@ class ThreeFrameTVG():
         self.global_variant = global_variant
         self.max_variants_per_node = max_variants_per_node
         self.subgraphs = subgraphs or SubgraphTree()
+        self.subgraphs.add_root(_id)
         self.hypermutated_region_warned = hypermutated_region_warned
 
     def add_default_sequence_locations(self):
@@ -1208,21 +1209,21 @@ class ThreeFrameTVG():
         if first.subgraph_id == second.subgraph_id:
             return first.seq.locations[0] < second.seq.locations[0]
 
-        subgraph1 = self.subgraphs[first.subgraph_id]
-        subgraph2 = self.subgraphs[second.subgraph_id]
+        subgraph1, subgraph2 = self.subgraphs.find_compatible_parents(first, second)
 
-        while subgraph1.id != subgraph2.id:
-            level1 = subgraph1.level
-            level2 = subgraph2.level
-            if level1 >= level2:
-                subgraph1 = self.subgraphs[subgraph1.parent_id]
-            if level2 >= level1:
-                subgraph2 = self.subgraphs[subgraph2.parent_id]
+        if subgraph1.id == subgraph2.id:
+            raise ValueError('They should not equal. Something went wrong.')
 
-        if subgraph1.id == first.subgraph_id:
+        if subgraph1.id == subgraph2.parent_id:
+            if subgraph1.id != first.subgraph_id:
+                raise ValueError('They should not equal. Something went wrong.')
             return first.seq.locations[0].ref.start < subgraph2.location.end
-        if subgraph2.id == second.subgraph_id:
+
+        if subgraph2.id == subgraph1.parent_id:
+            if subgraph2.id != second.subgraph_id:
+                raise ValueError('They should not equal. Something went wrong.')
             return subgraph1.location.end < second.seq.locations[0].ref.start
+
         return subgraph1.location < subgraph2.location
 
     def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode]) -> bool:
