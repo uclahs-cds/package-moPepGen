@@ -413,3 +413,13 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/03/brute_force.fasta'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case26(self):
+        """ Test case reported in #357 with two alternative splicing events. """
+        gvf = [
+            self.data_dir/'comb/CPCG0266_ENST00000381461.6/rMATs.gvf',
+            self.data_dir/'comb/CPCG0266_ENST00000381461.6/gsnp.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0266_ENST00000381461.6_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000381461.6'
+        self.default_test_case(gvf, reference, expected)

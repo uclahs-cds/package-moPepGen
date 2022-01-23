@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.1.0-beta.1
+##parser=parseRMATS
+##reference_index=/data/Index/GRCh38-EBI-GENCODE34
+##genome_fasta=
+##annotation_gtf=
+##source=rMATs
+##CHROM=<Description='{'Description': "'Gene ID'"}'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000183354.12	39047	SE_39046	G	<DEL>	.	.	TRANSCRIPT_ID=ENST00000381461.6;START=39047;END=40464;GENE_SYMBOL=KIAA2026;GENOMIC_POSITION=chr9:5968019:5969436
+ENSG00000183354.12	54388	MXE_54388-54467:63522-63612	G	<SUB>	.	.	TRANSCRIPT_ID=ENST00000381461.6;START=54388;END=54467;DONOR_START=63523;DONOR_END=63612;DONOR_GENE_ID=ENSG00000183354.12;COORDINATE=gene;GENE_SYMBOL=KIAA2026;GENOMIC_POSITION=chr9-54388:54467-63523:63612

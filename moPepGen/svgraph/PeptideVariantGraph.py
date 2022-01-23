@@ -495,7 +495,9 @@ class PeptideVariantGraph():
                     queue.appendleft(node)
                 continue
 
-            if cur.is_already_cleaved():
+            first_site = cur.seq.find_first_cleave_or_stop_site(self.rule, self.exception)
+
+            if cur.is_already_cleaved() and first_site == -1:
                 continue
 
             if len(cur.in_nodes) == 1:
