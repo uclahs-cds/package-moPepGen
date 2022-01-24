@@ -18,6 +18,6 @@ def load_references(path_anno:Path, path_genome:Path, path_proteome:Path
     proteome = AminoAcidSeqDict()
     proteome.dump_fasta(path_proteome)
 
-    anno.check_protein_coding(proteome)
+    anno.check_protein_coding(proteome, invalid_protein_as_noncoding=True)
 
     return anno, genome, proteome
