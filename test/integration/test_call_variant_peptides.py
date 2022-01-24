@@ -423,3 +423,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'comb/CPCG0266_ENST00000381461.6_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000381461.6'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case27(self):
+        """ Test case reported in #360 with one alternative splicing and an
+        indel. """
+        gvf = [
+            self.data_dir/'comb/CPCG0235_ENST00000525687.5/rMATs.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000525687.5/gindel.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0235_ENST00000525687.5_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000525687.5'
+        self.default_test_case(gvf, reference, expected)
