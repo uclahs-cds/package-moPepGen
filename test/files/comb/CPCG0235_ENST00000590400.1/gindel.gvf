@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=/data/Index/GRCh38-EBI-GENCODE34
+##genome_fasta=
+##annotation_gtf=
+##source=gindel
+##CHROM=<Description='{'Description': "'Gene ID'"}'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000197256.10	2101	INDEL-2101-CGTGGAGAGACACAGAGAGAC-C	CGTGGAGAGACACAGAGAGAC	C	.	.	TRANSCRIPT_ID=ENST00000590400.1;GENOMIC_POSITION=chr19:11195671-11195690;GENE_SYMBOL=KANK2
+ENSG00000197256.10	5007	INDEL-5007-GG-G	GG	G	.	.	TRANSCRIPT_ID=ENST00000590400.1;GENOMIC_POSITION=chr19:11192784;GENE_SYMBOL=KANK2

@@ -434,3 +434,17 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'comb/CPCG0235_ENST00000525687.5_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000525687.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case28(self):
+        """ Test case reported also in #360 with combination of one alternative
+        splicing and indels & snps. The issue of the case is that when
+        collapsing end nodes, the one with lower subgraph level should be kept.
+        """
+        gvf = [
+            self.data_dir/'comb/CPCG0235_ENST00000590400.1/rMATs.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000590400.1/gsnp.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000590400.1/gindel.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0235_ENST00000590400.1_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000590400.1'
+        self.default_test_case(gvf, reference, expected)
