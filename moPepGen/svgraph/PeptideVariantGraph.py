@@ -913,7 +913,7 @@ class PVGCursor():
         self.start_gain = start_gain or []
         self.cleavage_gain = cleavage_gain or []
         self.orf = orf or [None, None]
-        self.finding_start_site = True
+        self.finding_start_site = finding_start_site
 
 class PVGTraversal():
     """ PVG Traversal. The purpose of this class is to facilitate the graph
