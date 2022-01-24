@@ -26,6 +26,7 @@ def create_base_args() -> argparse.Namespace:
     args.quiet = True
     args.verbose_level = 1
     args.noncanonical_transcripts = False
+    args.invalid_protein_as_noncoding = False
     args.threads = 1
     return args
 

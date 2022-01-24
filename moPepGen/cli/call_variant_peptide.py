@@ -111,6 +111,7 @@ class VariantPeptideCaller():
         self.max_length:int = args.max_length
         self.max_variants_per_node:int = args.max_variants_per_node
         self.noncanonical_transcripts = args.noncanonical_transcripts
+        self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
         self.verbose = args.verbose_level
         self.threads = args.threads
         if self.quiet is True:
@@ -123,7 +124,10 @@ class VariantPeptideCaller():
 
     def load_reference(self):
         """ load reference genome, annotation, and canonical peptides """
-        self.genome, self.anno, _, self.canonical_peptides = load_references(self.args)
+        self.genome, self.anno, _, self.canonical_peptides = load_references(
+                args=self.args,
+                invalid_protein_as_noncoding=self.invalid_protein_as_noncoding
+            )
 
     def create_in_disk_vairant_pool(self):
         """ Create in disk variant pool """

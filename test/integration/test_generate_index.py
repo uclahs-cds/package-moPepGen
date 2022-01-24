@@ -13,6 +13,7 @@ class TestGenerateIndex(TestCaseIntegration):
         args.genome_fasta = self.data_dir / 'genome.fasta'
         args.annotation_gtf = self.data_dir / 'annotation.gtf'
         args.proteome_fasta = self.data_dir / 'translate.fasta'
+        args.invalid_protein_as_noncoding = False
         args.cleavage_rule = 'trypsin'
         args.min_mw = 500.
         args.min_length = 7
