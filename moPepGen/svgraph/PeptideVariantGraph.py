@@ -812,6 +812,7 @@ class PeptideVariantGraph():
         in_cds = cursor.in_cds
         start_gain = cursor.start_gain
         orf = cursor.orf
+        finding_start_site = cursor.finding_start_site
 
         node_list:List[Tuple[PVGNode, List[int,int], bool, List[VariantRecord]]] = []
         trash = set()
@@ -828,10 +829,19 @@ class PeptideVariantGraph():
             node_list.append((cur_copy, orf, False, additional_variants))
             trash.add(cur_copy)
 
-        stop_start_finding = any(x.variant.is_real_fusion for x in target_node.variants)
+        # if the current node contains the actual fusion variant, stop looking
+        # for further start sites.
+        if finding_start_site:
+            for variant in target_node.variants:
+                if variant.variant.is_real_fusion:
+                    finding_start_site = False
+                    real_fusion_position = variant.location.start
+
         start_indices = []
-        if not stop_start_finding:
+        if cursor.finding_start_site:
             start_indices = target_node.seq.find_all_start_sites()
+            if not finding_start_site:
+                start_indices = [x for x in start_indices if x <= real_fusion_position]
             for start_index in start_indices:
                 cur_copy = target_node.copy(in_nodes=False)
                 cur_copy.truncate_left(start_index)
@@ -875,7 +885,7 @@ class PeptideVariantGraph():
             cur_cleavage_gain = copy.copy(cleavage_gain)
 
             cursor = PVGCursor(target_node, out_node, in_cds, orf,
-                start_gain, cur_cleavage_gain)
+                start_gain, cur_cleavage_gain, finding_start_site)
             traversal.stage(target_node, out_node, cursor)
 
         for node, orf, is_start_codon, additional_variants in node_list:
@@ -894,7 +904,8 @@ class PVGCursor():
     """ Helper class for cursors when graph traversal to call peptides. """
     def __init__(self, in_node:PVGNode, out_node:PVGNode, in_cds:bool,
             orf:List[int,int]=None, start_gain:List[seqvar.VariantRecord]=None,
-            cleavage_gain:List[seqvar.VariantRecord]=None):
+            cleavage_gain:List[seqvar.VariantRecord]=None,
+            finding_start_site:bool=True):
         """ constructor """
         self.in_node = in_node
         self.out_node = out_node
@@ -902,6 +913,7 @@ class PVGCursor():
         self.start_gain = start_gain or []
         self.cleavage_gain = cleavage_gain or []
         self.orf = orf or [None, None]
+        self.finding_start_site = True
 
 class PVGTraversal():
     """ PVG Traversal. The purpose of this class is to facilitate the graph

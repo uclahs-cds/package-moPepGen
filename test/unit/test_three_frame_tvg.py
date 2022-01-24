@@ -1014,11 +1014,11 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         tgraph.init_three_frames()
         tgraph.create_variant_graph([fusion], variant_pool, genome, anno)
         node = list(tgraph.reading_frames[0].out_edges)[0].out_node
-        self.assertTrue(any(x.out_node.seq.seq == '' for x in node.out_edges))
+        self.assertTrue(node.get_out_nodes()[0].level == 1)
         tgraph.fit_into_codons()
         pgraph = tgraph.translate()
         peptides = pgraph.call_variant_peptides()
-        expected = {'MGPSFCEF', 'GPSFCEF', 'SFCEF'}
+        expected = {'MGPSFCEF', 'GPSFCEF'}
         self.assertEqual({str(x.seq) for x in peptides}, expected)
 
     def test_find_farthest_node_with_overlap_case1(self):
