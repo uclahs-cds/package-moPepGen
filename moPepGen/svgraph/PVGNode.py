@@ -451,8 +451,12 @@ class PVGNode():
             self.cleavage == other.cleavage and \
             self.reading_frame_index == other.reading_frame_index
 
-    def is_less_mutated(self, other:PVGNode) -> bool:
+    def is_less_mutated_than(self, other:PVGNode) -> bool:
         """ Checks if this node has less mutation than the other """
+        if self.level < other.level:
+            return True
+        if self.level > other.level:
+            return False
         if len(self.variants) < len(self.variants):
             return True
         if len(self.variants) > len(self.variants):

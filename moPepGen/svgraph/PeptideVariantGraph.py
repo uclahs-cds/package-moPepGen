@@ -305,7 +305,7 @@ class PeptideVariantGraph():
         for unique_node in copy.copy(unique_nodes):
             if unique_node.is_identical(node):
                 node_collapsed = True
-                if node.is_less_mutated(unique_node):
+                if node.is_less_mutated_than(unique_node):
                     unique_nodes.remove(unique_node)
                     unique_nodes.add(node)
                     unique_node.transfer_in_nodes_to(node)
