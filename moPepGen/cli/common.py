@@ -57,6 +57,12 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
             metavar='<file>',
             default=None
         )
+        group.add_argument(
+            '--invalid-protein-as-noncoding',
+            action='store_true',
+            help='Treat any transcript that the protein sequence is invalid ('
+            'contains the * symbol) as noncoding.'
+        )
     if index:
         group.add_argument(
             '--index-dir',
@@ -139,7 +145,8 @@ def add_args_source(parser:argparse.ArgumentParser):
     )
 
 def load_references(args:argparse.Namespace, load_genome:bool=True,
-        load_canonical_peptides:bool=True, load_proteome:bool=False
+        load_canonical_peptides:bool=True, load_proteome:bool=False,
+        invalid_protein_as_noncoding:bool=False
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, Set[str]]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
@@ -187,7 +194,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if not quiet:
             logger('Proteome FASTA loaded.')
 
-        annotation.check_protein_coding(proteome)
+        annotation.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
         if load_genome:
             genome = dna.DNASeqDict()

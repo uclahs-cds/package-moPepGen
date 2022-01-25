@@ -52,6 +52,7 @@ def generate_index(args:argparse.Namespace):
     min_length:int = int(args.min_length)
     max_length:int = int(args.max_length)
     exception = 'trypsin_exception' if rule == 'trypsin' else None
+    invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
     quiet:bool = args.quiet
 
     output_dir:Path = args.output_dir
@@ -83,7 +84,7 @@ def generate_index(args:argparse.Namespace):
     proteome = aa.AminoAcidSeqDict()
     proteome.dump_fasta(parth_proteome)
 
-    anno.check_protein_coding(proteome)
+    anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
     with open(output_anno, 'wb') as handle:
         pickle.dump(anno, handle)

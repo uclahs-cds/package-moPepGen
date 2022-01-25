@@ -155,10 +155,15 @@ class GenomicAnnotation():
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()
 
-    def check_protein_coding(self, proteome:AminoAcidSeqDict) -> None:
+    def check_protein_coding(self, proteome:AminoAcidSeqDict,
+            invalid_protein_as_noncoding:bool) -> None:
         """ Checks if each transcript is protein coding """
         for tx_id, tx_model in self.transcripts.items():
-            tx_model.is_protein_coding = tx_id in proteome
+            if invalid_protein_as_noncoding:
+                tx_model.is_protein_coding = tx_id in proteome and \
+                    '*' not in proteome[tx_id]
+            else:
+                tx_model.is_protein_coding = tx_id in proteome
 
     def coordinate_gene_to_transcript(self, index:int, gene:str,
             transcript:str) -> int:
