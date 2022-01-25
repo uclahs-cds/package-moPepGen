@@ -45,7 +45,7 @@ class PVGNodeCollapser():
         same_collapse_node = get_equivalent(self.pool, collapse_node)
         if same_collapse_node:
             same_node = self.mapper[same_collapse_node]
-            if node.is_less_mutated(same_node):
+            if node.is_less_mutated_than(same_node):
                 same_node.transfer_in_nodes_to(node)
                 self.pool.remove(same_collapse_node)
                 self.pool.add(collapse_node)

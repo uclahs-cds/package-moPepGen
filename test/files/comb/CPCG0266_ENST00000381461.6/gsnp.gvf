@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=/data/Index/GRCh38-EBI-GENCODE34
+##genome_fasta=
+##annotation_gtf=
+##source=gsnp
+##CHROM=<Description='{'Description': "'Gene ID'"}'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000183354.12	39234	SNV-39234-T-C	T	C	.	.	TRANSCRIPT_ID=ENST00000381461.6;GENOMIC_POSITION=chr9:5969249;GENE_SYMBOL=KIAA2026
+ENSG00000183354.12	40067	SNV-40067-T-C	T	C	.	.	TRANSCRIPT_ID=ENST00000381461.6;GENOMIC_POSITION=chr9:5968416;GENE_SYMBOL=KIAA2026

@@ -413,3 +413,38 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/03/brute_force.fasta'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case26(self):
+        """ Test case reported in #357 with two alternative splicing events. """
+        gvf = [
+            self.data_dir/'comb/CPCG0266_ENST00000381461.6/rMATs.gvf',
+            self.data_dir/'comb/CPCG0266_ENST00000381461.6/gsnp.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0266_ENST00000381461.6_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000381461.6'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case27(self):
+        """ Test case reported in #360 with one alternative splicing and an
+        indel. """
+        gvf = [
+            self.data_dir/'comb/CPCG0235_ENST00000525687.5/rMATs.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000525687.5/gindel.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0235_ENST00000525687.5_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000525687.5'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case28(self):
+        """ Test case reported also in #360 with combination of one alternative
+        splicing and indels & snps. The issue of the case is that when
+        collapsing end nodes, the one with lower subgraph level should be kept.
+        """
+        gvf = [
+            self.data_dir/'comb/CPCG0235_ENST00000590400.1/rMATs.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000590400.1/gsnp.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000590400.1/gindel.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0235_ENST00000590400.1_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000590400.1'
+        self.default_test_case(gvf, reference, expected)

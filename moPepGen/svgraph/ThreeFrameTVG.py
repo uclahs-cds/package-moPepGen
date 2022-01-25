@@ -696,7 +696,6 @@ class ThreeFrameTVG():
                 continue
 
             if variant_start == node_end == len(self.seq):
-                self.add_stop_node(node)
                 self.add_edge(node, var_node, 'reference')
                 continue
 

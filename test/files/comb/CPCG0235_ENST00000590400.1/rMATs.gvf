@@ -1,0 +1,18 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.1.0-beta.1
+##parser=parseRMATS
+##reference_index=/data/Index/GRCh38-EBI-GENCODE34
+##genome_fasta=
+##annotation_gtf=
+##source=rMATs
+##CHROM=<Description='{'Description': "'Gene ID'"}'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000197256.10	85	SE_1971	G	<INS>	.	.	TRANSCRIPT_ID=ENST00000590400.1;DONOR_START=1972;DONOR_END=2170;DONOR_GENE_ID=ENSG00000197256.10;GENE_SYMBOL=KANK2;GENOMIC_POSITION=chr19:11195622:11195820
