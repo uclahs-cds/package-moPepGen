@@ -1116,8 +1116,8 @@ class ThreeFrameTVG():
             len_after = len(visited)
             if len_before == len_after:
                 continue
-            is_bridge_out = any(e.out_node.reading_frame_index != this_id for e
-                in cur.out_edges)
+            is_bridge_out = any(e.out_node.reading_frame_index != this_id
+                and e.out_node is not end for e in cur.out_edges)
             if is_bridge_out:
                 bridge_out.add(cur)
                 continue
@@ -1150,7 +1150,10 @@ class ThreeFrameTVG():
                     \ /
                      A
         """
-        in_subgraph = node.subgraph_id != self.id
+        # When the subgraph_checker is True, alignment is limited within the
+        # current subgraph. The only exception is for fusions, that incoming
+        # node in the main graph is exclusively bond with the fusion donor.
+        subgraph_checker = True
         # find the range of overlaps
         farthest = None
         if not node.get_reference_next():
@@ -1167,7 +1170,12 @@ class ThreeFrameTVG():
             if cur.reading_frame_index != node.reading_frame_index:
                 continue
 
-            if not in_subgraph and cur.subgraph_id != node.subgraph_id:
+            if subgraph_checker:
+                if cur.has_exclusive_inbond_node() and \
+                        cur.get_in_nodes()[0].subgraph_id == node.subgraph_id:
+                    subgraph_checker = False
+
+            if subgraph_checker and cur.subgraph_id != node.subgraph_id:
                 continue
 
             visited_len_before = len(visited)
@@ -1196,8 +1204,6 @@ class ThreeFrameTVG():
             if not cur.is_reference():
                 for edge in cur.out_edges:
                     queue.append(edge.out_node)
-                # next_ref = cur.get_reference_next()
-                # queue.append(next_ref)
                 continue
 
             if cur.is_stop_node():
@@ -1547,7 +1553,7 @@ class ThreeFrameTVG():
         # Sometimes the annotated cds end isn't in fact a stop codon. If so,
         # a fake stop codon is added so the node won't be called as variant
         # peptide.
-        if terminal_node:
+        if self.has_known_orf and terminal_node:
             right_part = terminal_node.split_node(stop_site)
             if(len(right_part.seq.seq) > 1 and right_part.seq.seq[0] == '*'):
                 right_part.split_node(1)

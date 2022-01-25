@@ -199,6 +199,16 @@ class TVGNode():
             return False
         return len(self.out_edges) == 1 and len(other.in_edges) == 1
 
+    def has_exclusive_outbond_node(self) -> bool:
+        """ The given node has exclusive outbond node """
+        return len(self.out_edges) == 1 and \
+            len(self.get_out_nodes()[0].in_edges) == 1
+
+    def has_exclusive_inbond_node(self) -> bool:
+        """ The given node has exclusive inbond node """
+        return len(self.in_edges) == 1 and \
+            len(self.get_in_nodes()[0].out_edges) == 1
+
     def get_reference_next(self) -> TVGNode:
         """ Get the next node of which the edge is reference (not variant
         or cleavage). """
