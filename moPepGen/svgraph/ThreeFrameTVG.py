@@ -1132,6 +1132,10 @@ class ThreeFrameTVG():
             if cur is not end:
                 for e in cur.out_edges:
                     queue.appendleft(e.out_node)
+        for node in copy.copy(subgraph_in):
+            if node in subgraph_out:
+                subgraph_in.remove(node)
+                subgraph_out.remove(node)
         return bridge_in, bridge_out, subgraph_in, subgraph_out
 
     def find_farthest_node_with_overlap(self, node:TVGNode, min_size:int=6

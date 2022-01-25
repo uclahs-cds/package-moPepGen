@@ -173,6 +173,11 @@ class TVGNode():
         """ check if it is a orf bridge node """
         return self.reading_frame_index != out_node.reading_frame_index
 
+    def is_out_orf_bridge(self) -> bool:
+        """ check if it is an ORF out bridge node """
+        return any(x.reading_frame_index != self.reading_frame_index
+            for x in self.get_out_nodes())
+
     def has_bridge_from_reading_frame(self, other_reading_frame_index:int):
         """ Check if it has a in bridge node from another reading frame """
         return any(x.reading_frame_index == other_reading_frame_index\
