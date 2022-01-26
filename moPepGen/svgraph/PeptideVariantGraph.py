@@ -192,10 +192,10 @@ class PeptideVariantGraph():
                 for in_node in node.in_nodes:
                     if self.nodes_have_too_many_variants([in_node, out_node]) and \
                                 not self.hypermutated_region_warned:
-                            err.HypermutatedRegionWarning(
-                                self.id, self.max_variants_per_node
-                            )
-                            self.hypermutated_region_warned = True
+                        err.HypermutatedRegionWarning(
+                            self.id, self.max_variants_per_node
+                        )
+                        self.hypermutated_region_warned = True
                     else:
                         route = (in_node, node, out_node)
                         routes.add(route)
