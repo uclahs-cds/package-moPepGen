@@ -328,9 +328,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         when creating the cleavage graph, and they remained uncleaved,
         resulting * in the peptide sequence. The solution is just to use
         `merge_forward` when the only outgoing node is a bridge, instead of
-        `merge_join`. However, 5 peptides are sometimes not called. The graph
-        is too complicated to figure out where is the cause. Going to leave it
-        here for now.
+        `merge_join`.
         """
         gvf = [
             self.data_dir/'comb/CPCG0235_ENST00000480694.2/gsnp.gvf',
@@ -338,20 +336,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         ]
         expected = self.data_dir/'comb/CPCG0235_ENST00000480694.2_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000480694.2'
-        args = create_base_args()
-        args.input_variant = gvf
-        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
-        args.genome_fasta = reference/'genome.fasta'
-        args.annotation_gtf = reference/'annotation.gtf'
-        args.proteome_fasta = reference/'proteome.fasta'
-        cli.call_variant_peptide(args)
-        files = {str(file.name) for file in self.work_dir.glob('*')}
-        self.assertEqual(files, {'vep_moPepGen.fasta'})
-        peptides = list(SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'))
-        seqs = {str(seq.seq) for seq in peptides}
-        with open(expected, 'rt') as handle:
-            expect_seqs = {line.strip() for line in handle}
-        self.assertTrue(seqs.issuperset(expect_seqs))
+        self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case21(self):
         """ Alternative splicing only, reported in #333.
