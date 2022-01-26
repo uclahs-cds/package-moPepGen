@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseVEP
+##reference_index=/data/Index/GRCh38-EBI-GENCODE34
+##genome_fasta=
+##annotation_gtf=
+##source=gsnp
+##CHROM=<Description='{'Description': "'Gene ID'"}'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000228315.12	7513	SNV-7513-G-A	G	A	.	.	TRANSCRIPT_ID=ENST00000452737.5;GENOMIC_POSITION=chr22:23709844;GENE_SYMBOL=GUSBP11
+ENSG00000228315.12	78676	SNV-78676-G-T	G	T	.	.	TRANSCRIPT_ID=ENST00000452737.5;GENOMIC_POSITION=chr22:23638681;GENE_SYMBOL=GUSBP11

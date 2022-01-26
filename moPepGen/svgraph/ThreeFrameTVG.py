@@ -1116,8 +1116,8 @@ class ThreeFrameTVG():
             len_after = len(visited)
             if len_before == len_after:
                 continue
-            is_bridge_out = any(e.out_node.reading_frame_index != this_id for e
-                in cur.out_edges)
+            is_bridge_out = any(e.out_node.reading_frame_index != this_id
+                and e.out_node is not end for e in cur.out_edges)
             if is_bridge_out:
                 bridge_out.add(cur)
                 continue
@@ -1132,7 +1132,25 @@ class ThreeFrameTVG():
             if cur is not end:
                 for e in cur.out_edges:
                     queue.appendleft(e.out_node)
+        for node in copy.copy(subgraph_in):
+            if node in subgraph_out:
+                subgraph_in.remove(node)
+                subgraph_out.remove(node)
         return bridge_in, bridge_out, subgraph_in, subgraph_out
+
+    @staticmethod
+    def find_other_subgraph_end_nodes(node:TVGNode) -> Set[TVGNode]:
+        """ Find parallel subgraph end nodes """
+        end_nodes = set()
+        for out_node in node.get_out_nodes():
+            if out_node.level >= node.level:
+                raise ValueError('something went wrong!')
+            for end_node in out_node.get_in_nodes():
+                if end_node is not node and \
+                        end_node.subgraph_id == node.subgraph_id and\
+                        end_node.reading_frame_index == node.reading_frame_index:
+                    end_nodes.add(end_node)
+        return end_nodes
 
     def find_farthest_node_with_overlap(self, node:TVGNode, min_size:int=6
             ) -> TVGNode:
@@ -1150,7 +1168,10 @@ class ThreeFrameTVG():
                     \ /
                      A
         """
-        in_subgraph = node.subgraph_id != self.id
+        # When the subgraph_checker is True, alignment is limited within the
+        # current subgraph. The only exception is for fusions, that incoming
+        # node in the main graph is exclusively bond with the fusion donor.
+        subgraph_checker = True
         # find the range of overlaps
         farthest = None
         if not node.get_reference_next():
@@ -1167,7 +1188,12 @@ class ThreeFrameTVG():
             if cur.reading_frame_index != node.reading_frame_index:
                 continue
 
-            if not in_subgraph and cur.subgraph_id != node.subgraph_id:
+            if subgraph_checker:
+                if cur.has_exclusive_inbond_node() and \
+                        cur.get_in_nodes()[0].subgraph_id == node.subgraph_id:
+                    subgraph_checker = False
+
+            if subgraph_checker and cur.subgraph_id != node.subgraph_id:
                 continue
 
             visited_len_before = len(visited)
@@ -1196,8 +1222,6 @@ class ThreeFrameTVG():
             if not cur.is_reference():
                 for edge in cur.out_edges:
                     queue.append(edge.out_node)
-                # next_ref = cur.get_reference_next()
-                # queue.append(next_ref)
                 continue
 
             if cur.is_stop_node():
@@ -1269,17 +1293,19 @@ class ThreeFrameTVG():
         """
         start_node = node
         end_node = self.find_farthest_node_with_overlap(node)
-        end_nodes = [end_node]
+        end_nodes = {end_node}
+        if end_node.is_subgraph_end():
+            end_nodes.update(self.find_other_subgraph_end_nodes(end_node))
         bridges = self.find_bridge_nodes_between(start_node, end_node)
         bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges
 
         for bridge in bridge_outs:
             for e in bridge.out_edges:
-                end_nodes.append(e.out_node)
+                end_nodes.add(e.out_node)
 
         for subgraph in subgraph_outs:
             for e in subgraph.out_edges:
-                end_nodes.append(e.out_node)
+                end_nodes.add(e.out_node)
 
         new_nodes:Set[TVGNode] = set()
         queue = deque()
@@ -1547,7 +1573,7 @@ class ThreeFrameTVG():
         # Sometimes the annotated cds end isn't in fact a stop codon. If so,
         # a fake stop codon is added so the node won't be called as variant
         # peptide.
-        if terminal_node:
+        if self.has_known_orf and terminal_node:
             right_part = terminal_node.split_node(stop_site)
             if(len(right_part.seq.seq) > 1 and right_part.seq.seq[0] == '*'):
                 right_part.split_node(1)

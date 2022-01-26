@@ -169,9 +169,18 @@ class TVGNode():
         """ check if it is a subgraph bridge node """
         return self.subgraph_id != out_node.subgraph_id
 
+    def is_subgraph_end(self) -> bool:
+        """ check if is the end of a subgraph """
+        return all(x.level < self.level for x in self.get_out_nodes())
+
     def is_orf_bridge(self, out_node:TVGNode) -> bool:
         """ check if it is a orf bridge node """
         return self.reading_frame_index != out_node.reading_frame_index
+
+    def is_out_orf_bridge(self) -> bool:
+        """ check if it is an ORF out bridge node """
+        return any(x.reading_frame_index != self.reading_frame_index
+            for x in self.get_out_nodes())
 
     def has_bridge_from_reading_frame(self, other_reading_frame_index:int):
         """ Check if it has a in bridge node from another reading frame """
@@ -198,6 +207,16 @@ class TVGNode():
         if not self.is_inbond_of(other):
             return False
         return len(self.out_edges) == 1 and len(other.in_edges) == 1
+
+    def has_exclusive_outbond_node(self) -> bool:
+        """ The given node has exclusive outbond node """
+        return len(self.out_edges) == 1 and \
+            len(self.get_out_nodes()[0].in_edges) == 1
+
+    def has_exclusive_inbond_node(self) -> bool:
+        """ The given node has exclusive inbond node """
+        return len(self.in_edges) == 1 and \
+            len(self.get_in_nodes()[0].out_edges) == 1
 
     def get_reference_next(self) -> TVGNode:
         """ Get the next node of which the edge is reference (not variant
