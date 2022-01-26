@@ -463,3 +463,16 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'comb/CPCG0333_ENST00000452737.5_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case30(self):
+        """ Test case reported in #364 with combination of two alternative
+        splicing and indels & snps. The issue of the case is that when
+        aligning nodes in TVG, it failed to limit inside the same subgraph.
+        """
+        gvf = [
+            self.data_dir/'comb/CPCG0462_ENST00000483923.5/rMATs.gvf',
+            self.data_dir/'comb/CPCG0462_ENST00000483923.5/gsnp.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0462_ENST00000483923.5_expected.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000483923.5'
+        self.default_test_case(gvf, reference, expected)

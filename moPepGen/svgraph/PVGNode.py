@@ -457,9 +457,9 @@ class PVGNode():
             return True
         if self.level > other.level:
             return False
-        if len(self.variants) < len(self.variants):
+        if len(self.variants) < len(other.variants):
             return True
-        if len(self.variants) > len(self.variants):
+        if len(self.variants) > len(other.variants):
             return False
         for x, y in zip(self.variants, other.variants):
             if x.location < y.location:
