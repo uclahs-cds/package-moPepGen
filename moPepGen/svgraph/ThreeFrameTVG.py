@@ -1138,6 +1138,20 @@ class ThreeFrameTVG():
                 subgraph_out.remove(node)
         return bridge_in, bridge_out, subgraph_in, subgraph_out
 
+    @staticmethod
+    def find_other_subgraph_end_nodes(node:TVGNode) -> Set[TVGNode]:
+        """ Find parallel subgraph end nodes """
+        end_nodes = set()
+        for out_node in node.get_out_nodes():
+            if out_node.level >= node.level:
+                raise ValueError('something went wrong!')
+            for end_node in out_node.get_in_nodes():
+                if end_node is not node and \
+                        end_node.subgraph_id == node.subgraph_id and\
+                        end_node.reading_frame_index == node.reading_frame_index:
+                    end_nodes.add(end_node)
+        return end_nodes
+
     def find_farthest_node_with_overlap(self, node:TVGNode, min_size:int=6
             ) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
@@ -1279,17 +1293,19 @@ class ThreeFrameTVG():
         """
         start_node = node
         end_node = self.find_farthest_node_with_overlap(node)
-        end_nodes = [end_node]
+        end_nodes = {end_node}
+        if end_node.is_subgraph_end():
+            end_nodes.update(self.find_other_subgraph_end_nodes(end_node))
         bridges = self.find_bridge_nodes_between(start_node, end_node)
         bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges
 
         for bridge in bridge_outs:
             for e in bridge.out_edges:
-                end_nodes.append(e.out_node)
+                end_nodes.add(e.out_node)
 
         for subgraph in subgraph_outs:
             for e in subgraph.out_edges:
-                end_nodes.append(e.out_node)
+                end_nodes.add(e.out_node)
 
         new_nodes:Set[TVGNode] = set()
         queue = deque()

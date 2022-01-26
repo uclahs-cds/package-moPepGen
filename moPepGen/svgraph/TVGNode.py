@@ -169,6 +169,10 @@ class TVGNode():
         """ check if it is a subgraph bridge node """
         return self.subgraph_id != out_node.subgraph_id
 
+    def is_subgraph_end(self) -> bool:
+        """ check if is the end of a subgraph """
+        return all(x.level < self.level for x in self.get_out_nodes())
+
     def is_orf_bridge(self, out_node:TVGNode) -> bool:
         """ check if it is a orf bridge node """
         return self.reading_frame_index != out_node.reading_frame_index
