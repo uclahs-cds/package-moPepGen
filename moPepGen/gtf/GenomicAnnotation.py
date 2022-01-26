@@ -160,8 +160,14 @@ class GenomicAnnotation():
         """ Checks if each transcript is protein coding """
         for tx_id, tx_model in self.transcripts.items():
             if invalid_protein_as_noncoding:
-                tx_model.is_protein_coding = tx_id in proteome and \
-                    '*' not in proteome[tx_id]
+                if tx_id in proteome:
+                    if '*' in proteome[tx_id].seq:
+                        proteome.pop(tx_id)
+                        tx_model.is_protein_coding = False
+                    else:
+                        tx_model.is_protein_coding = True
+                else:
+                    tx_model.is_protein_coding = False
             else:
                 tx_model.is_protein_coding = tx_id in proteome
 

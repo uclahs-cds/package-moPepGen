@@ -4,7 +4,6 @@ import copy
 from typing import Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
-import itertools
 from Bio.Seq import Seq
 from moPepGen import aa, seqvar, err
 from moPepGen.seqvar.VariantRecord import VariantRecord
