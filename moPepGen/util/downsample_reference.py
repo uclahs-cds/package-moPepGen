@@ -206,7 +206,8 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
     genome[seqname].id = seqname
 
     gene_start = 0
-    for gene in anno.genes.values():
+    for gene_id in gene_seqs.keys():
+        gene = anno.genes[gene_id]
         shift_offset = gene_start - gene.location.start
         gene_start = gene_start + gene.location.end - gene.location.start
         shift_seq_feature(gene, shift_offset, seqname)

@@ -176,7 +176,10 @@ def call_variant_peptides_wrapper(tx_id:str,
                 max_variants_per_node=max_variants_per_node
             )
         except:
-            logger(f"Exception raised from fusion {variant.id}")
+            logger(
+                f"Exception raised from fusion {variant.id}, "
+                f"donor:{tx_id}, accepter: {variant.attrs['ACCEPTER_TRANSCRIPT_ID']}"
+            )
             raise
 
         peptides.update(_peptides)
