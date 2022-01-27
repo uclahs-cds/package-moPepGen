@@ -129,7 +129,7 @@ def add_args_output_path(parser:argparse.ArgumentParser, formats:List[str]):
     parser.add_argument(
         '-o', '--output-path',
         type=str,
-        help=f'File path to the output file. Valid file formats: {formats}',
+        help=f'File path to the output file. Valid formats: {formats}',
         metavar='<file>',
         required=True
     )
@@ -140,15 +140,18 @@ def add_args_input_path(parser:argparse.ArgumentParser, formats:List[str],
     if message is None:
         message = f"File path to the input file{'s' if plural else ''}."
 
-    message += f"{'Can take multiple files.' if plural else ''}. Valid formats: " +\
+    message += f"{' Can take multiple files.' if plural else ''} Valid formats: " +\
         f"{formats}"
+
+    metavar = ["<files>"] if plural else "<file>"
+    nargs = '+' if plural else None
 
     parser.add_argument(
         '-i', '--input-path',
         type=Path,
         help=message,
-        nargs='+' if plural else None,
-        metavar="<files>" if plural else "<file>",
+        nargs=nargs,
+        metavar=metavar,
         required=True
     )
 
