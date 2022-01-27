@@ -1,8 +1,7 @@
 """ Test the moPepGen parseRMATS """
 import argparse
+import os
 from pathlib import Path
-
-from bcrypt import os
 from test.integration import TestCaseIntegration
 from moPepGen import cli, seqvar
 
