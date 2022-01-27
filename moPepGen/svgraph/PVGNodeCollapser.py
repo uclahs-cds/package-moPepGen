@@ -16,12 +16,15 @@ class PVGCollapseNode(PVGNode):
 
     def __eq__(self, other:PVGCollapseNode):
         """ equal to """
-        return self.seq.seq == other.seq.seq and \
+        result = self.seq.seq == other.seq.seq and \
             self.out_nodes == other.out_nodes and \
             self.cleavage == other.cleavage and \
             self.truncated == other.truncated and \
             self.reading_frame_index == other.reading_frame_index and \
             self.was_bridge == other.was_bridge
+        if result and hasattr(other, 'match'):
+            other.match = self
+        return result
 
     def __ne__(self, other:PVGCollapseNode):
         """ not equal to """

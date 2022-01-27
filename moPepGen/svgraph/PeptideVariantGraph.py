@@ -4,7 +4,6 @@ import copy
 from typing import Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
-import itertools
 from Bio.Seq import Seq
 from moPepGen import aa, seqvar, err
 from moPepGen.seqvar.VariantRecord import VariantRecord
@@ -167,28 +166,53 @@ class PeptideVariantGraph():
 
         if cleavage:
             for out_node in node.out_nodes:
-                route = (node, out_node)
-                routes.add(route)
-                visited.add(out_node)
-        else:
-            for in_node, out_node in itertools.product(node.in_nodes, node.out_nodes):
-                if self.nodes_have_too_many_variants([in_node, out_node]):
-                    if not self.hypermutated_region_warned:
-                        err.HypermutatedRegionWarning(self.id, self.max_variants_per_node)
-                        self.hypermutated_region_warned = True
-                    continue
-                route = (in_node, node, out_node)
-                routes.add(route)
-                visited.add(in_node)
-                visited.add(out_node)
+                if self.nodes_have_too_many_variants([node, out_node]) and \
+                            not self.hypermutated_region_warned:
+                    err.HypermutatedRegionWarning(self.id, self.max_variants_per_node)
+                    self.hypermutated_region_warned = True
+                else:
+                    route = (node, out_node)
+                    routes.add(route)
+                    visited.add(out_node)
 
-        for cur in copy.copy(routes):
-            for in_node in cur[-1].in_nodes:
-                if (in_node.is_bridge() or self.node_is_subgraph_end(in_node)):
-                    #for out_node in cur[-1].out_nodes:
-                    new_route = (in_node, cur[-1],)
-                    routes.add(new_route)
-                    visited.add(in_node)
+                for in_node in out_node.in_nodes:
+                    if in_node is not node:
+                        if self.nodes_have_too_many_variants([node, out_node]) and \
+                                not self.hypermutated_region_warned:
+                            err.HypermutatedRegionWarning(
+                                self.id, self.max_variants_per_node
+                            )
+                            self.hypermutated_region_warned = True
+                        route = (in_node, out_node)
+                        routes.add(route)
+                        visited.add(in_node)
+        else:
+            for out_node in node.out_nodes:
+                for in_node in node.in_nodes:
+                    if self.nodes_have_too_many_variants([in_node, out_node]) and \
+                                not self.hypermutated_region_warned:
+                        err.HypermutatedRegionWarning(
+                            self.id, self.max_variants_per_node
+                        )
+                        self.hypermutated_region_warned = True
+                    else:
+                        route = (in_node, node, out_node)
+                        routes.add(route)
+                        visited.add(in_node)
+                        visited.add(out_node)
+
+                for in_node in out_node.in_nodes:
+                    if in_node is not node:
+                        if self.nodes_have_too_many_variants([node, out_node]) and \
+                                not self.hypermutated_region_warned:
+                            err.HypermutatedRegionWarning(
+                                self.id, self.max_variants_per_node
+                            )
+                            self.hypermutated_region_warned = True
+                        route = (in_node, out_node)
+                        routes.add(route)
+                        visited.add(in_node)
+
         return routes, visited
 
     def merge_nodes_routes(self, routes:Set[Tuple[PVGNode]],

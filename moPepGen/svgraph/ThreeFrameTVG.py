@@ -1553,7 +1553,8 @@ class ThreeFrameTVG():
 
                 new_pnode = out_node.translate()
 
-                if orf[1] and out_node.reading_frame_index == \
+                if orf[1] and out_node.level == 0 and \
+                        out_node.reading_frame_index == \
                         self.get_known_reading_frame_index() and \
                         out_node.has_ref_position(orf[1]):
                     terminal_node = new_pnode

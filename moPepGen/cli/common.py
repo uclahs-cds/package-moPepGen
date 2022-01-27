@@ -156,6 +156,8 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
     genome = None
     annotation = None
     canonical_peptides = None
+    if invalid_protein_as_noncoding:
+        load_proteome = True
 
     version = MetaVersion()
 
@@ -173,10 +175,13 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
 
 
         if load_proteome:
-            with not open(f'{index_dir}/proteome.pkl', 'rb') as handle:
+            with open(f'{index_dir}/proteome.pkl', 'rb') as handle:
                 proteome:aa.AminoAcidSeqDict = pickle.load(handle)
-                if version.is_valid(proteome.version):
+                if not version.is_valid(proteome.version):
                     raise err.IndexVersionNotMatchError(version, genome.version)
+
+        if invalid_protein_as_noncoding:
+            annotation.check_protein_coding(proteome, True)
 
         if load_canonical_peptides:
             with open(f"{index_dir}/canonical_peptides.pkl", 'rb') as handle:
