@@ -37,6 +37,14 @@ def add_subparser_validate_variant_callilng(subparsers:argparse._SubParsersActio
         metavar='<file>'
     )
     parser.add_argument(
+        '-f', '--force',
+        action='store_true',
+        help='If not set, the program stops when there are more than 10'
+        ' variants. When this flag is set, the program runs anyway. Noted that '
+        ' the runtime is going to increase quickly after 10 variants.',
+        default=False
+    )
+    parser.add_argument(
         '--variant-ids',
         type=str,
         help='List of variant labels.',
