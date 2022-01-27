@@ -62,7 +62,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         dest='alternative_5_splicing'
     )
     add_rmats_input_arg(
-        p, '--a5ss',
+        p, '--a3ss',
         message="File path to the A3SS (alternative 3' splicint site) junction"
         " count file output by rMATs. The file name should look like"
         " '_S3SS.MATS.JC.txt' or '*_A3SS.MATS.JCEC.txt'.",
