@@ -10,8 +10,7 @@ import argparse
 from pathlib import Path
 import pickle
 from moPepGen import dna, aa, gtf, logger
-from .common import add_args_cleavage, add_args_reference, add_args_quiet, \
-    print_help_if_missing_args, print_start_message
+from moPepGen.cli import common
 
 
 # pylint: disable=W0212
@@ -32,11 +31,11 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
         dest='output_dir',
         required=True
     )
-    add_args_reference(p, index=False)
-    add_args_cleavage(p)
-    add_args_quiet(p)
+    common.add_args_reference(p, index=False)
+    common.add_args_cleavage(p)
+    common.add_args_quiet(p)
     p.set_defaults(func=generate_index)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 
@@ -62,7 +61,7 @@ def generate_index(args:argparse.Namespace):
     output_peptides = output_dir/"canonical_peptides.pkl"
     output_coding_tx = output_dir/"coding_transcripts.pkl"
 
-    print_start_message(args)
+    common.print_start_message(args)
 
     output_dir.mkdir(exist_ok=True)
 

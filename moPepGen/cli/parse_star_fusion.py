@@ -7,9 +7,7 @@ import argparse
 from logging import warning
 from typing import List
 from moPepGen import logger, seqvar, parser, err
-from .common import add_args_input_path, add_args_output_path, add_args_reference, \
-    add_args_quiet, add_args_source, print_start_message, \
-    print_help_if_missing_args, load_references, generate_metadata, validate_file_format
+from moPepGen.cli import common
 
 
 INPUT_FILE_FORMATS = ['.tsv', '.txt']
@@ -27,12 +25,12 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    add_args_input_path(
+    common.add_args_input_path(
         parser=p,
         formats=INPUT_FILE_FORMATS,
         message="File path to STAR-Fusion's output file."
     )
-    add_args_output_path(p, OUTPUT_FILE_FORMATS)
+    common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--min-est-j',
         help='Minimal estimated junction reads to be included.',
@@ -40,24 +38,24 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
         default=5.0,
         metavar='<number>'
     )
-    add_args_source(p)
-    add_args_reference(p, proteome=False)
-    add_args_quiet(p)
+    common.add_args_source(p)
+    common.add_args_reference(p, proteome=False)
+    common.add_args_quiet(p)
     p.set_defaults(func=parse_star_fusion)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def parse_star_fusion(args:argparse.Namespace) -> None:
     """ Parse the STAR-Fusion's output and save it in GVF format. """
     # unpack args
     fusion = args.input_path
-    validate_file_format(args.input_path, INPUT_FILE_FORMATS)
+    common.validate_file_format(args.input_path, INPUT_FILE_FORMATS)
     output_path:str = args.output_path
-    validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    genome, anno, *_ = load_references(args, load_canonical_peptides=False)
+    genome, anno, *_ = common.load_references(args, load_canonical_peptides=False)
 
     variants:List[seqvar.VariantRecord] = []
 
@@ -84,7 +82,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Variants sorted.')
 
-    metadata = generate_metadata(args)
+    metadata = common.generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 

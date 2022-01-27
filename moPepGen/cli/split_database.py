@@ -8,8 +8,7 @@ import argparse
 from pathlib import Path
 from moPepGen.aa import PeptidePoolSplitter
 from moPepGen import SPLIT_DATABASE_KEY_SEPARATER, logger
-from .common import add_args_reference, add_args_quiet, print_start_message,\
-    print_help_if_missing_args, load_references, validate_file_format
+from moPepGen.cli import common
 
 
 GVF_FILE_FORMAT = ['.gvf']
@@ -86,23 +85,23 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
         default=None
     )
 
-    add_args_reference(p, genome=False, proteome=False)
-    add_args_quiet(p)
-    print_help_if_missing_args(p)
+    common.add_args_reference(p, genome=False, proteome=False)
+    common.add_args_quiet(p)
+    common.print_help_if_missing_args(p)
     p.set_defaults(func=split_database)
     return p
 
 def split_database(args:argparse.Namespace) -> None:
     """ Split peptide database """
     for file in args.gvf:
-        validate_file_format(file, GVF_FILE_FORMAT)
+        common.validate_file_format(file, GVF_FILE_FORMAT)
     for file in [args.variant_peptides, args.noncoding_peptides]:
         if file is not None:
-            validate_file_format(file, FASTA_FILE_FORMAT)
+            common.validate_file_format(file, FASTA_FILE_FORMAT)
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    _, anno, *_ = load_references(args, load_genome=False, \
+    _, anno, *_ = common.load_references(args, load_genome=False, \
         load_proteome=False, load_canonical_peptides=False)
 
     source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\

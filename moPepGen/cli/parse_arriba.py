@@ -7,9 +7,7 @@ from typing import List
 from pathlib import Path
 import argparse
 from moPepGen import logger, seqvar, parser, err
-from .common import add_args_input_path, add_args_reference, add_args_quiet, add_args_source,\
-    add_args_output_path, print_start_message,print_help_if_missing_args,\
-    load_references, generate_metadata, validate_file_format
+from moPepGen.cli import common
 
 
 INPUT_FILE_FORMATS = ['.tsv', '.txt']
@@ -26,11 +24,11 @@ def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
         'records for moPepGen to call variant peptides.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    add_args_input_path(
+    common.add_args_input_path(
         parser=p, formats=INPUT_FILE_FORMATS,
         message="File path to Arriba's output TSV file."
     )
-    add_args_output_path(p, OUTPUT_FILE_FORMATS)
+    common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--min-split-read1',
         type=int,
@@ -53,11 +51,11 @@ def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
         metavar='<choice>',
         default='medium'
     )
-    add_args_source(p)
-    add_args_reference(p, proteome=False)
-    add_args_quiet(p)
+    common.add_args_source(p)
+    common.add_args_reference(p, proteome=False)
+    common.add_args_quiet(p)
     p.set_defaults(func=parse_arriba)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def parse_arriba(args:argparse.Namespace) -> None:
@@ -65,16 +63,16 @@ def parse_arriba(args:argparse.Namespace) -> None:
     # unpack args
     fusion = args.input_path
     output_path:Path = args.output_path
-    validate_file_format(fusion, INPUT_FILE_FORMATS)
-    validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(fusion, INPUT_FILE_FORMATS)
+    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
     min_split_read1:int = args.min_split_read1
     min_split_read2:int = args.min_split_read2
     min_confidence:str = args.min_confidence
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    genome, anno, *_ = load_references(args=args, load_canonical_peptides=False)
+    genome, anno, *_ = common.load_references(args=args, load_canonical_peptides=False)
 
     variants:List[seqvar.VariantRecord] = []
 
@@ -106,7 +104,7 @@ def parse_arriba(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Variants sorted.')
 
-    metadata = generate_metadata(args)
+    metadata = common.generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 

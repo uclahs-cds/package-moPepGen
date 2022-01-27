@@ -13,9 +13,7 @@ from typing import Dict, Set
 from pathlib import Path
 from moPepGen import logger, seqvar
 from moPepGen.parser import RMATSParser
-from .common import add_args_output_path, add_args_reference, \
-    add_args_quiet, add_args_source, print_start_message, \
-    print_help_if_missing_args, load_references, generate_metadata, validate_file_format
+from moPepGen.cli import common
 
 
 INPUT_FILE_FORMATS = ['.tsv', '.txt']
@@ -97,12 +95,12 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         default=1
     )
 
-    add_args_output_path(p, OUTPUT_FILE_FORMATS)
-    add_args_source(p)
-    add_args_reference(p, proteome=False)
-    add_args_quiet(p)
+    common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
+    common.add_args_source(p)
+    common.add_args_reference(p, proteome=False)
+    common.add_args_quiet(p)
     p.set_defaults(func=parse_rmats)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def parse_rmats(args:argparse.Namespace) -> None:
@@ -117,12 +115,12 @@ def parse_rmats(args:argparse.Namespace) -> None:
     for file in [skipped_exon, alternative_3, alternative_5, mutually_exclusive,
             retained_intron]:
         if file is not None:
-            validate_file_format(file, INPUT_FILE_FORMATS)
-    validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+            common.validate_file_format(file, INPUT_FILE_FORMATS)
+    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    genome, anno, *_ = load_references(args, load_canonical_peptides=False)
+    genome, anno, *_ = common.load_references(args, load_canonical_peptides=False)
 
     variants:Dict[str,Set[seqvar.VariantRecord]] = {}
     rmats_outputs = [
@@ -163,7 +161,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Variants sorted.')
 
-    metadata = generate_metadata(args)
+    metadata = common.generate_metadata(args)
     seqvar.io.write(variants_sorted, output_path, metadata)
 
     if not args.quiet:

@@ -8,9 +8,7 @@ from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, aa, logger
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
-from moPepGen.cli.common import add_args_cleavage, add_args_quiet, add_args_reference, \
-    print_start_message, print_help_if_missing_args, load_references, \
-    load_inclusion_exclusion_biotypes, validate_file_format
+from moPepGen.cli import common
 
 
 if TYPE_CHECKING:
@@ -66,19 +64,19 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         default=None
     )
 
-    add_args_reference(p)
-    add_args_cleavage(p)
-    add_args_quiet(p)
+    common.add_args_reference(p)
+    common.add_args_cleavage(p)
+    common.add_args_quiet(p)
 
     p.set_defaults(func=call_noncoding_peptide)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def call_noncoding_peptide(args:argparse.Namespace) -> None:
     """ Main entry poitn for calling noncoding peptide """
-    validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
     if args.output_orf:
-        validate_file_format(args.output_orf, OUTPUT_FILE_FORMATS)
+        common.validate_file_format(args.output_orf, OUTPUT_FILE_FORMATS)
 
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
@@ -87,13 +85,13 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
     min_length:int = args.min_length
     max_length:int = args.max_length
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    genome, anno, proteome, canonical_peptides = load_references(
+    genome, anno, proteome, canonical_peptides = common.load_references(
         args=args, load_proteome=True
     )
 
-    inclusion_biotypes, exclusion_biotypes = load_inclusion_exclusion_biotypes(args)
+    inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)
 
     noncanonical_pool = aa.VariantPeptidePool()
     orf_pool = []
