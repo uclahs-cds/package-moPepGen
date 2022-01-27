@@ -218,6 +218,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     noncanonical_transcripts = caller.noncanonical_transcripts
 
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
+        if caller.verbose >= 1:
+            for file in pool.gvf_files:
+                logger(f"Using GVF file: {file}")
         tx_rank = caller.anno.get_transcirpt_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
         # tx_sorted = pool.get_transcript_order()
