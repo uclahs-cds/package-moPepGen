@@ -45,7 +45,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         default=None
     )
     p.add_argument(
-        '-t', '--min-tx-length',
+        '--min-tx-length',
         type=int,
         help='Minimal transcript length.',
         metavar='<number>',

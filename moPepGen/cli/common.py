@@ -306,7 +306,7 @@ def validate_file_format(file:Path, types:List[str]):
     actual_suffixes = [suffixes[-1]]
     if len(suffixes) > 1:
         actual_suffixes.append(''.join(suffixes[-2:]))
-    if not any(suffix in types for suffix in suffixes):
+    if not any(suffix in types for suffix in actual_suffixes):
         raise ValueError(
             f'The file {file} is invalid. Valid file types are {types}.'
         )
