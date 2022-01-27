@@ -55,7 +55,7 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
     # unpack args
     fusion = args.input_path
     output_path:Path = args.output_path
-    common.validate_file_format(fusion, INPUT_FILE_FORMATS)
+    common.validate_file_format(fusion, INPUT_FILE_FORMATS, True)
     common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
     common.print_start_message(args)

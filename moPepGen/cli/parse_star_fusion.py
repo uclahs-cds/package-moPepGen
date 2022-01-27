@@ -49,7 +49,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
     """ Parse the STAR-Fusion's output and save it in GVF format. """
     # unpack args
     fusion = args.input_path
-    common.validate_file_format(args.input_path, INPUT_FILE_FORMATS)
+    common.validate_file_format(args.input_path, INPUT_FILE_FORMATS, True)
     output_path:str = args.output_path
     common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 

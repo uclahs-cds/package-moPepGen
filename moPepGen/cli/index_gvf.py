@@ -34,7 +34,7 @@ def add_subparser_index_gvf(subparsers:argparse._SubParsersAction):
 def index_gvf(args:argparse.Namespace):
     """ Generate GVF index """
     input_file:Path = args.input_gvf
-    common.validate_file_format(input_file, INPUT_FILE_FORMATS)
+    common.validate_file_format(input_file, INPUT_FILE_FORMATS, True)
     output_file = input_file.with_suffix(input_file.suffix + '.idx')
     with open(input_file, 'rb') as handle:
         sum_val = check_sha512(handle)

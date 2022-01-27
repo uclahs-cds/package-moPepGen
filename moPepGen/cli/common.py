@@ -300,7 +300,7 @@ def parse_range(x:str) -> Tuple[int,int]:
         raise ValueError('Range invalid')
     return tuple(int(i) for i in y)
 
-def validate_file_format(file:Path, types:List[str]):
+def validate_file_format(file:Path, types:List[str], check_exist:bool=False):
     """ Validate the file type """
     suffixes = file.suffixes
     actual_suffixes = [suffixes[-1]]
@@ -310,3 +310,6 @@ def validate_file_format(file:Path, types:List[str]):
         raise ValueError(
             f'The file {file} is invalid. Valid file types are {types}.'
         )
+    if check_exist:
+        if not file.exists():
+            raise FileNotFoundError(f'File does not exist: {file}')

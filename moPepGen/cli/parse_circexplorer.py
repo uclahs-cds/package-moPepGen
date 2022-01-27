@@ -86,7 +86,7 @@ def parse_circexplorer(args:argparse.Namespace):
     """ Parse circexplorer known circRNA results. """
     input_path:Path = args.input_path
     output_path:Path = args.output_path
-    common.validate_file_format(input_path, INPUT_FILE_FORMATS)
+    common.validate_file_format(input_path, INPUT_FILE_FORMATS, True)
     common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
     intron_start_range = common.parse_range(args.intron_start_range)
