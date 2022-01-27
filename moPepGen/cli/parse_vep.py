@@ -11,7 +11,7 @@ from typing import Dict, List
 from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
-    TranscriptionStartSiteMutationError
+    TranscriptionStartSiteMutationError, warning
 from moPepGen import seqvar, logger
 from moPepGen.cli.common import add_args_output_prefix, add_args_reference, \
     add_args_quiet, add_args_source, print_start_message, \
@@ -81,6 +81,11 @@ def parse_vep(args:argparse.Namespace) -> None:
 
         if not args.quiet:
             logger(f'VEP file {vep_file} loaded.')
+
+    if not vep_records:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
 
     for records in vep_records.values():
         records.sort()

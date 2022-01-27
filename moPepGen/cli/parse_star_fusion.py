@@ -4,6 +4,7 @@ GVF file. The GVF file can be later used to call variant peptides using
 [callVariant](call-variant.md)."""
 from __future__ import annotations
 import argparse
+from logging import warning
 from typing import List
 from moPepGen import logger, seqvar, parser, err
 from .common import add_args_output_prefix, add_args_reference, \
@@ -69,6 +70,11 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
 
     if not args.quiet:
         logger(f'STAR-Fusion output {fusion} loaded.')
+
+    if not variants:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
 
     genes_rank = anno.get_genes_rank()
     variants = sorted(variants, key=lambda x: genes_rank[x.location.seqname])

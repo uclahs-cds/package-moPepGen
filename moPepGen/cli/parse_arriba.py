@@ -2,6 +2,7 @@
 [Arriba](https://github.com/suhrig/arriba) and saves as a GVF file. The GVF
 file can be later used to call variant peptides using
 [callVariant](call-variant.md)."""
+from logging import warning
 from typing import List
 from pathlib import Path
 import argparse
@@ -91,6 +92,11 @@ def parse_arriba(args:argparse.Namespace) -> None:
 
     if not args.quiet:
         logger(f'Arriba output {fusion} loaded.')
+
+    if not variants:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
 
     genes_rank = anno.get_genes_rank()
     variants = sorted(variants, key=lambda x: genes_rank[x.location.seqname])

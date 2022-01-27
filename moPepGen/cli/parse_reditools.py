@@ -5,6 +5,7 @@ file. The GVF file can then be used to call variant peptides using
 """
 from __future__ import annotations
 import argparse
+from logging import warning
 from typing import Dict, List
 from moPepGen import logger, seqvar, parser
 from .common import add_args_reference, add_args_quiet, add_args_source,\
@@ -101,6 +102,11 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     if not args.quiet:
         logger(f'REDItools table {table_file} loaded.')
+
+    if not variants:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
 
     for records in variants.values():
         records.sort()

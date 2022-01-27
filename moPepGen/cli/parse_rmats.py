@@ -8,6 +8,7 @@ The created GVF file can be then used to call for variant peptides using
 """
 from __future__ import annotations
 import argparse
+from logging import warning
 from typing import Dict, Set
 from pathlib import Path
 from moPepGen import logger, seqvar
@@ -134,6 +135,10 @@ def parse_rmats(args:argparse.Namespace) -> None:
                         variants[gene_id] = set()
                     variants[gene_id].add(var_record)
 
+    if not variants:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
 
     genes_rank = anno.get_genes_rank()
     ordered_keys = sorted(variants.keys(), key=lambda x:genes_rank[x])

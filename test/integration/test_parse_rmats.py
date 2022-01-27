@@ -1,6 +1,8 @@
 """ Test the moPepGen parseRMATS """
 import argparse
 from pathlib import Path
+
+from bcrypt import os
 from test.integration import TestCaseIntegration
 from moPepGen import cli, seqvar
 
@@ -112,11 +114,8 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_2.txt'
         cli.parse_rmats(args)
-        records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
-        self.assertEqual(len(records), 0)
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
-        for record in records:
-            self.assertEqual(record.type, 'Deletion')
+        filename = Path(f'{args.output_prefix}.gvf').name
+        self.assertNotIn(filename, os.listdir(self.work_dir))
 
     def test_parse_rmats_ri(self):
         """ rMATS RI. """

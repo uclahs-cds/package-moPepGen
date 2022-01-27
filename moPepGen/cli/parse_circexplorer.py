@@ -5,6 +5,7 @@ GVF file. The GVF file can be later used to call variant peptides using
 \*_circular_known.txt) """
 from __future__ import annotations
 import argparse
+from logging import warning
 from typing import List, Dict
 from pathlib import Path
 from moPepGen import logger, circ, err
@@ -125,6 +126,11 @@ def parse_circexplorer(args:argparse.Namespace):
         if gene_id not in circ_records:
             circ_records[gene_id] = []
         circ_records[gene_id].append(circ_record)
+
+    if not circ_records:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
 
     genes_rank = anno.get_genes_rank()
     ordered_keys = sorted(circ_records.keys(), key=lambda x:genes_rank[x])
