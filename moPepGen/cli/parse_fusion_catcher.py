@@ -7,10 +7,13 @@ from typing import List
 from pathlib import Path
 import argparse
 from moPepGen import logger, seqvar, parser, err
-from .common import add_args_reference, add_args_quiet, add_args_source,\
-    add_args_output_prefix, print_start_message,print_help_if_missing_args,\
-    load_references, generate_metadata
+from .common import add_args_input_path, add_args_reference, add_args_quiet, add_args_source,\
+    add_args_output_path, print_start_message,print_help_if_missing_args,\
+    load_references, generate_metadata, validate_file_format
 
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt']
+OUTPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
 def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
@@ -23,13 +26,11 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
         'records for moPepGen to call variant peptides. The genome',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    p.add_argument(
-        '-f', '--fusion',
-        type=Path,
-        help="Path to the FusionCatcher's output file.",
-        metavar='<file>',
-        required=True
+    add_args_input_path(
+        parser=p, formats=INPUT_FILE_FORMATS,
+        message="File path to FusionCatcher's output TSV file."
     )
+    add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--max-common-mapping',
         type=int,
@@ -44,7 +45,6 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
         default=5,
         metavar='<number>'
     )
-    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, proteome=False)
     add_args_quiet(p)
@@ -55,9 +55,10 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
 def parse_fusion_catcher(args:argparse.Namespace) -> None:
     """ Parse FusionCatcher output and save it in GVF format. """
     # unpack args
-    fusion = args.fusion
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.gvf'
+    fusion = args.input_path
+    output_path:Path = args.output_path
+    validate_file_format(fusion, INPUT_FILE_FORMATS)
+    validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
     print_start_message(args)
 

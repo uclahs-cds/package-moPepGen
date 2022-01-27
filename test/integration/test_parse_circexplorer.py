@@ -11,7 +11,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args = argparse.Namespace()
         args.command = 'parseCIRCexplorer'
         args.input_path = self.data_dir/'circRNA/CIRCexplorer_circularRNA_known.txt'
-        args.output_prefix = str(self.work_dir/'circ')
+        args.output_path = self.work_dir/'circ.gvf'
         args.source = 'circRNA'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -33,7 +33,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args = argparse.Namespace()
         args.command = 'parseCIRCexplorer'
         args.input_path = self.data_dir/'circRNA/CIRCexplorer3_circularRNA_known.txt'
-        args.output_prefix = str(self.work_dir/'circ')
+        args.output_path = self.work_dir/'circ.gvf'
         args.source = 'circRNA'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -50,7 +50,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'circ.gvf'}
         self.assertEqual(files, expected)
-        self.assert_gvf_order(self.work_dir/'circ.gvf', args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
         args.min_fbr_circ = 1
         args.min_circ_score = 1
@@ -58,4 +58,4 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'circ.gvf'}
         self.assertEqual(files, expected)
-        self.assert_gvf_order(self.work_dir/'circ.gvf', args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)

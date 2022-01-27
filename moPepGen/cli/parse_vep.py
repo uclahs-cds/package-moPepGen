@@ -13,10 +13,13 @@ from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
     TranscriptionStartSiteMutationError, warning
 from moPepGen import seqvar, logger
-from moPepGen.cli.common import add_args_output_prefix, add_args_reference, \
+from moPepGen.cli.common import add_args_input_path, add_args_output_path, add_args_reference, \
     add_args_quiet, add_args_source, print_start_message, \
-    print_help_if_missing_args, load_references, generate_metadata
+    print_help_if_missing_args, load_references, generate_metadata, validate_file_format
 
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt', '.tsv.gz', '.txt.gz']
+OUTPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
 def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
@@ -31,16 +34,11 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         "must the consistent with the VEP output.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-
-    p.add_argument(
-        '-i', '--vep-txt',
-        type=Path,
-        nargs='+',
-        help='Path to VEP result txt file.',
-        metavar='<file>',
-        required=True
+    add_args_input_path(
+        parser=p, formats=INPUT_FILE_FORMATS,
+        message="File path to the VEP outpu TXT file."
     )
-    add_args_output_prefix(p)
+    add_args_output_path(p, OUTPUT_FILE_FORMATS)
     add_args_source(p)
     add_args_reference(p, proteome=False)
     add_args_quiet(p)
@@ -51,9 +49,11 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
 def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """
     # unpack args
-    vep_files:List[Path] = args.vep_txt
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.gvf'
+    vep_files:List[Path] = args.input_path
+    for file in vep_files:
+        validate_file_format(file, INPUT_FILE_FORMATS)
+    output_path:Path = args.output_path
+    validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
     print_start_message(args)
 

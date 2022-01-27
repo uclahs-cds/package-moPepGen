@@ -25,7 +25,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.output_prefix = str(self.work_dir/'rmats')
+        args.output_path = self.work_dir/'rmats.gvf'
         args.quiet = True
         return args
 
@@ -35,13 +35,13 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_1.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
+        record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.location.start, 323)
         self.assertTrue(record.id, 'SE_324')
         self.assertTrue(int(record.attrs['START']), 323)
         self.assertTrue(int(record.attrs['END']), 405)
         self.assertTrue(record.type, 'Deletion')
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
     def test_parse_rmats_se_case_2(self):
         """ rMATS skipped exon when the skipped version is annotated. This
@@ -49,13 +49,13 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_2.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
+        record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.location.start, 870)
         self.assertTrue(record.id, 'SE_870')
         self.assertTrue(int(record.attrs['DONOR_START']), 870)
         self.assertTrue(int(record.attrs['DONOR_END']), 1097)
         self.assertTrue(record.type, 'Insertion')
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
     def test_parse_rmats_a5ss_case_1(self):
         """ rMATS A5SS when the longer version is annotated. This should
@@ -63,9 +63,9 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.alternative_5_splicing = self.data_dir/'alternative_splicing/rmats_a5ss_case_1.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
+        record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Deletion')
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
     def test_parse_rmats_a5ss_case_2(self):
         """ rMATS A5SS when the shorter version is annotated. This should
@@ -73,9 +73,9 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.alternative_5_splicing = self.data_dir/'alternative_splicing/rmats_a5ss_case_2.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
+        record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Insertion')
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
     def test_parse_rmats_a3ss_case_1(self):
         """ rMATS A3SS when the longer version is annotated. This should
@@ -83,9 +83,9 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.alternative_3_splicing = self.data_dir/'alternative_splicing/rmats_a3ss_case_1.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
+        record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Deletion')
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
     def test_parse_rmats_a3ss_case_2(self):
         """ rMATS A3SS when the shorter version is annotated. This should
@@ -93,9 +93,9 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.alternative_3_splicing = self.data_dir/'alternative_splicing/rmats_a3ss_case_2.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
+        record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Insertion')
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assert_gvf_order(Path(args.output_path), args.annotation_gtf)
 
     def test_parse_rmats_mxe_case_1(self):
         """ rMATS MXE when one exon is annotated. This should results a
@@ -103,9 +103,9 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_1.txt'
         cli.parse_rmats(args)
-        record = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))[0]
+        record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Substitution')
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assert_gvf_order(Path(args.output_path), args.annotation_gtf)
 
     def test_parse_rmats_mxe_case_2(self):
         """ rMATS MXE when both exons are annotated. MXE on transcript that
@@ -113,7 +113,7 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_2.txt'
         cli.parse_rmats(args)
-        filename = Path(f'{args.output_prefix}.gvf').name
+        filename = Path(args.output_path).name
         self.assertNotIn(filename, os.listdir(self.work_dir))
 
     def test_parse_rmats_ri(self):
@@ -121,8 +121,8 @@ class TestParseRMATS(TestCaseIntegration):
         args = self.create_base_args()
         args.retained_intron = self.data_dir/'alternative_splicing/rmats_ri_case_1.txt'
         cli.parse_rmats(args)
-        records = list(seqvar.io.parse(f'{args.output_prefix}.gvf'))
+        records = list(seqvar.io.parse(args.output_path))
         self.assertTrue(len(records), 2)
-        self.assert_gvf_order(Path(f'{args.output_prefix}.gvf'), args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)
         for record in records:
             self.assertEqual(record.type, 'Insertion')

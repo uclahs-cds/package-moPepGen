@@ -7,10 +7,13 @@ import argparse
 from logging import warning
 from typing import List
 from moPepGen import logger, seqvar, parser, err
-from .common import add_args_output_prefix, add_args_reference, \
+from .common import add_args_input_path, add_args_output_path, add_args_reference, \
     add_args_quiet, add_args_source, print_start_message, \
-    print_help_if_missing_args, load_references, generate_metadata
+    print_help_if_missing_args, load_references, generate_metadata, validate_file_format
 
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt']
+OUTPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
 def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
@@ -24,14 +27,12 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    p.add_argument(
-        '-f', '--fusion',
-        type=str,
-        help="Path to STAR-Fusion's output file.",
-        metavar='<file>',
-        required=True
+    add_args_input_path(
+        parser=p,
+        formats=INPUT_FILE_FORMATS,
+        message="File path to STAR-Fusion's output file."
     )
-    add_args_output_prefix(p)
+    add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--min-est-j',
         help='Minimal estimated junction reads to be included.',
@@ -49,9 +50,10 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
 def parse_star_fusion(args:argparse.Namespace) -> None:
     """ Parse the STAR-Fusion's output and save it in GVF format. """
     # unpack args
-    fusion = args.fusion
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.gvf'
+    fusion = args.input_path
+    validate_file_format(args.input_path, INPUT_FILE_FORMATS)
+    output_path:str = args.output_path
+    validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
     print_start_message(args)
 

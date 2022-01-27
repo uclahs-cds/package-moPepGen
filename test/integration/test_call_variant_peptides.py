@@ -14,7 +14,7 @@ def create_base_args() -> argparse.Namespace:
     args.genome_fasta = None
     args.annotation_gtf = None
     args.proteome_fasta = None
-    args.output_fasta = None
+    args.output_path = None
     args.max_variants_per_node = 5
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
@@ -45,8 +45,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
                 test/call_variant_peptide_brute_force.py script.
         """
         args = create_base_args()
-        args.input_variant = gvf
-        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.input_path = gvf
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = reference/'genome.fasta'
         args.annotation_gtf = reference/'annotation.gtf'
         args.proteome_fasta = reference/'proteome.fasta'
@@ -63,8 +63,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """
         args = create_base_args()
-        args.input_variant = [self.data_dir/'vep'/'vep_gSNP.gvf']
-        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.input_path = [self.data_dir/'vep'/'vep_gSNP.gvf']
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -76,11 +76,11 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case2(self):
         """ Test variant peptide calling with fusion """
         args = create_base_args()
-        args.input_variant = [
+        args.input_path = [
             self.data_dir/'vep'/'vep_gSNP.gvf',
             self.data_dir/'fusion'/'fusion.gvf'
         ]
-        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -92,12 +92,12 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case3(self):
         """ Test variant peptide calling with fusion and circRNA """
         args = create_base_args()
-        args.input_variant = [
+        args.input_path = [
             self.data_dir/'vep'/'vep_gSNP.gvf',
             self.data_dir/'fusion'/'fusion.gvf',
             self.data_dir/'circRNA'/'circ_rna.gvf'
         ]
-        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -110,14 +110,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test variant peptide calling with fusion and circRNA,
         RNAEditing, gSNP and gINDEL """
         args = create_base_args()
-        args.input_variant = [
+        args.input_path = [
             self.data_dir/'vep/vep_gSNP.gvf',
             self.data_dir/'vep/vep_gINDEL.gvf',
             self.data_dir/'fusion/fusion.gvf',
             self.data_dir/'circRNA/circ_rna.gvf',
             self.data_dir/'reditools/reditools.gvf'
         ]
-        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -129,11 +129,11 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case4(self):
         """ Test variant peptide calling with alternative splicing """
         args = create_base_args()
-        args.input_variant = [
+        args.input_path = [
             self.data_dir/'vep/vep_gSNP.gvf',
             self.data_dir/'alternative_splicing/alternative_splicing.gvf'
         ]
-        args.output_fasta = self.work_dir/'vep_moPepGen.fasta'
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'

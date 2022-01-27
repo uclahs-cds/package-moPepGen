@@ -124,16 +124,34 @@ def add_args_quiet(parser:argparse.ArgumentParser):
         default=False
     )
 
-def add_args_output_prefix(parser:argparse.ArgumentParser):
-    """ add output prefix """
+def add_args_output_path(parser:argparse.ArgumentParser, formats:List[str]):
+    """ add output file path """
     parser.add_argument(
-        '-o', '--output-prefix',
+        '-o', '--output-path',
         type=str,
-        help='Prefix to the output filename. The output file will be saved as'
-        ' <output_prefix>.gvf',
-        metavar='<value>',
+        help=f'File path to the output file. Valid file formats: {formats}',
+        metavar='<file>',
         required=True
     )
+
+def add_args_input_path(parser:argparse.ArgumentParser, formats:List[str],
+        plural:bool=False, message:str=None):
+    """ Add input file path """
+    if message is None:
+        message = f"File path to the input file{'s' if plural else ''}."
+
+    message += f"{'Can take multiple files.' if plural else ''}. Valid formats: " +\
+        f"{formats}"
+
+    parser.add_argument(
+        '-i', '--input-path',
+        type=Path,
+        help=message,
+        nargs='+' if plural else None,
+        metavar="<files>" if plural else "<file>",
+        required=True
+    )
+
 
 def add_args_source(parser:argparse.ArgumentParser):
     """ Add source """
@@ -278,3 +296,14 @@ def parse_range(x:str) -> Tuple[int,int]:
     if len(y) != 2:
         raise ValueError('Range invalid')
     return tuple(int(i) for i in y)
+
+def validate_file_format(file:Path, types:List[str]):
+    """ Validate the file type """
+    suffixes = file.suffixes
+    actual_suffixes = [suffixes[-1]]
+    if len(suffixes) > 1:
+        actual_suffixes.append(''.join(suffixes[-2:]))
+    if not any(suffix in types for suffix in suffixes):
+        raise ValueError(
+            f'The file {file} is invalid. Valid file types are {types}.'
+        )

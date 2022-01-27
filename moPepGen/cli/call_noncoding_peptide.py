@@ -33,14 +33,14 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         default=21
     )
     p.add_argument(
-        '-i', '--inclusion-biotypes',
+        '--inclusion-biotypes',
         type=Path,
         help='Inclusion biotype list.',
         metavar='<file>',
         default=None
     )
     p.add_argument(
-        '-e', '--exclusion-biotypes',
+        '--exclusion-biotypes',
         type=Path,
         help='Exclusion biotype list.',
         metavar='<file>',

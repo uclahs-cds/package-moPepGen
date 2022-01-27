@@ -10,13 +10,13 @@ class TestParseArriba(TestCaseIntegration):
         """ Test parseFusionCatcher """
         args = argparse.Namespace()
         args.command = 'parseArriba'
-        args.fusion = self.data_dir/'fusion/arriba.txt'
+        args.input_path = self.data_dir/'fusion/arriba.txt'
         args.source = 'Fusion'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.output_prefix = str(self.work_dir/'arriba')
+        args.output_path = self.work_dir/'arriba.gvf'
         args.min_split_read1 = 1
         args.min_split_read2 = 1
         args.min_confidence = 'medium'
@@ -25,4 +25,4 @@ class TestParseArriba(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'arriba.gvf'}
         self.assertEqual(files, expected)
-        self.assert_gvf_order(self.work_dir/'arriba.gvf', args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)

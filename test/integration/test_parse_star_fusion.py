@@ -13,12 +13,12 @@ class TestParseStarFusion(TestCaseIntegration):
         args = argparse.Namespace()
         args.command = 'parseSTARFusion'
         args.source = 'Fusion'
-        args.fusion = self.data_dir/'fusion/star_fusion.txt'
+        args.input_path = self.data_dir/'fusion/star_fusion.txt'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.output_prefix = str(self.work_dir/'star_fusion')
+        args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0
         args.quiet = True
         cli.parse_star_fusion(args)
@@ -47,17 +47,17 @@ class TestParseStarFusion(TestCaseIntegration):
         """ test parseSTARFusion case1 """
         args = argparse.Namespace()
         args.command = 'parseSTARFusion'
-        args.fusion = self.data_dir/'fusion/star_fusion.txt'
+        args.input_path = self.data_dir/'fusion/star_fusion.txt'
         args.source = 'Fusion'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.output_prefix = str(self.work_dir/'star_fusion')
+        args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0
         args.quiet = True
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'star_fusion.gvf'}
         self.assertEqual(files, expected)
-        self.assert_gvf_order(self.work_dir/f'{args.output_prefix}.gvf', args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)

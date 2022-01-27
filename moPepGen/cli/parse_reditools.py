@@ -6,12 +6,16 @@ file. The GVF file can then be used to call variant peptides using
 from __future__ import annotations
 import argparse
 from logging import warning
+from pathlib import Path
 from typing import Dict, List
 from moPepGen import logger, seqvar, parser
-from .common import add_args_reference, add_args_quiet, add_args_source,\
-    add_args_output_prefix, print_start_message,print_help_if_missing_args,\
-    load_references, generate_metadata
+from .common import add_args_input_path, add_args_reference, add_args_quiet, add_args_source,\
+    add_args_output_path, print_start_message,print_help_if_missing_args,\
+    load_references, generate_metadata, validate_file_format
 
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt']
+OUTPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
 def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
@@ -24,13 +28,11 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         'records for moPepGen to call variant peptides. The genome',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    p.add_argument(
-        '-t', '--reditools-table',
-        type=str,
-        help='Path to the REDItools output table.',
-        metavar='<file>',
-        required=True
+    add_args_input_path(
+        parser=p, formats=INPUT_FILE_FORMATS,
+        message="File path to REDItools' TSV output."
     )
+    add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--transcript-id-column',
         type=int,
@@ -62,7 +64,6 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         default=10,
         metavar='<number>'
     )
-    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
     add_args_quiet(p)
@@ -73,10 +74,12 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
 def parse_reditools(args:argparse.Namespace) -> None:
     """ Parse REDItools output and save it in the GVF format. """
     # unpack args
-    table_file = args.reditools_table
+    table_file:Path = args.input_path
+    output_path:Path = args.output_path
+    validate_file_format(table_file, INPUT_FILE_FORMATS)
+    validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+
     transcript_id_column = args.transcript_id_column
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.gvf'
     min_coverage_alt:int = args.min_coverage_alt
     min_frequency_alt:int = args.min_frequency_alt
     min_coverage_dna:int = args.min_coverage_dna

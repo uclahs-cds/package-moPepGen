@@ -10,10 +10,13 @@ from typing import List, Dict
 from pathlib import Path
 from moPepGen import logger, circ, err
 from moPepGen.parser import CIRCexplorerParser
-from moPepGen.cli.common import add_args_reference, add_args_quiet, \
-    add_args_source, add_args_output_prefix, print_start_message, \
-    print_help_if_missing_args, load_references, generate_metadata, parse_range
+from moPepGen.cli.common import add_args_input_path, add_args_reference, add_args_quiet, \
+    add_args_source, add_args_output_path, print_start_message, \
+    print_help_if_missing_args, load_references, generate_metadata, parse_range, validate_file_format
 
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt']
+OUTPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
 def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
@@ -25,13 +28,11 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         ' call variant peptides',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    p.add_argument(
-        '-i', '--input-path',
-        type=Path,
-        help='The input file path for CIRCexplorer result. Only the known'
-        'circRNA result is supported.',
-        metavar='<file>'
+    add_args_input_path(
+        parser=p, formats=INPUT_FILE_FORMATS,
+        message="File path to CIRCexplorer's TSV output."
     )
+    add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--circexplorer3',
         action='store_true',
@@ -76,7 +77,6 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
         default='-100,5',
         metavar='<number>'
     )
-    add_args_output_prefix(p)
     add_args_source(p)
     add_args_reference(p, genome=False, proteome=False)
     add_args_quiet(p)
@@ -86,9 +86,10 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
 
 def parse_circexplorer(args:argparse.Namespace):
     """ Parse circexplorer known circRNA results. """
-    input_path = args.input_path
-    output_prefix = args.output_prefix
-    output_path = output_prefix + '.gvf'
+    input_path:Path = args.input_path
+    output_path:Path = args.output_path
+    validate_file_format(input_path, INPUT_FILE_FORMATS)
+    validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
     intron_start_range = parse_range(args.intron_start_range)
     intron_end_range = parse_range(args.intron_end_range)
