@@ -27,10 +27,11 @@ class TestParseIndexGVF(TestCaseIntegration):
             raise
 
     def test_index_gvf(self):
+        """ Test parseFusionCatcher """
         filename = 'vep_gSNP.gvf'
         gvf_file = self.data_dir/'vep'/filename
         input_file = self.work_dir/filename
-        """ Test parseFusionCatcher """
+
         shutil.copy2(gvf_file, input_file)
         args = argparse.Namespace()
         args.command = 'indexGVF'
