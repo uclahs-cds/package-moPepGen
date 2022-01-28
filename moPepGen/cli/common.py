@@ -128,7 +128,7 @@ def add_args_output_path(parser:argparse.ArgumentParser, formats:List[str]):
     """ add output file path """
     parser.add_argument(
         '-o', '--output-path',
-        type=str,
+        type=Path,
         help=f'File path to the output file. Valid formats: {formats}',
         metavar='<file>',
         required=True
