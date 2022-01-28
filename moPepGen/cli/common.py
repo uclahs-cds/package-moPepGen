@@ -215,12 +215,12 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if not quiet:
             logger('Annotation GTF loaded.')
 
-        proteome = aa.AminoAcidSeqDict()
-        proteome.dump_fasta(args.proteome_fasta)
-        if not quiet:
-            logger('Proteome FASTA loaded.')
-
-        annotation.check_protein_coding(proteome, invalid_protein_as_noncoding)
+        if load_proteome or load_canonical_peptides:
+            proteome = aa.AminoAcidSeqDict()
+            proteome.dump_fasta(args.proteome_fasta)
+            if not quiet:
+                logger('Proteome FASTA loaded.')
+            annotation.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
         if load_genome:
             genome = dna.DNASeqDict()

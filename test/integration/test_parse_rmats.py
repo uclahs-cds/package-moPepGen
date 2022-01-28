@@ -2,13 +2,14 @@
 import argparse
 import os
 from pathlib import Path
+import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli, seqvar
 
 
 class TestParseRMATS(TestCaseIntegration):
     """ Test cases for moPepGen parseRMATS """
-
     def create_base_args(self) -> argparse.Namespace:
         """ Create base args """
         args = argparse.Namespace()
@@ -28,6 +29,28 @@ class TestParseRMATS(TestCaseIntegration):
         args.output_path = self.work_dir/'rmats.gvf'
         args.quiet = True
         return args
+
+    def test_parse_rmats_cli(self):
+        """ test parseRMATS cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli parseRMATS \\
+            --se {self.data_dir}/alternative_splicing/rmats_se_case_1.txt \\
+            --a5ss {self.data_dir}/alternative_splicing/rmats_a5ss_case_1.txt \\
+            --a3ss {self.data_dir}/alternative_splicing/rmats_a3ss_case_1.txt \\
+            --mxe {self.data_dir}/alternative_splicing/rmats_mxe_case_1.txt \\
+            --ri {self.data_dir}/alternative_splicing/rmats_ri_case_1.txt \\
+            -o {self.work_dir}/reditools.gvf \\
+            -g {self.data_dir}/genome.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            --source rMATs
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
 
     def test_parse_rmats_se_case_1(self):
         """ rMATS skipped exon when the retained version is annotated. This

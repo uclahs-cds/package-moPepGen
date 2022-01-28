@@ -1,6 +1,8 @@
 """ Test the CLI for callNoncoding """
 import argparse
 import os
+import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from Bio import SeqIO
 from moPepGen import cli
@@ -28,6 +30,23 @@ def create_base_args() -> argparse.Namespace:
 
 class TestCallNoncodingPeptides(TestCaseIntegration):
     """ Test cases for moPepGen callNoncoding """
+
+    def test_call_noncoding_cli(self):
+        """ test callNoncoding cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli callNoncoding \\
+            -o {self.work_dir}/circ.fasta \\
+            -g {self.data_dir}/genome.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
 
     def test_call_noncoding_peptides_case1(self):
         """ test call noncoding peptides """

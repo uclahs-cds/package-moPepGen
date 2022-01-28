@@ -85,7 +85,7 @@ def add_subparser_split_database(subparser:argparse._SubParsersAction):
         default=None
     )
 
-    common.add_args_reference(p, genome=False, proteome=False)
+    common.add_args_reference(p, genome=False, proteome=True)
     common.add_args_quiet(p)
     common.print_help_if_missing_args(p)
     p.set_defaults(func=split_database)
@@ -102,7 +102,7 @@ def split_database(args:argparse.Namespace) -> None:
     common.print_start_message(args)
 
     _, anno, *_ = common.load_references(args, load_genome=False, \
-        load_proteome=False, load_canonical_peptides=False)
+        load_proteome=True, load_canonical_peptides=False)
 
     source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\
         if args.order_source else None

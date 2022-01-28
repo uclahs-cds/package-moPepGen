@@ -1,12 +1,32 @@
 """ Test the command line interface """
 import argparse
 from pathlib import Path
+import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
 
 class TestParseVEP(TestCaseIntegration):
     """ Test cases for moPepGen parseVEP """
+    def test_parse_vep_cli(self):
+        """ test parseVEP cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli parseVEP \\
+            -i {self.data_dir}/vep/vep_snp.txt \\
+            -o {self.work_dir}/vep.gvf \\
+            -g {self.data_dir}/genome.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            --source VEP
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
+
     def create_base_args(self) -> argparse.Namespace:
         """ Create base args """
         args = argparse.Namespace()

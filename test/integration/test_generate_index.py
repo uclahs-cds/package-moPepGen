@@ -1,11 +1,29 @@
 """ Test the command line interface """
 import argparse
+import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
 
 class TestGenerateIndex(TestCaseIntegration):
     """ Test cases for moPepGen generateIndex """
+    def test_generate_index_cli(self):
+        """ Test generateIndex cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli generateIndex \\
+            -o {self.work_dir}/index \\
+            -g {self.data_dir}/genome.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
 
     def test_generate_index_case1(self):
         """ Test genreate index """

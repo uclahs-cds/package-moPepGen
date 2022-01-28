@@ -1,6 +1,7 @@
 """ Test parseArriba """
 import argparse
 import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
@@ -31,11 +32,17 @@ class TestParseArriba(TestCaseIntegration):
     def test_parse_arriba_cli(self):
         """ Test parseArriba from command line """
         cmd = f"""
-        python -m moPepGen.cli parseArriba \
-            -i {self.data_dir}/fusion/arriba.txt \
-            -o {self.work_dir}/arriba.gvf \
-            -g {self.data_dir}/genome.fasta \
-            -a {self.data_dir}/annotation.gtf \
-            -p {self.data_dir}/translate.fasta
+        {sys.executable} -m moPepGen.cli parseArriba \\
+            -i {self.data_dir}/fusion/arriba.txt \\
+            -o {self.work_dir}/arriba.gvf \\
+            -g {self.data_dir}/genome.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            --source fusion
         """
-        sp.run(cmd, shell=True, check=False)
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise

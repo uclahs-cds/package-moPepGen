@@ -1,6 +1,8 @@
 """ Integration test module for filterFasta """
 import argparse
 from pathlib import Path
+import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
@@ -18,6 +20,27 @@ class TestFilterFasta(TestCaseIntegration):
         args.proteome_fasta = Path('test/files/translate.fasta')
         args.quiet = True
         return args
+
+    def test_filter_fast_cli(self):
+        """ Test filterFasta cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli filterFasta \\
+            -i {self.data_dir}/vep/vep.fasta \\
+            -o {self.work_dir}/vep_filtered.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            --exprs-table {self.data_dir}/rsem/rsem.txt \\
+            --skip-lines 1 \\
+            --tx-id-col 1 \\
+            --quant-col 5 \\
+            --quant-cutoff 100
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
 
     def test_filter_fasta_int_index(self):
         """ test filterFasta """

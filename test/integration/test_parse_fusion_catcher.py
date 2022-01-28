@@ -1,6 +1,8 @@
 """ Test the command line interface """
 import argparse
 from pathlib import Path
+import subprocess as sp
+import sys
 from test.unit import load_references
 from test.integration import TestCaseIntegration
 from moPepGen import cli, parser
@@ -8,6 +10,24 @@ from moPepGen import cli, parser
 
 class TestParseFusionCatcher(TestCaseIntegration):
     """ Test cases for moPepGen parseSTARFusion """
+    def test_parse_fusioncatcher_cli(self):
+        """ test parseFusionCatcher cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli parseFusionCatcher \\
+            -i {self.data_dir}/fusion/fusion_catcher.txt \\
+            -o {self.work_dir}/fusion_catcher.gvf \\
+            -g {self.data_dir}/genome.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            --source Fusion
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
+
     def test_fusioncatcher_parser(self):
         """ Test FusionCatcherParser """
         genome, anno = load_references(Path('test/files'))

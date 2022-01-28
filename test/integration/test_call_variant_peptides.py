@@ -2,6 +2,8 @@
 import argparse
 from typing import List
 from pathlib import Path
+import sys
+import subprocess as sp
 from test.integration import TestCaseIntegration
 from Bio import SeqIO
 from moPepGen import cli
@@ -59,6 +61,29 @@ class TestCallVariantPeptides(TestCaseIntegration):
         with open(expect, 'rt') as handle:
             expected = {line.strip() for line in handle}
         self.assertEqual(seqs, expected)
+
+    def test_call_variant_cli(self):
+        """ test callVariant cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli callVariant \\
+            -i \\
+                {self.data_dir}/vep/vep_gSNP.gvf \\
+                    {self.data_dir}/vep/vep_gINDEL.gvf \\
+                {self.data_dir}/fusion/fusion.gvf \\
+                {self.data_dir}/circRNA/circ_rna.gvf \\
+                {self.data_dir}/reditools/reditools.gvf \\
+            -o {self.work_dir}/test.fasta \\
+            -g {self.data_dir}/genome.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
 
     def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """

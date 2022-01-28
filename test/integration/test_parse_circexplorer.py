@@ -1,6 +1,7 @@
 """ Integration test for parseCIRCexplorer """
 import argparse
 import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
@@ -15,9 +16,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.output_path = self.work_dir/'circ.gvf'
         args.source = 'circRNA'
         args.index_dir = None
-        args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.circexplorer3 = False
         args.min_read_number = 1
         args.intron_start_range = '-2,0'
@@ -37,9 +36,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.output_path = self.work_dir/'circ.gvf'
         args.source = 'circRNA'
         args.index_dir = None
-        args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.circexplorer3 = True
         args.min_read_number = 1
         args.min_fbr_circ = None
@@ -64,11 +61,16 @@ class TestParseCIRCexplorer(TestCaseIntegration):
     def test_parse_circexplorer_cli(self):
         """ Test parseCIRCexplorer cli """
         cmd = f"""
-        python -m moPepGen.cli parseCIRCexplorer \
-            -i {self.data_dir}/circRNA/CIRCexplorer3_circularRNA_known.txt \
-            -o {self.work_dir}/circ.gvf \
-            -g {self.data_dir}/genome.fasta \
-            -a {self.data_dir}/annotation.gtf \
-            -p {self.data_dir}/translate.fasta
+        {sys.executable} -m moPepGen.cli parseCIRCexplorer \\
+            -i {self.data_dir}/circRNA/CIRCexplorer3_circularRNA_known.txt \\
+            -o {self.work_dir}/circ.gvf \\
+            -a {self.data_dir}/annotation.gtf \\
+            --source circRNA
         """
-        sp.run(cmd, shell=True, check=False)
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
