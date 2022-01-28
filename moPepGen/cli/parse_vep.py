@@ -33,7 +33,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     common.add_args_input_path(
-        parser=p, formats=INPUT_FILE_FORMATS,
+        parser=p, formats=INPUT_FILE_FORMATS, plural=True,
         message="File path to the VEP outpu TXT file."
     )
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
