@@ -1,0 +1,36 @@
+# Changelog
+All notable changes to the tool_name Docker file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [Unreleased]
+
+---
+
+## [0.2.0-rc.1] - 2021-01-27
+
+### Added
+
+- Multi-threading is enabled for `callVariant` to run in parallel.
+
+- CLI command `indexGVF` added to generate a index file for quickly access variant data from the corresponding GVF file. Noted that this command is not required to run.
+
+### Changed
+
+- To solve the complexity of subgraphs introduced by fusion and especially alternative splicing insertion and substitution, the `SubgraphTree` class is added to keep the graph-subgraph relationship between nodes.
+
+- Variant records are now kept on disk rather than reading the entire GVF file(s) into memory, and only the file pointers to variant records are kept in memory. This significantly reduces the memory usage of `callVariant`.
+
+- The command line arguments are standardized across all commands, for example '-i/--input-path' for inputs and '-o/--output-path' for outputs.
+
+---
+
+## [0.1.0-beta.1] - 2021-12-23
+
+### Added
+
+- Initial beta release of moPepGen, with the three-frame graph based algorithm implemented to call noncanoinical peptides.
