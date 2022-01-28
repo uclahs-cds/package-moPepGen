@@ -33,7 +33,7 @@ def add_subparser_index_gvf(subparsers:argparse._SubParsersAction):
 
 def index_gvf(args:argparse.Namespace):
     """ Generate GVF index """
-    input_file:Path = args.input_gvf
+    input_file:Path = args.input_path
     common.validate_file_format(input_file, INPUT_FILE_FORMATS, True)
     output_file = input_file.with_suffix(input_file.suffix + '.idx')
     with open(input_file, 'rb') as handle:

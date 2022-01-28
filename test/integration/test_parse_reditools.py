@@ -1,11 +1,30 @@
 """ Test module for parseREDItools """
 import argparse
+import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
 
 class TestParseREDItools(TestCaseIntegration):
     """ Test parseREDItools """
+    def test_parse_reditools_cli(self):
+        """ Test parseREDItools cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli parseREDItools \\
+            -i {self.data_dir}/reditools/reditools_annotated.txt \\
+            -o {self.work_dir}/reditools.gvf \\
+            -a {self.data_dir}/annotation.gtf \\
+            --source RES
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
+
     def test_parse_reditools_case1(self):
         """ Test parse reditools """
         args = argparse.Namespace()
@@ -15,7 +34,6 @@ class TestParseREDItools(TestCaseIntegration):
         args.transcript_id_column = 16
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_path = self.work_dir/'reditools.gvf'
         args.quiet = True
         args.min_coverage_alt = 3

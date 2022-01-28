@@ -92,8 +92,9 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         site to be changed.
         """
         filtered_variants = []
+        exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion', 'circRNA']
         for variant in variants:
-            if variant.type == 'Fusion':
+            if variant.type == exclude_type:
                 continue
 
             circ_start = self.circ.fragments[0].location.start

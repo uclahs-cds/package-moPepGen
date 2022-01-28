@@ -1,11 +1,36 @@
 """ Integration test of splitDatabase """
 import argparse
+import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
 
 class TestSplitDatabase(TestCaseIntegration):
     """ Test cases for splitDatabase """
+    def test_split_database_cli(self):
+        """ test splitDatabase cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli splitDatabase \\
+            --gvf \\
+                {self.data_dir}/vep/vep_gSNP.gvf \\
+                {self.data_dir}/vep/vep_gINDEL.gvf \\
+                {self.data_dir}/reditools/reditools.gvf \\
+                {self.data_dir}/fusion/star_fusion.gvf \\
+                {self.data_dir}/circRNA/circ_rna.gvf \\
+            --variant-peptides {self.data_dir}/peptides/variant.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta \\
+            -o {self.work_dir}/test
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
+
     def create_base_args(self) -> argparse.Namespace:
         """ Create base args """
         args = argparse.Namespace()

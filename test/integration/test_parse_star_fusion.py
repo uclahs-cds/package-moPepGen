@@ -1,5 +1,7 @@
 """ Test the command line interface """
 import argparse
+import subprocess as sp
+import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli, seqvar
 from moPepGen.cli.common import load_references
@@ -7,6 +9,23 @@ from moPepGen.cli.common import load_references
 
 class TestParseStarFusion(TestCaseIntegration):
     """ Test cases for moPepGen parseSTARFusion """
+    def test_parse_star_fusion_cli(self):
+        """ test parseSTARFusion cli """
+        cmd = f"""
+        {sys.executable} -m moPepGen.cli parseSTARFusion \\
+            -i {self.data_dir}/fusion/star_fusion.txt \\
+            -o {self.work_dir}/fusion_catcher.gvf \\
+            -g {self.data_dir}/genome.fasta \\
+            -a {self.data_dir}/annotation.gtf \\
+            --source Fusion
+        """
+        res = sp.run(cmd, shell=True, check=False, capture_output=True)
+        try:
+            self.assertEqual(res.returncode, 0)
+        except:
+            print(cmd)
+            print(res.stderr.decode('utf-8'))
+            raise
 
     def test_star_fusion_record_case1(self):
         """ Test parseSTARFusion """
@@ -17,7 +36,6 @@ class TestParseStarFusion(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0
         args.quiet = True
@@ -52,7 +70,6 @@ class TestParseStarFusion(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0
         args.quiet = True

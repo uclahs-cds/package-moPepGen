@@ -541,6 +541,7 @@ class ThreeFrameTVG():
         accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
         accepter_tx_model = anno.transcripts[accepter_tx_id]
         accepter_chrom = accepter_tx_model.transcript.location.seqname
+        exclude_variant_types = ['Fusion', 'Insertion', 'Deletion', 'Substitution', 'circRNA']
         if tx_seqs and accepter_tx_id in tx_seqs:
             accepter_tx_seq = tx_seqs[accepter_tx_id]
         else:
@@ -562,7 +563,7 @@ class ThreeFrameTVG():
             insertion_end = variant.attrs['LEFT_INSERTION_END']
             insert_seq = seq[insertion_start:insertion_end]
             insertion_variants = variant_pool.filter_variants(
-                gene_id=gene_id, exclude_type=['Fusion'],
+                gene_id=gene_id, exclude_type=exclude_variant_types,
                 start=insertion_start, end=insertion_end, intron=True, return_coord='gene'
             )
             var = copy.deepcopy(variant)
@@ -597,7 +598,7 @@ class ThreeFrameTVG():
             insertion_end = variant.attrs['RIGHT_INSERTION_END']
             insert_seq = seq[insertion_start:insertion_end]
             insertion_variants = variant_pool.filter_variants(
-                gene_id=gene_id, exclude_type=['Fusion'],
+                gene_id=gene_id, exclude_type=exclude_variant_types,
                 start=insertion_start, end=insertion_end, intron=True, return_coord='gene'
             )
             var = copy.deepcopy(variant)
@@ -628,7 +629,7 @@ class ThreeFrameTVG():
             accepter_gene_id, accepter_tx_id)
 
         accepter_variant_records = variant_pool.filter_variants(
-            tx_ids=[accepter_tx_id], exclude_type=['Fusion'],
+            tx_ids=[accepter_tx_id], exclude_type=exclude_variant_types,
             start=breakpoint_tx, return_coord='transcript', intron=False
         )
 
@@ -837,7 +838,7 @@ class ThreeFrameTVG():
         else:
             gene_seq = gene_model.get_gene_sequence(genome[chrom])
         insert_seq = gene_seq[donor_start:donor_end]
-        exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
+        exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion', 'circRNA']
         insert_variants = variant_pool.filter_variants(
             gene_id=gene_id, exclude_type=exclude_type,
             start=donor_start, end=donor_end
@@ -887,7 +888,7 @@ class ThreeFrameTVG():
         else:
             gene_seq = gene_model.get_gene_sequence(genome[chrom])
         sub_seq = gene_seq[donor_start:donor_end]
-        exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion']
+        exclude_type = ['Insertion', 'Deletion', 'Substitution', 'Fusion', 'circRNA']
         sub_variants = variant_pool.filter_variants(
             gene_id=gene_id, exclude_type=exclude_type,
             start=donor_start, end=donor_end
