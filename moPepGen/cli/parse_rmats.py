@@ -28,7 +28,7 @@ def add_rmats_input_arg(parser:argparse.ArgumentParser, name:str, message:str,
         type=Path,
         help=message,
         metavar="<file>",
-        required=True,
+        default=None,
         dest=dest
     )
 
