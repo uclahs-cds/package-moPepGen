@@ -1,5 +1,6 @@
 """ Integration test for parseCIRCexplorer """
 import argparse
+import subprocess as sp
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
@@ -59,3 +60,15 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         expected = {'circ.gvf'}
         self.assertEqual(files, expected)
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
+
+    def test_parse_circexplorer_cli(self):
+        """ Test parseCIRCexplorer cli """
+        cmd = f"""
+        python -m moPepGen.cli parseCIRCexplorer \
+            -i {self.data_dir}/circRNA/CIRCexplorer3_circularRNA_known.txt \
+            -o {self.work_dir}/circ.gvf \
+            -g {self.data_dir}/genome.fasta \
+            -a {self.data_dir}/annotation.gtf \
+            -p {self.data_dir}/translate.fasta
+        """
+        sp.run(cmd, shell=True, check=False)
