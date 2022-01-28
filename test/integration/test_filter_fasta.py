@@ -11,7 +11,7 @@ class TestFilterFasta(TestCaseIntegration):
         """ Generate default args """
         args = argparse.Namespace()
         args.command = 'fitlerFasta'
-        args.output_fasta = self.work_dir/'vep_filtered.fasta'
+        args.output_path = self.work_dir/'vep_filtered.fasta'
         args.index_dir = None
         args.genome_fasta = Path('test/files/genome.fasta')
         args.annotation_gtf = Path('test/files/annotation.gtf')
@@ -22,7 +22,7 @@ class TestFilterFasta(TestCaseIntegration):
     def test_filter_fasta_int_index(self):
         """ test filterFasta """
         args = self.generate_default_args()
-        args.input_fasta = Path('test/files/vep/vep.fasta')
+        args.input_path = Path('test/files/vep/vep.fasta')
         args.exprs_table = Path('test/files/rsem/rsem.txt')
         args.skip_lines = 1
         args.delimiter = '\t'
@@ -39,7 +39,7 @@ class TestFilterFasta(TestCaseIntegration):
     def test_filter_fasta_str_index(self):
         """ test filterFasta """
         args = self.generate_default_args()
-        args.input_fasta = Path('test/files/vep/vep.fasta')
+        args.input_path = Path('test/files/vep/vep.fasta')
         args.exprs_table = Path('test/files/rsem/rsem.txt')
         args.skip_lines = 0
         args.delimiter = '\t'

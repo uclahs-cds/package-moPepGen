@@ -23,7 +23,7 @@ class TestSplitDatabase(TestCaseIntegration):
     def test_split_database_case1(self):
         """ test splitDatabase case1 """
         args = self.create_base_args()
-        args.variant_gvf = [
+        args.gvf = [
             self.data_dir/'vep/vep_gSNP.gvf',
             self.data_dir/'vep/vep_gINDEL.gvf',
             self.data_dir/'reditools/reditools.gvf',

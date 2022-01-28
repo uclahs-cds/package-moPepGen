@@ -8,14 +8,14 @@ from Bio.SeqIO import FastaIO
 from moPepGen import svgraph, aa, logger
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
-from moPepGen.cli.common import add_args_cleavage, add_args_quiet, add_args_reference, \
-    print_start_message, print_help_if_missing_args, load_references, \
-    load_inclusion_exclusion_biotypes
+from moPepGen.cli import common
 
 
 if TYPE_CHECKING:
     from moPepGen.gtf import TranscriptAnnotationModel
     from moPepGen.dna import DNASeqDict
+
+OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
 # pylint: disable=W0212
 def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
@@ -26,60 +26,72 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
-        '-t', '--min-tx-length',
+        '-o', '--output-path',
+        type=Path,
+        help='Output path to the noncanonical noncoding peptide FASTA.'
+        f" Valid formats: {OUTPUT_FILE_FORMATS}",
+        metavar='<file>',
+        required=True
+    )
+    p.add_argument(
+        '--output-orf',
+        type=Path,
+        help='Output path to the FASTA file with noncanonical ORF sequences.'
+        f" Valid formats: {OUTPUT_FILE_FORMATS}",
+        metavar='<file>',
+        required=False,
+        default=None
+    )
+    p.add_argument(
+        '--min-tx-length',
         type=int,
         help='Minimal transcript length.',
         metavar='<number>',
         default=21
     )
     p.add_argument(
-        '-i', '--inclusion-biotypes',
+        '--inclusion-biotypes',
         type=Path,
         help='Inclusion biotype list.',
         metavar='<file>',
         default=None
     )
     p.add_argument(
-        '-e', '--exclusion-biotypes',
+        '--exclusion-biotypes',
         type=Path,
         help='Exclusion biotype list.',
         metavar='<file>',
         default=None
     )
-    p.add_argument(
-        '-o', '--output-prefix',
-        type=Path,
-        help='File prefix for the output FASTA.',
-        metavar='<value>',
-        required=True
-    )
 
-    add_args_reference(p)
-    add_args_cleavage(p)
-    add_args_quiet(p)
+    common.add_args_reference(p)
+    common.add_args_cleavage(p)
+    common.add_args_quiet(p)
 
     p.set_defaults(func=call_noncoding_peptide)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def call_noncoding_peptide(args:argparse.Namespace) -> None:
     """ Main entry poitn for calling noncoding peptide """
+    common.validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
+    if args.output_orf:
+        common.validate_file_format(args.output_orf, OUTPUT_FILE_FORMATS)
+
     rule:str = args.cleavage_rule
     miscleavage:int = int(args.miscleavage)
     min_mw:float = float(args.min_mw)
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     min_length:int = args.min_length
     max_length:int = args.max_length
-    peptide_fasta = f"{args.output_prefix}_peptide.fasta"
-    orf_fasta = f"{args.output_prefix}_orf.fasta"
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    genome, anno, proteome, canonical_peptides = load_references(
+    genome, anno, proteome, canonical_peptides = common.load_references(
         args=args, load_proteome=True
     )
 
-    inclusion_biotypes, exclusion_biotypes = load_inclusion_exclusion_biotypes(args)
+    inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)
 
     noncanonical_pool = aa.VariantPeptidePool()
     orf_pool = []
@@ -122,9 +134,10 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             if i % 5000 == 0:
                 logger(f'{i} transcripts processed.')
 
-    noncanonical_pool.write(peptide_fasta)
-    with open(orf_fasta, 'w') as handle:
-        write_orf(orf_pool, handle)
+    noncanonical_pool.write(args.output_path)
+    if args.output_orf:
+        with open(args.output_orf, 'w') as handle:
+            write_orf(orf_pool, handle)
 
     if not args.quiet:
         logger('Noncanonical peptide FASTA file written to disk.')

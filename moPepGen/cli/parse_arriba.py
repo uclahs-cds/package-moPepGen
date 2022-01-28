@@ -2,14 +2,16 @@
 [Arriba](https://github.com/suhrig/arriba) and saves as a GVF file. The GVF
 file can be later used to call variant peptides using
 [callVariant](call-variant.md)."""
+from logging import warning
 from typing import List
 from pathlib import Path
 import argparse
 from moPepGen import logger, seqvar, parser, err
-from .common import add_args_reference, add_args_quiet, add_args_source,\
-    add_args_output_prefix, print_start_message,print_help_if_missing_args,\
-    load_references, generate_metadata
+from moPepGen.cli import common
 
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt']
+OUTPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
 def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
@@ -22,13 +24,11 @@ def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
         'records for moPepGen to call variant peptides.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    p.add_argument(
-        '-f', '--fusion',
-        type=Path,
-        help="Path to Arriba's output file.",
-        metavar='<file>',
-        required=True
+    common.add_args_input_path(
+        parser=p, formats=INPUT_FILE_FORMATS,
+        message="File path to Arriba's output TSV file."
     )
+    common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--min-split-read1',
         type=int,
@@ -51,27 +51,28 @@ def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
         metavar='<choice>',
         default='medium'
     )
-    add_args_output_prefix(p)
-    add_args_source(p)
-    add_args_reference(p, proteome=False)
-    add_args_quiet(p)
+    common.add_args_source(p)
+    common.add_args_reference(p, proteome=False)
+    common.add_args_quiet(p)
     p.set_defaults(func=parse_arriba)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def parse_arriba(args:argparse.Namespace) -> None:
     """ Parse Arriba output and save it in GVF format. """
     # unpack args
-    fusion = args.fusion
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.gvf'
+    fusion = args.input_path
+    output_path:Path = args.output_path
+    common.validate_file_format(fusion, INPUT_FILE_FORMATS, True)
+    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+
     min_split_read1:int = args.min_split_read1
     min_split_read2:int = args.min_split_read2
     min_confidence:str = args.min_confidence
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    genome, anno, *_ = load_references(args=args, load_canonical_peptides=False)
+    genome, anno, *_ = common.load_references(args=args, load_canonical_peptides=False)
 
     variants:List[seqvar.VariantRecord] = []
 
@@ -92,13 +93,18 @@ def parse_arriba(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger(f'Arriba output {fusion} loaded.')
 
+    if not variants:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
+
     genes_rank = anno.get_genes_rank()
     variants = sorted(variants, key=lambda x: genes_rank[x.location.seqname])
 
     if not args.quiet:
         logger('Variants sorted.')
 
-    metadata = generate_metadata(args)
+    metadata = common.generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 

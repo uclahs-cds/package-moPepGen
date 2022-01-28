@@ -5,12 +5,15 @@ file. The GVF file can then be used to call variant peptides using
 """
 from __future__ import annotations
 import argparse
+from logging import warning
+from pathlib import Path
 from typing import Dict, List
 from moPepGen import logger, seqvar, parser
-from .common import add_args_reference, add_args_quiet, add_args_source,\
-    add_args_output_prefix, print_start_message,print_help_if_missing_args,\
-    load_references, generate_metadata
+from moPepGen.cli import common
 
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt']
+OUTPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
 def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
@@ -23,13 +26,11 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         'records for moPepGen to call variant peptides. The genome',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    p.add_argument(
-        '-t', '--reditools-table',
-        type=str,
-        help='Path to the REDItools output table.',
-        metavar='<file>',
-        required=True
+    common.add_args_input_path(
+        parser=p, formats=INPUT_FILE_FORMATS,
+        message="File path to REDItools' TSV output."
     )
+    common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--transcript-id-column',
         type=int,
@@ -61,28 +62,29 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         default=10,
         metavar='<number>'
     )
-    add_args_output_prefix(p)
-    add_args_source(p)
-    add_args_reference(p, genome=False, proteome=False)
-    add_args_quiet(p)
+    common.add_args_source(p)
+    common.add_args_reference(p, genome=False, proteome=False)
+    common.add_args_quiet(p)
     p.set_defaults(func=parse_reditools)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def parse_reditools(args:argparse.Namespace) -> None:
     """ Parse REDItools output and save it in the GVF format. """
     # unpack args
-    table_file = args.reditools_table
+    table_file:Path = args.input_path
+    output_path:Path = args.output_path
+    common.validate_file_format(table_file, INPUT_FILE_FORMATS, True)
+    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+
     transcript_id_column = args.transcript_id_column
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.gvf'
     min_coverage_alt:int = args.min_coverage_alt
     min_frequency_alt:int = args.min_frequency_alt
     min_coverage_dna:int = args.min_coverage_dna
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    _, anno, *_ = load_references(args, load_genome=False, load_canonical_peptides=False)
+    _, anno, *_ = common.load_references(args, load_genome=False, load_canonical_peptides=False)
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
 
@@ -102,13 +104,18 @@ def parse_reditools(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger(f'REDItools table {table_file} loaded.')
 
+    if not variants:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
+
     for records in variants.values():
         records.sort()
 
     if not args.quiet:
         logger('Variants sorted.')
 
-    metadata = generate_metadata(args)
+    metadata = common.generate_metadata(args)
 
     genes_rank = anno.get_genes_rank()
     ordered_keys = sorted(variants.keys(), key=lambda x:genes_rank[x])

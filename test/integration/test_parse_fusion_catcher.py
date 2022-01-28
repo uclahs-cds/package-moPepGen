@@ -38,13 +38,13 @@ class TestParseFusionCatcher(TestCaseIntegration):
         """ Test parseFusionCatcher """
         args = argparse.Namespace()
         args.command = 'parseFusionCatcher'
-        args.fusion = self.data_dir/'fusion/fusion_catcher.txt'
+        args.input_path = self.data_dir/'fusion/fusion_catcher.txt'
         args.source = 'Fusion'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.output_prefix = str(self.work_dir/'fusion_catcher')
+        args.output_path = self.work_dir/'fusion_catcher.gvf'
         args.max_common_mapping = 0
         args.min_spanning_unique = 5
         args.quiet = True
@@ -52,4 +52,4 @@ class TestParseFusionCatcher(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'fusion_catcher.gvf'}
         self.assertEqual(files, expected)
-        self.assert_gvf_order(self.work_dir/'fusion_catcher.gvf', args.annotation_gtf)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)

@@ -8,13 +8,29 @@ The created GVF file can be then used to call for variant peptides using
 """
 from __future__ import annotations
 import argparse
+from logging import warning
 from typing import Dict, Set
 from pathlib import Path
 from moPepGen import logger, seqvar
 from moPepGen.parser import RMATSParser
-from .common import add_args_output_prefix, add_args_reference, \
-    add_args_quiet, add_args_source, print_start_message, \
-    print_help_if_missing_args, load_references, generate_metadata
+from moPepGen.cli import common
+
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt']
+OUTPUT_FILE_FORMATS = ['.gvf']
+
+def add_rmats_input_arg(parser:argparse.ArgumentParser, name:str, message:str,
+        dest:str):
+    """ add input arg for rMATs """
+    message += f" Valid formats: {INPUT_FILE_FORMATS}"
+    parser.add_argument(
+        name,
+        type=Path,
+        help=message,
+        metavar="<file>",
+        required=True,
+        dest=dest
+    )
 
 
 # pylint: disable=W0212
@@ -29,49 +45,39 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    p.add_argument(
-        '--se',
-        type=Path,
-        help="Skipped exon junction count txt file. The file name should have"
-        " the pattern of *_SE.MATS.JC.txt or *_SE.MATS.JCEC.txt",
-        metavar='<file>',
-        default=None,
+    add_rmats_input_arg(
+        p, '--se',
+        message="File path to the SE (skipped exons) junction count file output"
+        " by rMATs. The file name should look like '*_SE.MATS.JC.txt' or "
+        "'*_SE.MATS.JCEC.txt'.",
         dest='skipped_exon'
     )
-    p.add_argument(
-        '--a5ss',
-        type=Path,
-        help="Alternative 5' splicing junction count txt file. The file name"
-        ' should have the pattern of *_S5SS.MATS.JC.txt or *_A5SS.MATS.JCEC.txt',
-        metavar='<file>',
-        default=None,
+    add_rmats_input_arg(
+        p, '--a5ss',
+        message="File path to the A5SS (alternative 5' splicint site) junction"
+        " count file output by rMATs. The file name should look like"
+        " '_S5SS.MATS.JC.txt' or '*_A5SS.MATS.JCEC.txt'.",
         dest='alternative_5_splicing'
     )
-    p.add_argument(
-        '--a3ss',
-        type=Path,
-        help="Alternative 3' splicing junction count txt file. The file name"
-        ' should have the pattern of *_S3SS.MATS.JC.txt or *_A3SS.MATS.JCEC.txt',
-        metavar='<file>',
-        default=None,
+    add_rmats_input_arg(
+        p, '--a3ss',
+        message="File path to the A3SS (alternative 3' splicint site) junction"
+        " count file output by rMATs. The file name should look like"
+        " '_S3SS.MATS.JC.txt' or '*_A3SS.MATS.JCEC.txt'.",
         dest='alternative_3_splicing'
     )
-    p.add_argument(
-        '--mxe',
-        type=Path,
-        help="Mutually exclusive junction count txt file. The file name should"
-        " have the pattern of *_MXE.MATS.JC.txt or *_MXE.MATS.JCEC.txt',",
-        metavar='<file>',
-        default=None,
+    add_rmats_input_arg(
+        p, '--mxe',
+        message="File path to the MXE (mutually exclusive exons) junction"
+        " count file output by rMATs. The file name should look like"
+        " '_MXE.MATS.JC.txt' or '*_MXE.MATS.JCEC.txt'.",
         dest='mutually_exclusive_exons'
     )
-    p.add_argument(
-        '--ri',
-        type=Path,
-        help="Retained intron junction count txt file. The file name should"
-        " have the pattern of *_RI.MATS.JC.txt or *_RI.MATS.JCEC.txt",
-        metavar='<file>',
-        default=None,
+    add_rmats_input_arg(
+        p, '--ri',
+        message="File path to the RI (retained intron) junction"
+        " count file output by rMATs. The file name should look like"
+        " '_RI.MATS.JC.txt' or '*_RI.MATS.JCEC.txt'.",
         dest='retained_intron'
     )
     p.add_argument(
@@ -89,12 +95,12 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         default=1
     )
 
-    add_args_output_prefix(p)
-    add_args_source(p)
-    add_args_reference(p, proteome=False)
-    add_args_quiet(p)
+    common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
+    common.add_args_source(p)
+    common.add_args_reference(p, proteome=False)
+    common.add_args_quiet(p)
     p.set_defaults(func=parse_rmats)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def parse_rmats(args:argparse.Namespace) -> None:
@@ -104,12 +110,17 @@ def parse_rmats(args:argparse.Namespace) -> None:
     alternative_3 = args.alternative_3_splicing
     mutually_exclusive = args.mutually_exclusive_exons
     retained_intron = args.retained_intron
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.gvf'
+    output_path:Path = args.output_path
 
-    print_start_message(args)
+    for file in [skipped_exon, alternative_3, alternative_5, mutually_exclusive,
+            retained_intron]:
+        if file is not None:
+            common.validate_file_format(file, INPUT_FILE_FORMATS, True)
+    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
-    genome, anno, *_ = load_references(args, load_canonical_peptides=False)
+    common.print_start_message(args)
+
+    genome, anno, *_ = common.load_references(args, load_canonical_peptides=False)
 
     variants:Dict[str,Set[seqvar.VariantRecord]] = {}
     rmats_outputs = [
@@ -134,6 +145,10 @@ def parse_rmats(args:argparse.Namespace) -> None:
                         variants[gene_id] = set()
                     variants[gene_id].add(var_record)
 
+    if not variants:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
 
     genes_rank = anno.get_genes_rank()
     ordered_keys = sorted(variants.keys(), key=lambda x:genes_rank[x])
@@ -146,7 +161,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Variants sorted.')
 
-    metadata = generate_metadata(args)
+    metadata = common.generate_metadata(args)
     seqvar.io.write(variants_sorted, output_path, metadata)
 
     if not args.quiet:

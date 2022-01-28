@@ -11,12 +11,13 @@ from typing import Dict, List
 from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
-    TranscriptionStartSiteMutationError
+    TranscriptionStartSiteMutationError, warning
 from moPepGen import seqvar, logger
-from moPepGen.cli.common import add_args_output_prefix, add_args_reference, \
-    add_args_quiet, add_args_source, print_start_message, \
-    print_help_if_missing_args, load_references, generate_metadata
+from moPepGen.cli import common
 
+
+INPUT_FILE_FORMATS = ['.tsv', '.txt', '.tsv.gz', '.txt.gz']
+OUTPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
 def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
@@ -31,33 +32,30 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         "must the consistent with the VEP output.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-
-    p.add_argument(
-        '-i', '--vep-txt',
-        type=Path,
-        nargs='+',
-        help='Path to VEP result txt file.',
-        metavar='<file>',
-        required=True
+    common.add_args_input_path(
+        parser=p, formats=INPUT_FILE_FORMATS,
+        message="File path to the VEP outpu TXT file."
     )
-    add_args_output_prefix(p)
-    add_args_source(p)
-    add_args_reference(p, proteome=False)
-    add_args_quiet(p)
+    common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
+    common.add_args_source(p)
+    common.add_args_reference(p, proteome=False)
+    common.add_args_quiet(p)
     p.set_defaults(func=parse_vep)
-    print_help_if_missing_args(p)
+    common.print_help_if_missing_args(p)
     return p
 
 def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """
     # unpack args
-    vep_files:List[Path] = args.vep_txt
-    output_prefix:str = args.output_prefix
-    output_path = output_prefix + '.gvf'
+    vep_files:List[Path] = args.input_path
+    for file in vep_files:
+        common.validate_file_format(file, INPUT_FILE_FORMATS, True)
+    output_path:Path = args.output_path
+    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
-    print_start_message(args)
+    common.print_start_message(args)
 
-    genome, anno, *_ = load_references(args, load_canonical_peptides=False)
+    genome, anno, *_ = common.load_references(args, load_canonical_peptides=False)
 
     vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
 
@@ -82,13 +80,18 @@ def parse_vep(args:argparse.Namespace) -> None:
         if not args.quiet:
             logger(f'VEP file {vep_file} loaded.')
 
+    if not vep_records:
+        if not args.quiet:
+            warning('No variant record is saved.')
+        return
+
     for records in vep_records.values():
         records.sort()
 
     if not args.quiet:
         logger('VEP sorting done.')
 
-    metadata = generate_metadata(args)
+    metadata = common.generate_metadata(args)
 
     tx_rank = anno.get_transcirpt_rank()
     ordered_keys = sorted(vep_records.keys(), key=lambda x:tx_rank[x])

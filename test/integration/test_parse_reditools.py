@@ -11,12 +11,12 @@ class TestParseREDItools(TestCaseIntegration):
         args = argparse.Namespace()
         args.command = 'parseREDItools'
         args.source = 'RNAEditingSite'
-        args.reditools_table = self.data_dir/'reditools/reditools_annotated.txt'
+        args.input_path = self.data_dir/'reditools/reditools_annotated.txt'
         args.transcript_id_column = 16
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.output_prefix = str(self.work_dir/'reditools')
+        args.output_path = self.work_dir/'reditools.gvf'
         args.quiet = True
         args.min_coverage_alt = 3
         args.min_frequency_alt = 0.1
