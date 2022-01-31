@@ -224,6 +224,31 @@ class VariantRecord():
         """ Check if this is a fusion """
         return self.type == 'Fusion'
 
+    def is_in_frame_fusion(self, anno:GenomicAnnotation):
+        """ Check if this is a in-frame fusion. A in-frame fusion is only when
+        both donor and accepter transcripts a protein coding (which known
+        reading frame), and the sum of donor and accepter breakpoint reading
+        frame offset equals to 0 or 3. """
+        if not self.is_fusion():
+            raise ValueError(f'Variant {self.id} is not fusion.')
+        donor_model = anno.transcripts[self.transcript_id]
+        accepter_model = anno.transcripts[self.attrs['ACCEPTER_TRANSCRIPT_ID']]
+        if not donor_model.is_protein_coding or not accepter_model.is_protein_coding:
+            return False
+        if 'TRANSCRIPT_ID' in self.attrs:
+            raise ValueError('Variant must be in transcriptional coordinate.')
+        donor_breakpoint = self.location.start
+        donor_offset = (donor_breakpoint - donor_model.get_cds_start_index()) % 3
+
+        accepter_breakpoint = anno.coordinate_gene_to_transcript(
+            index=self.attrs['ACCEPTER_TRANSCRIPT_ID'],
+            gene=anno.transcripts[self.attrs['ACCEPTER_GENE_ID']],
+            transcript=anno.transcripts[self.attrs['ACCEPTER_TRANSCRIPT_ID']]
+        )
+        accepter_cds_start = accepter_model.get_cds_start_index()
+        accepter_offset = (accepter_breakpoint - accepter_cds_start) % 3
+        return (donor_offset + accepter_offset) % 3 == 0
+
     def is_circ_rna(self) -> bool:
         """ check if this is a circRNA """
         return self.type == 'circRNA'
