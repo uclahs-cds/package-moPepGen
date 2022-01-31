@@ -225,9 +225,6 @@ class ArribaRecord():
 
         records = []
 
-        fusion_id = f'FUSION-{self.gene_id1}:{donor_position}'\
-            f'-{self.gene_id2}:{accepter_position}'
-
         if donor_gene_model.strand == 1:
             ref_seq = genome[donor_chrom].seq[left_breakpoint]
         else:
@@ -240,6 +237,9 @@ class ArribaRecord():
         for donor_tx, accepter_tx in perms:
             donor_tx_id = donor_tx.transcript.transcript_id
             accepter_tx_id = accepter_tx.transcript.transcript_id
+
+            fusion_id = f'FUSION-{donor_tx_id}:{donor_position}'\
+                f'-{accepter_tx_id}:{accepter_position}'
 
             location = FeatureLocation(
                 seqname=self.gene_id1,

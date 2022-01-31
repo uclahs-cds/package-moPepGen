@@ -149,8 +149,6 @@ class FusionCatcherRecord():
         right_breakpoint_genetic = anno.coordinate_genomic_to_gene(
             index=right_breakpoint_genomic - 1, gene=accepter_gene_id
         )
-        fusion_id = f'FUSION-{donor_gene_id}:{left_breakpoint_genetic}'+\
-            f'-{accepter_gene_id}:{right_breakpoint_genetic}'
 
         donor_transcripts = self.get_donor_transcripts(anno, donor_gene_id)
         accepter_transcripts = self.get_accepter_transcripts(anno, accepter_gene_id)
@@ -169,6 +167,10 @@ class FusionCatcherRecord():
         for donor_tx, accepter_tx in perms:
             donor_tx_id = donor_tx.transcript.transcript_id
             accepter_tx_id = accepter_tx.transcript.transcript_id
+
+            fusion_id = f'FUSION-{donor_tx_id}:{left_breakpoint_genetic}'+\
+                f'-{accepter_tx_id}:{right_breakpoint_genetic}'
+
             location = FeatureLocation(
                 seqname=donor_gene_id,
                 start=left_breakpoint_genetic,
