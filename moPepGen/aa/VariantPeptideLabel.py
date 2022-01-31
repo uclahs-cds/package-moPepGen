@@ -163,12 +163,12 @@ class VariantPeptideInfo():
                 var_ids = {gene_ids[0]: [circ_rna_id, *variant_id.variant_ids]}
 
             elif isinstance(variant_id, pi.FusionVariantPeptideIdentifier):
-                first_gene_id = variant_id.first_gene_id
-                second_gene_id = variant_id.second_gene_id
-                gene_ids = [first_gene_id, second_gene_id]
+                first_tx_id = variant_id.first_tx_id
+                second_tx_id = variant_id.second_tx_id
+                gene_ids = [first_tx_id, second_tx_id]
                 var_ids = {
-                    first_gene_id: variant_id.first_variants + [variant_id.fusion_id],
-                    second_gene_id: variant_id.second_variants
+                    first_tx_id: variant_id.first_variants + [variant_id.fusion_id],
+                    second_tx_id: variant_id.second_variants
                 }
 
             elif isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
