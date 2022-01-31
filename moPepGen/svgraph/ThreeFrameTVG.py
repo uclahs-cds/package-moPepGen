@@ -423,7 +423,7 @@ class ThreeFrameTVG():
 
     def insert_flanking_variant(self, cursors:List[TVGNode],
             var:seqvar.VariantRecordWithCoordinate,
-            seq:DNASeqRecordWithCoordinates, subgraph_id:str,
+            seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecord], position:int,
             attach_directly:bool=False, known_orf_index:int=None
             ) -> List[TVGNode]:
@@ -436,6 +436,7 @@ class ThreeFrameTVG():
             var (VariantRecordWithCoordinate): The variant object to be added
                 to the inserted nodes. This should be the original variant to
                 be applied, e.g. the fusion.
+            seq (VariantRecordWithCoordinate): The sequence being inserted.
             variants (List[VariantRecord]): Additional variants that the
                 insertion sequence carries.
             position (int): The position where the variant should be inserted.
@@ -444,6 +445,7 @@ class ThreeFrameTVG():
                 cursors instead of checking for the position of insertion. This
                 is useful to insert the fusion subgraph when an intronic
                 subgraph is already inserted.
+            known_orf_index (int): The known orf index (1, 2, or 3)
         """
         cursors = copy.copy(cursors)
         var_tails = []
@@ -452,9 +454,15 @@ class ThreeFrameTVG():
         level = cursors[0].level + 1
         branch.update_node_level(level)
         parent_id = cursors[0].subgraph_id
+        if attach_directly:
+            subgraph_start = cursors[0].seq.locations[-1].ref.end
+            subgraph_end = subgraph_start + 1
+        else:
+            subgraph_start = var.location.start
+            subgraph_end = var.location.end
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
-            start=var.location.start, end=var.location.end
+            start=subgraph_start, end=subgraph_end
         )
         branch.init_three_frames(truncate_head=False)
         for root in branch.reading_frames:
@@ -516,7 +524,7 @@ class ThreeFrameTVG():
             anno:gtf.GenomicAnnotation,
             tx_seqs:Dict[str,dna.DNASeqRecordWithCoordinates]=None,
             gene_seqs:Dict[str,dna.DNASeqRecordWithCoordinates]=None,
-            active_frames:List[bool]=None, known_orf_index:int=None
+            known_orf_index:int=None
             ) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
@@ -576,7 +584,6 @@ class ThreeFrameTVG():
                 cursors=cursors,
                 var=var,
                 seq=insert_seq,
-                subgraph_id=gene_id,
                 variants=insertion_variants,
                 position=variant.location.start,
                 attach_directly=False,
@@ -617,7 +624,6 @@ class ThreeFrameTVG():
                 cursors=cursors,
                 var=var,
                 seq=insert_seq,
-                subgraph_id=gene_id,
                 variants=insertion_variants,
                 position=position,
                 attach_directly=attach_directly,
@@ -627,88 +633,40 @@ class ThreeFrameTVG():
         breakpoint_gene = variant.get_accepter_position()
         breakpoint_tx = anno.coordinate_gene_to_transcript(breakpoint_gene,
             accepter_gene_id, accepter_tx_id)
-
+        accepter_seq = accepter_tx_seq[breakpoint_tx:]
         accepter_variant_records = variant_pool.filter_variants(
             tx_ids=[accepter_tx_id], exclude_type=exclude_variant_types,
             start=breakpoint_tx, return_coord='transcript', intron=False
         )
 
-        subgraph_id = self.subgraphs.generate_subgraph_id()
-        branch = ThreeFrameTVG(accepter_tx_seq[breakpoint_tx:], subgraph_id)
-        level = cursors[0].level + 1
-        branch.update_node_level(level)
-        parent_id = cursors[0].subgraph_id
-        if variant.attrs['LEFT_INSERTION_START'] is not None or \
-                variant.attrs['RIGHT_INSERTION_START'] is not None:
-            self.subgraphs.add_subgraph(
-                child_id=subgraph_id, parent_id=parent_id, level=level,
-                start=insertion_start, end=insertion_end
-            )
+        # add the variant as global variant
+        accepter_length = len(accepter_tx_seq) - breakpoint_tx
+        var = seqvar.VariantRecordWithCoordinate(
+            variant=copy.deepcopy(variant),
+            location=FeatureLocation(start=0, end=accepter_length)
+        )
+        var.variant.is_real_fusion = True
+
+        if variant.attrs['LEFT_INSERTION_START'] is None and \
+                variant.attrs['RIGHT_INSERTION_START'] is None:
+            position = variant.location.start
+            attach_directly = False
         else:
-            self.subgraphs.add_subgraph(
-                child_id=subgraph_id, parent_id=parent_id, level=level,
-                start=variant.location.start, end=variant.location.start
-            )
-        branch.init_three_frames(truncate_head=False)
-        for root in branch.reading_frames:
-            list(root.out_edges)[0].out_node.subgraph_id = branch.id
-        branch.create_variant_graph(
+            position = None
+            attach_directly = True
+
+        self.insert_flanking_variant(
+            cursors=cursors,
+            var=var,
+            seq=accepter_seq,
             variants=accepter_variant_records,
-            variant_pool=None,
-            genome=None,
-            anno=None,
-            active_frames=active_frames,
+            position=position,
+            attach_directly=attach_directly,
             known_orf_index=known_orf_index
         )
-        for edge in branch.root.out_edges:
-            edge.out_node.variants.append(variant)
+        return original_cursors
 
-        for i in range(3):
-            var_node = branch.reading_frames[i].get_reference_next()
-            while var_node.in_edges:
-                edge = var_node.in_edges.pop()
-                branch.remove_edge(edge)
-            variant = copy.deepcopy(variant)
-            variant.is_real_fusion = True
-            var = seqvar.VariantRecordWithCoordinate(
-                variant=variant,
-                location=FeatureLocation(start=0, end=1)
-            )
-            var_node.variants.append(var)
-            variant_start = variant.location.start
-
-            node = cursors[i]
-
-            if variant.attrs['LEFT_INSERTION_START'] is not None or \
-                    variant.attrs['RIGHT_INSERTION_START'] is not None:
-                self.add_edge(node, var_node, 'reference')
-                cursors[i] = original_cursors[i]
-                continue
-
-            node_start = node.seq.locations[0].ref.start
-            node_end = node.seq.locations[-1].ref.end
-
-            if variant_start < node_start:
-                raise ValueError('Variant out of range')
-
-            if variant_start == node_start:
-                prev = node.get_reference_prev()
-                self.add_edge(prev, var_node, 'variant_start')
-                continue
-
-            if variant_start == node_end == len(self.seq):
-                self.add_edge(node, var_node, 'reference')
-                continue
-
-            index = node.seq.get_query_index(variant_start)
-            node, _ = self.splice(node, index, 'reference')
-            self.add_edge(node, var_node, 'variant_start')
-            self.reading_frames[i] = node
-            cursors[i] = node
-
-        return cursors
-
-    def _apply_insertion(self, cursors:List[TVGNode], subgraph_id:str,
+    def _apply_insertion(self, cursors:List[TVGNode],
             var:seqvar.VariantRecordWithCoordinate,
             seq:dna.DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecord],
@@ -863,7 +821,6 @@ class ThreeFrameTVG():
         )
         return self._apply_insertion(
             cursors=cursors,
-            subgraph_id=gene_id,
             var=var,
             seq=insert_seq,
             variants=insert_variants,
@@ -899,7 +856,6 @@ class ThreeFrameTVG():
         )
         return self._apply_insertion(
             cursors=cursors,
-            subgraph_id=gene_id,
             var=var,
             seq=sub_seq,
             variants=sub_variants,
@@ -998,7 +954,6 @@ class ThreeFrameTVG():
                     anno=anno,
                     tx_seqs=tx_seqs,
                     gene_seqs=gene_seqs,
-                    active_frames=copy.copy(active_frames),
                     known_orf_index=known_orf_index
                 )
 
