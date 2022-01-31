@@ -524,7 +524,7 @@ class ThreeFrameTVG():
             anno:gtf.GenomicAnnotation,
             tx_seqs:Dict[str,dna.DNASeqRecordWithCoordinates]=None,
             gene_seqs:Dict[str,dna.DNASeqRecordWithCoordinates]=None,
-            active_frames:List[bool]=None, known_orf_index:int=None
+            known_orf_index:int=None
             ) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
         transcript and merge at the breakpoint position.
@@ -954,7 +954,6 @@ class ThreeFrameTVG():
                     anno=anno,
                     tx_seqs=tx_seqs,
                     gene_seqs=gene_seqs,
-                    active_frames=copy.copy(active_frames),
                     known_orf_index=known_orf_index
                 )
 
