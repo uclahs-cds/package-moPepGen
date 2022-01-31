@@ -131,9 +131,6 @@ class STARFusionRecord():
         accepter_transcripts = self.get_accepter_transcripts(anno)
         records = []
 
-        fusion_id = f'FUSION-{self.left_gene}:{donor_position}'\
-            f'-{self.right_gene}:{accepter_position}'
-
         if donor_model.strand == 1:
             ref_seq = genome[donor_chrom].seq[left_breakpoint + 1]
         else:
@@ -146,6 +143,10 @@ class STARFusionRecord():
         for donor_tx, accepter_tx in perms:
             donor_tx_id = donor_tx.transcript.transcript_id
             accepter_tx_id = accepter_tx.transcript.transcript_id
+
+            fusion_id = f'FUSION-{donor_tx_id}:{donor_position}'\
+                f'-{accepter_tx_id}:{accepter_position}'
+
             location = FeatureLocation(
                 seqname=self.left_gene,
                 start=donor_position,

@@ -125,6 +125,11 @@ class BaseVariantPeptideIdentifier(VariantPeptideIdentifier):
             x.append(str(self.index))
         return '|'.join(x)
 
+    def is_alternative_splicing(self) -> bool:
+        """ Whether this variant peptide has any alternative splicing events """
+        alt_splice_types = ['SE', 'A5SS', 'A3SS', 'RI', 'MXE']
+        return any(any(y in x for y in alt_splice_types) for x in self.variant_ids)
+
 class CircRNAVariantPeptideIdentifier(VariantPeptideIdentifier):
     """ circRNA variant peptide identifier for output FASTA header """
     def __init__(self, circ_rna_id:str, variant_ids:List[str],
@@ -167,13 +172,13 @@ class FusionVariantPeptideIdentifier(VariantPeptideIdentifier):
         return '|'.join(x)
 
     @property
-    def first_gene_id(self):
+    def first_tx_id(self):
         """ get first gene id """
         _,first,_ = self.fusion_id.split('-')
         return first.split(':')[0]
 
     @property
-    def second_gene_id(self):
+    def second_tx_id(self):
         """ get first gene id """
         _,_,second = self.fusion_id.split('-')
         return second.split(':')[0]
