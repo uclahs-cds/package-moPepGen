@@ -8,6 +8,7 @@ import pickle
 from typing import IO, Dict, List
 from moPepGen import logger
 from moPepGen.aa import VariantPeptidePool
+from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.cli import common
 
@@ -18,7 +19,7 @@ OUTPUT_FILE_FORMATS = ['.fasta', '.fa']
 # pylint: disable=W0212
 def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     """ CLI for moPepGen splitDatabase """
-    p = subparser.add_parser(
+    p:argparse.ArgumentParser = subparser.add_parser(
         name='filterFasta',
         help='Filter noncanonical peptides.',
         description='Filter noncanonical peptides according to gene expression'
@@ -69,7 +70,8 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
         '--quant-cutoff',
         type=float,
         help='Quantification cutoff.',
-        metavar='<number>'
+        metavar='<number>',
+        default=None
     )
     p.add_argument(
         '--keep-all-coding',
@@ -83,6 +85,22 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
         default=False,
         help='Keep all noncoding genes, regardless of their expression level.'
     )
+    p.add_argument(
+        '--miscleavages',
+        type=str,
+        help='Range of miscleavages per peptide to allow. Min and max are'
+        ' included. For example, "1:2" will keep all peptides with 1 or 2'
+        ' miscleavages.',
+        metavar='[min]:[max]',
+        default=None
+    )
+    p.add_argument(
+        '--enzyme',
+        type=str,
+        help='Enzyme name. Ignored if --miscleavages is not specified.',
+        choices=list(EXPASY_RULES.keys()),
+        default='trypsin'
+    )
 
     common.add_args_reference(p, genome=False, proteome=False)
     common.add_args_quiet(p)
@@ -95,6 +113,14 @@ def filter_fasta(args:argparse.Namespace) -> None:
     common.validate_file_format(args.input_path, INPUT_FILE_FORMATS, True)
     common.validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
 
+    if args.miscleavages is not None and not ':' in args.miscleavages:
+        raise ValueError('Value invalid for --miscleavages. Must be [min]:[max]')
+
+    if args.miscleavages is None:
+        miscleavage_range = (None, None)
+    else:
+        miscleavage_range = tuple(int(x) for x in args.miscleavages.split(':', 1))
+
     common.print_start_message(args)
 
     coding_tx = load_coding_transcripts(args)
@@ -105,38 +131,45 @@ def filter_fasta(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Peptide FASTA file loaded.')
 
-    with open(args.exprs_table, 'rt') as handle:
-        i = 0
-        while i < args.skip_lines:
-            handle.readline()
-            i += 1
-        tx_id_col:str = args.tx_id_col
-        quant_col:str = args.quant_col
-        if any(not x.isdecimal() for x in [tx_id_col, quant_col]):
-            header = handle.readline().rstrip().split(args.delimiter)
+    if args.exprs_table is not None:
+        with open(args.exprs_table, 'rt') as handle:
+            i = 0
+            while i < args.skip_lines:
+                handle.readline()
+                i += 1
+            tx_id_col:str = args.tx_id_col
+            quant_col:str = args.quant_col
+            if any(not x.isdecimal() for x in [tx_id_col, quant_col]):
+                header = handle.readline().rstrip().split(args.delimiter)
 
-        if tx_id_col.isdecimal():
-            tx_id_col = int(tx_id_col) - 1
-        else:
-            tx_id_col = header.index(tx_id_col)
+            if tx_id_col.isdecimal():
+                tx_id_col = int(tx_id_col) - 1
+            else:
+                tx_id_col = header.index(tx_id_col)
 
-        if quant_col.isdecimal():
-            quant_col = int(quant_col) - 1
-        else:
-            quant_col = header.index(quant_col)
+            if quant_col.isdecimal():
+                quant_col = int(quant_col) - 1
+            else:
+                quant_col = header.index(quant_col)
 
-        exprs = load_expression_table(
-            handle=handle,
-            tx_col=tx_id_col,
-            quant_col=quant_col,
-            delim=args.delimiter
-        )
+            exprs = load_expression_table(
+                handle=handle,
+                tx_col=tx_id_col,
+                quant_col=quant_col,
+                delim=args.delimiter
+            )
+    else:
+        exprs = None
 
     if not args.quiet:
         logger('Gene expression table loaded.')
 
-    filtered_pool = pool.filter(exprs, args.quant_cutoff, coding_tx,
-        args.keep_all_noncoding, args.keep_all_coding)
+    filtered_pool = pool.filter(
+        exprs=exprs, cutoff=args.quant_cutoff, coding_transcripts=coding_tx,
+        keep_all_noncoding=args.keep_all_noncoding,
+        keep_all_coding=args.keep_all_coding, enzyme=args.enzyme,
+        miscleavage_range=miscleavage_range
+    )
 
     filtered_pool.write(args.output_path)
 

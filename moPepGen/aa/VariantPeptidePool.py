@@ -1,6 +1,6 @@
 """ Module for variant peptide pool (unique) """
 from __future__ import annotations
-from typing import Set, IO, Dict, List
+from typing import Set, IO, Dict, List, Tuple
 from pathlib import Path
 from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
@@ -70,14 +70,22 @@ class VariantPeptidePool():
             pool.peptides.add(seq)
         return pool
 
-    def filter(self, exprs:Dict[str,int], cutoff:float,
+    def filter(self, exprs:Dict[str,int]=None, cutoff:float=None,
             coding_transcripts:List[str]=None, keep_all_noncoding:bool=False,
-            keep_all_coding:bool=False
+            keep_all_coding:bool=False, enzyme:str='trypsin',
+            miscleavage_range:Tuple[int,int]=(None, None)
             ) -> VariantPeptidePool:
         """ Filter variant peptides according to gene expression. """
         label_delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         filtered_pool = VariantPeptidePool()
         for peptide in self.peptides:
+            if any(x is not None for x in miscleavage_range):
+                exception = 'trypsin_exception' if enzyme == 'trypsin' else None
+                misc = peptide.find_all_enzymatic_cleave_sites(enzyme, exception)
+                if miscleavage_range[0] is not None and len(misc) < miscleavage_range[0]:
+                    continue
+                if miscleavage_range[1] is not None and len(misc) > miscleavage_range[1]:
+                    continue
             peptide_entries = VariantPeptideInfo.from_variant_peptide_minimal(peptide)
             keep = []
             for entry in peptide_entries:
@@ -88,13 +96,17 @@ class VariantPeptidePool():
 
                 if keep_all_noncoding and all_noncoding:
                     should_keep = True
+
                 elif keep_all_coding and all_coding:
                     should_keep = True
                 else:
-                    tx_ids = entry.get_transcript_ids()
-                    should_keep = entry.is_fusion() or entry.is_circ_rna() or\
-                        entry.is_splice_altering() or \
-                        all(exprs[tx] > cutoff for tx in tx_ids)
+                    if exprs is not None:
+                        tx_ids = entry.get_transcript_ids()
+                        should_keep = entry.is_fusion() or entry.is_circ_rna() or\
+                            entry.is_splice_altering() or \
+                            all(exprs[tx] > cutoff for tx in tx_ids)
+                    else:
+                        should_keep = True
                 if should_keep:
                     keep.append(entry)
             if keep:
