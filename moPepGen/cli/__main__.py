@@ -14,7 +14,7 @@ CLI_MAIN_DESCRIPTION = """
    parseREDItools      Parse REDItools annotated output.
    parseSTARFusion     Parse STAR-Fusion output.
    parseFusionCatcher  Parse FusionCatcher output.
-   parseArriba        Parse Arriba output.
+   parseArriba         Parse Arriba output.
    parseRMATS          Parse rMATS output.
    parseCIRCexplorer   Parse CIRCexplorer known circRNA output.
 
@@ -25,6 +25,7 @@ CLI_MAIN_DESCRIPTION = """
 -- Processing
    filterFasta         Filter noncanonical peptides.
    splitDatabase       Split noncanonical peptides into separate databases.
+   mergeFasta          Merge multiple variant peptide FASTA databases.
 """
 
 def main():
@@ -59,6 +60,7 @@ def main():
     cli.add_subparser_split_database(subparsers)
     cli.add_subparser_filter_fasta(subparsers)
     cli.add_subparser_index_gvf(subparsers)
+    cli.add_subparser_merge_fasta(subparsers)
 
     # allowing values to start with -, such as -100,3
     # https://stackoverflow.com/a/21446783/11081630
