@@ -78,7 +78,7 @@ class TestFilterFasta(TestCaseIntegration):
         expected = {'vep_filtered.fasta'}
         self.assertEqual(files, expected)
 
-    def test_filter_fasta_str_index_misc(self):
+    def test_filter_fasta_miscleavages(self):
         """ test filterFasta to filter miscleavages """
         args = self.generate_default_args()
         args.input_path = Path('test/files/vep/vep.fasta')

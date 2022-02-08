@@ -5,7 +5,6 @@ from pathlib import Path
 from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
 from Bio.SeqIO import FastaIO
-from moPepGen.aa import expasy_rules
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from moPepGen import get_equivalent, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from .VariantPeptideLabel import VariantPeptideInfo
