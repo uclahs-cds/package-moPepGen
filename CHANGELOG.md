@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Enable `filterFasta` to filter by number of miscleavages per peptide. #382
 
-- Added CLI command `mergeFasta` to merge multiple variant peptide database Fasta files into one. This could be useful when working on multiplexed proteomics experiments such as TMT. [#380](https://github.com/uclahs-cds/private-moPepGen/issues/380)
+- Added CLI command `mergeFasta` to merge multiple variant peptide database Fasta files into one. This could be useful when working with multiplexed proteomic experiments such as TMT. [#380](https://github.com/uclahs-cds/private-moPepGen/issues/380)
 
 ### Changed
 

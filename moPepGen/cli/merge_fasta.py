@@ -1,4 +1,5 @@
-""" `MergeFasta` merges a serious of database FASTA files into one. """
+""" `MergeFasta` merges a serious of database FASTA files into one. This is
+useful when working with multiplexed proteomic experiments such as TMT """
 from __future__ import annotations
 import argparse
 from moPepGen import logger
