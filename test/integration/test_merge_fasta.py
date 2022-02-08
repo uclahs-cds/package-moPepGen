@@ -1,11 +1,10 @@
 """ Test mergeFasta """
 import argparse
-import shutil
 import subprocess as sp
 import sys
-from Bio.SeqIO import FastaIO
 from test.unit import create_aa_record
 from test.integration import TestCaseIntegration
+from Bio.SeqIO import FastaIO
 from moPepGen import cli
 from moPepGen.aa import VariantPeptidePool
 
@@ -117,4 +116,3 @@ class TestMergeFasta(TestCaseIntegration):
         with open(args.output_path, 'rt') as handle:
             pool = VariantPeptidePool.load(handle)
         self.assertEqual(len(pool.peptides), 2)
-
