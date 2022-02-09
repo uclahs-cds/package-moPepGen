@@ -1,5 +1,6 @@
 """ Variant Record Pool """
 from __future__ import annotations
+import copy
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from pathlib import Path
 from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512
@@ -27,6 +28,15 @@ class TranscriptionalVariantSeries():
         self.intronic = intronic or []
         self.fusion = fusion or []
         self.circ_rna = circ_rna or []
+
+    def __copy__(self) -> TranscriptionalVariantSeries:
+        """ copy """
+        return self.__class__(
+            transcriptional=copy.copy(self.transcriptional),
+            intronic=copy.copy(self.intronic),
+            fusion=copy.copy(self.fusion),
+            circ_rna=copy.copy(self.circ_rna)
+        )
 
     def sort(self):
         """ Sort each slot of variants in order """
