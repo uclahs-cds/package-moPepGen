@@ -1,5 +1,6 @@
 """ Variant Record Pool """
 from __future__ import annotations
+import copy
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from moPepGen import ERROR_INDEX_IN_INTRON
 from moPepGen.seqvar.VariantRecordPoolOnDisk import TranscriptionalVariantSeries
@@ -59,6 +60,12 @@ class VariantRecordPool():
         """ generator """
         for key in self.data:
             yield key
+
+    def __copy__(self) -> VariantRecordPool:
+        """ copy """
+        data = copy.copy(self.data)
+        anno = copy.copy(self.anno)
+        return self.__class__(data, anno)
 
     def add_intronic_variant(self, record:VariantRecord, tx_id:str=None):
         """ Add a variant with genetic coordinate that is in the intron of

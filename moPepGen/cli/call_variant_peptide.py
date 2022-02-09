@@ -160,11 +160,20 @@ def call_variant_peptides_wrapper(tx_id:str,
             raise
 
     peptides = set()
+    exclude_variant_types = ['Fusion', 'Insertion', 'Deletion', 'Substitution', 'circRNA']
     for variant in variant_series.fusion:
+        filtered_variants = pool.filter_variants(
+            tx_ids=[tx_id], start=0, end=variant.location.start,
+            exclude_type=exclude_variant_types, intron=False,
+            return_coord='transcript'
+        )
+        variant_pool = copy.copy(pool)
+        variant_pool[tx_id] = copy.copy(pool[tx_id])
+        variant_pool[tx_id].transcriptional = filtered_variants
         try:
             _peptides = call_peptide_fusion(
-                variant=variant, variant_pool=pool, anno=anno, genome=None,
-                tx_seqs=tx_seqs, gene_seqs=gene_seqs, rule=rule,
+                variant=variant, variant_pool=variant_pool, anno=anno,
+                genome=None, tx_seqs=tx_seqs, gene_seqs=gene_seqs, rule=rule,
                 exception=exception, miscleavage=miscleavage,
                 max_variants_per_node=max_variants_per_node
             )
