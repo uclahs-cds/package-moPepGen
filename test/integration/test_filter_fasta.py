@@ -23,7 +23,7 @@ class TestFilterFasta(TestCaseIntegration):
         args.miscleavages = None
         return args
 
-    def test_filter_fast_cli(self):
+    def test_filter_fasta_cli(self):
         """ Test filterFasta cli """
         cmd = f"""
         {sys.executable} -m moPepGen.cli filterFasta \\
