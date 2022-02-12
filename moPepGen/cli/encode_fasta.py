@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 INPUT_FILE_FORMATS = ['.fa', '.fasta']
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
+# pylint: disable=W0212
 def add_subparser_encode_fasta(subparser:argparse._SubParsersAction):
     """ CLI for moPepGen encodeFasta """
     parser:argparse.ArgumentParser = subparser.add_parser(
