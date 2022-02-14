@@ -117,7 +117,7 @@ class VEPRecord():
         Args:
             seq (dna.DNASeqRecord): The DNA sequence of the transcript.
         """
-        chrom_seqname, alt_position = self.location.split(':')
+        _, alt_position = self.location.split(':')
         if alt_position.find('-') > -1:
             alt_start_genomic, alt_end_genomic = \
                 [int(x) for x in alt_position.split('-')]
@@ -127,6 +127,7 @@ class VEPRecord():
         alt_start_genomic -= 1
 
         gene_model = anno.genes[self.gene]
+        chrom_seqname = gene_model.chrom
         strand = gene_model.strand
         seq = gene_model.get_gene_sequence(genome[chrom_seqname])
 
