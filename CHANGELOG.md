@@ -21,6 +21,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - For fusion, `callVariant` now looks at the entire accepter sequence for potential variant peptides, rather than only the peptides that contains the breakpoint.
 
+- In `parseVEP`, chromosome seqname for each record is now got directly from the gene annotation, to avoid the 'chr' prefix issue.
+
 ---
 
 ## [0.2.0] - 2021-01-28
