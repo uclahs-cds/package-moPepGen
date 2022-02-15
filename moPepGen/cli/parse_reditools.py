@@ -37,7 +37,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         help='The column index for transcript ID. If your REDItools table does'
         'not contains it, use the AnnotateTable.py from the REDItools'
         'package.',
-        default=16,
+        default=17,
         metavar='<number>'
     )
     p.add_argument(
@@ -77,7 +77,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
     common.validate_file_format(table_file, INPUT_FILE_FORMATS, True)
     common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
 
-    transcript_id_column = args.transcript_id_column
+    transcript_id_column = args.transcript_id_column - 1
     min_coverage_alt:int = args.min_coverage_alt
     min_frequency_alt:int = args.min_frequency_alt
     min_coverage_dna:int = args.min_coverage_dna

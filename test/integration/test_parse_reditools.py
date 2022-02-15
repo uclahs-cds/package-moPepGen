@@ -31,7 +31,7 @@ class TestParseREDItools(TestCaseIntegration):
         args.command = 'parseREDItools'
         args.source = 'RNAEditingSite'
         args.input_path = self.data_dir/'reditools/reditools_annotated.txt'
-        args.transcript_id_column = 16
+        args.transcript_id_column = 17
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.output_path = self.work_dir/'reditools.gvf'
