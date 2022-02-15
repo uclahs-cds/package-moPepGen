@@ -1,6 +1,6 @@
-""" This module takes a FASTA file and creates decoy database by shuffling or
-reversing each sequences. The generated decoy database FASTA file can then be
-used for library searching of proteomics data. """
+""" This module takes a FASTA file and creates a decoy database by shuffling or
+reversing each sequence. The generated decoy database FASTA file can then be
+used for library searching with proteomics data. """
 from __future__ import annotations
 import argparse
 import copy
