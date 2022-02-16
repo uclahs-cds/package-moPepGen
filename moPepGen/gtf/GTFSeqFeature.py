@@ -21,20 +21,51 @@ class GTFSeqFeature(SeqFeature):
             return self.attributes['gene_biotype']
         raise ValueError(f'Annotation source {self.source} not supported')
 
+    @biotype.setter
+    def biotype(self, biotype:str) -> None:
+        """ biotype """
+        if self.source == 'GENCODE':
+            self.attributes['gene_type'] = biotype
+        elif self.source == 'ENSEMBL':
+            self.attributes['gene_biotype'] = biotype
+        else:
+            raise ValueError(f'Annotation source {self.source} not supported')
+
     @property
     def gene_id(self) -> str:
         """ gene ID """
+        if 'gene_id' not in self.attributes:
+            return None
         return self.attributes['gene_id']
+
+    @gene_id.setter
+    def gene_id(self, gene_id:str) -> None:
+        """ set gene ID """
+        self.attributes['gene_id'] = gene_id
 
     @property
     def transcript_id(self) -> str:
         """ transcript ID """
+        if 'transcript_id' not in self.attributes:
+            return None
         return self.attributes['transcript_id']
+
+    @transcript_id.setter
+    def transcript_id(self, transcript_id:str) -> None:
+        """ set transcript ID """
+        self.attributes['transcript_id'] = transcript_id
 
     @property
     def protein_id(self) -> str:
         """ protein ID """
+        if 'protein_id' not in self.attributes:
+            return None
         return self.attributes['protein_id']
+
+    @protein_id.setter
+    def protein_id(self, protein_id:str) -> None:
+        """ set protein ID """
+        self.attributes['protein_id'] = protein_id
 
     @property
     def gene_name(self) -> str:
@@ -42,6 +73,11 @@ class GTFSeqFeature(SeqFeature):
         if 'gene_name' in self.attributes:
             return self.attributes['gene_name']
         return ''
+
+    @gene_name.setter
+    def gene_name(self, gene_name:str) -> None:
+        """ set gene name """
+        self.attributes['gene_name'] = gene_name
 
     def _shift(self, offset:int) -> GTFSeqFeature:
         """ shift by i """

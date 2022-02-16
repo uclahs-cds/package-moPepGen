@@ -34,9 +34,14 @@ class GtfIterator(SequenceIterator):
                 strand=None
 
             attributes = {}
+            attributes_to_keep = ['gene_id', 'transcript_id', 'protein_id',
+                'gene_name', 'gene_type', 'gene_biotype', 'tag']
             attribute_list = [field.strip().split(' ', 1) for field in \
                 fields[8].rstrip(';').split(';')]
+
             for key,val in attribute_list:
+                if key not in attributes_to_keep:
+                    continue
                 val = val.strip('"')
                 if key == 'tag':
                     if key not in attributes:
