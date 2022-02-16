@@ -3,7 +3,6 @@ reversing each sequence. The generated decoy database FASTA file can then be
 used for library searching with proteomics data. """
 from __future__ import annotations
 import argparse
-import copy
 from pathlib import Path
 import random
 from typing import List
@@ -111,7 +110,7 @@ def decoy_database(args:argparse.Namespace):
     non_shuffle_pattern = args.non_shuffle_pattern.split(',')
 
     with open(input_path, 'rt') as handle:
-        db:List[SeqRecord] = list(SeqIO.parse(handle, format='fasta'))
+        target_seqs:List[SeqRecord] = list(SeqIO.parse(handle, format='fasta'))
 
     if not args.quiet:
         logger('Input database FASTA file loaded.')
@@ -120,7 +119,7 @@ def decoy_database(args:argparse.Namespace):
         random.seed(args.seed)
 
     decoy_seqs = []
-    for seq in db:
+    for seq in target_seqs:
         decoy_seq = generate_decoy_sequence(
             seq, method=args.method, decoy_string=args.decoy_string,
             decoy_string_position=args.decoy_string_position,
@@ -136,7 +135,7 @@ def decoy_database(args:argparse.Namespace):
     with open(output_path, 'wt') as handle:
         record2title = lambda x: x.description
         writer = FastaIO.FastaWriter(handle, record2title=record2title)
-        for seq in iterate_target_decoy_database(db, decoy_seqs, args.order):
+        for seq in iterate_target_decoy_database(target_seqs, decoy_seqs, args.order):
             writer.write_record(seq)
 
     if not args.quiet:
@@ -146,6 +145,7 @@ def generate_decoy_sequence(seq:SeqRecord, method:str, decoy_string:str,
         decoy_string_position:str, keep_nterm:bool, keep_cterm:bool,
         non_shuffle_pattern:List[str]
         ) -> SeqRecord:
+    """ Generate decoy sequence """
     fixed_indices = find_fixed_indices(seq.seq, keep_nterm, keep_cterm, non_shuffle_pattern)
     if method == 'reverse':
         decoy_seq = reverse_sequence(seq.seq, fixed_indices)

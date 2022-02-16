@@ -1,13 +1,12 @@
 """ Integration test for decoyDatabase """
 import argparse
-from Bio.SeqIO import FastaIO
-from pathlib import Path
 import subprocess as sp
 import sys
-from Bio import SeqIO
 from test.integration import TestCaseIntegration
-from moPepGen import cli
 from test.unit import create_aa_record
+from Bio import SeqIO
+from Bio.SeqIO import FastaIO
+from moPepGen import cli
 
 
 TARGET_DB = [
