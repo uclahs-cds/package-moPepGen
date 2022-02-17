@@ -25,6 +25,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - In `parseVEP`, chromosome seqname for each record is now got directly from the gene annotation, to avoid the 'chr' prefix issue.
 
+- The `--transcript-id-column` parameter of `parseREDItools` is changed to take 1-based index.
+
 ---
 
 ## [0.2.0] - 2021-01-28
