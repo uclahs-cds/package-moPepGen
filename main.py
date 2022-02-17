@@ -16,7 +16,7 @@ COMMAND_MAPPER = {
     'callVariant': cli.add_subparser_call_variant,
     'callNoncoding': cli.add_subparser_call_noncoding,
     'filterFasta': cli.add_subparser_filter_fasta,
-    'splitDatabase': cli.add_subparser_split_database
+    'splitDatabase': cli.add_subparser_split_fasta
 }
 
 def define_env(env):

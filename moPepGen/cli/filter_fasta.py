@@ -18,7 +18,7 @@ OUTPUT_FILE_FORMATS = ['.fasta', '.fa']
 
 # pylint: disable=W0212
 def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
-    """ CLI for moPepGen splitDatabase """
+    """ CLI for moPepGen filterFasta """
     p:argparse.ArgumentParser = subparser.add_parser(
         name='filterFasta',
         help='Filter noncanonical peptides.',
