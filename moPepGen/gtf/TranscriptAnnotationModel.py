@@ -73,9 +73,9 @@ class TranscriptAnnotationModel():
         for key in ['transcript_id', 'gene_id', 'protein_id', 'gene_name', 'gene_type']:
             if hasattr(record, key):
                 if self.__getattribute__(key) is None:
-                        val = record.__getattribute__(key)
-                        if val is not None and val != '':
-                            self.__setattr__(key, record.__getattribute__(key))
+                    val = record.__getattribute__(key)
+                    if val is not None and val != '':
+                        self.__setattr__(key, record.__getattribute__(key))
                 else:
                     record.__setattr__(key, self.__getattribute__(key))
 
