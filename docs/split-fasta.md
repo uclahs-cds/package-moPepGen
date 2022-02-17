@@ -1,7 +1,7 @@
-{% set command = 'splitDatabase' %}
+{% set command = 'splitFasta' %}
 # {{ command }}
 
-::: moPepGen.cli.split_database
+::: moPepGen.cli.split_fasta
 	handler: python
     selection:
       members: false

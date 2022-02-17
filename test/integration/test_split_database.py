@@ -1,4 +1,4 @@
-""" Integration test of splitDatabase """
+""" Integration test of splitFasta """
 import argparse
 import subprocess as sp
 import sys
@@ -7,11 +7,11 @@ from moPepGen import cli
 
 
 class TestSplitDatabase(TestCaseIntegration):
-    """ Test cases for splitDatabase """
-    def test_split_database_cli(self):
-        """ test splitDatabase cli """
+    """ Test cases for splitFasta """
+    def test_split_fasta_cli(self):
+        """ test splitFasta cli """
         cmd = f"""
-        {sys.executable} -m moPepGen.cli splitDatabase \\
+        {sys.executable} -m moPepGen.cli splitFasta \\
             --gvf \\
                 {self.data_dir}/vep/vep_gSNP.gvf \\
                 {self.data_dir}/vep/vep_gINDEL.gvf \\
@@ -34,7 +34,7 @@ class TestSplitDatabase(TestCaseIntegration):
     def create_base_args(self) -> argparse.Namespace:
         """ Create base args """
         args = argparse.Namespace()
-        args.command = 'splitDatabase'
+        args.command = 'splitFasta'
         args.noncoding_peptides = None
         args.order_source = None
         args.group_source = None
@@ -45,8 +45,8 @@ class TestSplitDatabase(TestCaseIntegration):
         args.quiet = True
         return args
 
-    def test_split_database_case1(self):
-        """ test splitDatabase case1 """
+    def test_split_fasta_case1(self):
+        """ test splitFasta case1 """
         args = self.create_base_args()
         args.gvf = [
             self.data_dir/'vep/vep_gSNP.gvf',
@@ -58,7 +58,7 @@ class TestSplitDatabase(TestCaseIntegration):
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        cli.split_database(args)
+        cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'test_gINDEL.fasta','test_gSNP.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',

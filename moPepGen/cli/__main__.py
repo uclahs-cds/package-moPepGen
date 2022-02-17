@@ -24,7 +24,7 @@ CLI_MAIN_DESCRIPTION = """
 
 -- Processing
    filterFasta         Filter noncanonical peptides.
-   splitDatabase       Split noncanonical peptides into separate databases.
+   splitFasta          Split noncanonical peptides into separate databases.
    mergeFasta          Merge multiple variant peptide FASTA databases.
    encodeFasta         Encode variant peptide FASTA file header.
 """
@@ -58,7 +58,7 @@ def main():
     cli.add_subparser_parse_circexplorer(subparsers)
     cli.add_subparser_call_variant(subparsers)
     cli.add_subparser_call_noncoding(subparsers)
-    cli.add_subparser_split_database(subparsers)
+    cli.add_subparser_split_fasta(subparsers)
     cli.add_subparser_filter_fasta(subparsers)
     cli.add_subparser_index_gvf(subparsers)
     cli.add_subparser_merge_fasta(subparsers)

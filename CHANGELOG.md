@@ -27,6 +27,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - The `--transcript-id-column` parameter of `parseREDItools` is changed to take 1-based index.
 
+- Changed `splitDatabase` to `splitFasta` for consistency.
+
 ---
 
 ## [0.2.0] - 2021-01-28

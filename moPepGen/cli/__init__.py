@@ -9,7 +9,7 @@ from .parse_fusion_catcher import add_subparser_parse_fusion_catcher, parse_fusi
 from .parse_arriba import add_subparser_parse_arriba, parse_arriba
 from .parse_rmats import add_subparser_parse_rmats, parse_rmats
 from .parse_circexplorer import add_subparser_parse_circexplorer, parse_circexplorer
-from .split_database import add_subparser_split_database, split_database
+from .split_fasta import add_subparser_split_fasta, split_fasta
 from .filter_fasta import add_subparser_filter_fasta, filter_fasta
 from .index_gvf import add_subparser_index_gvf, index_gvf
 from .merge_fasta import add_subparser_merge_fasta, merge_fasta
