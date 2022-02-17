@@ -55,6 +55,14 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         metavar='<value>'
     )
     p.add_argument(
+        '--min-coverage-rna',
+        type=int,
+        help='Minimal read coverage at the alteration site of RNAseq data of'
+        ' reference and all alterations.',
+        default=10,
+        metavar='<value>'
+    )
+    p.add_argument(
         '--min-coverage-dna',
         type=int,
         help='Minimal read coverage at the alteration site of WGS. Set it to'
@@ -80,6 +88,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
     transcript_id_column = args.transcript_id_column - 1
     min_coverage_alt:int = args.min_coverage_alt
     min_frequency_alt:int = args.min_frequency_alt
+    min_coverage_rna:int = args.min_coverage_rna
     min_coverage_dna:int = args.min_coverage_dna
 
     common.print_start_message(args)
@@ -93,6 +102,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
             anno=anno,
             min_coverage_alt=min_coverage_alt,
             min_frequency_alt=min_frequency_alt,
+            min_coverage_rna=min_coverage_rna,
             min_coverage_dna=min_coverage_dna
         )
         for variant in _vars:

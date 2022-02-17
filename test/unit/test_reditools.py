@@ -60,7 +60,7 @@ class TestREDItoolsParser(unittest.TestCase):
         )
         variants = record.convert_to_variant_records(
             anno=anno, min_coverage_alt=3, min_frequency_alt=0.1,
-            min_coverage_dna=10
+            min_coverage_rna=10, min_coverage_dna=10
         )
         self.assertEqual(variants[0].location.start, 174)
         self.assertEqual(variants[0].location.end, 175)
@@ -83,7 +83,7 @@ class TestREDItoolsParser(unittest.TestCase):
         )
         variants = record.convert_to_variant_records(
             anno=anno, min_coverage_alt=3, min_frequency_alt=0.1,
-            min_coverage_dna=10
+            min_coverage_rna=10, min_coverage_dna=10
         )
         self.assertEqual(variants[0].location.start, 249)
         self.assertEqual(variants[0].location.end, 250)
@@ -113,7 +113,7 @@ class TestREDItoolsParser(unittest.TestCase):
         )
         variants = record.convert_to_variant_records(
             anno=anno, min_coverage_alt=3, min_frequency_alt=0.1,
-            min_coverage_dna=10
+            min_coverage_rna=10, min_coverage_dna=10
         )
         self.assertEqual(variants[0].location.start, 75)
         self.assertEqual(variants[0].location.end, 76)
@@ -136,7 +136,7 @@ class TestREDItoolsParser(unittest.TestCase):
         )
         variants = record.convert_to_variant_records(
             anno=anno, min_coverage_alt=3, min_frequency_alt=0.1,
-            min_coverage_dna=10
+            min_coverage_rna=10, min_coverage_dna=10
         )
         self.assertEqual(variants[0].location.start, 150)
         self.assertEqual(variants[0].location.end, 151)

@@ -38,6 +38,7 @@ class TestParseREDItools(TestCaseIntegration):
         args.quiet = True
         args.min_coverage_alt = 3
         args.min_frequency_alt = 0.1
+        args.min_coverage_rna = 10
         args.min_coverage_dna = 10
         cli.parse_reditools(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
