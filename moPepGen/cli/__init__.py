@@ -14,3 +14,4 @@ from .filter_fasta import add_subparser_filter_fasta, filter_fasta
 from .index_gvf import add_subparser_index_gvf, index_gvf
 from .merge_fasta import add_subparser_merge_fasta, merge_fasta
 from .encode_fasta import add_subparser_encode_fasta, encode_fasta
+from .decoy_fasta import add_subparser_decoy_fasta, decoy_fasta

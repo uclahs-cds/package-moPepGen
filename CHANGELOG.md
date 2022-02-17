@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added CLI command `mergeFasta` to merge multiple variant peptide database Fasta files into one. This could be useful when working with multiplexed proteomic experiments such as TMT. [#380](https://github.com/uclahs-cds/private-moPepGen/issues/380)
 
+- Added CLI command `decoyFasta` to generate decoy database by shuffling or reversing each sequence. [#386](https://github.com/uclahs-cds/private-moPepGen/issues/386)
+
 - Added parameter `--min-coverage-rna` to `parseREDItools` to filter by total RNA reads at a given position.
 
 ### Changed
