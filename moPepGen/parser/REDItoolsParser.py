@@ -103,10 +103,13 @@ class REDItoolsRecord():
         }
 
     def get_valid_subs(self, min_coverage_alt:int, min_frequency_alt:float,
-            min_coverage_dna:int) -> bool:
+            min_coverage_rna:int, min_coverage_dna:int) -> bool:
         """ Get all valid substitutions. """
         total_count = sum(self.base_count)
         valid_subs = []
+
+        if total_count < min_coverage_rna:
+            return valid_subs
 
         if self.g_coverage_q != -1:
             if self.g_coverage_q is None or self.g_coverage_q < min_coverage_dna:
@@ -124,7 +127,8 @@ class REDItoolsRecord():
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             min_coverage_alt:int, min_frequency_alt:float,
-            min_coverage_dna:int) -> List[seqvar.VariantRecord]:
+            min_coverage_rna:int, min_coverage_dna:int
+            ) -> List[seqvar.VariantRecord]:
         """ Convert to VariantRecord.
 
         Args:
@@ -161,6 +165,7 @@ class REDItoolsRecord():
             valid_subs = self.get_valid_subs(
                 min_coverage_alt=min_coverage_alt,
                 min_frequency_alt=min_frequency_alt,
+                min_coverage_rna=min_coverage_rna,
                 min_coverage_dna=min_coverage_dna
             )
             for sub in valid_subs:

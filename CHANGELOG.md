@@ -17,6 +17,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added CLI command `decoyFasta` to generate decoy database by shuffling or reversing each sequence. [#386](https://github.com/uclahs-cds/private-moPepGen/issues/386)
 
+- Added parameter `--min-coverage-rna` to `parseREDItools` to filter by total RNA reads at a given position.
+
 ### Changed
 
 - Donor and accepter transcript IDs are now explicitly included in the variant IDs of fusion in both GVFs and variaint peptide FASTA headers. Closed #376 via #377
@@ -24,6 +26,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - For fusion, `callVariant` now looks at the entire accepter sequence for potential variant peptides, rather than only the peptides that contains the breakpoint.
 
 - In `parseVEP`, chromosome seqname for each record is now got directly from the gene annotation, to avoid the 'chr' prefix issue.
+
+- The `--transcript-id-column` parameter of `parseREDItools` is changed to take 1-based index.
 
 ---
 
