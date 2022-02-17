@@ -1,4 +1,4 @@
-""" Integration test for decoyDatabase """
+""" Integration test for decoyFasta """
 import argparse
 import subprocess as sp
 import sys
@@ -15,7 +15,7 @@ TARGET_DB = [
 ]
 
 class TestDecoyFasta(TestCaseIntegration):
-    """ Test cases for decoyDatabase """
+    """ Test cases for decoyFasta """
     def write_test_data(self):
         """ write test data to disk """
         with open(self.work_dir/'test_input.fasta', 'wt') as handle:
@@ -28,7 +28,7 @@ class TestDecoyFasta(TestCaseIntegration):
     def generate_default_args(self):
         """ Generate the default args """
         args = argparse.Namespace()
-        args.command = 'decoyDatabase'
+        args.command = 'decoyFasta'
         args.output_path = self.work_dir/'test_output.fasta'
         args.decoy_string = 'DECOY_'
         args.decoy_string_position = 'prefix'
@@ -42,7 +42,7 @@ class TestDecoyFasta(TestCaseIntegration):
         return args
 
     def test_decoy_fasta_case1(self):
-        """ Test decoyDatabase """
+        """ Test decoyFasta """
         self.write_test_data()
         args = self.generate_default_args()
         args.input_path = self.work_dir/'test_input.fasta'
@@ -57,7 +57,7 @@ class TestDecoyFasta(TestCaseIntegration):
         self.assertTrue(expected.issubset(seqs))
 
     def test_decoy_fasta_case2(self):
-        """ Test decoyDatabase """
+        """ Test decoyFasta """
         self.write_test_data()
         args = self.generate_default_args()
         args.method = 'shuffle'
@@ -82,7 +82,7 @@ class TestDecoyFasta(TestCaseIntegration):
         self.assertTrue(expected.issubset(seqs))
 
     def test_decoy_fasta_case3(self):
-        """ Test decoyDatabase """
+        """ Test decoyFasta """
         self.write_test_data()
         args = self.generate_default_args()
         args.method = 'shuffle'
@@ -100,9 +100,9 @@ class TestDecoyFasta(TestCaseIntegration):
         self.assertTrue(expected.issubset(seqs))
 
     def test_decoy_fasta_cli(self):
-        """ Test decoyDatabase CLI """
+        """ Test decoyFasta CLI """
         cmd = f"""
-        {sys.executable} -m moPepGen.cli decoyDatabase \\
+        {sys.executable} -m moPepGen.cli decoyFasta \\
             -i {self.data_dir}/peptides/variant.fasta \\
             -o {self.work_dir}/test_output.fasta
         """

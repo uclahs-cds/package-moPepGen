@@ -19,9 +19,9 @@ OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
 # pylint: disable=W0212
 def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
-    """ CLI for moPepGen decoyDatabase """
+    """ CLI for moPepGen decoyFasta """
     parser:argparse.ArgumentParser = subparser.add_parser(
-        name='decoyDatabase',
+        name='decoyFasta',
         help='Generate decoy database FASTA file.',
         description='Generate decoy database FASTA file.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
