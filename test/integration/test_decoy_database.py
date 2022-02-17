@@ -14,7 +14,7 @@ TARGET_DB = [
     ('IRPPGGQIICCVCSSSR', 'ENST0002|SNV-200-G-C')
 ]
 
-class TestDecoyDatabase(TestCaseIntegration):
+class TestDecoyFasta(TestCaseIntegration):
     """ Test cases for decoyDatabase """
     def write_test_data(self):
         """ write test data to disk """
@@ -41,12 +41,12 @@ class TestDecoyDatabase(TestCaseIntegration):
         args.quiet = False
         return args
 
-    def test_decoy_database_case1(self):
+    def test_decoy_fasta_case1(self):
         """ Test decoyDatabase """
         self.write_test_data()
         args = self.generate_default_args()
         args.input_path = self.work_dir/'test_input.fasta'
-        cli.decoy_database(args)
+        cli.decoy_fasta(args)
 
         received = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.input_path.name, args.output_path.name}
@@ -56,14 +56,14 @@ class TestDecoyDatabase(TestCaseIntegration):
         expected = {'MVPPILQWQREGGTPIK', 'ISSSCVCCIIQGGPPRR'}
         self.assertTrue(expected.issubset(seqs))
 
-    def test_decoy_database_case2(self):
+    def test_decoy_fasta_case2(self):
         """ Test decoyDatabase """
         self.write_test_data()
         args = self.generate_default_args()
         args.method = 'shuffle'
         args.input_path = self.work_dir/'test_input.fasta'
         args.seed = 123123
-        cli.decoy_database(args)
+        cli.decoy_fasta(args)
 
         received = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.input_path.name, args.output_path.name}
@@ -81,7 +81,7 @@ class TestDecoyDatabase(TestCaseIntegration):
         expected = {'MIPQVIWQEGGLPTRPK', 'IQCCGCIISRPSVSGPR'}
         self.assertTrue(expected.issubset(seqs))
 
-    def test_decoy_database_case3(self):
+    def test_decoy_fasta_case3(self):
         """ Test decoyDatabase """
         self.write_test_data()
         args = self.generate_default_args()
@@ -89,7 +89,7 @@ class TestDecoyDatabase(TestCaseIntegration):
         args.input_path = self.work_dir/'test_input.fasta'
         args.seed = 123123
         args.non_shuffle_pattern = 'K,R'
-        cli.decoy_database(args)
+        cli.decoy_fasta(args)
 
         received = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.input_path.name, args.output_path.name}
@@ -99,7 +99,7 @@ class TestDecoyDatabase(TestCaseIntegration):
         expected = {'MIPWVIQREGGLPTQPK', 'IRIVSQCCISGPPCGSR'}
         self.assertTrue(expected.issubset(seqs))
 
-    def test_decoy_database_cli(self):
+    def test_decoy_fasta_cli(self):
         """ Test decoyDatabase CLI """
         cmd = f"""
         {sys.executable} -m moPepGen.cli decoyDatabase \\

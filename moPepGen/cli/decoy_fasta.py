@@ -18,7 +18,7 @@ INPUT_FILE_FORMATS = ['.fa', '.fasta']
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
 # pylint: disable=W0212
-def add_subparser_decoy_database(subparser:argparse._SubParsersAction):
+def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
     """ CLI for moPepGen decoyDatabase """
     parser:argparse.ArgumentParser = subparser.add_parser(
         name='decoyDatabase',
@@ -92,10 +92,10 @@ def add_subparser_decoy_database(subparser:argparse._SubParsersAction):
     )
     common.add_args_quiet(parser)
     common.print_help_if_missing_args(parser)
-    parser.set_defaults(func=decoy_database)
+    parser.set_defaults(func=decoy_fasta)
 
 
-def decoy_database(args:argparse.Namespace):
+def decoy_fasta(args:argparse.Namespace):
     """ Create decoy database """
     common.print_start_message(args)
 

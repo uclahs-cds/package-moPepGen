@@ -1,7 +1,7 @@
-{% set command = 'decoyDatabase' %}
+{% set command = 'decoyFasta' %}
 # {{ command }}
 
-::: moPepGen.cli.decoy_database
+::: moPepGen.cli.decoy_fasta
 	handler: python
     selection:
       members: false
