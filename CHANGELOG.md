@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added CLI command `mergeFasta` to merge multiple variant peptide database Fasta files into one. This could be useful when working with multiplexed proteomic experiments such as TMT. [#380](https://github.com/uclahs-cds/private-moPepGen/issues/380)
 
+- Added parameter `--min-coverage-rna` to `parseREDItools` to filter by total RNA reads at a given position.
+
 ### Changed
 
 - Donor and accepter transcript IDs are now explicitly included in the variant IDs of fusion in both GVFs and variaint peptide FASTA headers. Closed #376 via #377
