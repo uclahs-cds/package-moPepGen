@@ -35,16 +35,19 @@ def add_subparser_encode_fasta(subparser:argparse._SubParsersAction):
     common.add_args_output_path(
         parser=parser, formats=OUTPUT_FILE_FORMATS
     )
+    common.add_args_quiet(parser)
     common.print_help_if_missing_args(parser)
     parser.set_defaults(func=encode_fasta)
     return parser
 
 def encode_fasta(args:argparse.Namespace) -> None:
     """ encode fasta """
+    common.print_start_message(args)
+
     input_path:Path = args.input_path
     output_path:Path = args.output_path
     common.validate_file_format(input_path, INPUT_FILE_FORMATS, True)
-    common.validate_file_format(input_path, OUTPUT_FILE_FORMATS, True)
+    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS, False)
 
     fasta_dict = output_path.with_suffix(output_path.suffix + '.dict')
 
