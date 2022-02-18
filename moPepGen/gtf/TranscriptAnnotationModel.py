@@ -61,6 +61,9 @@ class TranscriptAnnotationModel():
             raise ValueError(f'Type must be from {GTF_FEATURE_TYPES}')
         if _type == 'transcript':
             self.transcript = record
+            if 'is_protein_coding' in record.attributes:
+                is_protein_coding = record.attributes.pop('is_protein_coding')
+                self.is_protein_coding = True if is_protein_coding == 'true' else False
         else:
             if self.__getattribute__(_type) is None:
                 self.__setattr__(_type, [])

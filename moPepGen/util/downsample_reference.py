@@ -356,7 +356,8 @@ def downsample_reference(args:argparse.Namespace):
                 aa_seqs = get_noncoding_translate(tx_id, anno, genome)
                 proteins.update(aa_seqs)
 
-    GtfIO.write(output_dir/'annotation.gtf', anno)
+    with open(output_dir/'annotation.gtf', 'wt') as handle:
+        GtfIO.write(handle, anno)
 
     with open(output_dir/'genome.fasta', 'wt') as handle:
         writer = SeqIO.FastaIO.FastaWriter(handle, record2title=lambda x: x.id)
