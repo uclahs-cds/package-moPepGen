@@ -81,6 +81,9 @@ class TranscriptAnnotationModel():
 
         if _type == 'transcript':
             self.transcript = record
+            if 'is_protein_coding' in record.attributes:
+                is_protein_coding = record.attributes.pop('is_protein_coding')
+                self.is_protein_coding = is_protein_coding == 'true'
         else:
             if self.__getattribute__(_type) is None:
                 self.__setattr__(_type, [])

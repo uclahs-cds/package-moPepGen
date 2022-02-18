@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added CLI command `mergeFasta` to merge multiple variant peptide database Fasta files into one. This could be useful when working with multiplexed proteomic experiments such as TMT. [#380](https://github.com/uclahs-cds/private-moPepGen/issues/380)
 
+- Added CLI command `decoyFasta` to generate decoy database by shuffling or reversing each sequence. [#386](https://github.com/uclahs-cds/private-moPepGen/issues/386)
+
+- Added parameter `--min-coverage-rna` to `parseREDItools` to filter by total RNA reads at a given position.
+
 ### Changed
 
 - Donor and accepter transcript IDs are now explicitly included in the variant IDs of fusion in both GVFs and variaint peptide FASTA headers. Closed #376 via #377
@@ -22,6 +26,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - For fusion, `callVariant` now looks at the entire accepter sequence for potential variant peptides, rather than only the peptides that contains the breakpoint.
 
 - In `parseVEP`, chromosome seqname for each record is now got directly from the gene annotation, to avoid the 'chr' prefix issue.
+
+- The `--transcript-id-column` parameter of `parseREDItools` is changed to take 1-based index.
+
+- Changed `splitDatabase` to `splitFasta` for consistency.
 
 ---
 
@@ -40,6 +48,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Variant records are now kept on disk rather than reading the entire GVF file(s) into memory, and only the file pointers to variant records are kept in memory. This significantly reduces the memory usage of `callVariant`.
 
 - The command line arguments are standardized across all commands, for example '-i/--input-path' for inputs and '-o/--output-path' for outputs.
+
+- `generateIndex` is changed to use compressed text format to store genomic annotation, because for some reason that we are not sure, when loading the pickled genomic annotation, the memory usage is almost doubled. [#394](https://github.com/uclahs-cds/private-moPepGen/issues/394)
 
 ---
 

@@ -14,6 +14,7 @@ class TestEncodeFasta(TestCaseIntegration):
         args = argparse.Namespace()
         args.input_path = Path('test/files/peptides/variant.fasta')
         args.output_path = self.work_dir/'variant_encode.fasta'
+        args.quiet = True
         cli.encode_fasta(args)
 
         received = {str(file.name) for file in self.work_dir.glob('*')}

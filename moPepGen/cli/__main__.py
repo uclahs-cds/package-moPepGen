@@ -24,9 +24,10 @@ CLI_MAIN_DESCRIPTION = """
 
 -- Processing
    filterFasta         Filter noncanonical peptides.
-   splitDatabase       Split noncanonical peptides into separate databases.
+   splitFasta          Split noncanonical peptides into separate databases.
    mergeFasta          Merge multiple variant peptide FASTA databases.
    encodeFasta         Encode variant peptide FASTA file header.
+   decoyFasta          Generate decoy database FASTA file.
 """
 
 def main():
@@ -58,11 +59,12 @@ def main():
     cli.add_subparser_parse_circexplorer(subparsers)
     cli.add_subparser_call_variant(subparsers)
     cli.add_subparser_call_noncoding(subparsers)
-    cli.add_subparser_split_database(subparsers)
+    cli.add_subparser_split_fasta(subparsers)
     cli.add_subparser_filter_fasta(subparsers)
     cli.add_subparser_index_gvf(subparsers)
     cli.add_subparser_merge_fasta(subparsers)
     cli.add_subparser_encode_fasta(subparsers)
+    cli.add_subparser_decoy_fasta(subparsers)
 
     # allowing values to start with -, such as -100,3
     # https://stackoverflow.com/a/21446783/11081630

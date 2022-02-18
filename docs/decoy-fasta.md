@@ -1,7 +1,7 @@
-{% set command = 'splitDatabase' %}
+{% set command = 'decoyFasta' %}
 # {{ command }}
 
-::: moPepGen.cli.split_database
+::: moPepGen.cli.decoy_fasta
 	handler: python
     selection:
       members: false
