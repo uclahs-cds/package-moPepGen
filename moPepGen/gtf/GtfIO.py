@@ -1,6 +1,5 @@
 """ Module for GTF IO """
 from typing import IO, Union, Iterable
-from pathlib import Path
 from Bio.SeqIO.Interfaces import SequenceIterator
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.gtf import GenomicAnnotation
