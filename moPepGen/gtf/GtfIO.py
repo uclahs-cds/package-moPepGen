@@ -1,6 +1,5 @@
 """ Module for GTF IO """
 from typing import IO, Union, Iterable
-from pathlib import Path
 from Bio.SeqIO.Interfaces import SequenceIterator
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.gtf import GenomicAnnotation
@@ -34,9 +33,14 @@ class GtfIterator(SequenceIterator):
                 strand=None
 
             attributes = {}
+            attributes_to_keep = ['gene_id', 'transcript_id', 'protein_id',
+                'gene_name', 'gene_type', 'gene_biotype', 'tag']
             attribute_list = [field.strip().split(' ', 1) for field in \
                 fields[8].rstrip(';').split(';')]
+
             for key,val in attribute_list:
+                if key not in attributes_to_keep:
+                    continue
                 val = val.strip('"')
                 if key == 'tag':
                     if key not in attributes:
@@ -68,7 +72,7 @@ def parse(handle:Union[IO[str], str]) -> GtfIterator:
     """
     return GtfIterator(handle)
 
-def to_gtf_record(record:GTFSeqFeature) -> str:
+def to_gtf_record(record:GTFSeqFeature, is_protein_coding:bool=None) -> str:
     """ Convert a SeqFeature object to a GTF record """
     if record.strand == 1:
         strand = '+'
@@ -84,6 +88,11 @@ def to_gtf_record(record:GTFSeqFeature) -> str:
                 attrs += f" {key} {vali};"
         else:
             attrs += f" {key} {val};"
+
+    if is_protein_coding is not None:
+        is_protein_coding = 'true' if is_protein_coding is True else 'false'
+        attrs += f" is_protein_coding {is_protein_coding};"
+
     frame = '.' if record.frame is None else str(record.frame)
     record_data = [
         record.chrom, '.', record.type, str(int(record.location.start)+1),
@@ -91,16 +100,16 @@ def to_gtf_record(record:GTFSeqFeature) -> str:
     ]
     return '\t'.join(record_data)
 
-def write(path:Path, anno:GenomicAnnotation) -> None:
+def write(handle:IO, anno:GenomicAnnotation) -> None:
     """ Write an GenomicAnnotation as a GTF file. """
-    with open(path, 'wt') as handle:
-        for gene_model in anno.genes.values():
-            handle.write(to_gtf_record(gene_model) + '\n')
-            for tx_id in gene_model.transcripts:
-                tx_model = anno.transcripts[tx_id]
-                handle.write(to_gtf_record(tx_model.transcript) + '\n')
-                records = tx_model.cds + tx_model.exon
-                records.sort()
-                records.extend(tx_model.utr)
-                for record in records:
-                    handle.write(to_gtf_record(record) + '\n')
+    for gene_model in anno.genes.values():
+        handle.write(to_gtf_record(gene_model) + '\n')
+        for tx_id in gene_model.transcripts:
+            tx_model = anno.transcripts[tx_id]
+            record = to_gtf_record(tx_model.transcript, tx_model.is_protein_coding)
+            handle.write(record + '\n')
+            records = tx_model.cds + tx_model.exon
+            records.sort()
+            records.extend(tx_model.utr)
+            for record in records:
+                handle.write(to_gtf_record(record) + '\n')

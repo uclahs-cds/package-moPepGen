@@ -9,7 +9,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import pickle
+import lzma
 from moPepGen import dna, aa, gtf, logger
+from moPepGen.gtf import GtfIO
 from moPepGen.cli import common
 
 
@@ -57,7 +59,7 @@ def generate_index(args:argparse.Namespace):
     output_dir:Path = args.output_dir
     output_genome = output_dir/"genome.pkl"
     output_proteome = output_dir/"proteome.pkl"
-    output_anno = output_dir/"annotation.pkl"
+    output_anno = output_dir/"annotation.dat"
     output_peptides = output_dir/"canonical_peptides.pkl"
     output_coding_tx = output_dir/"coding_transcripts.pkl"
 
@@ -85,8 +87,8 @@ def generate_index(args:argparse.Namespace):
 
     anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
-    with open(output_anno, 'wb') as handle:
-        pickle.dump(anno, handle)
+    with lzma.open(output_anno, 'wt') as handle:
+        GtfIO.write(handle, anno)
     if not quiet:
         logger('Genome annotation GTF saved to disk.')
 

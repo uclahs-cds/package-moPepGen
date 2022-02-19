@@ -1,6 +1,7 @@
 """ Common functions for cli """
 from __future__ import annotations
 import argparse
+import lzma
 import sys
 from typing import Tuple, Set, List
 from pathlib import Path
@@ -189,11 +190,11 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
                 if not version.is_valid(genome.version):
                     raise err.IndexVersionNotMatchError(version, genome.version)
 
-        with open(f'{index_dir}/annotation.pkl', 'rb') as handle:
-            annotation:gtf.GenomicAnnotation = pickle.load(handle)
+        with lzma.open(f'{index_dir}/annotation.dat', 'rt') as handle:
+            annotation = gtf.GenomicAnnotation()
+            annotation.dump_gtf(handle)
             if not version.is_valid(annotation.version):
                 raise err.IndexVersionNotMatchError(version, genome.version)
-
 
         if load_proteome:
             with open(f'{index_dir}/proteome.pkl', 'rb') as handle:

@@ -35,7 +35,12 @@ class TranscriptAnnotationModel():
             five_utr:List[GTFSeqFeature]=None,
             three_utr:List[GTFSeqFeature]=None,
             is_protein_coding:bool=None,
-            _seq:dna.DNASeqRecordWithCoordinates=None):
+            _seq:dna.DNASeqRecordWithCoordinates=None,
+            transcript_id:str=None,
+            gene_id:str=None,
+            protein_id:str=None,
+            gene_name:str=None,
+            gene_type:str=None):
         """ Construct a TranscriptAnnotationmodel """
         self.transcript = transcript
         self.cds = cds or []
@@ -47,6 +52,11 @@ class TranscriptAnnotationModel():
         self.three_utr = three_utr or []
         self.is_protein_coding = is_protein_coding
         self._seq = _seq
+        self.transcript_id = transcript_id
+        self.gene_id = gene_id
+        self.protein_id = protein_id
+        self.gene_name = gene_name
+        self.gene_type = gene_type
 
     def add_record(self, _type:str, record: GTFSeqFeature):
         """ Add a GTFRecrod into a TranscriptAnnotationModel. If the biotype
@@ -59,8 +69,21 @@ class TranscriptAnnotationModel():
         """
         if _type not in GTF_FEATURE_TYPES:
             raise ValueError(f'Type must be from {GTF_FEATURE_TYPES}')
+
+        for key in ['transcript_id', 'gene_id', 'protein_id', 'gene_name', 'gene_type']:
+            if hasattr(record, key):
+                if self.__getattribute__(key) is None:
+                    val = record.__getattribute__(key)
+                    if val is not None and val != '':
+                        self.__setattr__(key, record.__getattribute__(key))
+                else:
+                    record.__setattr__(key, self.__getattribute__(key))
+
         if _type == 'transcript':
             self.transcript = record
+            if 'is_protein_coding' in record.attributes:
+                is_protein_coding = record.attributes.pop('is_protein_coding')
+                self.is_protein_coding = is_protein_coding == 'true'
         else:
             if self.__getattribute__(_type) is None:
                 self.__setattr__(_type, [])
