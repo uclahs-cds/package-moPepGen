@@ -289,12 +289,12 @@ class FuzzTestCase():
         args = argparse.Namespace()
         args.index_dir = None
         args.command = 'callPeptides'
-        args.input_variant = [self.record.gvf_file]
+        args.input_path = [self.record.gvf_file]
         args.genome_fasta = self.config.path_genome_fasta
         args.annotation_gtf = self.config.path_annotation_gtf
         args.proteome_fasta = self.config.path_proteome_fasta
         args.circ_rna_bed = None
-        args.output_fasta = self.record.call_variant_fasta
+        args.output_path = self.record.call_variant_fasta
         args.quiet = True
         args.cleavage_rule = 'trypsin'
         args.miscleavage = 2
@@ -304,6 +304,7 @@ class FuzzTestCase():
         args.threads = 1
         args.max_variants_per_node = -1
         args.noncanonical_transcripts = False
+        args.invalid_protein_as_noncoding = False
         args.verbose_level = 0
         call_variant_peptide(args=args)
 
