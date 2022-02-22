@@ -94,6 +94,16 @@ class PeptidePoolSplitter():
             self.databases[database_key] = VariantPeptidePool()
         self.databases[database_key].peptides.add(peptide)
 
+    def get_all_peptide_sources(self, anno):
+        """ Get sources of all peptides """
+        peptide_sources = []
+        for peptide in self.peptides.peptides:
+            peptide_infos = VariantPeptideInfo.from_variant_peptide(
+                peptide, anno, self.label_map)
+            peptide_infos.sort()
+            peptide_sources.append([x.sources for x in peptide_infos])
+        return peptide_sources
+
     def split(self, max_groups:int, additional_split:List[Set],
             anno:GenomicAnnotation):
         """ Split peptide pool into separate databases """

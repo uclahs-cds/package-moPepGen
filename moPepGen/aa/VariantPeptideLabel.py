@@ -172,25 +172,19 @@ class VariantPeptideInfo():
                     first_gene_id: variant_id.first_variants + [variant_id.fusion_id],
                     second_gene_id: variant_id.second_variants
                 }
+                tx_id = first_tx_id
 
             elif isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
                 gene_id = anno.transcripts[variant_id.transcript_id].transcript.gene_id
                 gene_ids = [gene_id]
                 var_ids = {gene_id: variant_id.variant_ids}
+                tx_id = variant_id.transcript_id
 
             info = VariantPeptideInfo(str(variant_id), gene_ids, var_ids, variant_id.index)
 
             if check_source:
-                has_noncoding = False
-                for gene_id in gene_ids:
-                    gene_model = anno.genes[gene_id]
-                    for tx_id in gene_model.transcripts:
-                        if not anno.transcripts[tx_id].is_protein_coding:
-                            info.sources.add(NONCODING_SOURCE)
-                            has_noncoding = True
-                            break
-                    if has_noncoding:
-                        break
+                if anno.transcripts[tx_id].is_protein_coding is False:
+                    info.sources.add(NONCODING_SOURCE)
 
                 for gene_id, _ids in var_ids.items():
                     for var_id in _ids:
