@@ -34,7 +34,7 @@ class GtfIterator(SequenceIterator):
 
             attributes = {}
             attributes_to_keep = ['gene_id', 'transcript_id', 'protein_id',
-                'gene_name', 'gene_type', 'gene_biotype', 'tag']
+                'gene_name', 'gene_type', 'gene_biotype', 'tag', 'is_protein_coding']
             attribute_list = [field.strip().split(' ', 1) for field in \
                 fields[8].rstrip(';').split(';')]
 
