@@ -65,14 +65,14 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
     )
     parser.add_argument(
         '--keep-peptide-nterm',
-        type=bool,
+        type=str,
         choices=['true', 'false'],
         default='true',
         help='Whether to keep the peptide N terminus constant.'
     )
     parser.add_argument(
         '--keep-peptide-cterm',
-        type=bool,
+        type=str,
         choices=['true', 'false'],
         default='true',
         help='Whether to keep the peptide C terminus constant.'
