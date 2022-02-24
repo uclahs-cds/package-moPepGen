@@ -33,21 +33,7 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
     common.add_args_output_path(
         parser=parser, formats=OUTPUT_FILE_FORMATS
     )
-    parser.add_argument(
-        '--decoy-string',
-        type=str,
-        default='DECOY_',
-        help='The decoy string that is combined with the FASTA header for decoy'
-        ' sequences.'
-    )
-    parser.add_argument(
-        '--decoy_string_position',
-        type=str,
-        choices=['prefix', 'suffix'],
-        help='Should the decoy string be placed at the start or end of FASTA'
-        ' headers?',
-        default='prefix'
-    )
+    common.add_args_decoy(parser)
     parser.add_argument(
         '--method',
         type=str,

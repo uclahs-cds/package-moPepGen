@@ -6,7 +6,7 @@ search engines have strick requirement on the FASTA header length. """
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 import uuid
 from Bio import SeqIO
 from Bio.SeqIO import FastaIO
@@ -35,6 +35,7 @@ def add_subparser_encode_fasta(subparser:argparse._SubParsersAction):
     common.add_args_output_path(
         parser=parser, formats=OUTPUT_FILE_FORMATS
     )
+    common.add_args_decoy(parser)
     common.add_args_quiet(parser)
     common.print_help_if_missing_args(parser)
     parser.set_defaults(func=encode_fasta)
@@ -55,11 +56,52 @@ def encode_fasta(args:argparse.Namespace) -> None:
             open(output_path, 'wt') as out_handle, \
             open(fasta_dict, 'wt') as dict_handle:
         record2title = lambda x: x.description
+        id_mapper:Dict[str,str] = {}
         writer = FastaIO.FastaWriter(out_handle, record2title=record2title)
         record:SeqRecord
         for record in SeqIO.parse(in_handle, 'fasta'):
-            header = record.description
-            index = str(uuid.uuid4())
-            dict_handle.write(f"{index}\t{header}" + '\n')
+            is_decoy = is_decoy_sequence(record.description, args.decoy_string,
+                args.decoy_string_position)
+            if is_decoy:
+                header = get_real_header(record.description, args.decoy_string,
+                    args.decoy_string_position)
+            else:
+                header = record.description
+
+            if header in id_mapper:
+                index = id_mapper[header]
+            else:
+                index = str(uuid.uuid4())
+                dict_handle.write(f"{index}\t{header}" + '\n')
+                id_mapper[header] = index
+
+            if is_decoy:
+                index = get_decoy_header(index, args.decoy_string,
+                    args.decoy_string_position)
+
             record.description = index
             writer.write_record(record)
+
+def is_decoy_sequence(header:str, decoy_string:str, decoy_string_position:str) -> bool:
+    """ Checks if the sequence is decoy """
+    if decoy_string_position == 'prefix':
+        return header.startswith(decoy_string)
+    if decoy_string_position == 'suffix':
+        return header.endswith(decoy_string)
+    raise ValueError(f"decoy_string_position of {decoy_string_position} is not supported.")
+
+def get_real_header(header:str, decoy_string:str, decoy_string_position:str) -> str:
+    """ Get the real header if it is a decoy sequence """
+    if decoy_string_position == 'prefix':
+        return header[len(decoy_string):]
+    if decoy_string_position == 'suffix':
+        return header[:-len(decoy_string)]
+    raise ValueError(f"decoy_string_position of {decoy_string_position} is not supported.")
+
+def get_decoy_header(header:str, decoy_string:str, decoy_string_position:str) -> str:
+    """ Get the decoyed version of the header """
+    if decoy_string_position == 'prefix':
+        return decoy_string + header
+    if decoy_string_position == 'suffix':
+        return header + decoy_string
+    raise ValueError(f"decoy_string_position of {decoy_string_position} is not supported.")
