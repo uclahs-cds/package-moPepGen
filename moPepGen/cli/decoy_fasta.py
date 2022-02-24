@@ -134,7 +134,7 @@ def decoy_fasta(args:argparse.Namespace):
 
 def generate_decoy_sequence(seq:SeqRecord, method:str, decoy_string:str,
         decoy_string_position:str, keep_nterm:bool, keep_cterm:bool,
-        non_shuffle_pattern:List[str],  target_db:Set[Seq], decoy_db:Set[Seq]
+        non_shuffle_pattern:List[str], target_db:Set[Seq], decoy_db:Set[Seq]
         ) -> SeqRecord:
     """ Generate decoy sequence """
     fixed_indices = find_fixed_indices(seq.seq, keep_nterm, keep_cterm, non_shuffle_pattern)
