@@ -22,6 +22,7 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         args.decoy_string = 'DECOY_'
         args.decoy_string_position = 'prefix'
         args.method = 'reverse'
+        args.shuffle_max_attempts = float('inf')
         args.non_shuffle_pattern = ''
         args.keep_peptide_nterm = 'true'
         args.keep_peptide_cterm = 'true'
