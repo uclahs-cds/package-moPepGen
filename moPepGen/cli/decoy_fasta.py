@@ -56,7 +56,7 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
         help='Maximal attempts to shuffle a sequence to avoid any identical'
         ' decoy sequence.',
         metavar='<number>',
-        default=float('inf')
+        default=30
     )
     parser.add_argument(
         '--keep-peptide-nterm',
@@ -103,7 +103,7 @@ class _Summary():
     def log_summary(self):
         """ Print summary to stdout """
         logger(f"Number of decoy sequences created: {self.n_decoy}")
-        logger(f"Number of overlapping decoy sequences: {self.n_overlap}")
+        logger(f"Number of decoy sequences overlap with either target or decoy: {self.n_overlap}")
 
 class DecoyFasta():
     """ Decoy Fasta """
