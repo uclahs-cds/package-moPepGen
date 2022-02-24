@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import random
-from typing import List
+from typing import Iterable, List, Set
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -98,6 +98,8 @@ def decoy_fasta(args:argparse.Namespace):
     with open(input_path, 'rt') as handle:
         target_seqs:List[SeqRecord] = list(SeqIO.parse(handle, format='fasta'))
 
+    target_pool = {x.seq for x in target_seqs}
+
     if not args.quiet:
         logger('Input database FASTA file loaded.')
 
@@ -105,15 +107,18 @@ def decoy_fasta(args:argparse.Namespace):
         random.seed(args.seed)
 
     decoy_seqs = []
+    decoy_pool = set()
     for seq in target_seqs:
         decoy_seq = generate_decoy_sequence(
             seq, method=args.method, decoy_string=args.decoy_string,
             decoy_string_position=args.decoy_string_position,
             keep_nterm=keep_peptide_nterm,
             keep_cterm=keep_peptide_cterm,
-            non_shuffle_pattern=non_shuffle_pattern
+            non_shuffle_pattern=non_shuffle_pattern,
+            target_db=target_pool, decoy_db=decoy_pool
         )
         decoy_seqs.append(decoy_seq)
+        decoy_pool.add(decoy_seq.seq)
 
     if not args.quiet:
         logger('Decoy sequences created.')
@@ -129,14 +134,17 @@ def decoy_fasta(args:argparse.Namespace):
 
 def generate_decoy_sequence(seq:SeqRecord, method:str, decoy_string:str,
         decoy_string_position:str, keep_nterm:bool, keep_cterm:bool,
-        non_shuffle_pattern:List[str]
+        non_shuffle_pattern:List[str],  target_db:Set[Seq], decoy_db:Set[Seq]
         ) -> SeqRecord:
     """ Generate decoy sequence """
     fixed_indices = find_fixed_indices(seq.seq, keep_nterm, keep_cterm, non_shuffle_pattern)
     if method == 'reverse':
         decoy_seq = reverse_sequence(seq.seq, fixed_indices)
     elif method == 'shuffle':
-        decoy_seq = shuffle_sequence(seq.seq, fixed_indices)
+        while True:
+            decoy_seq = shuffle_sequence(seq.seq, fixed_indices)
+            if decoy_seq not in target_db and decoy_seq not in decoy_db:
+                break
     else:
         raise ValueError(f'Method {method} is not supported.')
 
@@ -202,7 +210,7 @@ def find_fixed_indices(seq:Seq, keep_nterm:bool, keep_cterm:bool, non_shuffle_pa
     return fixed_indices
 
 def iterate_target_decoy_database(target:List[SeqRecord], decoy:List[SeqRecord],
-        order=str) -> SeqRecord:
+        order=str) -> Iterable[SeqRecord]:
     """ Iterate through target and decoy database with specified order """
     if order == 'juxtaposed':
         for i, target_seq in enumerate(target):
