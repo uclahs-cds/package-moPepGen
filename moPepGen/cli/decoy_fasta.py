@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import random
-from typing import List
+from typing import Iterable, List, Set
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -33,21 +33,7 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
     common.add_args_output_path(
         parser=parser, formats=OUTPUT_FILE_FORMATS
     )
-    parser.add_argument(
-        '--decoy-string',
-        type=str,
-        default='DECOY_',
-        help='The decoy string that is combined with the FASTA header for decoy'
-        ' sequences.'
-    )
-    parser.add_argument(
-        '--decoy_string_position',
-        type=str,
-        choices=['prefix', 'suffix'],
-        help='Should the decoy string be placed at the start or end of FASTA'
-        ' headers?',
-        default='prefix'
-    )
+    common.add_args_decoy(parser)
     parser.add_argument(
         '--method',
         type=str,
@@ -61,26 +47,38 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
         type=str,
         help='Residues to not shuffle and keep at the original position.'
         ' Separate by common (e.g. "K,R")',
+        metavar='<value>',
         default=''
     )
     parser.add_argument(
+        '--shuffle-max-attempts',
+        type=int,
+        help='Maximal attempts to shuffle a sequence to avoid any identical'
+        ' decoy sequence.',
+        metavar='<number>',
+        default=30
+    )
+    parser.add_argument(
         '--keep-peptide-nterm',
-        type=bool,
+        type=str,
         choices=['true', 'false'],
+        metavar='<choice>',
         default='true',
         help='Whether to keep the peptide N terminus constant.'
     )
     parser.add_argument(
         '--keep-peptide-cterm',
-        type=bool,
+        type=str,
         choices=['true', 'false'],
         default='true',
+        metavar='<choice>',
         help='Whether to keep the peptide C terminus constant.'
     )
     parser.add_argument(
         '--seed',
         type=int,
         help='Random seed number.',
+        metavar='<number>',
         default=None
     )
     parser.add_argument(
@@ -88,149 +86,222 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
         type=str,
         choices=['juxtaposed', 'target_first', 'decoy_first'],
         help='Order of target and decoy sequences to write in the output FASTA.',
+        metavar='<choice>',
         default='juxtaposed'
     )
     common.add_args_quiet(parser)
     common.print_help_if_missing_args(parser)
     parser.set_defaults(func=decoy_fasta)
 
+class _Summary():
+    """ Summary """
+    def __init__(self, n_decoy:int=0, n_overlap:int=0):
+        """ Constructor """
+        self.n_decoy = n_decoy
+        self.n_overlap = n_overlap
 
-def decoy_fasta(args:argparse.Namespace):
-    """ Create decoy database """
-    common.print_start_message(args)
+    def log_summary(self):
+        """ Print summary to stdout """
+        logger(f"Number of decoy sequences created: {self.n_decoy}")
+        logger(f"Number of decoy sequences overlap with either target or decoy: {self.n_overlap}")
 
-    input_path:Path = args.input_path
-    output_path:Path = args.output_path
-    common.validate_file_format(input_path, INPUT_FILE_FORMATS, True)
-    common.validate_file_format(input_path, OUTPUT_FILE_FORMATS, True)
+class DecoyFasta():
+    """ Decoy Fasta """
+    def __init__(self, input_path:Path, output_path:Path, method:str,
+            keep_peptide_nterm:bool, keep_peptide_cterm:bool,
+            non_shuffle_pattern:List[str], shuffle_max_attempts:int,  seed:int,
+            decoy_string:str, decoy_string_position:str, order:str, quiet:bool,
+            target_db:List[SeqRecord]=None, _target_pool:Set[SeqRecord]=None,
+            decoy_db:List[SeqRecord]=None, _decoy_pool:Set[SeqRecord]=None,
+            _summary:_Summary=None):
+        """ Constructor """
+        self.input_path = input_path
+        self.output_path = output_path
+        self.method = method
+        self.seed = seed
+        self.keep_peptide_nterm = keep_peptide_nterm
+        self.keep_peptide_cterm = keep_peptide_cterm
+        self.non_shuffle_pattern = non_shuffle_pattern
+        self.shuffle_max_attempts = shuffle_max_attempts
+        self.decoy_string = decoy_string
+        self.decoy_string_position = decoy_string_position
+        self.order = order
+        self.quiet = quiet
+        self.target_db = target_db or []
+        self._target_pool = _target_pool or set()
+        self.decoy_db = decoy_db or []
+        self._decoy_pool = _decoy_pool or set()
+        self._summary = _summary or _Summary()
 
-    keep_peptide_nterm = args.keep_peptide_nterm == 'true'
-    keep_peptide_cterm = args.keep_peptide_cterm == 'true'
+    @classmethod
+    def from_args(cls, args:argparse.ArgumentParser):
+        """ Create instance from args """
+        common.print_start_message(args)
 
-    non_shuffle_pattern = args.non_shuffle_pattern.split(',')
+        input_path:Path = args.input_path
+        output_path:Path = args.output_path
+        common.validate_file_format(input_path, INPUT_FILE_FORMATS, True)
+        common.validate_file_format(input_path, OUTPUT_FILE_FORMATS, True)
 
-    with open(input_path, 'rt') as handle:
-        target_seqs:List[SeqRecord] = list(SeqIO.parse(handle, format='fasta'))
+        keep_peptide_nterm = args.keep_peptide_nterm == 'true'
+        keep_peptide_cterm = args.keep_peptide_cterm == 'true'
 
-    if not args.quiet:
-        logger('Input database FASTA file loaded.')
+        non_shuffle_pattern = args.non_shuffle_pattern.split(',')
 
-    if args.seed is not None:
-        random.seed(args.seed)
-
-    decoy_seqs = []
-    for seq in target_seqs:
-        decoy_seq = generate_decoy_sequence(
-            seq, method=args.method, decoy_string=args.decoy_string,
+        return cls(
+            input_path=input_path,
+            output_path=output_path,
+            method=args.method,
+            keep_peptide_nterm=keep_peptide_nterm,
+            keep_peptide_cterm=keep_peptide_cterm,
+            non_shuffle_pattern=non_shuffle_pattern,
+            shuffle_max_attempts=args.shuffle_max_attempts,
+            seed=args.seed,
+            decoy_string=args.decoy_string,
             decoy_string_position=args.decoy_string_position,
-            keep_nterm=keep_peptide_nterm,
-            keep_cterm=keep_peptide_cterm,
-            non_shuffle_pattern=non_shuffle_pattern
+            order=args.order,
+            quiet=args.quiet
         )
-        decoy_seqs.append(decoy_seq)
 
-    if not args.quiet:
-        logger('Decoy sequences created.')
 
-    with open(output_path, 'wt') as handle:
-        record2title = lambda x: x.description
-        writer = FastaIO.FastaWriter(handle, record2title=record2title)
-        for seq in iterate_target_decoy_database(target_seqs, decoy_seqs, args.order):
-            writer.write_record(seq)
+    def find_fixed_indices(self, seq:Seq) -> List[int]:
+        """ Find the peptide indices to be fixed """
+        fixed_indices = []
+        for i, it in enumerate(seq):
+            if i == 0 and self.keep_peptide_nterm:
+                fixed_indices.append(i)
+                continue
+            if i == len(seq) - 1 and self.keep_peptide_cterm:
+                fixed_indices.append(i)
+                continue
+            if it in self.non_shuffle_pattern:
+                fixed_indices.append(i)
+        return fixed_indices
 
-    if not args.quiet:
-        logger('Decoy database written.')
+    @staticmethod
+    def reverse_sequence(seq:Seq, fixed_indices) -> Seq:
+        """ Create a reversed sequence """
+        seq = str(seq)
+        reversed_indices = list(reversed([i for i,_ in enumerate(seq) if i not in fixed_indices]))
+        shuffled_seq = []
+        offset = 0
+        i = 0
+        while i < len(reversed_indices):
+            if i + offset in fixed_indices:
+                shuffled_seq.append(seq[i + offset])
+                offset += 1
+                continue
+            shuffled_seq.append(seq[reversed_indices[i]])
+            i += 1
 
-def generate_decoy_sequence(seq:SeqRecord, method:str, decoy_string:str,
-        decoy_string_position:str, keep_nterm:bool, keep_cterm:bool,
-        non_shuffle_pattern:List[str]
-        ) -> SeqRecord:
-    """ Generate decoy sequence """
-    fixed_indices = find_fixed_indices(seq.seq, keep_nterm, keep_cterm, non_shuffle_pattern)
-    if method == 'reverse':
-        decoy_seq = reverse_sequence(seq.seq, fixed_indices)
-    elif method == 'shuffle':
-        decoy_seq = shuffle_sequence(seq.seq, fixed_indices)
-    else:
-        raise ValueError(f'Method {method} is not supported.')
+        if len(shuffled_seq) < len(seq):
+            shuffled_seq += list(seq[len(shuffled_seq) - len(seq):])
+        return Seq(''.join(shuffled_seq))
 
-    if decoy_string_position == 'prefix':
-        decoy_header = decoy_string + seq.description
-    else:
-        decoy_header = seq.description + decoy_string
+    @staticmethod
+    def shuffle_sequence(seq:Seq, fixed_indices:List[int]) -> Seq:
+        """ Create a shuffled sequence """
+        seq = str(seq)
+        indices_to_shuffle = [i for i,_ in enumerate(seq) if i not in fixed_indices]
+        shuffled_indices = random.sample(indices_to_shuffle, len(indices_to_shuffle))
+        shuffled_seq = []
+        offset = 0
+        i = 0
+        while i < len(shuffled_indices):
+            if i + offset in fixed_indices:
+                shuffled_seq.append(seq[i + offset])
+                offset += 1
+                continue
+            shuffled_seq.append(seq[shuffled_indices[i]])
+            i += 1
 
-    return SeqRecord(decoy_seq, description=decoy_header)
+        if len(shuffled_seq) < len(seq):
+            shuffled_seq += list(seq[len(shuffled_seq) - len(seq):])
+        return Seq(''.join(shuffled_seq))
 
-def reverse_sequence(seq:Seq, fixed_indices) -> Seq:
-    """ Create a reversed sequence """
-    seq = str(seq)
-    reversed_indices = list(reversed([i for i,_ in enumerate(seq) if i not in fixed_indices]))
-    shuffled_seq = []
-    offset = 0
-    i = 0
-    while i < len(reversed_indices):
-        if i + offset in fixed_indices:
-            shuffled_seq.append(seq[i + offset])
-            offset += 1
-            continue
-        shuffled_seq.append(seq[reversed_indices[i]])
-        i += 1
+    def generate_decoy_sequence(self, seq:SeqRecord) -> SeqRecord:
+        """ Generate decoy sequence """
+        fixed_indices = self.find_fixed_indices(seq.seq)
+        if self.method == 'reverse':
+            decoy_seq = self.reverse_sequence(seq.seq, fixed_indices)
+        elif self.method == 'shuffle':
+            attempts = 0
+            while True:
+                decoy_seq = self.shuffle_sequence(seq.seq, fixed_indices)
+                attempts += 1
+                if decoy_seq not in self._target_pool and decoy_seq not in self._decoy_pool:
+                    break
+                if attempts >= self.shuffle_max_attempts:
+                    self._summary.n_overlap += 1
+                    break
+        else:
+            raise ValueError(f'Method {self.method} is not supported.')
 
-    if len(shuffled_seq) < len(seq):
-        shuffled_seq += list(seq[len(shuffled_seq) - len(seq):])
-    return Seq(''.join(shuffled_seq))
+        self._summary.n_decoy += 1
 
-def shuffle_sequence(seq:Seq, fixed_indices:List[int]) -> Seq:
-    """ Create a shuffled sequence """
-    seq = str(seq)
-    indices_to_shuffle = [i for i,_ in enumerate(seq) if i not in fixed_indices]
-    shuffled_indices = random.sample(indices_to_shuffle, len(indices_to_shuffle))
-    shuffled_seq = []
-    offset = 0
-    i = 0
-    while i < len(shuffled_indices):
-        if i + offset in fixed_indices:
-            shuffled_seq.append(seq[i + offset])
-            offset += 1
-            continue
-        shuffled_seq.append(seq[shuffled_indices[i]])
-        i += 1
+        self._decoy_pool.add(decoy_seq)
 
-    if len(shuffled_seq) < len(seq):
-        shuffled_seq += list(seq[len(shuffled_seq) - len(seq):])
-    return Seq(''.join(shuffled_seq))
+        if self.decoy_string_position == 'prefix':
+            decoy_header = self.decoy_string + seq.description
+        else:
+            decoy_header = seq.description + self.decoy_string
 
-def find_fixed_indices(seq:Seq, keep_nterm:bool, keep_cterm:bool, non_shuffle_pattern:List[str]
-        ) -> List[int]:
-    """ Find the peptide indices to be fixed """
-    fixed_indices = []
-    for i, it in enumerate(seq):
-        if i == 0 and keep_nterm:
-            fixed_indices.append(i)
-            continue
-        if i == len(seq) - 1 and keep_cterm:
-            fixed_indices.append(i)
-            continue
-        if it in non_shuffle_pattern:
-            fixed_indices.append(i)
-    return fixed_indices
+        self.decoy_db.append(SeqRecord(decoy_seq, description=decoy_header))
 
-def iterate_target_decoy_database(target:List[SeqRecord], decoy:List[SeqRecord],
-        order=str) -> SeqRecord:
-    """ Iterate through target and decoy database with specified order """
-    if order == 'juxtaposed':
-        for i, target_seq in enumerate(target):
-            yield target_seq
-            yield decoy[i]
-    elif order == 'target_first':
-        for seq in target:
-            yield seq
-        for seq in decoy:
-            yield seq
-    elif order == 'decoy_first':
-        for seq in decoy:
-            yield seq
-        for seq in target:
-            yield seq
-    else:
-        raise ValueError(f'Order {order} isnot supported.')
+    def iterate_target_decoy_database(self) -> Iterable[SeqRecord]:
+        """ Iterate through target and decoy database with specified order """
+        if self.order == 'juxtaposed':
+            for i, target_seq in enumerate(self.target_db):
+                yield target_seq
+                yield self.decoy_db[i]
+        elif self.order == 'target_first':
+            for seq in self.target_db:
+                yield seq
+            for seq in self.decoy_db:
+                yield seq
+        elif self.order == 'decoy_first':
+            for seq in self.decoy_db:
+                yield seq
+            for seq in self.target_db:
+                yield seq
+        else:
+            raise ValueError(f'Order {self.order} is not supported.')
+
+    def write(self):
+        """ Write decoy database to fasta """
+        with open(self.output_path, 'wt') as handle:
+            record2title = lambda x: x.description
+            writer = FastaIO.FastaWriter(handle, record2title=record2title)
+            for seq in self.iterate_target_decoy_database():
+                writer.write_record(seq)
+
+    def main(self):
+        """ Create decoy database """
+        with open(self.input_path, 'rt') as handle:
+            self.target_db = list(SeqIO.parse(handle, format='fasta'))
+
+        self._target_pool = {x.seq for x in self.target_db}
+
+        if not self.quiet:
+            logger('Input database FASTA file loaded.')
+
+        if self.seed is not None:
+            random.seed(self.seed)
+
+        for seq in self.target_db:
+            self.generate_decoy_sequence(seq)
+
+        if not self.quiet:
+            logger('Decoy sequences created.')
+
+        if not self.quiet:
+            self._summary.log_summary()
+
+        self.write()
+
+        if not self.quiet:
+            logger('Decoy database written.')
+
+def decoy_fasta(args:argparse.ArgumentParser):
+    """ Generate decoy database fasta file for library searching. """
+    DecoyFasta.from_args(args).main()

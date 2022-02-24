@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added parameter `--min-coverage-rna` to `parseREDItools` to filter by total RNA reads at a given position.
 
+- Added CLI command `encodeFasta` to replace the variant peptide headers with UUIDs. The original FASTA headers are stored in a text file together with the UUIDs. This is to make the FASTA header short enough for library search engines.
+
 ### Changed
 
 - Donor and accepter transcript IDs are now explicitly included in the variant IDs of fusion in both GVFs and variaint peptide FASTA headers. Closed #376 via #377

@@ -116,6 +116,27 @@ def add_args_cleavage(parser:argparse.ArgumentParser):
         metavar='<number>'
     )
 
+def add_args_decoy(parser:argparse.ArgumentParser):
+    """ add decoy fasta related arguments """
+    group = parser.add_argument_group('Decoy Database Parameters')
+    group.add_argument(
+        '--decoy-string',
+        type=str,
+        default='DECOY_',
+        help='The decoy string that is combined with the FASTA header for decoy'
+        ' sequences.',
+        metavar='<value>'
+    )
+    group.add_argument(
+        '--decoy_string_position',
+        type=str,
+        choices=['prefix', 'suffix'],
+        help='Should the decoy string be placed at the start or end of FASTA'
+        ' headers?',
+        default='prefix',
+        metavar='<value>'
+    )
+
 def add_args_quiet(parser:argparse.ArgumentParser):
     """ Add quiet """
     parser.add_argument(

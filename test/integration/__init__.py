@@ -1,7 +1,10 @@
 """ Integration Test """
 from pathlib import Path
 import shutil
+from typing import List, Tuple
 import unittest
+from test.unit import create_aa_record
+from Bio.SeqIO import FastaIO
 from moPepGen import gtf, seqvar
 
 
@@ -44,3 +47,14 @@ class TestCaseIntegration(unittest.TestCase):
         genes_rank = anno.get_genes_rank()
         sorted_gene_ids = sorted(gene_ids, key=lambda x:genes_rank[x])
         self.assertEqual(gene_ids, sorted_gene_ids)
+
+class TestFastaWriterMixin():
+    """ Mixin to write fasta data into test work dir """
+    def write_test_fasta(self, data:List[Tuple[str,str]]):
+        """ write test data to disk """
+        with open(self.work_dir/'test_input.fasta', 'wt') as handle:
+            record2title = lambda x: x.description
+            writer = FastaIO.FastaWriter(handle, record2title=record2title)
+            for seq, desc in data:
+                seq = create_aa_record(seq, desc)
+                writer.write_record(seq)

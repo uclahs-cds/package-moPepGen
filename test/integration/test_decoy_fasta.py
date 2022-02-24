@@ -2,10 +2,8 @@
 import argparse
 import subprocess as sp
 import sys
-from test.integration import TestCaseIntegration
-from test.unit import create_aa_record
+from test.integration import TestCaseIntegration, TestFastaWriterMixin
 from Bio import SeqIO
-from Bio.SeqIO import FastaIO
 from moPepGen import cli
 
 
@@ -14,17 +12,8 @@ TARGET_DB = [
     ('IRPPGGQIICCVCSSSR', 'ENST0002|SNV-200-G-C')
 ]
 
-class TestDecoyFasta(TestCaseIntegration):
+class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
     """ Test cases for decoyFasta """
-    def write_test_data(self):
-        """ write test data to disk """
-        with open(self.work_dir/'test_input.fasta', 'wt') as handle:
-            record2title = lambda x: x.description
-            writer = FastaIO.FastaWriter(handle, record2title=record2title)
-            for seq, desc in TARGET_DB:
-                seq = create_aa_record(seq, desc)
-                writer.write_record(seq)
-
     def generate_default_args(self):
         """ Generate the default args """
         args = argparse.Namespace()
@@ -33,6 +22,7 @@ class TestDecoyFasta(TestCaseIntegration):
         args.decoy_string = 'DECOY_'
         args.decoy_string_position = 'prefix'
         args.method = 'reverse'
+        args.shuffle_max_attempts = float('inf')
         args.non_shuffle_pattern = ''
         args.keep_peptide_nterm = 'true'
         args.keep_peptide_cterm = 'true'
@@ -43,7 +33,7 @@ class TestDecoyFasta(TestCaseIntegration):
 
     def test_decoy_fasta_case1(self):
         """ Test decoyFasta """
-        self.write_test_data()
+        self.write_test_fasta(TARGET_DB)
         args = self.generate_default_args()
         args.input_path = self.work_dir/'test_input.fasta'
         cli.decoy_fasta(args)
@@ -58,7 +48,7 @@ class TestDecoyFasta(TestCaseIntegration):
 
     def test_decoy_fasta_case2(self):
         """ Test decoyFasta """
-        self.write_test_data()
+        self.write_test_fasta(TARGET_DB)
         args = self.generate_default_args()
         args.method = 'shuffle'
         args.input_path = self.work_dir/'test_input.fasta'
@@ -83,7 +73,7 @@ class TestDecoyFasta(TestCaseIntegration):
 
     def test_decoy_fasta_case3(self):
         """ Test decoyFasta """
-        self.write_test_data()
+        self.write_test_fasta(TARGET_DB)
         args = self.generate_default_args()
         args.method = 'shuffle'
         args.input_path = self.work_dir/'test_input.fasta'
