@@ -21,21 +21,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added CLI command `decoyFasta` to generate decoy database by shuffling or reversing each sequence. [#386](https://github.com/uclahs-cds/private-moPepGen/issues/386)
 
-- Added parameter `--min-coverage-rna` to `parseREDItools` to filter by total RNA reads at a given position.
+- Added parameter `--min-coverage-rna` to `parseREDItools` to filter by total RNA reads at a given position. #392
 
-- Added CLI command `encodeFasta` to replace the variant peptide headers with UUIDs. The original FASTA headers are stored in a text file together with the UUIDs. This is to make the FASTA header short enough for library search engines.
+- Added CLI command `encodeFasta` to replace the variant peptide headers with UUIDs. The original FASTA headers are stored in a text file together with the UUIDs. This is to make the FASTA header short enough for library search engines. #389
 
 ### Changed
 
 - Donor and accepter transcript IDs are now explicitly included in the variant IDs of fusion in both GVFs and variaint peptide FASTA headers. Closed #376 via #377
 
-- For fusion, `callVariant` now looks at the entire accepter sequence for potential variant peptides, rather than only the peptides that contains the breakpoint.
+- For fusion, `callVariant` now looks at the entire accepter sequence for potential variant peptides, rather than only the peptides that contains the breakpoint. #377
 
-- In `parseVEP`, chromosome seqname for each record is now got directly from the gene annotation, to avoid the 'chr' prefix issue.
+- `filterFasta` updated to support filter by number of miscleavages. #383
 
-- The `--transcript-id-column` parameter of `parseREDItools` is changed to take 1-based index.
+- In `parseVEP`, chromosome seqname for each record is now read directly from the gene annotation, to avoid the 'chr' prefix issue. #391
 
-- Changed `splitDatabase` to `splitFasta` for consistency.
+- The `--transcript-id-column` parameter of `parseREDItools` is changed to take 1-based index. #392
+
+- Changed `splitDatabase` to `splitFasta` for consistency. #397
+
+- Updated `generateIndex` to reduce the size of genomic annotation data and the memory usage when loaded. #395
 
 ---
 
