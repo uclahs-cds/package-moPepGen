@@ -273,14 +273,14 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
 def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
     """ Generate metadata """
     if args.index_dir:
-        reference_index = args.index_dir.absolute()
+        reference_index = args.index_dir.resolve()
         genome_fasta = None
         annotation_gtf = None
     else:
         reference_index = None
-        genome_fasta = args.genome_fasta.absolute() if \
+        genome_fasta = args.genome_fasta.resolve() if \
             hasattr(args, 'genome_fasta') else None
-        annotation_gtf = args.annotation_gtf.absolute() if \
+        annotation_gtf = args.annotation_gtf.resolve() if \
             hasattr(args, 'annotation_gtf') else None
 
     return seqvar.GVFMetadata(
