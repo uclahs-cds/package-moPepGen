@@ -92,6 +92,7 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
     common.add_args_quiet(parser)
     common.print_help_if_missing_args(parser)
     parser.set_defaults(func=decoy_fasta)
+    return parser
 
 class _Summary():
     """ Summary """
