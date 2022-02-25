@@ -11,12 +11,16 @@ COMMAND_MAPPER = {
     'parseREDItools': cli.add_subparser_parse_reditools,
     'parseSTARFusion': cli.add_subparser_parse_star_fusion,
     'parseFusionCatcher': cli.add_subparser_parse_fusion_catcher,
+    'parseArriba': cli.add_subparser_parse_arriba,
     'parseRMATS': cli.add_subparser_parse_rmats,
     'parseCIRCexplorer': cli.add_subparser_parse_circexplorer,
     'callVariant': cli.add_subparser_call_variant,
     'callNoncoding': cli.add_subparser_call_noncoding,
     'filterFasta': cli.add_subparser_filter_fasta,
-    'splitDatabase': cli.add_subparser_split_fasta
+    'splitFasta': cli.add_subparser_split_fasta,
+    'mergeFasta': cli.add_subparser_merge_fasta,
+    'encodeFasta': cli.add_subparser_encode_fasta,
+    'decoyFasta': cli.add_subparser_decoy_fasta
 }
 
 def define_env(env):
