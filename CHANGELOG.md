@@ -33,7 +33,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `filterFasta` updated to support filter by number of miscleavages. #383
 
-- In `parseVEP`, chromosome seqname for each record is now got directly from the gene annotation, to avoid the 'chr' prefix issue. #391
+- In `parseVEP`, chromosome seqname for each record is now read directly from the gene annotation, to avoid the 'chr' prefix issue. #391
 
 - The `--transcript-id-column` parameter of `parseREDItools` is changed to take 1-based index. #392
 
