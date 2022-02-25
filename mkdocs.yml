@@ -14,12 +14,16 @@ nav:
       - parseREDItools: parse-reditools.md
       - parseSTARFuion: parse-star-fusion.md
       - parseFusionCatcher: parse-fusion-catcher.md
+      - parseArriba: parse-arriba.md
       - parseRMATS: parse-rmats.md
       - parseCIRCexplorer: parse-circexplorer.md
       - callVariant: call-variant.md
       - callNoncoding: call-noncoding.md
       - filterFasta: filter-fasta.md
-      - splitDatabase: split-database.md
+      - splitFasta: split-fasta.md
+      - mergeFasta: merge-fasta.md
+      - encodeFasta: encode-fasta.md
+      - decoyFasta: decoy-fasta.md
 theme: readthedocs
 plugins:
   - mkdocstrings:
