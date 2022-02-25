@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+---
+
+## [0.3.0] - 2022-02-24
+
 ### Added
 
 - Enable `filterFasta` to filter by number of miscleavages per peptide. #382
@@ -35,7 +39,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [0.2.0] - 2021-01-28
+## [0.2.0] - 2022-01-28
 
 ### Added
 
