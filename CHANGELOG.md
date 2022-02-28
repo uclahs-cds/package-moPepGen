@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Argument parameter `--decoy_string_position` is changed to `--decoy-string-position`. #417
+
 ---
 
 ## [0.3.0] - 2022-02-24
