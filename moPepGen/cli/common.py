@@ -128,7 +128,7 @@ def add_args_decoy(parser:argparse.ArgumentParser):
         metavar='<value>'
     )
     group.add_argument(
-        '--decoy_string_position',
+        '--decoy-string-position',
         type=str,
         choices=['prefix', 'suffix'],
         help='Should the decoy string be placed at the start or end of FASTA'
