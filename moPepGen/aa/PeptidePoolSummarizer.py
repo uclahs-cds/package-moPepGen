@@ -66,4 +66,4 @@ class PeptidePoolSummarizer():
                     count = self.summary_table[key]
                 else:
                     count = 0
-                handle.write(f"{','.join(comb)}\t{count}\n")
+                handle.write(f"{'-'.join(comb)}\t{count}\n")
