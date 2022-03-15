@@ -1,5 +1,5 @@
 """ Module for moPepGen seqvar IO """
-from typing import Iterable, Union, IO
+from typing import Dict, Iterable, Tuple, Union, IO
 from pathlib import Path
 import tempfile
 from moPepGen import GVF_HEADER
@@ -49,6 +49,17 @@ def iterate(handle:IO) -> Iterable[VariantRecord]:
         yield line_to_variant_record(line)
 
 
+def parse_attrs(info:str) -> Dict[str, Union[str,int]]:
+    """ """
+    attrs = {}
+    for field in info.split(';'):
+        key, val = field.split('=')
+        val = val.strip('"')
+        if key in ATTRS_POSITION:
+            val = str(int(val) - 1)
+        attrs[key] = val
+    return attrs
+
 def line_to_variant_record(line:str) -> VariantRecord:
     """ Convert line from GVF file to VariantRecord """
     fields = line.rstrip().split('\t')
@@ -56,13 +67,7 @@ def line_to_variant_record(line:str) -> VariantRecord:
     start=int(fields[1]) - 1
     ref = fields[3]
     alt = fields[4]
-    attrs = {}
-    for field in fields[7].split(';'):
-        key, val = field.split('=')
-        val = val.strip('"')
-        if key in ATTRS_POSITION:
-            val = str(int(val) - 1)
-        attrs[key] = val
+    attrs = parse_attrs(fields[7])
 
     if not alt.startswith('<'):
         end = start + len(ref)
@@ -96,6 +101,19 @@ def line_to_variant_record(line:str) -> VariantRecord:
         _id=_id,
         attrs=attrs
     )
+
+def parse_label(handle:IO) -> Tuple[str, str, str]:
+    """ parse only the transcirpt ID and variant label """
+    line:str
+    for line in handle:
+        if line.startswith('#'):
+            continue
+        fields = line.rstrip().split('\t')
+        gene_id = fields[0]
+        label = fields[2]
+        attrs = parse_attrs(fields[7])
+        tx_id = attrs['TRANSCRIPT_ID']
+        yield gene_id, tx_id, label
 
 def write(variants:Iterable[VariantRecord], output_path:str,
         metadata:GVFMetadata):

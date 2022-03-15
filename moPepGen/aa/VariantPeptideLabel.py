@@ -291,6 +291,16 @@ class LabelSourceMapping():
         """ construnctor"""
         self.data = data or {}
 
+    def add_record(self, gene_id:str, label:str, source:str):
+        """ add a record """
+        if gene_id not in self.data:
+            self.data[gene_id] = {}
+            if label in self.data[gene_id]:
+                raise ValueError(
+                    f"Duplicated variable label found for {gene_id}, {label}"
+                )
+        self.data[gene_id][label] = source
+
     def add_variant(self, variant:seqvar.VariantRecord, source:str):
         """ add variant """
         gene_id = variant.location.seqname
