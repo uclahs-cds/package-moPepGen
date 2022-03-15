@@ -50,7 +50,7 @@ def iterate(handle:IO) -> Iterable[VariantRecord]:
 
 
 def parse_attrs(info:str) -> Dict[str, Union[str,int]]:
-    """ """
+    """ parse the attributes of a GVF record. """
     attrs = {}
     for field in info.split(';'):
         key, val = field.split('=')

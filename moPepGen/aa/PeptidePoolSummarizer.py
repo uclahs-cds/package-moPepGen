@@ -1,7 +1,7 @@
 """ module for peptide pool summarizer """
 from __future__ import annotations
 import itertools
-from typing import Dict, Set, IO
+from typing import Dict, IO
 from Bio import SeqIO
 from moPepGen import gtf, seqvar, aa
 from moPepGen.aa.VariantPeptideLabel import VariantPeptideInfo, \
@@ -12,8 +12,7 @@ from moPepGen.aa.PeptidePoolSplitter import NONCODING_SOURCE
 class PeptidePoolSummarizer():
     """ Summarize the variant peptide pool called by moPepGen callVariant. """
     def __init__(self, summary_table:Dict[VariantSourceSet,int]=None,
-            label_map:LabelSourceMapping=None, sources:Set[str]=None,
-            order:Dict[str,int]=None):
+            label_map:LabelSourceMapping=None, order:Dict[str,int]=None):
         """ """
         self.summary_table = summary_table or {}
         self.label_map = label_map or LabelSourceMapping()
@@ -58,7 +57,7 @@ class PeptidePoolSummarizer():
 
     def write_summary_table(self, handle:IO):
         """ Write summary table to output. """
-        handle.write(f"sources\tn_peptides\n")
+        handle.write("sources\tn_peptides\n")
         sources = [it[0] for it in sorted(self.order.items(), key=lambda x:x[1])]
         for i in range(len(sources)):
             for comb in itertools.combinations(sources, i + 1):

@@ -97,4 +97,3 @@ def summarize_fasta(args:argparse.Namespace) -> None:
 
     with output_context(args.output_path) as handle:
         summarizer.write_summary_table(handle)
-
