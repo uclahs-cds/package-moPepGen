@@ -23,6 +23,7 @@ CLI_MAIN_DESCRIPTION = """
    callNoncoding       Call non-canonical peptides from noncoding transcripts.
 
 -- Processing
+   summarizeFasta      Summarize variant peptides.
    filterFasta         Filter noncanonical peptides.
    splitFasta          Split noncanonical peptides into separate databases.
    mergeFasta          Merge multiple variant peptide FASTA databases.
@@ -65,6 +66,7 @@ def main():
     cli.add_subparser_merge_fasta(subparsers)
     cli.add_subparser_encode_fasta(subparsers)
     cli.add_subparser_decoy_fasta(subparsers)
+    cli.add_subparser_summarize_fasta(subparsers)
 
     # allowing values to start with -, such as -100,3
     # https://stackoverflow.com/a/21446783/11081630

@@ -9,6 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Added CLI command `summarizeFasta` to output a summary table of the variant peptide FASTA file output by `callVariant`.
+
+### Changed
+
+- Attribute key for transcript ID is fixed from 'TRANSCRIPT' to 'TRANSCRIPT_ID' in circRNA's GVF files output by `parseCIRCExplorer` to be the same as other GVF files.
+
 ---
 
 ## [0.3.1] - 2022-03-01

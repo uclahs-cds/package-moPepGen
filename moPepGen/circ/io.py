@@ -34,7 +34,7 @@ def line_to_circ_model(line) -> CircRNAModel:
     offsets = attrs['OFFSET']
     lengths = attrs['LENGTH']
     introns = attrs['INTRON']
-    tx_id = attrs['TRANSCRIPT']
+    tx_id = attrs['TRANSCRIPT_ID']
     gene_name = attrs['GENE_SYMBOL']
 
     fragments:List[SeqFeature] = []
