@@ -20,7 +20,8 @@ class CircRNAModel():
         gene_locations (List[SeqFeature])
     """
     def __init__(self, transcript_id:str, fragments:List[SeqFeature],
-            intron:List[int], _id:str, gene_id:str, gene_name:str):
+            intron:List[int], _id:str, gene_id:str, gene_name:str,
+            genomic_location:str=''):
         """ Constructor """
         self.gene_id = gene_id
         self.fragments = fragments
@@ -29,6 +30,7 @@ class CircRNAModel():
         self.transcript_id = transcript_id
         self.gene_name = gene_name
         self.gene_locations = []
+        self.genomic_location = genomic_location
 
     def get_gene_coordinates(self, gene:GeneAnnotationModel) -> None:
         """ Get the coordinates of the gene """
@@ -74,6 +76,8 @@ class CircRNAModel():
         circ_id = self.id
         tx_id = self.transcript_id
         gene_name = self.gene_name
+        chrom = self.fragments[0].chrom
         info = f'OFFSET={offset};LENGTH={length};INTRON={intron};' +\
-            f'TRANSCRIPT_ID={tx_id};GENE_SYMBOL={gene_name}'
+            f'TRANSCRIPT_ID={tx_id};GENE_SYMBOL={gene_name};' +\
+            f'GENOMIC_POSITION={self.genomic_location}'
         return '\t'.join([gene_id, start, circ_id, '.', '.', '.', '.', info])

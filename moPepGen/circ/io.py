@@ -36,6 +36,7 @@ def line_to_circ_model(line) -> CircRNAModel:
     introns = attrs['INTRON']
     tx_id = attrs['TRANSCRIPT_ID']
     gene_name = attrs['GENE_SYMBOL']
+    genomic_location = attrs.get('GENOMIC_LOCATION', '')
 
     fragments:List[SeqFeature] = []
     for j, (position, length) in enumerate(zip(offsets, lengths)):
@@ -48,8 +49,8 @@ def line_to_circ_model(line) -> CircRNAModel:
         )
         fragments.append(frag)
 
-    return CircRNAModel(tx_id, fragments, introns, circ_id,
-            gene_id, gene_name)
+    return CircRNAModel(tx_id, fragments, introns, circ_id, gene_id, gene_name,
+            genomic_location)
 
 def write(records:Iterable[CircRNAModel], metadata:GVFMetadata, handle:IO):
     """ Write circRNA records to file. """
