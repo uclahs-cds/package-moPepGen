@@ -95,13 +95,16 @@ class CIRCexplorer2KnownRecord():
         fragment_ids.sort()
         circ_id += f'-{tx_id}-' + '-'.join(fragment_ids)
 
+        genomic_location = f"{self.chrom}:{self.start}"
+
         return CircRNAModel(
             transcript_id=tx_id,
             fragments=fragments,
             intron=intron,
             _id=circ_id,
             gene_id=gene_id,
-            gene_name=tx_model.transcript.gene_name
+            gene_name=tx_model.transcript.gene_name,
+            genomic_location=genomic_location
         )
 
     def is_valid(self, min_read_number:int) -> bool:
