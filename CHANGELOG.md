@@ -17,6 +17,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Attribute key for transcript ID is fixed from 'TRANSCRIPT' to 'TRANSCRIPT_ID' in circRNA's GVF files output by `parseCIRCExplorer` to be the same as other GVF files.
 
+- Genomic position for each record is added to the GVF file output by `parseCIRCExplorer`.
+
 ---
 
 ## [0.3.1] - 2022-03-01
