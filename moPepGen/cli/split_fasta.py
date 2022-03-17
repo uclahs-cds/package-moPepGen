@@ -102,7 +102,8 @@ def split_fasta(args:argparse.Namespace) -> None:
     common.print_start_message(args)
 
     _, anno, *_ = common.load_references(args, load_genome=False, \
-        load_proteome=True, load_canonical_peptides=False)
+        load_proteome=True, load_canonical_peptides=False,
+        check_protein_coding=True)
 
     source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\
         if args.order_source else None

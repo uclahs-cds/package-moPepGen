@@ -29,7 +29,9 @@ class TestSummarizeFasta(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
         args.annotation_gtf = self.data_dir/"annotation.gtf"
+        args.proteome_fasta = self.data_dir/"translate.fasta"
         cli.summarize_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.output_path.name}
@@ -47,6 +49,7 @@ class TestSummarizeFasta(TestCaseIntegration):
                 {self.data_dir}/circRNA/circ_rna.gvf \\
             --variant-peptides {self.data_dir}/peptides/variant.fasta \\
             -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta \\
             -o {self.work_dir}/test
         """
         res = sp.run(cmd, shell=True, check=False, capture_output=True)

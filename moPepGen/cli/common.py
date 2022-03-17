@@ -189,7 +189,7 @@ def add_args_source(parser:argparse.ArgumentParser):
 
 def load_references(args:argparse.Namespace, load_genome:bool=True,
         load_canonical_peptides:bool=True, load_proteome:bool=False,
-        invalid_protein_as_noncoding:bool=False
+        invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, Set[str]]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
@@ -232,12 +232,15 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if not quiet:
             logger('Reference indices loaded.')
     else:
+        if (check_protein_coding is True or load_canonical_peptides is True) and \
+                args.proteome_fasta is None:
+            raise ValueError('--proteome-fasta was not specified.')
         annotation = gtf.GenomicAnnotation()
         annotation.dump_gtf(args.annotation_gtf)
         if not quiet:
             logger('Annotation GTF loaded.')
 
-        if load_proteome or load_canonical_peptides:
+        if load_proteome or load_canonical_peptides or check_protein_coding:
             proteome = aa.AminoAcidSeqDict()
             proteome.dump_fasta(args.proteome_fasta)
             if not quiet:

@@ -6,6 +6,7 @@ from Bio import SeqIO
 from moPepGen import gtf, seqvar, aa
 from moPepGen.aa.VariantPeptideLabel import VariantPeptideInfo, \
     VariantSourceSet, LabelSourceMapping
+from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.aa.PeptidePoolSplitter import NONCODING_SOURCE
 
@@ -45,10 +46,12 @@ MUTUALLY_EXCLUSIVE_PARSERS:Dict[str,List[str]] = {
 
 class PeptidePoolSummarizer():
     """ Summarize the variant peptide pool called by moPepGen callVariant. """
-    def __init__(self, summary_table:Dict[VariantSourceSet,int]=None,
+    def __init__(self, peptides:VariantPeptidePool=None,
+            summary_table:Dict[VariantSourceSet,int]=None,
             label_map:LabelSourceMapping=None, order:Dict[str,int]=None,
             source_parser_map:Dict[str,str]=None):
         """ """
+        self.peptides = peptides
         self.summary_table = summary_table or {}
         self.label_map = label_map or LabelSourceMapping()
         self.order = order or {}
@@ -66,6 +69,15 @@ class PeptidePoolSummarizer():
             return
         self.order[source] = max(self.order.values()) + 1 if self.order else 0
 
+    def load_database(self, handle:IO) -> None:
+        """ load peptide database """
+        pool = VariantPeptidePool.load(handle)
+        if not self.peptides:
+            self.peptides = pool
+            return
+        for peptide in pool.peptides:
+            self.peptides.add_peptide(peptide, None, skip_checking=True)
+
     def update_label_map(self, handle:IO):
         """ Read GVF files and add to the label source map. """
         metadata = GVFMetadata.parse(handle)
@@ -74,13 +86,10 @@ class PeptidePoolSummarizer():
         for gene_id, _, label in seqvar.io.parse_label(handle):
             self.label_map.add_record(gene_id, label, metadata.source)
 
-    def count_peptide_source(self, handle:IO, anno:gtf.GenomicAnnotation):
+    def count_peptide_source(self, anno:gtf.GenomicAnnotation):
         """ Count number of peptides in each source or combinations of sources. """
         VariantSourceSet.set_levels(self.order)
-        for seq in SeqIO.parse(handle, 'fasta'):
-            seq.__class__ = aa.AminoAcidSeqRecord
-            seq.id = seq.description
-            seq.name = seq.description
+        for seq in self.peptides.peptides:
             peptide_labels = VariantPeptideInfo.from_variant_peptide(
                 peptide=seq, anno=anno, label_map=self.label_map,
                 check_source=True
