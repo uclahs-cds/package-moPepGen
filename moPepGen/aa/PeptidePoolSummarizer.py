@@ -108,18 +108,18 @@ class NoncanonicalPeptideSummariyTable():
 
     def get_keys(self) -> Tuple[str]:
         """ Get all column names """
-        return ('n_total', *[self.get_key_x_misc(i) for i in range(self.max_misc)])
+        return ('n_total', *[self.get_key_x_misc(i) for i in range(self.max_misc + 1)])
 
     def get_stringified_summary_entry(self, key:str, sep:str='\t') -> str:
         """ Get a row from the summary table for a given combination of sources. """
         rowname = '-'.join(key)
         if key not in self.data:
             entry = [rowname, '0']
-            for _ in range(self.max_misc):
+            for _ in range(self.max_misc + 1):
                 entry.append('0')
         else:
             entry = [rowname, str(self.get_n_total(key))]
-            for x in range(self.max_misc):
+            for x in range(self.max_misc + 1):
                 entry.append(str(self.get_n_x_misc(key, x)))
         return sep.join(entry)
 
