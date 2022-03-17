@@ -15,6 +15,7 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.quiet = False
         args.index_dir = None
         args.order_source = None
+        args.cleavage_rule = 'trypsin'
         args.output_path = self.work_dir/'output.txt'
         return args
 

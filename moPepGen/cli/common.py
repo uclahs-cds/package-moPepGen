@@ -76,7 +76,7 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
             default=None
         )
 
-def add_args_cleavage(parser:argparse.ArgumentParser):
+def add_args_cleavage(parser:argparse.ArgumentParser, enzyme_only:bool=False):
     """ Add args for cleavage """
     group = parser.add_argument_group('Cleavage Parameters')
     group.add_argument(
@@ -87,6 +87,8 @@ def add_args_cleavage(parser:argparse.ArgumentParser):
         metavar='<value>',
         choices=list(EXPASY_RULES.keys())
     )
+    if enzyme_only:
+        return
     group.add_argument(
         '-m', '--miscleavage',
         type=int,

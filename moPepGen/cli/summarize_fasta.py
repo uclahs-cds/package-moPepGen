@@ -61,7 +61,7 @@ def add_subparser_summarize_fasta(subparser:argparse._SubParsersAction):
         metavar='<file>',
         default=None
     )
-
+    common.add_args_cleavage(p, enzyme_only=True)
     common.add_args_reference(p, genome=False, proteome=True)
     common.add_args_quiet(p)
     common.print_help_if_missing_args(p)
@@ -109,7 +109,7 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         with open(args.noncoding_peptides, 'rt') as handle:
             summarizer.load_database(handle)
 
-    summarizer.count_peptide_source(anno)
+    summarizer.count_peptide_source(anno, args.cleavage_rule)
 
     with output_context(args.output_path) as handle:
         summarizer.write_summary_table(handle)
