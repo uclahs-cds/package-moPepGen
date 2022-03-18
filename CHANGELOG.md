@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+---
+
+## [0.4.0] - 2022-03-17
+
 ### Added
 
 - Added CLI command `summarizeFasta` to output a summary table of the variant peptide FASTA file output by `callVariant`.
