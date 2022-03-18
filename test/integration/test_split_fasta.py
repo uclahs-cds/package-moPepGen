@@ -56,11 +56,12 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'test_gINDEL.fasta','test_gSNP.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
-            'test_Remaining.fasta', 'test_circRNA.fasta'}
+            'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta'}
         self.assertEqual(files, expected)

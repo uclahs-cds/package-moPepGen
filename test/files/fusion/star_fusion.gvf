@@ -1,6 +1,6 @@
 ##fileformat=VCFv4.2
 ##mopepgen_version=0.0.1
-##parser=parseVEP
+##parser=parseSTARFusion
 ##reference_index=/home/chenghaozhu/projects/private-moPepGen-copy/test/files/index
 ##genome_fasta=
 ##annotation_gtf=
