@@ -45,7 +45,7 @@ MUTUALLY_EXCLUSIVE_PARSERS:Dict[str,List[str]] = {
     ]
 }
 
-class NoncanonicalPeptideSummariyTable():
+class NoncanonicalPeptideSummaryTable():
     """ Summary table for noncaonincal peptides """
     KEY_N_TOTAL = 'n_total'
     def __init__(self, data:Dict[str, Dict[str,int]]=None, max_misc:int=0):
@@ -112,7 +112,7 @@ class NoncanonicalPeptideSummariyTable():
 
     def get_stringified_summary_entry(self, key:str, sep:str='\t') -> str:
         """ Get a row from the summary table for a given combination of sources. """
-        rowname = '-'.join(key)
+        rowname = '-'.join(sorted(key))
         if key not in self.data:
             entry = [rowname, '0']
             for _ in range(self.max_misc + 1):
@@ -126,12 +126,12 @@ class NoncanonicalPeptideSummariyTable():
 class PeptidePoolSummarizer():
     """ Summarize the variant peptide pool called by moPepGen callVariant. """
     def __init__(self, peptides:VariantPeptidePool=None,
-            summary_table:NoncanonicalPeptideSummariyTable=None,
+            summary_table:NoncanonicalPeptideSummaryTable=None,
             label_map:LabelSourceMapping=None, order:Dict[str,int]=None,
             source_parser_map:Dict[str,str]=None):
         """ """
         self.peptides = peptides
-        self.summary_table = summary_table or NoncanonicalPeptideSummariyTable()
+        self.summary_table = summary_table or NoncanonicalPeptideSummaryTable()
         self.label_map = label_map or LabelSourceMapping()
         self.order = order or {}
         self.source_parser_map = source_parser_map or {}
