@@ -24,6 +24,7 @@ nav:
       - mergeFasta: merge-fasta.md
       - encodeFasta: encode-fasta.md
       - decoyFasta: decoy-fasta.md
+      - summarizeFasta: summarize-fasta.md
 theme: readthedocs
 plugins:
   - mkdocstrings:
