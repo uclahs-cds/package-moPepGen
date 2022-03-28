@@ -1,4 +1,7 @@
-""" `summarizeFasta` takes a variant peptide FASTA file output by callVariant. """
+""" `summarizeFasta` takes a variant peptide FASTA file output by callVariant
+and summarize the count of variant peptides of each source groups. This
+summary can then guide the database splitting for tiered custom database
+searching. """
 from __future__ import annotations
 import argparse
 from contextlib import contextmanager

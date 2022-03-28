@@ -20,7 +20,8 @@ COMMAND_MAPPER = {
     'splitFasta': cli.add_subparser_split_fasta,
     'mergeFasta': cli.add_subparser_merge_fasta,
     'encodeFasta': cli.add_subparser_encode_fasta,
-    'decoyFasta': cli.add_subparser_decoy_fasta
+    'decoyFasta': cli.add_subparser_decoy_fasta,
+    'summarizeFasta': cli.add_subparser_summarize_fasta
 }
 
 def define_env(env):
