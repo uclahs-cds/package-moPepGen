@@ -18,6 +18,7 @@ jobs:
       - name: Create a requirement.txt
         run: |
           echo 'mkdocs==1.2.3' > requirements.txt
+          echo 'jinja2==3.0.0' >> requirements.txt
           echo 'mkdocstrings==0.16.2' >> requirements.txt
           echo 'mkdocs-macros-plugin==0.6.0' >> requirements.txt
           echo '.' >> requirements.txt
