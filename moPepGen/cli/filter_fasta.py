@@ -1,4 +1,5 @@
-""" `filterFasta` takes the variant peptide sequence file (FASTA) and filters it
+""" `filterFasta` takes the FASTA file of variant peptides (output by
+`callVariant`) or noncoding peptides (output by `callNoncoding`) and filters it
 based on the gene expression data. A expresion table must be given as a CSV
 or TSV. """
 from __future__ import annotations
