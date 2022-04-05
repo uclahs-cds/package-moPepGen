@@ -9,6 +9,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.4.1]
+
+### Changed
+
+- Fixed the problem that in `summarizeFasta` output the order of variant sources in the same group is not consistent across runs. #428
+
+- In `filterFasta`, when filter with expression table, changed to filter out peptides smaller than, instead of smaller or equal to, the value of `--quant-cutoff`.
+
 ---
 
 ## [0.4.0] - 2022-03-17
