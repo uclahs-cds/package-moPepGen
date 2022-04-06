@@ -104,7 +104,7 @@ class VariantPeptidePool():
                         tx_ids = entry.get_transcript_ids()
                         should_keep = entry.is_fusion() or entry.is_circ_rna() or\
                             entry.is_splice_altering() or \
-                            all(exprs[tx] > cutoff for tx in tx_ids)
+                            all(exprs[tx] >= cutoff for tx in tx_ids)
                     else:
                         should_keep = True
                 if should_keep:

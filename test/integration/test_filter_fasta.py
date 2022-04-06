@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess as sp
 import sys
 from test.integration import TestCaseIntegration
+from Bio import SeqIO
 from moPepGen import cli
 
 
@@ -95,3 +96,45 @@ class TestFilterFasta(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_filtered.fasta'}
         self.assertEqual(files, expected)
+
+    def test_filter_fasta_noncoding_case1(self):
+        """ test filterFasta to filter noncoding peptides """
+        args = self.generate_default_args()
+        args.input_path = Path('test/files/peptides/noncoding.fasta')
+        args.exprs_table = Path('test/files/rsem/rsem.txt')
+        args.skip_lines = 1
+        args.delimiter = '\t'
+        args.tx_id_col = '1'
+        args.quant_col = '5'
+        args.quant_cutoff = 30
+        args.keep_all_coding = False
+        args.keep_all_noncoding = False
+        cli.filter_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_filtered.fasta'}
+        self.assertEqual(files, expected)
+        peptides_raw = list(SeqIO.parse(args.input_path, 'fasta'))
+        peptides_filtered = list(SeqIO.parse(args.output_path, 'fasta'))
+        seqs_raw = {x.seq for x in peptides_raw}
+        seqs_filtered = {x.seq for x in peptides_filtered}
+        self.assertTrue(all(x in seqs_raw for x in seqs_filtered))
+
+    def test_filter_fasta_noncoding_case2(self):
+        """ test filterFasta to filer noncodign peptides that no sequence should
+        pass. """
+        args = self.generate_default_args()
+        args.input_path = Path('test/files/peptides/noncoding.fasta')
+        args.exprs_table = Path('test/files/rsem/rsem.txt')
+        args.skip_lines = 1
+        args.delimiter = '\t'
+        args.tx_id_col = '1'
+        args.quant_col = '5'
+        args.quant_cutoff = 10000
+        args.keep_all_coding = False
+        args.keep_all_noncoding = False
+        cli.filter_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_filtered.fasta'}
+        self.assertEqual(files, expected)
+        peptides_filtered = list(SeqIO.parse(args.output_path, 'fasta'))
+        self.assertEqual(len(peptides_filtered), 0)
