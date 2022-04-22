@@ -113,7 +113,8 @@ def split_fasta(args:argparse.Namespace) -> None:
         group_map = {}
         for it in args.group_source:
             key, val = it.split(':')
-            group_map[key] = val.split(',')
+            for v in val.split(','):
+                group_map[v] = key
 
     splitter = PeptidePoolSplitter(order=source_order, group_map=group_map)
 
