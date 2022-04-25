@@ -107,8 +107,16 @@ def split_fasta(args:argparse.Namespace) -> None:
         load_proteome=True, load_canonical_peptides=False,
         check_protein_coding=True)
 
-    source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\
-        if args.order_source else None
+    if args.order_source:
+        source_order = {}
+        for i,val in enumerate(args.order_source.split(',')):
+            if val in source_order:
+                raise ValueError(
+                    f"Non-unique value found from `--group-source`: {val}"
+                )
+            source_order[val] = i
+    else:
+        source_order = None
 
     group_map = None
     if args.group_source:

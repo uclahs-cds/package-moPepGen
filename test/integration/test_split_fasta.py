@@ -103,7 +103,7 @@ class TestSplitDatabase(TestCaseIntegration):
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.group_source = ['coding:gSNP,gINDEL']
-        args.order_source = 'RNAEditingSite,coding,coding,circRNA,Fusion'
+        args.order_source = 'RNAEditingSite,coding,circRNA,Fusion'
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'test_coding.fasta', 'test_RNAEditingSite.fasta',
