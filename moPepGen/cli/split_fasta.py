@@ -64,7 +64,9 @@ def add_subparser_split_fasta(subparser:argparse._SubParsersAction):
     p.add_argument(
         '--group-source',
         type=str,
-        help='Group sources. E.g., PointMutation:gSNP,sSNV INDEL:gINDEL,sINDEL',
+        help='Group sources. The peptides with sources grouped will be written'
+        ' to the same FASTA file. E.g., "PointMutation:gSNP,sSNV'
+        ' INDEL:gINDEL,sINDEL".',
         metavar='<value>',
         nargs='*'
     )

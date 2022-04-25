@@ -15,6 +15,46 @@
 {{ get_arg_usage(command) }}
 ```
 
+## Examples
+
+### Basic usage
+
+A basic usage is below.
+
+```bash
+moPepGen splitFasta \
+  --gvf \
+    path/to/gSNP.gvf \
+    path/to/gINDEL.gvf \
+    path/to/reditools.gvf \
+  --variant-peptides path/to/variant.fasta \
+  --index-dir path/to/index \
+  --max-source-groups 1 \
+  --output-prefix path/to/split
+```
+
+The example above splits the variant peptide sequence database into four FASTA files, `split_gSNP.fasta`, `split_gINDEL.fasta`, `split_RNAEditing.fasta`, `split_Remaining.fasta`. Variant peptides are split into individual FASTA file of its variant source group based on the order of GVF files. Peptides with more than one variant sources are written into the `*_Remaining.fasta` because the `--max-source-groups` is set to 1.
+
+### Group sources
+
+Sometimes we want to group variant sources together. See example below.
+
+```bash
+moPepGen splitFasta \
+  --gvf \
+    path/to/gSNP.gvf \
+    path/to/gINDEL.gvf \
+    path/to/reditools.gvf \
+  --variant-peptides path/to/variant.fasta \
+  --index-dir path/to/index \
+  --group-source Coding:gSNP,gINDEL \
+  --order-source Coding,RNAEditing \
+  --max-source-groups 1 \
+  --output-prefix path/to/split
+```
+
+This example outputs three split FASTA filese, `split_Coding.fasta`, `split_RNAEditing.fasta`, and `split_Remaining.fasta`.
+
 ## Arguments
 
 {% with actions=get_arg_data(command) %}
