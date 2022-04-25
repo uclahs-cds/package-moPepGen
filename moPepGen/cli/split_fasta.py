@@ -64,7 +64,9 @@ def add_subparser_split_fasta(subparser:argparse._SubParsersAction):
     p.add_argument(
         '--group-source',
         type=str,
-        help='Group sources. E.g., PointMutation:gSNP,sSNV INDEL:gINDEL,sINDEL',
+        help='Group sources. The peptides with sources grouped will be written'
+        ' to the same FASTA file. E.g., "PointMutation:gSNP,sSNV'
+        ' INDEL:gINDEL,sINDEL".',
         metavar='<value>',
         nargs='*'
     )
@@ -105,15 +107,24 @@ def split_fasta(args:argparse.Namespace) -> None:
         load_proteome=True, load_canonical_peptides=False,
         check_protein_coding=True)
 
-    source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\
-        if args.order_source else None
+    if args.order_source:
+        source_order = {}
+        for i,val in enumerate(args.order_source.split(',')):
+            if val in source_order:
+                raise ValueError(
+                    f"Non-unique value found from `--group-source`: {val}"
+                )
+            source_order[val] = i
+    else:
+        source_order = None
 
     group_map = None
     if args.group_source:
         group_map = {}
         for it in args.group_source:
             key, val = it.split(':')
-            group_map[key] = val.split(',')
+            for v in val.split(','):
+                group_map[v] = key
 
     splitter = PeptidePoolSplitter(order=source_order, group_map=group_map)
 

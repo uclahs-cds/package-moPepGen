@@ -65,3 +65,48 @@ class TestSplitDatabase(TestCaseIntegration):
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
             'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta'}
         self.assertEqual(files, expected)
+
+    def test_split_fasta_case2(self):
+        """ test splitFasta with sources being grouped """
+        args = self.create_base_args()
+        args.gvf = [
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'reditools/reditools.gvf',
+            self.data_dir/'fusion/star_fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf'
+        ]
+        args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.group_source = ['coding:gSNP,gINDEL']
+        cli.split_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'test_coding.fasta', 'test_RNAEditingSite.fasta',
+            'test_circRNA.fasta', 'test_Remaining.fasta', 'test_circRNA.fasta',
+            'test_Noncoding.fasta'}
+        self.assertEqual(files, expected)
+
+    def test_split_fasta_case3(self):
+        """ test splitFasta with groups and order. """
+        args = self.create_base_args()
+        args.gvf = [
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'reditools/reditools.gvf',
+            self.data_dir/'fusion/star_fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf'
+        ]
+        args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.group_source = ['coding:gSNP,gINDEL']
+        args.order_source = 'RNAEditingSite,coding,circRNA,Fusion'
+        cli.split_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'test_coding.fasta', 'test_RNAEditingSite.fasta',
+            'test_circRNA.fasta', 'test_Remaining.fasta', 'test_circRNA.fasta',
+            'test_Noncoding.fasta'}
+        self.assertEqual(files, expected)
