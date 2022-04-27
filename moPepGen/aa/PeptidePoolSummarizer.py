@@ -46,11 +46,20 @@ MUTUALLY_EXCLUSIVE_PARSERS:Dict[str,List[str]] = {
 }
 
 class NoncanonicalPeptideSummaryTable():
-    """ Summary table for noncaonincal peptides """
+    """ Summary table for noncaonincal peptides
+
+    Attributes:
+        data (Dict[FrozonSet[str], Dict[str,int]]): Mapping from variant source
+            to number of miscleavages to count of peptides.
+        max_misc (int): Max number of miscleavages allowed.
+    """
     KEY_N_TOTAL = 'n_total'
-    def __init__(self, data:Dict[str, Dict[str,int]]=None, max_misc:int=0):
+    def __init__(self, data:Dict[FrozenSet[str], Dict[str,int]]=None,
+            sources:Set[str]=None, max_misc:int=0):
         """ constructor """
+        # mapping: source -> misc -> count
         self.data = data or {}
+        self.sources = sources or set()
         self.max_misc = max_misc
 
     @staticmethod
@@ -86,8 +95,15 @@ class NoncanonicalPeptideSummaryTable():
         misc = len(seq.find_all_enzymatic_cleave_sites(enzyme, exception))
         self.increment_misc(sources, misc)
 
+    def add_source(self, source:str) -> None:
+        """ add source """
+        self.sources.add(source)
+
     def _increment(self, sources:FrozenSet[str], key):
         """ Increment """
+        for source in sources:
+            self.add_source(source)
+
         if sources not in self.data:
             self.data[sources] = {key: 1}
         elif key not in self.data[sources]:
@@ -123,18 +139,24 @@ class NoncanonicalPeptideSummaryTable():
                 entry.append(str(self.get_n_x_misc(key, x)))
         return sep.join(entry)
 
+    def has_source(self, source:str) -> bool:
+        """ Checks if the given source exist in the summary table """
+        return source in self.sources
+
 class PeptidePoolSummarizer():
     """ Summarize the variant peptide pool called by moPepGen callVariant. """
     def __init__(self, peptides:VariantPeptidePool=None,
             summary_table:NoncanonicalPeptideSummaryTable=None,
             label_map:LabelSourceMapping=None, order:Dict[str,int]=None,
-            source_parser_map:Dict[str,str]=None):
+            source_parser_map:Dict[str,str]=None,
+            ignore_missing_source:bool=False):
         """ """
         self.peptides = peptides
         self.summary_table = summary_table or NoncanonicalPeptideSummaryTable()
         self.label_map = label_map or LabelSourceMapping()
         self.order = order or {}
         self.source_parser_map = source_parser_map or {}
+        self.ignore_missing_source = ignore_missing_source
 
     def append_order_noncoding(self):
         """ Add noncoding to the end of order """
@@ -196,6 +218,10 @@ class PeptidePoolSummarizer():
         sources = [it[0] for it in sorted(self.order.items(), key=lambda x:x[1])]
         for i in range(len(sources)):
             for comb in itertools.combinations(sources, i + 1):
+                if self.ignore_missing_source:
+                    # Ignore it if the source isn't present in any GVF given.
+                    if any(not self.summary_table.has_source(k) for k in comb):
+                        continue
                 if self.contains_exclusive_sources(comb):
                     continue
                 key = frozenset(comb)
