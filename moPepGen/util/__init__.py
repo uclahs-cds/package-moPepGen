@@ -9,3 +9,4 @@ from moPepGen.util.brute_force_noncoding import \
 from moPepGen.util.fuzz_test import \
     add_subparser_fuzz_test, fuzz_test
 from moPepGen.util.extract_gvf import add_subparser_extract_gvf, extract_gvf
+from moPepGen.util.ResourcesMonitor import ResourcesMonitor

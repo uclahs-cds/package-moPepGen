@@ -1,7 +1,8 @@
 """Main entry point"""
 import sys
 import argparse
-from moPepGen import cli, __version__
+from moPepGen import cli, __version__, logger
+from moPepGen.util import ResourcesMonitor
 
 CLI_MAIN_USAGE = "moPopGen [-h] [-V] <command> [options]"
 CLI_MAIN_DESCRIPTION = """
@@ -33,6 +34,7 @@ CLI_MAIN_DESCRIPTION = """
 
 def main():
     """ Main entry point """
+    process_monitor = ResourcesMonitor()
 
     parser = argparse.ArgumentParser(
         prog='moPopGen',
@@ -86,6 +88,8 @@ def main():
 
     args.func(args)
 
+    process_monitor.get_resource_usage()
+    logger(process_monitor)
 
 if __name__ == '__main__':
     main()
