@@ -88,8 +88,8 @@ def main():
 
     args.func(args)
 
-    process_monitor.get_resource_usage()
-    logger(process_monitor)
+    resources_usage = process_monitor.get_resource_usage()
+    logger(resources_usage)
 
 if __name__ == '__main__':
     main()
