@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.4.1]
+## [0.4.1] - 2022-04-27
 
 ### Changed
 
@@ -20,6 +20,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - In `filterFasta`, when filter with expression table, changed to filter out peptides smaller than, instead of smaller or equal to, the value of `--quant-cutoff`.
 
 - Fixed the issue that in `splitFasta`, variant sources are not grouped as they are specified by `--group-source` #439
+
+### Added
+
+- Resources usage including memory, CPU and time is now printed to stdout in the end of all command line programs.
 
 ---
 
