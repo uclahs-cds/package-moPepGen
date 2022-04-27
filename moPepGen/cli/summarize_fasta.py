@@ -64,6 +64,11 @@ def add_subparser_summarize_fasta(subparser:argparse._SubParsersAction):
         metavar='<file>',
         default=None
     )
+    p.add_argument(
+        '--ignore-missing-source',
+        action='store_true',
+        help='Ignore the sources missing from input GVF.'
+    )
     common.add_args_cleavage(p, enzyme_only=True)
     common.add_args_reference(p, genome=False, proteome=True)
     common.add_args_quiet(p)
@@ -97,7 +102,10 @@ def summarize_fasta(args:argparse.Namespace) -> None:
     source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\
         if args.order_source else None
 
-    summarizer = PeptidePoolSummarizer(order=source_order)
+    summarizer = PeptidePoolSummarizer(
+        order=source_order,
+        ignore_missing_source=args.ignore_missing_source
+    )
 
     for gvf in args.gvf:
         with open(gvf, 'rt') as handle:

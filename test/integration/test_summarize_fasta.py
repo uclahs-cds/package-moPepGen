@@ -17,6 +17,7 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.order_source = None
         args.cleavage_rule = 'trypsin'
         args.output_path = self.work_dir/'output.txt'
+        args.ignore_missing_source = False
         return args
 
     def test_summarize_fasta_case1(self):
@@ -33,6 +34,27 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
         args.annotation_gtf = self.data_dir/"annotation.gtf"
         args.proteome_fasta = self.data_dir/"translate.fasta"
+        cli.summarize_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {args.output_path.name}
+        self.assertEqual(files, expected)
+
+    def test_summarize_fasta_case2(self):
+        """ summarize fasta case2 with sources missing """
+        args = self.create_base_args()
+        args.gvf = [
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'reditools/reditools.gvf',
+            self.data_dir/'fusion/star_fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf'
+        ]
+        args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.annotation_gtf = self.data_dir/"annotation.gtf"
+        args.proteome_fasta = self.data_dir/"translate.fasta"
+        args.order_source = 'gSNP,gINDEL,RNAEditingSite,Fusion,circRNA,rMATS'
+        args.ignore_missing_source = True
         cli.summarize_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.output_path.name}
