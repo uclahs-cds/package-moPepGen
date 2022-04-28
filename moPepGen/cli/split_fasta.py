@@ -84,7 +84,8 @@ def add_subparser_split_fasta(subparser:argparse._SubParsersAction):
         'max_source_groups, those involving the following source will be split'
         'into additional FASTAs with decreasing priority',
         metavar='<value>',
-        default=None
+        default=None,
+        nargs="*"
     )
 
     common.add_args_reference(p, genome=False, proteome=True)
@@ -141,7 +142,7 @@ def split_fasta(args:argparse.Namespace) -> None:
 
     additional_split = args.additional_split or []
     sep = SPLIT_DATABASE_KEY_SEPARATER
-    additional_split = [{x.split(sep)} for x in additional_split]
+    additional_split = [set(x.split(sep)) for x in additional_split]
     splitter.split(args.max_source_groups, additional_split, anno)
 
     if not args.quiet:
