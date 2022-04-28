@@ -21,9 +21,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed the issue that in `splitFasta`, variant sources are not grouped as they are specified by `--group-source` #439
 
+
 ### Added
 
 - Resources usage including memory, CPU and time is now printed to stdout in the end of all command line programs.
+
+
+### Fixed
+
+- Fixed issue that `--additional-split` not recognized properly in `splitFasta`. #443
+
 
 ---
 

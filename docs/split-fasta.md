@@ -55,6 +55,25 @@ moPepGen splitFasta \
 
 This example outputs three split FASTA filese, `split_Coding.fasta`, `split_RNAEditing.fasta`, and `split_Remaining.fasta`.
 
+### Additional split
+
+Additional split allows you split the records with the source group specified that would otherwise be placed in to the remaining FASTA. See example below.
+
+```bash
+moPepGen splitFasta \
+  --gvf \
+    path/to/gSNP.gvf \
+    path/to/gINDEL.gvf \
+    path/to/reditools.gvf \
+  --variant-peptides path/to/variant.fasta \
+  --index-dir path/to/index \
+  --max-source-groups 1 \
+  --additional-split gSNP-gINDL gSNP-RNAEditing \
+  --output-prefix path/to/split
+```
+
+As result, `split_gSNP.fasta` and `split_gINDLE.fasta` will be written. `split_gSNP-gINDEL.fasta` and `split_gSNP-RNAEditign.fasta` will also be written although the number of variant sources (2) are larger than the value specified through `--max-source-groups`.
+
 ## Arguments
 
 {% with actions=get_arg_data(command) %}
