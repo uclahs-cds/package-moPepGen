@@ -82,7 +82,8 @@ def add_subparser_split_fasta(subparser:argparse._SubParsersAction):
         type=str,
         help='For peptides that were not already split into FASTAs up to'
         'max_source_groups, those involving the following source will be split'
-        'into additional FASTAs with decreasing priority',
+        'into additional FASTAs with decreasing priority. E.g., '
+        "'gSNP-Noncoding', 'gSNP-Noncoding gSNP-gINDEL'",
         metavar='<value>',
         default=None,
         nargs="*"
