@@ -21,6 +21,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed the issue that in `splitFasta`, variant sources are not grouped as they are specified by `--group-source` #439
 
+### Fixed
+
+- Fixed issue that `--additional-split` not recognized properly in `splitFasta`. #443
+
 ---
 
 ## [0.4.0] - 2022-03-17
