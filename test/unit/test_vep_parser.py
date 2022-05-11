@@ -1,11 +1,10 @@
 """ Test the VEP data model """
 import copy
 import unittest
-from moPepGen import err
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
-    TranscriptionStartSiteMutationError
+    TranscriptionStartSiteMutationError, MNVParsingError
 
 
 GENOME_DATA = {
@@ -501,7 +500,7 @@ class TestVEPRecord(unittest.TestCase):
             existing_variation='-',
             extra={}
         )
-        with self.assertRaises(err.MNVParsingError):
+        with self.assertRaises(MNVParsingError):
             vep_record.convert_to_variant_record(anno, genome)
 
 if __name__ == '__main__':
