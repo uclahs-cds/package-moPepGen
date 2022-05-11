@@ -1,6 +1,7 @@
 """ Test the VEP data model """
 import copy
 import unittest
+from moPepGen import err
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
@@ -478,6 +479,30 @@ class TestVEPRecord(unittest.TestCase):
         record = vep_record.convert_to_variant_record(anno, genome)
         self.assertEqual(record.ref, 'CTAT')
         self.assertEqual(record.alt, 'T')
+
+    def test_vep_to_variant_mnv_error(self):
+        """ error is raised for MNV """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:19-22',
+            allele='AAA',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('CCT', 'AAA'),
+            existing_variation='-',
+            extra={}
+        )
+        with self.assertRaises(err.MNVParsingError):
+            vep_record.convert_to_variant_record(anno, genome)
 
 if __name__ == '__main__':
     unittest.main()

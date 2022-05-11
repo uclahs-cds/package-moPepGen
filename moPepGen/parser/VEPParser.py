@@ -5,7 +5,7 @@ from typing import List, Tuple, Iterable, IO
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.err import TranscriptionStopSiteMutationError, \
-    TranscriptionStartSiteMutationError
+    TranscriptionStartSiteMutationError, MNVParsingError
 from moPepGen import seqvar, dna, gtf
 
 
@@ -174,9 +174,7 @@ class VEPRecord():
                 allele = str(Seq(allele).reverse_complement())
             if alt_end - alt_start == 1:
                 if len(allele) > 1:
-                    raise ValueError(
-                        f'Could not recognize the VEP record. Transcript: [{self.feature}]'
-                    )
+                    raise MNVParsingError()
                 ref = str(seq.seq[alt_start])
                 alt = allele
             elif alt_end - alt_start == 2:
@@ -185,9 +183,7 @@ class VEPRecord():
                 alt = ref + allele
             else:
                 if len(allele) > 1:
-                    raise ValueError(
-                        f'Could not recognize the VEP record. Transcript: [{self.feature}]'
-                    )
+                    raise MNVParsingError()
                 ref = str(seq.seq[alt_start:alt_end])
                 alt = allele
 

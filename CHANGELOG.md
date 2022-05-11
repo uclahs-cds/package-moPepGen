@@ -9,6 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.4.2] - 2022-05-11
+
+### Changed
+
+- A warning is raised in `parseVEP` when tryping to parse a MNV (multi-nucleotide variant) and skip the record instead of raising an error. #447
+
 ## [0.4.1] - 2022-04-27
 
 ### Changed
