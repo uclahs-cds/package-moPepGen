@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.4.2] - 2002-05-11
+
+- Fixed `summarizeFasta` that source order of `Noncoding` was not recognized. #449
+
 ## [0.4.1] - 2022-04-27
 
 ### Changed

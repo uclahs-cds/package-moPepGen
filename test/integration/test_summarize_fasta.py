@@ -53,7 +53,7 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
         args.annotation_gtf = self.data_dir/"annotation.gtf"
         args.proteome_fasta = self.data_dir/"translate.fasta"
-        args.order_source = 'gSNP,gINDEL,RNAEditingSite,Fusion,circRNA,rMATS'
+        args.order_source = 'gSNP,gINDEL,RNAEditingSite,Fusion,circRNA,rMATS,Noncoding'
         args.ignore_missing_source = True
         cli.summarize_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
