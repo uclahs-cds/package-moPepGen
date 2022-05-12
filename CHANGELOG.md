@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to the tool_name Docker file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
@@ -15,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - A warning is raised in `parseVEP` when tryping to parse a MNV (multi-nucleotide variant) and skip the record instead of raising an error. #447
 
+- Fixed `summarizeFasta` that source order of `Noncoding` was not recognized. #449
+
 ## [0.4.1] - 2022-04-27
 
 ### Changed
@@ -27,16 +30,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed the issue that in `splitFasta`, variant sources are not grouped as they are specified by `--group-source` #439
 
-
 ### Added
 
 - Resources usage including memory, CPU and time is now printed to stdout in the end of all command line programs.
 
-
 ### Fixed
 
 - Fixed issue that `--additional-split` not recognized properly in `splitFasta`. #443
-
 
 ---
 
