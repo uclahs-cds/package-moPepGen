@@ -197,7 +197,7 @@ class PeptidePoolSummarizer():
         """ Checks whether the given sources contains any mutually exclusive
         parsers. """
         for source in sources:
-            if source is NONCODING_SOURCE:
+            if source == NONCODING_SOURCE:
                 continue
             parser = self.source_parser_map[source]
             if parser not in MUTUALLY_EXCLUSIVE_PARSERS:
