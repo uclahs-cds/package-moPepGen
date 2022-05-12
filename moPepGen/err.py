@@ -92,6 +92,13 @@ class GeneNotFoundError(Exception):
         msg = f"Gene {gene_id} not found."
         super().__init__(msg)
 
+class MNVParsingError(Exception):
+    """ Error to be raised when trying to parse MNVs (multi-nucleotide variant). """
+    def __init__(self):
+        """ constructor """
+        msg = "Trying to parse a MNV, which is currently unsupported."
+        super().__init__(msg)
+
 def warning(msg:str) -> None:
     """ print a warning message """
     logger(f"[ !!! moPepGen WARNING !!! ] {msg}")

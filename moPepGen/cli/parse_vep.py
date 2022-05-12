@@ -10,7 +10,7 @@ import gzip
 from typing import Dict, List
 from pathlib import Path
 from moPepGen.parser import VEPParser
-from moPepGen.err import TranscriptionStopSiteMutationError, \
+from moPepGen.err import MNVParsingError, TranscriptionStopSiteMutationError, \
     TranscriptionStartSiteMutationError, warning
 from moPepGen import seqvar, logger
 from moPepGen.cli import common
@@ -73,6 +73,11 @@ def parse_vep(args:argparse.Namespace) -> None:
                 except TranscriptionStopSiteMutationError:
                     continue
                 except TranscriptionStartSiteMutationError:
+                    continue
+                except MNVParsingError:
+                    warning(
+                        f"MNVs are not currently supported. Skipping record: {record}"
+                    )
                     continue
 
                 vep_records[transcript_id].append(record)
