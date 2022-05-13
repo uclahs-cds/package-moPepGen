@@ -403,6 +403,10 @@ class VariantRecord():
 
     def to_end_inclusion(self, seq:DNASeqRecord):
         """ Convert the variant to start exlusion and end inclusion format """
+        if self.alt.startswith('<'):
+            raise ValueError(
+                f'This variant should not be converted to end inclusion: {self}'
+            )
         location = FeatureLocation(
             seqname=self.location.seqname,
             start=self.location.start + 1,

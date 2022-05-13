@@ -23,7 +23,7 @@ def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
         for (query_start, query_end), (ref_start, ref_end) in val[3]:
             loc = MatchedLocation(
                 query=FeatureLocation(start=query_start, end=query_end),
-                ref=FeatureLocation(start=ref_start, end=ref_end)
+                ref=FeatureLocation(start=ref_start, end=ref_end, seqname=_id)
             )
             locs.append(loc)
 

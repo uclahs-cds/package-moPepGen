@@ -9,7 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.4.2] - 2002-05-11
+## [0.5.0] - 2022-05-13
+
+- Fixed `callVariant` that it failed when the breakpoint of a fusion is right at the end of the start codon because it tried convert to end inclusion. #454
+
+- Fixed `callVariant` that no variant peptides are called when the first variant is a fusion. #454
+
+## [0.4.2] - 2022-05-11
 
 - Fixed `summarizeFasta` that source order of `Noncoding` was not recognized. #449
 

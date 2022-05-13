@@ -774,15 +774,16 @@ class PeptideVariantGraph():
         in_cds = cursor.in_cds
         orf = cursor.orf
         start_gain = cursor.start_gain
-        if target_node.reading_frame_index != self.known_reading_frame_index() or\
-                target_node.subgraph_id != self.id:
+        if target_node.reading_frame_index != self.known_reading_frame_index():
             for out_node in target_node.out_nodes:
                 cur = PVGCursor(target_node, out_node, False, orf, [])
                 traversal.stage(target_node, out_node, cur)
             return
 
         start_index = target_node.seq.get_query_index(
-            traversal.known_orf_aa[0])
+            ref_index=traversal.known_orf_aa[0],
+            seqname=self.id
+        )
         if start_index == -1:
             for out_node in target_node.out_nodes:
                 cur = PVGCursor(
