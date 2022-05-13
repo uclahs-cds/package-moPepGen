@@ -41,6 +41,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
 
         """
         self.seq = seq
+        self.id = _id
         if self.seq and not self.seq.locations:
             self.add_default_sequence_locations()
         self.attrs = attrs

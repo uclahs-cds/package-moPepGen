@@ -51,9 +51,9 @@ class ThreeFrameTVG():
             transcript_id (str)
         """
         self.seq = seq
+        self.id = _id
         if self.seq and not self.seq.locations:
             self.add_default_sequence_locations()
-        self.id = _id
         self.root = root or self.create_node(seq=None)
         self.reading_frames = reading_frames or [None, None, None]
         if reading_frames and len(reading_frames) != 3:
@@ -74,7 +74,7 @@ class ThreeFrameTVG():
         """ Add default sequence locations """
         self.seq.locations = [MatchedLocation(
             query=FeatureLocation(start=0, end=len(self.seq)),
-            ref=FeatureLocation(start=0, end=len(self.seq))
+            ref=FeatureLocation(start=0, end=len(self.seq), seqname=self.id)
         )]
 
     def update_node_level(self, level:int):
@@ -902,10 +902,16 @@ class ThreeFrameTVG():
             # skipping start lost mutations
             start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
 
-            if variant.location.start == start_index - 1 and variant.is_insertion():
+            if variant.location.start == start_index - 1 and variant.is_insertion() and \
+                    not variant.is_fusion():
                 variant.to_end_inclusion(self.seq)
 
-            if variant.location.start < start_index:
+            # Skip variants that the position is smaller than the first NT
+            # after start codon. Exception for fusion, that if the donor
+            # breakpoint is at the last NT of the start codon it is retained
+            # because it won't break the start codon.
+            if variant.location.start < start_index and not \
+                    (variant.is_fusion() and variant.location.start == start_index - 1):
                 variant = next(variant_iter, None)
                 continue
 

@@ -494,7 +494,7 @@ class TVGNode():
             dna_ref_codon_start = loc.ref.start + dna_query_codon_start - query.start
             ref_start = math.ceil((dna_ref_codon_start - self.reading_frame_index) / 3)
             ref_end = ref_start + len(query)
-            ref = FeatureLocation(start=ref_start, end=ref_end)
+            ref = FeatureLocation(start=ref_start, end=ref_end, seqname=loc.ref.seqname)
             locations.append(MatchedLocation(query=query, ref=ref))
 
         seq.__class__ = aa.AminoAcidSeqRecordWithCoordinates

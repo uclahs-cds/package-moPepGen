@@ -104,6 +104,10 @@ class PVGNode():
         for node in copy.copy(self.out_nodes):
             self.remove_out_edge(node)
 
+    def is_inbond_of(self, node:PVGNode) -> bool:
+        """ Checks if self is the inbond node of a given node. """
+        return node in self.out_nodes
+
     def is_orphan(self) -> bool:
         """ Checks if the node is orphan (no inbond or outbond node) """
         return not self.in_nodes and not self.out_nodes
