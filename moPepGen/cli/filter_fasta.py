@@ -7,6 +7,7 @@ import argparse
 from pathlib import Path
 import pickle
 from typing import IO, Dict, List
+from Bio import SeqIO
 from moPepGen import logger
 from moPepGen.aa import VariantPeptidePool
 from moPepGen.aa.expasy_rules import EXPASY_RULES
@@ -33,6 +34,13 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
         ' callVariant or callNoncoding.'
     )
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
+    p.add_argument(
+        '--denylist',
+        help='Path to the peptide sequence deny list. Valid formats: [".fasta"]',
+        type=Path,
+        metavar='<file>',
+        default=None
+    )
     p.add_argument(
         '--exprs-table',
         type=Path,
@@ -165,11 +173,18 @@ def filter_fasta(args:argparse.Namespace) -> None:
     if not args.quiet:
         logger('Gene expression table loaded.')
 
+    if args.denylist is not None:
+        with open(args.denylist, 'rt') as handle:
+            denylist = {seq.seq for seq in SeqIO.parse(handle, 'fasta')}
+    else:
+        denylist = None
+
     filtered_pool = pool.filter(
         exprs=exprs, cutoff=args.quant_cutoff, coding_transcripts=coding_tx,
         keep_all_noncoding=args.keep_all_noncoding,
         keep_all_coding=args.keep_all_coding, enzyme=args.enzyme,
-        miscleavage_range=miscleavage_range
+        miscleavage_range=miscleavage_range,
+        denylist=denylist
     )
 
     filtered_pool.write(args.output_path)

@@ -10,7 +10,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.5.1] - 2022-05-22
+
+### Added
+
+- An option `--denylist` is added to `filterFasta` to accept a FASTA file to exclude peptide sequences from it.
+
 ## [0.5.0] - 2022-05-13
+
+### Changed
 
 - Fixed `callVariant` that it failed when the breakpoint of a fusion is right at the end of the start codon because it tried convert to end inclusion. #454
 
