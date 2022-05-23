@@ -157,3 +157,21 @@ class TestFilterFasta(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_filtered.fasta'}
         self.assertEqual(files, expected)
+
+    def test_filter_fasta_denylist_only(self):
+        """ Test filterFasta with only a given denylist no exprs_table """
+        args = self.generate_default_args()
+        args.input_path = Path('test/files/vep/vep.fasta')
+        args.exprs_table = None
+        args.skip_lines = 1
+        args.delimiter = '\t'
+        args.tx_id_col = '1'
+        args.quant_col = '5'
+        args.quant_cutoff = 100
+        args.keep_all_coding = False
+        args.keep_all_noncoding = False
+        args.denylist = Path('test/files/peptides/noncoding.fasta')
+        cli.filter_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_filtered.fasta'}
+        self.assertEqual(files, expected)

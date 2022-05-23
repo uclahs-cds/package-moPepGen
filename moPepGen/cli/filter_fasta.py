@@ -36,7 +36,10 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--denylist',
-        help='Path to the peptide sequence deny list. Valid formats: [".fasta"]',
+        help='Path to the peptide sequence deny list. When using noncoding'
+        ' peptides as denylist, make sure it is no also passed as a input FASTA'
+        ' file, because all peptide sequences will be removed. Valid formats:'
+        ' [".fasta"]',
         type=Path,
         metavar='<file>',
         default=None
