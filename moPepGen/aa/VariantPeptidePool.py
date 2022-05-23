@@ -73,12 +73,14 @@ class VariantPeptidePool():
     def filter(self, exprs:Dict[str,int]=None, cutoff:float=None,
             coding_transcripts:List[str]=None, keep_all_noncoding:bool=False,
             keep_all_coding:bool=False, enzyme:str='trypsin',
-            miscleavage_range:Tuple[int,int]=(None, None)
-            ) -> VariantPeptidePool:
+            miscleavage_range:Tuple[int,int]=(None, None,),
+            denylist:Set[Seq]=None) -> VariantPeptidePool:
         """ Filter variant peptides according to gene expression. """
         label_delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         filtered_pool = VariantPeptidePool()
         for peptide in self.peptides:
+            if denylist and peptide.seq in denylist:
+                continue
             if any(x is not None for x in miscleavage_range):
                 exception = 'trypsin_exception' if enzyme == 'trypsin' else None
                 misc = peptide.find_all_enzymatic_cleave_sites(enzyme, exception)

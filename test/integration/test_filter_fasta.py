@@ -22,6 +22,7 @@ class TestFilterFasta(TestCaseIntegration):
         args.quiet = True
         args.enzyme = 'trypsin'
         args.miscleavages = None
+        args.denylist = None
         return args
 
     def test_filter_fasta_cli(self):
@@ -120,7 +121,7 @@ class TestFilterFasta(TestCaseIntegration):
         self.assertTrue(all(x in seqs_raw for x in seqs_filtered))
 
     def test_filter_fasta_noncoding_case2(self):
-        """ test filterFasta to filer noncodign peptides that no sequence should
+        """ test filterFasta to filer noncoding peptides that no sequence should
         pass. """
         args = self.generate_default_args()
         args.input_path = Path('test/files/peptides/noncoding.fasta')
@@ -138,3 +139,39 @@ class TestFilterFasta(TestCaseIntegration):
         self.assertEqual(files, expected)
         peptides_filtered = list(SeqIO.parse(args.output_path, 'fasta'))
         self.assertEqual(len(peptides_filtered), 0)
+
+    def test_filter_fasta_denylist(self):
+        """ Test filterFasta with given denylist """
+        args = self.generate_default_args()
+        args.input_path = Path('test/files/vep/vep.fasta')
+        args.exprs_table = Path('test/files/rsem/rsem.txt')
+        args.skip_lines = 1
+        args.delimiter = '\t'
+        args.tx_id_col = '1'
+        args.quant_col = '5'
+        args.quant_cutoff = 100
+        args.keep_all_coding = False
+        args.keep_all_noncoding = False
+        args.denylist = Path('test/files/peptides/noncoding.fasta')
+        cli.filter_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_filtered.fasta'}
+        self.assertEqual(files, expected)
+
+    def test_filter_fasta_denylist_only(self):
+        """ Test filterFasta with only a given denylist no exprs_table """
+        args = self.generate_default_args()
+        args.input_path = Path('test/files/vep/vep.fasta')
+        args.exprs_table = None
+        args.skip_lines = 1
+        args.delimiter = '\t'
+        args.tx_id_col = '1'
+        args.quant_col = '5'
+        args.quant_cutoff = 100
+        args.keep_all_coding = False
+        args.keep_all_noncoding = False
+        args.denylist = Path('test/files/peptides/noncoding.fasta')
+        cli.filter_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_filtered.fasta'}
+        self.assertEqual(files, expected)
