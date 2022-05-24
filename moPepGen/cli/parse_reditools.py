@@ -23,7 +23,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         name='parseREDItools',
         help='Parse REDItools result for moPepGen to call variant peptides.',
         description='Parse the REDItools result to a GVF format of variant'
-        'records for moPepGen to call variant peptides. The genome',
+        ' records for moPepGen to call variant peptides. The genome',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     common.add_args_input_path(
@@ -35,8 +35,8 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         '--transcript-id-column',
         type=int,
         help='The column index for transcript ID. If your REDItools table does'
-        'not contains it, use the AnnotateTable.py from the REDItools'
-        'package.',
+        ' not contains it, use the AnnotateTable.py from the REDItools'
+        ' package.',
         default=17,
         metavar='<number>'
     )
@@ -138,4 +138,4 @@ def parse_reditools(args:argparse.Namespace) -> None:
     seqvar.io.write(all_records, output_path, metadata)
 
     if not args.quiet:
-        logger("Variants written to disk.")
+        logger('Variants written to disk.')
