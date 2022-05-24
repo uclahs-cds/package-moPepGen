@@ -26,15 +26,15 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     p:argparse.ArgumentParser = subparsers.add_parser(
         name='parseVEP',
         help='Parse VEP output for moPepGen to call variant peptides.',
-        description="Parse VEP output tsv to the GVF format of variant records"
-        "for moPepGen to call variant peptides. The genome assembly FASTA and"
-        "annotation GTF must come from the same GENCODE/ENSEMBL version, and"
-        "must the consistent with the VEP output.",
+        description='Parse VEP output tsv to the GVF format of variant records'
+        ' for moPepGen to call variant peptides. The genome assembly FASTA and'
+        ' annotation GTF must come from the same GENCODE/ENSEMBL version, and'
+        ' must the consistent with the VEP output.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     common.add_args_input_path(
         parser=p, formats=INPUT_FILE_FORMATS, plural=True,
-        message="File path to the VEP output TXT file."
+        message='File path to the VEP output TXT file.'
     )
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     common.add_args_source(p)

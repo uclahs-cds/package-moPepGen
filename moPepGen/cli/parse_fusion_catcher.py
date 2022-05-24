@@ -21,7 +21,7 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
         name='parseFusionCatcher',
         help='Parse FusionCatcher result for moPepGen to call variant peptides.',
         description='Parse the FusionCatcher result to GVF format of variant'
-        'records for moPepGen to call variant peptides. The genome',
+        ' records for moPepGen to call variant peptides. The genome',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     common.add_args_input_path(
