@@ -21,7 +21,7 @@ def add_subparser_parse_arriba(subparsers:argparse._SubParsersAction):
         name='parseArriba',
         help='Parse Arriba result for moPepGen to call variant peptides.',
         description='Parse the Arriba result to GVF format of variant'
-        'records for moPepGen to call variant peptides.',
+        ' records for moPepGen to call variant peptides.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     common.add_args_input_path(

@@ -41,7 +41,7 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
         name='parseRMATS',
         help='Parse rMATS result for moPepGen to call variant peptides.',
         description='Parse the rMATS result to GVF format of variant'
-        'records for moPepGen to call variant peptides.',
+        ' records for moPepGen to call variant peptides.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
@@ -83,15 +83,15 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--min-ijc',
         type=int,
-        help="Minimal junction read count for the inclusion version to be"
-        " analyzed.",
+        help='Minimal junction read count for the inclusion version to be'
+        ' analyzed.',
         default=1
     )
     p.add_argument(
         '--min-sjc',
         type=int,
-        help="Minimal junction read count for the skipped version to be"
-        " analyzed.",
+        help='Minimal junction read count for the skipped version to be'
+        ' analyzed.',
         default=1
     )
 
@@ -165,4 +165,4 @@ def parse_rmats(args:argparse.Namespace) -> None:
     seqvar.io.write(variants_sorted, output_path, metadata)
 
     if not args.quiet:
-        logger("Variants written to disk.")
+        logger('Variants written to disk.')

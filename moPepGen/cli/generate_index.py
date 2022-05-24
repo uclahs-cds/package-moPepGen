@@ -22,7 +22,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
         name='generateIndex',
         help='Generate genome and proteome index files for moPepGen',
         description='Generate genome and proteome index files for moPepGen'
-        'parsers and peptide caller.',
+        ' parsers and peptide caller.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(

@@ -68,8 +68,8 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     p.add_argument(
         '--tx-id-col',
         type=str,
-        help="The index for transcript ID in the RNAseq quantification results."
-        " Index is 1-based.",
+        help='The index for transcript ID in the RNAseq quantification results.'
+        ' Index is 1-based.',
         metavar='<number>'
     )
     p.add_argument(
