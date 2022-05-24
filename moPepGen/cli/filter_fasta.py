@@ -179,6 +179,8 @@ def filter_fasta(args:argparse.Namespace) -> None:
     if args.denylist is not None:
         with open(args.denylist, 'rt') as handle:
             denylist = {seq.seq for seq in SeqIO.parse(handle, 'fasta')}
+        if not args.quiet:
+            logger('Peptide denylist loaded.')
     else:
         denylist = None
 
