@@ -170,15 +170,17 @@ def filter_fasta(args:argparse.Namespace) -> None:
                 quant_col=quant_col,
                 delim=args.delimiter
             )
+
+        if not args.quiet:
+            logger('Gene expression table loaded.')
     else:
         exprs = None
-
-    if not args.quiet:
-        logger('Gene expression table loaded.')
 
     if args.denylist is not None:
         with open(args.denylist, 'rt') as handle:
             denylist = {seq.seq for seq in SeqIO.parse(handle, 'fasta')}
+        if not args.quiet:
+            logger('Peptide denylist loaded.')
     else:
         denylist = None
 
