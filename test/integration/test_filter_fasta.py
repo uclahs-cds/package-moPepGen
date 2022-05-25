@@ -23,6 +23,7 @@ class TestFilterFasta(TestCaseIntegration):
         args.enzyme = 'trypsin'
         args.miscleavages = None
         args.denylist = None
+        args.keep_canonical = False
         return args
 
     def test_filter_fasta_cli(self):

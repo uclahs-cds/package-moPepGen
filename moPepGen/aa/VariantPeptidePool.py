@@ -74,13 +74,12 @@ class VariantPeptidePool():
             coding_transcripts:List[str]=None, keep_all_noncoding:bool=False,
             keep_all_coding:bool=False, enzyme:str='trypsin',
             miscleavage_range:Tuple[int,int]=(None, None,),
-            denylist:Set[Seq]=None) -> VariantPeptidePool:
+            denylist:Set[Seq]=None, keep_canonical:bool=False) -> VariantPeptidePool:
         """ Filter variant peptides according to gene expression. """
         label_delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         filtered_pool = VariantPeptidePool()
         for peptide in self.peptides:
-            if denylist and peptide.seq in denylist:
-                continue
+            # Filter by miscleavages
             if any(x is not None for x in miscleavage_range):
                 exception = 'trypsin_exception' if enzyme == 'trypsin' else None
                 misc = peptide.find_all_enzymatic_cleave_sites(enzyme, exception)
@@ -88,7 +87,10 @@ class VariantPeptidePool():
                     continue
                 if miscleavage_range[1] is not None and len(misc) > miscleavage_range[1]:
                     continue
+
             peptide_entries = VariantPeptideInfo.from_variant_peptide_minimal(peptide)
+
+            is_in_denylist = denylist is not None and peptide.seq in denylist
             keep = []
             for entry in peptide_entries:
                 all_noncoding = not any(x in coding_transcripts
@@ -96,11 +98,18 @@ class VariantPeptidePool():
                 all_coding = all(x in coding_transcripts
                     for x in entry.get_transcript_ids())
 
-                if keep_all_noncoding and all_noncoding:
+                is_canonical = ((not entry.is_circ_rna()) and \
+                    entry.get_transcript_ids()[0] in coding_transcripts)
+
+                if is_in_denylist and (not (keep_canonical and is_canonical)):
+                    should_keep = False
+
+                elif keep_all_noncoding and all_noncoding:
                     should_keep = True
 
                 elif keep_all_coding and all_coding:
                     should_keep = True
+
                 else:
                     if exprs is not None:
                         tx_ids = entry.get_transcript_ids()

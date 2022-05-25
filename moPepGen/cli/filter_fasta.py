@@ -98,6 +98,12 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
         help='Keep all noncoding genes, regardless of their expression level.'
     )
     p.add_argument(
+        '--keep-canonical',
+        action='store_true',
+        help='Keep peptides called from canonical ORFs. Only useful together'
+        ' with denylist.'
+    )
+    p.add_argument(
         '--miscleavages',
         type=str,
         help='Range of miscleavages per peptide to allow. Min and max are'
@@ -188,8 +194,8 @@ def filter_fasta(args:argparse.Namespace) -> None:
         exprs=exprs, cutoff=args.quant_cutoff, coding_transcripts=coding_tx,
         keep_all_noncoding=args.keep_all_noncoding,
         keep_all_coding=args.keep_all_coding, enzyme=args.enzyme,
-        miscleavage_range=miscleavage_range,
-        denylist=denylist
+        miscleavage_range=miscleavage_range, denylist=denylist,
+        keep_canonical=args.keep_canonical
     )
 
     filtered_pool.write(args.output_path)

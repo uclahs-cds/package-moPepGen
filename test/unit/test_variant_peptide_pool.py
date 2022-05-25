@@ -1,6 +1,7 @@
 """ Test Module for VariantPeptidePool """
 import unittest
 from test.unit import create_aa_record
+from Bio.Seq import Seq
 from moPepGen.aa import VariantPeptidePool
 
 
@@ -122,3 +123,57 @@ class TestVariantPeptidePool(unittest.TestCase):
             keep_all_coding=False, keep_all_noncoding=True
         )
         self.assertEqual(len(filtered.peptides), 4)
+
+    def test_filter_denylist(self):
+        """ Filter with denylist """
+        data = [
+            ['SSSSSSSSSR', 'ENST0001|SNV-100-A-T|1'],
+            ['SSSSSSSSAR', 'ENST0002|SNV-100-A-T|1'],
+            ['SSSSSSSSCR', 'ENST0003|SNV-100-A-T|1'],
+            ['SSSSSSSSGR', 'ENST0004|SNV-100-A-T|1'],
+        ]
+        peptides = {create_aa_record(*x) for x in data}
+        denylist_data = [
+            'SSSSSSSSAR', 'SSSSSSSSGR'
+        ]
+        denylist = {Seq(x) for x in denylist_data}
+        exprs = None
+        coding_tx = ['ENST0001', 'ENST0003']
+        pool = VariantPeptidePool(peptides=peptides)
+        filtered = pool.filter(
+            exprs=exprs, cutoff=8, coding_transcripts=coding_tx,
+            keep_all_coding=False, keep_all_noncoding=True,
+            denylist=denylist, keep_canonical=False
+        )
+        self.assertEqual(len(filtered.peptides), 2)
+        self.assertEqual(
+            {str(x.seq) for x in filtered.peptides},
+            {'SSSSSSSSSR', 'SSSSSSSSCR'}
+        )
+
+    def test_filter_denylist_keep_canonical(self):
+        """ Filter with denylist and keep_canonical = True """
+        data = [
+            ['SSSSSSSSSR', 'ENST0001|SNV-100-A-T|1'],
+            ['SSSSSSSSAR', 'ENST0002|SNV-100-A-T|1'],
+            ['SSSSSSSSCR', 'ENST0003|SNV-100-A-T|1'],
+            ['SSSSSSSSGR', 'ENST0004|SNV-100-A-T|1'],
+        ]
+        peptides = {create_aa_record(*x) for x in data}
+        denylist_data = [
+            'SSSSSSSSAR', 'SSSSSSSSGR'
+        ]
+        denylist = {Seq(x) for x in denylist_data}
+        exprs = None
+        coding_tx = ['ENST0001', 'ENST0002', 'ENST0003']
+        pool = VariantPeptidePool(peptides=peptides)
+        filtered = pool.filter(
+            exprs=exprs, cutoff=8, coding_transcripts=coding_tx,
+            keep_all_coding=False, keep_all_noncoding=True,
+            denylist=denylist, keep_canonical=True
+        )
+        self.assertEqual(len(filtered.peptides), 3)
+        self.assertEqual(
+            {str(x.seq) for x in filtered.peptides},
+            {'SSSSSSSSSR', 'SSSSSSSSAR', 'SSSSSSSSCR'}
+        )
