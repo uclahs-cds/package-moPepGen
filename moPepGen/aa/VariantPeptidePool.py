@@ -101,7 +101,7 @@ class VariantPeptidePool():
                 is_canonical = ((not entry.is_circ_rna()) and \
                     entry.get_transcript_ids()[0] in coding_transcripts)
 
-                if is_in_denylist and ((not keep_canonical) or is_canonical):
+                if is_in_denylist and (not (keep_canonical and is_canonical)):
                     should_keep = False
 
                 elif keep_all_noncoding and all_noncoding:

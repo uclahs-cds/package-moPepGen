@@ -146,6 +146,10 @@ class TestVariantPeptidePool(unittest.TestCase):
             denylist=denylist, keep_canonical=False
         )
         self.assertEqual(len(filtered.peptides), 2)
+        self.assertEqual(
+            {str(x.seq) for x in filtered.peptides},
+            {'SSSSSSSSSR', 'SSSSSSSSCR'}
+        )
 
     def test_filter_denylist_keep_canonical(self):
         """ Filter with denylist and keep_canonical = True """
@@ -169,3 +173,7 @@ class TestVariantPeptidePool(unittest.TestCase):
             denylist=denylist, keep_canonical=True
         )
         self.assertEqual(len(filtered.peptides), 3)
+        self.assertEqual(
+            {str(x.seq) for x in filtered.peptides},
+            {'SSSSSSSSSR', 'SSSSSSSSAR', 'SSSSSSSSCR'}
+        )

@@ -86,7 +86,7 @@ moPepGen fitlerFasta \
   --denylist path/to/denylist.fasta
 ```
 
-Use `--keep-canonical` option to keep peptides that are called from canonical ORFs even if they present in the denylist. Canonical ORFs include coding transcripts with mutation(s) and fusion transcripts that the upstream transcript is coding. Peptides called from circRNAs are considered as noncanonical ORFs.
+Use the `--keep-canonical` option to keep peptides that are called from canonical ORFs even if they are in the denylist. Canonical ORFs include coding transcripts with mutation(s) and fusion transcripts where the upstream transcript is coding. Peptides called from circRNAs are considered noncanonical ORFs.
 
 ```bash
 moPepGen filterFasta \
