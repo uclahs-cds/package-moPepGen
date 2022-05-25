@@ -86,6 +86,16 @@ moPepGen fitlerFasta \
   --denylist path/to/denylist.fasta
 ```
 
+Use `--keep-canonical` option to keep peptides that are called from canonical ORFs even if they present in the denylist. Canonical ORFs include coding transcripts with mutation(s) and fusion transcripts that the upstream transcript is coding. Peptides called from circRNAs are considered as noncanonical ORFs.
+
+```bash
+moPepGen filterFasta \
+  --input-path path/to/variant_peptides.fasta \
+  --output-path path/to/variant_peptides_filter.fasta \
+  --denylist path/to/denylist.fasta \
+  --keep-canonical
+```
+
 ### Complex Filtering
 
 Sometimes we want more complex filtering strategy. In the example below, we want to first remove any variant peptides that overlap with any noncoding peptide, and next we filter again based on the expression level.
