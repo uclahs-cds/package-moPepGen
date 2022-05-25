@@ -125,7 +125,7 @@ class TestVariantPeptidePool(unittest.TestCase):
         self.assertEqual(len(filtered.peptides), 4)
 
     def test_filter_denylist(self):
-        """ """
+        """ Filter with denylist """
         data = [
             ['SSSSSSSSSR', 'ENST0001|SNV-100-A-T|1'],
             ['SSSSSSSSAR', 'ENST0002|SNV-100-A-T|1'],
@@ -148,7 +148,7 @@ class TestVariantPeptidePool(unittest.TestCase):
         self.assertEqual(len(filtered.peptides), 2)
 
     def test_filter_denylist_keep_canonical(self):
-        """ """
+        """ Filter with denylist and keep_canonical = True """
         data = [
             ['SSSSSSSSSR', 'ENST0001|SNV-100-A-T|1'],
             ['SSSSSSSSAR', 'ENST0002|SNV-100-A-T|1'],
@@ -169,4 +169,3 @@ class TestVariantPeptidePool(unittest.TestCase):
             denylist=denylist, keep_canonical=True
         )
         self.assertEqual(len(filtered.peptides), 3)
-
