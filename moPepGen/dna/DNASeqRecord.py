@@ -302,9 +302,11 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
         if left_locs and right_locs:
             lhs = self.locations[-1]
             rhs = other.locations[0].shift(len(self))
-            if lhs.ref.end == rhs.ref.start and lhs.query.end == rhs.query.start:
+            if lhs.ref.end == rhs.ref.start and lhs.query.end == rhs.query.start \
+                    and lhs.ref.seqname == rhs.ref.seqname:
                 query = FeatureLocation(start=lhs.query.start, end=rhs.query.end)
-                ref = FeatureLocation(start=lhs.ref.start, end=rhs.ref.end)
+                ref = FeatureLocation(start=lhs.ref.start, end=rhs.ref.end,
+                    seqname=lhs.ref.seqname)
                 new_loc = MatchedLocation(query=query, ref=ref)
                 right_locs.pop(0)
                 left_locs[-1] = new_loc
