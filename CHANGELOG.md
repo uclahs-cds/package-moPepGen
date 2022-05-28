@@ -10,11 +10,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+---
+
+## [0.6.0] - 2022-05-28
+
+### Fixed
+
+- `callVariant` very slow on certain cases when the transcript is large. #464
+
+- `callVariant` failed to find start codon for transcript with fusion being the first variant and the donor breakpoint is intronic. #465
+
+---
+
 ## [0.5.1] - 2022-05-22
 
 ### Added
 
 - An option `--denylist` is added to `filterFasta` to accept a FASTA file to exclude peptide sequences from it.
+
+---
 
 ## [0.5.0] - 2022-05-13
 
@@ -24,6 +38,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that no variant peptides are called when the first variant is a fusion. #454
 
+---
+
 ## [0.4.2] - 2022-05-11
 
 ### Changed
@@ -31,6 +47,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - A warning is raised in `parseVEP` when tryping to parse a MNV (multi-nucleotide variant) and skip the record instead of raising an error. #447
 
 - Fixed `summarizeFasta` that source order of `Noncoding` was not recognized. #449
+
+---
 
 ## [0.4.1] - 2022-04-27
 
