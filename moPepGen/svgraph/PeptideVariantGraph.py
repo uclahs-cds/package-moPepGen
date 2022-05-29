@@ -100,16 +100,19 @@ class PeptideVariantGraph():
                 than last. Defaults to False
         """
         first_node = node
-        site = node.seq.find_first_cleave_or_stop_site(
+        exception_sites = node.seq.get_enzymatic_cleave_exception_sites(self.exception)
+        sites = node.seq.find_all_cleave_and_stop_sites(
             rule=self.rule,
-            exception=self.exception
+            exception=self.exception,
+            exception_sites=exception_sites
         )
-        while site > -1:
-            node = node.split_node(site, cleavage=True)
-            site = node.seq.find_first_cleave_or_stop_site(
-                rule=self.rule,
-                exception=self.exception
-            )
+        sites = deque(sites)
+        shift = 0
+        while len(sites) > 0:
+            site = sites.popleft()
+            shifted_site = site - shift
+            shift = site
+            node = node.split_node(shifted_site, cleavage=True)
         return first_node if return_first else node
 
     def find_nodes_with_seq(self, seq:str) -> List[PVGNode]:

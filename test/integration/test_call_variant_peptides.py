@@ -5,8 +5,10 @@ from pathlib import Path
 import sys
 import subprocess as sp
 from test.integration import TestCaseIntegration
+from test.unit import create_variant
 from Bio import SeqIO
-from moPepGen import cli
+from moPepGen.seqvar.GVFMetadata import GVFMetadata
+from moPepGen import cli, seqvar
 
 
 def create_base_args() -> argparse.Namespace:
@@ -152,7 +154,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide_fusion_only(self):
-        """ Test variant peptide calling with fusion and circRNA """
+        """ Test variant peptide calling with fusion only. """
         args = create_base_args()
         args.input_path = [
             self.data_dir/'fusion'/'fusion.gvf'
@@ -165,6 +167,35 @@ class TestCallVariantPeptides(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta'}
         self.assertEqual(files, expected)
+        seqs = list(SeqIO.parse(args.output_path, 'fasta'))
+        self.assertTrue(len(seqs) > 0)
+
+    def test_call_variant_peptide_fusion_donor_intronic(self):
+        """ Test case that the donor breakpoint is intronic """
+        attrs={
+            'ACCEPTER_GENE_ID': 'ENSG00000244486.9',
+            'ACCEPTER_TRANSCRIPT_ID': 'ENST00000622235.5',
+            'ACCEPTER_POSITION': '50',
+            'TRANSCRIPT_ID': 'ENST00000642151.1'
+        }
+        variant = create_variant(
+            start=94, end=95, ref='A', alt='<FUSION>', _type='Fusion',
+            _id='ENST00000642151.1-94:ENST00000622235.5:50', attrs=attrs,
+            seqname='ENSG00000099949.21'
+        )
+        metadata = GVFMetadata(
+            parser='parseSTARFusion', source='Fusion', chrom='Gene ID'
+        )
+        seqvar.io.write([variant], self.work_dir/'fusion.gvf', metadata)
+        args = create_base_args()
+        args.input_path = [
+            self.work_dir/'fusion.gvf'
+        ]
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        cli.call_variant_peptide(args)
         seqs = list(SeqIO.parse(args.output_path, 'fasta'))
         self.assertTrue(len(seqs) > 0)
 

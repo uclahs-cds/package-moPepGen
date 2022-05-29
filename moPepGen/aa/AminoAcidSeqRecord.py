@@ -154,22 +154,30 @@ class AminoAcidSeqRecord(SeqRecord):
         for occ in re.finditer(r'\*', str(self.seq)):
             yield occ.start()
 
-    def iter_enzymatic_cleave_sites(self, rule:str, exception:str=None
-            ) -> Iterable[int]:
+    def iter_enzymatic_cleave_sites(self, rule:str, exception:str=None,
+            exception_sites:List[int]=None) -> Iterable[int]:
         """ Create a generator of the cleave sites """
         rule = EXPASY_RULES[rule]
         exception = EXPASY_RULES.get(exception, exception)
-        exceptions = [] if exception is None else \
-            [x.end() for x in re.finditer(exception, str(self.seq))]
+        if exception_sites is None:
+            exception_sites = [] if exception is None else \
+                [x.end() for x in re.finditer(exception, str(self.seq))]
 
         for it in re.finditer(rule, str(self.seq)):
-            if it not in exceptions:
+            if it not in exception_sites:
                 yield it.end()
 
-    def find_first_cleave_or_stop_site(self, rule:str, exception:str=None
-            ) -> Iterable[int]:
+    def get_enzymatic_cleave_exception_sites(self, exception:str) -> Iterable[int]:
+        """ Find all enzymatic cleavage exception sites """
+        return [] if exception is None else \
+            [x.end() for x in re.finditer(exception, str(self.seq))]
+
+    def find_first_cleave_or_stop_site(self, rule:str, exception:str=None,
+            exception_sites:List[int]=None) -> Iterable[int]:
         """ Create a generator for cleave or stop sites """
-        it_cleavage = self.iter_enzymatic_cleave_sites(rule=rule, exception=exception)
+        it_cleavage = self.iter_enzymatic_cleave_sites(
+            rule=rule, exception=exception, exception_sites=exception_sites
+        )
         sites = []
         first_cleave_site = next(it_cleavage, None)
         if first_cleave_site is not None:
@@ -207,11 +215,11 @@ class AminoAcidSeqRecord(SeqRecord):
         """ Find all start positions """
         return [x.start() for x in re.finditer('M', str(self.seq))]
 
-    def find_all_cleave_and_stop_sites(self, rule:str, exception:str=None
-            ) -> List[int]:
+    def find_all_cleave_and_stop_sites(self, rule:str, exception:str=None,
+            exception_sites:List[int]=None) -> List[int]:
         """ Find all enzymatic lceave sites and stop sites """
         cleavage_sites = list(self.iter_enzymatic_cleave_sites(rule=rule,
-            exception=exception))
+            exception=exception, exception_sites=exception_sites))
         stop_sites_start = list(self.iter_stop_sites())
         stop_sites_end = [i + 1 for i in stop_sites_start if i < len(self.seq) - 1]
         stop_sites_start = [i for i in stop_sites_start if i > 0]
