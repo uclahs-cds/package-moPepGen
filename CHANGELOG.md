@@ -12,6 +12,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.6.1] - 2022-05-31
+
+### Fixed
+
+- Deletion was mistreated as insertion when trying to convert to end-inclusion format. Only affect on deletion that starts with the third nucleotide of CDS. #468
+
+---
+
 ## [0.6.0] - 2022-05-28
 
 ### Fixed
