@@ -16,7 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
-- Deletion was mistreated as insertion when trying to convert to end-inclusion format. Only affect on deletion that starts with the third nucleotide of CDS. #468
+- Deletion was mistreated as insertion when trying to convert to end-inclusion format. This only affects deletions that start on the third nucleotide of CDS. #468
 
 ---
 
