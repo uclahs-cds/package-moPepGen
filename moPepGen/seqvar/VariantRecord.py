@@ -212,7 +212,7 @@ class VariantRecord():
         """ Checks if the variant is an insertion """
         if self.type == 'Insertion':
             return True
-        return len(self.ref) == 1 and len(self.alt) > 1
+        return len(self.ref) == 1 and not self.alt.startswith('<') and len(self.alt) > 1
 
     def is_deletion(self) -> bool:
         """ Checks if the variant is a deletion. """
