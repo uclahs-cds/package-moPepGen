@@ -268,6 +268,18 @@ class VariantRecord():
             alt_len = len(self.alt)
         return (ref_len - alt_len) % 3 != 0
 
+    def set_end_inclusion(self):
+        """ Set end inclusion to True """
+        self.attrs['END_INCLUSION'] = True
+
+    def unset_end_inclusioN(self):
+        """ Set end inclusion to False """
+        self.attrs['END_INCLUSION'] = False
+
+    def is_end_inclusion(self) -> bool:
+        """ Is end inclusion """
+        return self.attrs.get('END_INCLUSION') is True
+
     def frames_shifted(self):
         """ get number of nucleotide shifted
         TODO: tests needed """
@@ -403,7 +415,7 @@ class VariantRecord():
 
     def to_end_inclusion(self, seq:DNASeqRecord):
         """ Convert the variant to start exlusion and end inclusion format """
-        if self.alt.startswith('<'):
+        if self.type != 'Insertion' and self.alt.startswith('<'):
             raise ValueError(
                 f'This variant should not be converted to end inclusion: {self}'
             )
@@ -412,11 +424,17 @@ class VariantRecord():
             start=self.location.start + 1,
             end=self.location.end + 1
         )
-        ref = self.ref[1:] + str(seq.seq[self.location.end])
-        alt = self.alt[1:] + str(seq.seq[self.location.end])
-        self.location = location
-        self.ref = ref
-        self.alt = alt
+        self.set_end_inclusion()
+        if self.type == 'Insertion':
+            ref = self.ref[1:] + str(seq.seq[self.location.end])
+            self.location = location
+            self.ref = ref
+        else:
+            ref = self.ref[1:] + str(seq.seq[self.location.end])
+            alt = self.alt[1:] + str(seq.seq[self.location.end])
+            self.location = location
+            self.ref = ref
+            self.alt = alt
 
     def shift_breakpoint_to_closest_exon(self, anno:GenomicAnnotation):
         """ Shift fusion breakpoints to the closest exon. Donor breakpoint will

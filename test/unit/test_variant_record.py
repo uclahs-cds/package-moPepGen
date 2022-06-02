@@ -1,5 +1,6 @@
 """ Test module for VariantRecord """
 import unittest
+from moPepGen.dna.DNASeqRecord import DNASeqRecord
 from test.unit import create_variant, create_genomic_annotation, \
     create_dna_record_dict, create_variants
 from moPepGen import seqvar
@@ -77,6 +78,43 @@ class TestVariantRecord(unittest.TestCase):
         ]
         variant = create_variant(*variant_data)
         self.assertTrue(variant.is_spanning_over_splicing_site(anno, 'ENST0001'))
+
+    def test_to_end_inclusion(self):
+        """ Test that variant record is converted to end inclusion """
+        tx_id = 'ENST0001'
+        variant_data = [
+            5, 6, 'C', 'CAAAA', 'INDEL', 'INDEL-5-C-CAAAA',
+            {'TRANSCRIPT_ID': tx_id}, 'ENSG0001'
+        ]
+        variant = create_variant(*variant_data)
+        seq = DNASeqRecord('C' * 10, id=tx_id, name=tx_id, description=tx_id)
+        variant.to_end_inclusion(seq)
+        self.assertEqual(variant.ref, 'C')
+        self.assertEqual(variant.alt, 'AAAAC')
+        self.assertEqual(variant.location.start, 6)
+
+        # Insertion
+        variant2 = create_variant(*variant_data)
+        variant2.alt = '<Insertion>'
+        variant2.type = 'Insertion'
+        seq = DNASeqRecord('C' * 10, id=tx_id, name=tx_id, description=tx_id)
+        variant2.to_end_inclusion(seq)
+        self.assertEqual(variant2.ref, 'C')
+        self.assertEqual(variant2.location.start, 6)
+        self.assertTrue(variant2.is_end_inclusion())
+
+    def test_to_end_inclusion_fail(self):
+        """ Should fail when converting non insertion variants to end inclusion """
+        tx_id = 'ENST0001'
+        variant_data = [
+            5, 6, 'C', '<Deletion>', 'Deletion', 'RI-5',
+            {'TRANSCRIPT_ID': tx_id}, 'ENSG0001'
+        ]
+        variant = create_variant(*variant_data)
+        seq = DNASeqRecord('C' * 10, id=tx_id, name=tx_id, description=tx_id)
+        with self.assertRaises(ValueError):
+            variant.to_end_inclusion(seq)
+
 class TestTranscriptionalVariantSeries(unittest.TestCase):
     """ Test cases for VariantRecordSeries """
     def test_highest_hypermutated_region_complexity(self):

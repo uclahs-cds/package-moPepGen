@@ -814,7 +814,10 @@ class ThreeFrameTVG():
             Seq(variant.ref),
             locations=[ref_seq_location]
         )
-        insert_seq = ref_seq + insert_seq
+        if variant.is_end_inclusion():
+            insert_seq = insert_seq + ref_seq
+        else:
+            insert_seq = ref_seq + insert_seq
         var = seqvar.VariantRecordWithCoordinate(
             variant=variant,
             location=FeatureLocation(start=1, end=len(insert_seq.seq))
