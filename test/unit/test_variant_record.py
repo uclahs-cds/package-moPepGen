@@ -1,9 +1,9 @@
 """ Test module for VariantRecord """
 import unittest
-from moPepGen.dna.DNASeqRecord import DNASeqRecord
 from test.unit import create_variant, create_genomic_annotation, \
     create_dna_record_dict, create_variants
 from moPepGen import seqvar
+from moPepGen.dna.DNASeqRecord import DNASeqRecord
 
 
 GENOME_DATA = {

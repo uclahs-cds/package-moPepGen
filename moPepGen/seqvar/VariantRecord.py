@@ -272,7 +272,7 @@ class VariantRecord():
         """ Set end inclusion to True """
         self.attrs['END_INCLUSION'] = True
 
-    def unset_end_inclusioN(self):
+    def unset_end_inclusion(self):
         """ Set end inclusion to False """
         self.attrs['END_INCLUSION'] = False
 
