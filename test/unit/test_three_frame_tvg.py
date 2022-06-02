@@ -522,6 +522,42 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             node_seqs = {str(edge.out_node.seq.seq) for edge in node.out_edges}
             self.assertEqual(node_seqs, {'T', 'A'})
 
+    def test_apply_insertion_case3(self):
+        """ apply_insertion with end_inclusion """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        genome = create_dna_record_dict(GENOME_DATA)
+        data = {
+            1: ['AAATAAATAAAT', ['RF0'], [], 0],
+            2: ['AATAAATAAAT',  ['RF1'], [], 1],
+            3: ['ATAAATAAAT',   ['RF2'], [], 2]
+        }
+        gene_id = 'ENSG0001'
+        ins_attrs = {
+            'DONOR_GENE_ID': 'ENSG0001',
+            'DONOR_START': 17,
+            'DONOR_END': 23
+        }
+        ins_var = create_variant(2,3,'T','<INS>','Insertion','',ins_attrs)
+        gene_seq = anno.genes[gene_id].get_gene_sequence(genome['chr1'])
+        ins_var.to_end_inclusion(gene_seq)
+
+        var_pool = seqvar.VariantRecordPool(anno=anno)
+        graph, nodes = create_three_frame_tvg(data, 'AAATAAATAAAT')
+        cursors = [nodes[1], nodes[2], nodes[3]]
+        graph.apply_insertion(cursors, ins_var, var_pool, genome, anno)
+
+        received = {str(list(n.out_edges)[0].out_node.seq.seq)
+            for n in graph.reading_frames}
+        self.assertEqual(received, {'A', 'AA', 'AAA'})
+
+        for root in graph.reading_frames:
+            node = root.get_out_nodes()[0]
+            for x in node.get_out_nodes():
+                if x.variants:
+                    self.assertEqual(x.seq.seq, 'CCTATGT')
+                else:
+                    self.assertEqual(x.seq.seq, 'T')
+
     def test_apply_substitution_case1(self):
         r"""                         T
                                     / \

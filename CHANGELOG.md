@@ -16,6 +16,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- Fixed the issue that large insertions, such as retained introns, that start right after the start codon were not converted to end inclusion successfully. #470
+
+## [0.6.1] - 2022-05-31
+
+### Fixed
+
 - Deletion was mistreated as insertion when trying to convert to end-inclusion format. This only affects deletions that start on the third nucleotide of CDS. #468
 
 ---
