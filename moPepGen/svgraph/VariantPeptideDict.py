@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import deque
 import copy
 from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
+from Bio.Seq import Seq
 from moPepGen import aa, get_equivalent
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.aa import VariantPeptideIdentifier as vpi
@@ -19,7 +20,8 @@ class MiscleavedNodes():
         self.orf = orf
 
     @staticmethod
-    def find_miscleaved_nodes(node:PVGNode, orf:Tuple[int,int], miscleavage:int
+    def find_miscleaved_nodes(node:PVGNode, orf:Tuple[int,int], miscleavage:int,
+            max_variants_per_node:int, additional_variants_per_misc:int
             ) -> MiscleavedNodes:
         """ find all miscleaved nodes """
         if orf[0] is None:
@@ -33,10 +35,22 @@ class MiscleavedNodes():
             while queue:
                 cur_batch = queue.pop()
                 cur_node = cur_batch[-1]
+                n_vars = sum(len(x.variants) for x in cur_batch)
+
+                # This is done to reduce the complexity when the node has too
+                # many out nodes, and its out nodes also have too many out nodes.
+                if additional_variants_per_misc == -1:
+                    allowed_n_vars = float('Inf')
+                else:
+                    allowed_n_vars = max_variants_per_node + \
+                        len(cur_batch) * additional_variants_per_misc
+
                 for _node in cur_node.out_nodes:
                     if not _node.out_nodes:
                         continue
                     if _node.truncated:
+                        continue
+                    if n_vars + len(_node.variants) > allowed_n_vars:
                         continue
                     new_batch = copy.copy(cur_batch)
                     is_stop = _node.seq.seq == '*'
@@ -66,12 +80,10 @@ class MiscleavedNodes():
         """
         for queue in self.data:
             metadata = VariantPeptideMetadata(orf=self.orf)
-            seq:aa.AminoAcidSeqRecord = None
+            seq:str = None
 
             for node in queue:
-                other = copy.deepcopy(node.seq)
-                other.__class__ = aa.AminoAcidSeqRecord
-                other:aa.AminoAcidSeqRecord
+                other = str(node.seq.seq)
                 if seq is None:
                     seq = other
                 else:
@@ -85,7 +97,7 @@ class MiscleavedNodes():
             metadata.variants.update(cleavage_gain_down)
 
             if seq:
-                seq.__class__ = aa.AminoAcidSeqRecord
+                seq = aa.AminoAcidSeqRecord(seq=Seq(seq))
 
             if check_variants and not metadata.variants:
                 continue
@@ -157,7 +169,8 @@ class VariantPeptideDict():
 
     def add_miscleaved_sequences(self, node:PVGNode, orf:List[int, int],
             miscleavage:int, check_variants:bool, is_start_codon:bool,
-            additional_variants:List[VariantRecord]):
+            additional_variants:List[VariantRecord], max_variants_per_node:int,
+            additional_variants_per_misc:int):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
@@ -165,13 +178,20 @@ class VariantPeptideDict():
 
         Args:
             node (PVGNode): The start node.
-            miscleavage (int): Number of miscleavage to allow.
+            orf (List[int, int]): The start and end position of ORF.
+            miscleavage (int): Number of miscleavages to allow.
             check_variants (bool): Whether to check variants.
-            has_known_orf (bool): Whether has known ORF. False for noncoding
-                genes/transcripts.
+            is_start_codon (bool): Whether the peptide starts with the start
+                codon (M).
+            max_variants_per_node (int): Maximal number of variants allowed
+                per node.
+            additional_variants_per_misc (int): Additional variants allowed
+                for every miscleavage.
         """
         miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
-            node=node, orf=orf, miscleavage=miscleavage
+            node=node, orf=orf, miscleavage=miscleavage,
+            max_variants_per_node=max_variants_per_node,
+            additional_variants_per_misc=additional_variants_per_misc
         )
         for seq, metadata in miscleaved_nodes.join_miscleaved_peptides(
                 check_variants, additional_variants, is_start_codon):

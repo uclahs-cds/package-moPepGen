@@ -14,7 +14,7 @@ class AminoAcidSeqRecord(SeqRecord):
     #pylint: disable=W0223
     """ A AminoAcidSeqRecord holds a protein or peptide sequence
     """
-    def __init__(self, seq:SeqRecord, _id:str="<unknown id>",
+    def __init__(self, seq:Seq, _id:str="<unknown id>",
             name:str="<unknown name>", description:str="<unknown description>",
             gene_id:str=None, transcript_id:str=None, protein_id:str=None,
             gene_name:str=None, **kwargs):
