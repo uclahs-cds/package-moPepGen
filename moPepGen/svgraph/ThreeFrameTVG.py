@@ -1324,7 +1324,10 @@ class ThreeFrameTVG():
 
                 if self.nodes_have_too_many_variants([cur, out_node]):
                     if not self.hypermutated_region_warned:
-                        err.HypermutatedRegionWarning(self.id, self.max_variants_per_node)
+                        err.HypermutatedRegionWarning(
+                            self.id, self.max_variants_per_node,
+                            self.additional_variants_per_misc
+                        )
                         self.hypermutated_region_warned = True
                     continue
 

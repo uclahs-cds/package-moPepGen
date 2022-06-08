@@ -171,49 +171,25 @@ class PeptideVariantGraph():
 
         if cleavage:
             for out_node in node.out_nodes:
-                if self.nodes_have_too_many_variants([node, out_node]) and \
-                            not self.hypermutated_region_warned:
-                    err.HypermutatedRegionWarning(self.id, self.max_variants_per_node)
-                    self.hypermutated_region_warned = True
-                else:
-                    route = (node, out_node)
-                    routes.add(route)
-                    visited.add(out_node)
+                route = (node, out_node)
+                routes.add(route)
+                visited.add(out_node)
 
                 for in_node in out_node.in_nodes:
                     if in_node is not node:
-                        if self.nodes_have_too_many_variants([node, out_node]) and \
-                                not self.hypermutated_region_warned:
-                            err.HypermutatedRegionWarning(
-                                self.id, self.max_variants_per_node
-                            )
-                            self.hypermutated_region_warned = True
                         route = (in_node, out_node)
                         routes.add(route)
                         visited.add(in_node)
         else:
             for out_node in node.out_nodes:
+                visited.add(out_node)
                 for in_node in node.in_nodes:
-                    if self.nodes_have_too_many_variants([in_node, out_node]) and \
-                                not self.hypermutated_region_warned:
-                        err.HypermutatedRegionWarning(
-                            self.id, self.max_variants_per_node
-                        )
-                        self.hypermutated_region_warned = True
-                    else:
-                        route = (in_node, node, out_node)
-                        routes.add(route)
-                        visited.add(in_node)
-                        visited.add(out_node)
+                    route = (in_node, node, out_node)
+                    routes.add(route)
+                    visited.add(in_node)
 
                 for in_node in out_node.in_nodes:
                     if in_node is not node:
-                        if self.nodes_have_too_many_variants([node, out_node]) and \
-                                not self.hypermutated_region_warned:
-                            err.HypermutatedRegionWarning(
-                                self.id, self.max_variants_per_node
-                            )
-                            self.hypermutated_region_warned = True
                         route = (in_node, out_node)
                         routes.add(route)
                         visited.add(in_node)
