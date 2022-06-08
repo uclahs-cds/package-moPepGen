@@ -123,5 +123,5 @@ class HypermutatedRegionWarning(MoPepGenWarning):
         msg = f"Hypermutated region detected from graph: '{graph_id}'. The" +\
             f" argument max_variants_per_node = {max_variants_per_node} and" +\
             f" additional_variants_per_misc = {additional_variants_per_misc}" +\
-            f' was used to reduce complexity.'
+            ' was used to reduce complexity.'
         super().__init__(msg)
