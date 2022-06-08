@@ -89,6 +89,7 @@ class TestREDItoolsParser(unittest.TestCase):
         self.assertEqual(variants[0].location.end, 250)
         self.assertEqual(variants[0].ref, 'C')
         self.assertEqual(variants[0].alt, 'T')
+        self.assertEqual(variants[0].id, 'RES-250-C-T')
 
     def test_reditools_record_to_variant_case2(self):
         """ strand negative """
