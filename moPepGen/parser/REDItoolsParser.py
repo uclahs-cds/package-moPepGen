@@ -174,7 +174,7 @@ class REDItoolsRecord():
                 if gene_model.strand == -1:
                     ref = str(Seq(ref).complement())
                     alt = str(Seq(alt).complement())
-                _id = f'RES-{ref}-{alt}'
+                _id = f'RES-{position + 1}-{ref}-{alt}'
                 attrs = {
                     'TRANSCRIPT_ID': tx_id,
                     'GENOMIC_POSITION': genomic_location,
