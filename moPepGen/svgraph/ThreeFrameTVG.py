@@ -19,7 +19,6 @@ from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
 if TYPE_CHECKING:
     from moPepGen import gtf
-    from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
 
 class ThreeFrameTVG():
     """ Defines the DAG data structure for the transcript and its variants.
@@ -41,8 +40,8 @@ class ThreeFrameTVG():
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
-            max_variants_per_node:int=-1, subgraphs:SubgraphTree=None,
-            hypermutated_region_warned:bool=False):
+            max_variants_per_node:int=-1, additional_variants_per_misc:int=-1,
+            subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -66,6 +65,7 @@ class ThreeFrameTVG():
         self.mrna_end_nf = mrna_end_nf
         self.global_variant = global_variant
         self.max_variants_per_node = max_variants_per_node
+        self.additional_variants_per_misc = additional_variants_per_misc
         self.subgraphs = subgraphs or SubgraphTree()
         self.subgraphs.add_root(_id)
         self.hypermutated_region_warned = hypermutated_region_warned
@@ -1324,7 +1324,10 @@ class ThreeFrameTVG():
 
                 if self.nodes_have_too_many_variants([cur, out_node]):
                     if not self.hypermutated_region_warned:
-                        err.HypermutatedRegionWarning(self.id, self.max_variants_per_node)
+                        err.HypermutatedRegionWarning(
+                            self.id, self.max_variants_per_node,
+                            self.additional_variants_per_misc
+                        )
                         self.hypermutated_region_warned = True
                     continue
 
@@ -1490,6 +1493,7 @@ class ThreeFrameTVG():
             known_orf=known_orf,
             cds_start_nf=self.cds_start_nf,
             max_variants_per_node=self.max_variants_per_node,
+            additional_variants_per_misc=self.additional_variants_per_misc,
             hypermutated_region_warned=self.hypermutated_region_warned
         )
 

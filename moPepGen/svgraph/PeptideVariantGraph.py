@@ -5,7 +5,7 @@ from typing import Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
 from Bio.Seq import Seq
-from moPepGen import aa, seqvar, err
+from moPepGen import aa, seqvar
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
@@ -39,7 +39,8 @@ class PeptideVariantGraph():
             known_orf:List[int,int], rule:str=None, exception:str=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
-            max_variants_per_node:int=-1, hypermutated_region_warned:bool=False
+            max_variants_per_node:int=-1, additional_variants_per_misc:int=-1,
+            hypermutated_region_warned:bool=False
             ):
         """ Construct a PeptideVariantGraph """
         self.root = root
@@ -53,6 +54,7 @@ class PeptideVariantGraph():
         self.orf_id_map = orf_id_map or {}
         self.cds_start_nf = cds_start_nf
         self.max_variants_per_node = max_variants_per_node
+        self.additional_variants_per_misc = additional_variants_per_misc
         self.hypermutated_region_warned = hypermutated_region_warned
 
     def add_stop(self, node:PVGNode):
@@ -169,49 +171,25 @@ class PeptideVariantGraph():
 
         if cleavage:
             for out_node in node.out_nodes:
-                if self.nodes_have_too_many_variants([node, out_node]) and \
-                            not self.hypermutated_region_warned:
-                    err.HypermutatedRegionWarning(self.id, self.max_variants_per_node)
-                    self.hypermutated_region_warned = True
-                else:
-                    route = (node, out_node)
-                    routes.add(route)
-                    visited.add(out_node)
+                route = (node, out_node)
+                routes.add(route)
+                visited.add(out_node)
 
                 for in_node in out_node.in_nodes:
                     if in_node is not node:
-                        if self.nodes_have_too_many_variants([node, out_node]) and \
-                                not self.hypermutated_region_warned:
-                            err.HypermutatedRegionWarning(
-                                self.id, self.max_variants_per_node
-                            )
-                            self.hypermutated_region_warned = True
                         route = (in_node, out_node)
                         routes.add(route)
                         visited.add(in_node)
         else:
             for out_node in node.out_nodes:
+                visited.add(out_node)
                 for in_node in node.in_nodes:
-                    if self.nodes_have_too_many_variants([in_node, out_node]) and \
-                                not self.hypermutated_region_warned:
-                        err.HypermutatedRegionWarning(
-                            self.id, self.max_variants_per_node
-                        )
-                        self.hypermutated_region_warned = True
-                    else:
-                        route = (in_node, node, out_node)
-                        routes.add(route)
-                        visited.add(in_node)
-                        visited.add(out_node)
+                    route = (in_node, node, out_node)
+                    routes.add(route)
+                    visited.add(in_node)
 
                 for in_node in out_node.in_nodes:
                     if in_node is not node:
-                        if self.nodes_have_too_many_variants([node, out_node]) and \
-                                not self.hypermutated_region_warned:
-                            err.HypermutatedRegionWarning(
-                                self.id, self.max_variants_per_node
-                            )
-                            self.hypermutated_region_warned = True
                         route = (in_node, out_node)
                         routes.add(route)
                         visited.add(in_node)
@@ -737,7 +715,9 @@ class PeptideVariantGraph():
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 is_start_codon=False,
-                additional_variants=additional_variants
+                additional_variants=additional_variants,
+                max_variants_per_node=self.max_variants_per_node,
+                additional_variants_per_misc=self.additional_variants_per_misc
             )
             self.remove_node(node_copy)
 
@@ -807,7 +787,9 @@ class PeptideVariantGraph():
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 is_start_codon=True,
-                additional_variants=additional_variants
+                additional_variants=additional_variants,
+                max_variants_per_node=self.max_variants_per_node,
+                additional_variants_per_misc=self.additional_variants_per_misc
             )
             cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
@@ -923,7 +905,9 @@ class PeptideVariantGraph():
                 miscleavage=traversal.miscleavage,
                 check_variants=traversal.check_variants,
                 is_start_codon=is_start_codon,
-                additional_variants=additional_variants
+                additional_variants=additional_variants,
+                max_variants_per_node=self.max_variants_per_node,
+                additional_variants_per_misc=self.additional_variants_per_misc
             )
         for node in trash:
             self.remove_node(node)
