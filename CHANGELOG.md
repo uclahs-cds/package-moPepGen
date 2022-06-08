@@ -12,6 +12,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.6.1] - 2022-06-08
+
+### Fixed
+
+- Fixed the issue of long run time for transcripts with hypermutated regions by limiting number of additional variants per miscleavage (`--additional-variants-per-misc`). Closed #476 via #477
+
+- Location was missing in variant labels output by `parseREDItools`. #478
+
+---
+
 ## [0.6.1] - 2022-05-31
 
 ### Fixed
