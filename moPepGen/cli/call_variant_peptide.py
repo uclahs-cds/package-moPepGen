@@ -63,6 +63,21 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         metavar='<number>'
     )
     p.add_argument(
+        '--min-nodes-to-collapse',
+        type=int,
+        help='When making the cleavage graph, the minimal number of nodes'
+        ' to trigger pop collapse.',
+        default=30,
+        metavar='<number>'
+    )
+    p.add_argument(
+        '--naa-to-collapse',
+        type=int,
+        help='The number of bases used for pop collapse.',
+        default=5,
+        metavar='<number>'
+    )
+    p.add_argument(
         '--noncanonical-transcripts',
         action='store_true',
         help='Process only noncanonical transcripts of fusion transcripts and'
@@ -113,6 +128,8 @@ class VariantPeptideCaller():
         self.max_length:int = args.max_length
         self.max_variants_per_node:int = args.max_variants_per_node
         self.additional_variants_per_misc:int = args.additional_variants_per_misc
+        self.min_nodes_to_collapse:int = args.min_nodes_to_collapse
+        self.naa_to_collapse:int = args.naa_to_collapse
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
         self.verbose = args.verbose_level
@@ -150,7 +167,8 @@ def call_variant_peptides_wrapper(tx_id:str,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         anno:gtf.GenomicAnnotation, pool:seqvar.VariantRecordPool,
         rule:str, exception:str, miscleavage:int, max_variants_per_node:int,
-        additional_variants_per_misc:int, noncanonical_transcripts:bool
+        additional_variants_per_misc:int, min_nodes_to_collapse:int,
+        naa_to_collapse:int, noncanonical_transcripts:bool
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
@@ -164,7 +182,9 @@ def call_variant_peptides_wrapper(tx_id:str,
                     gene_seqs=gene_seqs, rule=rule, exception=exception,
                     miscleavage=miscleavage,
                     max_variants_per_node=max_variants_per_node,
-                    additional_variants_per_misc=additional_variants_per_misc
+                    additional_variants_per_misc=additional_variants_per_misc,
+                    min_nodes_to_collapse=min_nodes_to_collapse,
+                    naa_to_collapse=naa_to_collapse
                 )
                 peptide_pool.append(peptides)
         except:
@@ -188,7 +208,9 @@ def call_variant_peptides_wrapper(tx_id:str,
                 genome=None, tx_seqs=tx_seqs, gene_seqs=gene_seqs, rule=rule,
                 exception=exception, miscleavage=miscleavage,
                 max_variants_per_node=max_variants_per_node,
-                additional_variants_per_misc=additional_variants_per_misc
+                additional_variants_per_misc=additional_variants_per_misc,
+                min_nodes_to_collapse=min_nodes_to_collapse,
+                naa_to_collapse=naa_to_collapse
             )
         except:
             logger(
@@ -207,7 +229,9 @@ def call_variant_peptides_wrapper(tx_id:str,
                 gene_seqs=gene_seqs, rule=rule, exception=exception,
                 miscleavage=miscleavage,
                 max_variants_per_node=max_variants_per_node,
-                additional_variants_per_misc=additional_variants_per_misc
+                additional_variants_per_misc=additional_variants_per_misc,
+                min_nodes_to_collapse=min_nodes_to_collapse,
+                naa_to_collapse=naa_to_collapse
             )
         except:
             logger(f"Exception raised from {circ_model.id}")
@@ -232,6 +256,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     miscleavage = caller.miscleavage
     max_variants_per_node = caller.max_variants_per_node
     additional_variants_per_misc = caller.additional_variants_per_misc
+    min_nodes_to_collapse = caller.min_nodes_to_collapse
+    naa_to_collapse = caller.naa_to_collapse
     noncanonical_transcripts = caller.noncanonical_transcripts
 
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
@@ -304,7 +330,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             dispatch = (
                 tx_id, variant_series, tx_seqs, gene_seqs, dummy_anno,
                 dummy_pool, rule, exception, miscleavage, max_variants_per_node,
-                additional_variants_per_misc, noncanonical_transcripts
+                additional_variants_per_misc, min_nodes_to_collapse,
+                naa_to_collapse, noncanonical_transcripts
             )
             dispatches.append(dispatch)
 
@@ -340,9 +367,10 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         variant_pool:seqvar.VariantRecordPoolOnDisk, anno:gtf.GenomicAnnotation,
         genome:dna.DNASeqDict, tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
-        gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
-        rule:str, exception:str, miscleavage:int,
-        max_variants_per_node:int, additional_variants_per_misc:int
+        gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates], rule:str,
+        exception:str, miscleavage:int, max_variants_per_node:int,
+        additional_variants_per_misc:int, min_nodes_to_collapse:int,
+        naa_to_collapse:int
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = anno.transcripts[tx_id]
@@ -355,7 +383,9 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         has_known_orf=tx_model.is_protein_coding,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
         max_variants_per_node=max_variants_per_node,
-        additional_variants_per_misc=additional_variants_per_misc
+        additional_variants_per_misc=additional_variants_per_misc,
+        min_nodes_to_collapse=min_nodes_to_collapse,
+        naa_to_collapse=naa_to_collapse
     )
     dgraph.init_three_frames()
     dgraph.create_variant_graph(
@@ -374,7 +404,8 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         rule:str, exception:str, miscleavage:int,
-        max_variants_per_node:int, additional_variants_per_misc:int
+        max_variants_per_node:int, additional_variants_per_misc:int,
+        min_nodes_to_collapse:int, naa_to_collapse:int
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for fusion """
     tx_id = variant.location.seqname
@@ -397,7 +428,9 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         has_known_orf=tx_model.is_protein_coding,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
         max_variants_per_node=max_variants_per_node,
-        additional_variants_per_misc=additional_variants_per_misc
+        additional_variants_per_misc=additional_variants_per_misc,
+        min_nodes_to_collapse=min_nodes_to_collapse,
+        naa_to_collapse=naa_to_collapse
     )
     dgraph.init_three_frames()
     dgraph.create_variant_graph(
@@ -413,7 +446,8 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         rule:str, exception:str, miscleavage:int,
-        max_variants_per_node:int, additional_variants_per_misc:int
+        max_variants_per_node:int, additional_variants_per_misc:int,
+        min_nodes_to_collapse:int, naa_to_collapse:int
         )-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
@@ -432,7 +466,9 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph = svgraph.ThreeFrameCVG(
         circ_seq, _id=record.id, circ_record=record,
         max_variants_per_node=max_variants_per_node,
-        additional_variants_per_misc=additional_variants_per_misc
+        additional_variants_per_misc=additional_variants_per_misc,
+        min_nodes_to_collapse=min_nodes_to_collapse,
+        naa_to_collapse=naa_to_collapse
     )
     cgraph.init_three_frames()
     cgraph.create_variant_circ_graph(variant_records)

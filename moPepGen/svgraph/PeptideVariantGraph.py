@@ -1,7 +1,7 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import Iterable, Set, Deque, Dict, List, Tuple
+from typing import FrozenSet, Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
 from Bio.Seq import Seq
@@ -9,7 +9,7 @@ from moPepGen import aa, seqvar
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
-from moPepGen.svgraph.PVGNodeCollapser import PVGNodeCollapser
+from moPepGen.svgraph.PVGNodeCollapser import PVGNodeCollapser, PVGNodePopCollapser
 
 
 T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
@@ -40,7 +40,8 @@ class PeptideVariantGraph():
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
             max_variants_per_node:int=-1, additional_variants_per_misc:int=-1,
-            hypermutated_region_warned:bool=False
+            hypermutated_region_warned:bool=False, min_nodes_to_collapse:int=30,
+            naa_to_collapse=5
             ):
         """ Construct a PeptideVariantGraph """
         self.root = root
@@ -56,6 +57,8 @@ class PeptideVariantGraph():
         self.max_variants_per_node = max_variants_per_node
         self.additional_variants_per_misc = additional_variants_per_misc
         self.hypermutated_region_warned = hypermutated_region_warned
+        self.min_nodes_to_collapse = min_nodes_to_collapse
+        self.naa_to_collapse = naa_to_collapse
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -345,6 +348,33 @@ class PeptideVariantGraph():
                 collapsed_nodes.remove(node)
         return collapsed_nodes
 
+    def pop_collapse_end_nodes(self, nodes:Iterable[PVGNode]):
+        """ This function aims at resolving the issue that too may nodes are
+        generated when making the cleavage graph. For nodes that share the
+        outbond nodes, the last X number of amino acids are popped as separate
+        nodes, and collapsed if they have the same sequence. The collapsed
+        nodes have the minimal non-zero number of variants, unless all nodes
+        of the same sequence don't have any variant. """
+        group:Dict[FrozenSet[PVGNode], PVGNodePopCollapser] = {}
+        collapsed_nodes:List[PVGNode] = []
+        for node in nodes:
+            node_len = len(node.seq.seq)
+            if node_len <= self.naa_to_collapse:
+                collapsed_nodes.append(node)
+                continue
+            new_node = node.split_node(node_len - 5, cleavage=True, pop_collapse=True)
+            collapsed_nodes.append(new_node)
+            out_nodes = frozenset(new_node.out_nodes)
+            collapser = group.setdefault(out_nodes, PVGNodePopCollapser())
+            redundant_node = collapser.collapse(new_node)
+            if redundant_node:
+                self.remove_node(redundant_node)
+        collapsed_nodes = set(collapsed_nodes)
+        for node in copy.copy(collapsed_nodes):
+            if node.is_orphan():
+                collapsed_nodes.remove(node)
+        return collapsed_nodes
+
     def expand_backward(self, node:PVGNode) -> T:
         r""" Expand the variant alignment bubble backward to the previous
         cleave site. The sequence of the input node is first prepended to each
@@ -371,6 +401,8 @@ class PeptideVariantGraph():
         routes, trash = self.find_routes_for_merging(node, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
+        if len(new_nodes) > self.min_nodes_to_collapse:
+            new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
             self.remove_node(trash_node)
@@ -407,6 +439,7 @@ class PeptideVariantGraph():
             trash.add(in_node)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
+        # new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
             self.remove_node(trash_node)
@@ -435,6 +468,8 @@ class PeptideVariantGraph():
         routes, trash = self.find_routes_for_merging(node)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
+        if len(new_nodes) > self.min_nodes_to_collapse:
+            new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
             self.remove_node(trash_node)
@@ -459,10 +494,13 @@ class PeptideVariantGraph():
         # there shouldn't have any bridge out in inbond nodes
         left_nodes, _ = self.expand_forward(node)
         self.collapse_end_nodes(left_nodes)
+        # self.pop_collapse_end_nodes(new_nodes)
 
         routes, trash = self.find_routes_for_merging(head, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
+        if len(new_nodes) > self.min_nodes_to_collapse:
+            new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
             self.remove_node(trash_node)
@@ -701,7 +739,7 @@ class PeptideVariantGraph():
         if is_stop:
             in_cds = False
             orf = [None, None]
-        else:
+        elif not target_node.npop_collapsed:
             node_copy = target_node.copy(in_nodes=False)
 
             if not node_copy.out_nodes:
@@ -833,7 +871,7 @@ class PeptideVariantGraph():
         if is_stop:
             in_cds = False
 
-        if in_cds:
+        if in_cds and not target_node.npop_collapsed:
             cur_copy = target_node.copy(in_nodes=False)
             additional_variants = start_gain + cursor.cleavage_gain
             node_list.append((cur_copy, orf, False, additional_variants))
@@ -871,7 +909,9 @@ class PeptideVariantGraph():
             if out_node is self.stop:
                 continue
             out_node.orf = orf
-            if target_node.is_bridge():
+            was_bridge_before_pop_collapse = target_node.cpop_collapsed and \
+                out_node.is_bridge()
+            if target_node.is_bridge() or was_bridge_before_pop_collapse:
                 if not in_cds:
                     start_gain = []
                 elif start_indices:
@@ -882,8 +922,9 @@ class PeptideVariantGraph():
                         end=min(start_indices[-1] + 3, len(target_node.seq.seq))
                     )
                 else:
-                    start_gain = [v.variant for v in out_node.variants
-                        if v.variant.is_frameshifting()]
+                    if not start_gain:
+                        start_gain = [v.variant for v in out_node.variants
+                            if v.variant.is_frameshifting()]
             else:
                 if is_stop:
                     start_gain = []
@@ -1037,7 +1078,7 @@ class PVGTraversal():
     def stage(self, in_node:PVGNode, out_node:PVGNode,
             cursor:PVGCursor):
         """ When a node is visited through a particular edge during the variant
-        peptide finding graph traversal, it is stage until all inbond edges
+        peptide finding graph traversal, it is staged until all inbond edges
         are visited. """
         in_nodes = self.stack.setdefault(out_node, {})
 

@@ -41,7 +41,8 @@ class ThreeFrameTVG():
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
             max_variants_per_node:int=-1, additional_variants_per_misc:int=-1,
-            subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False):
+            subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
+            min_nodes_to_collapse:int=30, naa_to_collapse=5):
         """ Constructor to create a TranscriptVariantGraph object.
 
         Args:
@@ -69,6 +70,8 @@ class ThreeFrameTVG():
         self.subgraphs = subgraphs or SubgraphTree()
         self.subgraphs.add_root(_id)
         self.hypermutated_region_warned = hypermutated_region_warned
+        self.min_nodes_to_collapse = min_nodes_to_collapse
+        self.naa_to_collapse = naa_to_collapse
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -1494,7 +1497,9 @@ class ThreeFrameTVG():
             cds_start_nf=self.cds_start_nf,
             max_variants_per_node=self.max_variants_per_node,
             additional_variants_per_misc=self.additional_variants_per_misc,
-            hypermutated_region_warned=self.hypermutated_region_warned
+            hypermutated_region_warned=self.hypermutated_region_warned,
+            min_nodes_to_collapse=self.min_nodes_to_collapse,
+            naa_to_collapse=self.naa_to_collapse
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
