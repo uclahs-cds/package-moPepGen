@@ -362,7 +362,11 @@ class PeptideVariantGraph():
             if node_len <= self.naa_to_collapse:
                 collapsed_nodes.append(node)
                 continue
-            new_node = node.split_node(node_len - 5, cleavage=True, pop_collapse=True)
+            new_node = node.split_node(
+                index=node_len - self.naa_to_collapse,
+                cleavage=True,
+                pop_collapse=True
+            )
             collapsed_nodes.append(new_node)
             out_nodes = frozenset(new_node.out_nodes)
             collapser = group.setdefault(out_nodes, PVGNodePopCollapser())
