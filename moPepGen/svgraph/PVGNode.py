@@ -25,12 +25,12 @@ class PVGNode():
         orf (List[int]): List of two integers indicating the start and stop
             of the orf.
         was_bridge (bool): When true indicating that the node used to be a
-            bridge node between reading frames, but becomes not due to
-            splitting.
-        pre_cleave (bool): Indicating that the node is already cleaved.
+            bridge node between reading frames, but is no longer a bridge node
+            because it was split.
+        pre_cleaved (bool): Indicating that the node is already cleaved.
         level (bool): Subgraph level that the node belongs to.
         npop_collapsed (bool): Whether the n-terminus is pop collapsed.
-        cpop_collapsed (bool): Whether the c-berminus is pop collapsed.
+        cpop_collapsed (bool): Whether the c-terminus is pop collapsed.
 
     """
     def __init__(self, seq:aa.AminoAcidSeqRecordWithCoordinates,
@@ -38,7 +38,7 @@ class PVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
-            was_bridge:bool=False, pre_cleave:bool=False, level:int=0,
+            was_bridge:bool=False, pre_cleaved:bool=False, level:int=0,
             npop_collapsed:bool=False, cpop_collapsed:bool=False):
         """ Construct a PVGNode object. """
         self.seq = seq
@@ -50,7 +50,7 @@ class PVGNode():
         self.orf = orf or [None, None]
         self.reading_frame_index = reading_frame_index
         self.was_bridge = was_bridge
-        self.pre_cleave = pre_cleave
+        self.pre_cleave = pre_cleaved
         self.subgraph_id = subgraph_id
         self.level = level
         self.npop_collapsed = npop_collapsed
@@ -319,7 +319,7 @@ class PVGNode():
             variants=right_variants,
             orf=self.orf,
             was_bridge=self.was_bridge,
-            pre_cleave=pre_cleave,
+            pre_cleaved=pre_cleave,
             subgraph_id=self.subgraph_id,
             level=self.level
         )
@@ -478,19 +478,16 @@ class PVGNode():
 
     def is_less_mutated_than(self, other:PVGNode) -> bool:
         """ Checks if this node has less mutation than the other """
-        if self.level < other.level:
-            return True
-        if self.level > other.level:
-            return False
-        if len(self.variants) < len(other.variants):
-            return True
-        if len(self.variants) > len(other.variants):
-            return False
+        if self.level != other.level:
+            return self.level < other.level
+
+        if len(self.variants) != len(other.variants):
+            return len(self.variants) < len(other.variants)
+
         for x, y in zip(self.variants, other.variants):
-            if x.location < y.location:
-                return True
-            if x.location > y.location:
-                return False
+            if x.location != y.location:
+                return x.location < y.location
+
         for x, y in zip(self.variants, other.variants):
             # SNV is higher than RES
             if x.variant.type == 'SNV' and y.variant.type == 'RNAEditingSite':
@@ -499,14 +496,11 @@ class PVGNode():
                 return False
             # Otherwise don't really care about the order, just to make sure
             # the result is reproducible
-            if x.variant.type < y.variant.type:
-                return True
-            if x.variant.type > y.variant.type:
-                return False
-            if x.variant.alt > y.variant.type:
-                return True
-            if x.variant.alt < y.variant.alt:
-                return False
+            if x.variant.type != y.variant.type:
+                return x.variant.type > y.variant.type
+
+            if x.variant.alt != y.variant.type:
+                return x.variant.alt > y.variant.type
         return True
 
     def transfer_in_nodes_to(self, other:PVGNode):

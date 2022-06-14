@@ -352,9 +352,8 @@ class PeptideVariantGraph():
         """ This function aims at resolving the issue that too may nodes are
         generated when making the cleavage graph. For nodes that share the
         outbond nodes, the last X number of amino acids are popped as separate
-        nodes, and collapsed if they have the same sequence. The collapsed
-        nodes have the minimal non-zero number of variants, unless all nodes
-        of the same sequence don't have any variant. """
+        nodes, and collapsed if they have the same sequence, and the least
+        variant node is kept. """
         group:Dict[FrozenSet[PVGNode], PVGNodePopCollapser] = {}
         collapsed_nodes:List[PVGNode] = []
         for node in nodes:
