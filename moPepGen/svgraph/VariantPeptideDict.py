@@ -27,39 +27,59 @@ class MiscleavedNodes():
         if orf[0] is None:
             raise ValueError('orf is None')
         queue = deque([[node]])
-        nodes = MiscleavedNodes(deque([[node]]), orf)
-        i = 0
-        while i < miscleavage and queue:
-            i += 1
-            next_cleavage = deque([])
-            while queue:
-                cur_batch = queue.pop()
-                cur_node = cur_batch[-1]
-                n_vars = sum(len(x.variants) for x in cur_batch)
+        nodes = MiscleavedNodes(deque([]), orf)
+        if not node.cpop_collapsed:
+            nodes.data.append([node])
+        while queue:
+            cur_batch = queue.pop()
+            cur_node = cur_batch[-1]
+            batch_vars = set()
 
-                # This is done to reduce the complexity when the node has too
-                # many out nodes, and its out nodes also have too many out nodes.
-                if additional_variants_per_misc == -1:
-                    allowed_n_vars = float('Inf')
-                else:
-                    allowed_n_vars = max_variants_per_node + \
-                        len(cur_batch) * additional_variants_per_misc
+            for _node in cur_batch:
+                for var in _node.variants:
+                    batch_vars.add(var.variant)
 
-                for _node in cur_node.out_nodes:
-                    if not _node.out_nodes:
+            n_cleavages = len([x for x in cur_batch if not x.cpop_collapsed]) - 1
+
+            if n_cleavages >= miscleavage:
+                continue
+
+            # This is done to reduce the complexity when the node has too
+            # many out nodes, and its out nodes also have too many out nodes.
+            if additional_variants_per_misc == -1:
+                allowed_n_vars = float('Inf')
+            else:
+                allowed_n_vars = max_variants_per_node
+                if n_cleavages > 0:
+                    allowed_n_vars += n_cleavages * additional_variants_per_misc
+
+            for _node in cur_node.out_nodes:
+                if not _node.out_nodes:
+                    continue
+                if _node.truncated:
+                    continue
+                new_batch = copy.copy(cur_batch)
+
+                is_stop = _node.seq.seq == '*'
+                if is_stop:
+                    continue
+
+                new_batch.append(_node)
+
+                if not _node.cpop_collapsed:
+                    cur_vars = copy.copy(batch_vars)
+                    for var in _node.variants:
+                        cur_vars.add(var.variant)
+
+                    if len(cur_vars) > allowed_n_vars:
                         continue
-                    if _node.truncated:
-                        continue
-                    if n_vars + len(_node.variants) > allowed_n_vars:
-                        continue
-                    new_batch = copy.copy(cur_batch)
-                    is_stop = _node.seq.seq == '*'
-                    if is_stop:
-                        continue
-                    new_batch.append(_node)
-                    next_cleavage.appendleft(new_batch)
+
                     nodes.data.append(copy.copy(new_batch))
-            queue = next_cleavage
+                    if n_cleavages + 1 == miscleavage:
+                        continue
+                    if n_cleavages + 1 > miscleavage:
+                        raise ValueError('Something just went wrong')
+                queue.appendleft(new_batch)
         return nodes
 
     def join_miscleaved_peptides(self, check_variants:bool,

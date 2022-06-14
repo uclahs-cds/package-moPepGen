@@ -13,31 +13,34 @@ class PVGNode():
 
     Attributes:
         seq (aa.AminoAcidSeqRecord): The amino acid sequence.
+        reading_frame_index (int): Reading frame index that the node belongs to.
+            Must be 0, 1, or 2.
         variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
             carried in the sequence.
         in_nodes (Set[PVGNode]): Inbound nodes.
         out_nodes (Set[PVGNode]): Outbound nodes
         cleavage (bool): Whether the start of the node is a cleavage site.
+        truncated (bool): Whether the node is truncated. Useful when the
+            sequence does not have a confirmed stop codon.
+        orf (List[int]): List of two integers indicating the start and stop
+            of the orf.
+        was_bridge (bool): When true indicating that the node used to be a
+            bridge node between reading frames, but is no longer a bridge node
+            because it was split.
+        pre_cleaved (bool): Indicating that the node is already cleaved.
+        level (bool): Subgraph level that the node belongs to.
+        npop_collapsed (bool): Whether the n-terminus is pop collapsed.
+        cpop_collapsed (bool): Whether the c-terminus is pop collapsed.
+
     """
     def __init__(self, seq:aa.AminoAcidSeqRecordWithCoordinates,
             reading_frame_index:int, subgraph_id:str,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
-            was_bridge:bool=False, pre_cleave:bool=False, level:int=0):
-        """ Construct a PVGNode object.
-
-        Args:
-            seq (aa.AminoAcidSeqRecordWithCoordinates): The amino acid sequence
-                with the coordinates reading frame
-            variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
-                carried in the sequence.
-            in_nodes (Set[PVGNode]): Inbound nodes.
-            ou_nodes (Set[PVGNode]): Outbound nodes
-            cleavage (bool): Whether the start of the node is a cleavage site.
-            truncated (bool): Whether the node is truncated. Useful when the
-                sequence does not have a confirmed stop codon.
-        """
+            was_bridge:bool=False, pre_cleaved:bool=False, level:int=0,
+            npop_collapsed:bool=False, cpop_collapsed:bool=False):
+        """ Construct a PVGNode object. """
         self.seq = seq
         self.variants = variants or []
         self.in_nodes = in_nodes or set()
@@ -47,9 +50,11 @@ class PVGNode():
         self.orf = orf or [None, None]
         self.reading_frame_index = reading_frame_index
         self.was_bridge = was_bridge
-        self.pre_cleave = pre_cleave
+        self.pre_cleave = pre_cleaved
         self.subgraph_id = subgraph_id
         self.level = level
+        self.npop_collapsed = npop_collapsed
+        self.cpop_collapsed = cpop_collapsed
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -61,6 +66,10 @@ class PVGNode():
         for variant in self.variants:
             if variant.location.overlaps(location):
                 variants.append(variant.shift(-start))
+
+        npop_collapsed = self.npop_collapsed and start == 0
+        cpop_collapsed = self.cpop_collapsed and stop == len(seq) or stop == -1
+
         return PVGNode(
             seq=seq,
             variants=variants,
@@ -69,7 +78,9 @@ class PVGNode():
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            npop_collapsed=npop_collapsed,
+            cpop_collapsed=cpop_collapsed
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -269,8 +280,8 @@ class PVGNode():
 
         return sorted(self.out_nodes, key=cmp_to_key(sort_func))[0]
 
-    def split_node(self, index:int, cleavage:bool=False, pre_cleave:bool=False
-            ) -> PVGNode:
+    def split_node(self, index:int, cleavage:bool=False, pre_cleave:bool=False,
+            pop_collapse:bool=False) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
         as the outbound edge. Variants will also be adjusted. For example:
 
@@ -308,7 +319,7 @@ class PVGNode():
             variants=right_variants,
             orf=self.orf,
             was_bridge=self.was_bridge,
-            pre_cleave=pre_cleave,
+            pre_cleaved=pre_cleave,
             subgraph_id=self.subgraph_id,
             level=self.level
         )
@@ -316,6 +327,12 @@ class PVGNode():
 
         if cleavage:
             new_node.cleavage = True
+
+        if pop_collapse:
+            self.cpop_collapsed = True
+            new_node.npop_collapsed = True
+            if new_node.is_bridge():
+                self.was_bridge = True
 
         # we only keep the last node to be was_bridge
         self.was_bridge = False
@@ -345,7 +362,8 @@ class PVGNode():
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            cpop_collapsed=self.cpop_collapsed
         )
 
         self.seq = self.seq[:i]
@@ -373,7 +391,8 @@ class PVGNode():
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            npop_collapsed=self.npop_collapsed
         )
 
         self.seq = self.seq[i:]
@@ -415,7 +434,9 @@ class PVGNode():
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            npop_collapsed=self.npop_collapsed,
+            cpop_collapsed=self.cpop_collapsed
         )
 
     def get_nearest_next_ref_index(self) -> int:
@@ -457,23 +478,33 @@ class PVGNode():
 
     def is_less_mutated_than(self, other:PVGNode) -> bool:
         """ Checks if this node has less mutation than the other """
-        if self.level < other.level:
-            return True
-        if self.level > other.level:
-            return False
-        if len(self.variants) < len(other.variants):
-            return True
-        if len(self.variants) > len(other.variants):
-            return False
+        if self.level != other.level:
+            return self.level < other.level
+
+        if len(self.variants) != len(other.variants):
+            return len(self.variants) < len(other.variants)
+
         for x, y in zip(self.variants, other.variants):
-            if x.location < y.location:
+            if x.location != y.location:
+                return x.location < y.location
+
+        for x, y in zip(self.variants, other.variants):
+            # SNV is higher than RES
+            if x.variant.type == 'SNV' and y.variant.type == 'RNAEditingSite':
                 return True
-            if x.location > y.location:
+            if x.variant.type == 'RNAEditingSite' and y.variant.type == 'SNV':
                 return False
+            # Otherwise don't really care about the order, just to make sure
+            # the result is reproducible
+            if x.variant.type != y.variant.type:
+                return x.variant.type > y.variant.type
+
+            if x.variant.alt != y.variant.type:
+                return x.variant.alt > y.variant.type
         return True
 
     def transfer_in_nodes_to(self, other:PVGNode):
-        """ transfre all in nodes of current node to the other """
+        """ transfer all in nodes of current node to the other """
         for in_node in copy.copy(self.in_nodes):
             if in_node in other.in_nodes:
                 continue

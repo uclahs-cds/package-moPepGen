@@ -21,6 +21,8 @@ def create_base_args() -> argparse.Namespace:
     args.output_path = None
     args.max_variants_per_node = 7
     args.additional_variants_per_misc = 2
+    args.min_nodes_to_collapse = 30
+    args.naa_to_collapse = 5
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
     args.cleavage_rule = 'trypsin'
