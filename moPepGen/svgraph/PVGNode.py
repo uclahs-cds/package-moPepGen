@@ -491,10 +491,26 @@ class PVGNode():
                 return True
             if x.location > y.location:
                 return False
+        for x, y in zip(self.variants, other.variants):
+            # SNV is higher than RES
+            if x.variant.type == 'SNV' and y.variant.type == 'RNAEditingSite':
+                return True
+            if x.variant.type == 'RNAEditingSite' and y.variant.type == 'SNV':
+                return False
+            # Otherwise don't really care about the order, just to make sure
+            # the result is reproducible
+            if x.variant.type < y.variant.type:
+                return True
+            if x.variant.type > y.variant.type:
+                return False
+            if x.variant.alt > y.variant.type:
+                return True
+            if x.variant.alt < y.variant.alt:
+                return False
         return True
 
     def transfer_in_nodes_to(self, other:PVGNode):
-        """ transfre all in nodes of current node to the other """
+        """ transfer all in nodes of current node to the other """
         for in_node in copy.copy(self.in_nodes):
             if in_node in other.in_nodes:
                 continue
