@@ -6,7 +6,6 @@ from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import aa, svgraph, seqvar
 from moPepGen.svgraph.PeptideVariantGraph import PVGTraversal, PVGCursor
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
-import moPepGen.aa.VariantPeptideIdentifier as vpi
 
 
 def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
