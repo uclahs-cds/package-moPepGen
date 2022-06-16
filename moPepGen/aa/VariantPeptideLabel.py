@@ -288,7 +288,7 @@ class VariantPeptideInfo():
 class LabelSourceMapping():
     """ Helper class to handle label source mapping """
     def __init__(self, data:Dict[str,Dict[str,str]]=None):
-        """ construnctor"""
+        """ constructor"""
         self.data = data or {}
 
     def add_record(self, gene_id:str, label:str, source:str):

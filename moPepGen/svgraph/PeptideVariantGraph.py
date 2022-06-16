@@ -120,6 +120,26 @@ class PeptideVariantGraph():
             node = node.split_node(shifted_site, cleavage=True)
         return first_node if return_first else node
 
+    def count_nodes(self):
+        """ Count nodes """
+        queue = deque([self.root])
+        visited = set()
+        k = 0
+
+        while queue:
+            cur = queue.pop()
+            if cur in visited:
+                continue
+            k += 1
+            visited.add(cur)
+            for node in cur.out_nodes:
+                if node in visited:
+                    continue
+                if node is None:
+                    continue
+                queue.appendleft(node)
+        return k
+
     def find_nodes_with_seq(self, seq:str) -> List[PVGNode]:
         """ find all nodes with the given sequence """
         queue = deque(self.root.out_nodes)

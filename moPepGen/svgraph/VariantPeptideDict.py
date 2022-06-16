@@ -14,20 +14,22 @@ if TYPE_CHECKING:
 
 class MiscleavedNodes():
     """ Helper class for looking for peptides with miscleavages """
-    def __init__(self, data:Deque[List[PVGNode]], orf:Tuple[int,int]=None):
+    def __init__(self, data:Deque[List[PVGNode]], orf:Tuple[int,int]=None,
+            tx_id:str=None):
         """ constructor """
         self.data = data
         self.orf = orf
+        self.tx_id = tx_id
 
     @staticmethod
     def find_miscleaved_nodes(node:PVGNode, orf:Tuple[int,int], miscleavage:int,
-            max_variants_per_node:int, additional_variants_per_misc:int
-            ) -> MiscleavedNodes:
+            max_variants_per_node:int, additional_variants_per_misc:int,
+            tx_id:str) -> MiscleavedNodes:
         """ find all miscleaved nodes """
         if orf[0] is None:
             raise ValueError('orf is None')
         queue = deque([[node]])
-        nodes = MiscleavedNodes(deque([]), orf)
+        nodes = MiscleavedNodes(deque([]), orf, tx_id)
         if not node.cpop_collapsed:
             nodes.data.append([node])
         while queue:
@@ -93,7 +95,7 @@ class MiscleavedNodes():
             graph (PeptideVariantGraph): The graph object.
             check_variants (bool): When true, only peptides that carries at
                 least 1 variant are kept. And when false, all unique peptides
-                are reported （e.g. noncoding).
+                are reported (e.g. noncoding).
             label_counter (Dict[str,int]): The object counts the total
                 occurrences of each variant label. An int number is appended
                 to the end of the label (e.g. ENST0001|SNV-10-T-C|5)
@@ -101,6 +103,8 @@ class MiscleavedNodes():
         for queue in self.data:
             metadata = VariantPeptideMetadata(orf=self.orf)
             seq:str = None
+
+            variants:Set[VariantRecord] = set()
 
             for node in queue:
                 other = str(node.seq.seq)
@@ -110,17 +114,23 @@ class MiscleavedNodes():
                     seq = seq + other
                 if check_variants:
                     for variant in node.variants:
-                        metadata.variants.add(variant.variant)
-                    metadata.variants.update(additional_variants)
+                        variants.add(variant.variant)
+                    variants.update(additional_variants)
 
             cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
-            metadata.variants.update(cleavage_gain_down)
+            variants.update(cleavage_gain_down)
 
             if seq:
                 seq = aa.AminoAcidSeqRecord(seq=Seq(seq))
 
-            if check_variants and not metadata.variants:
+            if check_variants and not variants:
                 continue
+
+            metadata.is_pure_circ_rna = len(variants) == 1 and \
+                list(variants)[0].is_circ_rna()
+
+            label = vpi.create_variant_peptide_id(self.tx_id, variants, None)
+            metadata.label = label
 
             yield seq, metadata
 
@@ -161,11 +171,12 @@ def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
 
 class VariantPeptideMetadata():
     """ Variant peptide metadata """
-    def __init__(self, variants:Set[VariantRecord]=None,
-            orf:Tuple[int,int]=None):
+    def __init__(self, label:str=None, orf:Tuple[int,int]=None,
+            is_pure_circ_rna:bool=False):
         """  """
-        self.variants = variants or set()
+        self.label = label
         self.orf = orf
+        self.is_pure_circ_rna = is_pure_circ_rna
 
 T = Dict[aa.AminoAcidSeqRecord, Set[VariantPeptideMetadata]]
 
@@ -178,8 +189,8 @@ class VariantPeptideDict():
             The peptide data pool, with keys being the AminoAcidRecord, and
             values being set of VariantPeptdieMetadata (variants and ORF).
         labels (Dict[str,int]): Label counter, as a dict with key being the
-            variant piptide label, and values being the number of occurrence
-            of this lable.
+            variant peptide label, and values being the number of occurrence
+            of this label.
     """
     def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None):
         """ constructor """
@@ -211,7 +222,8 @@ class VariantPeptideDict():
         miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
             node=node, orf=orf, miscleavage=miscleavage,
             max_variants_per_node=max_variants_per_node,
-            additional_variants_per_misc=additional_variants_per_misc
+            additional_variants_per_misc=additional_variants_per_misc,
+            tx_id=self.tx_id
         )
         for seq, metadata in miscleaved_nodes.join_miscleaved_peptides(
                 check_variants, additional_variants, is_start_codon):
@@ -239,22 +251,20 @@ class VariantPeptideDict():
             if '*' in seq:
                 raise ValueError('Invalid amino acid symbol found in the sequence.')
             labels = []
-            metadatas = list(metadatas)
-            metadatas.sort(key=lambda x: x.orf[0])
-            has_pure_circ_rna = False
+            metadatas = sorted(metadatas, key=lambda x: x.orf[0])
+            had_pure_circ_rna = False
             for metadata in metadatas:
-                variants = list(metadata.variants)
+                if metadata.is_pure_circ_rna:
+                    if had_pure_circ_rna:
+                        continue
+                    had_pure_circ_rna = True
                 orf_id = None
                 if orf_id_map:
                     orf_id = orf_id_map[metadata.orf]
 
-                label = vpi.create_variant_peptide_id(self.tx_id, variants, orf_id)
-
-                is_pure_circ_rna = len(variants) == 1 and variants[0].is_circ_rna()
-                if is_pure_circ_rna:
-                    if has_pure_circ_rna:
-                        continue
-                    has_pure_circ_rna = True
+                label = metadata.label
+                if orf_id:
+                    label += f"|{orf_id}"
 
                 if label in self.labels:
                     self.labels[label] += 1

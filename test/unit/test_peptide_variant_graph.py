@@ -6,6 +6,7 @@ from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import aa, svgraph, seqvar
 from moPepGen.svgraph.PeptideVariantGraph import PVGTraversal, PVGCursor
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
+import moPepGen.aa.VariantPeptideIdentifier as vpi
 
 
 def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
@@ -752,8 +753,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
         traversal = PVGTraversal(True, False, 0, pool, (6,13), (18,39))
         cursor = PVGCursor(nodes[1], nodes[3], True, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
-        variants = list(list(traversal.pool.peptides.values())[0])[0].variants
-        self.assertEqual(len(variants), 1)
+        label = list(list(traversal.pool.peptides.values())[0])[0].label
+        self.assertEqual(label.count('|'), 1)
 
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
         r""" Test the fit into cleavage for bridge node that needs to be merged
