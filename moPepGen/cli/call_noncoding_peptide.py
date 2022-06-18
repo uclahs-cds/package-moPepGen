@@ -5,7 +5,7 @@ import argparse
 from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path
 from Bio.SeqIO import FastaIO
-from moPepGen import svgraph, aa, logger
+from moPepGen import params, svgraph, aa, logger
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
 from moPepGen.cli import common
@@ -78,12 +78,14 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
     if args.output_orf:
         common.validate_file_format(args.output_orf, OUTPUT_FILE_FORMATS)
 
-    rule:str = args.cleavage_rule
-    miscleavage:int = int(args.miscleavage)
-    min_mw:float = float(args.min_mw)
-    exception = 'trypsin_exception' if rule == 'trypsin' else None
-    min_length:int = args.min_length
-    max_length:int = args.max_length
+    cleavage_params = params.CleavageParams(
+        enzyme=args.cleavage_rule,
+        exception='trypsin_exception' if args.cleavage_rule == 'trypsin' else None,
+        miscleavage=int(args.miscleavage),
+        min_mw=float(args.min_mw),
+        min_length=args.min_length,
+        max_length=args.max_length
+    )
 
     common.print_start_message(args)
 
@@ -111,7 +113,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
         try:
             peptides, orfs = call_noncoding_peptide_main(tx_id, tx_model, genome,
-                rule, exception, miscleavage)
+                canonical_peptides, cleavage_params)
 
             if not orfs:
                 continue
@@ -120,7 +122,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
             for peptide in peptides:
                 noncanonical_pool.add_peptide(peptide, canonical_peptides,
-                    min_mw, min_length, max_length)
+                    cleavage_params)
         except ReferenceSeqnameNotFoundError as e:
             if not ReferenceSeqnameNotFoundError.raised:
                 warning(e.args[0] + ' Make sure your GTF and FASTA files match.')
@@ -144,7 +146,8 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
 
 def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
-        genome:DNASeqDict, rule:str, exception:str, miscleavage:int
+        genome:DNASeqDict, canonical_peptides:Set[str],
+        cleavage_params:params.CleavageParams
         ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
     """ Call noncoding peptides """
     chrom = tx_model.transcript.location.seqname
@@ -159,15 +162,16 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         seq=tx_seq,
         _id=tx_id,
         cds_start_nf=True,
-        has_known_orf=False
+        has_known_orf=False,
+        cleavage_params=cleavage_params
     )
     dgraph.init_three_frames()
     pgraph = dgraph.translate()
-    pgraph.create_cleavage_graph(rule=rule, exception=exception)
+    pgraph.create_cleavage_graph()
     peptides = pgraph.call_variant_peptides(
-        miscleavage=miscleavage,
         check_variants=False,
-        check_orf=True
+        check_orf=True,
+        blacklist=canonical_peptides
     )
     orfs = get_orf_sequences(pgraph, tx_id, tx_seq)
     return peptides, orfs

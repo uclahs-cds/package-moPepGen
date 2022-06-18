@@ -5,7 +5,7 @@ from typing import FrozenSet, Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
 from Bio.Seq import Seq
-from moPepGen import aa, seqvar
+from moPepGen import aa, seqvar, params
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
@@ -36,29 +36,23 @@ class PeptideVariantGraph():
             position.
     """
     def __init__(self, root:PVGNode, _id:str,
-            known_orf:List[int,int], rule:str=None, exception:str=None,
+            known_orf:List[int,int], cleavage_params:params.CleavageParams=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
-            max_variants_per_node:int=-1, additional_variants_per_misc:int=-1,
-            hypermutated_region_warned:bool=False, min_nodes_to_collapse:int=30,
-            naa_to_collapse=5
+            hypermutated_region_warned:bool=False, blacklist:Set[str]=None
             ):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
         self.known_orf = known_orf
         self.stop = PVGNode(aa.AminoAcidSeqRecord(Seq('*')), None, subgraph_id=self.id)
-        self.rule = rule
-        self.exception = exception
         self.orfs = orfs or set()
         self.reading_frames = reading_frames or [None, None, None]
         self.orf_id_map = orf_id_map or {}
         self.cds_start_nf = cds_start_nf
-        self.max_variants_per_node = max_variants_per_node
-        self.additional_variants_per_misc = additional_variants_per_misc
         self.hypermutated_region_warned = hypermutated_region_warned
-        self.min_nodes_to_collapse = min_nodes_to_collapse
-        self.naa_to_collapse = naa_to_collapse
+        self.blacklist = blacklist or set()
+        self.cleavage_params = cleavage_params or params.CleavageParams()
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -105,10 +99,12 @@ class PeptideVariantGraph():
                 than last. Defaults to False
         """
         first_node = node
-        exception_sites = node.seq.get_enzymatic_cleave_exception_sites(self.exception)
+        exception_sites = node.seq.get_enzymatic_cleave_exception_sites(
+            self.cleavage_params.exception
+        )
         sites = node.seq.find_all_cleave_and_stop_sites(
-            rule=self.rule,
-            exception=self.exception,
+            rule=self.cleavage_params.enzyme,
+            exception=self.cleavage_params.exception,
             exception_sites=exception_sites
         )
         sites = deque(sites)
@@ -158,13 +154,13 @@ class PeptideVariantGraph():
 
     def nodes_have_too_many_variants(self, nodes:Iterable[PVGNode]) -> bool:
         """ Check the total number of variants of given nodes """
-        if self.max_variants_per_node == -1:
+        if self.cleavage_params.max_variants_per_node == -1:
             return False
         variants = set()
         for node in nodes:
             for variant in node.variants:
                 variants.add(variant.variant)
-        return len(variants) > self.max_variants_per_node
+        return len(variants) > self.cleavage_params.max_variants_per_node
 
     def find_routes_for_merging(self, node:PVGNode, cleavage:bool=False
             ) -> Tuple[Set[Tuple[PVGNode]], Set[PVGNode]]:
@@ -188,7 +184,10 @@ class PeptideVariantGraph():
                 for y in x.in_nodes) for x in out_node.out_nodes if x is not self.stop)
             if is_sharing_downstream:
                 continue
-            site = out_node.seq.find_first_cleave_or_stop_site(self.rule, self.exception)
+            site = out_node.seq.find_first_cleave_or_stop_site(
+                rule=self.cleavage_params.enzyme,
+                exception=self.cleavage_params.exception
+            )
             if site > -1:
                 out_node.split_node(site, cleavage=True, pre_cleave=True)
 
@@ -378,11 +377,11 @@ class PeptideVariantGraph():
         collapsed_nodes:List[PVGNode] = []
         for node in nodes:
             node_len = len(node.seq.seq)
-            if node_len <= self.naa_to_collapse:
+            if node_len <= self.cleavage_params.naa_to_collapse:
                 collapsed_nodes.append(node)
                 continue
             new_node = node.split_node(
-                index=node_len - self.naa_to_collapse,
+                index=node_len - self.cleavage_params.naa_to_collapse,
                 cleavage=True,
                 pop_collapse=True
             )
@@ -424,7 +423,7 @@ class PeptideVariantGraph():
         routes, trash = self.find_routes_for_merging(node, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
-        if len(new_nodes) > self.min_nodes_to_collapse:
+        if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
@@ -491,7 +490,7 @@ class PeptideVariantGraph():
         routes, trash = self.find_routes_for_merging(node)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
-        if len(new_nodes) > self.min_nodes_to_collapse:
+        if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
@@ -522,14 +521,14 @@ class PeptideVariantGraph():
         routes, trash = self.find_routes_for_merging(head, True)
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
         new_nodes = self.collapse_end_nodes(new_nodes)
-        if len(new_nodes) > self.min_nodes_to_collapse:
+        if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
             self.remove_node(trash_node)
         return downstreams, inbridge_list
 
-    def create_cleavage_graph(self, rule:str, exception:str=None) -> None:
+    def create_cleavage_graph(self) -> None:
         """ Form a cleavage graph from a variant graph. After calling this
         method, every each in the graph should represent a cleavage in the
         sequence of the pull peptide of reference and variated.
@@ -538,8 +537,6 @@ class PeptideVariantGraph():
             rule (str): The rule for enzymatic cleavage, e.g., trypsin.
             exception (str): The exception for cleavage rule.
         """
-        self.rule = rule
-        self.exception = exception
         queue = deque([self.root])
 
         inbridge_list:Dict[PVGNode,List[PVGNode]] = {}
@@ -560,7 +557,10 @@ class PeptideVariantGraph():
                     queue.appendleft(node)
                 continue
 
-            first_site = cur.seq.find_first_cleave_or_stop_site(self.rule, self.exception)
+            first_site = cur.seq.find_first_cleave_or_stop_site(
+                rule=self.cleavage_params.enzyme,
+                exception=self.cleavage_params.exception
+            )
 
             if cur.is_already_cleaved() and first_site == -1:
                 continue
@@ -592,7 +592,8 @@ class PeptideVariantGraph():
         if len(cur.out_nodes) == 1:
             downstream = list(cur.out_nodes)[0]
             site = downstream.seq.find_first_cleave_or_stop_site(
-                self.rule, self.exception
+                rule=self.cleavage_params.enzyme,
+                exception=self.cleavage_params.exception
             )
             if site > -1:
                 downstream.split_node(site, True)
@@ -615,8 +616,10 @@ class PeptideVariantGraph():
         branches:Set[PVGNode] = set()
         inbridges:Dict[PVGNode,List[PVGNode]] = {}
 
-        sites = cur.seq.find_all_cleave_and_stop_sites(rule=self.rule,
-            exception=self.exception)
+        sites = cur.seq.find_all_cleave_and_stop_sites(
+            rule=self.cleavage_params.enzyme,
+            exception=self.cleavage_params.exception
+        )
 
         if len(sites) == 0:
             if self.next_is_stop(cur) or cur.is_bridge() or \
@@ -654,7 +657,9 @@ class PeptideVariantGraph():
                 if not cur.cleavage:
                     _,inbridges = self.expand_forward(cur)
                 site = right.seq.find_first_cleave_or_stop_site(
-                    rule=self.rule, exception=self.exception)
+                    rule=self.cleavage_params.enzyme,
+                    exception=self.cleavage_params.exception
+                )
                 right = right.split_node(site, cleavage=True)
                 branches = {right}
 
@@ -671,8 +676,8 @@ class PeptideVariantGraph():
         orfs.sort()
         self.orf_id_map = {v:f"ORF{i+1}" for i,v in enumerate(orfs)}
 
-    def call_variant_peptides(self, miscleavage:int=2, check_variants:bool=True,
-            check_orf:bool=False, keep_all_occurrence:bool=True
+    def call_variant_peptides(self, check_variants:bool=True,
+            check_orf:bool=False, keep_all_occurrence:bool=True, blacklist:Set[str]=None
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
@@ -689,12 +694,13 @@ class PeptideVariantGraph():
         Return:
             A set of aa.AminoAcidSeqRecord.
         """
+        self.blacklist = blacklist or set()
         cur = PVGCursor(None, self.root, True, [None,None], [])
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
         peptide_pool = VariantPeptideDict(tx_id=self.id)
         traversal = PVGTraversal(
             check_variants=check_variants, check_orf=check_orf,
-            miscleavage=miscleavage, queue=queue, pool=peptide_pool,
+            queue=queue, pool=peptide_pool,
         )
 
         if self.has_known_orf():
@@ -773,12 +779,11 @@ class PeptideVariantGraph():
             traversal.pool.add_miscleaved_sequences(
                 node=node_copy,
                 orf=tuple(orf),
-                miscleavage=traversal.miscleavage,
+                cleavage_params=self.cleavage_params,
                 check_variants=traversal.check_variants,
                 is_start_codon=False,
                 additional_variants=additional_variants,
-                max_variants_per_node=self.max_variants_per_node,
-                additional_variants_per_misc=self.additional_variants_per_misc
+                blacklist=self.blacklist
             )
             self.remove_node(node_copy)
 
@@ -845,12 +850,11 @@ class PeptideVariantGraph():
             traversal.pool.add_miscleaved_sequences(
                 node=node_copy,
                 orf=tuple(orf),
-                miscleavage=traversal.miscleavage,
+                cleavage_params=self.cleavage_params,
                 check_variants=traversal.check_variants,
                 is_start_codon=True,
                 additional_variants=additional_variants,
-                max_variants_per_node=self.max_variants_per_node,
-                additional_variants_per_misc=self.additional_variants_per_misc
+                blacklist=self.blacklist
             )
             cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
@@ -966,12 +970,11 @@ class PeptideVariantGraph():
             traversal.pool.add_miscleaved_sequences(
                 node=node,
                 orf=tuple(orf),
-                miscleavage=traversal.miscleavage,
+                cleavage_params=self.cleavage_params,
                 check_variants=traversal.check_variants,
                 is_start_codon=is_start_codon,
                 additional_variants=additional_variants,
-                max_variants_per_node=self.max_variants_per_node,
-                additional_variants_per_misc=self.additional_variants_per_misc
+                blacklist=self.blacklist
             )
         for node in trash:
             self.remove_node(node)
@@ -995,7 +998,7 @@ class PVGTraversal():
     """ PVG Traversal. The purpose of this class is to facilitate the graph
     traversal to call variant peptides.
     """
-    def __init__(self, check_variants:bool, check_orf:bool, miscleavage:int,
+    def __init__(self, check_variants:bool, check_orf:bool,
             pool:VariantPeptideDict, known_orf_tx:Tuple[int,int]=None,
             known_orf_aa:Tuple[int,int]=None,
             queue:Deque[PVGCursor]=None,
@@ -1003,7 +1006,6 @@ class PVGTraversal():
         """ constructor """
         self.check_variants = check_variants
         self.check_orf = check_orf
-        self.miscleavage = miscleavage
         self.known_orf_tx = known_orf_tx or (None, None)
         self.known_orf_aa = known_orf_aa or (None, None)
         self.queue = queue or deque([])

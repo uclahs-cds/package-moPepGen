@@ -5,7 +5,7 @@ from collections import deque
 import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from moPepGen import dna, seqvar, err
+from moPepGen import dna, seqvar, err, params
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecordWithCoordinates
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.seqvar import VariantRecordWithCoordinate
@@ -40,16 +40,9 @@ class ThreeFrameTVG():
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
-            max_variants_per_node:int=-1, additional_variants_per_misc:int=-1,
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
-            min_nodes_to_collapse:int=30, naa_to_collapse=5):
-        """ Constructor to create a TranscriptVariantGraph object.
-
-        Args:
-            seq (DNASeqRecordWithCoordinates): The original sequence of the
-                transcript (reference).
-            transcript_id (str)
-        """
+            cleavage_params:params.CleavageParams=None):
+        """ Constructor to create a TranscriptVariantGraph object. """
         self.seq = seq
         self.id = _id
         if self.seq and not self.seq.locations:
@@ -65,13 +58,10 @@ class ThreeFrameTVG():
             self.has_known_orf = has_known_orf
         self.mrna_end_nf = mrna_end_nf
         self.global_variant = global_variant
-        self.max_variants_per_node = max_variants_per_node
-        self.additional_variants_per_misc = additional_variants_per_misc
         self.subgraphs = subgraphs or SubgraphTree()
         self.subgraphs.add_root(_id)
         self.hypermutated_region_warned = hypermutated_region_warned
-        self.min_nodes_to_collapse = min_nodes_to_collapse
-        self.naa_to_collapse = naa_to_collapse
+        self.cleavage_params = cleavage_params or params.CleavageParams('trypsin')
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
@@ -453,7 +443,11 @@ class ThreeFrameTVG():
         cursors = copy.copy(cursors)
         var_tails = []
         subgraph_id = self.subgraphs.generate_subgraph_id()
-        branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
+        branch = ThreeFrameTVG(
+            seq, subgraph_id,
+            global_variant=var.variant,
+            cleavage_params=self.cleavage_params
+        )
         level = cursors[0].level + 1
         branch.update_node_level(level)
         parent_id = cursors[0].subgraph_id
@@ -1230,13 +1224,13 @@ class ThreeFrameTVG():
 
     def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode]) -> bool:
         """ Check the total number of variants of given nodes """
-        if self.max_variants_per_node == -1:
+        if self.cleavage_params.max_variants_per_node == -1:
             return False
         variants = set()
         for node in nodes:
             for variant in node.variants:
                 variants.add(variant.variant)
-        return len(variants) > self.max_variants_per_node
+        return len(variants) > self.cleavage_params.max_variants_per_node
 
     def align_variants(self, node:TVGNode) -> Tuple[TVGNode, TVGNode]:
         r""" Aligns all variants at that overlaps to the same start and end
@@ -1328,8 +1322,9 @@ class ThreeFrameTVG():
                 if self.nodes_have_too_many_variants([cur, out_node]):
                     if not self.hypermutated_region_warned:
                         err.HypermutatedRegionWarning(
-                            self.id, self.max_variants_per_node,
-                            self.additional_variants_per_misc
+                            self.id,
+                            self.cleavage_params.max_variants_per_node,
+                            self.cleavage_params.additional_variants_per_misc
                         )
                         self.hypermutated_region_warned = True
                     continue
@@ -1494,12 +1489,9 @@ class ThreeFrameTVG():
             root=root,
             _id=self.id,
             known_orf=known_orf,
+            cleavage_params=self.cleavage_params,
             cds_start_nf=self.cds_start_nf,
-            max_variants_per_node=self.max_variants_per_node,
-            additional_variants_per_misc=self.additional_variants_per_misc,
-            hypermutated_region_warned=self.hypermutated_region_warned,
-            min_nodes_to_collapse=self.min_nodes_to_collapse,
-            naa_to_collapse=self.naa_to_collapse
+            hypermutated_region_warned=self.hypermutated_region_warned
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])

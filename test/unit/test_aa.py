@@ -3,7 +3,7 @@ import unittest
 from test.unit import create_aa_record, create_genomic_annotation, \
     create_aa_seq_with_coordinates
 from Bio.Seq import Seq
-from moPepGen import aa
+from moPepGen import aa, params
 
 
 ANNOTATION_ATTRS = [
@@ -136,8 +136,9 @@ class TestCaseVariantPeptidePool(unittest.TestCase):
         pool = aa.VariantPeptidePool(set(peptides[:2]))
         canonical = {'ABCD'}
         # pool2 = {1,2,3}
-        # get_equivalent(pool2, 2)
-        pool.add_peptide(peptides[-1], canonical)
+        # get_equivalent(pool2, 2)p
+        cleavage_params = params.CleavageParams()
+        pool.add_peptide(peptides[-1], canonical, cleavage_params)
         for seq in pool.peptides:
             if str(seq.seq) == peptide_data[-1][0]:
                 expected = f'{peptide_data[0][1]} {peptide_data[-1][1]}'

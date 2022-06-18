@@ -5,7 +5,7 @@ from pathlib import Path
 import pickle
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature, MatchedLocation
-from moPepGen import svgraph, dna, seqvar, gtf, aa
+from moPepGen import params, svgraph, dna, seqvar, gtf, aa
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen.seqvar import VariantRecordPool
 
@@ -116,6 +116,7 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
     raw_seq = Seq(seq)
     seq = dna.DNASeqRecordWithCoordinates(raw_seq, [])
     graph = svgraph.ThreeFrameTVG(seq, _id=graph_id)
+    graph.cleavage_params = params.CleavageParams()
     for edge in copy.copy(graph.root.out_edges):
         graph.remove_edge(edge)
     graph.reading_frames[0] = svgraph.TVGNode(None, reading_frame_index=0,

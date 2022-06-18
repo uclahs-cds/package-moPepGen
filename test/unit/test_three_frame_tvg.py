@@ -906,11 +906,12 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
 
         graph, nodes = create_three_frame_tvg(data, 'AATACCTTG')
-        graph.max_variants_per_node = 2
+        graph.cleavage_params.max_variants_per_node = 2
         graph.align_variants(nodes[1])
         for edge in nodes[1].out_edges:
             out_node = edge.out_node
-            self.assertTrue(len(out_node.variants) <= graph.max_variants_per_node)
+            self.assertTrue(len(out_node.variants) <=
+                graph.cleavage_params.max_variants_per_node)
 
     def test_expand_alignments(self):
         r""" find_known_orf wihtout mutation
