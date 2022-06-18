@@ -60,5 +60,3 @@ class ReferenceData():
         self.genome = genome
         self.anno = anno
         self.canonical_peptides = canonical_peptides
-
-

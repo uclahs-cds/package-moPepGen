@@ -1,8 +1,8 @@
 """ Test Module for VariantPeptidePool """
 import unittest
-from moPepGen import params
 from test.unit import create_aa_record
 from Bio.Seq import Seq
+from moPepGen import params
 from moPepGen.aa import VariantPeptidePool
 
 

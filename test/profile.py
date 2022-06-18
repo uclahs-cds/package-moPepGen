@@ -52,7 +52,7 @@ def run_task():
     dgraph.create_variant_graph(tx_variants, variant_pool, None, anno)
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
-    pgraph.create_cleavage_graph('trypsin')
+    pgraph.create_cleavage_graph()
     peptides = pgraph.call_variant_peptides()
     print(peptides)
 
