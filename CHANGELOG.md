@@ -12,7 +12,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [0.6.1] - 2022-06-08
+## [0.7.1] - 2022-06-18
+
+### Changed
+
+- `callVariant` optimized so the memory usage and run time is reduced to better handle hyper-mutated regions. #483
+
+- Switched from [pathos](https://pathos.readthedocs.io/en/latest/index.html) to [ray](https://www.ray.io/) because the latter has better support for shared memory.
+
+---
+
+## [0.7.0] - 2022-06-08
 
 ### Fixed
 

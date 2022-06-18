@@ -1,6 +1,6 @@
 """ Module for variant peptide pool (unique) """
 from __future__ import annotations
-from typing import Set, IO, Dict, List, Tuple
+from typing import Set, IO, Dict, List, Tuple, TYPE_CHECKING
 from pathlib import Path
 from Bio import SeqUtils, SeqIO
 from Bio.Seq import Seq
@@ -10,6 +10,9 @@ from moPepGen import get_equivalent, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from .VariantPeptideLabel import VariantPeptideInfo
 
 
+if TYPE_CHECKING:
+    from moPepGen import params
+
 class VariantPeptidePool():
     """ Varaint Peptide Pool """
     def __init__(self, peptides:Set[AminoAcidSeqRecord]=None):
@@ -18,8 +21,8 @@ class VariantPeptidePool():
         self.peptide_delimeter = VARIANT_PEPTIDE_SOURCE_DELIMITER
 
     def add_peptide(self, peptide:AminoAcidSeqRecord,
-            canonical_peptides:Set[str], min_mw:int=500, min_length:int=7,
-            max_length:int=25, skip_checking:bool=False):
+            canonical_peptides:Set[str], cleavage_params:params.CleavageParams=None,
+            skip_checking:bool=False):
         """ Add a peptide to the pool if it does not already exist. Otherwise,
         the label is appended to the existing same peptide.
 
@@ -31,6 +34,9 @@ class VariantPeptidePool():
             canonical_peptides (Set[str]): Canonical peptides.
         """
         if not skip_checking:
+            min_mw = cleavage_params.min_mw
+            min_length = cleavage_params.min_length
+            max_length = cleavage_params.max_length
             if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
                 return
             if len(peptide.seq) < min_length or len(peptide.seq) > max_length:

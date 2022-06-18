@@ -98,7 +98,7 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     metadata = common.generate_metadata(args)
 
-    tx_rank = anno.get_transcirpt_rank()
+    tx_rank = anno.get_transcript_rank()
     ordered_keys = sorted(vep_records.keys(), key=lambda x:tx_rank[x])
 
     all_records = []

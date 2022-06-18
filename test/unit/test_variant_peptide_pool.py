@@ -2,6 +2,7 @@
 import unittest
 from test.unit import create_aa_record
 from Bio.Seq import Seq
+from moPepGen import params
 from moPepGen.aa import VariantPeptidePool
 
 
@@ -15,7 +16,8 @@ class TestVariantPeptidePool(unittest.TestCase):
         ]
         peptides = [create_aa_record(*x) for x in data]
         pool = VariantPeptidePool(peptides={peptides[0]})
-        pool.add_peptide(peptides[1], set())
+        cleavage_params = params.CleavageParams()
+        pool.add_peptide(peptides[1], set(), cleavage_params)
         self.assertEqual(len(pool.peptides), 1)
 
         received = list(pool.peptides)[0].description

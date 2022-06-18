@@ -508,7 +508,7 @@ class GenomicAnnotation():
             i += 1
         return rank
 
-    def get_transcirpt_rank(self) -> Dict[str, int]:
+    def get_transcript_rank(self) -> Dict[str, int]:
         """ Get the transcripts rank """
         i = 0
         rank = {}

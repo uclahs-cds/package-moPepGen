@@ -3,7 +3,7 @@ from typing import Tuple, Dict, List
 import unittest
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from moPepGen import aa, svgraph, seqvar
+from moPepGen import aa, params, svgraph, seqvar
 from moPepGen.svgraph.PeptideVariantGraph import PVGTraversal, PVGCursor
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 
@@ -14,9 +14,11 @@ def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
     root = svgraph.PVGNode(None, None, subgraph_id=_id)
     if not known_orf:
         known_orf = [None, None]
-    graph = svgraph.PeptideVariantGraph(root, _id, known_orf)
-    graph.rule = 'trypsin'
-    graph.exception = 'trypsin'
+    cleavage_params = params.CleavageParams(
+        enzyme='trypsin', exception = 'trypsin',
+        miscleavage=0, min_mw=0, min_length=0
+    )
+    graph = svgraph.PeptideVariantGraph(root, _id, known_orf, cleavage_params)
     node_list:Dict[int,svgraph.PVGNode] = {0: root}
     for key, val in data.items():
         locs = []
@@ -430,7 +432,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
             4: ('SSXPK', [2,3], [None], locations, 0)
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,45])
-        peptides = graph.call_variant_peptides(1)
+        graph.cleavage_params.miscleavage = 1
+        peptides = graph.call_variant_peptides()
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR'}
         self.assertEqual(received, expected)
@@ -447,7 +450,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
             5: ('SSSVK', [4], [None], locations, 0)
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,60])
-        peptides = graph.call_variant_peptides(1)
+        graph.cleavage_params.miscleavage = 1
+        peptides = graph.call_variant_peptides()
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
@@ -462,7 +466,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
             4: ('SSSSS', [1,3], [None], [((0,5),(10,15))], 0),
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,60])
-        peptides = graph.call_variant_peptides(1)
+        graph.cleavage_params.miscleavage = 1
+        peptides = graph.call_variant_peptides()
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSR', 'SSSSRSSSIR', 'SSSIR'}
         self.assertEqual(received, expected)
@@ -482,7 +487,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
             7: ('SSSVK', [6], [None], locations, 0)
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,60])
-        peptides = graph.call_variant_peptides(1)
+        graph.cleavage_params.miscleavage = 1
+        peptides = graph.call_variant_peptides()
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSS', 'SS'}
         self.assertEqual(received, expected)
@@ -499,8 +505,9 @@ class TestPeptideVariantGraph(unittest.TestCase):
             5: ('SSSVK', [4], [None], locations, 0)
         }
         graph, nodes = create_pgraph(data, 'ENST0001', known_orf=[0,60])
+        graph.cleavage_params.miscleavage = 2
         nodes[5].truncated = True
-        peptides = graph.call_variant_peptides(2)
+        peptides = graph.call_variant_peptides()
         received = {str(x.seq) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSKSSSSRSSSPK', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
@@ -522,7 +529,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             9: ('SSSVK', [8], [None], [((0,5),(16,21))], 0)
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[18, 27])
-        peptides = graph.call_variant_peptides(0)
+        peptides = graph.call_variant_peptides()
         received = {str(x.seq) for x in peptides}
         expected = {'MSS', 'SS'}
         self.assertEqual(received, expected)
@@ -532,16 +539,16 @@ class TestPeptideVariantGraph(unittest.TestCase):
         locations = [((0,4),(0,4))]
         data = {
             1: ('MSSSK', [0], [], locations, 0),
-            2: ('MSSSJ', [0], [], locations, 1),
+            2: ('MSSYK', [0], [], locations, 1),
             3: ('SSSSR', [1], [], locations, 0),
             4: ('SSSSR', [2], [], locations, 1)
         }
         graph_id = 'ENST0001'
         graph, _ = create_pgraph(data, graph_id, )
-        peptides = graph.call_variant_peptides(0, check_variants=False, check_orf=True)
+        peptides = graph.call_variant_peptides(check_variants=False, check_orf=True)
 
         received = {str(x.seq) for x in peptides}
-        expected = {'MSSSK', 'MSSSJ', 'SSSSR', 'SSSJ', 'SSSK'}
+        expected = {'MSSSK', 'MSSYK', 'SSSSR', 'SSYK', 'SSSK'}
         self.assertEqual(received, expected)
 
         expected = {
@@ -588,7 +595,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,30]
         pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (0,30), (0,10))
+        traversal = PVGTraversal(True, False, pool, (0,30), (0,10))
         cursor = PVGCursor(nodes[1], nodes[2], True, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
 
@@ -614,7 +621,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         nodes[4].reading_frame_index = 2
         graph.known_orf = [18,60]
         pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (18,60), (6,20))
+        traversal = PVGTraversal(True, False, pool, (18,60), (6,20))
         cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(traversal.queue), 1)
@@ -636,7 +643,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [24,90]
         pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (24,90), (8,30))
+        traversal = PVGTraversal(True, False, pool, (24,90), (8,30))
         cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(pool.peptides), 2)
@@ -659,7 +666,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.cds_start_nf = True
         graph.known_orf = [6,90]
         pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (6,90), (2,30))
+        traversal = PVGTraversal(True, False, pool, (6,90), (2,30))
         cursor = PVGCursor(graph.root, nodes[2], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(pool.peptides), 0)
@@ -681,7 +688,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,90]
         pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (0,90), (0,30))
+        traversal = PVGTraversal(True, False, pool, (0,90), (0,30))
         cursor = PVGCursor(nodes[2], nodes[4], True, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(pool.peptides), 1)
@@ -706,7 +713,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,39]
         pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (0,42), (0,14))
+        traversal = PVGTraversal(True, False, pool, (0,42), (0,14))
         cursor = PVGCursor(nodes[4], nodes[5], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         cursor = PVGCursor(nodes[2], nodes[6], True, [0, None], [])
@@ -730,7 +737,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [18,39]
         pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (6,13), (18,39))
+        traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
         cursor = PVGCursor(nodes[5], nodes[6], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertFalse(traversal.queue[0].in_cds)
@@ -749,11 +756,11 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,39]
         pool = VariantPeptideDict(graph.id)
-        traversal = PVGTraversal(True, False, 0, pool, (6,13), (18,39))
+        traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
         cursor = PVGCursor(nodes[1], nodes[3], True, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
-        variants = list(list(traversal.pool.peptides.values())[0])[0].variants
-        self.assertEqual(len(variants), 1)
+        label = list(list(traversal.pool.peptides.values())[0])[0].label
+        self.assertEqual(label.count('|'), 1)
 
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
         r""" Test the fit into cleavage for bridge node that needs to be merged

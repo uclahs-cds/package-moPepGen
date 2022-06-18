@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 from typing import Dict, Union, List, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import svgraph, seqvar
+from moPepGen import svgraph, seqvar, params
 from moPepGen.svgraph.TVGNode import TVGNode
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
@@ -28,9 +28,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=False,
             circ_record:circ.CircRNAModel=None, attrs:dict=None,
-            max_variants_per_node:int=7, additional_variants_per_misc:int=-1,
-            min_nodes_to_collapse:int=30, naa_to_collapse=5,
-            subgraphs:SubgraphTree=None):
+            subgraphs:SubgraphTree=None, cleavage_params:params.CleavageParams=None):
         """ Construct a CircularVariantGraph
 
         Args:
@@ -63,11 +61,8 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         super().__init__(
             seq=seq, _id=_id, root=root, reading_frames=reading_frames,
             cds_start_nf=cds_start_nf, has_known_orf=has_known_orf,
-            global_variant=circ_variant,
-            max_variants_per_node=max_variants_per_node,
-            additional_variants_per_misc=additional_variants_per_misc,
-            subgraphs=subgraphs, min_nodes_to_collapse=min_nodes_to_collapse,
-            naa_to_collapse=naa_to_collapse
+            global_variant=circ_variant, subgraphs=subgraphs,
+            cleavage_params=cleavage_params
         )
 
     def get_circ_variant_with_coordinate(self) -> seqvar.VariantRecordWithCoordinate:

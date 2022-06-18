@@ -4,6 +4,7 @@ from collections import deque
 import copy
 from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from Bio.Seq import Seq
+from Bio import SeqUtils
 from moPepGen import aa, get_equivalent
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.aa import VariantPeptideIdentifier as vpi
@@ -11,23 +12,32 @@ from moPepGen.aa import VariantPeptideIdentifier as vpi
 
 if TYPE_CHECKING:
     from moPepGen.seqvar.VariantRecord import VariantRecord
+    from moPepGen import params
 
 class MiscleavedNodes():
     """ Helper class for looking for peptides with miscleavages """
-    def __init__(self, data:Deque[List[PVGNode]], orf:Tuple[int,int]=None):
+    def __init__(self, data:Deque[List[PVGNode]],
+            cleavage_params:params.CleavageParams,
+            orf:Tuple[int,int]=None, tx_id:str=None):
         """ constructor """
         self.data = data
         self.orf = orf
+        self.tx_id = tx_id
+        self.cleavage_params = cleavage_params
 
     @staticmethod
-    def find_miscleaved_nodes(node:PVGNode, orf:Tuple[int,int], miscleavage:int,
-            max_variants_per_node:int, additional_variants_per_misc:int
-            ) -> MiscleavedNodes:
+    def find_miscleaved_nodes(node:PVGNode, orf:Tuple[int,int],
+            cleavage_params:params.CleavageParams, tx_id:str) -> MiscleavedNodes:
         """ find all miscleaved nodes """
         if orf[0] is None:
             raise ValueError('orf is None')
         queue = deque([[node]])
-        nodes = MiscleavedNodes(deque([]), orf)
+        nodes = MiscleavedNodes(
+            data=deque([]),
+            cleavage_params=cleavage_params,
+            orf=orf,
+            tx_id=tx_id
+        )
         if not node.cpop_collapsed:
             nodes.data.append([node])
         while queue:
@@ -41,17 +51,17 @@ class MiscleavedNodes():
 
             n_cleavages = len([x for x in cur_batch if not x.cpop_collapsed]) - 1
 
-            if n_cleavages >= miscleavage:
+            if n_cleavages >= cleavage_params.miscleavage:
                 continue
 
             # This is done to reduce the complexity when the node has too
             # many out nodes, and its out nodes also have too many out nodes.
-            if additional_variants_per_misc == -1:
+            if cleavage_params.additional_variants_per_misc == -1:
                 allowed_n_vars = float('Inf')
             else:
-                allowed_n_vars = max_variants_per_node
+                allowed_n_vars = cleavage_params.max_variants_per_node
                 if n_cleavages > 0:
-                    allowed_n_vars += n_cleavages * additional_variants_per_misc
+                    allowed_n_vars += n_cleavages * cleavage_params.additional_variants_per_misc
 
             for _node in cur_node.out_nodes:
                 if not _node.out_nodes:
@@ -75,15 +85,26 @@ class MiscleavedNodes():
                         continue
 
                     nodes.data.append(copy.copy(new_batch))
-                    if n_cleavages + 1 == miscleavage:
+                    if n_cleavages + 1 == cleavage_params.miscleavage:
                         continue
-                    if n_cleavages + 1 > miscleavage:
+                    if n_cleavages + 1 > cleavage_params.miscleavage:
                         raise ValueError('Something just went wrong')
                 queue.appendleft(new_batch)
         return nodes
 
+    def is_valid_seq(self, seq:Seq, blacklist:Set[str]) -> bool:
+        """ Check whether the seq is valid """
+        min_length = self.cleavage_params.min_length
+        max_length = self.cleavage_params.max_length
+        min_mw = self.cleavage_params.min_mw
+
+        return seq not in blacklist and \
+            min_length <= len(seq) <= max_length and \
+            SeqUtils.molecular_weight(seq, 'protein') >= min_mw
+
     def join_miscleaved_peptides(self, check_variants:bool,
-            additional_variants:List[VariantRecord], is_start_codon:bool=False
+            additional_variants:List[VariantRecord], blacklist:Set[str],
+            is_start_codon:bool=False
             ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -93,7 +114,7 @@ class MiscleavedNodes():
             graph (PeptideVariantGraph): The graph object.
             check_variants (bool): When true, only peptides that carries at
                 least 1 variant are kept. And when false, all unique peptides
-                are reported （e.g. noncoding).
+                are reported (e.g. noncoding).
             label_counter (Dict[str,int]): The object counts the total
                 occurrences of each variant label. An int number is appended
                 to the end of the label (e.g. ENST0001|SNV-10-T-C|5)
@@ -101,6 +122,8 @@ class MiscleavedNodes():
         for queue in self.data:
             metadata = VariantPeptideMetadata(orf=self.orf)
             seq:str = None
+
+            variants:Set[VariantRecord] = set()
 
             for node in queue:
                 other = str(node.seq.seq)
@@ -110,23 +133,40 @@ class MiscleavedNodes():
                     seq = seq + other
                 if check_variants:
                     for variant in node.variants:
-                        metadata.variants.add(variant.variant)
-                    metadata.variants.update(additional_variants)
+                        variants.add(variant.variant)
+                    variants.update(additional_variants)
 
             cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
-            metadata.variants.update(cleavage_gain_down)
+            variants.update(cleavage_gain_down)
 
-            if seq:
-                seq = aa.AminoAcidSeqRecord(seq=Seq(seq))
-
-            if check_variants and not metadata.variants:
+            if not seq:
                 continue
 
-            yield seq, metadata
+            if check_variants and not variants:
+                continue
 
-            if is_start_codon and seq.seq.startswith('M'):
-                seq = seq[1:]
-                yield seq, metadata
+            seq = Seq(seq)
+
+            is_valid = self.is_valid_seq(seq, blacklist)
+            is_valid_start = is_start_codon and seq.startswith('M') and\
+                self.is_valid_seq(seq[1:], blacklist)
+
+            if not (is_valid or is_valid_start):
+                continue
+
+            metadata.is_pure_circ_rna = len(variants) == 1 and \
+                list(variants)[0].is_circ_rna()
+
+            label = vpi.create_variant_peptide_id(self.tx_id, variants, None)
+            metadata.label = label
+
+            if is_valid:
+                aa_seq = aa.AminoAcidSeqRecord(seq=seq)
+                yield aa_seq, metadata
+
+            if is_valid_start:
+                aa_seq = aa.AminoAcidSeqRecord(seq=seq[1:])
+                yield aa_seq, metadata
 
 def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
         peptide_pool:Set[aa.AminoAcidSeqDict],
@@ -161,11 +201,12 @@ def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
 
 class VariantPeptideMetadata():
     """ Variant peptide metadata """
-    def __init__(self, variants:Set[VariantRecord]=None,
-            orf:Tuple[int,int]=None):
+    def __init__(self, label:str=None, orf:Tuple[int,int]=None,
+            is_pure_circ_rna:bool=False):
         """  """
-        self.variants = variants or set()
+        self.label = label
         self.orf = orf
+        self.is_pure_circ_rna = is_pure_circ_rna
 
 T = Dict[aa.AminoAcidSeqRecord, Set[VariantPeptideMetadata]]
 
@@ -178,8 +219,8 @@ class VariantPeptideDict():
             The peptide data pool, with keys being the AminoAcidRecord, and
             values being set of VariantPeptdieMetadata (variants and ORF).
         labels (Dict[str,int]): Label counter, as a dict with key being the
-            variant piptide label, and values being the number of occurrence
-            of this lable.
+            variant peptide label, and values being the number of occurrence
+            of this label.
     """
     def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None):
         """ constructor """
@@ -188,9 +229,9 @@ class VariantPeptideDict():
         self.labels = labels or {}
 
     def add_miscleaved_sequences(self, node:PVGNode, orf:List[int, int],
-            miscleavage:int, check_variants:bool, is_start_codon:bool,
-            additional_variants:List[VariantRecord], max_variants_per_node:int,
-            additional_variants_per_misc:int):
+            cleavage_params:params.CleavageParams,
+            check_variants:bool, is_start_codon:bool,
+            additional_variants:List[VariantRecord], blacklist:Set[str]):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
@@ -209,12 +250,16 @@ class VariantPeptideDict():
                 for every miscleavage.
         """
         miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
-            node=node, orf=orf, miscleavage=miscleavage,
-            max_variants_per_node=max_variants_per_node,
-            additional_variants_per_misc=additional_variants_per_misc
+            node=node, orf=orf, cleavage_params=cleavage_params,
+            tx_id=self.tx_id
         )
-        for seq, metadata in miscleaved_nodes.join_miscleaved_peptides(
-                check_variants, additional_variants, is_start_codon):
+        seqs = miscleaved_nodes.join_miscleaved_peptides(
+            check_variants=check_variants,
+            additional_variants=additional_variants,
+            blacklist=blacklist,
+            is_start_codon=is_start_codon
+        )
+        for seq, metadata in seqs:
             if 'X' in seq.seq:
                 continue
             if '*' in seq:
@@ -235,26 +280,26 @@ class VariantPeptideDict():
         """
         peptide_pool:Set[aa.AminoAcidSeqRecord] = set()
 
-        for seq, metadatas in self.peptides.items():
+        while self.peptides:
+            seq, metadatas = self.peptides.popitem()
             if '*' in seq:
                 raise ValueError('Invalid amino acid symbol found in the sequence.')
             labels = []
             metadatas = list(metadatas)
             metadatas.sort(key=lambda x: x.orf[0])
-            has_pure_circ_rna = False
+            had_pure_circ_rna = False
             for metadata in metadatas:
-                variants = list(metadata.variants)
+                if metadata.is_pure_circ_rna:
+                    if had_pure_circ_rna:
+                        continue
+                    had_pure_circ_rna = True
                 orf_id = None
                 if orf_id_map:
                     orf_id = orf_id_map[metadata.orf]
 
-                label = vpi.create_variant_peptide_id(self.tx_id, variants, orf_id)
-
-                is_pure_circ_rna = len(variants) == 1 and variants[0].is_circ_rna()
-                if is_pure_circ_rna:
-                    if has_pure_circ_rna:
-                        continue
-                    has_pure_circ_rna = True
+                label = metadata.label
+                if orf_id:
+                    label += f"|{orf_id}"
 
                 if label in self.labels:
                     self.labels[label] += 1
