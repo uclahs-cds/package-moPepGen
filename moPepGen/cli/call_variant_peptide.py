@@ -262,10 +262,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         if caller.verbose >= 1:
             logger('Variants sorted')
 
-        canonical_peptides = ref.canonical_peptides
+        # Not providing canonical peptide pool to each task for now.
+        canonical_peptides = set()
         if caller.threads > 1:
             ray.init(num_cpus=caller.threads)
-            ray.put(ref.canonical_peptides)
+            # ray.put(canonical_peptides)
 
         dispatches = []
         i = 0
@@ -358,6 +359,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 i += 1
                 if i % 1000 == 0:
                     logger(f'{i} transcripts processed.')
+
+            if i > 200:
+                break
 
     caller.write_fasta()
 
