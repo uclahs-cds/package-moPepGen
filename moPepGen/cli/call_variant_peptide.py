@@ -360,9 +360,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 if i % 1000 == 0:
                     logger(f'{i} transcripts processed.')
 
-            if i > 200:
-                break
-
     caller.write_fasta()
 
 
