@@ -262,10 +262,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         if caller.verbose >= 1:
             logger('Variants sorted')
 
-        canonical_peptides = ref.canonical_peptides
+        # Not providing canonical peptide pool to each task for now.
+        canonical_peptides = set()
         if caller.threads > 1:
             ray.init(num_cpus=caller.threads)
-            ray.put(ref.canonical_peptides)
+            # ray.put(canonical_peptides)
 
         dispatches = []
         i = 0
