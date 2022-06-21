@@ -12,6 +12,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.7.2] - 2022-06-20
+
+- Rolling back to not filtering candidate variant peptides that overlaps with canonical peptide pool at transcript level in `PeptideVariantGraph` because accessing the shared memory object is too slow (which could be optimized in the future).
+
+---
+
 ## [0.7.1] - 2022-06-18
 
 ### Changed
