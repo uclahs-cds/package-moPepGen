@@ -10,9 +10,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-06-22
+
+### Fixed
+
+- Fixed issue that variants are not filtered correctly on `ThreeFrameCVG` (some variants are discarded or retained incorrectly). #488
+
 ---
 
 ## [0.7.2] - 2022-06-20
+
+### Changed
 
 - Rolling back to not filtering candidate variant peptides that overlaps with canonical peptide pool at transcript level in `PeptideVariantGraph` because accessing the shared memory object is too slow (which could be optimized in the future).
 
