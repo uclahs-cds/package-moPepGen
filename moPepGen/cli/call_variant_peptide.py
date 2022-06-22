@@ -440,6 +440,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
     gene_seq = gene_seqs[gene_id]
+    record.fragments.sort()
     circ_seq = record.get_circ_rna_sequence(gene_seq)
 
     # Alternative splicing should not be included. Alternative splicing
