@@ -4,5 +4,5 @@ Description: 'Multi-Omics Peptide Generator'
 Maintainers: ['ChenghaoZhu@mednet.ucla.edu']
 Contributors: 'Chenghao Zhu, Yiyang Liu'
 Languages: ['python']
-Dependencies: 'biopython'
+Dependencies: ['biopython', 'ray', 'psutil']
 References: ''
