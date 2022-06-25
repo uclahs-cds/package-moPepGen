@@ -222,11 +222,13 @@ class VariantPeptideDict():
             variant peptide label, and values being the number of occurrence
             of this label.
     """
-    def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None):
+    def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None,
+            global_variant:VariantRecord=None):
         """ constructor """
         self.tx_id = tx_id
         self.peptides = peptides or {}
         self.labels = labels or {}
+        self.global_variant = global_variant
 
     def add_miscleaved_sequences(self, node:PVGNode, orf:List[int, int],
             cleavage_params:params.CleavageParams,
@@ -253,6 +255,8 @@ class VariantPeptideDict():
             node=node, orf=orf, cleavage_params=cleavage_params,
             tx_id=self.tx_id
         )
+        if self.global_variant and self.global_variant not in additional_variants:
+            additional_variants.append(self.global_variant)
         seqs = miscleaved_nodes.join_miscleaved_peptides(
             check_variants=check_variants,
             additional_variants=additional_variants,

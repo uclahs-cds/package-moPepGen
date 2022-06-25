@@ -1491,7 +1491,8 @@ class ThreeFrameTVG():
             known_orf=known_orf,
             cleavage_params=self.cleavage_params,
             cds_start_nf=self.cds_start_nf,
-            hypermutated_region_warned=self.hypermutated_region_warned
+            hypermutated_region_warned=self.hypermutated_region_warned,
+            global_variant=self.global_variant
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
