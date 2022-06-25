@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.8.1] - 2022-06-24
+
+### Fixed
+
+- The attribute `global_variant` is added to the `PeptideVariantGraph` so for circRNA, if the entire variant peptide is called from an insertion sequence, the variant of circRNA is still going to be added. So the FASTA header will be written out correctly. #490
+
 ## [0.8.0] - 2022-06-22
 
 ### Fixed
