@@ -9,6 +9,7 @@ from test.unit import create_variant
 from Bio import SeqIO
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen import cli, seqvar
+from moPepGen.aa import VariantPeptideIdentifier as vpi
 
 
 def create_base_args() -> argparse.Namespace:
@@ -40,7 +41,7 @@ def create_base_args() -> argparse.Namespace:
 class TestCallVariantPeptides(TestCaseIntegration):
     """ Test cases for moPepGen callPeptides """
 
-    def default_test_case(self, gvf:List[Path], reference:Path, expect:Path):
+    def default_test_case(self, gvf:List[Path], reference:Path, expect:Path=None):
         """ Wrapper function to test actual cases.
 
         Args:
@@ -61,6 +62,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta'}
         self.assertEqual(files, expected)
+        if not expect:
+            return
         peptides = list(SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'))
         seqs = {str(seq.seq) for seq in peptides}
         with open(expect, 'rt') as handle:
@@ -537,3 +540,26 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'comb/CPCG0462_ENST00000483923.5_expected.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000483923.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case31(self):
+        """ Test case reported in #490 that variant label of the FASTA header
+        was not written correctly when the entire variatn peptide is called
+        from an insertion into a circRNA """
+        gvf = [
+            self.data_dir/'comb/CPCG0435_ENST00000374864.9/circ2.gvf',
+            self.data_dir/'comb/CPCG0435_ENST00000374864.9/gsnp.gvf',
+            self.data_dir/'comb/CPCG0435_ENST00000374864.9/gindel.gvf'
+        ]
+        reference = self.data_dir/'downsampled_reference/ENST00000374864.9'
+        self.default_test_case(gvf, reference, None)
+        has_incorrect_fasta_header = False
+        for peptide in SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'):
+            labels = vpi.parse_variant_peptide_id(peptide.description)
+            for label in labels:
+                if not isinstance(label, vpi.CircRNAVariantPeptideIdentifier):
+                    continue
+                for var_id in label.variant_ids:
+                    if var_id.startswith('ENS'):
+                        has_incorrect_fasta_header = True
+                        break
+        self.assertFalse(has_incorrect_fasta_header)
