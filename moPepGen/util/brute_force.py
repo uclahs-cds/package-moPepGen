@@ -2,11 +2,12 @@
 import sys
 import argparse
 import copy
-from typing import List, Dict, Tuple
+from typing import Iterable, List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
 from Bio import SeqUtils
 from moPepGen import seqvar, aa, dna
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.util.common import load_references
@@ -168,36 +169,33 @@ def brute_force(args):
                 cds_start_positions = [cds_start]
 
             for cds_start in cds_start_positions:
-                copy_canonical_peptides = copy.copy(canonical_peptides)
                 if not tx_model.is_protein_coding:
-                    ref_cds_start = cds_start
-                    ref_cds_end = len(tx_seq.seq)
-                    for variant in comb:
-                        if cds_start - offset in variant.location:
-                            ref_cds_start = ref_cds_start + len(variant.location) + \
-                                (3 - len(variant.location)%3)
-                    cur_cds_end = ref_cds_end - (ref_cds_end - cds_start) % 3
-                    cds_seq = tx_seq[ref_cds_start:cur_cds_end]
-                    canonical_seq = cds_seq.translate(to_stop=True)
-                    more_canonical_peptides = canonical_seq.enzymatic_cleave(
-                        'trypsin', 'trypsin_exception')
-                    more_canonical_peptides = {str(x.seq) for x in \
-                        more_canonical_peptides}
-                    copy_canonical_peptides.update(more_canonical_peptides)
-                    cur_cds_end = ref_cds_end + offset
+                    cur_cds_end = len(seq)
                 else:
                     cur_cds_end = cur_cds_end - (cur_cds_end - cds_start) % 3
 
                 aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=True)
                 aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
-                peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
-                for peptide in peptides:
-                    # if the first amino acid is M, it is already clipped, so
-                    # no need to check the leading M again.
-                    is_valid = peptide_is_valid(peptide.seq, copy_canonical_peptides,
-                        args.min_length, args.max_length, args.min_mw)
-                    if is_valid:
-                        variant_peptides.add(str(peptide.seq))
+
+                sites = aa_seq.find_all_enzymatic_cleave_sites('trypsin', 'trypsin_exception')
+                sites.insert(0, 0)
+                sites.append(len(aa_seq))
+                for j, lhs in enumerate(sites[:-1]):
+                    for k in range(j + 1, min([j + 3, len(sites) - 1]) + 1):
+                        rhs = sites[k]
+                        tx_lhs = cds_start + lhs * 3
+                        tx_rhs = cds_start + rhs * 3
+                        if not has_any_variant(tx_lhs, tx_rhs, cds_start, comb, tx_seq.seq):
+                            continue
+
+                        peptides = [aa_seq[lhs:rhs]]
+                        if peptides[0].seq.startswith('M') and lhs == 0:
+                            peptides.append(peptides[0][1:])
+                        for peptide in peptides:
+                            is_valid = peptide_is_valid(peptide.seq, canonical_peptides,
+                                args.min_length, args.max_length, args.min_mw)
+                            if is_valid:
+                                variant_peptides.add(str(peptide.seq))
 
     variant_peptides = list(variant_peptides)
     variant_peptides.sort()
@@ -211,3 +209,35 @@ def peptide_is_valid(peptide:str, canonical_peptides:str, min_length:int,
         return False
     return min_length <= len(peptide) <= max_length and \
         SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
+
+
+def has_any_variant(lhs:int, rhs:int, cds_start:int,
+        variants:Iterable[VariantRecord], tx_seq:str) -> bool:
+    """ Check whether the given range of the transcript has any variant
+    associated. """
+    offset = 0
+    query = FeatureLocation(start=lhs, end=rhs)
+    for variant in variants:
+        var_size = len(variant.alt) - len(variant.ref)
+        loc = FeatureLocation(
+            start=variant.location.start + offset,
+            end=variant.location.end + offset + var_size
+        )
+        if loc.start > rhs + 3:
+            break
+        is_frameshifting = cds_start < loc.start and variant.is_frameshifting()
+        is_cleavage_gain = (cds_start != lhs \
+                    and (loc.overlaps(FeatureLocation(start=lhs-3, end=lhs)))) \
+                or loc.overlaps(FeatureLocation(start=rhs, end=rhs+3))
+        orf_index = cds_start % 3
+        codon_pos = loc.start - (loc.start - orf_index) % 3
+        is_stop_lost = cds_start < loc.start \
+                and tx_seq[codon_pos:codon_pos + 3] in ['TAA', 'TAG', 'TGA']
+        if loc.overlaps(query) \
+                or cds_start in loc \
+                or is_frameshifting \
+                or is_cleavage_gain \
+                or is_stop_lost:
+            return True
+        offset += var_size
+    return False
