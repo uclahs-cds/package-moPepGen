@@ -303,6 +303,10 @@ class FuzzTestCase():
         args.max_length = 25
         args.threads = 1
         args.max_variants_per_node = -1
+        args.max_variants_per_node = 7
+        args.additional_variants_per_misc = 2
+        args.min_nodes_to_collapse = 30
+        args.naa_to_collapse = 5
         args.noncanonical_transcripts = False
         args.invalid_protein_as_noncoding = False
         args.verbose_level = 0

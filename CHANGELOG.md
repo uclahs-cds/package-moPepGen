@@ -8,7 +8,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [Unreleased]
+## [Unreleased] - 2022-07-09
+
+### Fixed
+
+- Fixed issue that peptides caused by start gain mutations are not called by `bruteForce`. #492
+
+---
 
 ## [0.8.1] - 2022-06-24
 

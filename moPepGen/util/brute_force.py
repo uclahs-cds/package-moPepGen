@@ -1,14 +1,13 @@
 """ A brute forth algorithm for calling variant peptides from a GVF file. """
 import sys
 import argparse
-import copy
-from typing import List, Dict, Tuple
+from typing import Iterable, List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
 from Bio import SeqUtils
-from moPepGen import seqvar, aa, dna
+from moPepGen import gtf, seqvar, aa, dna, params
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
-from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.util.common import load_references
 
 
@@ -67,147 +66,242 @@ def parse_variant_exclusion(exclusions:List[str]) -> Dict[Tuple,List[Tuple]]:
         groups[variant] = targets
     return groups
 
+
+class BruteForceVariantPeptideCaller():
+    """ Variant peptide caller using the brute force algorithm. """
+    def __init__(self, reference_data:params.ReferenceData=None,
+            cleavage_params:params.CleavageParams=None,
+            variants:List[seqvar.VariantRecord]=None,
+            canonical_peptides=None, tx_id:str=None,
+            tx_model:gtf.TranscriptAnnotationModel=None,
+            tx_seq:dna.DNASeqRecord=None, start_index:int=None):
+        """ Constructor """
+        self.reference_data = reference_data
+        self.cleavage_params = cleavage_params
+        self.variants = variants or []
+        self.canonical_peptides = canonical_peptides
+        self.tx_id = tx_id
+        self.tx_model = tx_model
+        self.tx_seq = tx_seq
+        self.start_index = start_index
+
+    def create_canonical_peptide_pool(self):
+        """ Create canonical peptide pool. """
+        proteome = self.reference_data.proteome
+        par = self.cleavage_params
+        self.canonical_peptides = proteome.create_unique_peptide_pool(
+            anno=self.reference_data.anno,
+            rule=par.enzyme,
+            exception=par.exception,
+            miscleavage=par.miscleavage,
+            min_mw=par.min_mw,
+            min_length=par.min_length,
+            max_length=par.max_length
+        )
+
+    def load_variant_records(self, variant_pool:seqvar.VariantRecordPool,
+            variant_ids:Iterable[str]=None):
+        """ Load variant records associated with the particular transcript. """
+        series = variant_pool[self.tx_id]
+        variants = []
+        for variant in series.transcriptional:
+            if variant.location.start < self.start_index -1:
+                continue
+            if self.tx_model.is_mrna_end_nf() and variant.location.end <= self.tx_seq.orf.end - 3:
+                continue
+            if variant_ids:
+                if variant.id not in variant_ids:
+                    continue
+            if variant.location.start == self.start_index - 1:
+                variant.to_end_inclusion(self.tx_seq)
+            variants.append(variant)
+        self.variants = variants
+
+    def get_start_index(self):
+        """ Get the "start index" used for filtering variants. For noncoding
+        transcript,s the  "start index" is set to the very beginning. """
+        if self.tx_seq.orf:
+            self.start_index = self.tx_seq.orf.start + 3
+        else:
+            self.start_index = 3
+
+    def peptide_is_valid(self, peptide:str) -> bool:
+        """ Check whether the peptide is valid """
+        if self.canonical_peptides and peptide in self.canonical_peptides:
+            return False
+        min_len = self.cleavage_params.min_length
+        max_len = self.cleavage_params.max_length
+        min_mw = self.cleavage_params.min_mw
+        return min_len <= len(peptide) <= max_len \
+            and SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
+
+    def has_any_variant(self, lhs:int, rhs:int, cds_start:int,
+            variants:List[seqvar.VariantRecord]) -> bool:
+        """ Check whether the given range of the transcript has any variant
+        associated. """
+        offset = 0
+        query = FeatureLocation(start=lhs, end=rhs)
+        for variant in variants:
+            var_size = len(variant.alt) - len(variant.ref)
+            loc = FeatureLocation(
+                start=variant.location.start + offset,
+                end=variant.location.end + offset + var_size
+            )
+            if loc.start > rhs + 3:
+                break
+            is_frameshifting = cds_start < loc.start and variant.is_frameshifting()
+            is_cleavage_gain = loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
+                if cds_start != lhs \
+                else loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))
+            orf_index = cds_start % 3
+            codon_pos = loc.start - (loc.start - orf_index) % 3
+            is_stop_lost = cds_start < loc.start \
+                    and self.tx_seq.seq[codon_pos:codon_pos + 3] in ['TAA', 'TAG', 'TGA']
+            if loc.overlaps(query) \
+                    or cds_start in loc \
+                    or is_frameshifting \
+                    or is_cleavage_gain \
+                    or is_stop_lost:
+                return True
+            offset += var_size
+        return False
+
+    def have_incompatible_variants(self, variants:Iterable[seqvar.VariantRecord]) -> bool:
+        """ Whether there are incompatible variants, i.e. variants that overlap
+        with each other. """
+        for j, left in enumerate(variants):
+            if j == len(variants) - 1:
+                continue
+            for right in variants[j+1:]:
+                if left.location.end >= right.location.start:
+                    return True
+        if self.tx_model.is_mrna_end_nf():
+            for variant in variants:
+                if variant.location.end >= self.tx_seq.orf.end:
+                    return True
+        return False
+
+    def call_peptides(self, force:bool):
+        """ Call variant peptides """
+        if not self.variants:
+            return
+
+        variant_peptides = set()
+
+        if len(self.variants) > 10 and not force:
+            raise ValueError(
+                f"{len(self.variants)} variants is too many for this brute force algorithm."
+            )
+
+        variants = self.variants
+        tx_model = self.tx_model
+        tx_seq = self.tx_seq
+        rule = self.cleavage_params.enzyme
+        exception = self.cleavage_params.exception
+        for i in range(len(self.variants)):
+            for comb in combinations(variants, i + 1):
+                if self.have_incompatible_variants(variants):
+                    continue
+
+                seq = tx_seq.seq
+                offset = 0
+                if tx_model.is_protein_coding and tx_model.is_mrna_end_nf():
+                    cur_cds_end = tx_seq.orf.end
+
+                for variant in comb:
+                    start = variant.location.start + offset
+                    end = variant.location.end + offset
+                    if tx_model.is_protein_coding and tx_model.is_mrna_end_nf():
+                        cur_cds_end += len(variant.alt) - len(variant.ref)
+                    offset = offset + len(variant.alt) - len(variant.ref)
+                    seq = seq[:start] + variant.alt + seq[end:]
+
+                if not (tx_model.is_protein_coding and tx_model.is_mrna_end_nf()):
+                    cur_cds_end = len(seq)
+
+                if not tx_model.is_protein_coding:
+                    alt_seq = dna.DNASeqRecord(seq)
+                    cds_start_positions = alt_seq.find_all_start_codons()
+                else:
+                    cds_start = tx_seq.orf.start
+                    cds_start_positions = [cds_start]
+
+                for cds_start in cds_start_positions:
+                    if not tx_model.is_protein_coding:
+                        cur_cds_end = len(seq)
+                    else:
+                        cur_cds_end = cur_cds_end - (cur_cds_end - cds_start) % 3
+
+                    aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=True)
+                    aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
+
+                    sites = aa_seq.find_all_enzymatic_cleave_sites(rule, exception)
+                    sites.insert(0, 0)
+                    sites.append(len(aa_seq))
+                    for j, lhs in enumerate(sites[:-1]):
+                        for k in range(j + 1, min([j + 3, len(sites) - 1]) + 1):
+                            rhs = sites[k]
+                            tx_lhs = cds_start + lhs * 3
+                            tx_rhs = cds_start + rhs * 3
+                            if not self.has_any_variant(tx_lhs, tx_rhs, cds_start, comb):
+                                continue
+
+                            peptides = [aa_seq[lhs:rhs]]
+                            if peptides[0].seq.startswith('M') and lhs == 0:
+                                peptides.append(peptides[0][1:])
+                            for peptide in peptides:
+                                is_valid = self.peptide_is_valid(peptide.seq)
+                                if is_valid:
+                                    variant_peptides.add(str(peptide.seq))
+
+        variant_peptides = list(variant_peptides)
+        variant_peptides.sort()
+        for peptide in variant_peptides:
+            print(peptide, file=sys.stdout)
+
 def brute_force(args):
     """ main """
-
+    # Load genomic references
     anno, genome, proteome = load_references(
         path_anno=args.reference_dir/'annotation.gtf',
         path_genome=args.reference_dir/'genome.fasta',
         path_proteome=args.reference_dir/'proteome.fasta'
     )
-
-    rule = args.cleavage_rule
-    exception = 'trypsin_exception' if rule == 'trypsin' else None
-    canonical_peptides = proteome.create_unique_peptide_pool(
-        anno=anno, rule=rule, exception=exception,
-        miscleavage=args.miscleavage, min_mw=args.min_mw,
-        min_length=args.min_length, max_length=args.max_length
+    reference_data = params.ReferenceData(
+        genome=genome,
+        anno=anno,
+        proteome=proteome,
+        canonical_peptides=None
     )
 
+    # load GVF files
     variant_pool = seqvar.VariantRecordPool()
-    for gvf_file in args.input_gvf:
-        with open(gvf_file) as handle:
-            variant_pool.load_variants(handle, anno, genome)
-
-    if not variant_pool.data:
-        return
-
+    for path in args.input_gvf:
+        with open(path) as handle:
+            variant_pool.load_variants(
+                handle=handle,
+                anno=reference_data.anno,
+                genome=reference_data.genome
+            )
     tx_id = list(variant_pool.data.keys())[0]
 
-    tx_model = anno.transcripts[tx_id]
-    tx_seq = tx_model.get_transcript_sequence(genome['chr1'])
+    caller = BruteForceVariantPeptideCaller()
+    caller.reference_data = reference_data
+    caller.tx_id = tx_id
+    caller.tx_model = caller.reference_data.anno.transcripts[caller.tx_id]
+    caller.tx_seq = caller.tx_model.get_transcript_sequence(caller.reference_data.genome['chr1'])
 
-    variant_peptides = set()
+    caller.cleavage_params = params.CleavageParams(
+        enzyme=args.cleavage_rule,
+        exception='trypsin_exception' if args.cleavage_rule == 'trypsin' else None,
+        miscleavage=int(args.miscleavage),
+        min_mw=float(args.min_mw),
+        min_length=args.min_length,
+        max_length=args.max_length
+    )
 
-    if tx_seq.orf:
-        start_index = tx_seq.orf.start + 3
-    else:
-        start_index = 3
-    variants:List[VariantRecord] = []
+    caller.create_canonical_peptide_pool()
+    caller.get_start_index()
+    caller.load_variant_records(variant_pool)
 
-    series = variant_pool[tx_id]
-
-    for variant in series.transcriptional:
-        if variant.location.start < start_index -1:
-            continue
-        if tx_model.is_mrna_end_nf() and variant.location.end <= tx_seq.orf.end - 3:
-            continue
-        if args.variant_ids:
-            if variant.id not in args.variant_ids:
-                continue
-        if variant.location.start == start_index - 1:
-            variant.to_end_inclusion(tx_seq)
-        variants.append(variant)
-
-    if len(variants) > 10 and not args.force:
-        raise ValueError(
-            f"{len(variants)} variants is too many for this brute force algorithm."
-        )
-
-    for i in range(len(variants)):
-        for comb in combinations(variants, i + 1):
-            skip = False
-
-            for j, left in enumerate(comb):
-                if j == len(comb) - 1:
-                    continue
-                for right in comb[j+1:]:
-                    if left.location.end >= right.location.start:
-                        skip = True
-
-            if tx_model.is_mrna_end_nf():
-                for variant in comb:
-                    if variant.location.end >= tx_seq.orf.end:
-                        skip = True
-                        break
-
-            if skip:
-                continue
-
-            seq = tx_seq.seq
-            offset = 0
-            if tx_model.is_protein_coding and tx_model.is_mrna_end_nf():
-                cur_cds_end = tx_seq.orf.end
-
-            for variant in comb:
-                start = variant.location.start + offset
-                end = variant.location.end + offset
-                if tx_model.is_protein_coding and tx_model.is_mrna_end_nf():
-                    cur_cds_end += len(variant.alt) - len(variant.ref)
-                offset = offset + len(variant.alt) - len(variant.ref)
-                seq = seq[:start] + variant.alt + seq[end:]
-
-            if not (tx_model.is_protein_coding and tx_model.is_mrna_end_nf()):
-                cur_cds_end = len(seq)
-
-            if not tx_model.is_protein_coding:
-                alt_seq = dna.DNASeqRecord(seq)
-                cds_start_positions = alt_seq.find_all_start_codons()
-            else:
-                cds_start = tx_seq.orf.start
-                cds_start_positions = [cds_start]
-
-            for cds_start in cds_start_positions:
-                copy_canonical_peptides = copy.copy(canonical_peptides)
-                if not tx_model.is_protein_coding:
-                    ref_cds_start = cds_start
-                    ref_cds_end = len(tx_seq.seq)
-                    for variant in comb:
-                        if cds_start - offset in variant.location:
-                            ref_cds_start = ref_cds_start + len(variant.location) + \
-                                (3 - len(variant.location)%3)
-                    cur_cds_end = ref_cds_end - (ref_cds_end - cds_start) % 3
-                    cds_seq = tx_seq[ref_cds_start:cur_cds_end]
-                    canonical_seq = cds_seq.translate(to_stop=True)
-                    more_canonical_peptides = canonical_seq.enzymatic_cleave(
-                        'trypsin', 'trypsin_exception')
-                    more_canonical_peptides = {str(x.seq) for x in \
-                        more_canonical_peptides}
-                    copy_canonical_peptides.update(more_canonical_peptides)
-                    cur_cds_end = ref_cds_end + offset
-                else:
-                    cur_cds_end = cur_cds_end - (cur_cds_end - cds_start) % 3
-
-                aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=True)
-                aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
-                peptides = aa_seq.enzymatic_cleave('trypsin', 'trypsin_exception')
-                for peptide in peptides:
-                    # if the first amino acid is M, it is already clipped, so
-                    # no need to check the leading M again.
-                    is_valid = peptide_is_valid(peptide.seq, copy_canonical_peptides,
-                        args.min_length, args.max_length, args.min_mw)
-                    if is_valid:
-                        variant_peptides.add(str(peptide.seq))
-
-    variant_peptides = list(variant_peptides)
-    variant_peptides.sort()
-    for peptide in variant_peptides:
-        print(peptide, file=sys.stdout)
-
-def peptide_is_valid(peptide:str, canonical_peptides:str, min_length:int,
-        max_length:int, min_mw:float) -> bool:
-    """ Check whether the peptide is valid """
-    if canonical_peptides and peptide in canonical_peptides:
-        return False
-    return min_length <= len(peptide) <= max_length and \
-        SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
+    caller.call_peptides(force=args.force)
