@@ -1,7 +1,6 @@
 """ A brute forth algorithm for calling variant peptides from a GVF file. """
 import sys
 import argparse
-import copy
 from typing import Iterable, List, Dict, Tuple
 from pathlib import Path
 from itertools import combinations
@@ -151,9 +150,9 @@ class BruteForceVariantPeptideCaller():
             if loc.start > rhs + 3:
                 break
             is_frameshifting = cds_start < loc.start and variant.is_frameshifting()
-            is_cleavage_gain = (cds_start != lhs \
-                        and (loc.overlaps(FeatureLocation(start=lhs-3, end=lhs)))) \
-                    or loc.overlaps(FeatureLocation(start=rhs, end=rhs+3))
+            is_cleavage_gain = loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
+                if cds_start != lhs \
+                else loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))
             orf_index = cds_start % 3
             codon_pos = loc.start - (loc.start - orf_index) % 3
             is_stop_lost = cds_start < loc.start \
