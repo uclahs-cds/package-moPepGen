@@ -2,6 +2,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Set
 
+from moPepGen import aa
+
 
 if TYPE_CHECKING:
     from moPepGen import dna, gtf
@@ -53,10 +55,12 @@ class ReferenceData():
         - genome (dna.DNASeqDict)
         - anno (gtf.GeneAnnotationModel)
         - canonical_peptides (Set[str])
+        - proteome (aa.AminoAcidSeqDict)
     """
     def __init__(self, genome:dna.DNASeqDict, anno:gtf.GeneAnnotationModel,
-            canonical_peptides:Set[str]):
+            canonical_peptides:Set[str], proteome:aa.AminoAcidSeqDict=None):
         """ constructor """
         self.genome = genome
         self.anno = anno
         self.canonical_peptides = canonical_peptides
+        self.proteome = proteome  or aa.AminoAcidSeqDict()
