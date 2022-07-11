@@ -8,11 +8,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [Unreleased] - 2022-07-09
+## [Unreleased]
+
+---
+
+## [0.9.0] - 2022-07-09
 
 ### Fixed
 
 - Fixed issue that peptides caused by start gain mutations are not called by `bruteForce`. #492
+
+- Fixed issue that variant peptides caused by start gain mutations from noncoding transcripts are not called in some cases. Stop gain mutations from downstream are also missed in some cases. #495
 
 ---
 

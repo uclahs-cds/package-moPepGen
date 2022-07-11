@@ -563,3 +563,12 @@ class TestCallVariantPeptides(TestCaseIntegration):
                         has_incorrect_fasta_header = True
                         break
         self.assertFalse(has_incorrect_fasta_header)
+
+    def test_call_variant_peptide_case32(self):
+        """ Noncoding TX with start gain mutation from fuzz test. """
+        gvf = [
+            self.data_dir/'fuzz/04/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/04/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
+        self.default_test_case(gvf, reference, expected)

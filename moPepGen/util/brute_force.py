@@ -141,6 +141,7 @@ class BruteForceVariantPeptideCaller():
         associated. """
         offset = 0
         query = FeatureLocation(start=lhs, end=rhs)
+        start_loc = FeatureLocation(start=cds_start, end=cds_start + 3)
         for variant in variants:
             var_size = len(variant.alt) - len(variant.ref)
             loc = FeatureLocation(
@@ -149,6 +150,7 @@ class BruteForceVariantPeptideCaller():
             )
             if loc.start > rhs + 3:
                 break
+            is_start_gain = start_loc.overlaps(loc)
             is_frameshifting = cds_start < loc.start and variant.is_frameshifting()
             is_cleavage_gain = loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
                 if cds_start != lhs \
@@ -158,7 +160,7 @@ class BruteForceVariantPeptideCaller():
             is_stop_lost = cds_start < loc.start \
                     and self.tx_seq.seq[codon_pos:codon_pos + 3] in ['TAA', 'TAG', 'TGA']
             if loc.overlaps(query) \
-                    or cds_start in loc \
+                    or is_start_gain \
                     or is_frameshifting \
                     or is_cleavage_gain \
                     or is_stop_lost:
