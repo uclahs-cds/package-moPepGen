@@ -137,7 +137,7 @@ class BruteForceVariantPeptideCaller():
 
     def is_stop_lost(self, variant:seqvar.VariantRecord, loc:FeatureLocation,
             cds_start:int) -> bool:
-        """ """
+        """ Check whether the variant is a stop lost mutation. """
         if self.tx_model.is_protein_coding:
             orf_end = self.tx_seq.orf.end
             stop_codon = FeatureLocation(orf_end, orf_end + 3)
