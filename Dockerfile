@@ -8,7 +8,7 @@ RUN conda create -qy -p /usr/local\
     python==${PYTHON_VER}
 
 RUN cd /opt/moPepGen/ && \
-    pip install . --use-feature=in-tree-build
+    pip install .
 
 # Deploy the target tools into a base image
 FROM ubuntu:20.04
