@@ -43,12 +43,14 @@ One can ensure that the correct version is used by downloading the cache followi
 If you have decided to use a set of reference files from GENCODE, it is important to supply VEP with the non-Ensembl GTF during annotation, so that chromosome names, transcript IDs and transcript coordinates match with your intended reference files. This can be specified in `VEP`.
 
 As [instructed](https://www.ensembl.org/info/docs/tools/vep/script/vep_cache.html#gff) by `VEP`, your GTF file must be sorted in chromosomal order and indexed.
+
 ```
 grep -v "#" PATH_TO_GTF | sort -k1,1 -k4,4n -k5,5n -t$'\t' | bgzip -c > PATH_TO_GTF_GZ
 tabix -p gff PATH_TO_GTF_GZ # gtf is not a tabix format option, gff works
 ```
 
 To use the GTF for annotation, run VEP with the additional parameters
+
 ```
 --custom PATH_TO_GTF,GENCODE,gtf --fasta PATH_TO_GENOME_FA
 ```
@@ -62,6 +64,7 @@ filter_vep -i VEP_OUTPUT_TSV -o FILTERED_VEP_OUTPUT_TSV --filter Source = GENCOD
 ### Tips for Running VEP
 
 We recommend the following parameters for running VEP for run time optimization, please select appropriate settings for your system.
+
 - `--offline --cache`
 - `--no_stats`
 - `--fork`

@@ -902,8 +902,9 @@ class ThreeFrameTVG():
             # skipping start lost mutations
             start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
 
-            if variant.location.start == start_index - 1 and variant.is_insertion() and \
-                    not variant.is_fusion():
+            if variant.location.start == start_index - 1 \
+                    and (variant.is_insertion() or variant.is_deletion()) \
+                    and not variant.is_fusion():
                 variant.to_end_inclusion(self.seq)
 
             # Skip variants that the position is smaller than the first NT

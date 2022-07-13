@@ -135,6 +135,23 @@ class BruteForceVariantPeptideCaller():
         return min_len <= len(peptide) <= max_len \
             and SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
 
+    def is_stop_lost(self, variant:seqvar.VariantRecord, loc:FeatureLocation,
+            cds_start:int) -> bool:
+        """ Check whether the variant is a stop lost mutation. """
+        if self.tx_model.is_protein_coding:
+            orf_end = self.tx_seq.orf.end
+            stop_codon = FeatureLocation(orf_end, orf_end + 3)
+            return variant.location.overlaps(stop_codon)
+        if cds_start > loc.start:
+            return False
+        orf_index = cds_start % 3
+        i = loc.start - (loc.start - orf_index) % 3
+        while i < loc.end:
+            if self.tx_seq.seq[i:i+3] in ['TAA', 'TAG', 'TGA']:
+                return True
+            i += 3
+        return False
+
     def has_any_variant(self, lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecord]) -> bool:
         """ Check whether the given range of the transcript has any variant
@@ -156,15 +173,12 @@ class BruteForceVariantPeptideCaller():
                     or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3)) \
                 if cds_start != lhs \
                 else loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))
-            orf_index = cds_start % 3
-            codon_pos = loc.start - (loc.start - orf_index) % 3
-            is_stop_lost = cds_start < loc.start \
-                    and self.tx_seq.seq[codon_pos:codon_pos + 3] in ['TAA', 'TAG', 'TGA']
+
             if loc.overlaps(query) \
                     or is_start_gain \
                     or is_frameshifting \
                     or is_cleavage_gain \
-                    or is_stop_lost:
+                    or self.is_stop_lost(variant, loc, cds_start):
                 return True
             offset += var_size
         return False

@@ -22,7 +22,8 @@ At the time of writing, the [Ensembl](https://www.ensembl.org/index.html) Releas
 2. Click on `Protein sequence (FASTA)` and download `Homo_sapiens.GRCh38.pep.all.fa.gz`
 3. Click on `Gene sets` `GTF` and download `Homo_sapiens.GRCh38.107.chr_patch_hapl_scaff.gtf.gz`
 
-> WARNING: **Do not mix and match** GENCODE and Ensembl reference files, the chromosome names and transcript IDs DO NOT MATCH
+!!! warning
+    **Do not mix and match** GENCODE and Ensembl reference files, the chromosome names and transcript IDs DO NOT MATCH
 
 ### Build Reference Index
 
