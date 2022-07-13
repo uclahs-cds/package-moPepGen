@@ -762,7 +762,7 @@ class PeptideVariantGraph():
 
     def call_and_stage_known_orf_in_cds(self, cursor:PVGCursor,
             traversal:PVGTraversal) -> None:
-        """ Kown ORF in CDS branch """
+        """ Known ORF in CDS branch """
         target_node = cursor.out_node
         in_cds = cursor.in_cds
         orf = cursor.orf
