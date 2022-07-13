@@ -1,5 +1,29 @@
 ## Quick Start
 
+### Downloading Reference Files
+
+moPepGen requires a coherent set of reference genome, proteome and Gene transfer format (GTF) files to run. The key is to ensure that the genome annotation version is consistent between the GTF and proteome FASTA, and that the reference genome build version is the same between all three.
+
+To ensure consistency, we recommend downloading the reference genome FASTA, reference proteome FASTA and genome annotation GTF from the same source. At this time reference files from GENCODE and Ensembl are supported. We do not forsee support for UniProt proteomes in the near future since there is no fail-safe method to map all IDs to formats found in commonly used genome annotation GTFs.
+
+#### GENCODE
+
+At the time of writing, the [GENCODE](https://www.gencodegenes.org/) [Human](https://www.gencodegenes.org/human/) release is at v41 (GRCh38.p13).
+
+1. Under Fasta files, download the `Genome sequence (GRCh38.p13)` `ALL` `Fasta` file (`GRCh38.p13.genome.fa.gz`).
+2. Under Fasta files, download the `Protein-coding transcript translation sequences` `CHR` `Fasta` file (`gencode.v41.pc_translations.fa.gz`) - Please ensure that this FASTA contains `amino acid` sequences, not nucleotide sequences.
+3. Under GTF/GFF3 files, download the `Comprehensive gene annotation` `ALL` `GTF` file (`gencode.v41.chr_patch_hapl_scaff.annotation.gtf.gz`).
+
+#### Ensembl
+
+At the time of writing, the [Ensembl](https://www.ensembl.org/index.html) Release is at 107 (Jul 2022). We illustrate using the Human GRCh38.p13 genome from the FTP Download [page](https://www.ensembl.org/info/data/ftp/index.html).
+
+1. Click on `DNA (FASTA)` and download `Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz`
+2. Click on `Protein sequence (FASTA)` and download `Homo_sapiens.GRCh38.pep.all.fa.gz`
+3. Click on `Gene sets` `GTF` and download `Homo_sapiens.GRCh38.107.chr_patch_hapl_scaff.gtf.gz`
+
+> WARNING: **Do not mix and match** GENCODE and Ensembl reference files, the chromosome names and transcript IDs DO NOT MATCH
+
 ### Build Reference Index
 
 Creating index files for genome, proteome and GTF, and create a canonical peptide pool to be used in further steps. By default, the `generateIndex` subcommand uses trypsin, up to 2 miscleavages, and minimal molecular weight of 500. Da. However those settings can be adjusted using command line arguments. See `moPepGen generateIndex --help`.
