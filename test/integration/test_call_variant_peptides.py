@@ -584,11 +584,20 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case34(self):
-        """ Coding TX with deletion that start at forth nucleotide from CDS
+        """ Noncoding TX with deletion that start at forth nucleotide from CDS
         start site. """
         gvf = [
             self.data_dir/'fuzz/06/fake_variants.gvf'
         ]
         expected = self.data_dir/'fuzz/06/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case35(self):
+        """ Noncoding TX with frameshifting mutations. #508 #509 """
+        gvf = [
+            self.data_dir/'fuzz/07/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/07/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
