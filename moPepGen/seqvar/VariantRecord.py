@@ -208,6 +208,10 @@ class VariantRecord():
         """ Checks if the variant is a single nucleotide variant. """
         return len(self.ref) == 1 and len(self.alt) == 1
 
+    def is_indel(self) -> bool:
+        """ Checks if the variant is an indel """
+        return not self.alt.startswith('<') and len(self.ref) != len(self.alt)
+
     def is_insertion(self) -> bool:
         """ Checks if the variant is an insertion """
         if self.type == 'Insertion':

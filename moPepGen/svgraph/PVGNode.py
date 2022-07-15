@@ -147,6 +147,10 @@ class PVGNode():
         """ Check if it has any incoming node that is bridge """
         return any(node.is_bridge() for node in self.in_nodes)
 
+    def has_any_indel(self) -> None:
+        """ Checks if there is any indel """
+        return any(x.variant.is_indel() for x in self.variants)
+
     def get_variants_at(self, start:int, end:int=-1) -> List[seqvar.VariantRecord]:
         """ Get the variant at position i """
         if end == -1:
