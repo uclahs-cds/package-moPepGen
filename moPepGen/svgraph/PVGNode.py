@@ -147,7 +147,7 @@ class PVGNode():
         """ Check if it has any incoming node that is bridge """
         return any(node.is_bridge() for node in self.in_nodes)
 
-    def get_variants_at(self, start:int, end:int=-1) -> seqvar.VariantRecord:
+    def get_variants_at(self, start:int, end:int=-1) -> List[seqvar.VariantRecord]:
         """ Get the variant at position i """
         if end == -1:
             end = len(self.seq)
@@ -331,9 +331,6 @@ class PVGNode():
             new_node.npop_collapsed = True
             if new_node.is_bridge():
                 self.was_bridge = True
-
-        # we only keep the last node to be was_bridge
-        self.was_bridge = False
 
         while self.out_nodes:
             node = self.out_nodes.pop()

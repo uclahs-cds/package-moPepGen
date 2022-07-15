@@ -959,9 +959,13 @@ class PeptideVariantGraph():
                         start=start_indices[-1],
                         end=min(start_indices[-1] + 3, len(target_node.seq.seq))
                     )
+                    fs_variants = target_node.get_variants_at(
+                        start=start_indices[-1], end=-1
+                    )
+                    start_gain += [x for x in fs_variants if x.is_frameshifting()]
                 else:
                     if not start_gain:
-                        start_gain = [v.variant for v in out_node.variants
+                        start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()]
             else:
                 if is_stop:
@@ -969,6 +973,9 @@ class PeptideVariantGraph():
                 elif start_indices:
                     if not start_gain:
                         start_gain = new_start_gain
+                elif not start_gain:
+                    start_gain = [x.variant for x in target_node.variants
+                        if x.variant.is_frameshifting()]
 
             for variant in target_node.variants:
                 if variant.is_stop_altering:

@@ -256,11 +256,16 @@ class BruteForceVariantPeptideCaller():
                     sites.insert(0, 0)
                     sites.append(len(aa_seq))
                     for j, lhs in enumerate(sites[:-1]):
+                        last_m = aa_seq.seq[:lhs].rfind('M')
+                        if last_m > 0 and not tx_model.is_protein_coding:
+                            actual_cds_start = cds_start + last_m * 3
+                        else:
+                            actual_cds_start = cds_start
                         for k in range(j + 1, min([j + 3, len(sites) - 1]) + 1):
                             rhs = sites[k]
                             tx_lhs = cds_start + lhs * 3
                             tx_rhs = cds_start + rhs * 3
-                            if not self.has_any_variant(tx_lhs, tx_rhs, cds_start, comb):
+                            if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start, comb):
                                 continue
 
                             peptides = [aa_seq[lhs:rhs]]
