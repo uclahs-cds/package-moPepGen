@@ -39,14 +39,12 @@ class PVGCollapseNode(PVGNode):
 
     def __hash__(self):
         """ hash """
-        hash_values = [
+        hash_values = (
             self.seq.seq, frozenset(self.out_nodes), self.cleavage,
             self.truncated, self.reading_frame_index, self.npop_collapsed,
-            self.was_bridge
-        ]
-        if self.has_any_indel():
-            hash_values.append(tuple(self.variants))
-        return hash(tuple(hash_values))
+            self.was_bridge, self.has_any_indel()
+        )
+        return hash(hash_values)
 
 class PVGNodeCollapser():
     """ Collapse PVGNode """
@@ -105,14 +103,13 @@ class PVGPopCollapseNode(PVGNode):
 
     def __hash__(self):
         """ hash """
-        hash_items = [
+        hash_items = (
             self.seq.seq, frozenset(self.out_nodes), self.cleavage,
             self.truncated, self.reading_frame_index, self.was_bridge,
-            self.npop_collapsed, self.cpop_collapsed, self.subgraph_id
-        ]
-        if self.has_any_in_bridge():
-            hash_items.append(tuple(self.variants))
-        return hash(tuple(hash_items))
+            self.npop_collapsed, self.cpop_collapsed, self.subgraph_id,
+            self.has_any_indel()
+        )
+        return hash(hash_items)
 
 class PVGNodePopCollapser():
     """ Pop collapse PVGNodes. Similar to PVGNodeCollapser, but only nodes
