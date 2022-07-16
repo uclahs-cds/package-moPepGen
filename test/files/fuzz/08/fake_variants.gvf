@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.9.0
+##parser=
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##source=
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000158062.20	35916	ENSG00000158062.20-35915-CGCCGAGCCC-C	CGCCGAGCCC	C	.	.	TRANSCRIPT_ID=ENST00000314675.11;GENOMIC_POSITION=chr1-1120:1112;GENE_SYMBOL=UBXN11
