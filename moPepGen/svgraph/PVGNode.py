@@ -2,7 +2,7 @@
 from __future__ import annotations
 import copy
 from functools import cmp_to_key
-from typing import List, Set
+from typing import Dict, List, Set
 from moPepGen import aa, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 
@@ -12,26 +12,29 @@ class PVGNode():
     stores the sequence in a Node.
 
     Attributes:
-        seq (aa.AminoAcidSeqRecord): The amino acid sequence.
-        reading_frame_index (int): Reading frame index that the node belongs to.
-            Must be 0, 1, or 2.
-        variants (List[seqvar.VariantRecordWithCoordinate]): The variant records
-            carried in the sequence.
-        in_nodes (Set[PVGNode]): Inbound nodes.
-        out_nodes (Set[PVGNode]): Outbound nodes
-        cleavage (bool): Whether the start of the node is a cleavage site.
-        truncated (bool): Whether the node is truncated. Useful when the
-            sequence does not have a confirmed stop codon.
-        orf (List[int]): List of two integers indicating the start and stop
-            of the orf.
-        was_bridge (bool): When true indicating that the node used to be a
-            bridge node between reading frames, but is no longer a bridge node
-            because it was split.
-        pre_cleaved (bool): Indicating that the node is already cleaved.
-        level (bool): Subgraph level that the node belongs to.
-        npop_collapsed (bool): Whether the n-terminus is pop collapsed.
-        cpop_collapsed (bool): Whether the c-terminus is pop collapsed.
-
+        - `seq` (AminoAcidSeqRecord): The amino acid sequence.
+        - `reading_frame_index` (int): Reading frame index that the node belongs
+          to. Must be 0, 1, or 2.
+        - `variants` (List[seqvar.VariantRecordWithCoordinate]): The variant
+          records carried in the sequence.
+        - `in_nodes` (Set[PVGNode]): Inbound nodes.
+        - `out_nodes` (Set[PVGNode]): Outbound nodes
+        - `cleavage` (bool): Whether the start of the node is a cleavage site.
+        - `truncated` (bool): Whether the node is truncated. Useful when the
+          sequence does not have a confirmed stop codon.
+        - `orf` (List[int]): List of two integers indicating the start and stop
+          of the orf.
+        - `was_bridge` (bool): When true indicating that the node used to be a
+          bridge node between reading frames, but is no longer a bridge node
+          because it was split.
+        - `pre_cleaved` (bool): Indicating that the node is already cleaved.
+        - `level` (bool): Subgraph level that the node belongs to.
+        - `npop_collapsed` (bool): Whether the n-terminus is pop collapsed.
+        - `cpop_collapsed` (bool): Whether the c-terminus is pop collapsed.
+        - `upstream_indel_map` (Dict[PVGNode, List[VariantRecord]]): A mapping
+          from upstream node to indel variants. When a node contains INDELs is
+          collapsed with a canonical peptide node, the upstream node will be
+          called for miscleaved peptides that has corresponding INDELs.
     """
     def __init__(self, seq:aa.AminoAcidSeqRecordWithCoordinates,
             reading_frame_index:int, subgraph_id:str,
@@ -39,7 +42,8 @@ class PVGNode():
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
             was_bridge:bool=False, pre_cleaved:bool=False, level:int=0,
-            npop_collapsed:bool=False, cpop_collapsed:bool=False):
+            npop_collapsed:bool=False, cpop_collapsed:bool=False,
+            upstream_indel_map:Dict[PVGNode, List[seqvar.VariantRecord]]=None):
         """ Construct a PVGNode object. """
         self.seq = seq
         self.variants = variants or []
@@ -55,6 +59,7 @@ class PVGNode():
         self.level = level
         self.npop_collapsed = npop_collapsed
         self.cpop_collapsed = cpop_collapsed
+        self.upstream_indel_map = upstream_indel_map or {}
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -391,8 +396,10 @@ class PVGNode():
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
             level=self.level,
-            npop_collapsed=self.npop_collapsed
+            npop_collapsed=self.npop_collapsed,
+            upstream_indel_map=self.upstream_indel_map
         )
+        self.upstream_indel_map = {}
 
         self.seq = self.seq[i:]
         self.variants = right_variants
@@ -406,6 +413,7 @@ class PVGNode():
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
         self.variants = variants
+        self.upstream_indel_map = other.upstream_indel_map
 
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
@@ -435,7 +443,8 @@ class PVGNode():
             subgraph_id=self.subgraph_id,
             level=self.level,
             npop_collapsed=self.npop_collapsed,
-            cpop_collapsed=self.cpop_collapsed
+            cpop_collapsed=self.cpop_collapsed,
+            upstream_indel_map=self.upstream_indel_map
         )
 
     def get_nearest_next_ref_index(self) -> int:
