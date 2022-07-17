@@ -601,3 +601,12 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/07/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case36(self):
+        """ Coding TX with in-frame deletion. #515 """
+        gvf = [
+            self.data_dir/'fuzz/08/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/08/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
+        self.default_test_case(gvf, reference, expected)

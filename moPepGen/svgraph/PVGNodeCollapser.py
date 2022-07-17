@@ -16,13 +16,14 @@ class PVGCollapseNode(PVGNode):
 
     def __eq__(self, other:PVGCollapseNode):
         """ equal to """
-        result = self.seq.seq == other.seq.seq and \
-            self.out_nodes == other.out_nodes and \
-            self.cleavage == other.cleavage and \
-            self.truncated == other.truncated and \
-            self.reading_frame_index == other.reading_frame_index and \
-            self.was_bridge == other.was_bridge and \
-            self.npop_collapsed == other.npop_collapsed == False
+        result = self.seq.seq == other.seq.seq \
+            and self.out_nodes == other.out_nodes \
+            and self.cleavage == other.cleavage \
+            and self.truncated == other.truncated \
+            and self.reading_frame_index == other.reading_frame_index \
+            and self.was_bridge == other.was_bridge \
+            and self.npop_collapsed == other.npop_collapsed == False
+
         if result and hasattr(other, 'match'):
             other.match = self
         return result
@@ -35,7 +36,8 @@ class PVGCollapseNode(PVGNode):
         """ hash """
         hash_values = (
             self.seq.seq, frozenset(self.out_nodes), self.cleavage,
-            self.truncated, self.reading_frame_index, self.was_bridge
+            self.truncated, self.reading_frame_index, self.npop_collapsed,
+            self.was_bridge
         )
         return hash(hash_values)
 
@@ -58,12 +60,25 @@ class PVGNodeCollapser():
                 self.pool.add(collapse_node)
                 self.mapper.pop(same_collapse_node, None)
                 self.mapper[collapse_node] = node
-                return same_node
-            node.transfer_in_nodes_to(same_node)
-            return node
-        self.pool.add(collapse_node)
-        self.mapper[collapse_node] = node
-        return None
+                node_to_keep = node
+                node_to_discard = same_node
+            else:
+                node.transfer_in_nodes_to(same_node)
+                node_to_keep = same_node
+                node_to_discard = node
+            node_to_keep.upstream_indel_map.update(node_to_discard.upstream_indel_map)
+        else:
+            self.pool.add(collapse_node)
+            self.mapper[collapse_node] = node
+            node_to_keep = node
+            node_to_discard = None
+
+        if node.has_any_indel():
+            indels = [x.variant for x in node.variants if x.variant.is_indel()]
+            for upstream in node.in_nodes:
+                node_to_keep.upstream_indel_map[upstream] = indels
+
+        return node_to_discard
 
 class PVGPopCollapseNode(PVGNode):
     """ Node for collapsing """
@@ -76,15 +91,16 @@ class PVGPopCollapseNode(PVGNode):
 
     def __eq__(self, other:PVGPopCollapseNode):
         """ equal to """
-        result = self.seq.seq == other.seq.seq and \
-            self.out_nodes == other.out_nodes and \
-            self.cleavage == other.cleavage and \
-            self.truncated == other.truncated and \
-            self.reading_frame_index == other.reading_frame_index and \
-            self.was_bridge == other.was_bridge and \
-            self.npop_collapsed == other.npop_collapsed and \
-            self.cpop_collapsed == other.cpop_collapsed and \
-            self.subgraph_id == other.subgraph_id
+        result = self.seq.seq == other.seq.seq \
+            and self.out_nodes == other.out_nodes \
+            and self.cleavage == other.cleavage \
+            and self.truncated == other.truncated \
+            and self.reading_frame_index == other.reading_frame_index \
+            and self.was_bridge == other.was_bridge \
+            and self.npop_collapsed == other.npop_collapsed \
+            and self.cpop_collapsed == other.cpop_collapsed \
+            and self.subgraph_id == other.subgraph_id
+
         if result and hasattr(other, 'match'):
             other.match = self
         return result
@@ -95,8 +111,12 @@ class PVGPopCollapseNode(PVGNode):
 
     def __hash__(self):
         """ hash """
-        return hash((self.seq.seq, frozenset(self.out_nodes), self.cleavage,
-            self.truncated, self.reading_frame_index, self.was_bridge))
+        hash_items = (
+            self.seq.seq, frozenset(self.out_nodes), self.cleavage,
+            self.truncated, self.reading_frame_index, self.was_bridge,
+            self.npop_collapsed, self.cpop_collapsed, self.subgraph_id
+        )
+        return hash(hash_items)
 
 class PVGNodePopCollapser():
     """ Pop collapse PVGNodes. Similar to PVGNodeCollapser, but only nodes
@@ -119,9 +139,21 @@ class PVGNodePopCollapser():
                 self.pool.add(collapse_node)
                 self.mapper.pop(same_collapse_node, None)
                 self.mapper[collapse_node] = node
-                return same_node
-            node.transfer_in_nodes_to(same_node)
-            return node
-        self.pool.add(collapse_node)
-        self.mapper[collapse_node] = node
-        return None
+                node_to_keep = node
+                node_to_discard = same_node
+            else:
+                node.transfer_in_nodes_to(same_node)
+                node_to_keep = same_node
+                node_to_discard = node
+        else:
+            self.pool.add(collapse_node)
+            self.mapper[collapse_node] = node
+            node_to_keep = node
+            node_to_discard = None
+
+        if node.has_any_indel():
+            indels = [x.variant for x in node.variants if x.variant.is_indel()]
+            for upstream in node.in_nodes:
+                node_to_keep.upstream_indel_map[upstream] = indels
+
+        return node_to_discard

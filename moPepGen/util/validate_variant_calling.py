@@ -72,10 +72,13 @@ def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
     args.translate_noncoding = 'true'
     downsample_reference(args)
 
-def extract_gvf(tx_id:str, gvf_files:List[Path], output_path:Path):
+def extract_gvf(tx_id:str, gvf_files:List[Path], output_dir:Path) -> List[Path]:
     """ extract GVF """
     i = 0
-    for gvf_file in gvf_files:
+    temp_gvfs = []
+    for j, gvf_file in enumerate(gvf_files):
+        output_path = output_dir/f"{tx_id}_{j}_{gvf_file.name}"
+        temp_gvfs.append(output_path)
         with open(gvf_file, 'rt') as in_handle, open(output_path, 'wt') as out_handle:
             for line in in_handle:
                 if line.startswith('#'):
@@ -85,13 +88,14 @@ def extract_gvf(tx_id:str, gvf_files:List[Path], output_path:Path):
                     i += 0
     if i > 10:
         logger(f"{i} variants found. The brute force caller is going to take a while.")
+    return temp_gvfs
 
-def call_variant(gvf_file:Path, ref_dir:Path, output_fasta:Path):
+def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path):
     """ call variant """
     args = argparse.Namespace()
     args.index_dir = None
     args.command = 'callPeptides'
-    args.input_path = [gvf_file]
+    args.input_path = gvf_files
     args.genome_fasta = ref_dir/'genome.fasta'
     args.annotation_gtf = ref_dir/'annotation.gtf'
     args.proteome_fasta = ref_dir/'proteome.fasta'
@@ -112,11 +116,11 @@ def call_variant(gvf_file:Path, ref_dir:Path, output_fasta:Path):
     args.threads = 1
     call_variant_peptide(args=args)
 
-def call_brute_force(gvf_file:Path, ref_dir:Path, output_path:str, force:bool,
+def call_brute_force(gvf_files:Path, ref_dir:Path, output_path:str, force:bool,
         variant_ids:List[str]):
     """ call brute force """
     args = argparse.Namespace()
-    args.input_gvf = [gvf_file]
+    args.input_gvf = gvf_files
     args.reference_dir = ref_dir
     args.force = force
     args.variant_ids = variant_ids
@@ -176,18 +180,17 @@ def validate_variant_calling(args:argparse.Namespace):
 
     logger('Reference files downsampling completed.')
 
-    temp_gvf = output_dir/f"{args.tx_id}.gvf"
-    extract_gvf(
+    temp_gvfs = extract_gvf(
         tx_id=args.tx_id,
         gvf_files=args.input_path,
-        output_path=temp_gvf
+        output_dir=output_dir
     )
 
     logger('Transcript variants extracted from GVF.')
 
     variant_fasta = output_dir/'call_variant.fasta'
     call_variant(
-        gvf_file=temp_gvf,
+        gvf_files=temp_gvfs,
         ref_dir=ref_dir,
         output_fasta=variant_fasta
     )
@@ -196,7 +199,7 @@ def validate_variant_calling(args:argparse.Namespace):
 
     brute_force_txt = output_dir/'brute_force.txt'
     call_brute_force(
-        gvf_file=temp_gvf,
+        gvf_files=temp_gvfs,
         ref_dir=ref_dir,
         output_path=brute_force_txt,
         force=args.force,

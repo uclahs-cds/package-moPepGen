@@ -788,7 +788,8 @@ class PeptideVariantGraph():
                 check_variants=traversal.check_variants,
                 is_start_codon=False,
                 additional_variants=additional_variants,
-                blacklist=self.blacklist
+                blacklist=self.blacklist,
+                leading_node=target_node
             )
             self.remove_node(node_copy)
 
@@ -859,7 +860,8 @@ class PeptideVariantGraph():
                 check_variants=traversal.check_variants,
                 is_start_codon=True,
                 additional_variants=additional_variants,
-                blacklist=self.blacklist
+                blacklist=self.blacklist,
+                leading_node=target_node
             )
             cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
@@ -995,7 +997,8 @@ class PeptideVariantGraph():
                 check_variants=traversal.check_variants,
                 is_start_codon=is_start_codon,
                 additional_variants=additional_variants,
-                blacklist=self.blacklist
+                blacklist=self.blacklist,
+                leading_node=target_node
             )
         for node in trash:
             self.remove_node(node)

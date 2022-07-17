@@ -15,20 +15,57 @@ if TYPE_CHECKING:
     from moPepGen import params
 
 class MiscleavedNodes():
-    """ Helper class for looking for peptides with miscleavages """
+    """ Helper class for looking for peptides with miscleavages. This class
+    defines the collection of nodes in sequence that starts from the same node,
+    with up to X allowed miscleavages that makes the miscleaved peptide
+    sequences.
+
+    Attributes:
+        - `data` (Deque[List[PVGNode]]): The collection of nodes that make all
+          miscleaved sequences.
+        - `cleavage_params` (CleavageParams): Cleavage related parameters.
+        - `orf` (Tuple[int,int]): The ORF start and end locations.
+        - `tx_id` (str): Transcript ID.
+        - `leading_node` (PVGNode): The start node that the miscleaved peptides
+          are called from. This node must present in the PVG graph.
+    """
     def __init__(self, data:Deque[List[PVGNode]],
             cleavage_params:params.CleavageParams,
-            orf:Tuple[int,int]=None, tx_id:str=None):
+            orf:Tuple[int,int]=None, tx_id:str=None,
+            leading_node:PVGNode=None):
         """ constructor """
         self.data = data
         self.orf = orf
         self.tx_id = tx_id
         self.cleavage_params = cleavage_params
+        self.leading_node = leading_node
 
     @staticmethod
     def find_miscleaved_nodes(node:PVGNode, orf:Tuple[int,int],
-            cleavage_params:params.CleavageParams, tx_id:str) -> MiscleavedNodes:
-        """ find all miscleaved nodes """
+            cleavage_params:params.CleavageParams, tx_id:str,
+            leading_node:PVGNode) -> MiscleavedNodes:
+        """ Find all miscleaved nodes.
+
+        node vs leading_node:
+            - When calling this function from a node within a PVG graph, a copy
+              of the node should be first created. This is because if the ORF
+              start site is located in the node, the peptide sequence should be
+              called form the ORF start site, rather than the beginning of the
+              sequence. So then a copy should be created from this node and
+              only keep the sequence after the ORF start.
+            - The `leading_node` must tbe the original copy of the node within
+              the graph, that the `node` is copied from. This is used to
+              retrieve INDELs from the downstream node.
+
+        Args:
+            - `node` (PVGNode): The node that miscleaved peptide sequences
+              starts from it should be called.
+            - `orf` (Tuple[int, int]): The ORF start and end locations.
+            - `cleavage_params` (CleavageParams): Cleavage related parameters.
+            - `tx_id` (str): Transcript ID.
+            - `leading_node` (PVGNode): The start node that the miscleaved
+              peptides are called from. This node must present in the PVG graph.
+        """
         if orf[0] is None:
             raise ValueError('orf is None')
         queue = deque([[node]])
@@ -36,7 +73,8 @@ class MiscleavedNodes():
             data=deque([]),
             cleavage_params=cleavage_params,
             orf=orf,
-            tx_id=tx_id
+            tx_id=tx_id,
+            leading_node=leading_node
         )
         if not node.cpop_collapsed:
             nodes.data.append([node])
@@ -109,15 +147,13 @@ class MiscleavedNodes():
         """ join miscleaved peptides and update the peptide pool.
 
         Args:
-            peptide_pool (Set[aa.AminoAcidSeqRecord]): The container for all
-                peptides called from the PeptdieVariantGraph.
-            graph (PeptideVariantGraph): The graph object.
-            check_variants (bool): When true, only peptides that carries at
-                least 1 variant are kept. And when false, all unique peptides
-                are reported (e.g. noncoding).
-            label_counter (Dict[str,int]): The object counts the total
-                occurrences of each variant label. An int number is appended
-                to the end of the label (e.g. ENST0001|SNV-10-T-C|5)
+            - `check_variants` (bool): When true, only peptides that carries at
+              least 1 variant are kept. And when false, all unique peptides are
+              reported (e.g. noncoding).
+            - `additional_variants` (List[VariantRecord]): Additional variants,
+              e.g., start gain, cleavage gain, stop lost.
+            - `blacklist` (Set[str]): Peptide sequences that should be excluded.
+            - `is_start_codon` (bool): Whether the node contains start codon.
         """
         for queue in self.data:
             metadata = VariantPeptideMetadata(orf=self.orf)
@@ -125,7 +161,7 @@ class MiscleavedNodes():
 
             variants:Set[VariantRecord] = set()
 
-            for node in queue:
+            for i, node in enumerate(queue):
                 other = str(node.seq.seq)
                 if seq is None:
                     seq = other
@@ -134,6 +170,12 @@ class MiscleavedNodes():
                 if check_variants:
                     for variant in node.variants:
                         variants.add(variant.variant)
+                    if i < len(queue) - 1:
+                        _node = self.leading_node if i == 0 else node
+                        indels = queue[i + 1].upstream_indel_map.get(_node)
+                        if indels:
+                            for variant in indels:
+                                variants.add(variant)
                     variants.update(additional_variants)
 
             cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
@@ -214,13 +256,16 @@ class VariantPeptideDict():
     """ Variant peptide pool as dict.
 
     Attributes:
-        tx_id (str): Transcript ID.
-        peptides (Dict[aa.AminoAcidSeqRecord, Set[VariantPeptideMetadata]]):
-            The peptide data pool, with keys being the AminoAcidRecord, and
-            values being set of VariantPeptdieMetadata (variants and ORF).
-        labels (Dict[str,int]): Label counter, as a dict with key being the
-            variant peptide label, and values being the number of occurrence
-            of this label.
+        - `tx_id` (str): Transcript ID.
+        - `peptides` (Dict[AminoAcidSeqRecord, Set[VariantPeptideMetadata]]):
+          The peptide data pool, with keys being the AminoAcidRecord, and
+          values being set of VariantPeptdieMetadata (variants and ORF).
+        - `labels` (Dict[str,int]): Label counter, as a dict with key being the
+          variant peptide label, and values being the number of occurrence
+          of this label.
+        - `global_variant` (VariantRecord): A variant that should be applied to
+          every node. This is useful for PVG derived from a circRNA, and this
+          argument is the circRNA variant.
     """
     def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None,
             global_variant:VariantRecord=None):
@@ -233,27 +278,31 @@ class VariantPeptideDict():
     def add_miscleaved_sequences(self, node:PVGNode, orf:List[int, int],
             cleavage_params:params.CleavageParams,
             check_variants:bool, is_start_codon:bool,
-            additional_variants:List[VariantRecord], blacklist:Set[str]):
+            additional_variants:List[VariantRecord], blacklist:Set[str],
+            leading_node:PVGNode=None):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
         with n ranges from 1 to miscleavages.
 
         Args:
-            node (PVGNode): The start node.
-            orf (List[int, int]): The start and end position of ORF.
-            miscleavage (int): Number of miscleavages to allow.
-            check_variants (bool): Whether to check variants.
-            is_start_codon (bool): Whether the peptide starts with the start
-                codon (M).
-            max_variants_per_node (int): Maximal number of variants allowed
-                per node.
-            additional_variants_per_misc (int): Additional variants allowed
-                for every miscleavage.
+            - `node` (PVGNode): The start node.
+            - `orf` (List[int, int]): The start and end position of ORF.
+            - `cleavage_params` (CleavageParams): Cleavage related parameters.
+            - `check_variants` (bool): Whether to check variants.
+            - `is_start_codon` (bool): Whether the peptide starts with the start
+              codon (M).
+            - `additional_variants` (List[VariantRecord]): Additional variants,
+              e.g., start gain, cleavage gain, stop lost.
+            - `blacklist` (Set[str]): Peptide sequences that should be excluded.
+            - `leading_node` (PVGNode): The start node that the miscleaved
+              peptides are called from. This node must present in the PVG graph.
         """
+        if leading_node is None:
+            leading_node = node
         miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
             node=node, orf=orf, cleavage_params=cleavage_params,
-            tx_id=self.tx_id
+            tx_id=self.tx_id, leading_node=leading_node
         )
         if self.global_variant and self.global_variant not in additional_variants:
             additional_variants.append(self.global_variant)
@@ -277,10 +326,10 @@ class VariantPeptideDict():
         """ Get the peptide sequence and check for miscleavages.
 
         Args:
-            keep_all_occurrence (bool): Whether to keep all occurance of the
-                peptide within the graph/transcript.
-            orf_id_map (Dict[int, str]): An ID map of ORF IDs from ORF start
-                position.
+            - `keep_all_occurrence` (bool): Whether to keep all occurance of
+              the peptide within the graph/transcript.
+            - `orf_id_map` (Dict[int, str]): An ID map of ORF IDs from ORF
+              start position.
         """
         peptide_pool:Set[aa.AminoAcidSeqRecord] = set()
 
