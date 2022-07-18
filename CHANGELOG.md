@@ -12,13 +12,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [0.9.0] - 2022-07-09
+## [0.9.0] - 2022-07-17
 
 ### Fixed
 
 - Fixed issue that peptides caused by start gain mutations are not called by `bruteForce`. #492
 
 - Fixed issue that variant peptides caused by start gain mutations from noncoding transcripts are not called in some cases. Stop gain mutations from downstream are also missed in some cases. #495
+
+- Fixed issue that some variant peptides were not called with in-frame deletions. #515
+
+- Fixed issue that the shuffled decoy sequences produced by decoyFasta are not reproducible when input FASTA order is changed. #517
 
 ---
 

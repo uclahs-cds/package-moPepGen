@@ -280,6 +280,7 @@ class DecoyFasta():
         """ Create decoy database """
         with open(self.input_path, 'rt') as handle:
             self.target_db = list(SeqIO.parse(handle, format='fasta'))
+            self.target_db.sort(key=lambda x: x.seq)
 
         self._target_pool = {x.seq for x in self.target_db}
 
