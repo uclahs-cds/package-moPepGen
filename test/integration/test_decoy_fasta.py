@@ -68,7 +68,7 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         self.assertEqual(headers, expected)
 
         seqs = {str(seq.seq) for seq in seqs}
-        expected = {'MIPQVIWQEGGLPTRPK', 'IQCCGCIISRPSVSGPR'}
+        expected = {'MEQIGWQRPIPVLPGTK', 'IRSISCCCQGGVPPISR'}
         self.assertTrue(expected.issubset(seqs))
 
     def test_decoy_fasta_case3(self):
@@ -86,8 +86,33 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         self.assertEqual(received, expected)
 
         seqs = {str(seq.seq) for seq in SeqIO.parse(args.output_path, 'fasta')}
-        expected = {'MIPWVIQREGGLPTQPK', 'IRIVSQCCISGPPCGSR'}
+        expected = {'MELPGQWRQVGIPITPK', 'IRPSCSCCIQGVPGISR'}
         self.assertTrue(expected.issubset(seqs))
+
+    def test_decoy_fasta_shuffle_order(self):
+        """ This test case ensures that the shuffled decoy sequences are
+        consistent with different order of input target DB sequences. """
+        self.write_test_fasta(TARGET_DB, 'test_input_1.fasta')
+        db2 = [TARGET_DB[1], TARGET_DB[0]]
+        self.write_test_fasta(db2, 'test_input_2.fasta')
+        args = self.generate_default_args()
+        args.method = 'shuffle'
+        args.seed = 123123
+        args.non_shuffle_pattern = 'K,R'
+
+        args.input_path = self.work_dir/'test_input_1.fasta'
+        args.output_path = self.work_dir/'test_output_1.fasta'
+        cli.decoy_fasta(args)
+
+        args.input_path = self.work_dir/'test_input_2.fasta'
+        args.output_path = self.work_dir/'test_output_2.fasta'
+        cli.decoy_fasta(args)
+
+        seq1 = {x.seq for x in SeqIO.parse(self.work_dir/'test_output_1.fasta', 'fasta')}
+        seq2 = {x.seq for x in SeqIO.parse(self.work_dir/'test_output_2.fasta', 'fasta')}
+
+        self.assertEqual(seq1, seq2)
+
 
     def test_decoy_fasta_cli(self):
         """ Test decoyFasta CLI """

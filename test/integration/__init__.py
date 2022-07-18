@@ -50,9 +50,11 @@ class TestCaseIntegration(unittest.TestCase):
 
 class TestFastaWriterMixin():
     """ Mixin to write fasta data into test work dir """
-    def write_test_fasta(self, data:List[Tuple[str,str]]):
+    def write_test_fasta(self, data:List[Tuple[str,str]], filename:str=None):
         """ write test data to disk """
-        with open(self.work_dir/'test_input.fasta', 'wt') as handle:
+        if not filename:
+            filename = 'test_input.fasta'
+        with open(self.work_dir/filename, 'wt') as handle:
             record2title = lambda x: x.description
             writer = FastaIO.FastaWriter(handle, record2title=record2title)
             for seq, desc in data:
