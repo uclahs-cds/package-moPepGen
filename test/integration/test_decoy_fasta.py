@@ -90,7 +90,8 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         self.assertTrue(expected.issubset(seqs))
 
     def test_decoy_fasta_shuffle_order(self):
-        """ """
+        """ This test case ensures that the shuffled decoy sequences are
+        consistent with different order of input target DB sequences. """
         self.write_test_fasta(TARGET_DB, 'test_input_1.fasta')
         db2 = [TARGET_DB[1], TARGET_DB[0]]
         self.write_test_fasta(db2, 'test_input_2.fasta')
