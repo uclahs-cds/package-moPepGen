@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import List, Set, Tuple, Dict, Deque, TYPE_CHECKING
 import copy
 from collections import deque
-from functools import reduce
 import math
 import re
 from moPepGen.dna import DNASeqRecordWithCoordinates
