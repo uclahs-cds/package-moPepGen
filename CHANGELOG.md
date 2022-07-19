@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [0.9.0] - 2022-07-17
+## [0.9.0] - 2022-07-18
 
 ### Fixed
 
@@ -23,6 +23,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed issue that some variant peptides were not called with in-frame deletions. #515
 
 - Fixed issue that the shuffled decoy sequences produced by decoyFasta are not reproducible when input FASTA order is changed. #517
+
+- Fixed issue that stop lost mutations are not recognized correctly. #519
+
+- Fixed issue that start gain and stop lost mutations before the novel start site were not excluded. #520
 
 ---
 

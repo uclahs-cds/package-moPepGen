@@ -136,13 +136,15 @@ class BruteForceVariantPeptideCaller():
             and SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
 
     def is_stop_lost(self, variant:seqvar.VariantRecord, loc:FeatureLocation,
-            cds_start:int) -> bool:
+            cds_start:int, prev_cds_start:int) -> bool:
         """ Check whether the variant is a stop lost mutation. """
         if self.tx_model.is_protein_coding:
             orf_end = self.tx_seq.orf.end
             stop_codon = FeatureLocation(orf_end, orf_end + 3)
             return variant.location.overlaps(stop_codon)
         if cds_start > loc.start:
+            return False
+        if -1 < loc.start < prev_cds_start:
             return False
         orf_index = cds_start % 3
         i = loc.start - (loc.start - orf_index) % 3
@@ -152,7 +154,7 @@ class BruteForceVariantPeptideCaller():
             i += 3
         return False
 
-    def has_any_variant(self, lhs:int, rhs:int, cds_start:int,
+    def has_any_variant(self, lhs:int, rhs:int, cds_start:int, prev_cds_start:int,
             variants:List[seqvar.VariantRecord]) -> bool:
         """ Check whether the given range of the transcript has any variant
         associated. """
@@ -178,7 +180,7 @@ class BruteForceVariantPeptideCaller():
                     or is_start_gain \
                     or is_frameshifting \
                     or is_cleavage_gain \
-                    or self.is_stop_lost(variant, loc, cds_start):
+                    or self.is_stop_lost(variant, loc, cds_start, prev_cds_start):
                 return True
             offset += var_size
         return False
@@ -197,6 +199,19 @@ class BruteForceVariantPeptideCaller():
                 if variant.location.end >= self.tx_seq.orf.end:
                     return True
         return False
+
+    @staticmethod
+    def find_prev_cds_start_same_frame(cds_start:int, cds_start_positions:List[int]):
+        """ find he previous cds start site in the same reading frame. """
+        if cds_start == 0:
+            return -1
+        reading_frame_index = cds_start % 3
+        for site in cds_start_positions[::-1]:
+            if site >= cds_start:
+                continue
+            if site % 3 == reading_frame_index:
+                return site
+        return -1
 
     def call_peptides(self, force:bool):
         """ Call variant peptides """
@@ -261,11 +276,18 @@ class BruteForceVariantPeptideCaller():
                             actual_cds_start = cds_start + last_m * 3
                         else:
                             actual_cds_start = cds_start
+
+                        prev_cds_start = self.find_prev_cds_start_same_frame(
+                            cds_start=actual_cds_start,
+                            cds_start_positions=cds_start_positions
+                        )
+
                         for k in range(j + 1, min([j + 3, len(sites) - 1]) + 1):
                             rhs = sites[k]
                             tx_lhs = cds_start + lhs * 3
                             tx_rhs = cds_start + rhs * 3
-                            if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start, comb):
+                            if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
+                                    prev_cds_start, comb):
                                 continue
 
                             peptides = [aa_seq[lhs:rhs]]
