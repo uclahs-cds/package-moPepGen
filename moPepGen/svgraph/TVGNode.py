@@ -558,7 +558,9 @@ class TVGNode():
         i_var = next(iter_var, None)
 
         while i_stop is not None and i_var is not None:
-            if i_var.location.end + offset < i_stop:
+            # Should not contain variants other than indel or snv
+            var_size = len(i_var.variant.ref)
+            if i_var.location.start + offset + var_size < i_stop:
                 i_var = next(iter_var, None)
                 continue
 
