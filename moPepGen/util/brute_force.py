@@ -202,7 +202,7 @@ class BruteForceVariantPeptideCaller():
 
     @staticmethod
     def find_prev_cds_start_same_frame(cds_start:int, cds_start_positions:List[int]):
-        """ ind he previous cds start site in the same reading frame. """
+        """ find he previous cds start site in the same reading frame. """
         if cds_start == 0:
             return -1
         reading_frame_index = cds_start % 3
