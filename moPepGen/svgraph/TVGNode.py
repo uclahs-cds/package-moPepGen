@@ -547,18 +547,26 @@ class TVGNode():
         ref_seq = self.get_ref_sequence()
         ref_seq = ref_seq[:math.floor(len(ref_seq)/3)*3]
         ref_aa = ref_seq.translate(to_stop=False)
-        stop_positions = [x.start() for x in re.finditer(r'\*', str(ref_aa))]
+        stop_positions = [x.start() * 3 for x in re.finditer(r'\*', str(ref_aa))]
         if not stop_positions:
             return
 
-        shifted = reduce(
-            lambda x,y: x+y,
-            [len(x.variant.alt) - len(x.variant.ref) for x in self.variants]
-        )
+        offset = 0
+        iter_stop = iter(stop_positions)
+        iter_var = iter(self.variants)
 
-        for stop in stop_positions:
-            pos = stop * 3 + shifted
-            stop_codon = FeatureLocation(start=pos, end=pos + 3)
-            for variant in self.variants:
-                if stop_codon.overlaps(variant.location):
-                    variant.is_stop_altering = True
+        i_stop = next(iter_stop, None)
+        i_var = next(iter_var, None)
+
+        while i_stop is not None and i_var is not None:
+            if i_var.location.end + offset < i_stop:
+                i_var = next(iter_var, None)
+                continue
+
+            if  i_var.location.start + offset >= i_stop + 3:
+                i_stop = next(iter_stop, None)
+                continue
+
+            i_var.is_stop_altering = True
+            offset += i_var.variant.frames_shifted()
+            i_var = next(iter_var, None)
