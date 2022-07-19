@@ -612,7 +612,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case37(self):
-        """ Coding TX with in-frame deletion. #515 """
+        """ Noncoding TX with stop lost mutation. This ensures that the
+        start gain and stop lost mutations before the novel start site are not
+        retained. #519 """
         gvf = [
             self.data_dir/'fuzz/09/fake_variants.gvf'
         ]
