@@ -22,7 +22,7 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
             circ_rna_id = variant.id
         else:
             seqname = variant.location.seqname
-            if seqname is not transcript_id:
+            if seqname != transcript_id:
                 if 'TRANSCRIPT_ID' in variant.attrs:
                     tx_id = variant.attrs['TRANSCRIPT_ID']
                     if tx_id == transcript_id:

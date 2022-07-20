@@ -8,6 +8,7 @@ from Bio import SeqUtils
 from moPepGen import gtf, seqvar, aa, dna, params
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
+from moPepGen.seqvar.VariantRecord import SINGLE_NUCLEOTIDE_SUBSTITUTION
 from moPepGen.util.common import load_references
 
 
@@ -162,7 +163,11 @@ class BruteForceVariantPeptideCaller():
         query = FeatureLocation(start=lhs, end=rhs)
         start_loc = FeatureLocation(start=cds_start, end=cds_start + 3)
         for variant in variants:
-            var_size = len(variant.alt) - len(variant.ref)
+            if variant.type not in SINGLE_NUCLEOTIDE_SUBSTITUTION:
+                raise ValueError(
+                    f"Haven't decided how to deal with this variant type: {variant.type}"
+                )
+            var_size =  len(variant.ref)
             loc = FeatureLocation(
                 start=variant.location.start + offset,
                 end=variant.location.end + offset + var_size
@@ -182,7 +187,7 @@ class BruteForceVariantPeptideCaller():
                     or is_cleavage_gain \
                     or self.is_stop_lost(variant, loc, cds_start, prev_cds_start):
                 return True
-            offset += var_size
+            offset += len(variant.alt) - len(variant.ref)
         return False
 
     def have_incompatible_variants(self, variants:Iterable[seqvar.VariantRecord]) -> bool:

@@ -621,3 +621,21 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/09/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case38(self):
+        """  """
+        gvf = [
+            self.data_dir/'fuzz/10/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/10/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case39(self):
+        """  """
+        gvf = [
+            self.data_dir/'fuzz/11/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/11/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
+        self.default_test_case(gvf, reference, expected)
