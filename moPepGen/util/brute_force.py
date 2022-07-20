@@ -8,6 +8,7 @@ from Bio import SeqUtils
 from moPepGen import gtf, seqvar, aa, dna, params
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
+from moPepGen.seqvar.VariantRecord import SINGLE_NUCLEOTIDE_SUBSTITUTION
 from moPepGen.util.common import load_references
 
 
@@ -135,9 +136,13 @@ class BruteForceVariantPeptideCaller():
         return min_len <= len(peptide) <= max_len \
             and SeqUtils.molecular_weight(peptide, 'protein') >= min_mw
 
-    def is_stop_lost(self, variant:seqvar.VariantRecord, loc:FeatureLocation,
+    def is_stop_lost(self, variant:seqvar.VariantRecord, offset:int,
             cds_start:int, prev_cds_start:int) -> bool:
         """ Check whether the variant is a stop lost mutation. """
+        loc = FeatureLocation(
+            start=variant.location.start + offset,
+            end=variant.location.end + offset
+        )
         if self.tx_model.is_protein_coding:
             orf_end = self.tx_seq.orf.end
             stop_codon = FeatureLocation(orf_end, orf_end + 3)
@@ -162,6 +167,11 @@ class BruteForceVariantPeptideCaller():
         query = FeatureLocation(start=lhs, end=rhs)
         start_loc = FeatureLocation(start=cds_start, end=cds_start + 3)
         for variant in variants:
+            if variant.type not in SINGLE_NUCLEOTIDE_SUBSTITUTION:
+                raise ValueError(
+                    f"Haven't decided how to deal with this variant type: {variant.type}"
+                )
+            # var_size =  len(variant.ref)
             var_size = len(variant.alt) - len(variant.ref)
             loc = FeatureLocation(
                 start=variant.location.start + offset,
@@ -180,9 +190,9 @@ class BruteForceVariantPeptideCaller():
                     or is_start_gain \
                     or is_frameshifting \
                     or is_cleavage_gain \
-                    or self.is_stop_lost(variant, loc, cds_start, prev_cds_start):
+                    or self.is_stop_lost(variant, offset, cds_start, prev_cds_start):
                 return True
-            offset += var_size
+            offset += len(variant.alt) - len(variant.ref)
         return False
 
     def have_incompatible_variants(self, variants:Iterable[seqvar.VariantRecord]) -> bool:

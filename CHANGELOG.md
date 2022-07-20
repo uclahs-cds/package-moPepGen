@@ -28,6 +28,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that start gain and stop lost mutations before the novel start site were not excluded. #520
 
+- Fixed issue that frameshifting mutations on the same node of a novel ORF start site and is right after it was not carried over to downstream nodes. #526
+
+- FIxed issue that stop lost mutations were not recognized for deletions. #527
+
 ---
 
 ## [0.8.1] - 2022-06-24

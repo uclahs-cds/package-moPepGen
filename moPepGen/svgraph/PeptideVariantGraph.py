@@ -939,12 +939,6 @@ class PeptideVariantGraph():
 
         cleavage_gain = target_node.get_cleavage_gain_variants()
 
-        new_start_gain = []
-        for start_index in start_indices:
-            new_start_gain = target_node.get_variants_at(start_index, start_index + 1)
-            if new_start_gain:
-                break
-
         for out_node in target_node.out_nodes:
             if out_node is self.stop:
                 continue
@@ -973,7 +967,12 @@ class PeptideVariantGraph():
                 if is_stop:
                     start_gain = []
                 elif start_indices:
-                    start_gain = new_start_gain
+                    start_index = start_indices[-1]
+                    start_gain = target_node.get_variants_at(start_index, start_index + 1)
+                    fs_variants = target_node.get_variants_at(
+                        start=start_index, end=-1
+                    )
+                    start_gain += [x for x in fs_variants if x.is_frameshifting()]
                 elif not start_gain:
                     start_gain = [x.variant for x in target_node.variants
                         if x.variant.is_frameshifting()]
