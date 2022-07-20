@@ -623,7 +623,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case38(self):
-        """  """
+        """ Test case from fuzz test that ensures frameshifting mutations that
+        are right after a novel ORF start site and in the same node of it, are
+        carried over to downstream nodes. #526 """
         gvf = [
             self.data_dir/'fuzz/10/fake_variants.gvf'
         ]
@@ -632,7 +634,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case39(self):
-        """  """
+        """ Test case from fuzz test that ensures stop lost mutations to be
+        recognized correctly. #527 """
         gvf = [
             self.data_dir/'fuzz/11/fake_variants.gvf'
         ]
