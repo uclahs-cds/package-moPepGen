@@ -40,8 +40,10 @@ class VariantRecordWithCoordinate():
 
     def __getitem__(self, index) -> VariantRecordWithCoordinate:
         """ Get item """
-        start, stop, _ = index.indices(len(self.location))
-        location = FeatureLocation(start=0, end=stop-start)
+        start, stop, _ = index.indices(self.location.end)
+        start_index = max([start, self.location.start])
+        end_index = min([stop, self.location.end])
+        location = FeatureLocation(start=start_index, end=end_index)
         return VariantRecordWithCoordinate(
             variant=self.variant,
             location=location

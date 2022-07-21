@@ -30,7 +30,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that frameshifting mutations on the same node of a novel ORF start site and is right after it was not carried over to downstream nodes. #526
 
-- FIxed issue that stop lost mutations were not recognized for deletions. #527
+- Fixed issue that stop lost mutations were not recognized for deletions. #527
+
+- Fixed issue that in-frame deletion stop retaining mutations were not recognized #528
+
+- Fixed issue that variant coordinates not handled correctly when the cleavage site is contained in the inserted sequence. #529
 
 ---
 

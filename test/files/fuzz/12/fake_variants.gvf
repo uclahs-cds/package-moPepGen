@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.9.0
+##parser=
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##source=
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000228315.12	78728	ENSG00000228315.12-78727-TCAT-T	TCAT	T	.	.	TRANSCRIPT_ID=ENST00000452737.5;GENOMIC_POSITION=chr1-142:140;GENE_SYMBOL=GUSBP11

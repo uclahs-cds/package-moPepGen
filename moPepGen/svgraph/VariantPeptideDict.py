@@ -14,6 +14,15 @@ if TYPE_CHECKING:
     from moPepGen.seqvar.VariantRecord import VariantRecord
     from moPepGen import params
 
+
+class MiscleavedNodeSeries():
+    """ Helper class when calling for miscleavage peptides. The nodes contained
+    by this class can be joined to make a miscleavage peptide. """
+    def __init__(self, nodes:List[PVGNode], additional_variants:Set[VariantRecord]):
+        """ """
+        self.nodes = nodes
+        self.additional_variants = additional_variants
+
 class MiscleavedNodes():
     """ Helper class for looking for peptides with miscleavages. This class
     defines the collection of nodes in sequence that starts from the same node,
@@ -29,7 +38,7 @@ class MiscleavedNodes():
         - `leading_node` (PVGNode): The start node that the miscleaved peptides
           are called from. This node must present in the PVG graph.
     """
-    def __init__(self, data:Deque[List[PVGNode]],
+    def __init__(self, data:Deque[MiscleavedNodeSeries],
             cleavage_params:params.CleavageParams,
             orf:Tuple[int,int]=None, tx_id:str=None,
             leading_node:PVGNode=None):
@@ -76,8 +85,12 @@ class MiscleavedNodes():
             tx_id=tx_id,
             leading_node=leading_node
         )
+
         if not node.cpop_collapsed:
-            nodes.data.append([node])
+            additional_variants = leading_node.get_downstream_stop_altering_variants()
+            series = MiscleavedNodeSeries([node], additional_variants)
+            nodes.data.append(series)
+
         while queue:
             cur_batch = queue.pop()
             cur_node = cur_batch[-1]
@@ -115,14 +128,18 @@ class MiscleavedNodes():
                 new_batch.append(_node)
 
                 if not _node.cpop_collapsed:
+                    additional_variants = _node.get_downstream_stop_altering_variants()
+
                     cur_vars = copy.copy(batch_vars)
                     for var in _node.variants:
                         cur_vars.add(var.variant)
 
-                    if len(cur_vars) > allowed_n_vars:
+                    if len(cur_vars) + len(additional_variants) > allowed_n_vars:
                         continue
 
-                    nodes.data.append(copy.copy(new_batch))
+                    series = MiscleavedNodeSeries(copy.copy(new_batch), additional_variants)
+                    nodes.data.append(series)
+
                     if n_cleavages + 1 == cleavage_params.miscleavage:
                         continue
                     if n_cleavages + 1 > cleavage_params.miscleavage:
@@ -155,7 +172,8 @@ class MiscleavedNodes():
             - `blacklist` (Set[str]): Peptide sequences that should be excluded.
             - `is_start_codon` (bool): Whether the node contains start codon.
         """
-        for queue in self.data:
+        for series in self.data:
+            queue = series.nodes
             metadata = VariantPeptideMetadata(orf=self.orf)
             seq:str = None
 
@@ -176,7 +194,10 @@ class MiscleavedNodes():
                         if indels:
                             for variant in indels:
                                 variants.add(variant)
-                    variants.update(additional_variants)
+
+            if check_variants:
+                variants.update(additional_variants)
+                variants.update(series.additional_variants)
 
             cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
             variants.update(cleavage_gain_down)

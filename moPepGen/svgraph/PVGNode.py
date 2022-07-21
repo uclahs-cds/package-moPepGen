@@ -5,6 +5,7 @@ from functools import cmp_to_key
 from typing import Dict, List, Set
 from moPepGen import aa, seqvar
 from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.seqvar.VariantRecord import VariantRecord
 
 
 class PVGNode():
@@ -524,3 +525,14 @@ class PVGNode():
             all(x.cleavage and not x.pre_cleave for x in self.out_nodes) and\
             all(all(y.cleavage and not y.pre_cleave for y in x.in_nodes)
                 for x in self.out_nodes)
+
+    def get_downstream_stop_altering_variants(self) -> Set[VariantRecord]:
+        """ Get downstream stop altering variants """
+        additional_variants = set()
+        for out_node in self.out_nodes:
+            if out_node.seq.seq == '*':
+                additional_variants.update([x.variant for x in out_node.variants])
+                additional_variants.update(out_node.upstream_indel_map.get(self, []))
+                if additional_variants:
+                    return additional_variants
+        return additional_variants
