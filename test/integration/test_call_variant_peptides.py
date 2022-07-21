@@ -634,11 +634,21 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case39(self):
-        """ Test case from fuzz test that ensures stop lost mutations to be
-        recognized correctly. #527 """
+        """ Test case from fuzz test that ensures in-frame deletion, stop
+        retaining mutations to be recognized correctly. #527 """
         gvf = [
             self.data_dir/'fuzz/11/fake_variants.gvf'
         ]
         expected = self.data_dir/'fuzz/11/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case40(self):
+        """ Test case from fuzz test that ensures peptides with in-frame
+        deletion stop lost mutations are called. #528 """
+        gvf = [
+            self.data_dir/'fuzz/12/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/12/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
