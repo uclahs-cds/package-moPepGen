@@ -1,9 +1,5 @@
-[ 2022-07-20 22:29:31 ] moPepGen callPeptides started
-[ 2022-07-20 22:29:31 ] Annotation GTF loaded.
-[ 2022-07-20 22:29:31 ] Proteome FASTA loaded.
-[ 2022-07-20 22:29:31 ] Genome assembly FASTA loaded.
-[ 2022-07-20 22:29:31 ] canonical peptide pool generated.
-[ 2022-07-20 22:29:31 ] Using GVF file: test/files/fuzz/output/fuzz_test_noncoding_indel_20220720-112446/b85dc0bfede64b0d877d04715ca9e0be/fake_variants.gvf
-[ 2022-07-20 22:29:31 ] Variants sorted
-[ 2022-07-20 22:29:31 ] ['ENST00000452737.5']
-[ 2022-07-20 22:29:31 ] Variant peptide FASTA file written to disk.
+GKHPPPTSMTSPSPPA
+GLLWSLLLYTTYLPR
+HICRGKHPPPTSMTSPSPPA
+IGSAHFYAIVDCCGLCFYTRHICR
+PSWTAVVSASIHDIFAAVNTPHLHR
