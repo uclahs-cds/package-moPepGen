@@ -64,6 +64,23 @@ class PeptideVariantGraph():
         """ Checks if stop is linked as a outbound node. """
         return len(node.out_nodes) == 1 and self.stop in node.out_nodes
 
+    def find_node(self, seq:str) -> List[PVGNode]:
+        """ Find node with given sequence. """
+        queue:Deque[PVGNode] = deque([self.root])
+        visited:Set[PVGNode] = set()
+        targets:List[PVGNode] = []
+        while queue:
+            cur = queue.popleft()
+            if cur in visited:
+                continue
+            visited.add(cur)
+            if cur.seq and cur.seq.seq == seq:
+                targets.append(cur)
+            for out_node in cur.out_nodes:
+                if not out_node in visited:
+                    queue.append(out_node)
+        return targets
+
     @staticmethod
     def remove_node(node:PVGNode) -> None:
         """ Remove a given node, and also remove the all edges from and to it.
@@ -195,12 +212,21 @@ class PeptideVariantGraph():
 
         if cleavage:
             for out_node in node.out_nodes:
+                count = 0
                 route = (node, out_node)
-                routes.add(route)
-                visited.add(out_node)
+                for out_node_2 in out_node.out_nodes:
+                    if node.is_inbond_of(out_node_2):
+                        count += 1
+                        new_route = (*route, out_node_2)
+                        routes.add(new_route)
+                if count == 0:
+                    routes.add(route)
+                    visited.add(node)
+                elif count == len(out_node.out_nodes):
+                    visited.add(node)
 
                 for in_node in out_node.in_nodes:
-                    if in_node is not node:
+                    if in_node is not node and not node.is_inbond_of(in_node):
                         route = (in_node, out_node)
                         routes.add(route)
                         visited.add(in_node)

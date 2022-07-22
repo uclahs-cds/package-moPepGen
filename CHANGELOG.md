@@ -34,7 +34,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that in-frame deletion stop retaining mutations were not recognized #528
 
-- Fixed issue that variant coordinates not handled correctly when the cleavage site is contained in the inserted sequence. #529
+- Fixed issue that variant coordinates not handled correctly when the cleavage site is contained in the inserted sequence. #52
+
+- Fixed issue that peptides are not called with overlapping deletions. #531
 
 ---
 
