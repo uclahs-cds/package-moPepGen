@@ -806,6 +806,9 @@ class PeptideVariantGraph():
                 node_copy.truncated = True
 
             additional_variants = start_gain + cursor.cleavage_gain
+            upstream_indels = target_node.upstream_indel_map.get(cursor.in_node)
+            if upstream_indels:
+                additional_variants += upstream_indels
 
             traversal.pool.add_miscleaved_sequences(
                 node=node_copy,
@@ -828,12 +831,20 @@ class PeptideVariantGraph():
                 cur_start_gain = copy.copy(start_gain)
                 if not cur_start_gain:
                     new_start_gain = set()
+
                     for variant in out_node.variants:
                         if variant.variant.is_frameshifting():
                             new_start_gain.add(variant.variant)
+
                     for variant in target_node.variants:
                         if variant.variant.is_frameshifting():
                             new_start_gain.add(variant.variant)
+
+                    upstream_indels = target_node.upstream_indel_map.get(cursor.in_node)
+                    if upstream_indels:
+                        for variant in upstream_indels:
+                            new_start_gain.add(variant)
+
                     stop_index = self.known_orf[1]
                     stop_lost = target_node.get_stop_lost_variants(stop_index)
                     new_start_gain.update(stop_lost)
@@ -844,8 +855,8 @@ class PeptideVariantGraph():
             else:
                 cur_start_gain = []
                 cur_cleavage_gain = None
-            cur = PVGCursor(target_node, out_node, in_cds, orf,
-                cur_start_gain, cur_cleavage_gain)
+            cur = PVGCursor(target_node, out_node, in_cds, orf, cur_start_gain,
+                cur_cleavage_gain)
             traversal.stage(target_node, out_node, cur)
 
     def call_and_stage_known_orf_not_in_cds(self, cursor:PVGCursor,
@@ -1148,8 +1159,7 @@ class PVGTraversal():
             return -1 if sorted(x.start_gain)[0] > sorted(y.start_gain)[0] else 1
         return -1
 
-    def stage(self, in_node:PVGNode, out_node:PVGNode,
-            cursor:PVGCursor):
+    def stage(self, in_node:PVGNode, out_node:PVGNode, cursor:PVGCursor):
         """ When a node is visited through a particular edge during the variant
         peptide finding graph traversal, it is staged until all inbond edges
         are visited. """
