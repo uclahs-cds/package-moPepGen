@@ -54,7 +54,12 @@ class PVGNodeCollapser():
         same_collapse_node = get_equivalent(self.pool, collapse_node)
         if same_collapse_node:
             same_node = self.mapper[same_collapse_node]
-            if node.is_less_mutated_than(same_node):
+            # Here we keep the node with least number of variants, unless one
+            # has stop altering mutation.
+            keep_node = node.is_less_mutated_than(same_node) \
+                and not (not any(x.is_stop_altering for x in node.variants)
+                    and any(y.is_stop_altering for y in same_node.variants))
+            if keep_node:
                 same_node.transfer_in_nodes_to(node)
                 self.pool.remove(same_collapse_node)
                 self.pool.add(collapse_node)
