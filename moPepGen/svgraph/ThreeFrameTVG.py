@@ -1088,7 +1088,7 @@ class ThreeFrameTVG():
                 subgraph_out.add(cur)
                 continue
             for e in cur.in_edges:
-                if e.in_node.reading_frame_index != this_id:
+                if e.in_node.reading_frame_index != this_id or e.in_node.was_bridge:
                     bridge_in.add(e.in_node)
                 elif e.in_node.subgraph_id != cur.subgraph_id:
                     subgraph_in.add(e.in_node)
@@ -1255,6 +1255,7 @@ class ThreeFrameTVG():
             The original input node.
         """
         start_node = node
+        rf_index = node.reading_frame_index
         end_node = self.find_farthest_node_with_overlap(node)
         end_nodes = {end_node}
         if end_node.is_subgraph_end():
@@ -1332,7 +1333,10 @@ class ThreeFrameTVG():
 
                 # create new node with the combined sequence
                 new_node = cur.copy()
+                was_bridge = new_node.reading_frame_index != rf_index \
+                    and any(x.reading_frame_index != rf_index for x in out_node.get_out_nodes())
                 new_node.append_right(out_node)
+                new_node.was_bridge = was_bridge
 
                 for edge in copy.copy(out_node.out_edges):
                     edge_type = 'reference' \

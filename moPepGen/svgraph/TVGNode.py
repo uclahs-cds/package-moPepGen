@@ -28,7 +28,7 @@ class TVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
-            level:int=0):
+            level:int=0, was_bridge:bool=False):
         """ Constructor for TVGNode.
 
         Args:
@@ -46,12 +46,13 @@ class TVGNode():
         self.subgraph_id = subgraph_id
         self.global_variant = global_variant
         self.level = level
+        self.was_bridge = was_bridge
 
     def create_node(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
-            level:int=None):
+            level:int=None, was_bridge:bool=False):
         """ Constructor for TVGNode.
 
         Args:
@@ -67,7 +68,8 @@ class TVGNode():
             reading_frame_index=reading_frame_index,
             subgraph_id=subgraph_id,
             global_variant=global_variant or self.global_variant,
-            level=level or self.level
+            level=level or self.level,
+            was_bridge=was_bridge
         )
 
     def __hash__(self):
@@ -279,7 +281,8 @@ class TVGNode():
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
             global_variant=self.global_variant,
-            level=self.level
+            level=self.level,
+            was_bridge=self.was_bridge
         )
 
     def deepcopy(self, subgraph_id:str=None, level_increment:int=None) -> TVGNode:
@@ -434,7 +437,8 @@ class TVGNode():
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            was_bridge=self.was_bridge
         )
 
         self.seq = self.seq[:i]

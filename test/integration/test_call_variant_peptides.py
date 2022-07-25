@@ -672,3 +672,24 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/14/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case43(self):
+        """ Test case from fuzz test that indel variants after collapsing
+        not considered. #533 """
+        gvf = [
+            self.data_dir/'fuzz/15/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/15/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case44(self):
+        """ Test case from fuzz test that nodes are missed when there are
+        multiple frameshifting mutation that makes it go back to the original
+        reading frame. #534 """
+        gvf = [
+            self.data_dir/'fuzz/16/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/16/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
+        self.default_test_case(gvf, reference, expected)
