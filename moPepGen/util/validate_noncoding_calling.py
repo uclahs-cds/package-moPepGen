@@ -213,11 +213,11 @@ class ValidationRecord():
 class ValidationSummary():
     """ Valiadtion summary """
     def __init__(self, data:List[ValidationRecord]=None):
-        """ """
+        """ constructor """
         self.data = data or []
 
     def append(self, x:ValidationRecord):
-        """ """
+        """ Add summary record """
         self.data.append(x)
 
     def write(self, path:Path):
