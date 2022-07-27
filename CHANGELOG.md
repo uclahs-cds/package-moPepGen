@@ -10,6 +10,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.9.1] - 2022-07-27
+
+### Added
+
+- UTIL command line tool `validateNoncodingCalling` added to validate the output of `callNoncoding` with `bruteForceNoncoding`. #524
+
+## Fixed
+
+- `parseVEP` updated to only parse the first 13 columns of the VEP TSV. #540
+
 ---
 
 ## [0.9.0] - 2022-07-18
