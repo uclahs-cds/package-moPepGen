@@ -1,14 +1,16 @@
 """ Validate callNoncoding results with bruteForceNoncoding """
 import argparse
 from contextlib import redirect_stdout
+from datetime import datetime
 from pathlib import Path
 import random
-from typing import IO, Set
+from typing import IO, List, Set
 from Bio import SeqIO
 from moPepGen import logger
 from moPepGen.cli import call_noncoding_peptide, common
 from moPepGen.gtf import GtfIO
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
+from moPepGen.util.common import load_references
 from moPepGen.util.validate_variant_calling import call_downsample_reference
 from moPepGen.util import brute_force_noncoding
 
@@ -101,6 +103,15 @@ def call_brute_force_noncoding(tx_id:str, ref_dir:Path, output_path:Path):
         with redirect_stdout(handle):
             brute_force_noncoding(args)
 
+def get_transcript_length(tx_id:str, ref_dir:Path) -> int:
+    """ Get the transcript length """
+    anno, genome, *_ = load_references(
+        path_anno=ref_dir/'annotation.gtf',
+        path_genome=ref_dir/'genome.fasta',
+        path_proteome=ref_dir/'proteome.fasta'
+    )
+    return len(anno.transcripts[tx_id].get_transcript_sequence(genome['chr1']))
+
 def assert_equal(noncoding_fasta:Path, brute_force_txt:Path, output_dir:Path) -> bool:
     """ Compare the results of callNoncoding and bruteForceNoncoding """
     with open(noncoding_fasta, 'rt') as handle:
@@ -132,6 +143,96 @@ def assert_equal(noncoding_fasta:Path, brute_force_txt:Path, output_dir:Path) ->
         return False
     return True
 
+class ValidationRecord():
+    """ Validation summary record """
+    def __init__(self, tx_id:str=None, status:str=None, submitted:datetime=None,
+            completed:datetime=None, tx_len:int=None,
+            call_noncoding_start:datetime=None, call_noncoding_end:datetime=None,
+            brute_force_start:datetime=None, brute_force_end:datetime=None):
+        """ """
+        self.tx_id = tx_id
+        self.status = status
+        self.submitted = submitted
+        self.completed = completed
+        self.tx_len = tx_len
+        self.call_noncoding_start = call_noncoding_start
+        self.call_noncoding_end = call_noncoding_end
+        self.brute_force_start = brute_force_start
+        self.brute_force_end = brute_force_end
+
+    def submit(self):
+        """ Validation starts """
+        self.submitted = datetime.now()
+
+    def complete(self, status:str):
+        """ set the complete timestamp """
+        self.completed = datetime.now()
+        self.status = status
+
+    def start_call_noncoding(self):
+        """ set timestamp when callNoncoding starts """
+        self.call_noncoding_start = datetime.now()
+
+    def end_call_noncoding(self):
+        """ set timestamp when callNoncoding ends """
+        self.call_noncoding_end = datetime.now()
+
+    def start_brute_force(self):
+        """ set timestamp when bruteForce starts """
+        self.brute_force_start = datetime.now()
+
+    def end_brute_force(self):
+        """ set timestamp when bruteForce ends """
+        self.brute_force_end = datetime.now()
+
+    def to_tsv(self) -> str:
+        """ convert to TSV record """
+        submitted = self.submitted.strftime('%Y-%m-%d %H:%M:%S') \
+            if self.submitted else '-'
+        completed = self.completed.strftime('%Y-%m-%d %H:%M:%S') \
+            if self.completed else '-'
+        call_noncoding_start = self.call_noncoding_start.strftime('%Y-%m-%d %H:%M:%S') \
+            if self.call_noncoding_start else '-'
+        call_noncoding_end = self.call_noncoding_end.strftime('%Y-%m-%d %H:%M:%S') \
+            if self.call_noncoding_end else '-'
+        call_noncoding_time = str(self.call_noncoding_end - self.call_noncoding_start) \
+            if self.call_noncoding_start and self.call_noncoding_end else '-'
+        brute_force_start = self.brute_force_start.strftime('%Y-%m-%d %H:%M:%S') \
+            if self.brute_force_start else '-'
+        brute_force_end = self.brute_force_end.strftime('%Y-%m-%d %H:%M:%S') \
+            if self.brute_force_end else '-'
+        brute_force_time = str(self.brute_force_end - self.brute_force_start) \
+            if self.brute_force_start and self.brute_force_end else '-'
+        return '\t'.join([
+            self.tx_id, str(self.tx_len), self.status, submitted, completed,
+            call_noncoding_start, call_noncoding_end, call_noncoding_time,
+            brute_force_start, brute_force_end, brute_force_time
+        ])
+
+
+class ValidationSummary():
+    """ Valiadtion summary """
+    def __init__(self, data:List[ValidationRecord]=None):
+        """ """
+        self.data = data or []
+
+    def append(self, x:ValidationRecord):
+        """ """
+        self.data.append(x)
+
+    def write(self, path:Path):
+        """ """
+        header = '\t'.join([
+            'tx_id', 'tx_len', 'status',
+            'submitted', 'completed',
+            'call_noncoding_start', 'call_noncoding_end', 'call_noncoding_time',
+            'brute_force_start', 'brute_force_end', 'brute_force_time'
+        ])
+        with open(path, 'w') as handle:
+            handle.write(header + '\n')
+            for record in self.data:
+                handle.write(record.to_tsv() + '\n')
+
 def validate_noncoding_calling(args:argparse.Namespace):
     """ main entrypoint """
     if args.tx_id:
@@ -143,11 +244,17 @@ def validate_noncoding_calling(args:argparse.Namespace):
     n_iter = min(args.n_iter, len(tx_ids))
     tx_ids_sampled = random.sample(tx_ids, n_iter)
 
+    summary = ValidationSummary()
+
     for tx_id in tx_ids_sampled:
         output_dir:Path = args.output_dir/tx_id
         output_dir.mkdir(exist_ok=True)
         ref_dir = output_dir/'index'
         ref_dir.mkdir(exist_ok=True)
+
+        record = ValidationRecord(tx_id=tx_id)
+        summary.append(record)
+        record.submit()
 
         noncoding_fasta = output_dir/'call_noncoding.fasta'
         brute_force_txt = output_dir/'brute_force_noncoding.fasta'
@@ -160,21 +267,30 @@ def validate_noncoding_calling(args:argparse.Namespace):
             output_dir=ref_dir
         )
 
+        record.tx_len = get_transcript_length(tx_id, ref_dir)
+
+        record.start_call_noncoding()
         call_noncoding(
             ref_dir=ref_dir,
             output_fasta=noncoding_fasta
         )
+        record.end_call_noncoding()
 
+        record.start_brute_force()
         call_brute_force_noncoding(
             tx_id=tx_id,
             ref_dir=ref_dir,
             output_path=brute_force_txt
         )
+        record.end_brute_force()
 
         res = assert_equal(
             noncoding_fasta=noncoding_fasta,
             brute_force_txt=brute_force_txt,
             output_dir=output_dir
         )
+        record.complete('SUCCEEDED' if res else 'FAILED')
 
         logger(f"Transcript ID: {tx_id}, {'Equal' if res else 'Not equal'}!")
+
+    summary.write(args.output_dir/'validate_noncoding_summary.tsv')
