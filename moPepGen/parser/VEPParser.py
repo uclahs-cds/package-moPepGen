@@ -35,9 +35,6 @@ def parse(handle:IO) -> Iterable[VEPRecord]:
             codons = (codons[0], '')
 
         extra = {}
-        for field in fields[13].split(';'):
-            key, val = field.split('=')
-            extra[key] = val
 
         yield VEPRecord(
             uploaded_variation=fields[0],
