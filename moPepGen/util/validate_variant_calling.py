@@ -13,11 +13,11 @@ from moPepGen.util import downsample_reference, brute_force
 INPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
-def add_subparser_validate_variant_callilng(subparsers:argparse._SubParsersAction):
+def add_subparser_validate_variant_calling(subparsers:argparse._SubParsersAction):
     """ parse args """
     parser:argparse.ArgumentParser = subparsers.add_parser(
         name='validateVariantCalling',
-        help='Validate the varaint peptide calling result of the graph-based'
+        help='Validate the variant peptide calling result of the graph-based'
         ' algorithm with the brute force algorithm.'
     )
     common.add_args_input_path(
@@ -69,7 +69,7 @@ def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
     args.output_dir = output_dir
     args.miscleavage = 2
     args.min_mw = 500.
-    args.translate_noncoding = 'true'
+    args.translate_noncoding = 'false'
     downsample_reference(args)
 
 def extract_gvf(tx_id:str, gvf_files:List[Path], output_dir:Path) -> List[Path]:
