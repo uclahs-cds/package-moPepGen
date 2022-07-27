@@ -221,7 +221,7 @@ class ValidationSummary():
         self.data.append(x)
 
     def write(self, path:Path):
-        """ """
+        """ Write summary """
         header = '\t'.join([
             'tx_id', 'tx_len', 'status',
             'submitted', 'completed',
