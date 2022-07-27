@@ -484,7 +484,10 @@ class TVGNode():
 
     def translate(self) -> svgraph.PVGNode:
         """ translate to a PVGNode """
-        seq = self.seq.translate()
+        if not self.out_edges:
+            seq = self.seq[:len(self.seq) - len(self.seq) % 3].translate()
+        else:
+            seq = self.seq.translate()
 
         locations = []
         for loc in self.seq.locations:
