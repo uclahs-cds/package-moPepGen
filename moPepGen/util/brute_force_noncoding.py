@@ -76,7 +76,9 @@ def brute_force_noncoding(args:argparse.Namespace):
         for it in re.finditer('M', str(frame_seq.seq)):
             i = it.start()
             j = frame_seq.seq[i:].find('*')
-            if not j == -1:
+            if j == -1:
+                j = len(frame_seq.seq)
+            else:
                 j += i
             aa_seq = frame_seq[i:j]
             peptides = aa_seq.enzymatic_cleave(rule, exception)
