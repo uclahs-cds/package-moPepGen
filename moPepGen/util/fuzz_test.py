@@ -111,28 +111,28 @@ class FuzzRecord():
         self.brute_force_end = brute_force_end
 
     def submit(self):
-        """ set the submit timestemp """
+        """ set the submit timestamp """
         self.submitted = datetime.now()
 
     def complete(self, status:str):
-        """ set the complete timetemp """
+        """ set the complete timestamp """
         self.completed = datetime.now()
         self.status = status
 
     def call_variant_starts(self):
-        """ set timestemp when callVariant starts """
+        """ set timestamp when callVariant starts """
         self.call_variant_start = datetime.now()
 
     def call_variant_ends(self):
-        """ set timestemp when callVariant ends """
+        """ set timestamp when callVariant ends """
         self.call_variant_end = datetime.now()
 
     def brute_force_starts(self):
-        """ set timestemp when bruteForce starts """
+        """ set timestamp when bruteForce starts """
         self.brute_force_start = datetime.now()
 
     def brute_force_ends(self):
-        """ set timestemp when bruteForce ends """
+        """ set timestamp when bruteForce ends """
         self.brute_force_end = datetime.now()
 
     def set_work_dir(self, global_work_dir:Path):
