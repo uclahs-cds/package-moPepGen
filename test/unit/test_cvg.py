@@ -34,7 +34,9 @@ class TestCVG(unittest.TestCase):
             self.assertTrue(root.get_reference_next().is_inbond_of(root))
 
     def test_extend_loop(self):
-        """ extend loop """
+        """ Extend loop. This test case ensures that the ThreeFrameCVG is
+        extended into the linear structure by copying the graph for three
+        times. """
         circ_record = create_circ_model('ENST0001', [(0,8),(10,18)], 'CIRCXXX')
         seq = Seq('AATTGGCCCCGGTTAA')
         locations = []
@@ -42,6 +44,11 @@ class TestCVG(unittest.TestCase):
         graph = svgraph.ThreeFrameCVG(seq, 'ENST0001', circ_record=circ_record)
         graph.init_three_frames()
         graph.extend_loop()
-        for root in graph.reading_frames:
-            node = list(list(root.out_edges)[0].out_node.out_edges)[0].out_node
-            self.assertEqual(str(node.seq.seq), str(seq.seq))
+        for cur in graph.reading_frames:
+            n_loops = 0
+            while cur.out_edges:
+                self.assertEqual(len(cur.out_edges), 1)
+                cur = cur.get_out_nodes()[0]
+                self.assertEqual(cur.seq.seq, seq.seq)
+                n_loops += 1
+            self.assertEqual(n_loops, 4)

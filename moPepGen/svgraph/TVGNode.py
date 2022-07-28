@@ -289,6 +289,8 @@ class TVGNode():
         """ Create a deep copy of the node and all its downstream nodes.
         """
         new_node = self.copy()
+        if level_increment is not None:
+            new_node.level += level_increment
 
         queue:Deque[Tuple[TVGNode, TVGNode]] = deque([(self, new_node)])
         visited:Dict[TVGNode, TVGNode] = {}
