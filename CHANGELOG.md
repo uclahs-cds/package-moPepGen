@@ -10,6 +10,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+---
+
+## [0.9.2] - 2022-07-28
+
+- For circRNA, each reading frame subgraph is now replicated for 3 times in order to catch all variant peptides that read through the junction site. #514
+
+---
+
 ## [0.9.1] - 2022-07-27
 
 ### Added
