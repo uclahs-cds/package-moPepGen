@@ -29,6 +29,7 @@ EXPASY_RULES = {
     'hydroxylamine': r'N(?=G)',
     'iodosobenzoic acid': r'W',
     'lysc': r'K',
+    'lysn': r'\w(?=K)',
     'ntcb': r'\w(?=C)',
     'pepsin ph1.3':  r'((?<=[^HKR][^P])[^R](?=[FL][^P]))|'
     r'((?<=[^HKR][^P])[FL](?=\w[^P]))',

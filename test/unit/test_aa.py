@@ -60,7 +60,7 @@ class TestAminoAcidSeqDict(unittest.TestCase):
 
 class TestAminoAcidSeqRecord(unittest.TestCase):
     """ Test case for AminoAcidSeqRecord """
-    def testinfer_ids_ensembl_case1(self):
+    def test_infer_ids_ensembl_case1(self):
         """ Test that ids are infered correctly with ENSMBLE style. """
         seq = aa.AminoAcidSeqRecord(
             seq=Seq('GTGG'),
@@ -77,7 +77,7 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
         self.assertEqual(seq.transcript_id, 'ENST00000631435')
         self.assertEqual(seq.gene_id, 'ENSG00000282253')
 
-    def testinfer_ids_ensembl_case2(self):
+    def test_nfer_ids_ensembl_case2(self):
         """ Test that error will raise with GENCODE style. """
         header = 'ENSP00000493376.2|ENST00000641515.2|ENSG00000186092.6|OTTH'+\
             'UMG00000001094.4|OTTHUMT00000003223.4|OR4F5-202|OR4F5|326'
@@ -90,7 +90,7 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
         with self.assertRaises(ValueError):
             seq.infer_ids_ensembl()
 
-    def testinfer_ids_gencode_case1(self):
+    def test_infer_ids_gencode_case1(self):
         """ Test that ids are infered correctly with ENSMBLE style. """
         header = 'ENSP00000493376.2|ENST00000641515.2|ENSG00000186092.6|OTTH'+\
             'UMG00000001094.4|OTTHUMT00000003223.4|OR4F5-202|OR4F5|326'
@@ -107,7 +107,7 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
         self.assertEqual(seq.gene_id, 'ENSG00000186092.6')
         self.assertEqual(seq.transcript_id, 'ENST00000641515.2')
 
-    def testinfer_ids_gencode_case2(self):
+    def test_infer_ids_gencode_case2(self):
         """ Test that error will raise with ENSEMBL style """
         seq = aa.AminoAcidSeqRecord(
             seq=Seq('GTGG'),
@@ -122,6 +122,13 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
         with self.assertRaises(ValueError):
             seq.infer_ids_gencode()
 
+    def test_enzyme_lysn(self):
+        """ Ensures that lysN cleaves lysine at N-terminus """
+        seq = aa.AminoAcidSeqRecord('ACDEGKILMNP')
+        expected = {'ACDEG', 'KILMNP'}
+        fragments = seq.enzymatic_cleave(rule='lysn', miscleavage=0, min_mw=0, min_length=0)
+        received = {str(x.seq) for x in fragments}
+        self.assertEqual(expected, received)
 
 class TestCaseVariantPeptidePool(unittest.TestCase):
     """ Test cases for VariantPeptidePool """
