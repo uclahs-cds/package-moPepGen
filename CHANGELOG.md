@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Enzyme lysN is added. #523
 
+- For `decoyFasta`, overlapping decoy sequences are also counted and printed to the stdout when using reverse. #474
+
 ---
 
 ## [0.9.1] - 2022-07-27
