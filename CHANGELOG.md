@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - For circRNA, each reading frame subgraph is now replicated for 3 times in order to catch all variant peptides that read through the junction site. #514
 
+- For `decoyFasta`, overlapping decoy sequences are also counted and printed to the stdout when using reverse. #474
+
 ---
 
 ## [0.9.1] - 2022-07-27
