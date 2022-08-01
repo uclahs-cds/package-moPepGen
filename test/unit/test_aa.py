@@ -38,7 +38,7 @@ class TestAminoAcidSeqDict(unittest.TestCase):
         """ Test that peptides kept are of correct length. """
         anno = create_genomic_annotation(ANNOTATION_DATA)
         sequence = 'MKVTAEAISWNERSTSETNNSMVTEFIFLGLSDSQEKLQRTFLFMLFFVFYGGIVFGN'
-        header = 'ENSP0001|ENST0001.1|ENSG0001'
+        header = 'ENSP0001|ENST0001.1|ENSG0001|-'
         seq = aa.AminoAcidSeqRecord(
             seq=sequence,
             _id=header,
