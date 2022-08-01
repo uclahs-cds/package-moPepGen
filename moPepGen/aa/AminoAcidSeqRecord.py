@@ -98,7 +98,8 @@ class AminoAcidSeqRecord(SeqRecord):
         """ Infers the gene, transcript, and protein ID from description base
         on GENCODE's format
         """
-        p = r'^(?P<protein_id>[A-Z0-9.:-]+)\|(?P<transcript_id>[A-Z0-9.:-]+)\|(?P<gene_id>[A-Z0-9.]+)\|.+'
+        p = r'^(?P<protein_id>[A-Z0-9.:-]+)\|' +\
+            r'(?P<transcript_id>[A-Z0-9.:-]+)\|(?P<gene_id>[A-Z0-9.]+)\|.+'
 
         match = re.search(p, self.description)
         if not match:
