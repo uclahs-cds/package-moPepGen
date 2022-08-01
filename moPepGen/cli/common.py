@@ -48,6 +48,13 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         metavar='<file>',
         default=None
     )
+    group.add_argument(
+        '--reference-source',
+        type=str,
+        choices=['gencode', 'ensembl'],
+        help='Source of reference genome and annotation.',
+        default=None
+    )
     if proteome:
         group.add_argument(
             '-p', '--proteome-fasta',
@@ -238,13 +245,13 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
                 args.proteome_fasta is None:
             raise ValueError('--proteome-fasta was not specified.')
         annotation = gtf.GenomicAnnotation()
-        annotation.dump_gtf(args.annotation_gtf)
+        annotation.dump_gtf(args.annotation_gtf, source=args.reference_source)
         if not quiet:
             logger('Annotation GTF loaded.')
 
         if load_proteome or load_canonical_peptides or check_protein_coding:
             proteome = aa.AminoAcidSeqDict()
-            proteome.dump_fasta(args.proteome_fasta)
+            proteome.dump_fasta(args.proteome_fasta, source=args.reference_source)
             if not quiet:
                 logger('Proteome FASTA loaded.')
             annotation.check_protein_coding(proteome, invalid_protein_as_noncoding)

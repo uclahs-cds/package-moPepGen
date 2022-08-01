@@ -26,6 +26,7 @@ class TestParseRMATS(TestCaseIntegration):
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.reference_source = None
         args.output_path = self.work_dir/'rmats.gvf'
         args.quiet = True
         return args

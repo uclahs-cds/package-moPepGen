@@ -19,6 +19,7 @@ def create_base_args() -> argparse.Namespace:
     args.genome_fasta = None
     args.annotation_gtf = None
     args.proteome_fasta = None
+    args.reference_source = None
     args.output_path = None
     args.max_variants_per_node = 7
     args.additional_variants_per_misc = 2
@@ -58,6 +59,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.genome_fasta = reference/'genome.fasta'
         args.annotation_gtf = reference/'annotation.gtf'
         args.proteome_fasta = reference/'proteome.fasta'
+        args.reference_source = None
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta'}
