@@ -96,14 +96,14 @@ class AminoAcidSeqRecord(SeqRecord):
 
     def infer_ids_gencode(self):
         """ Infers the gene, transcript, and protein ID from description base
-        on GENCODE's format
+        on the GENCODE format
         """
         p = r'^(?P<protein_id>[A-Z0-9.:-]+)\|' +\
             r'(?P<transcript_id>[A-Z0-9.:-]+)\|(?P<gene_id>[A-Z0-9.]+)\|.+'
 
         match = re.search(p, self.description)
         if not match:
-            raise ValueError(f"The record doesn't seem like GENCODE's style: {self.description}")
+            raise ValueError(f"The record doesn't seem to follow the GENCODE format: {self.description}")
 
         protein_id = match.group('protein_id')
         transcript_id = match.group('transcript_id')
@@ -117,7 +117,7 @@ class AminoAcidSeqRecord(SeqRecord):
 
     def infer_ids_ensembl(self):
         """ Infers the gene, transcript, and protein ID from description base
-        on ENSEMBL's format
+        on the ENSEMBL format
         """
         p = r'^(?P<protein_id>.+) pep (\bchromosome\b|\bsupercontig\b|\bscaffold\b):' +\
             r'(?P<genome_build>.+?):(?P<chromosome>.+?):(?P<position>\d+:\d+):(?P<strand>.+) ' +\
@@ -125,7 +125,7 @@ class AminoAcidSeqRecord(SeqRecord):
 
         match = re.search(p, self.description)
         if not match:
-            raise ValueError(f"The record doesn't seem like ESEMBL's style: {self.description}")
+            raise ValueError(f"doesn't seem to follow the ENSEMBL format: {self.description}")
 
         protein_id = self.id
         gene_id = match.group('gene_id')
