@@ -103,7 +103,9 @@ class AminoAcidSeqRecord(SeqRecord):
 
         match = re.search(p, self.description)
         if not match:
-            raise ValueError(f"The record doesn't seem to follow the GENCODE format: {self.description}")
+            raise ValueError(
+                f"The record doesn't seem to follow the GENCODE format: {self.description}"
+            )
 
         protein_id = match.group('protein_id')
         transcript_id = match.group('transcript_id')
