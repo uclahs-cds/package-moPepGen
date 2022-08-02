@@ -78,12 +78,12 @@ def generate_index(args:argparse.Namespace):
     del genome
 
     anno = gtf.GenomicAnnotation()
-    anno.dump_gtf(path_gtf)
+    anno.dump_gtf(path_gtf, source=args.reference_source)
     if not quiet:
         logger('Genome annotation GTF loaded.')
 
     proteome = aa.AminoAcidSeqDict()
-    proteome.dump_fasta(parth_proteome)
+    proteome.dump_fasta(parth_proteome, source=args.reference_source)
 
     anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 

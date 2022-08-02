@@ -36,6 +36,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.reference_source = None
         args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0
         args.quiet = True
@@ -70,6 +71,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.reference_source = None
         args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0
         args.quiet = True

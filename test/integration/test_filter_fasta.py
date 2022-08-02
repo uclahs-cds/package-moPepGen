@@ -19,6 +19,7 @@ class TestFilterFasta(TestCaseIntegration):
         args.genome_fasta = Path('test/files/genome.fasta')
         args.annotation_gtf = Path('test/files/annotation.gtf')
         args.proteome_fasta = Path('test/files/translate.fasta')
+        args.reference_source = None
         args.quiet = True
         args.enzyme = 'trypsin'
         args.miscleavages = None

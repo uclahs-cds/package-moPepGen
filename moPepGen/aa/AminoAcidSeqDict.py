@@ -39,9 +39,10 @@ class AminoAcidSeqDict(dict):
                 'ensembl'. If None is given, it will be infered by trying
                 the first 100 records. Default to None.
         """
+        count = 0
         if not source:
-            count = 0
             inferred = set()
+        record:AminoAcidSeqRecord
         for record in SeqIO.parse(path, 'fasta'):
             record.__class__ = AminoAcidSeqRecord
             if count > 100 and not source:
