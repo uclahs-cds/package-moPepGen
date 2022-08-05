@@ -34,6 +34,7 @@ class TestParseREDItools(TestCaseIntegration):
         args.transcript_id_column = 17
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.reference_source = None
         args.output_path = self.work_dir/'reditools.gvf'
         args.quiet = True
         args.min_coverage_alt = 3

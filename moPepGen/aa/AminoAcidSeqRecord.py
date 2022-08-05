@@ -96,29 +96,20 @@ class AminoAcidSeqRecord(SeqRecord):
 
     def infer_ids_gencode(self):
         """ Infers the gene, transcript, and protein ID from description base
-        on GENCODE's format
+        on the GENCODE format
         """
-        delimiter = '|'
-        if delimiter not in self.description:
-            raise ValueError(r'The description does not have any \'' +
-            delimiter + r'\'.')
-        ids = self.description.split(delimiter)
-        gene_id, protein_id, transcript_id = None, None, None
-        for _id in ids:
-            if _id.startswith('ENSP'):
-                protein_id = _id
-            elif _id.startswith('ENSG'):
-                gene_id = _id
-            elif _id.startswith('ENST'):
-                transcript_id = _id
-            else:
-                continue
-        if gene_id is None:
-            raise ValueError(r'Couldn\'t find gene ID')
-        if transcript_id is None:
-            raise ValueError(r'Transcript ID could\'t be inferred.')
-        if protein_id is None:
-            raise ValueError(r'Protein ID could\'t be inferred.')
+        p = r'^(?P<protein_id>[A-Z0-9.:-]+)\|' +\
+            r'(?P<transcript_id>[A-Z0-9.:-]+)\|(?P<gene_id>[A-Z0-9.]+)\|.+'
+
+        match = re.search(p, self.description)
+        if not match:
+            raise ValueError(
+                f"The record doesn't seem to follow the GENCODE format: {self.description}"
+            )
+
+        protein_id = match.group('protein_id')
+        transcript_id = match.group('transcript_id')
+        gene_id = match.group('gene_id')
 
         self.id = protein_id
         self.name = protein_id
@@ -128,22 +119,19 @@ class AminoAcidSeqRecord(SeqRecord):
 
     def infer_ids_ensembl(self):
         """ Infers the gene, transcript, and protein ID from description base
-        on ENSEMBL's format
+        on the ENSEMBL format
         """
-        if not re.search(r'^ENSP\d+\.\d+ pep ', self.description):
-            raise ValueError(r'Description doesn\'t seem like ESEMBL\'s style')
+        p = r'^(?P<protein_id>.+) pep (\bchromosome\b|\bsupercontig\b|\bscaffold\b):' +\
+            r'(?P<genome_build>.+?):(?P<chromosome>.+?):(?P<position>\d+:\d+):(?P<strand>.+) ' +\
+            r'gene:(?P<gene_id>.+) transcript:(?P<transcript_id>\S+) .+'
+
+        match = re.search(p, self.description)
+        if not match:
+            raise ValueError(f"doesn't seem to follow the ENSEMBL format: {self.description}")
 
         protein_id = self.id
-
-        match = re.search(r'gene:(ENSG\d+\.\d+) ', self.description)
-        if not match:
-            raise ValueError(r'Couldn\'t find gene ID')
-        gene_id = match.group(1)
-
-        match = re.search(r'transcript:(ENST\d+\.\d+) ', self.description)
-        if not match:
-            raise ValueError(r'Couldn\'t find transcript ID')
-        transcript_id = match.group(1)
+        gene_id = match.group('gene_id')
+        transcript_id = match.group('transcript_id')
 
         self.gene_id = gene_id.split('.')[0]
         self.protein_id = protein_id.split('.')[0]

@@ -17,6 +17,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.source = 'circRNA'
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.reference_source = None
         args.circexplorer3 = False
         args.min_read_number = 1
         args.intron_start_range = '-2,0'
@@ -37,6 +38,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.source = 'circRNA'
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.reference_source = None
         args.circexplorer3 = True
         args.min_read_number = 1
         args.min_fbr_circ = None

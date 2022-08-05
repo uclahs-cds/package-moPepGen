@@ -225,6 +225,8 @@ class DecoyFasta():
         fixed_indices = self.find_fixed_indices(seq.seq)
         if self.method == 'reverse':
             decoy_seq = self.reverse_sequence(seq.seq, fixed_indices)
+            if decoy_seq in self._target_pool or decoy_seq in self._decoy_pool:
+                self._summary.n_overlap += 1
         elif self.method == 'shuffle':
             attempts = 0
             while True:

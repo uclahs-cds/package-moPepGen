@@ -109,10 +109,10 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                     break
         super().create_variant_graph(filtered_variants, None, None, None)
 
-    def extend_loop(self):
-        """ Extend each reading frame for one more loop. """
-        frame_map:Dict[TVGNode, TVGNode] = {}
-        for root in self.reading_frames:
+    def get_tail_nodes(self) -> Dict[TVGNode, TVGNode]:
+        """ The the last node of each reading frame. """
+        tail_nodes:List[TVGNode] = [None, None, None]
+        for i, root in enumerate(self.reading_frames):
             if len(root.in_edges) > 2:
                 raise ValueError('CVG should not have any stop altering mutation')
             in_edge = None
@@ -121,25 +121,42 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                     break
             if not in_edge:
                 raise ValueError('The TVG is not cyclic')
-            frame_map[root] = in_edge.in_node
+            tail_nodes[i] = in_edge.in_node
             self.remove_edge(in_edge)
+        return tail_nodes
 
-        subgraph_id = self.subgraphs.generate_subgraph_id()
-        level = self.root.level + 1
-        self.subgraphs.add_subgraph(
-            child_id=subgraph_id, parent_id=self.id, level=level,
-            start=self.seq.locations[-1].ref.end, end=self.seq.locations[-1].ref.end
-        )
-        root_copy = self.root.deepcopy(subgraph_id, 1)
-        for edge in root_copy.out_edges:
-            root = edge.out_node
-            if len(root.out_edges) > 1:
-                raise ValueError('CVG should not have any start altering mutation')
-            head = list(root.out_edges)[0].out_node
-            end_node = frame_map[self.reading_frames[head.reading_frame_index]]
-            for _edge in copy.copy(head.in_edges):
-                self.remove_edge(_edge)
-            self.add_edge(end_node, head, 'reference')
+    def extend_loop(self):
+        """ Extend the three frame circular graph into linear by repeating the
+        graph of each reading frame for 3 additional copies. """
+        n_loops = 3
+
+        subgraphs:List[ThreeFrameCVG] = []
+        cur = self
+        for _ in range(n_loops):
+            sub = cur.create_subgraph_copy()
+            subgraphs.append(sub)
+            cur = sub
+
+        cur = self
+        cur_tail_nodes = self.get_tail_nodes()
+        cur = self
+        for sub in subgraphs:
+            sub_tail_nodes = sub.get_tail_nodes()
+            self.subgraphs.add_subgraph(
+                child_id=sub.id, parent_id=cur.id, level=sub.root.level,
+                start=self.seq.locations[-1].ref.end, end=self.seq.locations[-1].ref.end
+            )
+            for edge in sub.root.out_edges:
+                root = edge.out_node
+                if len(root.out_edges) > 1:
+                    raise ValueError('CVG should not have any start altering mutation')
+                head = list(root.out_edges)[0].out_node
+                end_node = cur_tail_nodes[head.reading_frame_index]
+                for _edge in copy.copy(head.in_edges):
+                    cur.remove_edge(_edge)
+                cur.add_edge(end_node, head, 'reference')
+            cur = sub
+            cur_tail_nodes = sub_tail_nodes
 
     def truncate_three_frames(self):
         """ For each of the reading frames, tuncate the leading nodes for 1
@@ -151,3 +168,19 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                 raise ValueError('CVG should not contain any start altering mutaiton')
             head = list(root.out_edges)[0].out_node
             head.truncate_left(i)
+
+    def create_subgraph_copy(self) -> ThreeFrameCVG:
+        """ Create a subgraph by copying the current graph. The subgraph created
+        will be attached to the end of this current graph. """
+        subgraph_id = self.subgraphs.generate_subgraph_id()
+        seq = copy.copy(self.seq)
+        root = self.root.deepcopy(subgraph_id, 1)
+        reading_frames:Dict[TVGNode] = [None, None, None]
+        for node in root.get_out_nodes():
+            reading_frames[node.reading_frame_index] = node
+        return ThreeFrameCVG(
+            seq=seq, _id=subgraph_id, root=root, reading_frames=reading_frames,
+            cds_start_nf=self.cds_start_nf, has_known_orf=self.has_known_orf,
+            circ_record=self.circ, attrs=copy.copy(self.attrs),
+            subgraphs=None, cleavage_params=self.cleavage_params
+        )

@@ -12,6 +12,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.9.2] - 2022-07-29
+
+- For circRNA, each reading frame subgraph is now replicated for 3 times in order to catch all variant peptides that read through the junction site. #514
+
+- Enzyme lysN is added. #523
+
+- For `decoyFasta`, overlapping decoy sequences are also counted and printed to the stdout when using reverse. #474
+
+---
+
+## [0.9.1] - 2022-07-27
+
+### Added
+
+- UTIL command line tool `validateNoncodingCalling` added to validate the output of `callNoncoding` with `bruteForceNoncoding`. #524
+
+## Fixed
+
+- `parseVEP` updated to only parse the first 13 columns of the VEP TSV. #540
+
+---
+
 ## [0.9.0] - 2022-07-18
 
 ### Fixed

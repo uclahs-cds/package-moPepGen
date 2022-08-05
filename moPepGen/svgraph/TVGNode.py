@@ -289,6 +289,8 @@ class TVGNode():
         """ Create a deep copy of the node and all its downstream nodes.
         """
         new_node = self.copy()
+        if level_increment is not None:
+            new_node.level += level_increment
 
         queue:Deque[Tuple[TVGNode, TVGNode]] = deque([(self, new_node)])
         visited:Dict[TVGNode, TVGNode] = {}
@@ -484,7 +486,10 @@ class TVGNode():
 
     def translate(self) -> svgraph.PVGNode:
         """ translate to a PVGNode """
-        seq = self.seq.translate()
+        if not self.out_edges:
+            seq = self.seq[:len(self.seq) - len(self.seq) % 3].translate()
+        else:
+            seq = self.seq.translate()
 
         locations = []
         for loc in self.seq.locations:

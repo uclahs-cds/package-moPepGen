@@ -18,6 +18,7 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.cleavage_rule = 'trypsin'
         args.output_path = self.work_dir/'output.txt'
         args.ignore_missing_source = False
+        args.reference_source = None
         return args
 
     def test_summarize_fasta_case1(self):

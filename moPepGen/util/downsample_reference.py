@@ -365,4 +365,6 @@ def downsample_reference(args:argparse.Namespace):
             writer.write_record(record)
 
     with open(output_dir/'proteome.fasta', 'wt') as handle:
-        SeqIO.write(proteins.values(), handle, 'fasta')
+        writer = SeqIO.FastaIO.FastaWriter(handle, record2title=lambda x: x.description)
+        for record in proteins.values():
+            writer.write_record(record)

@@ -41,6 +41,7 @@ class TestSplitDatabase(TestCaseIntegration):
         args.max_source_groups = 1
         args.additional_split = None
         args.output_prefix = self.work_dir/'test'
+        args.reference_source = None
         args.index_dir = None
         args.quiet = True
         return args

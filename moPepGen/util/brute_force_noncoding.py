@@ -76,6 +76,10 @@ def brute_force_noncoding(args:argparse.Namespace):
         for it in re.finditer('M', str(frame_seq.seq)):
             i = it.start()
             j = frame_seq.seq[i:].find('*')
+            if j == -1:
+                j = len(frame_seq.seq)
+            else:
+                j += i
             aa_seq = frame_seq[i:j]
             peptides = aa_seq.enzymatic_cleave(rule, exception)
             for peptide in peptides:
@@ -84,7 +88,7 @@ def brute_force_noncoding(args:argparse.Namespace):
                     if canonical_pool and seq not in canonical_pool:
                         noncanonical_peptides.add(seq)
                 seq = str(peptide.seq)
-                if canonical_pool and seq not in canonical_pool:
+                if not canonical_pool or seq not in canonical_pool:
                     noncanonical_peptides.add(str(peptide.seq))
 
     noncanonical_peptides = sorted(noncanonical_peptides)

@@ -15,6 +15,7 @@ def create_base_args() -> argparse.Namespace:
     args.genome_fasta = None
     args.annotation_gtf = None
     args.proteome_fasta = None
+    args.reference_source = None
     args.output_path = None
     args.output_orf = None
     args.inclusion_biotypes = None
