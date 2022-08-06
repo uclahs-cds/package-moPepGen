@@ -60,9 +60,9 @@ class PVGNodeCollapser():
         has stop altering mutation. """
         if self.first_is_stop_altering(first, second):
             return True
-        elif self.first_is_stop_altering(second, first):
+        if self.first_is_stop_altering(second, first):
             return False
-        elif first.is_less_mutated_than(second):
+        if first.is_less_mutated_than(second):
             return True
         return False
 
