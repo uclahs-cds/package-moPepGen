@@ -99,6 +99,7 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path):
     args.genome_fasta = ref_dir/'genome.fasta'
     args.annotation_gtf = ref_dir/'annotation.gtf'
     args.proteome_fasta = ref_dir/'proteome.fasta'
+    args.reference_source = None
     args.invalid_protein_as_noncoding = False
     args.output_path = output_fasta
     args.quiet = False
