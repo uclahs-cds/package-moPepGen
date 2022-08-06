@@ -48,13 +48,32 @@ class PVGNodeCollapser():
         self.pool = pool or set()
         self.mapper = mapper or {}
 
+    @staticmethod
+    def first_is_stop_altering(first:PVGNode, second:PVGNode) -> bool:
+        """ Check whether the first node is stop altering while the second
+        is not. """
+        return any(x.is_stop_altering for x in first.variants) \
+            and not any(y.is_stop_altering for y in second.variants)
+
+    def should_keep_first(self, first:PVGNode, second:PVGNode) -> bool:
+        """ Here we keep the node with least number of variants, unless one
+        has stop altering mutation. """
+        if self.first_is_stop_altering(first=first, second=second):
+            return True
+        if self.first_is_stop_altering(first=second, second=first):
+            return False
+        if first.is_less_mutated_than(second):
+            return True
+        return False
+
     def collapse(self, node:PVGNode) -> PVGNode:
         """ Collapse the given node if it has the same in the pool """
         collapse_node = PVGCollapseNode.from_pvg_node(node)
         same_collapse_node = get_equivalent(self.pool, collapse_node)
         if same_collapse_node:
             same_node = self.mapper[same_collapse_node]
-            if node.is_less_mutated_than(same_node):
+
+            if self.should_keep_first(node, same_node):
                 same_node.transfer_in_nodes_to(node)
                 self.pool.remove(same_collapse_node)
                 self.pool.add(collapse_node)

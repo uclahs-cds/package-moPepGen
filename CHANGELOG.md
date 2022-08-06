@@ -10,15 +10,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.9.3] - 2022-08-05
+
+### Fixed
+
+- Fixed issue that mouse reference genome and proteome were not parsed correctly. #546
+
+- Fixed issue that stop-lost inframe deletions being missed during node collapsing. #549
+
 ---
 
 ## [0.9.2] - 2022-07-29
 
+### Fixed
+
 - For circRNA, each reading frame subgraph is now replicated for 3 times in order to catch all variant peptides that read through the junction site. #514
 
-- Enzyme lysN is added. #523
-
 - For `decoyFasta`, overlapping decoy sequences are also counted and printed to the stdout when using reverse. #474
+
+### Added
+
+- Enzyme lysN is added. #523
 
 ---
 
