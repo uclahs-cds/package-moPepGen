@@ -58,9 +58,9 @@ class PVGNodeCollapser():
     def should_keep_first(self, first:PVGNode, second:PVGNode) -> bool:
         """ Here we keep the node with least number of variants, unless one
         has stop altering mutation. """
-        if self.first_is_stop_altering(first, second):
+        if self.first_is_stop_altering(first=first, second=second):
             return True
-        if self.first_is_stop_altering(second, first):
+        if self.first_is_stop_altering(first=second, second=first):
             return False
         if first.is_less_mutated_than(second):
             return True
