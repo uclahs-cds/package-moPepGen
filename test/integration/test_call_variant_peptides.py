@@ -695,3 +695,13 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/16/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000314675.11'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case45(self):
+        """ Test case from fuzz test that stop altering mutation not retained
+        during collapsing. #549 """
+        gvf = [
+            self.data_dir/'fuzz/17/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/17/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
+        self.default_test_case(gvf, reference, expected)
