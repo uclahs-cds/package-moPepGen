@@ -152,8 +152,8 @@ class BruteForceVariantPeptideCaller():
         if -1 < loc.start < prev_cds_start:
             return False
         orf_index = cds_start % 3
-        i = loc.start - (loc.start - orf_index) % 3
-        while i < loc.end:
+        i = variant.location.start - (loc.start - orf_index) % 3
+        while i < variant.location.end:
             if self.tx_seq.seq[i:i+3] in ['TAA', 'TAG', 'TGA']:
                 return True
             i += 3
