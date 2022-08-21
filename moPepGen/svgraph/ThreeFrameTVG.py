@@ -15,6 +15,7 @@ from moPepGen.svgraph.TVGEdge import TVGEdge
 from moPepGen.svgraph.PeptideVariantGraph import PeptideVariantGraph
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
+from moPepGen.svgraph.TVGNodeCollapser import TVGNodeCollapser
 
 
 if TYPE_CHECKING:
@@ -1441,6 +1442,24 @@ class ThreeFrameTVG():
         end_nodes.append(end)
         return end_nodes
 
+    def collapse_equivalent_nodes(self, node:TVGNode):
+        """ Collapse nodes that have the same sequence and same incoming and
+        outgoing nodes. """
+        group:Dict[Tuple(Tuple[PVGNode], Tuple[PVGNode]),TVGNodeCollapser] = {}
+        nodes = node.get_out_nodes()
+        for out_node in nodes:
+            in_nodes = tuple(out_node.get_in_nodes())
+            out_nodes = tuple(out_node.get_out_nodes())
+            collapser = group.setdefault((in_nodes, out_nodes), TVGNodeCollapser())
+            redundant_node = collapser.collapse(out_node)
+            if redundant_node:
+                self.remove_node(redundant_node)
+        collapsed_nodes = set(nodes)
+        for _node in copy.copy(collapsed_nodes):
+            if _node.is_orphan():
+                collapsed_nodes.remove(_node)
+        return collapsed_nodes
+
     def fit_into_codons(self) -> None:
         r""" This takes the variant graph, and fit all cleave sites into the
         range of codons. For frameshifting mutations, the downstream part
@@ -1469,6 +1488,7 @@ class ThreeFrameTVG():
                 continue
 
             self.align_variants(cur)
+            self.collapse_equivalent_nodes(cur)
             if cur.out_edges:
                 end_nodes = self.expand_alignments(cur)
                 for node in end_nodes:

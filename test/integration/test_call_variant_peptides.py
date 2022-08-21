@@ -705,3 +705,13 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/17/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case46(self):
+        """ Test case from fuzz test that peptides are missed when multiple
+        variants cause the same sequence. #552 """
+        gvf = [
+            self.data_dir/'fuzz/18/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/18/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
+        self.default_test_case(gvf, reference, expected)

@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that stop-lost inframe deletions being missed during node collapsing. #549
 
+- Fixed issue that variants missed by callVariant when multiple variants are causing the same sequence. #552
+
 ---
 
 ## [0.9.2] - 2022-07-29

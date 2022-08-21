@@ -293,6 +293,7 @@ class FuzzTestCase():
         args.genome_fasta = self.config.path_genome_fasta
         args.annotation_gtf = self.config.path_annotation_gtf
         args.proteome_fasta = self.config.path_proteome_fasta
+        args.reference_source = None
         args.circ_rna_bed = None
         args.output_path = self.record.call_variant_fasta
         args.quiet = True
