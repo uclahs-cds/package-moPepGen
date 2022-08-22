@@ -580,3 +580,30 @@ class TVGNode():
             i_var.is_stop_altering = True
             offset += i_var.variant.frames_shifted()
             i_var = next(iter_var, None)
+
+    def is_less_mutated_than(self, other:TVGNode) -> bool:
+        """ Checks if this node has less mutation than the other """
+        if self.level != other.level:
+            return self.level < other.level
+
+        if len(self.variants) != len(other.variants):
+            return len(self.variants) < len(other.variants)
+
+        for x, y in zip(self.variants, other.variants):
+            if x.location != y.location:
+                return x.location < y.location
+
+        for x, y in zip(self.variants, other.variants):
+            # SNV is higher than RES
+            if x.variant.type == 'SNV' and y.variant.type == 'RNAEditingSite':
+                return True
+            if x.variant.type == 'RNAEditingSite' and y.variant.type == 'SNV':
+                return False
+            # Otherwise don't really care about the order, just to make sure
+            # the result is reproducible
+            if x.variant.type != y.variant.type:
+                return x.variant.type > y.variant.type
+
+            if x.variant.alt != y.variant.type:
+                return x.variant.alt > y.variant.type
+        return True
