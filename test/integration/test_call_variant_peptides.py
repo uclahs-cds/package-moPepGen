@@ -715,3 +715,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/18/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case47(self):
+        """ Test case from fuzz test that `cpop_collapsed` attribute was not
+        retained afer merging so peptides that don't end with cleavage sites
+        were yield. #552 """
+        gvf = [
+            self.data_dir/'fuzz/19/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/19/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
+        self.default_test_case(gvf, reference, expected)
