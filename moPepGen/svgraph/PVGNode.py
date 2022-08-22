@@ -422,6 +422,7 @@ class PVGNode():
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
         self.seq = new_seq
+        self.cpop_collapsed = other.cpop_collapsed
 
     def find_start_index(self) -> int:
         """ Find the start amino acid position """
