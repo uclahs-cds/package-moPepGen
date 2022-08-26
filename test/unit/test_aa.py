@@ -91,7 +91,7 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
             seq.infer_ids_ensembl()
 
     def test_infer_ids_gencode_case1(self):
-        """ Test that ids are infered correctly with ENSMBLE style. """
+        """ Test that ids are infered correctly with GENCODE style. """
         header = 'ENSP00000493376.2|ENST00000641515.2|ENSG00000186092.6|OTTH'+\
             'UMG00000001094.4|OTTHUMT00000003223.4|OR4F5-202|OR4F5|326'
         seq = aa.AminoAcidSeqRecord(
@@ -121,6 +121,23 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             seq.infer_ids_gencode()
+
+    def test_infer_ids_gencode_case3(self):
+        """ Test that ids are infered correctly with GENCODE style with _PAR_Y. """
+        header = 'ENSP00000493376.2|ENST00000641515.2_PAR_Y|ENSG00000186092.6_PAR_Y' +\
+            '|OTTHUMG00000001094.4|OTTHUMT00000003223.4|OR4F5-202|OR4F5|326'
+        seq = aa.AminoAcidSeqRecord(
+            seq=Seq('GTGG'),
+            _id=header,
+            name=header,
+            description=header
+        )
+        seq.infer_ids_gencode()
+        self.assertEqual(seq.id, 'ENSP00000493376.2')
+        self.assertEqual(seq.name, 'ENSP00000493376.2')
+        self.assertEqual(seq.protein_id, 'ENSP00000493376.2')
+        self.assertEqual(seq.gene_id, 'ENSG00000186092.6_PAR_Y')
+        self.assertEqual(seq.transcript_id, 'ENST00000641515.2_PAR_Y')
 
     def test_enzyme_lysn(self):
         """ Ensures that lysN cleaves lysine at N-terminus """
