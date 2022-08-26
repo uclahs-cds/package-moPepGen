@@ -153,9 +153,10 @@ class MiscleavedNodes():
         max_length = self.cleavage_params.max_length
         min_mw = self.cleavage_params.min_mw
 
-        return seq not in blacklist and \
-            min_length <= len(seq) <= max_length and \
-            SeqUtils.molecular_weight(seq, 'protein') >= min_mw
+        return seq not in blacklist \
+            and min_length <= len(seq) <= max_length \
+            and 'X' not in seq \
+            and SeqUtils.molecular_weight(seq, 'protein') >= min_mw
 
     def join_miscleaved_peptides(self, check_variants:bool,
             additional_variants:List[VariantRecord], blacklist:Set[str],
