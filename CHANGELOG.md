@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.9.3] - 2022-08-05
+## [0.9.3] - 2022-08-26
 
 ### Fixed
 
@@ -21,6 +21,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed issue that variants missed by callVariant when multiple variants are causing the same sequence. #552
 
 - Fixed issue that `cpop_collapsed` attribute was not retained after merging so peptides that don't end with cleavage sites were yield. #554
+
+- Fixed problem caused by N in the reference DNA sequence. #556
 
 ---
 
