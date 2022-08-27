@@ -241,7 +241,7 @@ def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
         orf = f"ORF{start}:{end}"
         alt_protein_id = f"{protein_id}-{orf}"
         alt_tx_id = f"{tx_id}-{orf}"
-        description = f"{alt_protein_id}|{alt_tx_id}|{gene_id}"
+        description = f"{alt_protein_id}|{alt_tx_id}|{gene_id}|-"
         aa_seq.id = alt_protein_id
         aa_seq.protein_id = alt_protein_id
         aa_seq.transcript_id = alt_tx_id
