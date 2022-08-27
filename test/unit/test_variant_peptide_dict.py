@@ -1,7 +1,7 @@
 """ Test Module for VariantPeptideDict """
 import unittest
-from moPepGen import params
 from test.unit import create_aa_record, create_variants
+from moPepGen import params
 from moPepGen.svgraph.VariantPeptideDict import MiscleavedNodes, VariantPeptideDict, \
     VariantPeptideMetadata
 import moPepGen.aa.VariantPeptideIdentifier as vpi
