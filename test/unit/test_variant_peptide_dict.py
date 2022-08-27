@@ -1,7 +1,8 @@
 """ Test Module for VariantPeptideDict """
 import unittest
+from moPepGen import params
 from test.unit import create_aa_record, create_variants
-from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict, \
+from moPepGen.svgraph.VariantPeptideDict import MiscleavedNodes, VariantPeptideDict, \
     VariantPeptideMetadata
 import moPepGen.aa.VariantPeptideIdentifier as vpi
 
@@ -65,3 +66,13 @@ class TestCaseVariantPeptideDict(unittest.TestCase):
         seqs = pool.get_peptide_sequences()
         self.assertEqual({str(x.seq) for x in seqs}, {'SSSSSSSSSR'})
         self.assertEqual(list(seqs)[0].description, 'CIRC-ENST0001-E1-E2-E3|1')
+
+
+class TestCaseMiscleavedNodes(unittest.TestCase):
+    """ Test cases for MiscleavedNodes """
+    def test_is_valid_x(self):
+        """ Test that when X is found in the sequence, it is recognized as an
+        invalid sequence. """
+        cleavage_params = params.CleavageParams(enzyme='trypsin')
+        misc_nodes = MiscleavedNodes([], cleavage_params)
+        self.assertFalse(misc_nodes.is_valid_seq('AAAAXAAA', set()))
