@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.9.4] - 2022-09-07
+
+- Fixed issue of alternative splicing deletion that starts at the third nucleotide of start codon. Those variants are now skipped. #560
+
 ## [0.9.3] - 2022-08-26
 
 ### Fixed

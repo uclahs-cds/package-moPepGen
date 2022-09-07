@@ -905,7 +905,8 @@ class ThreeFrameTVG():
 
             if variant.location.start == start_index - 1 \
                     and (variant.is_insertion() or variant.is_deletion()) \
-                    and not variant.is_fusion():
+                    and not variant.is_fusion() \
+                    and not variant.is_alternative_splicing():
                 variant.to_end_inclusion(self.seq)
 
             # Skip variants that the position is smaller than the first NT

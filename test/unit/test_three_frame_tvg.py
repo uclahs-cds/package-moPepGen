@@ -432,6 +432,29 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         expected = {'AAA', 'AA', 'A'}
         self.assertEqual(received, expected)
 
+    def test_create_variant_graph_deletion_alt_splice(self):
+        """ alternative splicing deletion that starts with the third nucleotide
+        of start codon should be skipped. """
+        data = {
+            1: ['AAATAAATAAAT', ['RF0'], [], 0],
+            2: ['AATAAATAAAT',  ['RF1'], [], 1],
+            3: ['ATAAATAAAT',   ['RF2'], [], 2]
+        }
+
+        var_data = [
+            (3, 10, 'T', '<DEL>', 'Deletion', 'SE-10')
+        ]
+
+        graph, _ = create_three_frame_tvg(data, 'AAATAAATAAAT')
+        graph.seq.orf = FeatureLocation(start=1, end=4)
+        graph.has_known_orf = True
+        variants = create_variants(var_data)
+        graph.create_variant_graph(variants, None, None, None)
+        received = {str(list(n.out_edges)[0].out_node.seq.seq) \
+            for n in graph.reading_frames}
+        expected = {x[0] for x in data.values()}
+        self.assertEqual(received, expected)
+
     def test_apply_insertion_case1(self):
         """ apply_insertion """
         anno = create_genomic_annotation(ANNOTATION_DATA)

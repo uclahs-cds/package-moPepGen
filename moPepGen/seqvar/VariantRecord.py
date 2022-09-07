@@ -228,6 +228,11 @@ class VariantRecord():
         """ Check if this is a fusion """
         return self.type == 'Fusion'
 
+    def is_alternative_splicing(self) -> bool:
+        """ Check if this is an alternative splicing event """
+        alt_splice_types = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
+        return any(self.id.startswith(x) for x in alt_splice_types)
+
     def is_in_frame_fusion(self, anno:GenomicAnnotation):
         """ Check if this is a in-frame fusion. A in-frame fusion is only when
         both donor and accepter transcripts a protein coding (which known
