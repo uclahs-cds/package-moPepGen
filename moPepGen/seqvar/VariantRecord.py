@@ -18,6 +18,7 @@ _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'RNAEditingSite']
 ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
 ALTERNATIVE_SPLICING_TYPES = ['Insertion', 'Deletion', 'Substitution']
+RMATS_TYPES = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
@@ -230,8 +231,7 @@ class VariantRecord():
 
     def is_alternative_splicing(self) -> bool:
         """ Check if this is an alternative splicing event """
-        alt_splice_types = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
-        return any(self.id.startswith(x) for x in alt_splice_types)
+        return any(self.id.startswith(x) for x in RMATS_TYPES)
 
     def is_in_frame_fusion(self, anno:GenomicAnnotation):
         """ Check if this is a in-frame fusion. A in-frame fusion is only when
