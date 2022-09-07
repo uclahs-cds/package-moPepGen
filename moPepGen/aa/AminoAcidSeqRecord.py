@@ -229,6 +229,8 @@ class AminoAcidSeqRecord(SeqRecord):
         start = 0
 
         def update_peptides(peptide):
+            if 'X' in peptide.seq:
+                return
             mol_wt = SeqUtils.molecular_weight(peptide.seq, 'protein')
             weight_flag = mol_wt > min_mw
             length_flag = len(peptide.seq) >= min_length \
