@@ -57,7 +57,7 @@ class ReferenceData():
         - canonical_peptides (Set[str])
         - proteome (aa.AminoAcidSeqDict)
     """
-    def __init__(self, genome:dna.DNASeqDict, anno:gtf.GeneAnnotationModel,
+    def __init__(self, genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             canonical_peptides:Set[str], proteome:aa.AminoAcidSeqDict=None):
         """ constructor """
         self.genome = genome

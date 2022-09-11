@@ -84,3 +84,79 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
         _id=var_id,
         attrs=attrs
     )
+
+def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> VariantRecord:
+    """ Create a fake fusion """
+    if len(anno.transcripts) <=1 :
+        raise ValueError("Not enough transcripts to create fake fusion.")
+    donor_tx_model = anno.transcripts[tx_id]
+    donor_chrom = donor_tx_model.transcript.chrom
+    donor_tx_seq = donor_tx_model.get_transcript_sequence(genome[donor_chrom])
+    donor_gene_id = donor_tx_model.gene_id
+    donor_gene_model = anno.genes[donor_gene_id]
+    donor_gene_seq = donor_gene_model.get_gene_sequence(genome[donor_chrom])
+
+    if donor_tx_model.is_protein_coding:
+        cds_start_tx = donor_tx_model.get_cds_start_index()
+        cds_start_genomic = anno.coordinate_transcript_to_genomic(cds_start_tx, tx_id)
+        cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, donor_gene_id)
+        cds_end_tx = donor_tx_model.get_cds_end_index(donor_tx_seq, donor_tx_seq.orf.start)
+        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
+        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id)
+    else:
+        cds_start_genomic = anno.coordinate_gene_to_genomic(0, tx_id)
+        cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, donor_gene_id)
+        cds_end_tx = len(donor_tx_seq)
+        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
+        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id)
+    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
+    donor_breakpoint_genomic = anno.coordinate_gene_to_genomic(donor_breakpoint, donor_gene_id)
+    ref_seq = donor_gene_seq.seq[donor_breakpoint]
+
+    while True:
+        accepter_tx_id = random.choice(list(anno.transcripts.keys()))
+        if accepter_tx_id != tx_id:
+            break
+    accepter_tx_model = anno.transcripts[accepter_tx_id]
+    accepter_chrom = accepter_tx_model.transcript.chrom
+    accepter_tx_seq = accepter_tx_model.get_transcript_sequence(genome[accepter_chrom])
+    accepter_gene_id = accepter_tx_model.gene_id
+    cds_start_tx = accepter_tx_model.get_cds_start_index()
+    cds_start_genomic = anno.coordinate_transcript_to_genomic(cds_start_tx, accepter_tx_id)
+    cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, accepter_gene_id)
+    cds_end_tx = accepter_tx_model.get_cds_end_index(accepter_tx_seq, accepter_tx_seq.orf.start)
+    cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, accepter_tx_id)
+    cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, accepter_gene_id)
+
+    accepter_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
+
+    accepter_breakpoint_genomic = anno.coordinate_gene_to_genomic(
+        accepter_breakpoint, accepter_gene_id)
+
+    location = FeatureLocation(
+        seqname=donor_gene_id,
+        start=donor_breakpoint,
+        end=donor_breakpoint + 1
+    )
+
+    attrs = {
+        'TRANSCRIPT_ID': tx_id,
+        'GENE_SYMBOL': donor_tx_model.gene_name,
+        'GENOMIC_POSITION': donor_breakpoint_genomic,
+        'ACCEPTER_GENE_ID': accepter_gene_id,
+        'ACCEPTER_TRANSCRIPT_ID': accepter_tx_id,
+        'ACCEPTER_SYMBOL': accepter_tx_model.gene_name,
+        'ACCEPTER_POSITION': accepter_breakpoint,
+        'ACCEPTER_GENOMIC_POSITION': accepter_breakpoint_genomic
+    }
+
+    fusion_id = f"FUSION-{tx_id}:{donor_breakpoint}-{accepter_tx_id}:{accepter_breakpoint}"
+
+    return VariantRecord(
+        location=location,
+        ref=ref_seq,
+        alt='<FUSION>',
+        _type='Fusion',
+        _id=fusion_id,
+        attrs=attrs
+    )

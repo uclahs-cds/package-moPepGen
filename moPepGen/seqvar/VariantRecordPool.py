@@ -2,7 +2,7 @@
 from __future__ import annotations
 import copy
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
-from moPepGen import ERROR_INDEX_IN_INTRON
+from moPepGen import ERROR_INDEX_IN_INTRON, circ
 from moPepGen.seqvar.VariantRecordPoolOnDisk import TranscriptionalVariantSeries
 from . import VariantRecord, io
 
@@ -96,6 +96,14 @@ class VariantRecordPool():
         if tx_id not in self:
             self[tx_id] = TranscriptionalVariantSeries()
         self[tx_id].fusion.append(record)
+
+    def add_circ_rna(self, record:circ.CircRNAModel, tx_id:str=None):
+        """ Add a circRNA """
+        if tx_id is None:
+            tx_id = record.transcript_id
+        if tx_id not in self:
+            self[tx_id] = TranscriptionalVariantSeries()
+        self[tx_id].circ_rna.append(record)
 
     def load_variants(self, handle:IO, anno:GenomicAnnotation,
             genome:DNASeqDict):

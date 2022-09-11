@@ -10,8 +10,7 @@ from typing import List
 import sys
 import uuid
 from Bio import SeqIO
-from moPepGen import ERROR_INDEX_IN_INTRON, seqvar
-from moPepGen.fake import fake_variant_record
+from moPepGen import ERROR_INDEX_IN_INTRON, seqvar, fake
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.util.common import load_references
 from moPepGen.cli.common import add_args_cleavage, generate_metadata, \
@@ -62,6 +61,16 @@ def add_subparser_fuzz_test(subparsers:argparse._SubParsersAction
         help='Min number of variants',
         default=1,
         metavar='<number>'
+    )
+    parser.add_argument(
+        '--fusion',
+        action='store_true',
+        help='Whether to generate a fusion variant.'
+    )
+    parser.add_argument(
+        '--circ-rna',
+        action='store_true',
+        help='Whether to generate a circRNA.'
     )
     parser.add_argument(
         '-i', '--n-iter',
@@ -263,8 +272,12 @@ class FuzzTestCase():
         )
         records:List[VariantRecord] = []
         n_variants = random.randint(self.config.min_vairants, self.config.max_variants)
+        if self.config.fusion:
+            record = fake.fake_fusion(anno, genome, self.config.tx_id)
+            records.append(record)
+            n_variants -= 1
         for _ in range(n_variants):
-            record = fake_variant_record(anno, genome, self.config.tx_id,
+            record = fake.fake_variant_record(anno, genome, self.config.tx_id,
                 self.config.max_size, self.config.exonic_only)
             records.append(record)
         self.record.n_var = n_variants
@@ -358,10 +371,10 @@ class FuzzTestCase():
 class FuzzTestConfig():
     """ Fuzz test config """
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
-            min_variants:int, exonic_only:bool, cleavage_rule:str,
-            miscleavage:int, min_mw:int, min_length:int, max_length:int,
-            temp_dir:Path, ref_dir:Path, fuzz_start:datetime=None,
-            fuzz_end:datetime=None):
+            min_variants:int, exonic_only:bool, fusion:bool, circ_rna:bool,
+            cleavage_rule:str, miscleavage:int, min_mw:int, min_length:int,
+            max_length:int, temp_dir:Path, ref_dir:Path,
+            fuzz_start:datetime=None, fuzz_end:datetime=None):
         """ constructor """
         self.tx_id = tx_id
         self.n_iter = n_iter
@@ -369,6 +382,8 @@ class FuzzTestConfig():
         self.max_variants = max_variants
         self.min_vairants = min_variants
         self.exonic_only = exonic_only
+        self.fusion = fusion
+        self.circ_rna = circ_rna
         self.cleavage_rule = cleavage_rule
         self.miscleavage = miscleavage
         self.min_mw = min_mw
@@ -469,6 +484,8 @@ def fuzz_test(args:argparse.Namespace):
         max_variants=args.max_variants,
         min_variants=args.min_variants,
         exonic_only=args.exonic_only,
+        fusion=args.fusion,
+        circ_rna=args.circ_rna,
         cleavage_rule=args.cleavage_rule,
         miscleavage=args.miscleavage,
         min_mw=args.min_mw,
