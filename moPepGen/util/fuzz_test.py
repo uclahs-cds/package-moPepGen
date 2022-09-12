@@ -272,19 +272,22 @@ class FuzzTestCase():
         )
         records:List[VariantRecord] = []
         n_variants = random.randint(self.config.min_vairants, self.config.max_variants)
+        tx_ids = [self.config.tx_id]
         if self.config.fusion:
             record = fake.fake_fusion(anno, genome, self.config.tx_id)
             records.append(record)
             n_variants -= 1
+            tx_ids.append(record.attrs['ACCEPTER_TRANSCRIPT_ID'])
         for _ in range(n_variants):
-            record = fake.fake_variant_record(anno, genome, self.config.tx_id,
+            tx_id = random.choice(tx_ids)
+            record = fake.fake_variant_record(anno, genome, tx_id,
                 self.config.max_size, self.config.exonic_only)
             records.append(record)
         self.record.n_var = n_variants
         self.record.n_exonic = 0
         for variant in records:
             try:
-                variant.to_transcript_variant(anno, genome, self.config.tx_id)
+                variant.to_transcript_variant(anno, genome, variant.transcript_id)
                 self.record.n_exonic += 1
             except ValueError as e:
                 if e.args[0] == ERROR_INDEX_IN_INTRON:
