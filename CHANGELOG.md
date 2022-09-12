@@ -10,7 +10,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.9.5] - 2022-09-11
+
+## Added
+
+- Added support for fusion in `bruteForce`.
+
 ## [0.9.4] - 2022-09-07
+
+## Fixed
 
 - Fixed issue of alternative splicing deletion that starts at the third nucleotide of start codon. Those variants are now skipped. #560
 
