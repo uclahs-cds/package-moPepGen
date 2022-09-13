@@ -296,8 +296,8 @@ class VariantRecord():
             return 0
         ref_len = len(self.location)
         if self.type in ['Insertion', 'Substitution']:
-            end = int(self.attrs['DONOR_END'])
-            start = int(self.attrs['DONOR_START'])
+            end = self.get_donor_end()
+            start = self.get_donor_start()
             alt_len = end - start
         elif self.type == 'Deletion':
             alt_len = 1

@@ -374,7 +374,7 @@ class BruteForceVariantPeptideCaller():
                     variant_coordinates.append(variant_coordinate)
                     alt_seq = var_seq[start:start+1]
                     offset = offset + len(alt_seq) - len(variant.ref)
-                    var_seq = var_seq[:start] + alt_seq + var_seq[end:]
+                    var_seq = var_seq[:start+1] + alt_seq + var_seq[end:]
 
                 elif variant.type == 'Insertion':
                     start = variant.location.start + offset - location.start
@@ -399,7 +399,7 @@ class BruteForceVariantPeptideCaller():
                     variant_coordinates.append(variant_coordinate)
                     variant_coordinates += insert_variants
                     offset = offset + len(alt_seq) - len(variant.location)
-                    var_seq = var_seq[:start] + alt_seq + var_seq[end:]
+                    var_seq = var_seq[:start+1] + alt_seq + var_seq[end:]
 
                 elif variant.type == 'Substitution':
                     start = variant.location.start + offset - location.start
