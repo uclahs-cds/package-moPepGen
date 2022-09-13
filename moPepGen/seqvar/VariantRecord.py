@@ -267,9 +267,9 @@ class VariantRecord():
         if self.type == 'Fusion':
             return True
         ref_len = len(self.location)
-        if self.type in ['Insertion', 'Substritution']:
-            end = int(self.attrs['DONOR_END'])
-            start = int(self.attrs['DONOR_START'])
+        if self.type in ['Insertion', 'Substitution']:
+            end = self.get_donor_end()
+            start = self.get_donor_start()
             alt_len = end - start
         elif self.type == 'Deletion':
             alt_len = 1
@@ -295,7 +295,7 @@ class VariantRecord():
         if self.type == 'Fusion':
             return 0
         ref_len = len(self.location)
-        if self.type in ['Insertion', 'Substritution']:
+        if self.type in ['Insertion', 'Substitution']:
             end = int(self.attrs['DONOR_END'])
             start = int(self.attrs['DONOR_START'])
             alt_len = end - start
