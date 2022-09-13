@@ -4,9 +4,15 @@ from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.dna.DNASeqDict import DNASeqDict
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.seqvar import VariantRecord
+from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES, RMATS_TYPES
 
 
 DNA_ALPHABET = ['A', 'T', 'G', 'C']
+ALT_SPLICE_TYPE_TO_RMATS = {
+    'Deletion': ['SE', 'RI', 'A3SS', 'A5SS', 'MXE'],
+    'Insertion': ['SE', 'RI', 'A3SS', 'A5SS', 'MXE'],
+    'Substitution': ['MXE']
+}
 
 def create_random_dna_sequence(size:int) -> str:
     """ Create a randeom DNA sequence in str """
@@ -158,5 +164,242 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
         alt='<FUSION>',
         _type='Fusion',
         _id=fusion_id,
+        attrs=attrs
+    )
+
+def fake_alternative_splicing(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str
+        ) -> VariantRecord:
+    """ Create an alternative splicing variant """
+    var_type = random.choice(ALTERNATIVE_SPLICING_TYPES)
+    rmats_type = random.choice(ALT_SPLICE_TYPE_TO_RMATS[var_type])
+
+    err_message = f"Not valid variant type of {rmats_type} {var_type}"
+
+    if var_type == 'Insertion':
+        return fake_intron_insertion(anno, genome, tx_id, rmats_type)
+    elif var_type == 'Deletion':
+        return fake_exon_deletion(anno, genome, tx_id, rmats_type)
+    elif var_type == 'Substitution':
+        return fake_mxe_substitution(anno, genome, tx_id)
+    else:
+        raise ValueError(err_message)
+
+def fake_exon_deletion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str,
+        rmats_type:str) -> VariantRecord:
+    """ """
+    tx_model = anno.transcripts[tx_id]
+    gene_id = tx_model.gene_id
+    gene_model = anno.genes[gene_id]
+    chrom = gene_model.chrom
+    gene_seq = gene_model.get_gene_sequence(genome[chrom])
+
+    # sample an exon
+    if gene_model.strand == 1:
+        i = random.choice(list(range(1, len(tx_model.exon))))
+    else:
+        i = random.choice(list(range(len(tx_model.exon) - 1)))
+
+    exon = tx_model.exon[i]
+
+    if rmats_type in ['SE', 'MXE']:
+        start_genomic = exon.location.start
+        end_genomic = exon.location.end
+    elif rmats_type == 'RI':
+        start_genomic = random.randint(exon.location.start + 1, exon.location.end - 2)
+        end_genomic = random.randint(start_genomic, exon.location.end - 1)
+    elif (rmats_type == 'A5SS' and gene_model.strand == 1)\
+            or (rmats_type == 'A3SS' and gene_model.strand == -1):
+        start_genomic = random.randint(exon.location.start + 1, exon.location.end - 2)
+        end_genomic = exon.location.end
+    elif (rmats_type == 'A5SS' and gene_model.strand == -1)\
+            or (rmats_type == 'A3SS' and gene_model.strand == 1):
+        start_genomic = exon.location.start
+        end_genomic = random.randint(start_genomic, exon.location.end - 1)
+    else:
+        raise ValueError(
+            "Alternative splicing even could not be recognized with rmats_type"
+            f"={rmats_type} and strand={gene_model.strand}"
+        )
+
+    start_gene = anno.coordinate_genomic_to_gene(start_genomic, gene_id)
+    end_gene = anno.coordinate_genomic_to_gene(end_genomic - 1, gene_id)
+
+    if gene_model.strand == -1:
+        start_gene, end_gene = end_gene, start_gene
+
+    end_gene += 1
+    ref = str(gene_seq.seq[start_gene])
+
+    genomic_position = f"{chrom}:{start_genomic+1}:{end_genomic}"
+
+    if gene_model.strand == 1:
+        insert_position = anno.coordinate_genomic_to_gene(
+            tx_model.exon[i - 1].location.end - 1, gene_id
+        )
+    else:
+        insert_position = anno.coordinate_genomic_to_gene(
+            tx_model.exon[i + 1].location.start, gene_id
+        )
+
+    location = FeatureLocation(
+        seqname=gene_id, start=insert_position, end=insert_position + 1
+    )
+
+    attrs = {
+        'TRANSCRIPT_ID': tx_id,
+        'START': start_gene,
+        'END': end_gene,
+        'GENE_SYMBOL': gene_model.gene_name,
+        'GENOMIC_POSITION': genomic_position
+    }
+
+    return VariantRecord(
+        location=location,
+        ref=ref,
+        alt='<DEL>',
+        _type='Deletion',
+        _id=f"{rmats_type}_{start_gene}",
+        attrs=attrs
+    )
+
+def fake_intron_insertion(anno:GenomicAnnotation, genome:DNASeqDict,
+        tx_id:str, rmats_type:str) -> VariantRecord:
+    """ """
+    tx_model = anno.transcripts[tx_id]
+    gene_id = tx_model.gene_id
+    gene_model = anno.genes[gene_id]
+    chrom = gene_model.chrom
+    gene_seq = gene_model.get_gene_sequence(genome[chrom])
+
+    # sample an intron
+    i = random.choice(list(range(len(tx_model.exon) - 1)))
+    intron_start = tx_model.exon[i].location.end
+    intron_end = tx_model.exon[i + 1].location.start
+
+    if rmats_type in ['SE', 'MXE']:
+        start_genomic = random.randint(intron_start + 1, intron_end - 2)
+        end_genomic = random.randint(start_genomic, intron_end - 1)
+    elif rmats_type == 'RI':
+        start_genomic = intron_start
+        end_genomic = intron_end
+    elif (rmats_type == 'A3SS' and gene_model.strand == 1)\
+            or (rmats_type == 'A5SS' and gene_model.strand == -1):
+        start_genomic = random.randint(intron_start + 1, intron_end - 2)
+        end_genomic = intron_end
+    elif (rmats_type == 'A3SS' and gene_model.strand == -1)\
+            or (rmats_type == 'A5SS' and gene_model.strand == 1):
+        start_genomic = intron_start
+        end_genomic = random.randint(start_genomic, intron_end - 1)
+    else:
+        raise ValueError(
+            "Alternative splicing even could not be recognized with rmats_type"
+            f"={rmats_type} and strand={gene_model.strand}"
+        )
+
+    start_gene = anno.coordinate_genomic_to_gene(start_genomic, gene_id)
+    end_gene = anno.coordinate_genomic_to_gene(end_genomic - 1, gene_id)
+
+    if gene_model.strand == -1:
+        start_gene, end_gene = end_gene, start_gene
+
+    end_gene += 1
+
+    if gene_model.strand == 1:
+        insert_position = anno.coordinate_genomic_to_gene(
+            tx_model.exon[i].location.end - 1, gene_id
+        )
+    else:
+        insert_position = anno.coordinate_genomic_to_gene(
+            tx_model.exon[i + 1].location.start, gene_id
+        )
+
+    location = FeatureLocation(
+        seqname=gene_id, start=insert_position, end=insert_position + 1
+    )
+
+    ref = str(gene_seq.seq[insert_position])
+
+    genomic_position = f"{chrom}:{start_genomic+1}:{end_genomic}"
+
+    attrs = {
+        'TRANSCRIPT_ID': tx_id,
+        'DONOR_START': start_gene,
+        'DONOR_END': end_gene,
+        'DONOR_GENE_ID': gene_id,
+        'GENE_SYMBOL': gene_model.gene_name,
+        'GENOMIC_POSITION': genomic_position
+    }
+
+    return VariantRecord(
+        location=location,
+        ref=ref,
+        alt='<INS>',
+        _type='Insertion',
+        _id=f"{rmats_type}_{start_gene}",
+        attrs=attrs
+    )
+
+def fake_mxe_substitution(anno:GenomicAnnotation, genome:DNASeqDict,
+        tx_id:str) -> VariantRecord:
+    """ """
+    tx_model = anno.transcripts[tx_id]
+    gene_id = tx_model.gene_id
+    gene_model = anno.genes[gene_id]
+    chrom = gene_model.chrom
+    gene_seq = gene_model.get_gene_sequence(genome[chrom])
+
+    # sample an exon
+    i = random.choice(list(range(1, len(tx_model.exon) - 1)))
+    exon = tx_model.exon[i]
+    if random.choice([-1,1]) == 1:
+        intron_start = tx_model.exon[i].location.end
+        intron_end = tx_model.exon[i+1].location.start
+    else:
+        intron_start = tx_model.exon[i-1].location.end
+        intron_end = tx_model.exon[i].location.start
+
+    first_start_genomic = exon.location.start
+    first_end_genomic = exon.location.end
+
+    second_start_genomic = random.randint(intron_start + 1, intron_end - 2)
+    second_end_genomic = random.randint(second_start_genomic, intron_end - 1)
+
+    first_start_gene = anno.coordinate_genomic_to_gene(first_start_genomic, gene_id)
+    first_end_gene = anno.coordinate_genomic_to_gene(first_end_genomic - 1, gene_id)
+    second_start_gene = anno.coordinate_genomic_to_gene(second_start_genomic, gene_id)
+    second_end_gene = anno.coordinate_genomic_to_gene(second_end_genomic - 1, gene_id)
+
+    if gene_model.strand == -1:
+        first_start_gene, first_end_gene = first_end_gene, first_start_gene
+        second_start_gene, second_end_gene = second_end_gene, second_start_gene
+    second_end_gene += 1
+    first_end_gene += 1
+
+    location = FeatureLocation(
+        seqname=gene_id, start=first_start_gene, end=first_end_gene
+    )
+    ref = str(gene_seq.seq[first_start_gene])
+    genomic_position = f"{chrom}-{first_start_gene + 1}:{first_end_gene}" +\
+        f"-{second_start_gene + 1}:{second_end_gene}"
+    _id=f"MXE_{first_start_gene + 1}-{first_end_gene}" +\
+            f"{second_start_gene}-{second_end_gene}"
+    attrs = {
+        'TRANSCRIPT_ID': tx_id,
+        'START': first_start_gene,
+        'END': first_end_gene,
+        'DONOR_START': second_start_gene,
+        'DONOR_END': second_end_gene,
+        'DONOR_GENE_ID': gene_id,
+        'COORDINATE': 'gene',
+        'GENE_SYMBOL': gene_model.gene_name,
+        'GENOMIC_POSITION': genomic_position
+    }
+
+    return VariantRecord(
+        location=location,
+        ref=ref,
+        alt='<SUB>',
+        _type='Substitution',
+        _id=_id,
         attrs=attrs
     )

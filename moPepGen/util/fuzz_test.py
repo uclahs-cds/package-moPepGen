@@ -73,6 +73,11 @@ def add_subparser_fuzz_test(subparsers:argparse._SubParsersAction
         help='Whether to generate a circRNA.'
     )
     parser.add_argument(
+        '--alt-splice',
+        action='store_true',
+        help='Whether to generate alternative splicings.'
+    )
+    parser.add_argument(
         '-i', '--n-iter',
         type=int,
         help='Max number of iterations',
@@ -278,10 +283,19 @@ class FuzzTestCase():
             records.append(record)
             n_variants -= 1
             tx_ids.append(record.attrs['ACCEPTER_TRANSCRIPT_ID'])
+        var_types = ['SNV']
+        if self.config.alt_splicing:
+            var_types.append('AltSplicing')
         for _ in range(n_variants):
             tx_id = random.choice(tx_ids)
-            record = fake.fake_variant_record(anno, genome, tx_id,
-                self.config.max_size, self.config.exonic_only)
+            var_type = random.choice(var_types)
+            if var_type == 'AltSplicing':
+                record = fake.fake_alternative_splicing(anno, genome, tx_id)
+            elif var_type == 'SNV':
+                record = fake.fake_variant_record(anno, genome, tx_id,
+                    self.config.max_size, self.config.exonic_only)
+            else:
+                raise ValueError(f"var_type of {var_type} can not be recognized.")
             records.append(record)
         self.record.n_var = n_variants
         self.record.n_exonic = 0
@@ -375,8 +389,8 @@ class FuzzTestConfig():
     """ Fuzz test config """
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
             min_variants:int, exonic_only:bool, fusion:bool, circ_rna:bool,
-            cleavage_rule:str, miscleavage:int, min_mw:int, min_length:int,
-            max_length:int, temp_dir:Path, ref_dir:Path,
+            alt_splicing:bool, cleavage_rule:str, miscleavage:int, min_mw:int,
+            min_length:int, max_length:int, temp_dir:Path, ref_dir:Path,
             fuzz_start:datetime=None, fuzz_end:datetime=None):
         """ constructor """
         self.tx_id = tx_id
@@ -387,6 +401,7 @@ class FuzzTestConfig():
         self.exonic_only = exonic_only
         self.fusion = fusion
         self.circ_rna = circ_rna
+        self.alt_splicing = alt_splicing
         self.cleavage_rule = cleavage_rule
         self.miscleavage = miscleavage
         self.min_mw = min_mw
@@ -488,6 +503,7 @@ def fuzz_test(args:argparse.Namespace):
         min_variants=args.min_variants,
         exonic_only=args.exonic_only,
         fusion=args.fusion,
+        alt_splicing=args.alt_splice,
         circ_rna=args.circ_rna,
         cleavage_rule=args.cleavage_rule,
         miscleavage=args.miscleavage,
