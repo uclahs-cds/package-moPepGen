@@ -107,7 +107,7 @@ class BruteForceVariantPeptideCaller():
         )
 
     def get_gene_seq(self) -> dna.DNASeqRecord:
-        """ """
+        """ Get the gene sequence and cache it if it is not already cached. """
         if self.gene_seq:
             return self.gene_seq
         gene_id = self.tx_model.gene_id

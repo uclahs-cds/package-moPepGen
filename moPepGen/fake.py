@@ -4,7 +4,7 @@ from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.dna.DNASeqDict import DNASeqDict
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.seqvar import VariantRecord
-from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES, RMATS_TYPES
+from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 
 
 DNA_ALPHABET = ['A', 'T', 'G', 'C']
@@ -177,16 +177,15 @@ def fake_alternative_splicing(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:s
 
     if var_type == 'Insertion':
         return fake_intron_insertion(anno, genome, tx_id, rmats_type)
-    elif var_type == 'Deletion':
+    if var_type == 'Deletion':
         return fake_exon_deletion(anno, genome, tx_id, rmats_type)
-    elif var_type == 'Substitution':
+    if var_type == 'Substitution':
         return fake_mxe_substitution(anno, genome, tx_id)
-    else:
-        raise ValueError(err_message)
+    raise ValueError(err_message)
 
 def fake_exon_deletion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str,
         rmats_type:str) -> VariantRecord:
-    """ """
+    """ Create an deletion of an entire or a part of an exon. """
     tx_model = anno.transcripts[tx_id]
     gene_id = tx_model.gene_id
     gene_model = anno.genes[gene_id]
@@ -264,7 +263,8 @@ def fake_exon_deletion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str,
 
 def fake_intron_insertion(anno:GenomicAnnotation, genome:DNASeqDict,
         tx_id:str, rmats_type:str) -> VariantRecord:
-    """ """
+    """ Create an insertion of an entire intron (RI) or a part of it (e.g.
+    A3SS & A5SS). """
     tx_model = anno.transcripts[tx_id]
     gene_id = tx_model.gene_id
     gene_model = anno.genes[gene_id]
@@ -341,7 +341,7 @@ def fake_intron_insertion(anno:GenomicAnnotation, genome:DNASeqDict,
 
 def fake_mxe_substitution(anno:GenomicAnnotation, genome:DNASeqDict,
         tx_id:str) -> VariantRecord:
-    """ """
+    """ Create a MXE substitution. """
     tx_model = anno.transcripts[tx_id]
     gene_id = tx_model.gene_id
     gene_model = anno.genes[gene_id]
