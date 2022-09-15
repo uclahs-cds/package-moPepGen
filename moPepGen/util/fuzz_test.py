@@ -290,7 +290,7 @@ class FuzzTestCase():
             tx_id = random.choice(tx_ids)
             var_type = random.choice(var_types)
             if var_type == 'AltSplicing':
-                record = fake.fake_alternative_splicing(anno, genome, tx_id)
+                record = fake.fake_rmats_record(anno, genome, tx_id)
             elif var_type == 'SNV':
                 record = fake.fake_variant_record(anno, genome, tx_id,
                     self.config.max_size, self.config.exonic_only)

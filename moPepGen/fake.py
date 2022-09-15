@@ -167,7 +167,7 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
         attrs=attrs
     )
 
-def fake_alternative_splicing(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str
+def fake_rmats_record(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str
         ) -> VariantRecord:
     """ Create an alternative splicing variant """
     var_type = random.choice(ALTERNATIVE_SPLICING_TYPES)
