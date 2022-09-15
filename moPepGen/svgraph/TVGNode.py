@@ -147,7 +147,8 @@ class TVGNode():
 
     def is_reference(self) -> bool:
         """ check if it is reference (no variants) """
-        if len(self.variants) == 1 and self.variants[0].variant.is_real_fusion:
+        if len({x.variant for x in self.variants}) == 1 \
+                and any(x.variant.is_real_fusion for x in self.variants):
             return True
         if self.global_variant is None:
             return not self.variants
@@ -172,7 +173,8 @@ class TVGNode():
 
     def is_subgraph_end(self) -> bool:
         """ check if is the end of a subgraph """
-        return all(x.level < self.level for x in self.get_out_nodes())
+        return self.get_out_nodes() \
+            and all(x.level < self.level for x in self.get_out_nodes())
 
     def is_orf_bridge(self, out_node:TVGNode) -> bool:
         """ check if it is a orf bridge node """
