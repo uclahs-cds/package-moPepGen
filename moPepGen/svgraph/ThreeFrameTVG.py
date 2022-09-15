@@ -1259,9 +1259,14 @@ class ThreeFrameTVG():
         start_node = node
         rf_index = node.reading_frame_index
         end_node = self.find_farthest_node_with_overlap(node)
-        end_nodes = {end_node}
         if end_node.is_subgraph_end():
-            end_nodes.update(self.find_other_subgraph_end_nodes(end_node))
+            subgraph_ends = {end_node}
+            subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node))
+            end_nodes = set()
+            for subgraph_end in subgraph_ends:
+                end_nodes.update(subgraph_end.get_out_nodes())
+        else:
+            end_nodes = {end_node}
         bridges = self.find_bridge_nodes_between(start_node, end_node)
         bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges
 
