@@ -462,7 +462,7 @@ class BruteForceVariantPeptideCaller():
         var_seq = seq[:fusion.location.start]
         location = FeatureLocation(start=0, end=len(var_seq))
         var_seq, variant_coordinates = self.get_variant_sequence(
-            seq=var_seq, location=location, local_offset=len(var_seq),
+            seq=var_seq, location=location, offset=len(var_seq),
             variants=variants[self.tx_id].transcriptional, pool=variants
         )
 
@@ -485,7 +485,7 @@ class BruteForceVariantPeptideCaller():
                 if location.is_superset(x.location)]
             insert_seq, insert_variants = self.get_variant_sequence(
                 seq=insert_seq, location=location,
-                local_offset=len(var_seq) + len(additional_seq),
+                offset=len(var_seq) + len(additional_seq),
                 variants=insert_variants, pool=variants
             )
             additional_seq += insert_seq
@@ -500,7 +500,7 @@ class BruteForceVariantPeptideCaller():
             insert_seq = gene_seq.seq[right_insert_start:right_insert_end]
             insert_seq, insert_variants = self.get_variant_sequence(
                 seq=insert_seq, location=location,
-                local_offset=len(var_seq) + len(additional_seq),
+                offset=len(var_seq) + len(additional_seq),
                 variants=variants[right_tx_id].intronic if right_tx_id in variants else [],
                 pool=variants
             )
@@ -522,7 +522,7 @@ class BruteForceVariantPeptideCaller():
         insert_seq = accepter_seq.seq[breakpoint_tx:]
         insert_seq, insert_variants = self.get_variant_sequence(
             seq=insert_seq, location=location,
-            local_offset=len(var_seq) + len(additional_seq),
+            offset=len(var_seq) + len(additional_seq),
             variants=variants[right_tx_id].transcriptional if right_tx_id in variants else [],
             pool=variants
         )
@@ -577,7 +577,7 @@ class BruteForceVariantPeptideCaller():
 
     def check_silent_mutation(self, seq:str,
             variants:List[seqvar.VariantRecordWithCoordinate]):
-        """ """
+        """ Check whether variants are silent mutations on each reading frame """
         silent_mutation:List[Tuple[bool,bool,bool]] = []
         for variant in variants:
             if variant.variant.is_fusion() \
