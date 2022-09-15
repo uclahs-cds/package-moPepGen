@@ -271,6 +271,8 @@ class VariantRecord():
             end = self.get_donor_end()
             start = self.get_donor_start()
             alt_len = end - start
+            if self.type == 'Insertion':
+                alt_len += 1
         elif self.type == 'Deletion':
             alt_len = 1
         else:
@@ -299,6 +301,8 @@ class VariantRecord():
             end = self.get_donor_end()
             start = self.get_donor_start()
             alt_len = end - start
+            if self.type == 'Insertion':
+                alt_len += 1
         elif self.type == 'Deletion':
             alt_len = 1
         else:
