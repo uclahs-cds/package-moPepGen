@@ -195,7 +195,8 @@ class BruteForceVariantPeptideCaller():
     @staticmethod
     def has_any_variant(lhs:int, rhs:int, cds_start:int, prev_cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
-            variants_stop_lost:List[Tuple[bool,bool,bool]]) -> bool:
+            variants_stop_lost:List[Tuple[bool,bool,bool]],
+            variants_silent_mutation:List[Tuple[bool,bool,bool]]) -> bool:
         """ Check whether the given range of the transcript has any variant
         associated. """
         offset = 0
@@ -213,14 +214,18 @@ class BruteForceVariantPeptideCaller():
                 if cds_start != lhs \
                 else loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))
 
-            is_stop_lost = variants_stop_lost[i] \
+            is_stop_lost = variants_stop_lost[i][cds_start % 3] \
                 and variants[i].location.start > cds_start
 
-            if loc.overlaps(query) \
-                    or is_start_gain \
-                    or is_frameshifting \
-                    or is_cleavage_gain \
-                    or is_stop_lost:
+            is_silent_mutation = variants_silent_mutation[i][cds_start % 3] \
+                and variants[i].location.start > cds_start
+
+            if (loc.overlaps(query) \
+                        or is_start_gain \
+                        or is_frameshifting \
+                        or is_cleavage_gain \
+                        or is_stop_lost )\
+                    and not is_silent_mutation:
                 return True
             offset += len(variant.alt) - len(variant.ref)
         return False
@@ -361,24 +366,26 @@ class BruteForceVariantPeptideCaller():
         """ Get variant sequence. """
         var_seq = seq
         variant_coordinates = []
+        local_offset = 0
         for variant in variants:
             if variant.is_alternative_splicing():
                 if variant.type == 'Deletion':
-                    start = variant.location.start + offset - location.start
-                    end = variant.location.end + offset - location.start
+                    start = variant.location.start + local_offset - location.start
+                    end = variant.location.end + local_offset - location.start
+                    loc = FeatureLocation(start=start, end=start + 1)
                     variant_coordinate = seqvar.VariantRecordWithCoordinate(
                         variant=variant,
-                        location=FeatureLocation(start=start, end=start + 1)
+                        location=loc
                     )
 
                     variant_coordinates.append(variant_coordinate)
                     alt_seq = var_seq[start:start+1]
-                    offset = offset + len(alt_seq) - len(variant.ref)
-                    var_seq = var_seq[:start+1] + alt_seq + var_seq[end:]
+                    local_offset = local_offset + len(alt_seq) - len(variant.location)
+                    var_seq = var_seq[:start] + alt_seq + var_seq[end:]
 
                 elif variant.type == 'Insertion':
-                    start = variant.location.start + offset - location.start
-                    end = variant.location.end + offset - location.start
+                    start = variant.location.start + local_offset - location.start
+                    end = variant.location.end + local_offset - location.start
 
                     gene_seq = self.get_gene_seq()
                     donor_start = variant.get_donor_start()
@@ -388,7 +395,7 @@ class BruteForceVariantPeptideCaller():
                     insert_variants = [x for x in pool[self.tx_id].intronic
                         if loc.is_superset(x.location)]
                     alt_seq, insert_variants = self.get_variant_sequence(
-                        seq=alt_seq, location=loc, offset=len(var_seq),
+                        seq=alt_seq, location=loc, offset=start,
                         variants=insert_variants, pool=pool
                     )
 
@@ -398,12 +405,12 @@ class BruteForceVariantPeptideCaller():
                     )
                     variant_coordinates.append(variant_coordinate)
                     variant_coordinates += insert_variants
-                    offset = offset + len(alt_seq) - len(variant.location)
+                    local_offset = local_offset + len(alt_seq) + 1 - len(variant.location)
                     var_seq = var_seq[:start+1] + alt_seq + var_seq[end:]
 
                 elif variant.type == 'Substitution':
-                    start = variant.location.start + offset - location.start
-                    end = variant.location.end + offset - location.start
+                    start = variant.location.start + local_offset - location.start
+                    end = variant.location.end + local_offset - location.start
 
                     gene_seq = self.get_gene_seq()
                     donor_start = variant.get_donor_start()
@@ -413,7 +420,7 @@ class BruteForceVariantPeptideCaller():
                     insert_variants = [x for x in pool[self.tx_id].intronic
                         if loc.is_superset(x.location)]
                     alt_seq, insert_variants = self.get_variant_sequence(
-                        seq=alt_seq, location=loc, offset=len(var_seq),
+                        seq=alt_seq, location=loc, offset=start,
                         variants=insert_variants, pool=pool
                     )
 
@@ -423,19 +430,22 @@ class BruteForceVariantPeptideCaller():
                     )
                     variant_coordinates.append(variant_coordinate)
                     variant_coordinates += insert_variants
-                    offset = offset + len(alt_seq) - len(variant.location)
+                    local_offset = local_offset + len(alt_seq) - len(variant.location)
                     var_seq = var_seq[:start] + alt_seq + var_seq[end:]
 
             else:
-                start = variant.location.start + offset - location.start
-                end = variant.location.end + offset - location.start
+                start = variant.location.start + local_offset - location.start
+                end = variant.location.end + local_offset - location.start
+                loc = FeatureLocation(
+                    start=start + offset, end=start + len(variant.alt) + offset
+                )
                 variant_coordinate = seqvar.VariantRecordWithCoordinate(
                     variant=variant,
-                    location=FeatureLocation(start=start, end=start + len(variant.alt))
+                    location=loc
                 )
 
                 variant_coordinates.append(variant_coordinate)
-                offset = offset + len(variant.alt) - len(variant.ref)
+                local_offset = local_offset + len(variant.alt) - len(variant.ref)
                 var_seq = var_seq[:start] + variant.alt + var_seq[end:]
 
         return var_seq, variant_coordinates
@@ -452,7 +462,7 @@ class BruteForceVariantPeptideCaller():
         var_seq = seq[:fusion.location.start]
         location = FeatureLocation(start=0, end=len(var_seq))
         var_seq, variant_coordinates = self.get_variant_sequence(
-            seq=var_seq, location=location, offset=len(var_seq),
+            seq=var_seq, location=location, local_offset=len(var_seq),
             variants=variants[self.tx_id].transcriptional, pool=variants
         )
 
@@ -475,7 +485,7 @@ class BruteForceVariantPeptideCaller():
                 if location.is_superset(x.location)]
             insert_seq, insert_variants = self.get_variant_sequence(
                 seq=insert_seq, location=location,
-                offset=len(var_seq) + len(additional_seq),
+                local_offset=len(var_seq) + len(additional_seq),
                 variants=insert_variants, pool=variants
             )
             additional_seq += insert_seq
@@ -490,7 +500,7 @@ class BruteForceVariantPeptideCaller():
             insert_seq = gene_seq.seq[right_insert_start:right_insert_end]
             insert_seq, insert_variants = self.get_variant_sequence(
                 seq=insert_seq, location=location,
-                offset=len(var_seq) + len(additional_seq),
+                local_offset=len(var_seq) + len(additional_seq),
                 variants=variants[right_tx_id].intronic if right_tx_id in variants else [],
                 pool=variants
             )
@@ -512,7 +522,7 @@ class BruteForceVariantPeptideCaller():
         insert_seq = accepter_seq.seq[breakpoint_tx:]
         insert_seq, insert_variants = self.get_variant_sequence(
             seq=insert_seq, location=location,
-            offset=len(var_seq) + len(additional_seq),
+            local_offset=len(var_seq) + len(additional_seq),
             variants=variants[right_tx_id].transcriptional if right_tx_id in variants else [],
             pool=variants
         )
@@ -555,7 +565,7 @@ class BruteForceVariantPeptideCaller():
                 rhs = min(len(seq), variant.location.end + n_carry_over)
                 ref_seq += seq[variant.location.end:rhs]
                 j = 0
-                while j + 3 < len(ref_seq):
+                while j + 3 <= len(ref_seq):
                     if ref_seq[j:j+3] in ['TAA', 'TAG', 'TGA']:
                         stop_lost_i.append(True)
                         break
@@ -564,6 +574,38 @@ class BruteForceVariantPeptideCaller():
                     stop_lost_i.append(False)
             stop_lost.append(tuple(stop_lost_i))
         return stop_lost
+
+    def check_silent_mutation(self, seq:str,
+            variants:List[seqvar.VariantRecordWithCoordinate]):
+        """ """
+        silent_mutation:List[Tuple[bool,bool,bool]] = []
+        for variant in variants:
+            if variant.variant.is_fusion() \
+                    or variant.variant.is_circ_rna() \
+                    or variant.variant.is_alternative_splicing():
+                silent_mutation.append((False, False, False))
+                continue
+            silent_i:List[bool] = []
+            for i in range(3):
+                # lhs & rhs: position of the first (lhs) and last (lhs) codon
+                # that overlaps with the variant
+                lhs = variant.location.start - (variant.location.start - i) % 3
+                var_ref = self.get_variant_ref_seq(variant.variant)
+                ref_seq = seq[lhs:variant.location.start] + var_ref
+                n_carry_over = 3 - (len(ref_seq) % 3)
+                rhs = min(len(seq), variant.location.end + n_carry_over)
+                ref_seq += seq[variant.location.end:rhs]
+
+                var_seq = seq[lhs:variant.location.end]
+                n_carry_over = 3 - (len(var_seq) % 3)
+                rhs = min(len(seq), variant.location.end + n_carry_over)
+                var_seq += seq[variant.location.end:rhs]
+
+                silent_i.append(
+                    ref_seq.translate(to_stop=False) == var_seq.translate(to_stop=False)
+                )
+            silent_mutation.append(tuple(silent_i))
+        return silent_mutation
 
     def call_peptides_main(self, variants:seqvar.VariantRecordPool):
         """ Call peptide main """
@@ -584,6 +626,7 @@ class BruteForceVariantPeptideCaller():
             )
 
         stop_lost = self.check_stop_lost(seq, variant_coordinates)
+        silent_mutation = self.check_silent_mutation(seq, variant_coordinates)
 
         if not (tx_model.is_protein_coding and tx_model.is_mrna_end_nf()):
             cur_cds_end = len(seq)
@@ -624,7 +667,8 @@ class BruteForceVariantPeptideCaller():
                     tx_lhs = cds_start + lhs * 3
                     tx_rhs = cds_start + rhs * 3
                     if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
-                            prev_cds_start, variant_coordinates, stop_lost):
+                            prev_cds_start, variant_coordinates, stop_lost,
+                            silent_mutation):
                         continue
 
                     peptides = [aa_seq[lhs:rhs]]
