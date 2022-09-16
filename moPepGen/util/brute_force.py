@@ -1,4 +1,5 @@
 """ A brute forth algorithm for calling variant peptides from a GVF file. """
+import copy
 import sys
 import argparse
 from typing import Iterable, List, Dict, Set, Tuple
@@ -9,7 +10,7 @@ from Bio.Seq import Seq
 from moPepGen import gtf, seqvar, aa, dna, params
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
-from moPepGen.seqvar.VariantRecord import VariantRecord
+from moPepGen.seqvar.VariantRecord import VariantRecord, ALTERNATIVE_SPLICING_TYPES
 from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
 from moPepGen.seqvar.VariantRecordWithCoordinate import VariantRecordWithCoordinate
 from moPepGen.util.common import load_references
@@ -450,6 +451,46 @@ class BruteForceVariantPeptideCaller():
 
         return var_seq, variant_coordinates
 
+    def get_variant_sequence_circ_rna(self, seq:Seq, variants:seqvar.VariantRecordPool
+            ) -> Tuple[Seq, List[seqvar.VariantRecordWithCoordinate]]:
+        """ Get the variant sequence of circRNA """
+        number_of_circ = len(variants[self.tx_id].circ_rna)
+        if number_of_circ != 1:
+            raise ValueError(
+                f"Should have exactly 1 circRNA, but {number_of_circ} were found."
+            )
+        circ = variants[self.tx_id].circ_rna[0]
+        var_seq = circ.get_circ_rna_sequence(seq)
+        location = FeatureLocation(start=0, end=len(var_seq))
+        filtered_variants = variants.filter_variants(
+            tx_id=[circ.transcript_id], exclude_type=ALTERNATIVE_SPLICING_TYPES,
+            intron=False, segments=circ.fragments
+        )
+        var_seq, variant_coordinates = self.get_variant_sequence(
+            seq=var_seq, location=location, offset=0, variants=filtered_variants,
+            pool=variants
+        )
+
+        for _ in range(2):
+            offset = len(var_seq)
+            variants_extend = copy.copy(variant_coordinates)
+            for variant in variants_extend:
+                location = FeatureLocation(
+                    seqname=variant.location.seqname,
+                    start=variant.location.start + offset,
+                    end=variant.location.end + offset
+                )
+                variant.location = location
+            var_seq += var_seq
+            variant_coordinates += variants_extend
+
+        circ_var = VariantRecordWithCoordinate(
+            variant=circ, location=FeatureLocation(start=0, end=len(var_seq))
+        )
+        variant_coordinates.insert(0, circ_var)
+
+        return var_seq, variant_coordinates
+
     def get_variant_sequence_fusion(self, seq:Seq, variants:seqvar.VariantRecordPool
             ) -> Tuple[Seq, List[seqvar.VariantRecordWithCoordinate]]:
         """ Get variant sequence with fusion. """
@@ -618,6 +659,11 @@ class BruteForceVariantPeptideCaller():
             seq, variant_coordinates = self.get_variant_sequence_fusion(
                 seq=tx_seq.seq, variants=variants
             )
+        elif variants[self.tx_id].circ_rna:
+            gene_seq = self.get_gene_seq()
+            seq, variant_coordinates = self.get_variant_sequence_circ_rna(
+                seq=gene_seq.seq, variants=variants
+            )
         else:
             location = FeatureLocation(start=0, end=len(tx_seq.seq))
             seq, variant_coordinates = self.get_variant_sequence(
@@ -682,7 +728,12 @@ class BruteForceVariantPeptideCaller():
     def generate_variant_comb(self) -> Iterable[seqvar.VariantRecordPool]:
         """ Generate combination of variants. """
         variant_type_mapper:Dict[seqvar.VariantRecord, str] = {}
+        start_index = self.tx_seq.orf.start + 3 if bool(self.tx_seq.orf) else 3
         for variant in self.variant_pool[self.tx_id].transcriptional:
+            if variant.location.start < start_index:
+                continue
+            if variant.location.start == start_index:
+                variant.to_end_inclusion(self.tx_seq)
             variant_type_mapper[variant] = 'transcriptional'
         for variant in self.variant_pool[self.tx_id].intronic:
             variant_type_mapper[variant] = 'intronic'
@@ -725,10 +776,7 @@ class BruteForceVariantPeptideCaller():
     def call_peptides(self):
         """ Call variant peptides """
         for comb in self.generate_variant_comb():
-            if comb[self.tx_id].circ_rna:
-                pass
-            else:
-                self.call_peptides_main(comb)
+            self.call_peptides_main(comb)
 
 def brute_force(args):
     """ main """
