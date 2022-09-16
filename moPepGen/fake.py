@@ -405,9 +405,11 @@ def fake_mxe_substitution(anno:GenomicAnnotation, genome:DNASeqDict,
         attrs=attrs
     )
 
-def fake_circ_rna_model(anno:GenomicAnnotation, tx_id:str) -> CircRNAModel:
+def fake_circ_rna_model(anno:GenomicAnnotation, tx_id:str, ci_ratio:float=0.2
+        ) -> CircRNAModel:
     """ Create a fake circRNA model for either CIRC or CI. """
-    circ_type = random.choice(['CIRC', 'CI'])
+    weights = [1-ci_ratio, ci_ratio]
+    circ_type = random.choices(['CIRC', 'CI'], weights=weights, k=1)[0]
     if circ_type == 'CIRC':
         return fake_circ_rna_model_circ(anno, tx_id)
     return fake_circ_rna_model_ci(anno, tx_id)

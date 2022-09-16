@@ -75,6 +75,13 @@ def add_subparser_fuzz_test(subparsers:argparse._SubParsersAction
         help='Whether to generate a circRNA.'
     )
     parser.add_argument(
+        '--ci-ratio',
+        type=float,
+        help='Fraction of ciRNA to generate.',
+        default=0.2,
+        metavar='<value>'
+    )
+    parser.add_argument(
         '--alt-splice',
         action='store_true',
         help='Whether to generate alternative splicings.'
@@ -289,7 +296,8 @@ class FuzzTestCase():
             tx_ids.append(record.attrs['ACCEPTER_TRANSCRIPT_ID'])
 
         if self.config.circ_rna:
-            record = fake.fake_circ_rna_model(anno, self.config.tx_id)
+            record = fake.fake_circ_rna_model(anno, self.config.tx_id,
+                self.config.ci_ratio)
             records.append(record)
             n_variants -= 1
 
@@ -420,9 +428,10 @@ class FuzzTestConfig():
     """ Fuzz test config """
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
             min_variants:int, exonic_only:bool, fusion:bool, circ_rna:bool,
-            alt_splicing:bool, cleavage_rule:str, miscleavage:int, min_mw:int,
-            min_length:int, max_length:int, temp_dir:Path, ref_dir:Path,
-            fuzz_start:datetime=None, fuzz_end:datetime=None):
+            ci_ratio:float, alt_splicing:bool, cleavage_rule:str,
+            miscleavage:int, min_mw:int, min_length:int, max_length:int,
+            temp_dir:Path, ref_dir:Path, fuzz_start:datetime=None,
+            fuzz_end:datetime=None):
         """ constructor """
         self.tx_id = tx_id
         self.n_iter = n_iter
@@ -432,6 +441,7 @@ class FuzzTestConfig():
         self.exonic_only = exonic_only
         self.fusion = fusion
         self.circ_rna = circ_rna
+        self.ci_ratio = ci_ratio
         self.alt_splicing = alt_splicing
         self.cleavage_rule = cleavage_rule
         self.miscleavage = miscleavage
@@ -536,6 +546,7 @@ def fuzz_test(args:argparse.Namespace):
         fusion=args.fusion,
         alt_splicing=args.alt_splice,
         circ_rna=args.circ_rna,
+        ci_ratio=args.ci_ratio,
         cleavage_rule=args.cleavage_rule,
         miscleavage=args.miscleavage,
         min_mw=args.min_mw,
