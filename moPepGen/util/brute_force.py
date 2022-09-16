@@ -729,11 +729,19 @@ class BruteForceVariantPeptideCaller():
         """ Generate combination of variants. """
         variant_type_mapper:Dict[seqvar.VariantRecord, str] = {}
         start_index = self.tx_seq.orf.start + 3 if bool(self.tx_seq.orf) else 3
+        mrna_end_nf = self.tx_model.is_mrna_end_nf()
         for variant in self.variant_pool[self.tx_id].transcriptional:
-            if variant.location.start < start_index:
-                continue
-            if variant.location.start == start_index:
+            if variant.location.start == start_index - 1 \
+                    and (variant.is_insertion() or variant.is_deletion()) \
+                    and not variant.is_fusion() \
+                    and not variant.is_alternative_splicing():
                 variant.to_end_inclusion(self.tx_seq)
+            if variant.location.start < start_index \
+                    and not (variant.is_fusion() \
+                        and variant.location.start == start_index - 1):
+                continue
+            if mrna_end_nf and variant.location.start <= self.tx_seq.orf.end - 3:
+                continue
             variant_type_mapper[variant] = 'transcriptional'
         for variant in self.variant_pool[self.tx_id].intronic:
             variant_type_mapper[variant] = 'intronic'
