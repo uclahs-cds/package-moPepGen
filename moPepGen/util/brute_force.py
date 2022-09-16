@@ -623,7 +623,8 @@ class BruteForceVariantPeptideCaller():
         for variant in variants:
             if variant.variant.is_fusion() \
                     or variant.variant.is_circ_rna() \
-                    or variant.variant.is_alternative_splicing():
+                    or variant.variant.is_alternative_splicing()\
+                    or variant.variant.is_frameshifting():
                 silent_mutation.append((False, False, False))
                 continue
             silent_i:List[bool] = []
