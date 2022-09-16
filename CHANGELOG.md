@@ -14,7 +14,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Added
 
-- Added support for fusion and alternative splicing in `bruteForce`.
+- Added support for fusion, alternative splicing and circRNA in `bruteForce`.
 
 ## [0.9.4] - 2022-09-07
 

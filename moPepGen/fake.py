@@ -1,10 +1,11 @@
 """ Module to generate fake data """
 import random
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen.dna.DNASeqDict import DNASeqDict
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.seqvar import VariantRecord
 from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
+from moPepGen.circ import CircRNAModel
 
 
 DNA_ALPHABET = ['A', 'T', 'G', 'C']
@@ -402,4 +403,87 @@ def fake_mxe_substitution(anno:GenomicAnnotation, genome:DNASeqDict,
         _type='Substitution',
         _id=_id,
         attrs=attrs
+    )
+
+def fake_circ_rna_model(anno:GenomicAnnotation, tx_id:str, ci_ratio:float=0.2
+        ) -> CircRNAModel:
+    """ Create a fake circRNA model for either CIRC or CI. """
+    weights = [1-ci_ratio, ci_ratio]
+    circ_type = random.choices(['CIRC', 'CI'], weights=weights, k=1)[0]
+    if circ_type == 'CIRC':
+        return fake_circ_rna_model_circ(anno, tx_id)
+    return fake_circ_rna_model_ci(anno, tx_id)
+
+def fake_circ_rna_model_circ(anno:GenomicAnnotation, tx_id:str
+        ) -> CircRNAModel:
+    """ Create a fake circRNA model of CIRC """
+    tx_model = anno.transcripts[tx_id]
+    gene_id = tx_model.gene_id
+    chrom = tx_model.transcript.chrom
+
+    n_exons = random.randint(1, len(tx_model.exon) - 1)
+    first_exon_ind = random.randint(0, len(tx_model.exon) - n_exons - 1)
+    exons = tx_model.exon[first_exon_ind:first_exon_ind + n_exons]
+
+    fragments = []
+    for exon in exons:
+        fragment = SeqFeature(
+            chrom=tx_id, location=exon.location, attributes={}, type='exon'
+        )
+        fragments.append(fragment)
+
+    exon_indices = [f"E{x}" for x in
+        range(first_exon_ind + 1, first_exon_ind + n_exons + 1)]
+
+    _id = f'CIRC-{tx_id}-' + '-'.join(exon_indices)
+
+    if tx_model.transcript.strand == 1:
+        start = anno.coordinate_genomic_to_gene(exons[0].location.start, gene_id)
+    else:
+        start = anno.coordinate_genomic_to_gene(exons[-1].location.end - 1, gene_id)
+
+    genomic_location = f"{chrom}:{start}"
+
+    return CircRNAModel(
+        transcript_id=tx_id,
+        fragments=fragments,
+        intron=[],
+        _id=_id,
+        gene_id=gene_id,
+        gene_name=tx_model.transcript.gene_name,
+        genomic_location=genomic_location
+    )
+
+def fake_circ_rna_model_ci(anno:GenomicAnnotation, tx_id:str
+        ) -> CircRNAModel:
+    """ Create a fake circRNA model of CI (circular intron).  """
+    tx_model = anno.transcripts[tx_id]
+    gene_id = tx_model.gene_id
+    chrom = tx_model.transcript.chrom
+
+    exon_ind = random.randint(0, len(tx_model.exon) - 2)
+    start = tx_model.exon[exon_ind].location.end
+    end = tx_model.exon[exon_ind + 1].location.start - 1
+
+    location = FeatureLocation(start=start, end=end)
+    fragment = SeqFeature(chrom=tx_id, location=location, attributes={}, type='intron')
+    introns = [fragment]
+
+    _id = f'CI-{tx_id}-I{exon_ind + 1}'
+
+    if tx_model.transcript.strand == 1:
+        start_gene = anno.coordinate_genomic_to_gene(introns[0].location.start, gene_id)
+    else:
+        start_gene = anno.coordinate_genomic_to_gene(introns[-1].location.end - 1, gene_id)
+
+    genomic_location = f"{chrom}:{start_gene}"
+
+    return CircRNAModel(
+        transcript_id=tx_id,
+        fragments=introns,
+        intron=[0],
+        _id=_id,
+        gene_id=gene_id,
+        gene_name=tx_model.transcript.gene_name,
+        genomic_location=genomic_location
     )

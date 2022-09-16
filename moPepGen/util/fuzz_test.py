@@ -5,13 +5,15 @@ from contextlib import redirect_stdout
 from datetime import datetime, timedelta
 from pathlib import Path
 import random
+import tempfile
 import traceback
-from typing import List
+from typing import Iterable, List, Union
 import sys
 import uuid
 from Bio import SeqIO
-from moPepGen import ERROR_INDEX_IN_INTRON, seqvar, fake
+from moPepGen import ERROR_INDEX_IN_INTRON, GVF_HEADER, fake
 from moPepGen.seqvar.VariantRecord import VariantRecord
+from moPepGen.circ import CircRNAModel
 from moPepGen.util.common import load_references
 from moPepGen.cli.common import add_args_cleavage, generate_metadata, \
     print_help_if_missing_args
@@ -71,6 +73,13 @@ def add_subparser_fuzz_test(subparsers:argparse._SubParsersAction
         '--circ-rna',
         action='store_true',
         help='Whether to generate a circRNA.'
+    )
+    parser.add_argument(
+        '--ci-ratio',
+        type=float,
+        help='Fraction of ciRNA to generate.',
+        default=0.2,
+        metavar='<value>'
     )
     parser.add_argument(
         '--alt-splice',
@@ -252,7 +261,8 @@ class FuzzTestCase():
     def run(self):
         """ run the current test case """
         try:
-            self.create_variants()
+            variants = self.create_variants()
+            self.write_variants(variants)
             self.record.call_variant_starts()
             self.call_variants()
             self.record.call_variant_ends()
@@ -268,21 +278,29 @@ class FuzzTestCase():
                 handle.write(str(error))
                 handle.write(traceback.format_exc())
 
-    def create_variants(self):
+    def create_variants(self) -> List[Union[VariantRecord,CircRNAModel]]:
         """ create random variant records """
         anno, genome, _ = load_references(
             path_anno=self.config.path_annotation_gtf,
             path_genome=self.config.path_genome_fasta,
             path_proteome=self.config.path_proteome_fasta
         )
-        records:List[VariantRecord] = []
+        records:List[Union[VariantRecord, CircRNAModel]] = []
         n_variants = random.randint(self.config.min_vairants, self.config.max_variants)
         tx_ids = [self.config.tx_id]
+
         if self.config.fusion:
             record = fake.fake_fusion(anno, genome, self.config.tx_id)
             records.append(record)
             n_variants -= 1
             tx_ids.append(record.attrs['ACCEPTER_TRANSCRIPT_ID'])
+
+        if self.config.circ_rna:
+            record = fake.fake_circ_rna_model(anno, self.config.tx_id,
+                self.config.ci_ratio)
+            records.append(record)
+            n_variants -= 1
+
         var_types = ['SNV']
         if self.config.alt_splicing:
             var_types.append('AltSplicing')
@@ -300,6 +318,8 @@ class FuzzTestCase():
         self.record.n_var = n_variants
         self.record.n_exonic = 0
         for variant in records:
+            if variant.__class__ is CircRNAModel:
+                continue
             try:
                 variant.to_transcript_variant(anno, genome, variant.transcript_id)
                 self.record.n_exonic += 1
@@ -307,12 +327,32 @@ class FuzzTestCase():
                 if e.args[0] == ERROR_INDEX_IN_INTRON:
                     continue
                 raise e
+
+        return records
+
+    def write_variants(self, variants:Iterable[Union[VariantRecord,CircRNAModel]]):
+        """ Write variants to file """
         args = argparse.Namespace()
         args.index_dir = None
         args.command = ''
         args.source = ''
         metadata = generate_metadata(args)
-        seqvar.io.write(records, self.record.gvf_file, metadata)
+        with tempfile.TemporaryFile(mode='w+t') as temp_file:
+            temp_file.write('#' + '\t'.join(GVF_HEADER))
+            for record in variants:
+                if record.__class__ is CircRNAModel:
+                    metadata.add_info('circRNA')
+                else:
+                    metadata.add_info(record.type)
+                line = record.to_string()
+                temp_file.write(line + '\n')
+            with open(self.record.gvf_file, 'w') as out_file:
+                for line in metadata.to_strings():
+                    out_file.write(line + '\n')
+
+                temp_file.seek(0)
+                for line in temp_file:
+                    out_file.write(line)
 
     def call_variants(self):
         """ call variants using moPepGen's graph algorithm """
@@ -324,7 +364,6 @@ class FuzzTestCase():
         args.annotation_gtf = self.config.path_annotation_gtf
         args.proteome_fasta = self.config.path_proteome_fasta
         args.reference_source = None
-        args.circ_rna_bed = None
         args.output_path = self.record.call_variant_fasta
         args.quiet = True
         args.cleavage_rule = 'trypsin'
@@ -389,9 +428,10 @@ class FuzzTestConfig():
     """ Fuzz test config """
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
             min_variants:int, exonic_only:bool, fusion:bool, circ_rna:bool,
-            alt_splicing:bool, cleavage_rule:str, miscleavage:int, min_mw:int,
-            min_length:int, max_length:int, temp_dir:Path, ref_dir:Path,
-            fuzz_start:datetime=None, fuzz_end:datetime=None):
+            ci_ratio:float, alt_splicing:bool, cleavage_rule:str,
+            miscleavage:int, min_mw:int, min_length:int, max_length:int,
+            temp_dir:Path, ref_dir:Path, fuzz_start:datetime=None,
+            fuzz_end:datetime=None):
         """ constructor """
         self.tx_id = tx_id
         self.n_iter = n_iter
@@ -401,6 +441,7 @@ class FuzzTestConfig():
         self.exonic_only = exonic_only
         self.fusion = fusion
         self.circ_rna = circ_rna
+        self.ci_ratio = ci_ratio
         self.alt_splicing = alt_splicing
         self.cleavage_rule = cleavage_rule
         self.miscleavage = miscleavage
@@ -505,6 +546,7 @@ def fuzz_test(args:argparse.Namespace):
         fusion=args.fusion,
         alt_splicing=args.alt_splice,
         circ_rna=args.circ_rna,
+        ci_ratio=args.ci_ratio,
         cleavage_rule=args.cleavage_rule,
         miscleavage=args.miscleavage,
         min_mw=args.min_mw,

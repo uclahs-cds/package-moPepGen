@@ -1,4 +1,4 @@
-""" Moduel for CircRNA """
+""" Module for CircRNA """
 from __future__ import annotations
 from typing import List, TYPE_CHECKING
 from moPepGen.SeqFeature import SeqFeature, FeatureLocation
@@ -53,7 +53,7 @@ class CircRNAModel():
 
         Args:
             seq (DNASeqRecordWithCoordinates): The DNA sequence of the
-                transcript where the circRNA comes from.
+                gene where the circRNA comes from.
         """
         circ = None
         for fragment in sorted(self.fragments):
