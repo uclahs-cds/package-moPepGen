@@ -326,7 +326,7 @@ class BruteForceVariantPeptideCaller():
             return True
 
         # check if there are multiple novel transcript variants (fusion + circ)
-        if len(pool[self.tx_id].circ_rna) + len(pool[self.tx_id].circ_rna) > 1:
+        if len(pool[self.tx_id].fusion) + len(pool[self.tx_id].circ_rna) > 1:
             return True
 
         if self.has_any_invalid_variants_on_inserted_sequences(pool):
@@ -460,21 +460,44 @@ class BruteForceVariantPeptideCaller():
                 f"Should have exactly 1 circRNA, but {number_of_circ} were found."
             )
         circ = variants[self.tx_id].circ_rna[0]
-        var_seq = circ.get_circ_rna_sequence(seq)
-        location = FeatureLocation(start=0, end=len(var_seq))
-        filtered_variants = variants.filter_variants(
-            tx_id=[circ.transcript_id], exclude_type=ALTERNATIVE_SPLICING_TYPES,
-            intron=False, segments=circ.fragments
+        var_seq = Seq('')
+        vars_coord = []
+
+        for fragment in circ.fragments:
+            loc = FeatureLocation(
+                start=int(fragment.location.start), end=int(fragment.location.end)
+            )
+            new_seq = seq[loc.start:loc.end]
+            frag_vars = variants.filter_variants(
+                tx_ids=[circ.transcript_id], exclude_type=ALTERNATIVE_SPLICING_TYPES,
+                intron=False, segments=[fragment]
+            )
+            frag_seq, frag_vars_coord = self.get_variant_sequence(
+                seq=new_seq, location=loc, offset=len(var_seq),
+                variants=frag_vars, pool=variants
+            )
+            var_seq += frag_seq
+            vars_coord += frag_vars_coord
+
+        location = FeatureLocation(
+            seqname=circ.gene_id,
+            start=min(x.location.start for x in circ.fragments),
+            end=max(x.location.end for x in circ.fragments)
         )
-        var_seq, variant_coordinates = self.get_variant_sequence(
-            seq=var_seq, location=location, offset=0, variants=filtered_variants,
-            pool=variants
+        circ_var = seqvar.VariantRecord(
+            location=location,
+            ref=var_seq[0],
+            alt='<circRNA>',
+            _type='circRNA',
+            _id=circ.id
         )
+
+        vars_aloop = copy.deepcopy(vars_coord)
 
         for _ in range(2):
             offset = len(var_seq)
-            variants_extend = copy.copy(variant_coordinates)
-            for variant in variants_extend:
+            vars_extend = copy.deepcopy(vars_aloop)
+            for variant in vars_extend:
                 location = FeatureLocation(
                     seqname=variant.location.seqname,
                     start=variant.location.start + offset,
@@ -482,14 +505,14 @@ class BruteForceVariantPeptideCaller():
                 )
                 variant.location = location
             var_seq += var_seq
-            variant_coordinates += variants_extend
+            vars_coord += vars_extend
 
-        circ_var = VariantRecordWithCoordinate(
-            variant=circ, location=FeatureLocation(start=0, end=len(var_seq))
+        circ_var_coord = VariantRecordWithCoordinate(
+            variant=circ_var, location=FeatureLocation(start=0, end=len(var_seq))
         )
-        variant_coordinates.insert(0, circ_var)
+        vars_coord.insert(0, circ_var_coord)
 
-        return var_seq, variant_coordinates
+        return var_seq, vars_coord
 
     def get_variant_sequence_fusion(self, seq:Seq, variants:seqvar.VariantRecordPool
             ) -> Tuple[Seq, List[seqvar.VariantRecordWithCoordinate]]:
@@ -656,11 +679,14 @@ class BruteForceVariantPeptideCaller():
         rule = self.cleavage_params.enzyme
         exception = self.cleavage_params.exception
 
+        is_circ_rna = False
+
         if variants[self.tx_id].fusion:
             seq, variant_coordinates = self.get_variant_sequence_fusion(
                 seq=tx_seq.seq, variants=variants
             )
         elif variants[self.tx_id].circ_rna:
+            is_circ_rna = True
             gene_seq = self.get_gene_seq()
             seq, variant_coordinates = self.get_variant_sequence_circ_rna(
                 seq=gene_seq.seq, variants=variants
@@ -678,7 +704,7 @@ class BruteForceVariantPeptideCaller():
         if not (tx_model.is_protein_coding and tx_model.is_mrna_end_nf()):
             cur_cds_end = len(seq)
 
-        if not tx_model.is_protein_coding:
+        if not tx_model.is_protein_coding or is_circ_rna:
             alt_seq = dna.DNASeqRecord(seq)
             cds_start_positions = alt_seq.find_all_start_codons()
         else:
@@ -686,10 +712,7 @@ class BruteForceVariantPeptideCaller():
             cds_start_positions = [cds_start]
 
         for cds_start in cds_start_positions:
-            if not tx_model.is_protein_coding:
-                cur_cds_end = len(seq)
-            else:
-                cur_cds_end = cur_cds_end - (cur_cds_end - cds_start) % 3
+            cur_cds_end = len(seq) - (len(seq) - cds_start) % 3
 
             aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=True)
             aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
@@ -765,6 +788,7 @@ class BruteForceVariantPeptideCaller():
             for inds in combinations(range(len(all_variants)), i + 1):
                 variants = [all_variants[i] for i in inds]
                 pool = seqvar.VariantRecordPool()
+                pool.anno = self.variant_pool.anno
                 for variant in variants:
                     var_type = variant_type_mapper[variant]
                     tx_id = variant.transcript_id
@@ -804,6 +828,7 @@ def brute_force(args):
 
     # load GVF files
     variant_pool = seqvar.VariantRecordPool()
+    variant_pool.anno = reference_data.anno
     for path in args.input_gvf:
         with open(path) as handle:
             variant_pool.load_variants(
