@@ -4,7 +4,7 @@ import copy
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from moPepGen import ERROR_INDEX_IN_INTRON, circ
 from moPepGen.seqvar.VariantRecordPoolOnDisk import TranscriptionalVariantSeries
-from . import VariantRecord, io
+from . import VariantRecord, io, GVFMetadata
 
 
 # To avoid circular import
@@ -108,6 +108,15 @@ class VariantRecordPool():
     def load_variants(self, handle:IO, anno:GenomicAnnotation,
             genome:DNASeqDict):
         """ Load variants """
+        handle.seek(0)
+        metadata = GVFMetadata.parse(handle)
+        handle.seek(0)
+
+        if metadata.is_circ_rna():
+            for record in circ.io.parse(handle):
+                self.add_circ_rna(record)
+            return
+
         for record in io.parse(handle):
             tx_id = record.transcript_id
             if record.is_fusion():
