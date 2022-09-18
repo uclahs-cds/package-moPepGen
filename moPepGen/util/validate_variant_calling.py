@@ -29,7 +29,8 @@ def add_subparser_validate_variant_calling(subparsers:argparse._SubParsersAction
         '--tx-id',
         type=str,
         help='Transcript ID',
-        metavar='<value>'
+        metavar='<value>',
+        nargs='+'
     )
     parser.add_argument(
         '-o', '--output-dir',
@@ -57,14 +58,14 @@ def add_subparser_validate_variant_calling(subparsers:argparse._SubParsersAction
     common.print_help_if_missing_args(parser)
     return parser
 
-def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
+def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:List[str],
         output_dir:Path):
     """ downsample reference """
     args = argparse.Namespace()
     args.genome_fasta = genome
     args.annotation_gtf = anno
     args.proteome_fasta = protein
-    args.tx_list = [tx_id]
+    args.tx_list = tx_id
     args.gene_list = None
     args.output_dir = output_dir
     args.miscleavage = 2
@@ -72,18 +73,18 @@ def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:str,
     args.translate_noncoding = 'false'
     downsample_reference(args)
 
-def extract_gvf(tx_id:str, gvf_files:List[Path], output_dir:Path) -> List[Path]:
+def extract_gvf(tx_id:List[str], gvf_files:List[Path], output_dir:Path) -> List[Path]:
     """ extract GVF """
     i = 0
     temp_gvfs = []
     for j, gvf_file in enumerate(gvf_files):
-        output_path = output_dir/f"{tx_id}_{j}_{gvf_file.name}"
+        output_path = output_dir/f"{'-'.join(tx_id)}_{j}_{gvf_file.name}"
         temp_gvfs.append(output_path)
         with open(gvf_file, 'rt') as in_handle, open(output_path, 'wt') as out_handle:
             for line in in_handle:
                 if line.startswith('#'):
                     out_handle.write(line)
-                elif tx_id in line:
+                elif any(x in line for x in tx_id):
                     out_handle.write(line)
                     i += 0
     if i > 10:

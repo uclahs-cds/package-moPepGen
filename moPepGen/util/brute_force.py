@@ -197,12 +197,14 @@ class BruteForceVariantPeptideCaller():
     def has_any_variant(lhs:int, rhs:int, cds_start:int, prev_cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
+            variants_stop_gain:List[Tuple[bool,bool,bool]],
             variants_silent_mutation:List[Tuple[bool,bool,bool]]) -> bool:
         """ Check whether the given range of the transcript has any variant
         associated. """
         offset = 0
         query = FeatureLocation(start=lhs, end=rhs)
         start_loc = FeatureLocation(start=cds_start, end=cds_start + 3)
+        rf_index = cds_start % 3
         for i, variant_coordinate in enumerate(variants):
             variant = variant_coordinate.variant
             loc = variant_coordinate.location
@@ -221,11 +223,15 @@ class BruteForceVariantPeptideCaller():
             is_silent_mutation = variants_silent_mutation[i][cds_start % 3] \
                 and variants[i].location.start > cds_start
 
+            is_stop_gain = variants_stop_gain[i][cds_start % 3] \
+                and int((variants[i].location.start - rf_index) / 3) == rhs
+
             if (loc.overlaps(query) \
                         or is_start_gain \
                         or is_frameshifting \
                         or is_cleavage_gain \
-                        or is_stop_lost )\
+                        or is_stop_lost \
+                        or is_stop_gain ) \
                     and not is_silent_mutation:
                 return True
             offset += len(variant.alt) - len(variant.ref)
@@ -299,6 +305,9 @@ class BruteForceVariantPeptideCaller():
             if alt_splice.transcript_id not in inserted_intronic_region:
                 inserted_intronic_region[alt_splice.transcript_id] = []
             inserted_intronic_region[alt_splice.transcript_id].append(loc)
+
+        if not inserted_intronic_region:
+            return False
 
         for tx_id in pool:
             if tx_id not in inserted_intronic_region:
@@ -639,6 +648,34 @@ class BruteForceVariantPeptideCaller():
             stop_lost.append(tuple(stop_lost_i))
         return stop_lost
 
+    def check_stop_gain(self, seq:str,
+            variants:List[seqvar.VariantRecordWithCoordinate]
+            ) -> List[Tuple[bool, bool, bool]]:
+        """ """
+        stop_gain:List[Tuple[bool, bool, bool]] = []
+        for variant in variants:
+            if variant.variant.is_fusion() or variant.variant.is_circ_rna():
+                stop_gain.append((False, False, False))
+            stop_gain_i:List[bool] = []
+            for i in range(3):
+                lhs = variant.location.start - (variant.location.start - i) % 3
+                var_ref = self.get_variant_ref_seq(variant.variant)
+                ref_seq = seq[lhs:variant.location.start] + var_ref
+                n_carry_over = 3 - (len(ref_seq) % 3)
+                rhs = min(len(seq), variant.location.end + n_carry_over)
+                ref_seq += seq[variant.location.end:rhs]
+
+                var_seq = seq[lhs:variant.location.end]
+                n_carry_over = 3 - (len(var_seq) % 3)
+                rhs = min(len(seq), variant.location.end + n_carry_over)
+                var_seq += seq[variant.location.end:rhs]
+
+                var_aa = Seq(var_seq).translate(to_stop=False)
+                ref_aa = Seq(ref_seq).translate(to_stop=False)
+                stop_gain_i.append(var_aa in ['*', ''] and ref_aa not in ['*', ''])
+            stop_gain.append(stop_gain_i)
+        return stop_gain
+
     def check_silent_mutation(self, seq:str,
             variants:List[seqvar.VariantRecordWithCoordinate]):
         """ Check whether variants are silent mutations on each reading frame """
@@ -699,6 +736,7 @@ class BruteForceVariantPeptideCaller():
             )
 
         stop_lost = self.check_stop_lost(seq, variant_coordinates)
+        stop_gain = self.check_stop_gain(seq, variant_coordinates)
         silent_mutation = self.check_silent_mutation(seq, variant_coordinates)
 
         if not (tx_model.is_protein_coding and tx_model.is_mrna_end_nf()):
@@ -738,7 +776,7 @@ class BruteForceVariantPeptideCaller():
                     tx_rhs = cds_start + rhs * 3
                     if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
                             prev_cds_start, variant_coordinates, stop_lost,
-                            silent_mutation):
+                            stop_gain, silent_mutation):
                         continue
 
                     peptides = [aa_seq[lhs:rhs]]

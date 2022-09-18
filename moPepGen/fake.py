@@ -111,7 +111,7 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
         cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
         cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id)
     else:
-        cds_start_genomic = anno.coordinate_gene_to_genomic(0, tx_id)
+        cds_start_genomic = anno.coordinate_gene_to_genomic(0, donor_gene_id)
         cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, donor_gene_id)
         cds_end_tx = len(donor_tx_seq) - 1
         cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
