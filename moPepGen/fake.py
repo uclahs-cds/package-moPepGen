@@ -113,10 +113,10 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
     else:
         cds_start_genomic = anno.coordinate_gene_to_genomic(0, tx_id)
         cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, donor_gene_id)
-        cds_end_tx = len(donor_tx_seq)
+        cds_end_tx = len(donor_tx_seq) - 1
         cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
         cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id)
-    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
+    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene)
     donor_breakpoint_genomic = anno.coordinate_gene_to_genomic(donor_breakpoint, donor_gene_id)
     ref_seq = donor_gene_seq.seq[donor_breakpoint]
 
@@ -128,14 +128,13 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
     accepter_chrom = accepter_tx_model.transcript.chrom
     accepter_tx_seq = accepter_tx_model.get_transcript_sequence(genome[accepter_chrom])
     accepter_gene_id = accepter_tx_model.gene_id
-    cds_start_tx = accepter_tx_model.get_cds_start_index()
-    cds_start_genomic = anno.coordinate_transcript_to_genomic(cds_start_tx, accepter_tx_id)
+    cds_start_genomic = anno.coordinate_transcript_to_genomic(0, accepter_tx_id)
     cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, accepter_gene_id)
-    cds_end_tx = accepter_tx_model.get_cds_end_index(accepter_tx_seq, accepter_tx_seq.orf.start)
+    cds_end_tx = len(accepter_tx_seq) - 1
     cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, accepter_tx_id)
     cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, accepter_gene_id)
 
-    accepter_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
+    accepter_breakpoint = random.randint(cds_start_gene, cds_end_gene)
 
     accepter_breakpoint_genomic = anno.coordinate_gene_to_genomic(
         accepter_breakpoint, accepter_gene_id)
@@ -427,10 +426,18 @@ def fake_circ_rna_model_circ(anno:GenomicAnnotation, tx_id:str
 
     fragments = []
     for exon in exons:
+        start=anno.coordinate_genomic_to_gene(exon.location.start, gene_id)
+        end=anno.coordinate_genomic_to_gene(exon.location.end - 1, gene_id)
+        if tx_model.transcript.strand == -1:
+            start, end = end, start
+        end += 1
+        location = FeatureLocation(start=start, end=end)
         fragment = SeqFeature(
-            chrom=tx_id, location=exon.location, attributes={}, type='exon'
+            chrom=tx_id, location=location, attributes={}, type='exon'
         )
         fragments.append(fragment)
+
+    fragments.sort()
 
     exon_indices = [f"E{x}" for x in
         range(first_exon_ind + 1, first_exon_ind + n_exons + 1)]
@@ -438,11 +445,15 @@ def fake_circ_rna_model_circ(anno:GenomicAnnotation, tx_id:str
     _id = f'CIRC-{tx_id}-' + '-'.join(exon_indices)
 
     if tx_model.transcript.strand == 1:
-        start = anno.coordinate_genomic_to_gene(exons[0].location.start, gene_id)
+        start_genomic = anno.coordinate_gene_to_genomic(
+            fragments[0].location.start, gene_id
+        )
     else:
-        start = anno.coordinate_genomic_to_gene(exons[-1].location.end - 1, gene_id)
+        start_genomic = anno.coordinate_gene_to_genomic(
+            fragments[-1].location.end - 1, gene_id
+        )
 
-    genomic_location = f"{chrom}:{start}"
+    genomic_location = f"{chrom}:{start_genomic}"
 
     return CircRNAModel(
         transcript_id=tx_id,
@@ -462,8 +473,11 @@ def fake_circ_rna_model_ci(anno:GenomicAnnotation, tx_id:str
     chrom = tx_model.transcript.chrom
 
     exon_ind = random.randint(0, len(tx_model.exon) - 2)
-    start = tx_model.exon[exon_ind].location.end
-    end = tx_model.exon[exon_ind + 1].location.start - 1
+    start = anno.coordinate_genomic_to_gene(tx_model.exon[exon_ind].location.end - 1, gene_id)
+    end = anno.coordinate_genomic_to_gene(tx_model.exon[exon_ind + 1].location.start, gene_id)
+    if tx_model.transcript.strand == -1:
+        start, end = end, start
+    end += 1
 
     location = FeatureLocation(start=start, end=end)
     fragment = SeqFeature(chrom=tx_id, location=location, attributes={}, type='intron')
@@ -472,11 +486,11 @@ def fake_circ_rna_model_ci(anno:GenomicAnnotation, tx_id:str
     _id = f'CI-{tx_id}-I{exon_ind + 1}'
 
     if tx_model.transcript.strand == 1:
-        start_gene = anno.coordinate_genomic_to_gene(introns[0].location.start, gene_id)
+        start_genomic = introns[0].location.start
     else:
-        start_gene = anno.coordinate_genomic_to_gene(introns[-1].location.end - 1, gene_id)
+        start_genomic = introns[-1].location.end - 1
 
-    genomic_location = f"{chrom}:{start_gene}"
+    genomic_location = f"{chrom}:{start_genomic}"
 
     return CircRNAModel(
         transcript_id=tx_id,
