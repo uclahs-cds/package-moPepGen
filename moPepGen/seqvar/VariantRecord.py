@@ -86,7 +86,7 @@ class VariantRecord():
     def __hash__(self):
         """ hash """
         return hash((self.location.start, self.location.end, self.ref, self.alt,
-            self.type))
+            self.type, self.id))
 
     def __repr__(self) -> str:
         """Return representation of the VEP record."""
