@@ -193,8 +193,7 @@ class BruteForceVariantPeptideCaller():
             i += 3
         return False
 
-    @staticmethod
-    def has_any_variant(lhs:int, rhs:int, cds_start:int, prev_cds_start:int,
+    def has_any_variant(self, lhs:int, rhs:int, cds_start:int, prev_cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
@@ -211,7 +210,7 @@ class BruteForceVariantPeptideCaller():
             if loc.start > rhs + 3:
                 break
             is_start_gain = start_loc.overlaps(loc)
-            is_frameshifting = prev_cds_start < loc.start and variant.is_frameshifting()
+            is_frameshifting = cds_start < loc.start and variant.is_frameshifting()
             is_cleavage_gain = loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
                     or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3)) \
                 if cds_start != lhs \
@@ -274,7 +273,7 @@ class BruteForceVariantPeptideCaller():
                 alt_splices += [x for x in pool[right_tx_id].transcriptional
                     if x.is_alternative_splicing()]
 
-            if any(x.location.start > fusion.location.start
+            if any(x.location.end > fusion.location.start
                     for x in pool[self.tx_id].transcriptional):
                 return True
 
@@ -616,47 +615,39 @@ class BruteForceVariantPeptideCaller():
             return self.tx_seq.seq[variant.location.start:variant.location.end]
         return variant.ref
 
-    def check_stop_lost(self, seq:str, variants:List[seqvar.VariantRecordWithCoordinate]
+    def check_variant_effect(self, seq:str,
+            variants:List[seqvar.VariantRecordWithCoordinate]
             ) -> List[Tuple[bool, bool, bool]]:
-        """ Checks if each variant is stop lost on each reading frame. """
-        stop_lost:List[Tuple[bool,bool,bool]] = []
+        """ """
+        stop_lost:List[Tuple[bool, bool, bool]] = []
+        stop_gain:List[Tuple[bool, bool, bool]] = []
+        silent_mutation:List[Tuple[bool, bool, bool]] = []
         for variant in variants:
+            skip_stop_lost = False
+            skip_stop_gain = False
+            skip_silent_mutation =False
+            stop_gain_i:List[bool] = []
+            stop_lost_i:List[bool] = []
+            silent_mutation_i:List[bool] = []
+
+            if variant.variant.is_fusion() or variant.variant.is_circ_rna():
+                stop_gain_i = (False, False, False)
+                skip_stop_gain = True
+
             if variant.variant.is_fusion() \
                     or variant.variant.is_circ_rna() \
                     or variant.variant.transcript_id != self.tx_id \
                     or 'TRANSCRIPT_ID' in variant.variant.attrs:
-                stop_lost.append((False, False, False))
-                continue
-            stop_lost_i:List[bool] = []
-            for i in range(3):
-                # lhs & rhs: position of the first (lhs) and last (lhs) codon
-                # that overlaps with the variant
-                lhs = variant.location.start - (variant.location.start - i) % 3
-                var_ref = self.get_variant_ref_seq(variant.variant)
-                ref_seq = seq[lhs:variant.location.start] + var_ref
-                n_carry_over = 3 - (len(ref_seq) % 3)
-                rhs = min(len(seq), variant.location.end + n_carry_over)
-                ref_seq += seq[variant.location.end:rhs]
-                j = 0
-                while j + 3 <= len(ref_seq):
-                    if ref_seq[j:j+3] in ['TAA', 'TAG', 'TGA']:
-                        stop_lost_i.append(True)
-                        break
-                    j += 3
-                else:
-                    stop_lost_i.append(False)
-            stop_lost.append(tuple(stop_lost_i))
-        return stop_lost
+                stop_lost_i = (False, False, False)
+                skip_stop_lost = True
 
-    def check_stop_gain(self, seq:str,
-            variants:List[seqvar.VariantRecordWithCoordinate]
-            ) -> List[Tuple[bool, bool, bool]]:
-        """ """
-        stop_gain:List[Tuple[bool, bool, bool]] = []
-        for variant in variants:
-            if variant.variant.is_fusion() or variant.variant.is_circ_rna():
-                stop_gain.append((False, False, False))
-            stop_gain_i:List[bool] = []
+            if variant.variant.is_fusion() \
+                    or variant.variant.is_circ_rna() \
+                    or variant.variant.is_alternative_splicing()\
+                    or variant.variant.is_frameshifting():
+                silent_mutation_i = (False, False, False)
+                skip_silent_mutation = True
+
             for i in range(3):
                 lhs = variant.location.start - (variant.location.start - i) % 3
                 var_ref = self.get_variant_ref_seq(variant.variant)
@@ -672,42 +663,23 @@ class BruteForceVariantPeptideCaller():
 
                 var_aa = Seq(var_seq).translate(to_stop=False)
                 ref_aa = Seq(ref_seq).translate(to_stop=False)
-                stop_gain_i.append(var_aa in ['*', ''] and ref_aa not in ['*', ''])
-            stop_gain.append(stop_gain_i)
-        return stop_gain
 
-    def check_silent_mutation(self, seq:str,
-            variants:List[seqvar.VariantRecordWithCoordinate]):
-        """ Check whether variants are silent mutations on each reading frame """
-        silent_mutation:List[Tuple[bool,bool,bool]] = []
-        for variant in variants:
-            if variant.variant.is_fusion() \
-                    or variant.variant.is_circ_rna() \
-                    or variant.variant.is_alternative_splicing()\
-                    or variant.variant.is_frameshifting():
-                silent_mutation.append((False, False, False))
-                continue
-            silent_i:List[bool] = []
-            for i in range(3):
-                # lhs & rhs: position of the first (lhs) and last (lhs) codon
-                # that overlaps with the variant
-                lhs = variant.location.start - (variant.location.start - i) % 3
-                var_ref = self.get_variant_ref_seq(variant.variant)
-                ref_seq = seq[lhs:variant.location.start] + var_ref
-                n_carry_over = 3 - (len(ref_seq) % 3)
-                rhs = min(len(seq), variant.location.end + n_carry_over)
-                ref_seq += seq[variant.location.end:rhs]
+                if not skip_stop_lost:
+                    is_stop_lost = '*' not in var_aa and '*' in ref_aa
+                    stop_lost_i.append(is_stop_lost)
 
-                var_seq = seq[lhs:variant.location.end]
-                n_carry_over = 3 - (len(var_seq) % 3)
-                rhs = min(len(seq), variant.location.end + n_carry_over)
-                var_seq += seq[variant.location.end:rhs]
+                if not skip_stop_gain:
+                    is_stop_gain = var_aa == '' or var_aa.startswith('*') \
+                        and not (ref_aa == '' or ref_aa.startswith('*'))
+                    stop_gain_i.append(is_stop_gain)
 
-                silent_i.append(
-                    ref_seq.translate(to_stop=False) == var_seq.translate(to_stop=False)
-                )
-            silent_mutation.append(tuple(silent_i))
-        return silent_mutation
+                if not skip_silent_mutation:
+                    is_silent_mutation = ref_aa == var_aa
+                    silent_mutation_i.append(is_silent_mutation)
+            stop_lost.append(tuple(stop_lost_i))
+            stop_gain.append(tuple(stop_gain_i))
+            silent_mutation.append(tuple(silent_mutation_i))
+        return stop_lost, stop_gain, silent_mutation
 
     def call_peptides_main(self, variants:seqvar.VariantRecordPool):
         """ Call peptide main """
@@ -735,9 +707,8 @@ class BruteForceVariantPeptideCaller():
                 variants=variants[self.tx_id].transcriptional, pool=variants
             )
 
-        stop_lost = self.check_stop_lost(seq, variant_coordinates)
-        stop_gain = self.check_stop_gain(seq, variant_coordinates)
-        silent_mutation = self.check_silent_mutation(seq, variant_coordinates)
+        variant_effects = self.check_variant_effect(seq, variant_coordinates)
+        stop_lost, stop_gain, silent_mutation = variant_effects
 
         if not (tx_model.is_protein_coding and tx_model.is_mrna_end_nf()):
             cur_cds_end = len(seq)
