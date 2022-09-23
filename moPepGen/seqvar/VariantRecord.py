@@ -85,8 +85,18 @@ class VariantRecord():
 
     def __hash__(self):
         """ hash """
+        donor_tx_id = self.attrs.get('DONOR_TRANSCRIPT_ID')
+        start = self.attrs.get('START')
+        end = self.attrs.get('END')
+        donor_start = self.attrs.get('DONOR_START')
+        donor_end = self.attrs.get('DONOR_END')
+        left_insert_start = self.attrs.get('LEFT_INSERT_START')
+        left_insert_end = self.attrs.get('LEFT_INSERT_END')
+        right_insert_start = self.attrs.get('RIGHT_INSERT_START')
+        right_insert_end = self.attrs.get('RIGHT_INSERT_END')
         return hash((self.location.start, self.location.end, self.ref, self.alt,
-            self.type, self.id))
+            self.type, self.id, donor_tx_id, start, end, donor_start, donor_end,
+            left_insert_start, left_insert_end, right_insert_start, right_insert_end))
 
     def __repr__(self) -> str:
         """Return representation of the VEP record."""
