@@ -334,7 +334,17 @@ class BruteForceVariantPeptideCaller():
             return True
 
         # check if there are multiple novel transcript variants (fusion + circ)
-        if len(pool[self.tx_id].fusion) + len(pool[self.tx_id].circ_rna) > 1:
+        n_fusion = len(pool[self.tx_id].fusion)
+        n_circ = len(pool[self.tx_id].circ_rna)
+        n_alt_splice = len([x for x in pool[self.tx_id].transcriptional
+            if x.type in ALTERNATIVE_SPLICING_TYPES])
+        for fusion in pool[self.tx_id].fusion:
+            accepter_tx_id = fusion.attrs['ACCEPTER_TRANSCRIPT_ID']
+            if accepter_tx_id not in pool:
+                continue
+            n_alt_splice += len([x for x in pool[accepter_tx_id].transcriptional
+                if x.type in ALTERNATIVE_SPLICING_TYPES])
+        if n_fusion + n_circ + n_alt_splice > 1:
             return True
 
         if self.has_any_invalid_variants_on_inserted_sequences(pool):
@@ -534,7 +544,7 @@ class BruteForceVariantPeptideCaller():
         var_seq = seq[:fusion.location.start]
         location = FeatureLocation(start=0, end=len(var_seq))
         var_seq, variant_coordinates = self.get_variant_sequence(
-            seq=var_seq, location=location, offset=len(var_seq),
+            seq=var_seq, location=location, offset=0,
             variants=variants[self.tx_id].transcriptional, pool=variants
         )
 
