@@ -1334,9 +1334,9 @@ class ThreeFrameTVG():
                     and any(x.reading_frame_index != rf_index for x in out_node.get_out_nodes())
                 new_node.append_right(out_node)
                 new_node.was_bridge = was_bridge
-                new_node.subgraph_id = new_node.subgraph_id \
-                    if new_node.level >= out_node.level \
-                    else out_node.subgraph_id
+                if new_node.level < out_node.level:
+                    new_node.subgraph_id = out_node.subgraph_id
+                    new_node.level = out_node.level
 
                 for edge in copy.copy(out_node.out_edges):
                     edge_type = 'reference' \

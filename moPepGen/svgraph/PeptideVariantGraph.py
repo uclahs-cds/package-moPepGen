@@ -278,6 +278,9 @@ class PeptideVariantGraph():
                     new_node = node.copy(in_nodes=False, out_nodes=False)
                 else:
                     new_node.append_right(node)
+                    if new_node.level < node.level:
+                        new_node.subgraph_id = node.subgraph_id
+                        new_node.level = node.level
                     if node_is_bridge:
                         new_node.was_bridge = True
                     trash.add((route[i-1], node))
