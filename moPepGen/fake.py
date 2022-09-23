@@ -362,7 +362,7 @@ def fake_mxe_substitution(anno:GenomicAnnotation, genome:DNASeqDict,
     first_end_genomic = exon.location.end
 
     second_start_genomic = random.randint(intron_start + 1, intron_end - 2)
-    second_end_genomic = random.randint(second_start_genomic, intron_end - 1)
+    second_end_genomic = random.randint(second_start_genomic + 2, intron_end - 1)
 
     first_start_gene = anno.coordinate_genomic_to_gene(first_start_genomic, gene_id)
     first_end_gene = anno.coordinate_genomic_to_gene(first_end_genomic - 1, gene_id)
