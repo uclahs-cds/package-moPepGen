@@ -273,7 +273,7 @@ class BruteForceVariantPeptideCaller():
                 alt_splices += [x for x in pool[right_tx_id].transcriptional
                     if x.is_alternative_splicing()]
 
-            if any(x.location.end > fusion.location.start
+            if any(x.location.end >= fusion.location.start
                     for x in pool[self.tx_id].transcriptional):
                 return True
 
@@ -718,7 +718,8 @@ class BruteForceVariantPeptideCaller():
             cds_start_positions = alt_seq.find_all_start_codons()
         else:
             cds_start = tx_seq.orf.start
-            cds_start_positions = [cds_start]
+            cds_start_positions:List[int] = [cds_start]
+
 
         for cds_start in cds_start_positions:
             cur_cds_end = len(seq) - (len(seq) - cds_start) % 3
@@ -727,9 +728,19 @@ class BruteForceVariantPeptideCaller():
             aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
 
             sites = aa_seq.find_all_enzymatic_cleave_sites(rule, exception)
+
+            # Finding the next M, so peptides that starts from the next M should
+            # be processed with the correct `cds_start`
+            if not tx_model.is_protein_coding or is_circ_rna:
+                next_m = aa_seq.seq[1:].find('M') + 1
+            else:
+                next_m = 0
+
             sites.insert(0, 0)
             sites.append(len(aa_seq))
             for j, lhs in enumerate(sites[:-1]):
+                if 0 < next_m < lhs:
+                    break
                 last_m = aa_seq.seq[:lhs].rfind('M')
                 if last_m > 0 and not tx_model.is_protein_coding:
                     actual_cds_start = cds_start + last_m * 3
