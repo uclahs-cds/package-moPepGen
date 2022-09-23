@@ -570,6 +570,14 @@ class BruteForceVariantPeptideCaller():
                 offset=len(var_seq) + len(additional_seq),
                 variants=insert_variants, pool=variants
             )
+            location=FeatureLocation(
+                start=len(var_seq),
+                end=len(var_seq) + len(insert_seq)
+            )
+            insert_fusion = VariantRecordWithCoordinate(
+                variant=fusion, location=location
+            )
+            insert_variants.insert(0, insert_fusion)
             additional_seq += insert_seq
             additional_variants += insert_variants
 
@@ -586,6 +594,14 @@ class BruteForceVariantPeptideCaller():
                 variants=variants[right_tx_id].intronic if right_tx_id in variants else [],
                 pool=variants
             )
+            location=FeatureLocation(
+                start=len(var_seq) + len(additional_seq),
+                end=len(var_seq) + len(additional_seq) + len(insert_seq)
+            )
+            insert_fusion = VariantRecordWithCoordinate(
+                variant=fusion, location=location
+            )
+            insert_variants.insert(0, insert_fusion)
             additional_seq += insert_seq
             additional_variants += insert_variants
 
@@ -608,13 +624,18 @@ class BruteForceVariantPeptideCaller():
             variants=variants[right_tx_id].transcriptional if right_tx_id in variants else [],
             pool=variants
         )
+
+        location = FeatureLocation(
+            start=len(var_seq) + len(additional_seq),
+            end=len(var_seq) + len(additional_seq) + len(insert_seq)
+        )
+        fusion_var = VariantRecordWithCoordinate(variant=fusion, location=location)
+        insert_variants.insert(0, fusion_var)
+
         additional_seq += insert_seq
         additional_variants += insert_variants
 
-        location = FeatureLocation(start=len(var_seq), end=len(var_seq) + len(additional_seq))
-        fusion_var = VariantRecordWithCoordinate(variant=fusion, location=location)
         var_seq += additional_seq
-        variant_coordinates.append(fusion_var)
         variant_coordinates += additional_variants
 
         return var_seq, variant_coordinates
@@ -699,8 +720,10 @@ class BruteForceVariantPeptideCaller():
         exception = self.cleavage_params.exception
 
         is_circ_rna = False
+        is_fusion = False
 
         if variants[self.tx_id].fusion:
+            is_fusion = True
             seq, variant_coordinates = self.get_variant_sequence_fusion(
                 seq=tx_seq.seq, variants=variants
             )
@@ -726,6 +749,15 @@ class BruteForceVariantPeptideCaller():
         if not tx_model.is_protein_coding or is_circ_rna:
             alt_seq = dna.DNASeqRecord(seq)
             cds_start_positions = alt_seq.find_all_start_codons()
+            if is_fusion:
+                fusion_var = None
+                # Get the last fusion, which should be the actual fusion
+                # no insertions of intronic regions.
+                for variant in variant_coordinates:
+                    if variant.variant.is_fusion():
+                        fusion_var = variant
+                cds_start_positions = [x for x in cds_start_positions
+                    if x <= fusion_var.location.start]
         else:
             cds_start = tx_seq.orf.start
             cds_start_positions:List[int] = [cds_start]
