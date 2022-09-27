@@ -1019,6 +1019,9 @@ class PeptideVariantGraph():
 
             for variant in target_node.variants:
                 if variant.is_stop_altering:
+                    if start_indices:
+                        if variant.location.end < start_indices[-1]:
+                            continue
                     start_gain.append(variant.variant)
 
             cur_cleavage_gain = copy.copy(cleavage_gain)
