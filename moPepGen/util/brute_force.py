@@ -344,7 +344,11 @@ class BruteForceVariantPeptideCaller():
                 continue
             n_alt_splice += len([x for x in pool[accepter_tx_id].transcriptional
                 if x.type in ALTERNATIVE_SPLICING_TYPES])
-        if n_fusion + n_circ + n_alt_splice > 1:
+        if n_fusion + n_circ > 1:
+            return True
+        
+        # not allowing any alternative splicing comb with fusion or circ
+        if (n_fusion > 0 or n_circ > 0) and n_alt_splice > 0:
             return True
 
         if self.has_any_invalid_variants_on_inserted_sequences(pool):
