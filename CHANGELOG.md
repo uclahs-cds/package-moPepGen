@@ -10,11 +10,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.9.5] - 2022-09-11
+## [0.9.5] - 2022-09-28
 
 ## Added
 
 - Added support for fusion, alternative splicing and circRNA in `bruteForce`.
+
+## Fixed
+
+- Several issues of `bruteForce` were fixed for fusion, alternative splicing and circRNA to be consistent with `callVariant`.
+
+- In `ThreeFrameTVG` and `PeptideVariantGraph`, large deletions (for alternative splicing) are no longer treated as subgraphs any more. 
+
+- Fixed the issue that the `subgraph_id` attributes of `TVGNode` and `PVGNode` are lost after nodes are merged.
+
+- When expanding the aligned variant bubble, if the downstream node of the start node has multiple inbond nodes, nucleotides will be taken from the downstream node and added to each upstreams
+
+- Fixed `callVariant` that when filtering variants that are compatible with fusion, the breakpoint site were not recogniazed correctly.
+
+- For `ThreeFrameTVG', when aligning variant bubbles, if the end of the first variant is the start of the next (e.g. alternative splicing events that sharing the same splicing site), the bubbles will then contain both variants
+
+- Fixed `callVariant` that mutations are assigned as stop altering mutation when there is a start codon after it.
+
+- Fixed `callVariant` that alternative splicing variants were not recognized as stop altering mutation correctly because their reference sequence from GVF is only the first nucleotide. 
 
 ## [0.9.4] - 2022-09-07
 
