@@ -1158,7 +1158,8 @@ class ThreeFrameTVG():
                 if cur is farthest and cur is not node:
                     if not cur.out_edges:
                         continue
-                    if cur.get_reference_next().has_in_bridge():
+                    if cur.get_reference_next().has_in_bridge() \
+                            or cur.get_reference_next().has_in_subgraph():
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
                     # if the farthest has less than 6 neucleotides, continue

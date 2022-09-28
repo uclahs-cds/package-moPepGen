@@ -162,6 +162,11 @@ class TVGNode():
         """ check if it has any in node from different reading frame """
         return any(e.in_node.reading_frame_index != self.reading_frame_index
             for e in self.in_edges)
+        
+    def has_in_subgraph(self) -> bool:
+        """ check if it has any in node from different reading frame """
+        return any(e.in_node.subgraph_id != self.subgraph_id
+            for e in self.in_edges)
 
     def is_bridge_to_subgraph(self) -> bool:
         """ check if it is a bridge node to a subgraph """
