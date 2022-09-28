@@ -1134,7 +1134,7 @@ class PVGTraversal():
             return 1
         if x.start_gain and y.start_gain:
             return -1 if sorted(x.start_gain)[0] > sorted(y.start_gain)[0] else 1
-        
+
         if x.cleavage_gain and not y.cleavage_gain:
             return -1
         if not x.cleavage_gain and y.cleavage_gain:

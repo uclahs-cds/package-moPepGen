@@ -193,7 +193,8 @@ class BruteForceVariantPeptideCaller():
             i += 3
         return False
 
-    def has_any_variant(self, lhs:int, rhs:int, cds_start:int, prev_cds_start:int,
+    @staticmethod
+    def has_any_variant(lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
@@ -346,7 +347,7 @@ class BruteForceVariantPeptideCaller():
                 if x.type in ALTERNATIVE_SPLICING_TYPES])
         if n_fusion + n_circ > 1:
             return True
-        
+
         # not allowing any alternative splicing comb with fusion or circ
         if (n_fusion > 0 or n_circ > 0) and n_alt_splice > 0:
             return True
@@ -653,7 +654,8 @@ class BruteForceVariantPeptideCaller():
     def check_variant_effect(self, seq:str,
             variants:List[seqvar.VariantRecordWithCoordinate]
             ) -> List[Tuple[bool, bool, bool]]:
-        """ """
+        """ Check the variant effects, including stop lost, stop gain, and
+        silent mutation """
         stop_lost:List[Tuple[bool, bool, bool]] = []
         stop_gain:List[Tuple[bool, bool, bool]] = []
         silent_mutation:List[Tuple[bool, bool, bool]] = []
@@ -793,17 +795,17 @@ class BruteForceVariantPeptideCaller():
                 else:
                     actual_cds_start = cds_start
 
-                prev_cds_start = self.find_prev_cds_start_same_frame(
-                    cds_start=actual_cds_start,
-                    cds_start_positions=cds_start_positions
-                )
+                # prev_cds_start = self.find_prev_cds_start_same_frame(
+                #     cds_start=actual_cds_start,
+                #     cds_start_positions=cds_start_positions
+                # )
 
                 for k in range(j + 1, min([j + 3, len(sites) - 1]) + 1):
                     rhs = sites[k]
                     tx_lhs = cds_start + lhs * 3
                     tx_rhs = cds_start + rhs * 3
                     if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
-                            prev_cds_start, variant_coordinates, stop_lost,
+                            variant_coordinates, stop_lost,
                             stop_gain, silent_mutation):
                         continue
 
