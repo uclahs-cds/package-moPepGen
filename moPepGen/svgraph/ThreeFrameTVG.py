@@ -1174,7 +1174,9 @@ class ThreeFrameTVG():
                 queue.append(cur)
                 continue
 
-            if not cur.is_reference():
+            if not cur.is_reference() \
+                    or ( len(cur.out_edges) > 1
+                        and any(len(x.in_edges) > 1 for x in cur.get_out_nodes())):
                 for edge in cur.out_edges:
                     queue.append(edge.out_node)
                 continue
@@ -1547,7 +1549,7 @@ class ThreeFrameTVG():
                 else:
                     orf = out_node.orf
 
-                out_node.check_stop_altering(orf[1])
+                out_node.check_stop_altering(self.seq.seq, orf[1])
 
                 new_pnode = out_node.translate()
 
