@@ -278,7 +278,7 @@ def fake_intron_insertion(anno:GenomicAnnotation, genome:DNASeqDict,
 
     if rmats_type in ['SE', 'MXE']:
         start_genomic = random.randint(intron_start + 1, intron_end - 2)
-        end_genomic = random.randint(start_genomic, intron_end - 1)
+        end_genomic = random.randint(start_genomic + 1, intron_end - 1)
     elif rmats_type == 'RI':
         start_genomic = intron_start
         end_genomic = intron_end
@@ -289,7 +289,7 @@ def fake_intron_insertion(anno:GenomicAnnotation, genome:DNASeqDict,
     elif (rmats_type == 'A3SS' and gene_model.strand == -1)\
             or (rmats_type == 'A5SS' and gene_model.strand == 1):
         start_genomic = intron_start
-        end_genomic = random.randint(start_genomic, intron_end - 1)
+        end_genomic = random.randint(start_genomic + 1, intron_end - 2)
     else:
         raise ValueError(
             "Alternative splicing even could not be recognized with rmats_type"
