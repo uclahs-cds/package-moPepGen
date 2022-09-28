@@ -1022,7 +1022,7 @@ class PeptideVariantGraph():
                     if start_indices and variant.location.end < start_indices[-1]:
                         continue
                     start_gain.append(variant.variant)
-s
+
             cur_cleavage_gain = copy.copy(cleavage_gain)
 
             cursor = PVGCursor(target_node, out_node, in_cds, orf,
