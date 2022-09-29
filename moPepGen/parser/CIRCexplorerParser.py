@@ -39,7 +39,7 @@ class CIRCexplorer2KnownRecord():
     def convert_to_circ_rna(self, anno:gtf.GenomicAnnotation,
             intron_start_range:Tuple[int,int]=(0,0),
             intron_end_range:Tuple[int,int]=(0,0)) -> CircRNAModel:
-        """ COnvert a CIRCexplorerKnownRecord to CircRNAModel. """
+        """ Convert a CIRCexplorerKnownRecord to CircRNAModel. """
         tx_id = self.isoform_name
         tx_model = anno.transcripts[tx_id]
         gene_id = tx_model.transcript.gene_id

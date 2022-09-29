@@ -163,6 +163,11 @@ class TVGNode():
         return any(e.in_node.reading_frame_index != self.reading_frame_index
             for e in self.in_edges)
 
+    def has_in_subgraph(self) -> bool:
+        """ check if it has any in node from different reading frame """
+        return any(e.in_node.subgraph_id != self.subgraph_id
+            for e in self.in_edges)
+
     def is_bridge_to_subgraph(self) -> bool:
         """ check if it is a bridge node to a subgraph """
         return any(e.in_node.subgraph_id != self.subgraph_id for e in self.in_edges)
@@ -523,14 +528,17 @@ class TVGNode():
             level=self.level
         )
 
-    def get_ref_sequence(self) -> Seq:
+    def get_ref_sequence(self, tx_seq:Seq) -> Seq:
         """ Get the reference sequence """
         if not self.variants:
             return self.seq.seq
 
         seq = self.seq.seq[:self.variants[0].location.start]
         for i, variant in enumerate(self.variants):
-            seq += variant.variant.ref
+            if variant.variant.type in ['Deletion', 'Substitution']:
+                seq += tx_seq[variant.variant.location.start:variant.variant.location.end]
+            else:
+                seq += variant.variant.ref
             if i + 1 >= len(self.variants):
                 seq += self.seq.seq[variant.location.end:]
             else:
@@ -539,7 +547,7 @@ class TVGNode():
 
         return seq
 
-    def check_stop_altering(self, cds_end:int=None):
+    def check_stop_altering(self, tx_seq:Seq, cds_end:int=None):
         """ Checks whether each variant is stop lost """
         if not self.variants:
             return
@@ -554,7 +562,7 @@ class TVGNode():
                     variant.is_stop_altering = True
             return
 
-        ref_seq = self.get_ref_sequence()
+        ref_seq = self.get_ref_sequence(tx_seq)
         ref_seq = ref_seq[:math.floor(len(ref_seq)/3)*3]
         ref_aa = ref_seq.translate(to_stop=False)
         stop_positions = [x.start() * 3 for x in re.finditer(r'\*', str(ref_aa))]
@@ -570,7 +578,7 @@ class TVGNode():
 
         while i_stop is not None and i_var is not None:
             # Should not contain variants other than indel or snv
-            var_size = len(i_var.variant.ref)
+            var_size = len(i_var.variant.location)
             if i_var.location.start + offset + var_size < i_stop:
                 i_var = next(iter_var, None)
                 continue

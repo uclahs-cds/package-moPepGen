@@ -278,6 +278,9 @@ class PeptideVariantGraph():
                     new_node = node.copy(in_nodes=False, out_nodes=False)
                 else:
                     new_node.append_right(node)
+                    if new_node.level < node.level:
+                        new_node.subgraph_id = node.subgraph_id
+                        new_node.level = node.level
                     if node_is_bridge:
                         new_node.was_bridge = True
                     trash.add((route[i-1], node))
@@ -1016,6 +1019,8 @@ class PeptideVariantGraph():
 
             for variant in target_node.variants:
                 if variant.is_stop_altering:
+                    if start_indices and variant.location.end < start_indices[-1]:
+                        continue
                     start_gain.append(variant.variant)
 
             cur_cleavage_gain = copy.copy(cleavage_gain)
@@ -1129,6 +1134,14 @@ class PVGTraversal():
             return 1
         if x.start_gain and y.start_gain:
             return -1 if sorted(x.start_gain)[0] > sorted(y.start_gain)[0] else 1
+
+        if x.cleavage_gain and not y.cleavage_gain:
+            return -1
+        if not x.cleavage_gain and y.cleavage_gain:
+            return 1
+        if x.cleavage_gain and y.cleavage_gain:
+            return -1 if sorted(x.cleavage_gain)[0] > sorted(y.cleavage_gain)[0] else 1
+
         return -1
 
     @staticmethod

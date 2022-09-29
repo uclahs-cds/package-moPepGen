@@ -726,3 +726,33 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/19/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000452737.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case48(self):
+        """ Test case from fuzz test that subgraph identity got lost after
+        mergine. #566 """
+        gvf = [
+            self.data_dir/'fuzz/20/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/20/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case49(self):
+        """ Test case from fuzz test that variants are not filtered correctly
+        for fusion. #567 """
+        gvf = [
+            self.data_dir/'fuzz/21/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/21/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case50(self):
+        """ Test case from fuzz test that stop altering variants where there
+        is any novel start codon after it should be ignored. #568 """
+        gvf = [
+            self.data_dir/'fuzz/22/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/22/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)

@@ -5,13 +5,13 @@ from contextlib import redirect_stdout
 from datetime import datetime, timedelta
 from pathlib import Path
 import random
-import tempfile
+import shutil
 import traceback
 from typing import Iterable, List, Union
 import sys
 import uuid
 from Bio import SeqIO
-from moPepGen import ERROR_INDEX_IN_INTRON, GVF_HEADER, fake
+from moPepGen import ERROR_INDEX_IN_INTRON, fake, seqvar, circ
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.circ import CircRNAModel
 from moPepGen.util.common import load_references
@@ -174,9 +174,14 @@ class FuzzRecord():
         return record
 
     @property
-    def gvf_file(self) -> Path:
+    def var_gvf_file(self) -> Path:
         """ File path to the GVF file that contains the faked variants """
         return self.work_dir/'fake_variants.gvf'
+
+    @property
+    def circ_gvf_file(self) -> Path:
+        """ CircRNA GVF file """
+        return self.work_dir/'fake_circ_rna.gvf'
 
     @property
     def call_variant_fasta(self) -> Path:
@@ -271,6 +276,8 @@ class FuzzTestCase():
             self.record.brute_force_ends()
             status = self.assert_equal()
             self.record.complete(status)
+            if status == 'SUCCEEDED':
+                shutil.rmtree(self.config.temp_dir/self.record.id)
         # pylint: disable=W0703
         except Exception as error:
             self.record.complete('FAILED')
@@ -332,34 +339,36 @@ class FuzzTestCase():
 
     def write_variants(self, variants:Iterable[Union[VariantRecord,CircRNAModel]]):
         """ Write variants to file """
+        var_records = []
+        circ_records = []
+
+        for v in variants:
+            if v.__class__ is CircRNAModel:
+                circ_records.append(v)
+            else:
+                var_records.append(v)
+
         args = argparse.Namespace()
         args.index_dir = None
-        args.command = ''
+        args.command = 'parseVEP'
         args.source = ''
         metadata = generate_metadata(args)
-        with tempfile.TemporaryFile(mode='w+t') as temp_file:
-            temp_file.write('#' + '\t'.join(GVF_HEADER))
-            for record in variants:
-                if record.__class__ is CircRNAModel:
-                    metadata.add_info('circRNA')
-                else:
-                    metadata.add_info(record.type)
-                line = record.to_string()
-                temp_file.write(line + '\n')
-            with open(self.record.gvf_file, 'w') as out_file:
-                for line in metadata.to_strings():
-                    out_file.write(line + '\n')
+        seqvar.io.write(var_records, self.record.var_gvf_file, metadata)
 
-                temp_file.seek(0)
-                for line in temp_file:
-                    out_file.write(line)
+        args.command = 'parseCIRCexplorer'
+        metadata = generate_metadata(args)
+        if circ_records:
+            with open(self.record.circ_gvf_file, 'w') as handle:
+                circ.io.write(circ_records, metadata, handle)
 
     def call_variants(self):
         """ call variants using moPepGen's graph algorithm """
         args = argparse.Namespace()
         args.index_dir = None
         args.command = 'callPeptides'
-        args.input_path = [self.record.gvf_file]
+        args.input_path = [self.record.var_gvf_file]
+        if self.record.circ_gvf_file.exists():
+            args.input_path.append(self.record.circ_gvf_file)
         args.genome_fasta = self.config.path_genome_fasta
         args.annotation_gtf = self.config.path_annotation_gtf
         args.proteome_fasta = self.config.path_proteome_fasta
@@ -385,7 +394,9 @@ class FuzzTestCase():
     def brute_force(self):
         """ call the brute force variant peptide caller """
         args = argparse.Namespace()
-        args.input_gvf = [self.record.gvf_file]
+        args.input_gvf = [self.record.var_gvf_file]
+        if self.record.circ_gvf_file.exists():
+            args.input_gvf.append(self.record.circ_gvf_file)
         args.reference_dir = self.config.ref_dir
         args.force = True
         args.variant_ids = []

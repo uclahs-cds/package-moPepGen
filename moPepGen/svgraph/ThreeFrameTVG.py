@@ -355,16 +355,6 @@ class ThreeFrameTVG():
             level=self.root.level
         )
 
-        if is_deletion:
-            subgraph_id = self.subgraphs.generate_subgraph_id()
-            var_node.subgraph_id = subgraph_id
-            level = self.root.level + 1
-            var_node.level = level
-            self.subgraphs.add_subgraph(
-                child_id=subgraph_id, parent_id=self.id, level=level,
-                start=variant.location.start, end=variant.location.end
-            )
-
         returns = [None, None]
         # variant start
         if variant_start == source_start:
@@ -1168,7 +1158,8 @@ class ThreeFrameTVG():
                 if cur is farthest and cur is not node:
                     if not cur.out_edges:
                         continue
-                    if cur.get_reference_next().has_in_bridge():
+                    if cur.get_reference_next().has_in_bridge() \
+                            or cur.get_reference_next().has_in_subgraph():
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
                     # if the farthest has less than 6 neucleotides, continue
@@ -1184,7 +1175,9 @@ class ThreeFrameTVG():
                 queue.append(cur)
                 continue
 
-            if not cur.is_reference():
+            if not cur.is_reference() \
+                    or ( len(cur.out_edges) > 1
+                        and any(len(x.in_edges) > 1 for x in cur.get_out_nodes())):
                 for edge in cur.out_edges:
                     queue.append(edge.out_node)
                 continue
@@ -1344,6 +1337,9 @@ class ThreeFrameTVG():
                     and any(x.reading_frame_index != rf_index for x in out_node.get_out_nodes())
                 new_node.append_right(out_node)
                 new_node.was_bridge = was_bridge
+                if new_node.level < out_node.level:
+                    new_node.subgraph_id = out_node.subgraph_id
+                    new_node.level = out_node.level
 
                 for edge in copy.copy(out_node.out_edges):
                     edge_type = 'reference' \
@@ -1379,7 +1375,7 @@ class ThreeFrameTVG():
 
         return start_node, end_node
 
-    def expand_alignments(self, start:TVGNode) -> TVGNode:
+    def expand_alignments(self, start:TVGNode) -> List[TVGNode]:
         r""" Expand the aligned variants into the range of codons. For
         frameshifting mutations, a copy of each downstream node will be
         created and branched out. Exclusive nodes are merged.
@@ -1401,6 +1397,13 @@ class ThreeFrameTVG():
             expension is returned, and for siblings more than 1, the common
             downstream node is returned.
         """
+        if len(start.out_edges) == 1 and len(start.get_out_nodes()[0].in_edges) > 1:
+            downstream = start.get_out_nodes()[0]
+            right_index = (3 - len(start.seq) % 3) % 3
+            right_over = downstream.truncate_left(right_index)
+            for in_node in downstream.get_in_nodes():
+                in_node.append_right(right_over)
+            return [downstream]
         # number of NT to be carried over to the downstreams.
         if start.seq:
             left_index = len(start.seq) - len(start.seq) % 3
@@ -1547,7 +1550,7 @@ class ThreeFrameTVG():
                 else:
                     orf = out_node.orf
 
-                out_node.check_stop_altering(orf[1])
+                out_node.check_stop_altering(self.seq.seq, orf[1])
 
                 new_pnode = out_node.translate()
 
