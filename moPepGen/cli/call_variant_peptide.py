@@ -197,14 +197,14 @@ def call_variant_peptides_wrapper(tx_id:str,
     peptides = set()
     exclude_variant_types = ['Fusion', 'Insertion', 'Deletion', 'Substitution', 'circRNA']
     for variant in variant_series.fusion:
-        donor_breakpoint = reference_data.anno.coordinate_transcript_to_genomic(
+        donor_breakpoint_genomic = reference_data.anno.coordinate_transcript_to_genomic(
             index=variant.location.start, transcript=tx_id
         )
-        donor_breakpoint = reference_data.anno.coordinate_genomic_to_gene(
-            index=donor_breakpoint, gene=variant.attrs['GENE_ID']
+        donor_breakpoint_gene = reference_data.anno.coordinate_genomic_to_gene(
+            index=donor_breakpoint_genomic, gene=variant.attrs['GENE_ID']
         )
         filtered_variants = pool.filter_variants(
-            tx_ids=[tx_id], start=0, end=donor_breakpoint,
+            tx_ids=[tx_id], start=0, end=donor_breakpoint_gene,
             exclude_type=exclude_variant_types, intron=False,
             return_coord='transcript'
         )
