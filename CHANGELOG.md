@@ -20,19 +20,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Several issues of `bruteForce` were fixed for fusion, alternative splicing and circRNA to be consistent with `callVariant`.
 
-- In `ThreeFrameTVG` and `PeptideVariantGraph`, large deletions (for alternative splicing) are no longer treated as subgraphs any more. 
+- In `ThreeFrameTVG` and `PeptideVariantGraph`, large deletions (for alternative splicing) are no longer treated as subgraphs any more.
 
-- Fixed the issue that the `subgraph_id` attributes of `TVGNode` and `PVGNode` are lost after nodes are merged.
+- Fixed the issue that the `subgraph_id` attributes of `TVGNode` and `PVGNode` are lost after nodes are merged. #566
 
 - When expanding the aligned variant bubble, if the downstream node of the start node has multiple inbond nodes, nucleotides will be taken from the downstream node and added to each upstreams
 
-- Fixed `callVariant` that when filtering variants that are compatible with fusion, the breakpoint site were not recogniazed correctly.
+- Fixed `callVariant` that when filtering variants that are compatible with fusion, the breakpoint site were not recognized correctly. #567
 
-- For `ThreeFrameTVG', when aligning variant bubbles, if the end of the first variant is the start of the next (e.g. alternative splicing events that sharing the same splicing site), the bubbles will then contain both variants
+- For `ThreeFrameTVG', when aligning variant bubbles, if the end of the first variant is the start of the next (e.g. alternative splicing events that sharing the same splicing site), the merged bubble will then contain both variants
 
-- Fixed `callVariant` that mutations are assigned as stop altering mutation when there is a start codon after it.
+- Fixed `callVariant` that mutations are assigned as stop altering mutation when there is a start codon after it. #568
 
-- Fixed `callVariant` that alternative splicing variants were not recognized as stop altering mutation correctly because their reference sequence from GVF is only the first nucleotide. 
+- Fixed `callVariant` that alternative splicing variants were not recognized as stop altering mutation correctly because their reference sequence from GVF is only the first nucleotide. #569
 
 ## [0.9.4] - 2022-09-07
 
