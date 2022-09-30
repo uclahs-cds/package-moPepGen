@@ -779,7 +779,8 @@ class BruteForceVariantPeptideCaller():
 
             # Finding the next M, so peptides that starts from the next M should
             # be processed with the correct `cds_start`
-            if not tx_model.is_protein_coding or is_circ_rna:
+            if (not tx_model.is_protein_coding or is_circ_rna) \
+                    and not (is_fusion and cds_start == cds_start_positions[-1]):
                 next_m = aa_seq.seq[1:].find('M') + 1
             else:
                 next_m = 0
