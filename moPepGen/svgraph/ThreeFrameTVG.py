@@ -182,7 +182,18 @@ class ThreeFrameTVG():
     @staticmethod
     def is_reference_edge(in_node:TVGNode, out_node:TVGNode):
         """ checks if this is a reference edge """
-        return out_node.is_reference() and out_node.subgraph_id == in_node.subgraph_id
+        if out_node.is_reference() and out_node.subgraph_id == in_node.subgraph_id:
+            return True
+        in_vars = {x.variant for x in in_node.variants}
+        out_vars = {x.variant for x in out_node.variants}
+
+        if in_vars == out_vars:
+            return True
+
+        if not in_vars and len(out_vars) == 1 and list(out_vars)[0].is_fusion():
+            return True
+
+        return False
 
     def remove_node(self, node:TVGNode):
         """ Remove a node from its inboud and outbound node. """
@@ -1158,8 +1169,14 @@ class ThreeFrameTVG():
                 if cur is farthest and cur is not node:
                     if not cur.out_edges:
                         continue
+
+                    downstream = cur.get_reference_next()
+                    downstream_has_subgraph_in = \
+                        not any(x.variant.is_fusion() for x in downstream.variants) \
+                        and downstream.has_in_subgraph()
+
                     if cur.get_reference_next().has_in_bridge() \
-                            or cur.get_reference_next().has_in_subgraph():
+                            or downstream_has_subgraph_in:
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
                     # if the farthest has less than 6 neucleotides, continue

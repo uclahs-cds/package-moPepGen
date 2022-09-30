@@ -756,3 +756,19 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/22/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case51(self):
+        """ An issue caught by fuzz test. In #684b6f we fixe it in the way that
+        when finding the farthest downstream reference node for aligning the
+        variant bubble, if the downstream node has a incoming node from a different
+        subgraph, a farther downstream node will be taken. But in the case of
+        fusion with insertions, the first node of a subgraph always have a
+        incoming node from a different subgraph. And this causes the entire
+        fusion graph to be resolved. So here we made it an exception for fusion.
+        """
+        gvf = [
+            self.data_dir/'fuzz/23/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/23/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)
