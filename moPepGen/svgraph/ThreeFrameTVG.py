@@ -1102,6 +1102,15 @@ class ThreeFrameTVG():
             if node in subgraph_out:
                 subgraph_in.remove(node)
                 subgraph_out.remove(node)
+
+        inframe_singleton_subgraphs = set()
+        for node in subgraph_out:
+            if node in subgraph_in:
+                inframe_singleton_subgraphs.add(node)
+
+        subgraph_in = {x for x in subgraph_in if x not in inframe_singleton_subgraphs}
+        subgraph_out = {x for x in subgraph_out if x not in inframe_singleton_subgraphs}
+
         return bridge_in, bridge_out, subgraph_in, subgraph_out
 
     @staticmethod
@@ -1144,8 +1153,12 @@ class ThreeFrameTVG():
             return None
         if not node.get_reference_next().out_edges:
             return node.get_reference_next()
-        queue = deque([edge.out_node for edge in node.out_edges])
-        visited = {node}
+        queue:Deque[TVGNode] = deque([edge.out_node for edge in node.out_edges])
+        visited:Set[TVGNode] = {node}
+        # When a new farthest node is found, the downstream nodes of the old
+        # farthest node are put into this `exceptions` container, so they
+        # can be visited again.
+        exceptions:Set[TVGNode] = set()
         while queue:
             cur:TVGNode = queue.popleft()
             if cur is None:
@@ -1185,6 +1198,11 @@ class ThreeFrameTVG():
                     elif len(cur.seq) < min_size:
                         for edge in cur.out_edges:
                             queue.append(edge.out_node)
+                elif cur in exceptions:
+                    for out_node in cur.get_out_nodes():
+                        queue.append(out_node)
+                        exceptions.add(out_node)
+                    exceptions.remove(cur)
                 continue
 
             if farthest is None and cur.is_reference():
@@ -1209,7 +1227,7 @@ class ThreeFrameTVG():
 
             farthest, cur = cur, farthest
             queue.append(cur)
-            visited.remove(cur)
+            exceptions.add(cur)
             continue
         return farthest
 
