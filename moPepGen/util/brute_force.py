@@ -268,7 +268,14 @@ class BruteForceVariantPeptideCaller():
             right_insert_start = fusion.attrs['RIGHT_INSERTION_START']
             right_insert_end = fusion.attrs['RIGHT_INSERTION_END']
             right_tx_id = fusion.attrs['ACCEPTER_TRANSCRIPT_ID']
-            right_breakpoint = fusion.get_accepter_position()
+            right_tx_model = self.reference_data.anno.transcripts[right_tx_id]
+            right_gene_id = right_tx_model.gene_id
+            right_breakpoint_gene = fusion.get_accepter_position()
+            right_breakpoint_tx = self.reference_data.anno.coordinate_gene_to_transcript(
+                index=right_breakpoint_gene,
+                gene=right_gene_id,
+                transcript=right_tx_id
+            )
 
             if right_tx_id in pool:
                 alt_splices += [x for x in pool[right_tx_id].transcriptional
@@ -291,7 +298,7 @@ class BruteForceVariantPeptideCaller():
                 inserted_intronic_region[self.tx_id].append(loc)
 
             if right_tx_id in pool \
-                    and any(x.location.start < right_breakpoint
+                    and any(x.location.start < right_breakpoint_tx
                         for x in pool[right_tx_id].transcriptional):
                 return True
 
@@ -310,6 +317,8 @@ class BruteForceVariantPeptideCaller():
             return False
 
         for tx_id in pool:
+            if not pool[tx_id].intronic:
+                continue
             if tx_id not in inserted_intronic_region:
                 return True
             for v in pool[tx_id].intronic:
@@ -759,11 +768,12 @@ class BruteForceVariantPeptideCaller():
                 fusion_var = None
                 # Get the last fusion, which should be the actual fusion
                 # no insertions of intronic regions.
-                for variant in variant_coordinates:
+                for variant in reversed(variant_coordinates):
                     if variant.variant.is_fusion():
                         fusion_var = variant
+                        break
                 cds_start_positions = [x for x in cds_start_positions
-                    if x <= fusion_var.location.start]
+                    if x <= fusion_var.location.start + 3]
         else:
             cds_start = tx_seq.orf.start
             cds_start_positions:List[int] = [cds_start]
