@@ -425,7 +425,7 @@ class BruteForceVariantPeptideCaller():
 
                     variant_coordinate = seqvar.VariantRecordWithCoordinate(
                         variant=variant,
-                        location=FeatureLocation(start=start, end=start + len(alt_seq))
+                        location=FeatureLocation(start=start, end=start + len(alt_seq) + 1)
                     )
                     variant_coordinates.append(variant_coordinate)
                     variant_coordinates += insert_variants
