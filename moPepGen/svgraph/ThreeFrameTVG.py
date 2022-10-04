@@ -1088,16 +1088,7 @@ class ThreeFrameTVG():
                 bridge_out.add(cur)
                 continue
             if cur.subgraph_id != start.subgraph_id:
-                is_inframe_subgraph = False
-                if len(cur.out_edges) == 1 and len(cur.in_edges) == 1:
-                    upstream = cur.get_in_nodes()[0]
-                    downstream = cur.get_out_nodes()[0]
-                    is_inframe_subgraph = downstream.subgraph_id == start.subgraph_id \
-                        and downstream.reading_frame_index == start.reading_frame_index \
-                        and downstream.seq.locations[0].ref < end.seq.locations[0].ref \
-                        and upstream.seq.locations[0].ref > start.seq.locations[0].ref
-
-                if not is_inframe_subgraph:
+                if not cur.is_inframe_subgraph(start, end):
                     subgraph_out.add(cur)
                     continue
 
@@ -1105,14 +1096,7 @@ class ThreeFrameTVG():
                 if e.in_node.reading_frame_index != this_id or e.in_node.was_bridge:
                     bridge_in.add(e.in_node)
                 elif e.in_node.subgraph_id != cur.subgraph_id:
-                    is_inframe_subgraph = False
-                    if len(e.in_node.in_edges) == 1:
-                        upstream = e.in_node.get_in_nodes()[0]
-                        is_inframe_subgraph = upstream.subgraph_id == cur.subgraph_id \
-                            and upstream.reading_frame_index == start.reading_frame_index \
-                            and cur.seq.locations[0].ref < end.seq.locations[0].ref \
-                            and upstream.seq.locations[0].ref > start.seq.locations[0].ref
-                    if not is_inframe_subgraph:
+                    if not e.in_node.is_inframe_subgraph(start, end):
                         subgraph_in.add(e.in_node)
             if cur is not end:
                 for e in cur.out_edges:
