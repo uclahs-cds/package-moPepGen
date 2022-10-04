@@ -772,3 +772,37 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/23/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case52(self):
+        """ Issue found by fuzz test to make sure the correct right most node
+        of a variant bubble is found.
+        """
+        gvf = [
+            self.data_dir/'fuzz/24/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/24/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case53(self):
+        """ Test case to ensure that because alt splice deletions are not terated
+        as subgraphs any more so it won't be returned by `move_downsteams` as
+        an end node.
+        """
+        gvf = [
+            self.data_dir/'fuzz/25/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/25/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case54(self):
+        """ To ensure that in-frame subgraph won't be treated as subgraph when
+        aligning variant bubbles.
+        """
+        gvf = [
+            self.data_dir/'fuzz/26/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/26/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)

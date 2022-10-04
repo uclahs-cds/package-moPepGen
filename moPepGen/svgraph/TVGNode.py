@@ -617,3 +617,20 @@ class TVGNode():
             if x.variant.alt != y.variant.type:
                 return x.variant.alt > y.variant.type
         return True
+
+    def is_inframe_subgraph(self, start:TVGNode, end:TVGNode) -> bool:
+        """ Check whether it is a inframe subgraph, i.e. its a subgraph node
+        and its upstream and downstream are in the same reading frame and
+        are also from the main graph. """
+        if len(self.in_edges) != 1 or len(self.out_edges) != 1:
+            return False
+
+        upstream = self.get_in_nodes()[0]
+        downstream = self.get_out_nodes()[0]
+
+        return downstream.subgraph_id == start.subgraph_id \
+            and upstream.subgraph_id == start.subgraph_id \
+            and downstream.reading_frame_index == start.reading_frame_index \
+            and upstream.reading_frame_index == start.reading_frame_index \
+            and upstream.seq.locations[0].ref > start.seq.locations[0].ref \
+            and downstream.seq.locations[0].ref < end.seq.locations[0].ref

@@ -1,0 +1,27 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.9.5
+##parser=parseVEP
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##source=
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=ACCEPTER_GENE_ID,Number=1,Type=String,Description="3' Accepter Transcript's Gene ID">
+##INFO=<ID=ACCEPTER_TRANSCRIPT_ID,Number=1,Type=String,Description="3' Accepter Transcript's Transcript ID">
+##INFO=<ID=ACCEPTER_POSITION,Number=1,Type=Integer,Description="Position of the break point of the 3' accepter transcript">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+##INFO=<ID=OFFSET,Number=+,Type=Integer,Description="Offsets of fragments (exons or introns)">
+##INFO=<ID=LENGTH,Number=+,Type=Integer,Description="Lengths of fragments (exons or introns)">
+##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000248323.7	910	SE_62309	G	<INS>	.	.	TRANSCRIPT_ID=ENST00000650150.1;DONOR_START=62310;DONOR_END=136264;DONOR_GENE_ID=ENSG00000248323.7;GENE_SYMBOL=LUCAT1;GENOMIC_POSITION=chr1:123451:197405
+ENSG00000248323.7	910	RI_162916	C	<DEL>	.	.	TRANSCRIPT_ID=ENST00000650150.1;START=162917;END=163264;GENE_SYMBOL=LUCAT1;GENOMIC_POSITION=chr1:96451:96798
+ENSG00000248323.7	162428	ENSG00000248323.7-162427-C-CCCTGAGCGAAAGGAGT	C	CCCTGAGCGAAAGGAGT	.	.	TRANSCRIPT_ID=ENST00000650150.1;GENOMIC_POSITION=chr1-97286:97287;GENE_SYMBOL=LUCAT1
+ENSG00000248323.7	162495	ENSG00000248323.7-162494-TTGGA-T	TTGGA	T	.	.	TRANSCRIPT_ID=ENST00000650150.1;GENOMIC_POSITION=chr1-97219:97216;GENE_SYMBOL=LUCAT1

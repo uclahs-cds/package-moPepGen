@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that alternative splicing variants were not recognized as stop altering mutation correctly because their reference sequence from GVF is only the first nucleotide. #569
 
+- Fixed `callVariant` that nodes being lost after an in-frame subgraph. #573
+
 ## [0.9.4] - 2022-09-07
 
 ## Fixed
