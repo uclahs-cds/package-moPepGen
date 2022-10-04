@@ -778,6 +778,8 @@ class BruteForceVariantPeptideCaller():
             cds_start = tx_seq.orf.start
             cds_start_positions:List[int] = [cds_start]
 
+        cds_start_sites = set(cds_start_positions)
+
 
         for cds_start in cds_start_positions:
             cur_cds_end = len(seq) - (len(seq) - cds_start) % 3
@@ -789,9 +791,10 @@ class BruteForceVariantPeptideCaller():
 
             # Finding the next M, so peptides that starts from the next M should
             # be processed with the correct `cds_start`
-            if (not tx_model.is_protein_coding or is_circ_rna) \
-                    and not (is_fusion and cds_start == cds_start_positions[-1]):
+            if (not tx_model.is_protein_coding or is_circ_rna):
                 next_m = aa_seq.seq[1:].find('M') + 1
+                if cds_start + next_m * 3 not in cds_start_sites:
+                    next_m = 0
             else:
                 next_m = 0
 
