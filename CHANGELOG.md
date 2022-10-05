@@ -36,6 +36,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that nodes being lost after an in-frame subgraph. #573
 
+- Fixed `callVariant` that the actual fusion breakpoint was not found correctly when trying to tell whether a novel start site should be considered.
+
 ## [0.9.4] - 2022-09-07
 
 ## Fixed

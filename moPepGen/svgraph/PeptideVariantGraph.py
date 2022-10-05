@@ -960,6 +960,7 @@ class PeptideVariantGraph():
                 if variant.variant.is_real_fusion:
                     finding_start_site = False
                     real_fusion_position = variant.location.start
+                    break
 
         start_indices = []
         if cursor.finding_start_site:
