@@ -284,7 +284,7 @@ class TestBruteForce(TestCaseIntegration):
     def test_brute_force_fuzz_27(self):
         """ Fuzz test 27 """
         gvf = [
-            self.data_dir/'fuzz/27/fake_variants.gvf'，
+            self.data_dir/'fuzz/27/fake_variants.gvf',
             self.data_dir/'fuzz/27/fake_circ_rna.gvf'
         ]
         expected = self.data_dir/'fuzz/27/brute_force.txt'
