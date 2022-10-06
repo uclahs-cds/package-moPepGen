@@ -525,8 +525,9 @@ class BruteForceVariantPeptideCaller():
         )
 
         vars_aloop = copy.deepcopy(vars_coord)
+        seq_aloop = copy.deepcopy(var_seq)
 
-        for _ in range(2):
+        for _ in range(3):
             offset = len(var_seq)
             vars_extend = copy.deepcopy(vars_aloop)
             for variant in vars_extend:
@@ -536,7 +537,7 @@ class BruteForceVariantPeptideCaller():
                     end=variant.location.end + offset
                 )
                 variant.location = location
-            var_seq += var_seq
+            var_seq += seq_aloop
             vars_coord += vars_extend
 
         circ_var_coord = VariantRecordWithCoordinate(

@@ -806,3 +806,15 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/26/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case55(self):
+        """ Caught by fuzz test that a start gain mutation is missing in the
+        current loop. #576
+        """
+        gvf = [
+            self.data_dir/'fuzz/27/fake_variants.gvf',
+            self.data_dir/'fuzz/27/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/27/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)
