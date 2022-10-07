@@ -1,0 +1,24 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.9.5
+##parser=parseVEP
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##source=
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=ACCEPTER_GENE_ID,Number=1,Type=String,Description="3' Accepter Transcript's Gene ID">
+##INFO=<ID=ACCEPTER_TRANSCRIPT_ID,Number=1,Type=String,Description="3' Accepter Transcript's Transcript ID">
+##INFO=<ID=ACCEPTER_POSITION,Number=1,Type=Integer,Description="Position of the break point of the 3' accepter transcript">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=OFFSET,Number=+,Type=Integer,Description="Offsets of fragments (exons or introns)">
+##INFO=<ID=LENGTH,Number=+,Type=Integer,Description="Lengths of fragments (exons or introns)">
+##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000113369.9	9606	ENSG00000113369.9-9605-GA-G	GA	G	.	.	TRANSCRIPT_ID=ENST00000265138.4;GENOMIC_POSITION=chr1-264795:264795;GENE_SYMBOL=ARRDC3

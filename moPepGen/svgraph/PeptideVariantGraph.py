@@ -983,6 +983,7 @@ class PeptideVariantGraph():
         cleavage_gain = target_node.get_cleavage_gain_variants()
 
         for out_node in target_node.out_nodes:
+            cur_in_cds = in_cds
             if out_node is self.stop:
                 continue
             out_node.orf = orf
@@ -1002,10 +1003,12 @@ class PeptideVariantGraph():
                         start=start_indices[-1], end=-1
                     )
                     start_gain += [x for x in fs_variants if x.is_frameshifting()]
+                    start_gain = [x for x in start_gain if not x.is_circ_rna()]
                 else:
                     if not start_gain:
                         start_gain = [v.variant for v in target_node.variants
-                            if v.variant.is_frameshifting()]
+                            if v.variant.is_frameshifting()
+                            and not v.variant.is_circ_rna()]
             else:
                 if is_stop:
                     start_gain = []
@@ -1016,9 +1019,11 @@ class PeptideVariantGraph():
                         start=start_index, end=-1
                     )
                     start_gain += [x for x in fs_variants if x.is_frameshifting()]
+                    start_gain = [x for x in start_gain if not x.is_circ_rna()]
                 elif not start_gain:
                     start_gain = [x.variant for x in target_node.variants
-                        if x.variant.is_frameshifting()]
+                        if x.variant.is_frameshifting()
+                        and not x.variant.is_circ_rna()]
 
             for variant in target_node.variants:
                 if variant.is_stop_altering:
@@ -1028,7 +1033,12 @@ class PeptideVariantGraph():
 
             cur_cleavage_gain = copy.copy(cleavage_gain)
 
-            cursor = PVGCursor(target_node, out_node, in_cds, orf,
+            if self.global_variant and self.global_variant.is_circ_rna():
+                if out_node.is_missing_any_variant(start_gain):
+                    cur_in_cds = False
+                    start_gain = []
+
+            cursor = PVGCursor(target_node, out_node, cur_in_cds, orf,
                 start_gain, cur_cleavage_gain, finding_start_site)
             traversal.stage(target_node, out_node, cursor)
 
