@@ -37,6 +37,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed `callVariant` that nodes being lost after an in-frame subgraph. #573
 
 - Fixed `callVariant` that the actual fusion breakpoint was not found correctly when trying to tell whether a novel start site should be considered.
+  
+- Fixed `callVariant` that variant peptides were called with variants present in one loop but not in another. #576
 
 ## [0.9.4] - 2022-09-07
 
