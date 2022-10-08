@@ -457,8 +457,8 @@ class ThreeFrameTVG():
             subgraph_start = cursors[0].seq.locations[-1].ref.end
             subgraph_end = subgraph_start + 1
         else:
-            subgraph_start = var.location.start
-            subgraph_end = var.location.end
+            subgraph_start = var.variant.location.start
+            subgraph_end = var.variant.location.end
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
             start=subgraph_start, end=subgraph_end
