@@ -8,7 +8,7 @@ from itertools import combinations
 from Bio import SeqUtils
 from Bio.Seq import Seq
 from moPepGen import gtf, seqvar, aa, dna, params
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
 from moPepGen.seqvar.VariantRecord import VariantRecord, ALTERNATIVE_SPLICING_TYPES
 from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
@@ -499,6 +499,11 @@ class BruteForceVariantPeptideCaller():
             loc = FeatureLocation(
                 start=int(fragment.location.start), end=int(fragment.location.end)
             )
+            frag_loc = FeatureLocation(
+                start=int(fragment.location.start) + 3, end=int(fragment.location.end)
+            )
+            fragment = SeqFeature(location=frag_loc, chrom=fragment.chrom,
+                attributes=fragment.attributes)
             new_seq = seq[loc.start:loc.end]
             frag_vars = variants.filter_variants(
                 tx_ids=[circ.transcript_id], exclude_type=ALTERNATIVE_SPLICING_TYPES,
