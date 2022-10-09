@@ -633,6 +633,7 @@ class ThreeFrameTVG():
         breakpoint_tx = anno.coordinate_gene_to_transcript(breakpoint_gene,
             accepter_gene_id, accepter_tx_id)
         accepter_seq = accepter_tx_seq[breakpoint_tx:]
+        accepter_seq.orf = None
         accepter_variant_records = variant_pool.filter_variants(
             tx_ids=[accepter_tx_id], exclude_type=exclude_variant_types,
             start=breakpoint_tx, return_coord='transcript', intron=False
