@@ -774,7 +774,7 @@ class BruteForceVariantPeptideCaller():
                         fusion_var = variant
                         break
                 cds_start_positions = [x for x in cds_start_positions
-                    if x < fusion_var.location.start]
+                    if x <= fusion_var.location.start]
         else:
             cds_start = tx_seq.orf.start
             cds_start_positions:List[int] = [cds_start]
