@@ -204,12 +204,13 @@ class MiscleavedNodes():
             variants.update(cleavage_gain_down)
 
             is_missing_any_variant = False
-            for v in variants:
-                if v.is_circ_rna():
-                    continue
-                if all(n.is_missing_variant(v) for n in queue):
-                    is_missing_any_variant = True
-                    break
+            if any(v.is_circ_rna() for v in variants):
+                for v in variants:
+                    if v.is_circ_rna():
+                        continue
+                    if all(n.is_missing_variant(v) for n in queue):
+                        is_missing_any_variant = True
+                        break
             if is_missing_any_variant:
                 continue
 
