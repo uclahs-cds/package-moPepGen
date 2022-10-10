@@ -22,7 +22,9 @@ class PVGCollapseNode(PVGNode):
             and self.truncated == other.truncated \
             and self.reading_frame_index == other.reading_frame_index \
             and self.was_bridge == other.was_bridge \
-            and self.npop_collapsed == other.npop_collapsed == False
+            and self.npop_collapsed == other.npop_collapsed == False \
+            and {v.variant for v in self.variants if v.variant.type == 'Deletion'} \
+                == {v.variant for v in other.variants if v.variant.type == 'Deletion'}
 
         if result and hasattr(other, 'match'):
             other.match = self
@@ -118,7 +120,9 @@ class PVGPopCollapseNode(PVGNode):
             and self.was_bridge == other.was_bridge \
             and self.npop_collapsed == other.npop_collapsed \
             and self.cpop_collapsed == other.cpop_collapsed \
-            and self.subgraph_id == other.subgraph_id
+            and self.subgraph_id == other.subgraph_id \
+            and {v.variant for v in self.variants if v.variant.type == 'Deletion'}\
+                == {v.variant for v in other.variants if v.variant.type == 'Deletion'}
 
         if result and hasattr(other, 'match'):
             other.match = self

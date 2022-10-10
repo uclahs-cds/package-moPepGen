@@ -457,8 +457,8 @@ class ThreeFrameTVG():
             subgraph_start = cursors[0].seq.locations[-1].ref.end
             subgraph_end = subgraph_start + 1
         else:
-            subgraph_start = var.location.start
-            subgraph_end = var.location.end
+            subgraph_start = var.variant.location.start
+            subgraph_end = var.variant.location.end
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
             start=subgraph_start, end=subgraph_end
@@ -633,6 +633,7 @@ class ThreeFrameTVG():
         breakpoint_tx = anno.coordinate_gene_to_transcript(breakpoint_gene,
             accepter_gene_id, accepter_tx_id)
         accepter_seq = accepter_tx_seq[breakpoint_tx:]
+        accepter_seq.orf = None
         accepter_variant_records = variant_pool.filter_variants(
             tx_ids=[accepter_tx_id], exclude_type=exclude_variant_types,
             start=breakpoint_tx, return_coord='transcript', intron=False
