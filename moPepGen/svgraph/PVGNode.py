@@ -538,7 +538,7 @@ class PVGNode():
                     return additional_variants
         return additional_variants
 
-    def is_missing_any_variant(self, variants:List[seqvar.VariantRecord]) -> bool:
+    def is_missing_variant(self, variant:seqvar.VariantRecord) -> bool:
         """ Checks if in the coordinates of the node if any variant from a
         given set is missing. This is used for circRNA to ensure that the
         same variant is either on or off in each loop. """
@@ -554,9 +554,8 @@ class PVGNode():
             locs += [x.variant.location for x in self.variants
                 if not x.variant.is_circ_rna()]
         out_node_variants = {x.variant for x in self.variants}
-        for variant in variants:
-            for loc in locs:
-                if loc.overlaps(variant.location) \
-                        and not any(variant == v for v in out_node_variants):
-                    return True
+        for loc in locs:
+            if loc.overlaps(variant.location) \
+                    and not any(variant == v for v in out_node_variants):
+                return True
         return False

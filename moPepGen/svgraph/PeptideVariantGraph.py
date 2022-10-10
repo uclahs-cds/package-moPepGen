@@ -1,7 +1,7 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import FrozenSet, Iterable, Set, Deque, Dict, List, Tuple
+from typing import Callable, FrozenSet, Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
 from Bio.Seq import Seq
@@ -64,7 +64,7 @@ class PeptideVariantGraph():
         """ Checks if stop is linked as a outbound node. """
         return len(node.out_nodes) == 1 and self.stop in node.out_nodes
 
-    def find_node(self, seq:str) -> List[PVGNode]:
+    def find_node(self, func:Callable) -> List[PVGNode]:
         """ Find node with given sequence. """
         queue:Deque[PVGNode] = deque([self.root])
         visited:Set[PVGNode] = set()
@@ -74,11 +74,15 @@ class PeptideVariantGraph():
             if cur in visited:
                 continue
             visited.add(cur)
-            if cur.seq and cur.seq.seq == seq:
-                targets.append(cur)
-            for out_node in cur.out_nodes:
-                if not out_node in visited:
-                    queue.append(out_node)
+            try:
+                if func(cur):
+                    targets.append(cur)
+            except Exception:
+                pass
+            finally:
+                for out_node in cur.out_nodes:
+                    if not out_node in visited:
+                        queue.append(out_node)
         return targets
 
     @staticmethod
@@ -1034,9 +1038,10 @@ class PeptideVariantGraph():
             cur_cleavage_gain = copy.copy(cleavage_gain)
 
             if self.global_variant and self.global_variant.is_circ_rna():
-                if out_node.is_missing_any_variant(start_gain):
-                    cur_in_cds = False
-                    start_gain = []
+                for v in start_gain:
+                    if out_node.is_missing_variant(v):
+                        cur_in_cds = False
+                        start_gain = []
 
             cursor = PVGCursor(target_node, out_node, cur_in_cds, orf,
                 start_gain, cur_cleavage_gain, finding_start_site)

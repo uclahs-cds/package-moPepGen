@@ -203,8 +203,14 @@ class MiscleavedNodes():
             cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
             variants.update(cleavage_gain_down)
 
-            if any(v.is_circ_rna() for v in variants)\
-                    and any(n.is_missing_any_variant(variants) for n in queue):
+            is_missing_any_variant = False
+            for v in variants:
+                if v.is_circ_rna():
+                    continue
+                if all(n.is_missing_variant(v) for n in queue):
+                    is_missing_any_variant = True
+                    break
+            if is_missing_any_variant:
                 continue
 
             if not seq:
