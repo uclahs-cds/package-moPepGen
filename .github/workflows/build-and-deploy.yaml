@@ -1,0 +1,58 @@
+---
+name: Create and publish a Docker image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['main']
+    tags: ['v*']
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io/uclahs-cds
+  METADATA_FILE: metadata.yaml
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Read YAML
+        id: yaml-data
+        uses: jbutcher5/read-yaml@1.6
+        with:
+          file: "${{ env.METADATA_FILE }}"
+          key-path: '["image_name"]'
+
+      - name: Create tags
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          flavor: |
+            latest=false
+          images: ${{ env.REGISTRY }}/${{ steps.yaml-data.outputs.data }}
+          tags: |
+            type=raw,enable=${{github.event_name == 'push'}},value=dev,event=branch
+            type=raw,enable=${{github.event_name == 'workflow_dispatch'}},branch=unstable,value=unstable
+            type=semver,pattern={{version}}
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
