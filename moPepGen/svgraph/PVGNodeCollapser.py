@@ -23,7 +23,7 @@ class PVGCollapseNode(PVGNode):
             and self.reading_frame_index == other.reading_frame_index \
             and self.was_bridge == other.was_bridge \
             and self.npop_collapsed == other.npop_collapsed == False \
-            and {v.variant for v in self.variants if v.variant.type == 'Deletion'}\
+            and {v.variant for v in self.variants if v.variant.type == 'Deletion'} \
                 == {v.variant for v in other.variants if v.variant.type == 'Deletion'}
 
         if result and hasattr(other, 'match'):
