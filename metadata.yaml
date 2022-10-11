@@ -1,8 +1,8 @@
 ---
-Category: 'tool'
-Description: 'Multi-Omics Peptide Generator'
-Maintainers: ['ChenghaoZhu@mednet.ucla.edu']
-Contributors: 'Chenghao Zhu, Yiyang Liu'
-Languages: ['python']
-Dependencies: ['biopython', 'ray', 'psutil']
-References: ''
+category: 'tool'
+description: 'Multi-Omics Peptide Generator'
+maintainers: ['ChenghaoZhu@mednet.ucla.edu']
+contributors: ['Chenghao Zhu', 'Yiyang Liu']
+languages: ['python']
+references: ''
+image_name: 'mopepgen'
