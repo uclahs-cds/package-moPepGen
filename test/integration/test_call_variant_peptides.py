@@ -820,9 +820,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case56(self):
-        """ Caught by fuzz test that fusion not inserted into the correct
-        position when the breakpoint (eitgher donor or accetper) is intronic.
-        #578
+        """ This is to make sure that when creating the cleavage graph, nodes
+        that contain alt splice deletion are skipped by `move_downstreams`
+        only when its outgoing node has a reference incoming node.
         """
         gvf = [
             self.data_dir/'fuzz/28/fake_variants.gvf'

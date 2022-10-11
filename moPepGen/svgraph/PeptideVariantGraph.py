@@ -332,9 +332,14 @@ class PeptideVariantGraph():
         for node in nodes:
             if node.reading_frame_index != reading_frame_index:
                 continue
+            is_deletion_only_end = any(x.variant.type == 'Deletion' for x in node.variants) \
+                and len(node.out_nodes) == 1 \
+                and len(node.get_out_nodes()[0].in_nodes) > 1 \
+                and not all(any(v.variant.type == 'Deletion' for v in x.variants)
+                    for x in node.get_out_nodes()[0].get_in_nodes())
             if node.is_bridge() \
                     or self.node_is_subgraph_end(node) \
-                    or any(x.variant.type == 'Deletion' for x in node.variants):
+                    or is_deletion_only_end:
                 continue
 
             is_sharing_downstream = any(any(y is not node and y in nodes \
