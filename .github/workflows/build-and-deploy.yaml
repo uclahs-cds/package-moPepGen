@@ -21,4 +21,5 @@ jobs:
         uses: uclahs-cds/tool-Docker-action/build-release@yashpatel-custom-tags
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          custom-tags: unstable
+          custom-tags: |
+            type=raw,enable=${{github.event_name == 'workflow_dispatch'}},branch=unstable,value=unstable
