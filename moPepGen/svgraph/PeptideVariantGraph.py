@@ -1006,7 +1006,7 @@ class PeptideVariantGraph():
                     # node if a start codon is found.
                     start_gain = target_node.get_variants_at(
                         start=start_indices[-1],
-                        end=min(start_indices[-1] + 3, len(target_node.seq.seq))
+                        end=min(start_indices[-1] + 1, len(target_node.seq.seq))
                     )
                     fs_variants = target_node.get_variants_at(
                         start=start_indices[-1], end=-1
