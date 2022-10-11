@@ -74,6 +74,7 @@ class PeptideVariantGraph():
             if cur in visited:
                 continue
             visited.add(cur)
+            # pylint: disable=W0703
             try:
                 if func(cur):
                     targets.append(cur)
