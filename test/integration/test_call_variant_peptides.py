@@ -830,3 +830,27 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/28/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case57(self):
+        """ Fuzz test 29
+        """
+        gvf = [
+            self.data_dir/'fuzz/29/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/29/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case58(self):
+        """ When checking whether a miscleaved peptide sequence from circRNA
+        contains all start gain variants in all its loops, it must be
+        (1) that any nodes overlaps with a given start gain variant, and (2)
+        all those nodes that overlaps are missing this start gain variant.
+        """
+        gvf = [
+            self.data_dir/'fuzz/30/fake_variants.gvf',
+            self.data_dir/'fuzz/30/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/30/brute_force.txt'
+        reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
+        self.default_test_case(gvf, reference, expected)
