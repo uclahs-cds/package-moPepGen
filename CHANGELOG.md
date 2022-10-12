@@ -44,6 +44,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fusion not inserted correctly when the breakpoint is intronic. #578
 
+- When finding start altering variants from a node, wrong right position was used. #583
+
 ## [0.9.4] - 2022-09-07
 
 ## Fixed

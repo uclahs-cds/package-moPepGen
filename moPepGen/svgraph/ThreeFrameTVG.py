@@ -1569,7 +1569,7 @@ class ThreeFrameTVG():
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
-        visited = dict()
+        visited = {}
         terminal_node = None
 
         while queue:
