@@ -13,10 +13,10 @@ import argparse
 import copy
 from typing import List, Set, TYPE_CHECKING, Dict
 from pathlib import Path
-from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 import ray
 from moPepGen import svgraph, aa, seqvar, logger, gtf, params
 from moPepGen.cli import common
+from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 
 
 if TYPE_CHECKING:
