@@ -539,7 +539,7 @@ class PVGNode():
         return additional_variants
 
     def has_variant_at(self, start:int, end:int) -> bool:
-        """ """
+        """ Checks if the node has any variant at a given position """
         loc = FeatureLocation(start=start, end=end)
         for variant in self.variants:
             if variant.location.overlaps(loc):

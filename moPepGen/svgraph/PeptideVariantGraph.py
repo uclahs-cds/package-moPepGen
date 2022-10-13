@@ -1231,7 +1231,7 @@ class PVGTraversal():
 
     @staticmethod
     def comp_unknown_orf_keep_all_orfs(x:PVGCursor, y:PVGCursor) -> bool:
-        """ """
+        """ comparison when all ORFs want to be kept (for circRNA) """
         if x.in_cds and not y.in_cds:
             return -1
         if not x.in_cds and y.in_cds:

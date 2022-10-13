@@ -1,4 +1,4 @@
-""" """
+""" PVGOrf """
 from __future__ import annotations
 from typing import Set, List
 import copy
@@ -6,7 +6,7 @@ from moPepGen import seqvar
 
 
 class PVGOrf():
-    """ """
+    """ Helper class for an ORF and its corresponding start gain variants. """
     def __init__(self, orf:List[int,int]=None,
             start_gain:Set[seqvar.VariantRecord]=None):
         """ constructor """
