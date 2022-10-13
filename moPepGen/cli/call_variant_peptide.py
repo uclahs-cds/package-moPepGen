@@ -16,6 +16,7 @@ from pathlib import Path
 import ray
 from moPepGen import svgraph, aa, seqvar, logger, gtf, params
 from moPepGen.cli import common
+from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 
 
 if TYPE_CHECKING:
@@ -453,9 +454,17 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
     # represented as Insertion, Deletion or Substitution.
     exclusion_variant_types = ['Insertion', 'Deletion', 'Substitution']
 
+    fragments = []
+    for frag in record.fragments:
+        loc = FeatureLocation(
+            start=frag.location.start + 3, end=frag.location.end
+        )
+        frag = SeqFeature(chrom=frag.chrom, location=loc, attributes=frag.attributes)
+        fragments.append(frag)
+
     variant_records = variant_pool.filter_variants(
         tx_ids=[record.transcript_id], exclude_type=exclusion_variant_types,
-        intron=False, segments=record.fragments
+        intron=False, segments=fragments
     )
 
     cgraph = svgraph.ThreeFrameCVG(

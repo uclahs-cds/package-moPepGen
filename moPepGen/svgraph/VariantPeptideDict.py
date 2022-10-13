@@ -6,6 +6,7 @@ from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from Bio.Seq import Seq
 from Bio import SeqUtils
 from moPepGen import aa, get_equivalent
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.aa import VariantPeptideIdentifier as vpi
 
@@ -208,7 +209,7 @@ class MiscleavedNodes():
                 for v in variants:
                     if v.is_circ_rna():
                         continue
-                    if all(n.is_missing_variant(v) for n in queue):
+                    if self.any_overlaps_and_all_missing_variant(queue, v):
                         is_missing_any_variant = True
                         break
             if is_missing_any_variant:
@@ -242,6 +243,35 @@ class MiscleavedNodes():
             if is_valid_start:
                 aa_seq = aa.AminoAcidSeqRecord(seq=seq[1:])
                 yield aa_seq, metadata
+
+    @staticmethod
+    def any_overlaps_and_all_missing_variant(nodes:Iterable[PVGNode], variant:VariantRecord):
+        """ Whether any node overlaps with a given variant and all nodes are
+        missing it. Should be only used for circRNA. """
+        any_overlap = False
+        all_missing = True
+        for node in nodes:
+            locs = []
+            if node.seq.locations:
+                for loc in node.seq.locations:
+                    tx_loc = FeatureLocation(
+                        start=int(loc.ref.start) * 3 + node.reading_frame_index,
+                        end=int(loc.ref.end) * 3 + node.reading_frame_index
+                    )
+                    locs.append(tx_loc)
+            if node.variants:
+                locs += [x.variant.location for x in node.variants
+                    if not x.variant.is_circ_rna()]
+            node_variants = {x.variant for x in node.variants}
+            if not any(loc.overlaps(variant.location) for loc in locs):
+                continue
+            any_overlap = True
+            for loc in locs:
+                if loc.overlaps(variant.location) \
+                        and any(variant == v for v in node_variants):
+                    all_missing = False
+        return any_overlap and all_missing
+
 
 def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
         peptide_pool:Set[aa.AminoAcidSeqDict],
