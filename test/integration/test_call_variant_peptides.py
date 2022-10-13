@@ -863,6 +863,6 @@ class TestCallVariantPeptides(TestCaseIntegration):
             self.data_dir/'fuzz/31/fake_variants.gvf',
             self.data_dir/'fuzz/31/fake_circ_rna.gvf'
         ]
-        expected = self.data_dir/'fuzz/30/brute_force.txt'
+        expected = self.data_dir/'fuzz/31/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
         self.default_test_case(gvf, reference, expected)
