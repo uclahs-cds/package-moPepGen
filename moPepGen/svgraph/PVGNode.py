@@ -538,6 +538,14 @@ class PVGNode():
                     return additional_variants
         return additional_variants
 
+    def has_variant_at(self, start:int, end:int) -> bool:
+        """ """
+        loc = FeatureLocation(start=start, end=end)
+        for variant in self.variants:
+            if variant.location.overlaps(loc):
+                return True
+        return False
+
     def is_missing_variant(self, variant:seqvar.VariantRecord) -> bool:
         """ Checks if in the coordinates of the node if any variant from a
         given set is missing. This is used for circRNA to ensure that the
@@ -553,9 +561,9 @@ class PVGNode():
         if self.variants:
             locs += [x.variant.location for x in self.variants
                 if not x.variant.is_circ_rna()]
-        out_node_variants = {x.variant for x in self.variants}
+        variants = {x.variant for x in self.variants}
         for loc in locs:
             if loc.overlaps(variant.location) \
-                    and not any(variant == v for v in out_node_variants):
+                    and not any(variant == v for v in variants):
                 return True
         return False

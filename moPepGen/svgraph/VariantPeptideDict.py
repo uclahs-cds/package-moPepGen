@@ -8,6 +8,7 @@ from Bio import SeqUtils
 from moPepGen import aa, get_equivalent
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGNode import PVGNode
+from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.aa import VariantPeptideIdentifier as vpi
 
 
@@ -41,17 +42,17 @@ class MiscleavedNodes():
     """
     def __init__(self, data:Deque[MiscleavedNodeSeries],
             cleavage_params:params.CleavageParams,
-            orf:Tuple[int,int]=None, tx_id:str=None,
+            orfs:List[PVGOrf]=None, tx_id:str=None,
             leading_node:PVGNode=None):
         """ constructor """
         self.data = data
-        self.orf = orf
+        self.orfs = orfs or []
         self.tx_id = tx_id
         self.cleavage_params = cleavage_params
         self.leading_node = leading_node
 
     @staticmethod
-    def find_miscleaved_nodes(node:PVGNode, orf:Tuple[int,int],
+    def find_miscleaved_nodes(node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams, tx_id:str,
             leading_node:PVGNode) -> MiscleavedNodes:
         """ Find all miscleaved nodes.
@@ -70,19 +71,19 @@ class MiscleavedNodes():
         Args:
             - `node` (PVGNode): The node that miscleaved peptide sequences
               starts from it should be called.
-            - `orf` (Tuple[int, int]): The ORF start and end locations.
+            - `orfs` (List[PVGPOrf]): The ORF start and end locations.
             - `cleavage_params` (CleavageParams): Cleavage related parameters.
             - `tx_id` (str): Transcript ID.
             - `leading_node` (PVGNode): The start node that the miscleaved
               peptides are called from. This node must present in the PVG graph.
         """
-        if orf[0] is None:
-            raise ValueError('orf is None')
+        if not orfs:
+            raise ValueError('ORFs are empty')
         queue = deque([[node]])
         nodes = MiscleavedNodes(
             data=deque([]),
             cleavage_params=cleavage_params,
-            orf=orf,
+            orfs=orfs,
             tx_id=tx_id,
             leading_node=leading_node
         )
@@ -176,43 +177,66 @@ class MiscleavedNodes():
         """
         for series in self.data:
             queue = series.nodes
-            metadata = VariantPeptideMetadata(orf=self.orf)
+            metadata = VariantPeptideMetadata()
             seq:str = None
 
-            variants:Set[VariantRecord] = set()
+            valid_orf_found = False
 
-            for i, node in enumerate(queue):
-                other = str(node.seq.seq)
-                if seq is None:
-                    seq = other
-                else:
-                    seq = seq + other
+            for orf in self.orfs:
+                variants:Set[VariantRecord] = set()
+
+                for i, node in enumerate(queue):
+                    other = str(node.seq.seq)
+                    if seq is None:
+                        seq = other
+                    else:
+                        seq = seq + other
+                    if check_variants:
+                        for variant in node.variants:
+                            variants.add(variant.variant)
+                        if i < len(queue) - 1:
+                            _node = self.leading_node if i == 0 else node
+                            indels = queue[i + 1].upstream_indel_map.get(_node)
+                            if indels:
+                                for variant in indels:
+                                    variants.add(variant)
+
                 if check_variants:
-                    for variant in node.variants:
-                        variants.add(variant.variant)
-                    if i < len(queue) - 1:
-                        _node = self.leading_node if i == 0 else node
-                        indels = queue[i + 1].upstream_indel_map.get(_node)
-                        if indels:
-                            for variant in indels:
-                                variants.add(variant)
+                    variants.update(orf.start_gain)
+                    variants.update(additional_variants)
+                    variants.update(series.additional_variants)
 
-            if check_variants:
-                variants.update(additional_variants)
-                variants.update(series.additional_variants)
+                cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
+                variants.update(cleavage_gain_down)
 
-            cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
-            variants.update(cleavage_gain_down)
-
-            is_missing_any_variant = False
-            if any(v.is_circ_rna() for v in variants):
-                for v in variants:
-                    if v.is_circ_rna():
-                        continue
-                    if self.any_overlaps_and_all_missing_variant(queue, v):
-                        is_missing_any_variant = True
+                if any(v.is_circ_rna() for v in variants):
+                    is_missing_any_variant = False
+                    for v in variants:
+                        if v.is_circ_rna():
+                            continue
+                        # The peptide sequence is invalid in two cases:
+                        # 1. There is at least one start gain mutation that is
+                        # missing in the sequence, and 2. there is no start
+                        # gain mutation but the sequence has a variant at the
+                        # same position.
+                        if self.any_overlaps_and_all_missing_variant(queue, v):
+                            is_missing_any_variant = True
+                            break
+                        if not orf.start_gain \
+                                and any(n.has_variant_at(orf.orf[0], orf.orf[0]+3)
+                                    for n in queue):
+                            is_missing_any_variant = True
+                            break
+                    if not is_missing_any_variant:
+                        metadata.orf = tuple(orf.orf)
+                        valid_orf_found = True
                         break
-            if is_missing_any_variant:
+                else:
+                    metadata.orf = tuple(orf.orf)
+                    valid_orf_found = True
+                    break
+
+            if not valid_orf_found:
                 continue
 
             if not seq:
@@ -338,7 +362,7 @@ class VariantPeptideDict():
         self.labels = labels or {}
         self.global_variant = global_variant
 
-    def add_miscleaved_sequences(self, node:PVGNode, orf:List[int, int],
+    def add_miscleaved_sequences(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams,
             check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord], blacklist:Set[str],
@@ -364,7 +388,7 @@ class VariantPeptideDict():
         if leading_node is None:
             leading_node = node
         miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
-            node=node, orf=orf, cleavage_params=cleavage_params,
+            node=node, orfs=orfs, cleavage_params=cleavage_params,
             tx_id=self.tx_id, leading_node=leading_node
         )
         if self.global_variant and self.global_variant not in additional_variants:
