@@ -64,6 +64,10 @@ class ThreeFrameTVG():
         self.hypermutated_region_warned = hypermutated_region_warned
         self.cleavage_params = cleavage_params or params.CleavageParams('trypsin')
 
+    def is_circ_rna(self) -> bool:
+        """ If the graph is a circRNA """
+        return self.global_variant and self.global_variant.is_circ_rna()
+
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
         self.seq.locations = [MatchedLocation(
@@ -1151,6 +1155,8 @@ class ThreeFrameTVG():
         # current subgraph. The only exception is for fusions, that incoming
         # node in the main graph is exclusively bond with the fusion donor.
         subgraph_checker = True
+        if self.is_circ_rna():
+            subgraph_checker = False
         # find the range of overlaps
         farthest = None
         if not node.get_reference_next():

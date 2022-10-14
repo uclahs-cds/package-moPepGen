@@ -1001,6 +1001,7 @@ class PeptideVariantGraph():
                     start_gain = set()
                     orfs = []
                 elif start_indices:
+                    orf = orf.copy()
                     # carry over variants from the target node to the next
                     # node if a start codon is found.
                     start_gain = target_node.get_variants_at(
@@ -1026,6 +1027,7 @@ class PeptideVariantGraph():
                     start_gain = set()
                     orfs = []
                 elif start_indices:
+                    orf = orf.copy()
                     start_index = start_indices[-1]
                     start_gain = target_node.get_variants_at(start_index, start_index + 1)
                     fs_variants = target_node.get_variants_at(
