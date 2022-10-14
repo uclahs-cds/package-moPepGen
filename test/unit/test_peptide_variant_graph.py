@@ -4,6 +4,7 @@ import unittest
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import aa, params, svgraph, seqvar
+from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.svgraph.PeptideVariantGraph import PVGTraversal, PVGCursor
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 
@@ -596,7 +597,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.known_orf = [0,30]
         pool = VariantPeptideDict(graph.id)
         traversal = PVGTraversal(True, False, pool, (0,30), (0,10))
-        cursor = PVGCursor(nodes[1], nodes[2], True, [0, None], [])
+        orf = PVGOrf([0, None])
+        cursor = PVGCursor(nodes[1], nodes[2], True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
 
         received = {str(x.seq) for x in traversal.pool.peptides.keys()}
@@ -622,11 +624,12 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.known_orf = [18,60]
         pool = VariantPeptideDict(graph.id)
         traversal = PVGTraversal(True, False, pool, (18,60), (6,20))
-        cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
+        orf = PVGOrf([0, None], set())
+        cursor = PVGCursor(nodes[1], nodes[2], False, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(traversal.queue), 1)
         self.assertTrue(traversal.queue[-1].in_cds)
-        self.assertEqual(len(traversal.queue[-1].start_gain), 1)
+        self.assertEqual(len(traversal.queue[-1].orfs[0].start_gain), 1)
 
     def test_call_and_stage_known_orf_multiple_methionine(self):
         """ Test when a mutation is in the same cleavage node as start codon,
@@ -689,7 +692,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.known_orf = [0,90]
         pool = VariantPeptideDict(graph.id)
         traversal = PVGTraversal(True, False, pool, (0,90), (0,30))
-        cursor = PVGCursor(nodes[2], nodes[4], True, [0, None], [])
+        orf = PVGOrf([0, None])
+        cursor = PVGCursor(nodes[2], nodes[4], True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(pool.peptides), 1)
         seqs = {str(x.seq) for x in pool.peptides.keys()}
@@ -714,11 +718,13 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.known_orf = [0,39]
         pool = VariantPeptideDict(graph.id)
         traversal = PVGTraversal(True, False, pool, (0,42), (0,14))
-        cursor = PVGCursor(nodes[4], nodes[5], False, [0, None], [])
+        orf = PVGOrf([0,None])
+        cursor = PVGCursor(nodes[4], nodes[5], False, [orf], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
-        cursor = PVGCursor(nodes[2], nodes[6], True, [0, None], [])
+        orf = PVGOrf([0, None])
+        cursor = PVGCursor(nodes[2], nodes[6], True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
-        self.assertEqual(len(traversal.queue[0].start_gain), 1)
+        self.assertEqual(len(traversal.queue[0].orfs[0].start_gain), 1)
 
     def test_call_and_stage_known_orf_not_in_cds_no_start_altering(self):
         """ Test when the transcript doesn't have any start altering variants,
@@ -757,7 +763,8 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.known_orf = [0,39]
         pool = VariantPeptideDict(graph.id)
         traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
-        cursor = PVGCursor(nodes[1], nodes[3], True, [0, None], [])
+        orf = PVGOrf([0, None])
+        cursor = PVGCursor(nodes[1], nodes[3], True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
         label = list(list(traversal.pool.peptides.values())[0])[0].label
         self.assertEqual(label.count('|'), 1)
