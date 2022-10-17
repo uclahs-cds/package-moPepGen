@@ -152,7 +152,7 @@ class PVGNode():
 
     def is_at_least_one_loop_downstream(self, other, subgraphs:SubgraphTree,
             circ_rna:circ.CircRNAModel) -> bool:
-        """"""
+        """ Checks if is at least one loop downstream to the other node. """
         if self.seq.locations:
             i = self.seq.locations[0].ref.start
             i = i * 3 + self.reading_frame_index
@@ -583,13 +583,14 @@ class PVGNode():
         return False
 
     def get_subgraph_id_at(self, i:int) -> str:
-        """ """
+        """ Get the subgraph ID at the ith amino acid of the node's sequence. """
         for loc in self.seq.locations:
             if i in loc.query:
                 return loc.ref.seqname
         for v in self.variants:
             if i in v.location:
                 return v.location.seqname
+        raise ValueError("Failed to get the subgraph ID.")
 
     def is_missing_variant(self, variant:seqvar.VariantRecord) -> bool:
         """ Checks if in the coordinates of the node if any variant from a

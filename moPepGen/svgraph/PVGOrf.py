@@ -66,7 +66,7 @@ class PVGOrf():
 
     def is_valid_orf(self, node:PVGNode, subgraphs:SubgraphTree,
             circ_rna:circ.CircRNAModel) -> bool:
-        """ """
+        """ Checks if it is a valid orf of a downstream node. """
         if not node.is_at_least_one_loop_downstream(self.start_node, subgraphs, circ_rna):
             return True
         start_gain = {x for x in self.start_gain if not x.is_circ_rna()}
@@ -75,5 +75,3 @@ class PVGOrf():
         variants = {x.variant for x in node.variants if not x.variant.is_circ_rna()}
         return not any(node.is_missing_variant(v) for v in start_gain) \
             and not any(x not in start_gain for x in variants)
-
-
