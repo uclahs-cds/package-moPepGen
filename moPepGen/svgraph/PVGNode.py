@@ -158,16 +158,26 @@ class PVGNode():
             i = i * 3 + self.reading_frame_index
             x_level = subgraphs[self.seq.locations[0].ref.seqname].level
         else:
-            i = self.variants[0].variant.location.start
-            x_level = subgraphs[self.variants[0].location.seqname].level
+            for v in self.variants:
+                if not v.variant.is_circ_rna():
+                    break
+            else:
+                raise ValueError("Failed to find a non circRNA variant.")
+            i = v.variant.location.start
+            x_level = subgraphs[v.location.seqname].level
 
         if other.seq.locations:
             j = other.seq.locations[0].ref.start
             j = j * 3 + other.reading_frame_index
             y_level = subgraphs[other.seq.locations[0].ref.seqname].level
         else:
-            j = other.variants[0].variant.location.start
-            y_level = subgraphs[other.variants[0].location.seqname].level
+            for v in self.variants:
+                if not v.variant.is_circ_rna():
+                    break
+            else:
+                raise ValueError("Failed to find a non circRNA variant.")
+            j = v.variant.location.start
+            y_level = subgraphs[v.location.seqname].level
 
         if x_level - y_level > 1:
             return True
