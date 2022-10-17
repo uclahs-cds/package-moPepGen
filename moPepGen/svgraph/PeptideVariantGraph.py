@@ -5,8 +5,9 @@ from typing import Callable, FrozenSet, Iterable, Set, Deque, Dict, List, Tuple
 from collections import deque
 from functools import cmp_to_key
 from Bio.Seq import Seq
-from moPepGen import aa, seqvar, params
+from moPepGen import aa, circ, seqvar, params
 from moPepGen.seqvar.VariantRecord import VariantRecord
+from moPepGen.svgraph.SubgraphTree import SubgraphTree
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
@@ -41,7 +42,7 @@ class PeptideVariantGraph():
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
             hypermutated_region_warned:bool=False, blacklist:Set[str]=None,
-            global_variant:VariantRecord=None
+            global_variant:VariantRecord=None, subgraphs:SubgraphTree=None
             ):
         """ Construct a PeptideVariantGraph """
         self.root = root
@@ -56,6 +57,7 @@ class PeptideVariantGraph():
         self.blacklist = blacklist or set()
         self.cleavage_params = cleavage_params or params.CleavageParams()
         self.global_variant = global_variant
+        self.subgraphs = subgraphs
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -64,6 +66,10 @@ class PeptideVariantGraph():
     def next_is_stop(self, node:PVGNode) -> bool:
         """ Checks if stop is linked as a outbound node. """
         return len(node.out_nodes) == 1 and self.stop in node.out_nodes
+
+    def is_circ_rna(self) -> bool:
+        """ """
+        return self.global_variant and self.global_variant.is_circ_rna()
 
     def find_node(self, func:Callable) -> List[PVGNode]:
         """ Find node with given sequence. """
@@ -721,8 +727,8 @@ class PeptideVariantGraph():
         self.orf_id_map = {v:f"ORF{i+1}" for i,v in enumerate(orfs)}
 
     def call_variant_peptides(self, check_variants:bool=True,
-            check_orf:bool=False, keep_all_occurrence:bool=True, blacklist:Set[str]=None
-            ) -> Set[aa.AminoAcidSeqRecord]:
+            check_orf:bool=False, keep_all_occurrence:bool=True, blacklist:Set[str]=None,
+            circ_rna:circ.CircRNAModel=None) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
         Args:
@@ -738,6 +744,9 @@ class PeptideVariantGraph():
         Return:
             A set of aa.AminoAcidSeqRecord.
         """
+        if self.is_circ_rna() and not circ_rna:
+            raise ValueError('`circ_rna` must be given.')
+
         self.blacklist = blacklist or set()
         cur = PVGCursor(None, self.root, True, [], [])
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
@@ -747,7 +756,7 @@ class PeptideVariantGraph():
         )
         traversal = PVGTraversal(
             check_variants=check_variants, check_orf=check_orf,
-            queue=queue, pool=peptide_pool,
+            queue=queue, pool=peptide_pool, circ_rna=circ_rna
         )
 
         if self.has_known_orf():
@@ -833,7 +842,8 @@ class PeptideVariantGraph():
                 is_start_codon=False,
                 additional_variants=additional_variants,
                 blacklist=self.blacklist,
-                leading_node=target_node
+                leading_node=target_node,
+                subgraphs=self.subgraphs
             )
             self.remove_node(node_copy)
 
@@ -902,7 +912,8 @@ class PeptideVariantGraph():
             node_copy = target_node.copy(in_nodes=False)
             in_cds = True
             node_copy.truncate_left(start_index)
-            orf = PVGOrf(orf=list(traversal.known_orf_tx), start_gain=start_gain)
+            orf = PVGOrf(orf=list(traversal.known_orf_tx), start_gain=start_gain,
+                start_node=target_node)
             traversal.pool.add_miscleaved_sequences(
                 node=node_copy,
                 orfs=[orf],
@@ -911,7 +922,8 @@ class PeptideVariantGraph():
                 is_start_codon=True,
                 additional_variants=additional_variants,
                 blacklist=self.blacklist,
-                leading_node=target_node
+                leading_node=target_node,
+                subgraphs=self.subgraphs
             )
             cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
@@ -982,7 +994,7 @@ class PeptideVariantGraph():
                 cur_orf = [orf_start, None]
                 self.update_orf(cur_orf)
                 in_cds = True
-                orf = PVGOrf(orf=cur_orf, start_gain=set())
+                orf = PVGOrf(orf=cur_orf, start_gain=set(), start_node=target_node)
                 additional_variants = copy.copy(cleavage_gain_down)
                 node_list.append((cur_copy, [orf], True, additional_variants))
                 trash.add(cur_copy)
@@ -993,57 +1005,32 @@ class PeptideVariantGraph():
             cur_in_cds = in_cds
             if out_node is self.stop:
                 continue
-            # out_node.orf = orf
-            was_bridge_before_pop_collapse = target_node.cpop_collapsed and \
-                out_node.is_bridge()
-            if target_node.is_bridge() or was_bridge_before_pop_collapse:
-                if not in_cds:
-                    start_gain = set()
-                    orfs = []
-                elif start_indices:
-                    orf = orf.copy()
-                    # carry over variants from the target node to the next
-                    # node if a start codon is found.
-                    start_gain = target_node.get_variants_at(
-                        start=start_indices[-1],
-                        end=min(start_indices[-1] + 1, len(target_node.seq.seq))
-                    )
-                    fs_variants = target_node.get_variants_at(
-                        start=start_indices[-1], end=-1
-                    )
-                    start_gain += [x for x in fs_variants if x.is_frameshifting()]
-                    start_gain = [x for x in start_gain if not x.is_circ_rna()]
-                    orf.start_gain = set(start_gain)
-                    orfs = [orf]
-                else:
-                    for orf in orfs:
-                        if not orf.start_gain:
-                            start_gain = [v.variant for v in target_node.variants
-                                if v.variant.is_frameshifting()
-                                and not v.variant.is_circ_rna()]
-                            orf.start_gain.update(start_gain)
+
+            if not in_cds:
+                start_gain = set()
+                orfs = []
+            elif start_indices:
+                orf = orf.copy()
+                # carry over variants from the target node to the next
+                # node if a start codon is found.
+                start_gain = target_node.get_variants_at(
+                    start=start_indices[-1],
+                    end=min(start_indices[-1] + 1, len(target_node.seq.seq))
+                )
+                fs_variants = target_node.get_variants_at(
+                    start=start_indices[-1], end=-1
+                )
+                start_gain += [x for x in fs_variants if x.is_frameshifting()]
+                start_gain = [x for x in start_gain if not x.is_circ_rna()]
+                orf.start_gain = set(start_gain)
+                orfs = [orf]
             else:
-                if is_stop:
-                    start_gain = set()
-                    orfs = []
-                elif start_indices:
-                    orf = orf.copy()
-                    start_index = start_indices[-1]
-                    start_gain = target_node.get_variants_at(start_index, start_index + 1)
-                    fs_variants = target_node.get_variants_at(
-                        start=start_index, end=-1
-                    )
-                    start_gain += [x for x in fs_variants if x.is_frameshifting()]
-                    start_gain = [x for x in start_gain if not x.is_circ_rna()]
-                    orf.start_gain = set(start_gain)
-                    orfs = [orf]
-                else:
-                    for orf in orfs:
-                        if not orf.start_gain:
-                            start_gain = [x.variant for x in target_node.variants
-                                if x.variant.is_frameshifting()
-                                and not x.variant.is_circ_rna()]
-                            orf.start_gain.update(start_gain)
+                for orf in orfs:
+                    if not orf.start_gain:
+                        start_gain = [v.variant for v in target_node.variants
+                            if v.variant.is_frameshifting()
+                            and not v.variant.is_circ_rna()]
+                        orf.start_gain.update(start_gain)
 
             for variant in target_node.variants:
                 if variant.is_stop_altering:
@@ -1054,13 +1041,18 @@ class PeptideVariantGraph():
 
             cur_cleavage_gain = copy.copy(cleavage_gain)
 
-            if self.global_variant and self.global_variant.is_circ_rna():
+            if self.is_circ_rna():
+                circ_rna = traversal.circ_rna
                 filtered_orfs = []
                 for orf_i in orfs:
-                    if not (any(out_node.is_missing_variant(v) for v in orf_i.start_gain)\
-                            or (not orf_i.start_gain
-                            and out_node.has_variant_at(orf_i.orf[0], orf_i.orf[0] + 3))):
-                        filtered_orfs.append(orf_i)
+                    orf_i_2 = orf_i.copy()
+                    if out_node.is_at_least_one_loop_downstream(
+                                orf_i_2.start_node, self.subgraphs, circ_rna):
+                        if orf_i.is_valid_orf(out_node, self.subgraphs, circ_rna):
+                            filtered_orfs.append(orf_i_2)
+                    else:
+                        orf_i_2.start_gain.update({x.variant for x in out_node.variants})
+                        filtered_orfs.append(orf_i_2)
                 if not filtered_orfs:
                     cur_in_cds = False
             else:
@@ -1079,7 +1071,9 @@ class PeptideVariantGraph():
                 is_start_codon=is_start_codon,
                 additional_variants=additional_variants,
                 blacklist=self.blacklist,
-                leading_node=target_node
+                leading_node=target_node,
+                subgraphs=self.subgraphs,
+                circ_rna=traversal.circ_rna
             )
         for node in trash:
             self.remove_node(node)
@@ -1105,7 +1099,7 @@ class PVGTraversal():
     """
     def __init__(self, check_variants:bool, check_orf:bool,
             pool:VariantPeptideDict, known_orf_tx:Tuple[int,int]=None,
-            known_orf_aa:Tuple[int,int]=None,
+            known_orf_aa:Tuple[int,int]=None, circ_rna:circ.CircRNAModel=None,
             queue:Deque[PVGCursor]=None,
             stack:Dict[PVGNode, Dict[PVGNode, PVGCursor]]=None):
         """ constructor """
@@ -1113,6 +1107,7 @@ class PVGTraversal():
         self.check_orf = check_orf
         self.known_orf_tx = known_orf_tx or (None, None)
         self.known_orf_aa = known_orf_aa or (None, None)
+        self.circ_rna = circ_rna
         self.queue = queue or deque([])
         self.pool = pool
         self.stack = stack or {}

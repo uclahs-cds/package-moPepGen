@@ -3,9 +3,10 @@ from __future__ import annotations
 import copy
 from functools import cmp_to_key
 from typing import Dict, List, Set
-from moPepGen import aa, seqvar
+from moPepGen import aa, circ, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
+from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
 
 class PVGNode():
@@ -148,6 +149,41 @@ class PVGNode():
         """ Check if this is the start node of a subgraph """
         return any(x.subgraph_id != self.subgraph_id for x in self.in_nodes) and \
             all(x.subgraph_id == self.subgraph_id for x in self.out_nodes)
+
+    def is_at_least_one_loop_downstream(self, other, subgraphs:SubgraphTree,
+            circ_rna:circ.CircRNAModel) -> bool:
+        """"""
+        if self.seq.locations:
+            i = self.seq.locations[0].ref.start
+            i = i * 3 + self.reading_frame_index
+            x_level = subgraphs[self.seq.locations[0].ref.seqname].level
+        else:
+            i = self.variants[0].variant.location.start
+            x_level = subgraphs[self.variants[0].location.seqname].level
+
+        if other.seq.locations:
+            j = other.seq.locations[0].ref.start
+            j = j * 3 + other.reading_frame_index
+            y_level = subgraphs[other.seq.locations[0].ref.seqname].level
+        else:
+            j = other.variants[0].variant.location.start
+            y_level = subgraphs[other.variants[0].location.seqname].level
+
+        if x_level - y_level > 1:
+            return True
+
+        if x_level == y_level:
+            return False
+
+        if x_level - y_level == 1:
+            for fragment in circ_rna.fragments:
+                if i in fragment.location and j in fragment.location:
+                    return i >= j - 3
+                if i in fragment.location:
+                    return False
+                if j in fragment.location:
+                    return True
+        raise ValueError('Locations not found from the fragments of the circRNA.')
 
     def has_any_in_bridge(self) -> None:
         """ Check if it has any incoming node that is bridge """
@@ -545,6 +581,15 @@ class PVGNode():
             if variant.location.overlaps(loc):
                 return True
         return False
+
+    def get_subgraph_id_at(self, i:int) -> str:
+        """ """
+        for loc in self.seq.locations:
+            if i in loc.query:
+                return loc.ref.seqname
+        for v in self.variants:
+            if i in v.location:
+                return v.location.seqname
 
     def is_missing_variant(self, variant:seqvar.VariantRecord) -> bool:
         """ Checks if in the coordinates of the node if any variant from a
