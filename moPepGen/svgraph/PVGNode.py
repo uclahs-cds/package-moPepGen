@@ -170,7 +170,7 @@ class PVGNode():
             j = other.seq.locations[0].ref.start
             y_level = subgraphs[other.seq.locations[0].ref.seqname].level
         else:
-            for v in self.variants:
+            for v in other.variants:
                 if not v.variant.is_circ_rna():
                     break
             else:
