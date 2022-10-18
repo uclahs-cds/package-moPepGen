@@ -155,10 +155,10 @@ class PVGNode():
             circ_rna:circ.CircRNAModel) -> bool:
         """ Checks if is at least one loop downstream to the other node. """
         if self.seq.locations:
-            i = self.seq.locations[0].ref.start
-            x_level = subgraphs[self.seq.locations[0].ref.seqname].level
+            i = self.seq.locations[-1].ref.start
+            x_level = subgraphs[self.seq.locations[-1].ref.seqname].level
         else:
-            for v in self.variants:
+            for v in reversed(self.variants):
                 if not v.variant.is_circ_rna():
                     break
             else:
@@ -190,11 +190,11 @@ class PVGNode():
                     start=math.floor((fragment.location.start - 3) / 3),
                     end=math.floor(fragment.location.end / 3)
                 )
-                if i in frag:
+                if i in frag and j in frag:
                     return i >= j
-                if i in fragment.location:
+                if i in frag:
                     return False
-                if j in fragment.location:
+                if j in frag:
                     return True
         raise ValueError('Locations not found from the fragments of the circRNA.')
 
