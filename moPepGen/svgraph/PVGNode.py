@@ -160,11 +160,11 @@ class PVGNode():
         else:
             for v in reversed(self.variants):
                 if not v.variant.is_circ_rna():
+                    i = math.floor(v.variant.location.start / 3)
+                    x_level = subgraphs[v.location.seqname].level
                     break
             else:
                 raise ValueError("Failed to find a non circRNA variant.")
-            i = math.floor(v.variant.location.start / 3)
-            x_level = subgraphs[v.location.seqname].level
 
         if other.seq.locations:
             j = other.seq.locations[0].ref.start
@@ -172,11 +172,11 @@ class PVGNode():
         else:
             for v in other.variants:
                 if not v.variant.is_circ_rna():
+                    j = math.floor(v.variant.location.start)
+                    y_level = subgraphs[v.location.seqname].level
                     break
             else:
                 raise ValueError("Failed to find a non circRNA variant.")
-            j = math.floor(v.variant.location.start)
-            y_level = subgraphs[v.location.seqname].level
 
         if x_level - y_level > 1:
             return True

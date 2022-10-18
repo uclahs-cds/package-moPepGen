@@ -68,7 +68,7 @@ class PeptideVariantGraph():
         return len(node.out_nodes) == 1 and self.stop in node.out_nodes
 
     def is_circ_rna(self) -> bool:
-        """ """
+        """ Checks if this is a circRNA """
         return self.global_variant and self.global_variant.is_circ_rna()
 
     def find_node(self, func:Callable) -> List[PVGNode]:

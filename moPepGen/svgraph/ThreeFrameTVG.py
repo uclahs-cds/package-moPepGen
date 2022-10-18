@@ -873,8 +873,8 @@ class ThreeFrameTVG():
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
             variant_pool:Union[VariantRecordWithCoordinate, VariantRecordPoolOnDisk],
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
-            tx_seqs:dict[str, dna.DNASeqRecordWithCoordinates]=None,
-            gene_seqs:dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
             active_frames:List[bool]=None,
             known_orf_index:int=None) -> None:
         """ Create a variant graph.
