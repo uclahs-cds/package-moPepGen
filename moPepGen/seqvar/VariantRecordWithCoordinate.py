@@ -22,7 +22,8 @@ class VariantRecordWithCoordinate():
             variant=self.variant,
             location=FeatureLocation(
                 start=max(self.location.start + index, 0),
-                end=self.location.end + index
+                end=self.location.end + index,
+                seqname=self.location.seqname
             ),
             is_stop_altering=self.is_stop_altering
         )
@@ -34,7 +35,7 @@ class VariantRecordWithCoordinate():
         end = math.ceil(self.location.end / 3)
         return seqvar.VariantRecordWithCoordinate(
             variant=self.variant,
-            location=FeatureLocation(start=start, end=end),
+            location=FeatureLocation(start=start, end=end, seqname=self.location.seqname),
             is_stop_altering=self.is_stop_altering
         )
 
@@ -43,7 +44,9 @@ class VariantRecordWithCoordinate():
         start, stop, _ = index.indices(self.location.end)
         start_index = max([start, self.location.start])
         end_index = min([stop, self.location.end])
-        location = FeatureLocation(start=start_index, end=end_index)
+        location = FeatureLocation(
+            start=start_index, end=end_index, seqname=self.location.seqname
+        )
         return VariantRecordWithCoordinate(
             variant=self.variant,
             location=location

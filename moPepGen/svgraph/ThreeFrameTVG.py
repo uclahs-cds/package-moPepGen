@@ -360,7 +360,7 @@ class ThreeFrameTVG():
             )
         variant_with_coordinates = seqvar.VariantRecordWithCoordinate(
             variant=variant,
-            location=FeatureLocation(start=0, end=len(seq))
+            location=FeatureLocation(start=0, end=len(seq), seqname=source.subgraph_id)
         )
         var_node = self.create_node(
             seq=seq,
@@ -873,8 +873,8 @@ class ThreeFrameTVG():
     def create_variant_graph(self, variants:List[seqvar.VariantRecord],
             variant_pool:Union[VariantRecordWithCoordinate, VariantRecordPoolOnDisk],
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
-            tx_seqs:dict[str, dna.DNASeqRecordWithCoordinates]=None,
-            gene_seqs:dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
             active_frames:List[bool]=None,
             known_orf_index:int=None) -> None:
         """ Create a variant graph.
@@ -1068,8 +1068,7 @@ class ThreeFrameTVG():
 
         return out_nodes
 
-    @staticmethod
-    def find_bridge_nodes_between(start:TVGNode, end=TVGNode
+    def find_bridge_nodes_between(self, start:TVGNode, end=TVGNode
             ) -> Tuple[Set[TVGNode], Set[TVGNode], Set[TVGNode], Set[TVGNode]]:
         """ Find all bridge in and bridge out nodes between a start and a
         end node. """
@@ -1092,15 +1091,17 @@ class ThreeFrameTVG():
             if is_bridge_out:
                 bridge_out.add(cur)
                 continue
-            if cur.subgraph_id != start.subgraph_id:
-                if not cur.is_inframe_subgraph(start, end):
-                    subgraph_out.add(cur)
-                    continue
+
+            if not self.is_circ_rna():
+                if cur.subgraph_id != start.subgraph_id:
+                    if not cur.is_inframe_subgraph(start, end):
+                        subgraph_out.add(cur)
+                        continue
 
             for e in cur.in_edges:
                 if e.in_node.reading_frame_index != this_id or e.in_node.was_bridge:
                     bridge_in.add(e.in_node)
-                elif e.in_node.subgraph_id != cur.subgraph_id:
+                elif not self.is_circ_rna() and e.in_node.subgraph_id != cur.subgraph_id:
                     if not e.in_node.is_inframe_subgraph(start, end):
                         subgraph_in.add(e.in_node)
             if cur is not end:
@@ -1195,7 +1196,8 @@ class ThreeFrameTVG():
 
                     downstream = cur.get_reference_next()
                     downstream_has_subgraph_in = \
-                        not any(x.variant.is_fusion() for x in downstream.variants) \
+                        not self.is_circ_rna() \
+                        and not any(x.variant.is_fusion() for x in downstream.variants) \
                         and downstream.has_in_subgraph()
 
                     if cur.get_reference_next().has_in_bridge() \
@@ -1297,7 +1299,7 @@ class ThreeFrameTVG():
         start_node = node
         rf_index = node.reading_frame_index
         end_node = self.find_farthest_node_with_overlap(node)
-        if end_node.is_subgraph_end():
+        if not self.is_circ_rna() and end_node.is_subgraph_end():
             subgraph_ends = {end_node}
             subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node))
             end_nodes = set()
@@ -1571,7 +1573,8 @@ class ThreeFrameTVG():
             cleavage_params=self.cleavage_params,
             cds_start_nf=self.cds_start_nf,
             hypermutated_region_warned=self.hypermutated_region_warned,
-            global_variant=self.global_variant
+            global_variant=self.global_variant,
+            subgraphs=self.subgraphs
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])

@@ -5,11 +5,12 @@ import copy
 from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from Bio.Seq import Seq
 from Bio import SeqUtils
-from moPepGen import aa, get_equivalent
+from moPepGen import aa, circ, get_equivalent
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.aa import VariantPeptideIdentifier as vpi
+from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
 
 if TYPE_CHECKING:
@@ -43,18 +44,19 @@ class MiscleavedNodes():
     def __init__(self, data:Deque[MiscleavedNodeSeries],
             cleavage_params:params.CleavageParams,
             orfs:List[PVGOrf]=None, tx_id:str=None,
-            leading_node:PVGNode=None):
+            leading_node:PVGNode=None, subgraphs:SubgraphTree=None):
         """ constructor """
         self.data = data
         self.orfs = orfs or []
         self.tx_id = tx_id
         self.cleavage_params = cleavage_params
         self.leading_node = leading_node
+        self.subgrpahs = subgraphs
 
     @staticmethod
     def find_miscleaved_nodes(node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams, tx_id:str,
-            leading_node:PVGNode) -> MiscleavedNodes:
+            leading_node:PVGNode, subgraphs:SubgraphTree) -> MiscleavedNodes:
         """ Find all miscleaved nodes.
 
         node vs leading_node:
@@ -85,7 +87,8 @@ class MiscleavedNodes():
             cleavage_params=cleavage_params,
             orfs=orfs,
             tx_id=tx_id,
-            leading_node=leading_node
+            leading_node=leading_node,
+            subgraphs=subgraphs
         )
 
         if not node.cpop_collapsed:
@@ -162,7 +165,7 @@ class MiscleavedNodes():
 
     def join_miscleaved_peptides(self, check_variants:bool,
             additional_variants:List[VariantRecord], blacklist:Set[str],
-            is_start_codon:bool=False
+            is_start_codon:bool=False, circ_rna:circ.CircRNAModel=None
             ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -210,24 +213,7 @@ class MiscleavedNodes():
                 variants.update(cleavage_gain_down)
 
                 if any(v.is_circ_rna() for v in variants):
-                    is_missing_any_variant = False
-                    for v in variants:
-                        if v.is_circ_rna():
-                            continue
-                        # The peptide sequence is invalid in two cases:
-                        # 1. There is at least one start gain mutation that is
-                        # missing in the sequence, and 2. there is no start
-                        # gain mutation but the sequence has a variant at the
-                        # same position.
-                        if self.any_overlaps_and_all_missing_variant(queue, v):
-                            is_missing_any_variant = True
-                            break
-                        if not orf.start_gain \
-                                and any(n.has_variant_at(orf.orf[0], orf.orf[0]+3)
-                                    for n in queue):
-                            is_missing_any_variant = True
-                            break
-                    if not is_missing_any_variant:
+                    if all(orf.is_valid_orf(x, self.subgrpahs, circ_rna) for x in queue):
                         metadata.orf = tuple(orf.orf)
                         valid_orf_found = True
                         break
@@ -366,7 +352,8 @@ class VariantPeptideDict():
             cleavage_params:params.CleavageParams,
             check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord], blacklist:Set[str],
-            leading_node:PVGNode=None):
+            leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
+            circ_rna:circ.CircRNAModel=None):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
@@ -389,7 +376,8 @@ class VariantPeptideDict():
             leading_node = node
         miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
             node=node, orfs=orfs, cleavage_params=cleavage_params,
-            tx_id=self.tx_id, leading_node=leading_node
+            tx_id=self.tx_id, leading_node=leading_node,
+            subgraphs=subgraphs
         )
         if self.global_variant and self.global_variant not in additional_variants:
             additional_variants.append(self.global_variant)
@@ -397,7 +385,8 @@ class VariantPeptideDict():
             check_variants=check_variants,
             additional_variants=additional_variants,
             blacklist=blacklist,
-            is_start_codon=is_start_codon
+            is_start_codon=is_start_codon,
+            circ_rna=circ_rna
         )
         for seq, metadata in seqs:
             if 'X' in seq.seq:

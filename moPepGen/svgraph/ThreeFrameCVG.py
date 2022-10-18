@@ -173,7 +173,9 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         """ Create a subgraph by copying the current graph. The subgraph created
         will be attached to the end of this current graph. """
         subgraph_id = self.subgraphs.generate_subgraph_id()
-        seq = copy.copy(self.seq)
+        seq = copy.deepcopy(self.seq)
+        for loc in seq.locations:
+            loc.ref.seqname = subgraph_id
         root = self.root.deepcopy(subgraph_id, 1)
         reading_frames:Dict[TVGNode] = [None, None, None]
         for node in root.get_out_nodes():

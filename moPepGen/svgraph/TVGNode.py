@@ -94,7 +94,8 @@ class TVGNode():
             if variant.location.overlaps(location):
                 new_loc = FeatureLocation(
                     start=max(variant.location.start, location.start),
-                    end=min(variant.location.end, location.end)
+                    end=min(variant.location.end, location.end),
+                    seqname=variant.location.seqname
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
@@ -152,7 +153,8 @@ class TVGNode():
             return True
         if self.global_variant is None:
             return not self.variants
-        return not any(v.variant is not self.global_variant for v in self.variants)
+        return not any(v.variant is not self.global_variant and
+            v.variant != self.global_variant for v in self.variants)
 
     def is_stop_node(self) -> bool:
         """ check if it is a stop node """
@@ -280,9 +282,16 @@ class TVGNode():
 
     def copy(self) -> TVGNode:
         """ Create a copy of the node """
+        variants = []
+        for variant in self.variants:
+            new_variant = seqvar.VariantRecordWithCoordinate(
+                variant=variant.variant,
+                location=copy.deepcopy(variant.location)
+            )
+            variants.append(new_variant)
         return TVGNode(
-            seq=copy.copy(self.seq),
-            variants=copy.copy(self.variants),
+            seq=copy.deepcopy(self.seq),
+            variants=variants,
             branch=self.branch,
             orf=self.orf,
             reading_frame_index=self.reading_frame_index,
@@ -314,6 +323,11 @@ class TVGNode():
                     new_out_node = source_out_node.copy()
                     if subgraph_id:
                         new_out_node.subgraph_id = subgraph_id
+                        if new_out_node.seq:
+                            for loc in new_out_node.seq.locations:
+                                loc.ref.seqname = subgraph_id
+                        for variant in new_out_node.variants:
+                            variant.location.seqname = subgraph_id
                     if level_increment is not None:
                         new_out_node.level += level_increment
                     visited[source_out_node] = new_out_node
@@ -375,7 +389,8 @@ class TVGNode():
             if variant.location.start < i:
                 new_loc = FeatureLocation(
                     start=variant.location.start,
-                    end=min(i, variant.location.end)
+                    end=min(i, variant.location.end),
+                    seqname=variant.location.seqname
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
@@ -384,7 +399,8 @@ class TVGNode():
             if variant.location.end > i:
                 new_loc = FeatureLocation(
                     start=max(variant.location.start, i),
-                    end=variant.location.end
+                    end=variant.location.end,
+                    seqname=variant.location.seqname
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
@@ -422,7 +438,8 @@ class TVGNode():
             if variant.location.start < i:
                 new_loc = FeatureLocation(
                     start=variant.location.start,
-                    end=min(i, variant.location.end)
+                    end=min(i, variant.location.end),
+                    seqname=variant.location.seqname
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
@@ -431,7 +448,8 @@ class TVGNode():
             if variant.location.end > i:
                 new_loc = FeatureLocation(
                     start=max(variant.location.start, i),
-                    end=variant.location.end
+                    end=variant.location.end,
+                    seqname=variant.location.seqname
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
@@ -484,7 +502,8 @@ class TVGNode():
             if should_combine_variants:
                 self.variants[-1].location = FeatureLocation(
                     start=self.variants[-1].location.start,
-                    end=variant.location.end
+                    end=variant.location.end,
+                    seqname=self.variants[-1].location.seqname
                 )
             else:
                 self.variants.append(variant.shift(len(self.seq.seq)))
@@ -502,12 +521,12 @@ class TVGNode():
         for loc in self.seq.locations:
             if len(loc.query) < 3:
                 continue
-            query_start = math.ceil(loc.query.start / 3)
+            query_start = math.floor(loc.query.start / 3)
             query_end = math.floor(loc.query.end / 3)
             query = FeatureLocation(start=query_start, end=query_end)
             dna_query_codon_start = query_start * 3
-            dna_ref_codon_start = loc.ref.start + dna_query_codon_start - query.start
-            ref_start = math.ceil((dna_ref_codon_start - self.reading_frame_index) / 3)
+            dna_ref_codon_start = loc.ref.start - (loc.query.start - dna_query_codon_start)
+            ref_start = math.floor((dna_ref_codon_start - self.reading_frame_index) / 3)
             ref_end = ref_start + len(query)
             ref = FeatureLocation(start=ref_start, end=ref_end, seqname=loc.ref.seqname)
             locations.append(MatchedLocation(query=query, ref=ref))

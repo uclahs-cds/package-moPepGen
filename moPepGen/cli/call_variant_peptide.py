@@ -449,6 +449,8 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
     gene_seq = gene_seqs[gene_id]
     record.fragments.sort()
     circ_seq = record.get_circ_rna_sequence(gene_seq)
+    for loc in circ_seq.locations:
+        loc.ref.seqname = record.id
 
     # Alternative splicing should not be included. Alternative splicing
     # represented as Insertion, Deletion or Substitution.
@@ -478,4 +480,4 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
     cgraph.fit_into_codons()
     pgraph = cgraph.translate()
     pgraph.create_cleavage_graph()
-    return pgraph.call_variant_peptides(blacklist=ref.canonical_peptides)
+    return pgraph.call_variant_peptides(blacklist=ref.canonical_peptides, circ_rna=record)

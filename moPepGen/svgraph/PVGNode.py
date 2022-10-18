@@ -2,10 +2,12 @@
 from __future__ import annotations
 import copy
 from functools import cmp_to_key
+import math
 from typing import Dict, List, Set
-from moPepGen import aa, seqvar
+from moPepGen import aa, circ, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
+from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
 
 class PVGNode():
@@ -148,6 +150,53 @@ class PVGNode():
         """ Check if this is the start node of a subgraph """
         return any(x.subgraph_id != self.subgraph_id for x in self.in_nodes) and \
             all(x.subgraph_id == self.subgraph_id for x in self.out_nodes)
+
+    def is_at_least_one_loop_downstream(self, other, subgraphs:SubgraphTree,
+            circ_rna:circ.CircRNAModel) -> bool:
+        """ Checks if is at least one loop downstream to the other node. """
+        if self.seq.locations:
+            i = self.seq.locations[-1].ref.start
+            x_level = subgraphs[self.seq.locations[-1].ref.seqname].level
+        else:
+            for v in reversed(self.variants):
+                if not v.variant.is_circ_rna():
+                    i = math.floor(v.variant.location.start / 3)
+                    x_level = subgraphs[v.location.seqname].level
+                    break
+            else:
+                raise ValueError("Failed to find a non circRNA variant.")
+
+        if other.seq.locations:
+            j = other.seq.locations[0].ref.start
+            y_level = subgraphs[other.seq.locations[0].ref.seqname].level
+        else:
+            for v in other.variants:
+                if not v.variant.is_circ_rna():
+                    j = math.floor(v.variant.location.start)
+                    y_level = subgraphs[v.location.seqname].level
+                    break
+            else:
+                raise ValueError("Failed to find a non circRNA variant.")
+
+        if x_level - y_level > 1:
+            return True
+
+        if x_level == y_level:
+            return False
+
+        if x_level - y_level == 1:
+            for fragment in circ_rna.fragments:
+                frag = FeatureLocation(
+                    start=math.floor((fragment.location.start - 3) / 3),
+                    end=math.floor(fragment.location.end / 3)
+                )
+                if i in frag and j in frag:
+                    return i >= j
+                if i in frag:
+                    return False
+                if j in frag:
+                    return True
+        raise ValueError('Locations not found from the fragments of the circRNA.')
 
     def has_any_in_bridge(self) -> None:
         """ Check if it has any incoming node that is bridge """
@@ -545,6 +594,16 @@ class PVGNode():
             if variant.location.overlaps(loc):
                 return True
         return False
+
+    def get_subgraph_id_at(self, i:int) -> str:
+        """ Get the subgraph ID at the ith amino acid of the node's sequence. """
+        for loc in self.seq.locations:
+            if i in loc.query:
+                return loc.ref.seqname
+        for v in self.variants:
+            if i in v.location:
+                return v.location.seqname
+        raise ValueError("Failed to get the subgraph ID.")
 
     def is_missing_variant(self, variant:seqvar.VariantRecord) -> bool:
         """ Checks if in the coordinates of the node if any variant from a
