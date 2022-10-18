@@ -2,6 +2,7 @@
 from __future__ import annotations
 import copy
 from functools import cmp_to_key
+import math
 from typing import Dict, List, Set
 from moPepGen import aa, circ, seqvar
 from moPepGen.SeqFeature import FeatureLocation
@@ -155,7 +156,6 @@ class PVGNode():
         """ Checks if is at least one loop downstream to the other node. """
         if self.seq.locations:
             i = self.seq.locations[0].ref.start
-            i = i * 3 + self.reading_frame_index
             x_level = subgraphs[self.seq.locations[0].ref.seqname].level
         else:
             for v in self.variants:
@@ -163,12 +163,11 @@ class PVGNode():
                     break
             else:
                 raise ValueError("Failed to find a non circRNA variant.")
-            i = v.variant.location.start
+            i = math.floor(v.variant.location.start / 3)
             x_level = subgraphs[v.location.seqname].level
 
         if other.seq.locations:
             j = other.seq.locations[0].ref.start
-            j = j * 3 + other.reading_frame_index
             y_level = subgraphs[other.seq.locations[0].ref.seqname].level
         else:
             for v in self.variants:
@@ -176,7 +175,7 @@ class PVGNode():
                     break
             else:
                 raise ValueError("Failed to find a non circRNA variant.")
-            j = v.variant.location.start
+            j = math.floor(v.variant.location.start)
             y_level = subgraphs[v.location.seqname].level
 
         if x_level - y_level > 1:
@@ -187,8 +186,12 @@ class PVGNode():
 
         if x_level - y_level == 1:
             for fragment in circ_rna.fragments:
-                if i in fragment.location and j in fragment.location:
-                    return i >= j - 3
+                frag = FeatureLocation(
+                    start=math.floor((fragment.location.start - 3) / 3),
+                    end=math.floor(fragment.location.end / 3)
+                )
+                if i in frag:
+                    return i >= j
                 if i in fragment.location:
                     return False
                 if j in fragment.location:

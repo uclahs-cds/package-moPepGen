@@ -525,7 +525,7 @@ class TVGNode():
             query_end = math.floor(loc.query.end / 3)
             query = FeatureLocation(start=query_start, end=query_end)
             dna_query_codon_start = query_start * 3
-            dna_ref_codon_start = loc.ref.start + dna_query_codon_start - loc.query.start
+            dna_ref_codon_start = loc.ref.start - (loc.query.start - dna_query_codon_start)
             ref_start = math.floor((dna_ref_codon_start - self.reading_frame_index) / 3)
             ref_end = ref_start + len(query)
             ref = FeatureLocation(start=ref_start, end=ref_end, seqname=loc.ref.seqname)
