@@ -5,7 +5,7 @@ import itertools
 from typing import Iterable, IO
 
 
-__version__ = '0.9.5'
+__version__ = '0.10.0'
 
 ## Error messages
 ERROR_INDEX_IN_INTRON = 'The genomic index seems to be in an intron'
