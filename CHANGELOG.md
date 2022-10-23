@@ -10,13 +10,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.10.1] - 2022-10-24
+
+### Fixed
+
+- Transcriptional coordinate to genomic coordinate not converted successfully when it is the last nucleotide of the transcript. #592
+
 ## [0.10.0] - 2022-10-20
 
-## Added
+### Added
 
 - Added support for fusion, alternative splicing and circRNA in `bruteForce`.
 
-## Fixed
+### Fixed
 
 - Several issues of `bruteForce` were fixed for fusion, alternative splicing and circRNA to be consistent with `callVariant`.
 
@@ -48,7 +54,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.9.4] - 2022-09-07
 
-## Fixed
+### Fixed
 
 - Fixed issue of alternative splicing deletion that starts at the third nucleotide of start codon. Those variants are now skipped. #560
 

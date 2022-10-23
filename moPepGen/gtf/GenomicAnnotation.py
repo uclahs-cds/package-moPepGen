@@ -211,20 +211,20 @@ class GenomicAnnotation():
     def coordinate_transcript_to_genomic(self, index:int, transcript:str) -> int:
         """ Get the genomic coordinate from transcript coordinate """
         tx_model = self.transcripts[transcript]
-        tx_size = tx_model.transcript.location.end - tx_model.transcript.location.start
+        tx_size = sum(len(x.location) for x in tx_model.exon)
         if tx_size < index:
             raise ValueError('Index out of range.')
 
         if tx_model.transcript.strand == 1:
             for exon in tx_model.exon:
                 size = exon.location.end - exon.location.start
-                if index < size:
+                if index <= size:
                     return index + exon.location.start
                 index -= size
         if tx_model.transcript.strand == -1:
             for exon in reversed(tx_model.exon):
                 size = exon.location.end - exon.location.start
-                if index < size:
+                if index <= size:
                     return exon.location.end - 1 - index
                 index -= size
         raise ValueError("Don't know how to handle unstranded transcript.")
