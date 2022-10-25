@@ -425,3 +425,46 @@ class TestGTF(unittest.TestCase):
         tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
         x = anno.coordinate_gene_to_transcript(19, gene_id, tx_id)
         self.assertEqual(x, 10)
+
+    def test_coordinate_convert_tx_exon_start(self):
+        """ Convert coodinate from transcript to genomic when the index is the
+        start of an exon"""
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = ANNOTATION_ATTRS[0]['gene_id']
+        tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
+
+        i_genomic = 17
+        i_gene = anno.coordinate_genomic_to_gene(i_genomic, gene_id)
+        i_tx = anno.coordinate_gene_to_transcript(i_gene, gene_id, tx_id)
+        self.assertEqual(i_tx, 7)
+        i_genomic_2 = anno.coordinate_transcript_to_genomic(i_tx, tx_id)
+        self.assertEqual(i_genomic, i_genomic_2)
+
+        i_genomic = 11
+        i_gene = anno.coordinate_genomic_to_gene(i_genomic, gene_id)
+        i_tx = anno.coordinate_gene_to_transcript(i_gene, gene_id, tx_id)
+        self.assertEqual(i_tx, 6)
+        i_genomic_2 = anno.coordinate_transcript_to_genomic(i_tx, tx_id)
+        self.assertEqual(i_genomic, i_genomic_2)
+
+        # negative strand
+        annotation_data2 = copy.deepcopy(ANNOTATION_DATA)
+        annotation_data2['genes'][0]['strand'] = -1
+        annotation_data2['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(annotation_data2)
+        gene_id = ANNOTATION_ATTRS[0]['gene_id']
+        tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
+
+        i_genomic = 22
+        i_gene = anno.coordinate_genomic_to_gene(i_genomic, gene_id)
+        i_tx = anno.coordinate_gene_to_transcript(i_gene, gene_id, tx_id)
+        self.assertEqual(i_tx, 8)
+        i_genomic_2 = anno.coordinate_transcript_to_genomic(i_tx, tx_id)
+        self.assertEqual(i_genomic, i_genomic_2)
+
+        i_genomic = 17
+        i_gene = anno.coordinate_genomic_to_gene(i_genomic, gene_id)
+        i_tx = anno.coordinate_gene_to_transcript(i_gene, gene_id, tx_id)
+        self.assertEqual(i_tx, 13)
+        i_genomic_2 = anno.coordinate_transcript_to_genomic(i_tx, tx_id)
+        self.assertEqual(i_genomic, i_genomic_2)
