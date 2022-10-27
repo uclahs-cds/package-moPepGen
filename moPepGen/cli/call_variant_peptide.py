@@ -198,21 +198,21 @@ def call_variant_peptides_wrapper(tx_id:str,
     peptides = set()
     exclude_variant_types = ['Fusion', 'Insertion', 'Deletion', 'Substitution', 'circRNA']
     for variant in variant_series.fusion:
-        donor_breakpoint_genomic = reference_data.anno.coordinate_transcript_to_genomic(
-            index=variant.location.start, transcript=tx_id
-        )
-        donor_breakpoint_gene = reference_data.anno.coordinate_genomic_to_gene(
-            index=donor_breakpoint_genomic, gene=variant.attrs['GENE_ID']
-        )
-        filtered_variants = pool.filter_variants(
-            tx_ids=[tx_id], start=0, end=donor_breakpoint_gene,
-            exclude_type=exclude_variant_types, intron=False,
-            return_coord='transcript'
-        )
-        variant_pool = copy.copy(pool)
-        variant_pool[tx_id] = copy.copy(pool[tx_id])
-        variant_pool[tx_id].transcriptional = filtered_variants
         try:
+            donor_breakpoint_genomic = reference_data.anno.coordinate_transcript_to_genomic(
+                index=variant.location.start - 1, transcript=tx_id
+            )
+            donor_breakpoint_gene = reference_data.anno.coordinate_genomic_to_gene(
+                index=donor_breakpoint_genomic, gene=variant.attrs['GENE_ID']
+            ) + 1
+            filtered_variants = pool.filter_variants(
+                tx_ids=[tx_id], start=0, end=donor_breakpoint_gene,
+                exclude_type=exclude_variant_types, intron=False,
+                return_coord='transcript'
+            )
+            variant_pool = copy.copy(pool)
+            variant_pool[tx_id] = copy.copy(pool[tx_id])
+            variant_pool[tx_id].transcriptional = filtered_variants
             _peptides = call_peptide_fusion(
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
                 tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params
