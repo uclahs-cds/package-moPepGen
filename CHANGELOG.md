@@ -10,11 +10,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.10.1] - 2022-10-24
+## [0.10.1] - 2022-10-27
 
 ### Fixed
 
 - Transcriptional coordinate to genomic coordinate not converted successfully when it is the last nucleotide of the transcript. #592
+
+- When creating the peptide cleavage graph, the end nodes of ate variant bubble with alt splice were collapsed with the reference node causing the graph cleavage process terminated too early resulting uncleaved nodes. #597
+
+- in `callVariant` when filtering variants associated with the donor transcript, the left breakpoint coordinate not converted successfully if it is the end of the transcript. #598
 
 ## [0.10.0] - 2022-10-20
 
