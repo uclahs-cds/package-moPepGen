@@ -23,8 +23,8 @@ class PVGCollapseNode(PVGNode):
             and self.reading_frame_index == other.reading_frame_index \
             and self.was_bridge == other.was_bridge \
             and self.npop_collapsed == other.npop_collapsed == False \
-            and {v.variant for v in self.variants if v.variant.type == 'Deletion'} \
-                == {v.variant for v in other.variants if v.variant.type == 'Deletion'}
+            and {v.variant for v in self.variants if v.variant.is_alternative_splicing()} \
+                == {v.variant for v in other.variants if v.variant.is_alternative_splicing()}
 
         if result and hasattr(other, 'match'):
             other.match = self
@@ -36,10 +36,11 @@ class PVGCollapseNode(PVGNode):
 
     def __hash__(self):
         """ hash """
+        alt_vars = {v.variant for v in self.variants if v.variant.is_alternative_splicing()}
         hash_values = (
             self.seq.seq, frozenset(self.out_nodes), self.cleavage,
             self.truncated, self.reading_frame_index, self.npop_collapsed,
-            self.was_bridge
+            self.was_bridge, frozenset(alt_vars)
         )
         return hash(hash_values)
 
@@ -121,8 +122,8 @@ class PVGPopCollapseNode(PVGNode):
             and self.npop_collapsed == other.npop_collapsed \
             and self.cpop_collapsed == other.cpop_collapsed \
             and self.subgraph_id == other.subgraph_id \
-            and {v.variant for v in self.variants if v.variant.type == 'Deletion'}\
-                == {v.variant for v in other.variants if v.variant.type == 'Deletion'}
+            and {v.variant for v in self.variants if v.variant.is_alternative_splicing()}\
+                == {v.variant for v in other.variants if v.variant.is_alternative_splicing()}
 
         if result and hasattr(other, 'match'):
             other.match = self
@@ -134,10 +135,12 @@ class PVGPopCollapseNode(PVGNode):
 
     def __hash__(self):
         """ hash """
+        alt_vars = {v.variant for v in self.variants if v.variant.is_alternative_splicing()}
         hash_items = (
             self.seq.seq, frozenset(self.out_nodes), self.cleavage,
             self.truncated, self.reading_frame_index, self.was_bridge,
-            self.npop_collapsed, self.cpop_collapsed, self.subgraph_id
+            self.npop_collapsed, self.cpop_collapsed, self.subgraph_id,
+            frozenset(alt_vars)
         )
         return hash(hash_items)
 
