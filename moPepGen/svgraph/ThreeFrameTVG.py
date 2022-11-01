@@ -370,6 +370,16 @@ class ThreeFrameTVG():
             level=self.root.level
         )
 
+        if is_deletion:
+            subgraph_id = self.subgraphs.generate_subgraph_id()
+            var_node.subgraph_id = subgraph_id
+            level = self.root.level + 1
+            var_node.level = level
+            self.subgraphs.add_subgraph(
+                child_id=subgraph_id, parent_id=self.id, level=level,
+                start=variant.location.start, end=variant.location.end
+            )
+
         returns = [None, None]
         # variant start
         if variant_start == source_start:
