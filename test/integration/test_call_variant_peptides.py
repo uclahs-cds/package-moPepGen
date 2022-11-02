@@ -880,7 +880,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case61(self):
-        """ 
+        """ Found by fuzz test that on a node that spans over the backsplicing
+        site, a variant appears before the splicing site. #602
         """
         gvf = [
             self.data_dir/'fuzz/33/fake_variants.gvf',
