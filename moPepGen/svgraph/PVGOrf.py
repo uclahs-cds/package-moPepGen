@@ -96,14 +96,16 @@ class PVGOrf():
             loc = self.start_node.seq.locations[0]
             y_level = subgraphs[loc.ref.seqname].level
             j = loc.ref.start - loc.query.start
-        elif self.start_node.variants \
-                and not self.start_node.variants[0].variant.is_circ_rna() \
-                and 0 in self.start_node.variants[0].location:
-            v = self.start_node.variants[0]
-            j = math.floor(v.variant.location.start / 3)
-            y_level = subgraphs[v.location.seqname].level
         else:
-            raise ValueError('Failed to find the position for start of ORF.')
+            for v in self.start_node.variants:
+                if v.variant.is_circ_rna():
+                    continue
+                if 0 in v.location:
+                    j = math.floor(v.variant.location.start / 3)
+                    y_level = subgraphs[v.location.seqname].level
+                    break
+            else:
+                raise ValueError('Failed to find the position for start of ORF.')
 
         if x_level - y_level > 1:
             return True
