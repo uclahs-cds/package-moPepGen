@@ -130,12 +130,12 @@ class PVGOrf():
         """ Checks whether a given node is at least one loop downstream to the
         ORF start site. """
         if node.seq.locations:
-            i = node.seq.locations[-1].ref.start
+            i = node.seq.locations[-1].ref.end
             subgraph_id = node.seq.locations[-1].ref.seqname
         else:
             for v in reversed(node.variants):
                 if not v.variant.is_circ_rna():
-                    i = math.floor(v.variant.location.start / 3)
+                    i = math.floor(v.variant.location.end / 3)
                     subgraph_id = v.location.seqname
                     break
             else:
