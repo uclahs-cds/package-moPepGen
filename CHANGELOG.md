@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.10.1] - 2022-10-27
+## [0.10.1] - 2022-11-2
 
 ### Fixed
 
@@ -19,6 +19,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - When creating the peptide cleavage graph, the end nodes of ate variant bubble with alt splice were collapsed with the reference node causing the graph cleavage process terminated too early resulting uncleaved nodes. #597
 
 - in `callVariant` when filtering variants associated with the donor transcript, the left breakpoint coordinate not converted successfully if it is the end of the transcript. #598
+
+- Large deletion caused by alt splice raised the complexity drastically so had to go back to treat alt splice deletion as subgraph again. #600
+
+- In circRNA, nodes that span over the backsplicing site with variant before the backsplicing site were not recognized correctly. #602
 
 ## [0.10.0] - 2022-10-20
 

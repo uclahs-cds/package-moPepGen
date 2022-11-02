@@ -172,7 +172,7 @@ class PVGNode():
         else:
             for v in other.variants:
                 if not v.variant.is_circ_rna():
-                    j = math.floor(v.variant.location.start)
+                    j = math.floor(v.variant.location.start / 3)
                     y_level = subgraphs[v.location.seqname].level
                     break
             else:
@@ -528,6 +528,20 @@ class PVGNode():
         # raise ValueError('Can not find ORF')
         return -1
 
+    def get_subgraph_id_at(self, i:int) -> str:
+        """ Get the subgraph ID at the given position """
+        for loc in self.seq.locations:
+            if i in loc.query:
+                return loc.ref.seqname
+            if loc.query.start > i:
+                break
+        for v in self.variants:
+            if i in v.location:
+                return v.location.seqname
+            if v.location.start > i:
+                break
+        raise ValueError('Failed to find the subgraph ID.')
+
     def is_identical(self, other:PVGNode) -> bool:
         """ Checks if two nodes have the same sequence and same outbond node """
         return self.seq == other.seq and \
@@ -594,16 +608,6 @@ class PVGNode():
             if variant.location.overlaps(loc):
                 return True
         return False
-
-    def get_subgraph_id_at(self, i:int) -> str:
-        """ Get the subgraph ID at the ith amino acid of the node's sequence. """
-        for loc in self.seq.locations:
-            if i in loc.query:
-                return loc.ref.seqname
-        for v in self.variants:
-            if i in v.location:
-                return v.location.seqname
-        raise ValueError("Failed to get the subgraph ID.")
 
     def is_missing_variant(self, variant:seqvar.VariantRecord) -> bool:
         """ Checks if in the coordinates of the node if any variant from a
