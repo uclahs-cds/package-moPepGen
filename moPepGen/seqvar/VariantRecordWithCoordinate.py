@@ -32,7 +32,7 @@ class VariantRecordWithCoordinate():
         """ Returns a new object with the coordinates of the translated protein
         """
         start = int(self.location.start / 3)
-        end = math.ceil(self.location.end - 1 / 3) + 1
+        end = math.ceil((self.location.end - 1) / 3) + 1
         return seqvar.VariantRecordWithCoordinate(
             variant=self.variant,
             location=FeatureLocation(start=start, end=end, seqname=self.location.seqname),
