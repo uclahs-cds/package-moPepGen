@@ -364,7 +364,7 @@ class TranscriptAnnotationModel():
                     break
         else:
             for exon in reversed(self.exon):
-                if exon.location.end < pos:
+                if exon.location.end - 1 <= pos:
                     ind = exon.location.end - 1
                     break
         if ind == -1:
