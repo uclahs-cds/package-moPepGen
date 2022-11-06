@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - In circRNA, nodes that span over the backsplicing site with variant before the backsplicing site were not recognized correctly. #602
 
+- Failed to find the downstream exon start when the breakpoint is the first nucleotide before the exon start of a transcript on the negative strand. #603
+
 ## [0.10.0] - 2022-10-20
 
 ### Added

@@ -3,6 +3,7 @@ import unittest
 from test.unit import create_variant, create_genomic_annotation, \
     create_dna_record_dict, create_variants
 from moPepGen import seqvar
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.dna.DNASeqRecord import DNASeqRecord
 
 
@@ -114,6 +115,58 @@ class TestVariantRecord(unittest.TestCase):
         seq = DNASeqRecord('C' * 10, id=tx_id, name=tx_id, description=tx_id)
         with self.assertRaises(ValueError):
             variant.to_end_inclusion(seq)
+
+class TestVariantRecordWithCoordinate(unittest.TestCase):
+    """ Test cases for VariantRecordWithCoordinate """
+    def test_to_protein_coordinate(self):
+        """ """
+        variant = create_variant(
+            10, 11, 'C', 'G', 'SNV', 'SNV-10-C-G',
+            {'TRANSCRIPT_ID': 'ENST0001'}, 'ENSG0001'
+        )
+
+        loc = FeatureLocation(0, 1)
+        v = seqvar.VariantRecordWithCoordinate(variant, loc)
+        v = v.to_protein_coordinates()
+        self.assertEqual(v.location.start, 0)
+        self.assertEqual(v.location.end, 1)
+
+        loc = FeatureLocation(1, 2)
+        v = seqvar.VariantRecordWithCoordinate(variant, loc)
+        v = v.to_protein_coordinates()
+        self.assertEqual(v.location.start, 0)
+        self.assertEqual(v.location.end, 1)
+
+        loc = FeatureLocation(2, 3)
+        v = seqvar.VariantRecordWithCoordinate(variant, loc)
+        v = v.to_protein_coordinates()
+        self.assertEqual(v.location.start, 0)
+        self.assertEqual(v.location.end, 1)
+
+        loc = FeatureLocation(3, 4)
+        v = seqvar.VariantRecordWithCoordinate(variant, loc)
+        v = v.to_protein_coordinates()
+        self.assertEqual(v.location.start, 1)
+        self.assertEqual(v.location.end, 2)
+
+        loc = FeatureLocation(0, 2)
+        v = seqvar.VariantRecordWithCoordinate(variant, loc)
+        v = v.to_protein_coordinates()
+        self.assertEqual(v.location.start, 0)
+        self.assertEqual(v.location.end, 1)
+
+        loc = FeatureLocation(0, 3)
+        v = seqvar.VariantRecordWithCoordinate(variant, loc)
+        v = v.to_protein_coordinates()
+        self.assertEqual(v.location.start, 0)
+        self.assertEqual(v.location.end, 1)
+
+        loc = FeatureLocation(0, 4)
+        v = seqvar.VariantRecordWithCoordinate(variant, loc)
+        v = v.to_protein_coordinates()
+        self.assertEqual(v.location.start, 0)
+        self.assertEqual(v.location.end, 2)
+
 
 class TestTranscriptionalVariantSeries(unittest.TestCase):
     """ Test cases for VariantRecordSeries """
