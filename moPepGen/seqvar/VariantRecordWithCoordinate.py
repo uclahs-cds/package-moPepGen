@@ -6,9 +6,10 @@ from moPepGen.SeqFeature import FeatureLocation
 
 
 class VariantRecordWithCoordinate():
-    """ This class models the variant record and it's coordinate location at
-    a sequence. This is used mainly in the graph, to keep track on the location
-    of variants of a node when it expand forward or backward. """
+    """ This class models the variant record with its coordinate location at
+    a gene or protein. This is used mainly in the graph to keep track on the
+    location of variants of a node when the variable bubble expands forward
+    or backward. """
     def __init__(self, variant:seqvar.VariantRecord, location:FeatureLocation,
             is_stop_altering:bool=False):
         """ Constructor """

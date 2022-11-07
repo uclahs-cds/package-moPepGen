@@ -119,7 +119,7 @@ class TestVariantRecord(unittest.TestCase):
 class TestVariantRecordWithCoordinate(unittest.TestCase):
     """ Test cases for VariantRecordWithCoordinate """
     def test_to_protein_coordinate(self):
-        """ """
+        """ Convert variant record to protein coordinate """
         variant = create_variant(
             10, 11, 'C', 'G', 'SNV', 'SNV-10-C-G',
             {'TRANSCRIPT_ID': 'ENST0001'}, 'ENSG0001'
