@@ -51,7 +51,7 @@ class MiscleavedNodes():
         self.tx_id = tx_id
         self.cleavage_params = cleavage_params
         self.leading_node = leading_node
-        self.subgrpahs = subgraphs
+        self.subgraphs = subgraphs
 
     @staticmethod
     def find_miscleaved_nodes(node:PVGNode, orfs:List[PVGOrf],
@@ -213,7 +213,7 @@ class MiscleavedNodes():
                 variants.update(cleavage_gain_down)
 
                 if any(v.is_circ_rna() for v in variants):
-                    if all(orf.is_valid_orf(x, self.subgrpahs, circ_rna) for x in queue):
+                    if all(orf.is_valid_orf(x, self.subgraphs, circ_rna) for x in queue):
                         metadata.orf = tuple(orf.orf)
                         valid_orf_found = True
                         break

@@ -468,3 +468,48 @@ class TestGTF(unittest.TestCase):
         self.assertEqual(i_tx, 13)
         i_genomic_2 = anno.coordinate_transcript_to_genomic(i_tx, tx_id)
         self.assertEqual(i_genomic, i_genomic_2)
+
+    def test_get_downstream_exon_start(self):
+        """ Test TranscriptAnnotationModel.get_downstream_exon_start """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
+
+        # + strand
+        tx_model = anno.transcripts[tx_id]
+        i = tx_model.get_downstream_exon_start(15)
+        self.assertEqual(i, 17)
+
+        # exon end
+        i = tx_model.get_downstream_exon_start(12)
+        self.assertEqual(i, 17)
+
+        # intron end
+        i = tx_model.get_downstream_exon_start(16)
+        self.assertEqual(i, 17)
+
+        # exon start
+        i = tx_model.get_downstream_exon_start(15)
+        self.assertEqual(i, 17)
+
+        # - strand
+        annotation_data2 = copy.deepcopy(ANNOTATION_DATA)
+        annotation_data2['genes'][0]['strand'] = -1
+        annotation_data2['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(annotation_data2)
+        tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
+
+        tx_model = anno.transcripts[tx_id]
+        i = tx_model.get_downstream_exon_start(15)
+        self.assertEqual(i, 11)
+
+        # exon start
+        i = tx_model.get_downstream_exon_start(16)
+        self.assertEqual(i, 11)
+
+        # exon end
+        i = tx_model.get_downstream_exon_start(22)
+        self.assertEqual(i, 22)
+
+        # intron end
+        i = tx_model.get_downstream_exon_start(23)
+        self.assertEqual(i, 22)

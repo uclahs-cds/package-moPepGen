@@ -913,7 +913,7 @@ class PeptideVariantGraph():
             in_cds = True
             node_copy.truncate_left(start_index)
             orf = PVGOrf(orf=list(traversal.known_orf_tx), start_gain=start_gain,
-                start_node=target_node)
+                start_node=target_node, subgraph_id=self.id, node_offset=start_index)
             traversal.pool.add_miscleaved_sequences(
                 node=node_copy,
                 orfs=[orf],
@@ -991,10 +991,14 @@ class PeptideVariantGraph():
                 cur_copy = target_node.copy(in_nodes=False)
                 cur_copy.truncate_left(start_index)
                 orf_start = cur_copy.get_orf_start()
+                orf_subgraph_id = cur_copy.get_subgraph_id_at(0)
                 cur_orf = [orf_start, None]
                 self.update_orf(cur_orf)
                 in_cds = True
-                orf = PVGOrf(orf=cur_orf, start_gain=set(), start_node=target_node)
+                orf = PVGOrf(
+                    orf=cur_orf, start_gain=set(), start_node=target_node,
+                    subgraph_id=orf_subgraph_id, node_offset = start_index
+                )
                 additional_variants = copy.copy(cleavage_gain_down)
                 node_list.append((cur_copy, [orf], True, additional_variants))
                 trash.add(cur_copy)
@@ -1046,8 +1050,8 @@ class PeptideVariantGraph():
                 filtered_orfs = []
                 for orf_i in orfs:
                     orf_i_2 = orf_i.copy()
-                    if out_node.is_at_least_one_loop_downstream(
-                                orf_i_2.start_node, self.subgraphs, circ_rna):
+                    if orf_i_2.node_is_at_least_one_loop_downstream(
+                                out_node, self.subgraphs, circ_rna):
                         if orf_i.is_valid_orf(out_node, self.subgraphs, circ_rna):
                             filtered_orfs.append(orf_i_2)
                     else:

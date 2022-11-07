@@ -47,7 +47,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         self.attrs = attrs
         self.circ = circ_record
         location = FeatureLocation(
-            seqname=self.circ.gene_id,
+            seqname=self.id,
             start=seq.locations[0].ref.start,
             end=seq.locations[0].ref.end
         )
