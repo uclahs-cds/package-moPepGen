@@ -182,48 +182,47 @@ class MiscleavedNodes():
             queue = series.nodes
             metadata = VariantPeptideMetadata()
             seq:str = None
+            variants:Set[VariantRecord] = set()
 
-            valid_orf_found = False
-
-            for orf in self.orfs:
-                variants:Set[VariantRecord] = set()
-
-                for i, node in enumerate(queue):
-                    other = str(node.seq.seq)
-                    if seq is None:
-                        seq = other
-                    else:
-                        seq = seq + other
-                    if check_variants:
-                        for variant in node.variants:
-                            variants.add(variant.variant)
-                        if i < len(queue) - 1:
-                            _node = self.leading_node if i == 0 else node
-                            indels = queue[i + 1].upstream_indel_map.get(_node)
-                            if indels:
-                                for variant in indels:
-                                    variants.add(variant)
-
+            for i, node in enumerate(queue):
+                other = str(node.seq.seq)
+                if seq is None:
+                    seq = other
+                else:
+                    seq = seq + other
                 if check_variants:
-                    variants.update(orf.start_gain)
-                    variants.update(additional_variants)
-                    variants.update(series.additional_variants)
+                    for variant in node.variants:
+                        variants.add(variant.variant)
+                    if i < len(queue) - 1:
+                        _node = self.leading_node if i == 0 else node
+                        indels = queue[i + 1].upstream_indel_map.get(_node)
+                        if indels:
+                            for variant in indels:
+                                variants.add(variant)
 
-                cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
-                variants.update(cleavage_gain_down)
-
-                if any(v.is_circ_rna() for v in variants):
+            valid_orf = None
+            for orf in self.orfs:
+                if any(v.is_circ_rna() for v in variants) \
+                        or any(v.is_circ_rna() for v in orf.start_gain):
                     if all(orf.is_valid_orf(x, self.subgraphs, circ_rna) for x in queue):
                         metadata.orf = tuple(orf.orf)
-                        valid_orf_found = True
+                        valid_orf = orf
                         break
                 else:
                     metadata.orf = tuple(orf.orf)
-                    valid_orf_found = True
+                    valid_orf = orf
                     break
 
-            if not valid_orf_found:
+            if valid_orf is None:
                 continue
+
+            cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
+            variants.update(cleavage_gain_down)
+
+            if check_variants:
+                variants.update(valid_orf.start_gain)
+                variants.update(additional_variants)
+                variants.update(series.additional_variants)
 
             if not seq:
                 continue
