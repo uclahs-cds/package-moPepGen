@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - In `bruteForce`, variants that start at the fusion breakpoint were not excluded. #604
 
+- Variant peptides on circRNA are missed by `callVariant` when there are multiple ORF candidates. #606
+
 ## [0.10.0] - 2022-10-20
 
 ### Added
