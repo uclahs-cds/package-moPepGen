@@ -298,7 +298,7 @@ class BruteForceVariantPeptideCaller():
                 inserted_intronic_region[self.tx_id].append(loc)
 
             if right_tx_id in pool \
-                    and any(x.location.start < right_breakpoint_tx
+                    and any(x.location.start <= right_breakpoint_tx
                         for x in pool[right_tx_id].transcriptional):
                 return True
 
