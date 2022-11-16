@@ -322,7 +322,8 @@ class BruteForceVariantPeptideCaller():
             if tx_id not in inserted_intronic_region:
                 return True
             for v in pool[tx_id].intronic:
-                if not any(x.is_superset(v.location) for x in inserted_intronic_region[tx_id]):
+                if not any(x.start < v.location.start and x.end > v.location.end
+                        for x in inserted_intronic_region[tx_id]):
                     return True
         return False
 
