@@ -458,6 +458,8 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
 
     fragments = []
     for frag in record.fragments:
+        if len(frag) <= 3:
+            continue
         loc = FeatureLocation(
             start=frag.location.start + 3, end=frag.location.end
         )
