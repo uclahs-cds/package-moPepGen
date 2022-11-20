@@ -191,7 +191,7 @@ class MatchedLocation():
         """ Shift query window by i """
         query = self.query.__class__(
             seqname=self.query.seqname,
-            start=self.query.start._shift(i),
-            end=self.query.end._shift(i)
+            start=self.query.start + i,
+            end=self.query.end + i
         )
         return self.__class__(query=query, ref=self.ref)
