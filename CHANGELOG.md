@@ -10,6 +10,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+
+## [0.10.2] - 2022-11-20
+
+- When filtering variants for circRNA, fragments that are shorter than 3 will not be accounted from now. #613
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed
