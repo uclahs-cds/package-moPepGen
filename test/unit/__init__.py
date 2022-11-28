@@ -307,9 +307,12 @@ def create_dna_record_dict(data:dict) -> dna.DNASeqDict:
     return genome
 
 T = List[Tuple[Tuple[int,int], Tuple[int,int]]]
-def create_dna_seq_with_coordinates(seq:str, locations=T, orf=Tuple[int,int]
+def create_dna_seq_with_coordinates(seq:str, locations:T=None, orf=Tuple[int,int]
         ) -> dna.DNASeqRecordWithCoordinates:
     """ Create a dna.DNASeqRecordWithCoordinates instance """
+    if not locations:
+        locations = [((0,len(seq)), (0, len(seq)))]
+
     locs = []
     for (a,b),(c,d) in locations:
         loc = MatchedLocation(

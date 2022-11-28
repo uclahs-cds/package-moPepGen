@@ -266,7 +266,8 @@ class ThreeFrameTVG():
     def create_node(self, seq:dna.DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
-            subgraph_id:str=None, level:int=0) -> TVGNode:
+            subgraph_id:str=None, level:int=0, global_variant:seqvar.VariantRecord=None
+            ) -> TVGNode:
         """ create a node """
         return TVGNode(
             seq=seq,
@@ -275,7 +276,8 @@ class ThreeFrameTVG():
             orf=orf,
             reading_frame_index=reading_frame_index,
             subgraph_id=subgraph_id or self.id,
-            level=level
+            level=level,
+            global_variant=global_variant
         )
 
     def splice(self, node:TVGNode, i:int, _type:str
@@ -367,7 +369,8 @@ class ThreeFrameTVG():
             variants=[variant_with_coordinates],
             reading_frame_index=source.reading_frame_index,
             orf=source.orf,
-            level=self.root.level
+            level=self.root.level,
+            global_variant=source.global_variant
         )
 
         if is_deletion:

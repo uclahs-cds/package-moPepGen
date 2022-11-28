@@ -612,17 +612,19 @@ class TVGNode():
 
     def is_less_mutated_than(self, other:TVGNode) -> bool:
         """ Checks if this node has less mutation than the other """
+        self_vars = [v for v in self.variants if v.variant is not self.global_variant]
+        other_vars = [v for v in other.variants if v.variant is not other.global_variant]
         if self.level != other.level:
             return self.level < other.level
 
-        if len(self.variants) != len(other.variants):
-            return len(self.variants) < len(other.variants)
+        if len(self_vars) != len(other_vars):
+            return len(self_vars) < len(other_vars)
 
-        for x, y in zip(self.variants, other.variants):
+        for x, y in zip(self_vars, other_vars):
             if x.location != y.location:
                 return x.location < y.location
 
-        for x, y in zip(self.variants, other.variants):
+        for x, y in zip(self_vars, other_vars):
             # SNV is higher than RES
             if x.variant.type == 'SNV' and y.variant.type == 'RNAEditingSite':
                 return True

@@ -15,6 +15,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - When filtering variants for circRNA, those on fragments that are shorter than 3 nucleotides will not be included. #613
 
+- When collapsing nodes with the same sequence, global variants (mostly circRNA) are no longer considered when comparing variants, so that nodes with no other variant won't be discarded mistakenly. #619
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed
