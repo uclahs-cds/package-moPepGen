@@ -520,7 +520,9 @@ class TVGNode():
         locations = []
         for loc in self.seq.locations:
             if len(loc.query) < 3:
-                continue
+                if loc.query.end != len(self.seq.seq):
+                    continue
+
             query_start = math.floor(loc.query.start / 3)
             query_end = math.floor(loc.query.end / 3)
             query = FeatureLocation(start=query_start, end=query_end)

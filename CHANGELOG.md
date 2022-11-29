@@ -17,6 +17,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - When collapsing nodes with the same sequence, global variants (mostly circRNA) are no longer considered when comparing variants, so that nodes with no other variant won't be discarded mistakenly. #619
 
+- Fixed issue that for hybrid nodes that span over a junction site on a circRNA, the location got lost and caused it to fail to identify whether the node is at least one loop downstream to an ORF start site. #621
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed
