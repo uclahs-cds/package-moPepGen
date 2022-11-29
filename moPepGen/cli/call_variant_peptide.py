@@ -466,6 +466,9 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
         frag = SeqFeature(chrom=frag.chrom, location=loc, attributes=frag.attributes)
         fragments.append(frag)
 
+    if not fragments:
+        return set()
+
     variant_records = variant_pool.filter_variants(
         tx_ids=[record.transcript_id], exclude_type=exclusion_variant_types,
         intron=False, segments=fragments
