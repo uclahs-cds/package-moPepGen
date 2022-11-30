@@ -10,8 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-
-## [0.10.2] - 2022-11-20
+## [0.10.2] - 2022-11-30
 
 - When filtering variants for circRNA, those on fragments that are shorter than 3 nucleotides will not be included. #613
 
@@ -20,6 +19,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed issue that for hybrid nodes that span over a junction site on a circRNA, the location got lost and caused it to fail to identify whether the node is at least one loop downstream to an ORF start site. #621
 
 - Fixed issue that circRNA with only 1 nucleotide was causing it to fail to filter variants. #623
+
+- Fixed issue that peptide nodes on different subgraphs were collapsed after expanding the variant bubble, causing downstream nodes to be unprocessed and resulting in `*` in the final sequences. #625
 
 ## [0.10.1] - 2022-11-2
 
