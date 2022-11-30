@@ -24,7 +24,9 @@ class PVGCollapseNode(PVGNode):
             and self.was_bridge == other.was_bridge \
             and self.npop_collapsed == other.npop_collapsed == False \
             and {v.variant for v in self.variants if v.variant.is_alternative_splicing()} \
-                == {v.variant for v in other.variants if v.variant.is_alternative_splicing()}
+                == {v.variant for v in other.variants if v.variant.is_alternative_splicing()} \
+            and self.subgraph_id == other.subgraph_id \
+            and self.level == other.level
 
         if result and hasattr(other, 'match'):
             other.match = self
@@ -40,7 +42,7 @@ class PVGCollapseNode(PVGNode):
         hash_values = (
             self.seq.seq, frozenset(self.out_nodes), self.cleavage,
             self.truncated, self.reading_frame_index, self.npop_collapsed,
-            self.was_bridge, frozenset(alt_vars)
+            self.was_bridge, frozenset(alt_vars), self.subgraph_id, self.level
         )
         return hash(hash_values)
 
@@ -123,7 +125,9 @@ class PVGPopCollapseNode(PVGNode):
             and self.cpop_collapsed == other.cpop_collapsed \
             and self.subgraph_id == other.subgraph_id \
             and {v.variant for v in self.variants if v.variant.is_alternative_splicing()}\
-                == {v.variant for v in other.variants if v.variant.is_alternative_splicing()}
+                == {v.variant for v in other.variants if v.variant.is_alternative_splicing()} \
+            and self.subgraph_id == other.subgraph_id \
+            and self.level == other.level
 
         if result and hasattr(other, 'match'):
             other.match = self
@@ -140,7 +144,7 @@ class PVGPopCollapseNode(PVGNode):
             self.seq.seq, frozenset(self.out_nodes), self.cleavage,
             self.truncated, self.reading_frame_index, self.was_bridge,
             self.npop_collapsed, self.cpop_collapsed, self.subgraph_id,
-            frozenset(alt_vars)
+            frozenset(alt_vars), self.subgraph_id, self.level
         )
         return hash(hash_items)
 
