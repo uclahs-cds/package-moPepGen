@@ -18,9 +18,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that for hybrid nodes that span over a junction site on a circRNA, the location got lost and caused it to fail to identify whether the node is at least one loop downstream to an ORF start site. #621
 
-- Fixed issue that circRNA with only 1 nucleotide causing it failed to filter variants on it. #
+- Fixed issue that circRNA with only 1 nucleotide causing it failed to filter variants on it. #623
 
-- Fixed issue that peptide nodes on different subgraphs are collapsed after expanding the variant bubble, causing downstream nodes unprocessed resulting * in the final sequences.
+- Fixed issue that peptide nodes on different subgraphs are collapsed after expanding the variant bubble, causing downstream nodes unprocessed resulting * in the final sequences. #625
 
 ## [0.10.1] - 2022-11-2
 
