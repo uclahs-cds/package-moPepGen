@@ -20,7 +20,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that circRNA with only 1 nucleotide causing it failed to filter variants on it. #623
 
-- Fixed issue that peptide nodes on different subgraphs are collapsed after expanding the variant bubble, causing downstream nodes unprocessed resulting * in the final sequences. #625
+- Fixed issue that peptide nodes on different subgraphs were collapsed after expanding the variant bubble, causing downstream nodes to be unprocessed and resulting in `*` in the final sequences. #625
 
 ## [0.10.1] - 2022-11-2
 
