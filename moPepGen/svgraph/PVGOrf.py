@@ -119,11 +119,14 @@ class PVGOrf():
                     start=math.floor((fragment.location.start - 3) / 3),
                     end=math.floor(fragment.location.end / 3)
                 )
-                if i in frag and j in frag:
-                    return i >= j
+                if i in frag:
+                    if j in frag:
+                        return i >= j
+                    if j + 1 in frag:
+                        return i >= j + 1
                 if i in frag:
                     return False
-                if j in frag:
+                if j in frag or j + 1 in frag:
                     return True
         raise ValueError('Locations not found from the fragments of the circRNA.')
 
