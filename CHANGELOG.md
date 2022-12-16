@@ -22,7 +22,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that peptide nodes on different subgraphs are collapsed after expanding the variant bubble, causing downstream nodes unprocessed resulting * in the final sequences. #625
 
-- Fixed issue that the ORF start site position cannot be interpreted when checking whether it is at least one loop away, because it can be off by 1 when converting the location from  thegene coordinate to amino acid. #630
+- Fixed issue that the ORF start site position cannot be interpreted when checking whether it is at least one loop away, because it can be off by 1 when converting the location from the gene coordinate to amino acid. #630
 
 ## [0.10.1] - 2022-11-2
 
