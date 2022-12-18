@@ -106,7 +106,7 @@ class GVFMetadata():
             f'##genome_fasta={genome_fasta}',
             f'##annotation_gtf={annotation_gtf}',
             f'##source={self.source}',
-            f"##CHROM=<Description='{self.chrom}'>",
+            f'##CHROM=<Description="{self.chrom}">',
             *[f'##ALT=<ID={key},Description="{val}">' for key, val in self.alt],
             *info_lines,
             *additional
@@ -128,11 +128,11 @@ class GVFMetadata():
                 val = None
             if key == 'CHROM':
                 key = key.lower()
-                metadata[key] = {}
                 for it in val.strip('<>').split(','):
                     k,v = it.split('=')
-                    v = v.strip('"')
-                    metadata[key][k] = v
+                    v = v.strip('"').strip("'")
+                    if k == 'Description':
+                        metadata[key] = v
             elif key == 'INFO':
                 key = key.lower()
                 if key not in metadata:
