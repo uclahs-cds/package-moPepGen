@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that the ORF start site position cannot be interpreted when checking whether it is at least one loop away, because it can be off by 1 when converting the location from the gene coordinate to amino acid. #630
 
+- Fixed issue that the 'CHROM' attribute of GVF metadata not read in correctly. #629
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed

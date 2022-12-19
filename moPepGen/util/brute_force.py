@@ -932,7 +932,7 @@ def brute_force(args):
         caller.tx_id = tx_id
         caller.tx_model = caller.reference_data.anno.transcripts[caller.tx_id]
         caller.tx_seq = caller.tx_model.get_transcript_sequence(
-            caller.reference_data.genome['chr1']
+            caller.reference_data.genome[caller.tx_model.transcript.chrom]
         )
 
         caller.cleavage_params = params.CleavageParams(
