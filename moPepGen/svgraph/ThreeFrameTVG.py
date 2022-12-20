@@ -940,6 +940,7 @@ class ThreeFrameTVG():
             # if the transcript is mrna_end_NF, we are not going to use any
             # variants in the annotated 3'UTR region.
             if self.mrna_end_nf and variant.location.start <= self.seq.orf.end - 3:
+                variant = next(variant_iter, None)
                 continue
 
             if any(c.seq.locations[0].ref.start > variant.location.start for c in cursors):

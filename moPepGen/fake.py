@@ -545,7 +545,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
                     if cds_start_nf:
                         cds_start = offset
                     else:
-                        cds_start = offset + random.randint(1, exon_len - 1)
+                        cds_start = offset + random.randint(1, exon_len - 3)
                 else:
                     if mrna_end_nf:
                         cds_start = offset
@@ -559,7 +559,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
                     if cds_start_nf:
                         cds_end = offset + exon_len
                     else:
-                        cds_end = offset + exon_len - random.randint(1, exon_len - 1)
+                        cds_end = offset + exon_len - random.randint(1, exon_len - 3)
                 else:
                     if mrna_end_nf:
                         cds_end = offset + exon_len
@@ -580,14 +580,12 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
 
     # define frame for each cds
     if is_coding:
+        cds_len = sum(len(x.location) for x in cds_set)
         if strand == 1:
             for i in range(len(cds_set)):
                 cds = cds_set[i]
                 if i == 0:
-                    if cds_start_nf:
-                        cds.frame = random.randint(0, 2)
-                    else:
-                        cds.frame = (cds.location.start - exon_set[0].location.start) % 3
+                    cds.frame = cds_len % 3
                 else:
                     prev_exon = exon_set[i-1]
                     prev_cds = cds_set[i-1]
@@ -596,10 +594,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
             for i in reversed(range(len(cds_set))):
                 cds = cds_set[i]
                 if i == len(cds_set) - 1:
-                    if cds_start_nf:
-                        cds.frame = random.randint(0, 2)
-                    else:
-                        cds.frame = (exon_set[-1].location.end - cds.location.end) % 3
+                    cds.frame = cds_len % 3
                 else:
                     prev_exon = exon_set[i+1]
                     prev_cds = cds_set[i+1]
@@ -635,7 +630,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
             if strand == 1:
                 three_utr_set.append(utr)
             else:
-                three_utr_set.append(utr)
+                five_utr_set.append(utr)
 
     loc = FeatureLocation(
         start=exon_set[0].location.start,
@@ -671,8 +666,11 @@ def fake_genomic_annotation(n_genes:int, chrom:str, min_exons:int, max_exons:int
             protein_id = f"FAKEP{x:08}"
             if gene_id not in anno.genes and tx_id not in anno.transcripts:
                 break
-        cds_start_nf = random.choice((True, False))
-        mrna_end_nf = random.choice((True, False))
+        if is_coding:
+            cds_start_nf = random.choice((True, False))
+            mrna_end_nf = random.choice((True, False))
+        else:
+            cds_start_nf, mrna_end_nf = False, False
         tx_model = fake_transcript_model(
             n_exons=n_exons, is_coding=is_coding, chrom=chrom, strand=strand,
             start_pos=offset, gene_id=gene_id, transcript_id=tx_id,
@@ -711,21 +709,22 @@ def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
     for tx_model in anno.transcripts.values():
         chrom_nts = genome_nts[tx_model.transcript.chrom]
         if tx_model.is_protein_coding:
+            attrs = tx_model.transcript.attributes
             # make sure cds start is start codon
-            if 'cds_start_NF' not in tx_model.transcript.attributes['tag']:
+            if 'tag' not in attrs or 'cds_start_NF' not in attrs:
                 if tx_model.transcript.strand == 1:
-                    cds_start = tx_model.cds[0].location.start
+                    cds_start = tx_model.cds[0].location.start + tx_model.cds[0].frame
                     chrom_nts[cds_start] = 'A'
                     chrom_nts[cds_start + 1] = 'T'
                     chrom_nts[cds_start + 2] = 'G'
                 else:
-                    cds_start = tx_model.cds[-1].location.end
+                    cds_start = tx_model.cds[-1].location.end - tx_model.cds[-1].frame - 1
                     chrom_nts[cds_start] = 'T'
                     chrom_nts[cds_start - 1] = 'A'
                     chrom_nts[cds_start - 2] = 'C'
 
             # make sure cds end is stop codon
-            if 'mrna_end_NF' not in tx_model.transcript.attributes['tag']:
+            if 'tag' not in attrs or 'mrna_end_NF' not in attrs:
                 stop_codon = random.choice(STOP_CODONS)
                 if tx_model.transcript.strand == 1:
                     cds_end = tx_model.cds[-1].location.end
@@ -741,7 +740,7 @@ def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
 
             # make sure no stop codon in cds
             if tx_model.transcript.strand == 1:
-                i = tx_model.cds[0].location.start
+                i = tx_model.cds[0].location.start + tx_model.cds[0].frame
                 cds_iter = iter(tx_model.cds)
                 cds = next(cds_iter, None)
                 while True:
@@ -772,34 +771,34 @@ def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
                         for pos, nt in zip(positions, codon):
                             chrom_nts[pos] = nt
 
-                    i = k + 1
+                    i = k
             else:
-                i = tx_model.cds[-1].location.end
+                i = tx_model.cds[-1].location.end - tx_model.cds[-1].frame - 1
                 cds_iter = reversed(tx_model.cds)
                 cds = next(cds_iter, None)
                 while True:
                     if not cds:
                         break
-                    if i <= cds.location.start:
+                    if i < cds.location.start:
                         if cds is tx_model.cds[0]:
                             break
                         cds = next(cds_iter, None)
-                        i = cds.location.end
+                        i = cds.location.end - 1
                     if i - 3 < cds.location.start and cds is tx_model.cds[0]:
                         break
 
                     codon = []
                     positions = []
-                    k = i - 1
+                    k = i
                     while len(codon) < 3:
                         if k < cds.location.start:
                             cds = next(cds_iter, None)
                             k = cds.location.end - 1
                         codon.append(chrom_nts[k])
                         positions.append(k)
+                        k -= 1
 
-                    while str(Seq(''.join(reversed(codon))).reverse_complement) \
-                            in STOP_CODONS:
+                    while str(Seq(''.join(codon)).complement()) in STOP_CODONS:
                         codon = random.choices(DNA_ALPHABET, k=3)
                         for pos, nt in zip(positions, codon):
                             chrom_nts[pos] = nt

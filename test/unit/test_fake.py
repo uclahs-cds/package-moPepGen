@@ -21,7 +21,7 @@ class TestCaseFake(unittest.TestCase):
 
     def test_fake_genome_and_annotation(self):
         """ Test fake_genome_and_annotation """
-        random.seed(123)
+        random.seed(123124)
         anno = fake.fake_genomic_annotation(
             n_genes=4, chrom='chrF', min_exons=1, max_exons=10, min_exon_size=10,
             max_exon_size=300, min_intron_size=20, max_intron_size=500,
@@ -31,4 +31,19 @@ class TestCaseFake(unittest.TestCase):
 
         genome = fake.fake_genome(anno)
         self.assertEqual(len(genome), 1)
-        print(genome['chrF'].seq)
+
+        tx_id = 'FAKET00000693' # strand = 1 and cds_start_NF
+        tx_model = anno.transcripts[tx_id]
+        tx_seq = tx_model.get_transcript_sequence(genome['chrF'])
+        aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
+        self.assertFalse(aa_seq.startswith('M'))
+        self.assertTrue(tx_model.is_cds_start_nf())
+        self.assertTrue('*' not in aa_seq)
+
+        tx_id = 'FAKET00000397' # strand = -1
+        tx_model = anno.transcripts[tx_id]
+        tx_seq = tx_model.get_transcript_sequence(genome['chrF'])
+        aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
+        self.assertTrue(aa_seq.startswith('M'))
+        self.assertTrue('*' not in aa_seq)
+
