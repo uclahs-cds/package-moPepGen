@@ -114,15 +114,15 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
         cds_start_genomic = anno.coordinate_transcript_to_genomic(cds_start_tx, tx_id)
         cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, donor_gene_id)
         cds_end_tx = donor_tx_model.get_cds_end_index(donor_tx_seq, donor_tx_seq.orf.start)
-        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
-        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id)
+        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx - 1, tx_id)
+        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id) + 1
     else:
         cds_start_genomic = anno.coordinate_gene_to_genomic(0, donor_gene_id)
         cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, donor_gene_id)
         cds_end_tx = len(donor_tx_seq) - 1
-        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
-        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id)
-    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene)
+        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx - 1, tx_id)
+        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id) + 1
+    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
     donor_breakpoint_genomic = anno.coordinate_gene_to_genomic(donor_breakpoint, donor_gene_id)
     ref_seq = donor_gene_seq.seq[donor_breakpoint]
 
@@ -137,10 +137,10 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
     cds_start_genomic = anno.coordinate_transcript_to_genomic(0, accepter_tx_id)
     cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, accepter_gene_id)
     cds_end_tx = len(accepter_tx_seq) - 1
-    cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, accepter_tx_id)
-    cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, accepter_gene_id)
+    cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx - 1, accepter_tx_id)
+    cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, accepter_gene_id) + 1
 
-    accepter_breakpoint = random.randint(cds_start_gene, cds_end_gene)
+    accepter_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
 
     accepter_breakpoint_genomic = anno.coordinate_gene_to_genomic(
         accepter_breakpoint, accepter_gene_id)
@@ -824,7 +824,7 @@ def fake_genome_and_annotation(n_genes:int) -> Tuple[DNASeqDict, GenomicAnnotati
         'max_exon_size': 300,
         'min_intergenic_size': 10,
         'max_intergenic_size': 50,
-        'min_exons': 1,
+        'min_exons': 3,
         'max_exons': 10
     }
     chrom = 'chrF'
