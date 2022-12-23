@@ -4,6 +4,7 @@ import argparse
 import copy
 from contextlib import redirect_stdout
 from datetime import datetime, timedelta
+import json
 from pathlib import Path
 import random
 import shutil
@@ -12,7 +13,7 @@ from typing import Iterable, List, Union, Tuple
 import sys
 import uuid
 from Bio import SeqIO
-from moPepGen import ERROR_INDEX_IN_INTRON, fake, seqvar, circ, dna, gtf, aa
+from moPepGen import ERROR_INDEX_IN_INTRON, fake, seqvar, circ, dna, gtf, aa, logger
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.circ import CircRNAModel
 from moPepGen.util.common import load_references
@@ -106,6 +107,12 @@ def add_subparser_fuzz_test(subparsers:argparse._SubParsersAction
         action='store_true',
         help='Create only exonic variants',
         default=False
+    )
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=None,
+        help='Random seed to set. If not specified, a random number will be generated.'
     )
     add_args_cleavage(parser)
     parser.set_defaults(func=fuzz_test)
@@ -251,6 +258,11 @@ class FuzzRecord():
         """ File path to the test case specific stderr """
         return self.work_dir/'fuzzing.err'
 
+    @property
+    def path_stdout(self) -> Path:
+        """ """
+        return self.work_dir/'fuzzing.out'
+
     def is_succeeded(self) -> bool:
         """ check if the test case was successful """
         return self.status == 'SUCCEEDED'
@@ -268,22 +280,36 @@ class FuzzTestCase():
 
     def run(self):
         """ run the current test case """
+        if self.config.seed is None:
+            seed = random.randint(1, 1_000_000_000_000)
+        else:
+            seed = self.config.seed
+        random.seed(seed)
         try:
-            if self.config.ref_dir is None:
-                genome, anno, proteome = self.create_fake_reference()
-                self.write_fake_reference(genome, anno, proteome)
-                self.config.ref_dir = self.config.temp_dir/self.record.id
-                self.config.tx_id = list(anno.transcripts.keys())[0]
-            variants = self.create_variants()
-            self.write_variants(variants)
-            self.record.call_variant_starts()
-            self.call_variants()
-            self.record.call_variant_ends()
-            self.record.brute_force_starts()
-            self.brute_force()
-            self.record.brute_force_ends()
-            status = self.assert_equal()
-            self.record.complete(status)
+            with open(self.record.path_stdout, 'w') as os_handle:
+                with redirect_stdout(os_handle):
+                    logger(f"[ fuzzTest ] Random seed: {seed}")
+                    if self.config.ref_dir is None:
+                        logger(f'[ fuzzTest ] Creating random reference.')
+                        genome, anno, proteome = self.create_fake_reference()
+                        self.write_fake_reference(genome, anno, proteome)
+                        self.config.ref_dir = self.config.temp_dir/self.record.id
+                        self.config.tx_id = list(anno.transcripts.keys())[0]
+                    with open(self.record.work_dir/'config.json', 'w') as param_handle:
+                        json.dump(self.config.to_dict(), param_handle, indent=4)
+                    logger('Creating random variants.')
+                    variants = self.create_variants()
+                    self.write_variants(variants)
+                    self.record.call_variant_starts()
+                    logger('Starting callVariant.')
+                    self.call_variants()
+                    self.record.call_variant_ends()
+                    self.record.brute_force_starts()
+                    logger('Starting bruteForce.')
+                    self.brute_force()
+                    self.record.brute_force_ends()
+                    status = self.assert_equal()
+                    self.record.complete(status)
             if status == 'SUCCEEDED':
                 shutil.rmtree(self.config.temp_dir/self.record.id)
         # pylint: disable=W0703
@@ -434,7 +460,7 @@ class FuzzTestCase():
         args.naa_to_collapse = 5
         args.noncanonical_transcripts = False
         args.invalid_protein_as_noncoding = False
-        args.verbose_level = 0
+        args.verbose_level = 1
         call_variant_peptide(args=args)
 
     def brute_force(self):
@@ -488,7 +514,7 @@ class FuzzTestConfig():
             ci_ratio:float, alt_splicing:bool, cleavage_rule:str,
             miscleavage:int, min_mw:int, min_length:int, max_length:int,
             temp_dir:Path, ref_dir:Path, fuzz_start:datetime=None,
-            fuzz_end:datetime=None):
+            fuzz_end:datetime=None, seed:int=None):
         """ constructor """
         self.tx_id = tx_id
         self.n_iter = n_iter
@@ -509,6 +535,18 @@ class FuzzTestConfig():
         self.ref_dir = ref_dir
         self.fuzz_start = fuzz_start
         self.fuzz_end = fuzz_end
+        self.seed = seed
+
+    def to_dict(self):
+        """ Convert to a dict """
+        mapper = {}
+        for k,v in self.__dict__.items():
+            if isinstance(v, Path):
+                v = str(v)
+            elif isinstance(v, datetime):
+                continue
+            mapper[k] = v
+        return mapper
 
     @property
     def path_genome_fasta(self) -> Path:
@@ -611,7 +649,8 @@ def fuzz_test(args:argparse.Namespace):
         min_length=args.min_length,
         max_length=args.max_length,
         temp_dir=args.temp_dir,
-        ref_dir=args.reference_dir
+        ref_dir=args.reference_dir,
+        seed=args.seed
     )
     with Fuzzer(config) as fuzzer:
         fuzzer.fuzz()
