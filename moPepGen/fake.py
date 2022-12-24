@@ -725,7 +725,7 @@ def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
                     chrom_nts[cds_start - 2] = 'C'
 
             # make sure cds end is stop codon
-            if 'tag' not in attrs or 'mrna_end_NF' not in attrs:
+            if 'tag' not in attrs or 'mrna_end_NF' not in attrs['tag']:
                 stop_codon = random.choice(STOP_CODONS)
                 if tx_model.transcript.strand == 1:
                     cds_end = tx_model.cds[-1].location.end
@@ -753,7 +753,7 @@ def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
                         cds = next(cds_iter, None)
                         i = cds.location.start
 
-                    if i + 3 >= cds.location.end and cds is tx_model.cds[-1]:
+                    if i + 3 > cds.location.end and cds is tx_model.cds[-1]:
                         break
 
                     codon = []
