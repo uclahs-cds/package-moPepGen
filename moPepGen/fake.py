@@ -691,7 +691,8 @@ def fake_genomic_annotation(n_genes:int, chrom:str, min_exons:int, max_exons:int
         anno.genes[gene_id] = gene_model
         anno.transcripts[tx_id] = tx_model
 
-        offset += random.randint(min_intergenic_size, max_intergenic_size)
+        offset += len(tx_model.transcript) \
+            + random.randint(min_intergenic_size, max_intergenic_size)
     return anno
 
 def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
