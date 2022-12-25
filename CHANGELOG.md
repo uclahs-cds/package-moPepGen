@@ -26,6 +26,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that the 'CHROM' attribute of GVF metadata not read in correctly. #629
 
+- Fixed issue that when a frameshift insertion is on a alt splice frameshift substitution (or insertion), the node became disconnected after aligning the variant bubble. #635
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed

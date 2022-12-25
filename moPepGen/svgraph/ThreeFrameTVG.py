@@ -1102,7 +1102,7 @@ class ThreeFrameTVG():
                 continue
             is_bridge_out = any(e.out_node.reading_frame_index != this_id
                 and e.out_node is not end for e in cur.out_edges)
-            if is_bridge_out:
+            if is_bridge_out and cur is not end:
                 bridge_out.add(cur)
                 continue
 
