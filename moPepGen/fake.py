@@ -753,7 +753,7 @@ def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
                         cds = next(cds_iter, None)
                         i = cds.location.start
 
-                    if i + 3 > cds.location.end and cds is tx_model.cds[-1]:
+                    if i + 2 > cds.location.end and cds is tx_model.cds[-1]:
                         break
 
                     codon = []
