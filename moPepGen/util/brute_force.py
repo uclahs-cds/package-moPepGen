@@ -293,9 +293,9 @@ class BruteForceVariantPeptideCaller():
 
             if right_insert_start:
                 loc = FeatureLocation(start=right_insert_start, end=right_insert_end)
-                if self.tx_id not in inserted_intronic_region:
-                    inserted_intronic_region[self.tx_id] = []
-                inserted_intronic_region[self.tx_id].append(loc)
+                if right_tx_id not in inserted_intronic_region:
+                    inserted_intronic_region[right_tx_id] = []
+                inserted_intronic_region[right_tx_id].append(loc)
 
             if right_tx_id in pool \
                     and any(x.location.start <= right_breakpoint_tx
@@ -349,6 +349,7 @@ class BruteForceVariantPeptideCaller():
         n_circ = len(pool[self.tx_id].circ_rna)
         n_alt_splice = len([x for x in pool[self.tx_id].transcriptional
             if x.type in ALTERNATIVE_SPLICING_TYPES])
+
         for fusion in pool[self.tx_id].fusion:
             accepter_tx_id = fusion.attrs['ACCEPTER_TRANSCRIPT_ID']
             if accepter_tx_id not in pool:
@@ -377,6 +378,9 @@ class BruteForceVariantPeptideCaller():
         if self.tx_model.is_mrna_end_nf():
             for variant in pool[self.tx_id].transcriptional:
                 if variant.location.end >= self.tx_seq.orf.end:
+                    return True
+                if n_circ == 0 \
+                        and variant.location.start >= self.tx_seq.orf.end - 3:
                     return True
         return False
 
@@ -850,15 +854,15 @@ class BruteForceVariantPeptideCaller():
                 variant.to_end_inclusion(self.tx_seq)
             if variant.location.start < start_index:
                 continue
-            if mrna_end_nf and variant.location.start <= self.tx_seq.orf.end - 3:
-                continue
+            # if mrna_end_nf and variant.location.start <= self.tx_seq.orf.end - 3:
+            #     continue
             variant_type_mapper[variant] = 'transcriptional'
         for variant in self.variant_pool[self.tx_id].intronic:
             variant_type_mapper[variant] = 'intronic'
         for variant in self.variant_pool[self.tx_id].fusion:
             if variant.location.start < start_index - 1:
                 continue
-            if mrna_end_nf and variant.location.start <= self.tx_seq.orf.end - 3:
+            if mrna_end_nf and variant.location.start >= self.tx_seq.orf.end - 3:
                 continue
             variant_type_mapper[variant] = 'fusion'
             accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
