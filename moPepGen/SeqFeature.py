@@ -8,9 +8,11 @@ _STRAND_LEVELS = {None:0, 0:1, -1:2, 1:3}
 
 class FeatureLocation(BioFeatureLocation):
     """ This models the range of a sequence, with a start and an end. """
-    def __init__(self, *args, seqname:str=None, **kwargs):
+    def __init__(self, *args, seqname:str=None, reading_frame_index:int=None,
+            **kwargs):
         super().__init__(*args, **kwargs)
         self.seqname = seqname
+        self.reading_frame_index = reading_frame_index
 
     def __eq__(self, other: FeatureLocation)->bool:
         """ equal to """
@@ -141,15 +143,15 @@ class MatchedLocation():
     location = MatchedLocation(query=query, ref=ref)
 
     Attributes:
-        query (FeatureLocation): The location of the query sequence.
-        ref (FeatureLocation): The location of the reference sequence.
+        - query (FeatureLocation): The location of the query sequence.
+        - ref (FeatureLocation): The location of the reference sequence.
     """
     def __init__(self, query:FeatureLocation, ref:FeatureLocation):
         """ Constructor for MatchedLocation
 
         Args:
-            query (FeatureLocation): The location of the query sequence.
-            ref (FeatureLocation): The location of the reference sequence.
+            - query (FeatureLocation): The location of the query sequence.
+            - ref (FeatureLocation): The location of the reference sequence.
         """
         if len(query) != len(ref):
             raise ValueError('Location length must equal.')
@@ -175,12 +177,14 @@ class MatchedLocation():
         query = FeatureLocation(
             seqname=self.query.seqname,
             start=0,
-            end=stop - start
+            end=stop - start,
+            reading_frame_index=self.query.reading_frame_index
         )
         ref = FeatureLocation(
             seqname=self.ref.seqname,
             start=self.ref.start + start,
-            end=self.ref.start + stop
+            end=self.ref.start + stop,
+            reading_frame_index=self.ref.reading_frame_index
         )
         return self.__class__(
             query=query,
@@ -192,6 +196,7 @@ class MatchedLocation():
         query = self.query.__class__(
             seqname=self.query.seqname,
             start=self.query.start + i,
-            end=self.query.end + i
+            end=self.query.end + i,
+            reading_frame_index=self.query.reading_frame_index
         )
         return self.__class__(query=query, ref=self.ref)
