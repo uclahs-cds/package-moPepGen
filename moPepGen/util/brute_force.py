@@ -218,7 +218,7 @@ class BruteForceVariantPeptideCaller():
                 else loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))
 
             is_stop_lost = variants_stop_lost[i][cds_start % 3] \
-                and variants[i].location.start > cds_start
+                and cds_start < variants[i].location.start < rhs
 
             is_silent_mutation = variants_silent_mutation[i][cds_start % 3] \
                 and variants[i].location.start > cds_start
