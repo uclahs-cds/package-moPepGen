@@ -559,12 +559,12 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
                     if cds_start_nf:
                         cds_end = offset + exon_len
                     else:
-                        cds_end = offset + exon_len - random.randint(1, exon_len - 3)
+                        cds_end = offset + exon_len - random.randint(3, exon_len - 3)
                 else:
                     if mrna_end_nf:
                         cds_end = offset + exon_len
                     else:
-                        cds_end = offset + exon_len - random.randint(1, exon_len - 1)
+                        cds_end = offset + exon_len - random.randint(3, exon_len - 3)
             else:
                 cds_end = offset + exon_len
 
