@@ -48,7 +48,7 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
             start = random.randint(tx_start, tx_end - 1)
             end = start + 1
         else:
-            start = random.randint(tx_start, tx_end - frames_shifted - 1)
+            start = random.randint(tx_start, tx_end - 1 + (frames_shifted - 1))
             end = start - frames_shifted + 1
         start_genomic = anno.coordinate_gene_to_genomic(start, gene_id)
         end_genomic = anno.coordinate_gene_to_genomic(end - 1, gene_id) + 1
