@@ -950,9 +950,13 @@ class ThreeFrameTVG():
 
             # if the transcript is mrna_end_NF, we are not going to use any
             # variants in the annotated 3'UTR region.
-            if self.mrna_end_nf and variant.location.start >= self.seq.orf.end - 3:
-                variant = next(variant_iter, None)
-                continue
+            if self.mrna_end_nf:
+                orf_end_trinuc = FeatureLocation(
+                    start=self.seq.orf.end-3, end=self.seq.orf.end
+                )
+                if variant.location.overlaps(orf_end_trinuc):
+                    variant = next(variant_iter, None)
+                    continue
 
             if any(c.seq.locations[0].ref.start > variant.location.start for c in cursors):
                 variant = next(variant_iter, None)
@@ -1328,6 +1332,8 @@ class ThreeFrameTVG():
         """
         start_node = node
         rf_index = node.reading_frame_index
+        if rf_index is None:
+            raise ValueError('reading_frame_index not found')
         end_node = self.find_farthest_node_with_overlap(node)
         if not self.is_circ_rna() and end_node.is_subgraph_end():
             subgraph_ends = {end_node}
