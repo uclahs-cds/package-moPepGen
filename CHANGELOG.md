@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that when a frameshift insertion is on a alt splice frameshift substitution (or insertion), the node became disconnected after aligning the variant bubble. #635
 
+- Fixed issue that when getting the stop altering mutations, location comparison was one incorrectly by 1. #636
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed

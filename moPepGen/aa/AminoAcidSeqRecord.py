@@ -278,9 +278,13 @@ class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
             lhs = self.locations[-1]
             rhs = other.locations[0].shift(len(self))
             if lhs.ref.end == rhs.ref.start and lhs.query.end == rhs.query.start:
-                query = FeatureLocation(start=lhs.query.start, end=rhs.query.end)
+                query = FeatureLocation(
+                    start=lhs.query.start, end=rhs.query.end,
+                    reading_frame_index=lhs.query.reading_frame_index
+                )
                 ref = FeatureLocation(
-                    start=lhs.ref.start, end=rhs.ref.end, seqname=lhs.ref.seqname
+                    start=lhs.ref.start, end=rhs.ref.end, seqname=lhs.ref.seqname,
+                    reading_frame_index=lhs.ref.reading_frame_index
                 )
                 new_loc = MatchedLocation(query=query, ref=ref)
                 right_locs.pop(0)
