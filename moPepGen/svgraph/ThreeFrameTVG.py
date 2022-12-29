@@ -714,6 +714,8 @@ class ThreeFrameTVG():
         """
         cursors = copy.copy(cursors)
         subgraph_id = self.subgraphs.generate_subgraph_id()
+        for loc in seq.locations:
+            loc.ref.seqname = subgraph_id
         branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
         level = cursors[0].level + 1
         branch.update_node_level(level)
@@ -1131,6 +1133,12 @@ class ThreeFrameTVG():
                     if not cur.is_inframe_subgraph(start, end):
                         subgraph_out.add(cur)
                         continue
+
+                if cur.has_multiple_segments() \
+                        and cur.get_first_subgraph_id() == start.subgraph_id \
+                        and cur.get_first_subgraph_id() != cur.get_last_subgraph_id():
+                    subgraph_out.add(cur)
+                    continue
 
             for e in cur.in_edges:
                 if e.in_node.reading_frame_index != this_id or e.in_node.was_bridge:

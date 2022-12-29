@@ -149,7 +149,8 @@ class TVGNode():
             raise ValueError('Node does not have multiple segments')
 
         locations = [loc.query for loc in self.seq.locations]
-        locations += [v.location for v in self.variants]
+        locations += [v.location for v in self.variants
+            if self.global_variant is not None and v.variant != self.global_variant]
 
         locations.sort()
 
@@ -167,10 +168,34 @@ class TVGNode():
         """ """
         return self._get_nth_rf_index(-1)
 
+    def _get_nth_subgraph_id(self, i) -> str:
+        """ """
+        if (i > 0 or i < -1) and not self.has_multiple_segments():
+            raise ValueError('Node does not have multiple segments')
+
+        locations = [(loc.query, loc.ref.seqname) for loc in self.seq.locations]
+        locations += [(v.location, v.location.seqname) for v in self.variants
+            if self.global_variant is not None and v.variant != self.global_variant]
+
+        locations = sorted(locations, key=lambda x: x[0])
+
+        return locations[i][1]
+
+    def get_first_subgraph_id(self) -> str:
+        """ """
+        return self._get_nth_subgraph_id(0)
+
+    def get_last_subgraph_id(self) -> str:
+        """ """
+        return self._get_nth_subgraph_id(-1)
+
     def has_multiple_segments(self) -> bool:
         """ Whether the node has multiple segments, which is when the node
         is merged from several individual nodes. """
-        return len(self.seq.locations) + len(self.variants) > 1
+        n = len(self.seq.locations)
+        n += len([v for v in self.variants if self.global_variant is not None
+            and v.variant != self.global_variant])
+        return n > 1
 
     def is_inbond_of(self, node:svgraph.TVGEdge) -> bool:
         """ Checks if this node is a inbound node of the other node. """
