@@ -19,7 +19,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
 
     Attributes:
         seq (DNASeqRecordWithCoordinates): The original sequence of the
-                transcript (reference).
+                circRNA (reference).
         transcript_id (str): The transcript ID that the circRNA is associated
             with
         attrs (dict): additional attributes

@@ -277,14 +277,20 @@ class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
         if left_locs and right_locs:
             lhs = self.locations[-1]
             rhs = other.locations[0].shift(len(self))
-            if lhs.ref.end == rhs.ref.start and lhs.query.end == rhs.query.start:
+            if lhs.query.end == rhs.query.start \
+                    and lhs.ref.end == rhs.ref.start \
+                    and lhs.get_ref_dna_end() == rhs.get_ref_dna_start():
                 query = FeatureLocation(
                     start=lhs.query.start, end=rhs.query.end,
-                    reading_frame_index=lhs.query.reading_frame_index
+                    reading_frame_index=lhs.query.reading_frame_index,
+                    start_offset=lhs.query.start_offset,
+                    end_offset=rhs.query.end_offset
                 )
                 ref = FeatureLocation(
                     start=lhs.ref.start, end=rhs.ref.end, seqname=lhs.ref.seqname,
-                    reading_frame_index=lhs.ref.reading_frame_index
+                    reading_frame_index=lhs.ref.reading_frame_index,
+                    start_offset=lhs.ref.start_offset,
+                    end_offset=rhs.ref.end_offset
                 )
                 new_loc = MatchedLocation(query=query, ref=ref)
                 right_locs.pop(0)

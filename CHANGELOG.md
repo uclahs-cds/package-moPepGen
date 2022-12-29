@@ -30,6 +30,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that when getting the stop altering mutations, location comparison was one incorrectly by 1. #636
 
+- Node In circRNA missing downstream stop lost mutation called as variant peptide incorrectly. #637
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed

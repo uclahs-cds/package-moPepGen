@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from functools import cmp_to_key
 import math
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Iterable
 from moPepGen import aa, circ, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
@@ -617,16 +617,54 @@ class PVGNode():
         if self.seq.locations:
             for loc in self.seq.locations:
                 tx_loc = FeatureLocation(
-                    start=int(loc.ref.start) * 3 + self.reading_frame_index,
-                    end=int(loc.ref.end) * 3 + self.reading_frame_index
+                    start=loc.get_ref_dna_start(),
+                    end=loc.get_ref_dna_end()
                 )
                 locs.append(tx_loc)
         if self.variants:
-            locs += [x.variant.location for x in self.variants
-                if not x.variant.is_circ_rna()]
+            for v in self.variants:
+                if v.variant.is_circ_rna():
+                    continue
+                locs.append(v.variant.location)
         variants = {x.variant for x in self.variants}
         for loc in locs:
             if loc.overlaps(variant.location) \
                     and not any(variant == v for v in variants):
                 return True
+        return False
+
+    def is_missing_any_variant(self, variants:Iterable[seqvar.VariantRecord]) -> bool:
+        """ Checks if the node is missing any of the variants. """
+        return any(self.is_missing_variant(v) for v in variants)
+
+    def any_unaccounted_downstream_cleavage_or_stop_altering(self,
+            variants:Iterable[seqvar.VariantRecord]) -> bool:
+        """ Checks if the node has any unaccouted cleavage or stop altering
+        mutation from a giving list. The first amino acid from the downstream
+        node and the last amino acid from the upstream one will be check if
+        they contain any variant in the list of variant provided and not having
+        any variant that are not in the list.
+        """
+        variants = set(variants)
+
+        boundary_nodes:List[PVGNode] = []
+
+        # stop and downstream cleavage gain
+        if len(self.get_out_nodes()) == 1:
+            downstream = self.get_out_nodes()[0]
+            if not (downstream.seq.seq == '*' and not downstream.get_out_nodes()):
+                boundary_nodes.append(downstream[:1])
+
+        # upstream cleavage gain cleavage gain
+        if len(self.get_in_nodes()) == 1:
+            upstream = self.get_in_nodes()[0]
+            if upstream.seq is not None:
+                boundary_nodes.append(upstream[-1:])
+
+        for node in boundary_nodes:
+            if node.is_missing_any_variant(variants):
+                return True
+            for v in node.variants:
+                if not v.variant.is_circ_rna() and v.variant not in variants:
+                    return True
         return False

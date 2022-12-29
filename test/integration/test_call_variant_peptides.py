@@ -915,3 +915,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/35/brute_force.txt'
         reference = self.data_dir/'fuzz/35'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case64(self):
+        """
+        """
+        gvf = [
+            self.data_dir/'fuzz/36/fake_variants.gvf',
+            self.data_dir/'fuzz/36/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/36/brute_force.txt'
+        reference = self.data_dir/'fuzz/36'
+        self.default_test_case(gvf, reference, expected)

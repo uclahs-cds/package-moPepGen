@@ -144,6 +144,8 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
                 upstream = node
                 break
 
+        orf_idx = upstream.reading_frame_index
+
         if len(val) == 4:
             node_start = val[3]
         elif is_head_node:
@@ -164,7 +166,10 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
             var_start = node_start + var_data[0]
             var_end = var_start + len(var_data[1])
             var_record = seqvar.VariantRecord(
-                location=FeatureLocation(start=var_start, end=var_end),
+                location=FeatureLocation(
+                    start=var_start, end=var_end,
+                    reading_frame_index=orf_idx
+                ),
                 ref=var_data[1],
                 alt=var_data[2],
                 _type=var_data[3],
@@ -188,8 +193,12 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
                 ref_start = left + node_start
                 ref_end = right  + node_start
                 seq_location = MatchedLocation(
-                    query=FeatureLocation(start=left, end=right),
-                    ref=FeatureLocation(start=ref_start, end=ref_end)
+                    query=FeatureLocation(
+                        start=left, end=right, reading_frame_index=orf_idx
+                    ),
+                    ref=FeatureLocation(
+                        start=ref_start, end=ref_end, reading_frame_index=orf_idx
+                    )
                 )
                 seq_locations.append(seq_location)
             left = variant.location.end
@@ -199,13 +208,14 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
             ref_start = left + node_start
             ref_end = right + node_start
             seq_location = MatchedLocation(
-                query=FeatureLocation(start=left, end=right),
-                ref=FeatureLocation(start=ref_start, end=ref_end)
+                query=FeatureLocation(start=left, end=right,
+                    reading_frame_index=orf_idx),
+                ref=FeatureLocation(start=ref_start, end=ref_end,
+                    reading_frame_index=orf_idx)
             )
             seq_locations.append(seq_location)
 
         seq = dna.DNASeqRecordWithCoordinates(_seq, seq_locations)
-        orf_idx = upstream.reading_frame_index
         node = svgraph.TVGNode(seq, variants,
             reading_frame_index=orf_idx, subgraph_id=graph.id)
         node_list[key] = node

@@ -92,11 +92,19 @@ class TVGNode():
 
         for variant in self.variants:
             if variant.location.overlaps(location):
+                new_start = max(variant.location.start, location.start)
+                new_end = min(variant.location.end, location.end)
+                new_start_offset = variant.location.start_offset \
+                    if new_start == variant.location.start else 0
+                new_end_offset = variant.location.end_offset \
+                    if new_end == variant.location.end else 0
                 new_loc = FeatureLocation(
                     start=max(variant.location.start, location.start),
                     end=min(variant.location.end, location.end),
                     seqname=variant.location.seqname,
-                    reading_frame_index=variant.location.reading_frame_index
+                    reading_frame_index=variant.location.reading_frame_index,
+                    start_offset=new_start_offset,
+                    end_offset=new_end_offset
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
@@ -417,22 +425,32 @@ class TVGNode():
 
         for variant in self.variants:
             if variant.location.start < i:
+                end = min(i, variant.location.end)
+                end_offset = variant.location.end_offset \
+                    if end == variant.location.end else 0
                 new_loc = FeatureLocation(
                     start=variant.location.start,
-                    end=min(i, variant.location.end),
+                    end=end,
                     seqname=variant.location.seqname,
-                    reading_frame_index=self.reading_frame_index
+                    reading_frame_index=variant.location.reading_frame_index,
+                    start_offset=variant.location.start_offset,
+                    end_offset=end_offset
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
                 )
                 left_variants.append(new_variant)
             if variant.location.end > i:
+                start = max(variant.location.start, i)
+                start_offset = variant.location.start_offset \
+                    if start == variant.location.start else 0
                 new_loc = FeatureLocation(
-                    start=max(variant.location.start, i),
+                    start=start,
                     end=variant.location.end,
                     seqname=variant.location.seqname,
-                    reading_frame_index=self.reading_frame_index
+                    reading_frame_index=variant.location.reading_frame_index,
+                    start_offset=start_offset,
+                    end_offset=variant.location.end_offset
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
@@ -468,22 +486,32 @@ class TVGNode():
 
         for variant in self.variants:
             if variant.location.start < i:
+                end = min(i, variant.location.end)
+                end_offset = variant.location.end_offset \
+                    if end == variant.location.end else 0
                 new_loc = FeatureLocation(
                     start=variant.location.start,
-                    end=min(i, variant.location.end),
+                    end=end,
                     seqname=variant.location.seqname,
-                    reading_frame_index=variant.location.reading_frame_index
+                    reading_frame_index=variant.location.reading_frame_index,
+                    start_offset=variant.location.start_offset,
+                    end_offset=end_offset
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
                 )
                 left_variants.append(new_variant)
             if variant.location.end > i:
+                start = max(variant.location.start, i)
+                start_offset = variant.location.start_offset \
+                    if start == variant.location.start else 0
                 new_loc = FeatureLocation(
-                    start=max(variant.location.start, i),
+                    start=start,
                     end=variant.location.end,
                     seqname=variant.location.seqname,
-                    reading_frame_index=variant.location.reading_frame_index
+                    reading_frame_index=variant.location.reading_frame_index,
+                    start_offset=start_offset,
+                    end_offset=variant.location.end_offset
                 )
                 new_variant = seqvar.VariantRecordWithCoordinate(
                     variant=variant.variant, location=new_loc
@@ -520,7 +548,9 @@ class TVGNode():
                 variant.location = FeatureLocation(
                     start=other.variants[-1].location.start,
                     end=variant.location.end,
-                    reading_frame_index=other.variants[-1].location.reading_frame_index
+                    reading_frame_index=other.variants[-1].location.reading_frame_index,
+                    start_offset=other.variants[-1].location.start_offset,
+                    end_offset=variant.location.start_offset
                 )
             else:
                 variants.append(variant.shift(len(other.seq.seq)))
@@ -539,7 +569,9 @@ class TVGNode():
                     start=self.variants[-1].location.start,
                     end=variant.location.end,
                     seqname=self.variants[-1].location.seqname,
-                    reading_frame_index=self.variants[-1].location.reading_frame_index
+                    reading_frame_index=self.variants[-1].location.reading_frame_index,
+                    start_offset=self.variants[-1].location.start_offset,
+                    end_offset=variant.location.end_offset
                 )
             else:
                 self.variants.append(variant.shift(len(self.seq.seq)))
@@ -560,16 +592,27 @@ class TVGNode():
                     continue
 
             query_start = math.floor(loc.query.start / 3)
-            query_end = math.floor(loc.query.end / 3)
+            query_end = math.ceil(loc.query.end / 3)
+            query_start_offset = loc.query.start - query_start * 3
+            query_end_offset = query_end * 3 - loc.query.end
             query = FeatureLocation(
                 start=query_start, end=query_end,
-                reading_frame_index=loc.query.reading_frame_index
+                reading_frame_index=loc.query.reading_frame_index,
+                start_offset=query_start_offset,
+                end_offset=query_end_offset
             )
             dna_query_codon_start = query_start * 3
             dna_ref_codon_start = loc.ref.start - (loc.query.start - dna_query_codon_start)
             ref_start = math.floor((dna_ref_codon_start - self.reading_frame_index) / 3)
+            dna_query_codon_end = query_end * 3
+            dna_ref_codon_end = loc.ref.end + (dna_query_codon_end - loc.query.end)
             ref_end = ref_start + len(query)
-            ref = FeatureLocation(start=ref_start, end=ref_end, seqname=loc.ref.seqname)
+            ref_start_offset = dna_ref_codon_start - ref_start * 3
+            ref_end_offset = dna_ref_codon_end - ref_end * 3
+            ref = FeatureLocation(
+                start=ref_start, end=ref_end, seqname=loc.ref.seqname,
+                start_offset=ref_start_offset, end_offset=ref_end_offset
+            )
             locations.append(MatchedLocation(query=query, ref=ref))
 
         seq.__class__ = aa.AminoAcidSeqRecordWithCoordinates
