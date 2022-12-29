@@ -32,18 +32,11 @@ class TestCaseFake(unittest.TestCase):
         genome = fake.fake_genome(anno)
         self.assertEqual(len(genome), 1)
 
-        tx_id = 'FAKET00000693' # strand = 1 and cds_start_NF
-        tx_model = anno.transcripts[tx_id]
-        tx_seq = tx_model.get_transcript_sequence(genome['chrF'])
-        aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
-        self.assertFalse(aa_seq.startswith('M'))
-        self.assertTrue(tx_model.is_cds_start_nf())
-        self.assertTrue('*' not in aa_seq)
-
-        tx_id = 'FAKET00000397' # strand = -1
-        tx_model = anno.transcripts[tx_id]
-        tx_seq = tx_model.get_transcript_sequence(genome['chrF'])
-        aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
-        self.assertTrue(aa_seq.startswith('M'))
-        self.assertTrue('*' not in aa_seq)
-
+        for tx_model in anno.transcripts.values():
+            if tx_model.is_protein_coding:
+                chrom = tx_model.transcript.chrom
+                tx_seq = tx_model.get_transcript_sequence(genome[chrom])
+                aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
+                if not tx_model.is_cds_start_nf():
+                    self.assertTrue(aa_seq.startswith('M'))
+                self.assertTrue('*' not in aa_seq)
