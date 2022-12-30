@@ -260,7 +260,7 @@ class FuzzRecord():
 
     @property
     def path_stdout(self) -> Path:
-        """ """
+        """ File path to the test case specific stdout """
         return self.work_dir/'fuzzing.out'
 
     def is_succeeded(self) -> bool:
@@ -290,7 +290,7 @@ class FuzzTestCase():
                 with redirect_stdout(os_handle):
                     logger(f"[ fuzzTest ] Random seed: {seed}")
                     if self.config.ref_dir is None:
-                        logger(f'[ fuzzTest ] Creating random reference.')
+                        logger('[ fuzzTest ] Creating random reference.')
                         genome, anno, proteome = self.create_fake_reference()
                         self.write_fake_reference(genome, anno, proteome)
                         self.config.ref_dir = self.config.temp_dir/self.record.id
@@ -321,7 +321,8 @@ class FuzzTestCase():
 
     def create_fake_reference(self
             ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, aa.AminoAcidSeqDict]:
-        """ """
+        """ Create a fake genomic reference, including the genome sequence and
+        genomic annotation model, and the translated amino acid sequences. """
         if self.config.fusion:
             n_genes = 2
         else:
@@ -342,7 +343,7 @@ class FuzzTestCase():
 
     def write_fake_reference(self, genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             proteome:aa.AminoAcidSeqDict):
-        """ """
+        """ Write the fake genomic reference into files. """
         work_dir = self.config.temp_dir/self.record.id
 
         with open(work_dir/'annotation.gtf', 'wt') as handle:

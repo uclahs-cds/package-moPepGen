@@ -582,8 +582,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
     if is_coding:
         cds_len = sum(len(x.location) for x in cds_set)
         if strand == 1:
-            for i in range(len(cds_set)):
-                cds = cds_set[i]
+            for i,cds in enumerate(cds_set):
                 if i == 0:
                     cds.frame = cds_len % 3
                 else:
@@ -591,8 +590,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
                     prev_cds = cds_set[i-1]
                     cds.frame = (3 - (len(prev_exon.location) - prev_cds.frame) % 3) % 3
         else:
-            for i in reversed(range(len(cds_set))):
-                cds = cds_set[i]
+            for i,cds in reversed(list(enumerate(cds_set))):
                 if i == len(cds_set) - 1:
                     cds.frame = cds_len % 3
                 else:

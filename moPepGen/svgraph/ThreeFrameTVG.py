@@ -1121,7 +1121,7 @@ class ThreeFrameTVG():
             is_bridge_out = any(e.out_node.reading_frame_index != this_id
                 and e.out_node is not end for e in cur.out_edges)
             is_bridge_out |= cur.has_multiple_segments() \
-                and cur.get_first_ref_index() != cur.get_second_rf_index() \
+                and cur.get_first_rf_index() != cur.get_second_rf_index() \
                 and cur.get_second_rf_index() != this_id
 
             if is_bridge_out and cur is not end:

@@ -156,20 +156,20 @@ class TVGNode():
 
         return locations[i].reading_frame_index
 
-    def get_first_ref_index(self) -> int:
+    def get_first_rf_index(self) -> int:
         """ Get the first fragment's reading frame index """
         return self._get_nth_rf_index(0)
 
     def get_second_rf_index(self) -> int:
-        """ """
+        """ Get the second fragment's reading frame index """
         return self._get_nth_rf_index(1)
 
     def get_last_rf_index(self) -> int:
-        """ """
+        """ Get the last fragment's reading frame index """
         return self._get_nth_rf_index(-1)
 
     def _get_nth_subgraph_id(self, i) -> str:
-        """ """
+        """ Get the nth fragment's subgraph ID """
         if (i > 0 or i < -1) and not self.has_multiple_segments():
             raise ValueError('Node does not have multiple segments')
 
@@ -182,11 +182,11 @@ class TVGNode():
         return locations[i][1]
 
     def get_first_subgraph_id(self) -> str:
-        """ """
+        """ Get the first fragment's subgraph ID """
         return self._get_nth_subgraph_id(0)
 
     def get_last_subgraph_id(self) -> str:
-        """ """
+        """ Get the last fragment's subgraph ID """
         return self._get_nth_subgraph_id(-1)
 
     def has_multiple_segments(self) -> bool:

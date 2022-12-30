@@ -274,6 +274,7 @@ good-names=a,
            T,
            it,
            id,
+           nt,
            ex,
            Run,
            _

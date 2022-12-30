@@ -917,7 +917,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case64(self):
-        """
+        """ Test case caught by fuzz test that the sequence missing a downstream
+        stop lost mutation called by moPepGen as a variant peptide incorrectly.
+        #637
         """
         gvf = [
             self.data_dir/'fuzz/36/fake_variants.gvf',
