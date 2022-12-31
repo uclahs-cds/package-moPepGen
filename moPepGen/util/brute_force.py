@@ -354,9 +354,9 @@ class BruteForceVariantPeptideCaller():
 
         orf = self.tx_seq.orf
         is_mrna_end_nf = self.tx_model.is_mrna_end_nf()
+        start_index = orf.start + 3 if bool(orf) else 3
 
         if n_circ == 0:
-            start_index = orf.start + 3 if bool(orf) else 3
             for variant in pool[self.tx_id].transcriptional:
                 if variant.location.start < start_index:
                     return True
@@ -366,6 +366,8 @@ class BruteForceVariantPeptideCaller():
                         return True
 
         for fusion in pool[self.tx_id].fusion:
+            if fusion.location.start < start_index:
+                return True
             accepter_tx_id = fusion.attrs['ACCEPTER_TRANSCRIPT_ID']
             if accepter_tx_id not in pool:
                 continue

@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.10.2] - 2022-11-30
 
+### Fixed
+
 - When filtering variants for circRNA, those on fragments that are shorter than 3 nucleotides will not be included. #613
 
 - When collapsing nodes with the same sequence, global variants (mostly circRNA) are no longer considered when comparing variants, so that nodes with no other variant won't be discarded mistakenly. #619
@@ -35,6 +37,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Silent mutation not excluded when it is very closed to anther mutation. #638
 
 - Stop remaining mutation not excluded. #638
+
+- Fusion with donor breakpoint smaller than 3 causing it failed to run. #633
 
 ## [0.10.1] - 2022-11-2
 
