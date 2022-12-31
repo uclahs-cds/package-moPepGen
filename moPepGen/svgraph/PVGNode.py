@@ -639,9 +639,9 @@ class PVGNode():
 
     def any_unaccounted_downstream_cleavage_or_stop_altering(self,
             variants:Iterable[seqvar.VariantRecord]) -> bool:
-        """ Checks if the node has any unaccouted cleavage or stop altering
-        mutation from a giving list. The first amino acid from the downstream
-        node and the last amino acid from the upstream one will be check if
+        """ Checks if the node has any unaccounted cleavage or stop altering
+        mutation from a given list. The first amino acid from the downstream
+        node and the last amino acid from the upstream one will be checked if
         they contain any variant in the list of variant provided and not having
         any variant that are not in the list.
         """
