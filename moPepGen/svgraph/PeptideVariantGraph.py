@@ -881,8 +881,9 @@ class PeptideVariantGraph():
         for out_node in target_node.out_nodes:
             if out_node is self.stop:
                 continue
+            cur_orfs = [orf.copy() for orf in orfs]
             if in_cds:
-                cur_start_gain = copy.copy(orfs[0].start_gain)
+                cur_start_gain = copy.copy(cur_orfs[0].start_gain)
                 if not cur_start_gain:
                     cur_start_gain = set()
 
@@ -905,10 +906,10 @@ class PeptideVariantGraph():
                 cur_cleavage_gain = copy.copy(cleavage_gain)
                 cleavage_gain_down = out_node.get_cleavage_gain_from_downstream()
                 cur_cleavage_gain.extend(cleavage_gain_down)
-                orfs[0].start_gain = cur_start_gain
+                cur_orfs[0].start_gain = cur_start_gain
             else:
                 cur_cleavage_gain = None
-            cur = PVGCursor(target_node, out_node, in_cds, orfs, cur_cleavage_gain)
+            cur = PVGCursor(target_node, out_node, in_cds, cur_orfs, cur_cleavage_gain)
             traversal.stage(target_node, out_node, cur)
 
     def call_and_stage_known_orf_not_in_cds(self, cursor:PVGCursor,
