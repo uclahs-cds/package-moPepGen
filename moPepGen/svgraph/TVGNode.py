@@ -721,6 +721,10 @@ class TVGNode():
             # Skip if it is stop retaining.
             i_stop_aa = int(i_stop / 3)
             var_start_aa = int(i_var.location.start / 3)
+            if len(i_var.location) == 1 and ref_aa[i_stop_aa:i_stop_aa+1] \
+                    == alt_aa[var_start_aa:var_start_aa+1]:
+                i_var.is_silent = True
+
             if ref_aa[i_stop_aa:i_stop_aa+1] == alt_aa[var_start_aa:var_start_aa+1] == '*':
                 i_var = next(iter_var, None)
                 continue

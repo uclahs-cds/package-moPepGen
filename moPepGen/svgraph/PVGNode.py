@@ -235,7 +235,7 @@ class PVGNode():
                 return []
             if node.variants[0].location.start != 0:
                 return []
-            if not cleavage_gain and node.variants[0].is_stop_altering:
+            if not cleavage_gain and not node.variants[0].is_silent:
                 cleavage_gain.append(node.variants[0].variant)
         return cleavage_gain
 
