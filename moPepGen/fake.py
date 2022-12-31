@@ -176,7 +176,10 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
 def fake_rmats_record(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str
         ) -> VariantRecord:
     """ Create an alternative splicing variant """
-    var_type = random.choice(ALTERNATIVE_SPLICING_TYPES)
+    while True:
+        var_type = random.choice(ALTERNATIVE_SPLICING_TYPES)
+        if var_type != 'Substitution' or len(anno.transcripts[tx_id].exon) > 3:
+            break
     rmats_type = random.choice(ALT_SPLICE_TYPE_TO_RMATS[var_type])
 
     err_message = f"Not valid variant type of {rmats_type} {var_type}"
