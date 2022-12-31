@@ -350,6 +350,12 @@ class BruteForceVariantPeptideCaller():
         n_alt_splice = len([x for x in pool[self.tx_id].transcriptional
             if x.type in ALTERNATIVE_SPLICING_TYPES])
 
+        if n_circ == 0:
+            start_index = self.tx_seq.orf.start + 3 if bool(self.tx_seq.orf) else 3
+            for variant in pool[self.tx_id].transcriptional:
+                if variant.location.start < start_index:
+                    return True
+
         for fusion in pool[self.tx_id].fusion:
             accepter_tx_id = fusion.attrs['ACCEPTER_TRANSCRIPT_ID']
             if accepter_tx_id not in pool:
@@ -853,10 +859,7 @@ class BruteForceVariantPeptideCaller():
                     and (variant.is_insertion() or variant.is_deletion()) \
                     and not variant.is_alternative_splicing():
                 variant.to_end_inclusion(self.tx_seq)
-            if variant.location.start < start_index:
-                continue
-            # if mrna_end_nf and variant.location.start <= self.tx_seq.orf.end - 3:
-            #     continue
+
             variant_type_mapper[variant] = 'transcriptional'
         for variant in self.variant_pool[self.tx_id].intronic:
             variant_type_mapper[variant] = 'intronic'

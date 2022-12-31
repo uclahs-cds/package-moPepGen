@@ -32,6 +32,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Node in circRNA missing downstream stop lost mutation called as variant peptide incorrectly. #637
 
+- Silent mutation not excluded when it is very closed to anther mutation. #638
+
+- Stop remaining mutation not excluded. #638
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed
