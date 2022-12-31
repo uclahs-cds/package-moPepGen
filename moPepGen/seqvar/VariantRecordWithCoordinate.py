@@ -24,7 +24,10 @@ class VariantRecordWithCoordinate():
             location=FeatureLocation(
                 start=max(self.location.start + index, 0),
                 end=self.location.end + index,
-                seqname=self.location.seqname
+                seqname=self.location.seqname,
+                reading_frame_index=self.location.reading_frame_index,
+                start_offset=self.location.start_offset,
+                end_offset=self.location.end_offset
             ),
             is_stop_altering=self.is_stop_altering
         )
@@ -32,11 +35,17 @@ class VariantRecordWithCoordinate():
     def to_protein_coordinates(self) -> VariantRecordWithCoordinate:
         """ Returns a new object with the coordinates of the translated protein
         """
-        start = int(self.location.start / 3)
-        end = math.floor((self.location.end - 1) / 3) + 1
+        start = math.floor(self.location.start / 3)
+        end = math.ceil(self.location.end / 3)
+        start_offset = self.location.start - start * 3
+        end_offset = end * 3 - self.location.end
         return seqvar.VariantRecordWithCoordinate(
             variant=self.variant,
-            location=FeatureLocation(start=start, end=end, seqname=self.location.seqname),
+            location=FeatureLocation(
+                start=start, end=end, seqname=self.location.seqname,
+                reading_frame_index=self.location.reading_frame_index,
+                start_offset=start_offset, end_offset=end_offset
+            ),
             is_stop_altering=self.is_stop_altering
         )
 
@@ -45,8 +54,12 @@ class VariantRecordWithCoordinate():
         start, stop, _ = index.indices(self.location.end)
         start_index = max([start, self.location.start])
         end_index = min([stop, self.location.end])
+        start_offset = self.location.start_offset if start == self.location.start else 0
+        end_offset = self.location.end_offset if stop == self.location.end else 0
         location = FeatureLocation(
-            start=start_index, end=end_index, seqname=self.location.seqname
+            start=start_index, end=end_index, seqname=self.location.seqname,
+            reading_frame_index=self.location.reading_frame_index,
+            start_offset=start_offset, end_offset=end_offset
         )
         return VariantRecordWithCoordinate(
             variant=self.variant,

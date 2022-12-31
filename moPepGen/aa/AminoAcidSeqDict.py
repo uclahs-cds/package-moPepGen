@@ -26,7 +26,7 @@ class AminoAcidSeqDict(dict):
     def __setitem__(self, k:str, v:AminoAcidSeqRecord)->None:
         """ set item """
         if not isinstance(v, AminoAcidSeqRecord):
-            raise ValueError('The value of a DNASeqDict must be '
+            raise ValueError('The value of a AASeqDict must be '
             'AminoAcidSeqRecord.')
         super().__setitem__(k, v)
 
@@ -118,6 +118,7 @@ class AminoAcidSeqDict(dict):
                 if e.args[0] == msg:
                     protein.seq = protein.seq.split('X')[0]
                     continue
+                raise e
             for peptide in peptides:
                 pool.add(str(peptide.seq))
                 # Convert all I with L and add to the canonical peptide pool.

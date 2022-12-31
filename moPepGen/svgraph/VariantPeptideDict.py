@@ -183,6 +183,7 @@ class MiscleavedNodes():
             metadata = VariantPeptideMetadata()
             seq:str = None
             variants:Set[VariantRecord] = set()
+            in_seq_variants:Set[VariantRecord] = set()
 
             for i, node in enumerate(queue):
                 other = str(node.seq.seq)
@@ -193,6 +194,8 @@ class MiscleavedNodes():
                 if check_variants:
                     for variant in node.variants:
                         variants.add(variant.variant)
+                        if not variant.variant.is_circ_rna():
+                            in_seq_variants.add(variant.variant)
                     if i < len(queue) - 1:
                         _node = self.leading_node if i == 0 else node
                         indels = queue[i + 1].upstream_indel_map.get(_node)
@@ -205,6 +208,11 @@ class MiscleavedNodes():
                 if any(v.is_circ_rna() for v in variants) \
                         or any(v.is_circ_rna() for v in orf.start_gain):
                     if all(orf.is_valid_orf(x, self.subgraphs, circ_rna) for x in queue):
+                        if any(n.is_missing_any_variant(in_seq_variants) for n in queue):
+                            continue
+                        if queue[-1].any_unaccounted_downstream_cleavage_or_stop_altering(
+                                in_seq_variants):
+                            continue
                         metadata.orf = tuple(orf.orf)
                         valid_orf = orf
                         break

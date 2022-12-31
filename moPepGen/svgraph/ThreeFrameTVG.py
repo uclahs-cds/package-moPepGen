@@ -102,7 +102,7 @@ class ThreeFrameTVG():
         root2 = TVGNode(None, reading_frame_index=2, level=level)
 
         node0 = TVGNode(
-            seq=self.seq, reading_frame_index=0, subgraph_id=self.id,
+            seq=copy.deepcopy(self.seq), reading_frame_index=0, subgraph_id=self.id,
             global_variant=self.global_variant, level=level
         )
         if truncate_head:
@@ -116,13 +116,17 @@ class ThreeFrameTVG():
             )
         else:
             node1 = TVGNode(
-                self.seq, reading_frame_index=1, subgraph_id=self.id,
+                copy.deepcopy(self.seq), reading_frame_index=1, subgraph_id=self.id,
                 global_variant=self.global_variant, level=level
             )
             node2 = TVGNode(
-                self.seq, reading_frame_index=2, subgraph_id=self.id,
+                copy.deepcopy(self.seq), reading_frame_index=2, subgraph_id=self.id,
                 global_variant=self.global_variant, level=level
             )
+
+        for i,node in enumerate([node0, node1, node2]):
+            for loc in node.seq.locations:
+                loc.query.reading_frame_index = i
 
         self.add_edge(root0, node0, 'reference')
         self.add_edge(self.root, root0, 'reference')
@@ -362,7 +366,10 @@ class ThreeFrameTVG():
             )
         variant_with_coordinates = seqvar.VariantRecordWithCoordinate(
             variant=variant,
-            location=FeatureLocation(start=0, end=len(seq), seqname=source.subgraph_id)
+            location=FeatureLocation(
+                start=0, end=len(seq), seqname=source.subgraph_id,
+                reading_frame_index=source.reading_frame_index
+            )
         )
         var_node = self.create_node(
             seq=seq,
@@ -399,7 +406,7 @@ class ThreeFrameTVG():
             if in_frame:
                 target = tail
 
-        # varaint end
+        # variant end
         if variant_end < target_end:
             index = target.seq.get_query_index(variant_end)
             head, tail = self.splice(target, index, 'reference')
@@ -481,9 +488,11 @@ class ThreeFrameTVG():
             start=subgraph_start, end=subgraph_end
         )
         branch.init_three_frames(truncate_head=False)
-        for root in branch.reading_frames:
+        for rf_index, root in enumerate(branch.reading_frames):
+            var_i = copy.deepcopy(var)
+            var_i.location.reading_frame_index = rf_index
             node = list(root.out_edges)[0].out_node
-            node.variants.append(var)
+            node.variants.append(var_i)
         branch.create_variant_graph(
             variants=variants,
             variant_pool=None,
@@ -705,6 +714,8 @@ class ThreeFrameTVG():
         """
         cursors = copy.copy(cursors)
         subgraph_id = self.subgraphs.generate_subgraph_id()
+        for loc in seq.locations:
+            loc.ref.seqname = subgraph_id
         branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
         level = cursors[0].level + 1
         branch.update_node_level(level)
@@ -714,9 +725,11 @@ class ThreeFrameTVG():
             start=var.location.start, end=var.location.end
         )
         branch.init_three_frames(truncate_head=False)
-        for root in branch.reading_frames:
+        for rf_index, root in enumerate(branch.reading_frames):
+            var_i = copy.deepcopy(var)
+            var_i.location.reading_frame_index = rf_index
             node = list(root.out_edges)[0].out_node
-            node.variants.append(var)
+            node.variants.append(var_i)
             is_frameshifting = False
             if var.variant.is_frameshifting():
                 is_frameshifting = True
@@ -939,8 +952,13 @@ class ThreeFrameTVG():
 
             # if the transcript is mrna_end_NF, we are not going to use any
             # variants in the annotated 3'UTR region.
-            if self.mrna_end_nf and variant.location.start <= self.seq.orf.end - 3:
-                continue
+            if self.mrna_end_nf:
+                orf_end_trinuc = FeatureLocation(
+                    start=self.seq.orf.end-3, end=self.seq.orf.end
+                )
+                if variant.location.overlaps(orf_end_trinuc):
+                    variant = next(variant_iter, None)
+                    continue
 
             if any(c.seq.locations[0].ref.start > variant.location.start for c in cursors):
                 variant = next(variant_iter, None)
@@ -1085,7 +1103,7 @@ class ThreeFrameTVG():
             ) -> Tuple[Set[TVGNode], Set[TVGNode], Set[TVGNode], Set[TVGNode]]:
         """ Find all bridge in and bridge out nodes between a start and a
         end node. """
-        this_id = start.reading_frame_index
+        this_id = start.get_last_rf_index()
         bridge_in:Set[TVGNode] = set()
         bridge_out:Set[TVGNode] = set()
         subgraph_in:Set[TVGNode] = set()
@@ -1099,9 +1117,14 @@ class ThreeFrameTVG():
             len_after = len(visited)
             if len_before == len_after:
                 continue
+
             is_bridge_out = any(e.out_node.reading_frame_index != this_id
                 and e.out_node is not end for e in cur.out_edges)
-            if is_bridge_out:
+            is_bridge_out |= cur.has_multiple_segments() \
+                and cur.get_first_rf_index() != cur.get_second_rf_index() \
+                and cur.get_second_rf_index() != this_id
+
+            if is_bridge_out and cur is not end:
                 bridge_out.add(cur)
                 continue
 
@@ -1110,6 +1133,12 @@ class ThreeFrameTVG():
                     if not cur.is_inframe_subgraph(start, end):
                         subgraph_out.add(cur)
                         continue
+
+                if cur.has_multiple_segments() \
+                        and cur.get_first_subgraph_id() == start.subgraph_id \
+                        and cur.get_first_subgraph_id() != cur.get_last_subgraph_id():
+                    subgraph_out.add(cur)
+                    continue
 
             for e in cur.in_edges:
                 if e.in_node.reading_frame_index != this_id or e.in_node.was_bridge:
@@ -1311,6 +1340,8 @@ class ThreeFrameTVG():
         """
         start_node = node
         rf_index = node.reading_frame_index
+        if rf_index is None:
+            raise ValueError('reading_frame_index not found')
         end_node = self.find_farthest_node_with_overlap(node)
         if not self.is_circ_rna() and end_node.is_subgraph_end():
             subgraph_ends = {end_node}

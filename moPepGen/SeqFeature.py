@@ -8,9 +8,13 @@ _STRAND_LEVELS = {None:0, 0:1, -1:2, 1:3}
 
 class FeatureLocation(BioFeatureLocation):
     """ This models the range of a sequence, with a start and an end. """
-    def __init__(self, *args, seqname:str=None, **kwargs):
+    def __init__(self, *args, seqname:str=None, reading_frame_index:int=None,
+            start_offset:int=0, end_offset:int=0, **kwargs):
         super().__init__(*args, **kwargs)
         self.seqname = seqname
+        self.reading_frame_index = reading_frame_index
+        self.start_offset = start_offset
+        self.end_offset = end_offset
 
     def __eq__(self, other: FeatureLocation)->bool:
         """ equal to """
@@ -141,15 +145,15 @@ class MatchedLocation():
     location = MatchedLocation(query=query, ref=ref)
 
     Attributes:
-        query (FeatureLocation): The location of the query sequence.
-        ref (FeatureLocation): The location of the reference sequence.
+        - query (FeatureLocation): The location of the query sequence.
+        - ref (FeatureLocation): The location of the reference sequence.
     """
     def __init__(self, query:FeatureLocation, ref:FeatureLocation):
         """ Constructor for MatchedLocation
 
         Args:
-            query (FeatureLocation): The location of the query sequence.
-            ref (FeatureLocation): The location of the reference sequence.
+            - query (FeatureLocation): The location of the query sequence.
+            - ref (FeatureLocation): The location of the reference sequence.
         """
         if len(query) != len(ref):
             raise ValueError('Location length must equal.')
@@ -172,15 +176,23 @@ class MatchedLocation():
         """ Get item. The query location of the returned object starts at 0.
         """
         start, stop, _ = index.indices(len(self))
+        query_start_offset = self.query.start_offset if start == 0 else 0
+        query_end_offset = self.query.end_offset if stop == 0 else 0
         query = FeatureLocation(
             seqname=self.query.seqname,
             start=0,
-            end=stop - start
+            end=stop - start,
+            reading_frame_index=self.query.reading_frame_index,
+            start_offset=query_start_offset,
+            end_offset=query_end_offset
         )
         ref = FeatureLocation(
             seqname=self.ref.seqname,
             start=self.ref.start + start,
-            end=self.ref.start + stop
+            end=self.ref.start + stop,
+            reading_frame_index=self.ref.reading_frame_index,
+            start_offset=self.ref.start_offset,
+            end_offset=self.ref.end_offset
         )
         return self.__class__(
             query=query,
@@ -192,6 +204,25 @@ class MatchedLocation():
         query = self.query.__class__(
             seqname=self.query.seqname,
             start=self.query.start + i,
-            end=self.query.end + i
+            end=self.query.end + i,
+            reading_frame_index=self.query.reading_frame_index,
+            start_offset=self.query.start_offset,
+            end_offset=self.query.end_offset
         )
         return self.__class__(query=query, ref=self.ref)
+
+    def get_ref_codon_start(self) -> int:
+        """ Get the start position of the first codon on the gene """
+        return self.ref.start * 3 + self.ref.start_offset
+
+    def get_ref_codon_end(self) -> int:
+        """ Get the end position of the last codon on the gene """
+        return self.ref.end * 3 + self.ref.end_offset
+
+    def get_ref_dna_start(self) -> int:
+        """ Get the start position of the sequence on the gene/transcript """
+        return self.get_ref_codon_start() + self.query.start_offset
+
+    def get_ref_dna_end(self) -> int:
+        """ Get the end position of the sequence on the gene/transcript """
+        return self.get_ref_codon_end() - self.query.end_offset

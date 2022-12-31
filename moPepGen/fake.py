@@ -1,8 +1,13 @@
 """ Module to generate fake data """
+import copy
 import random
+from typing import Tuple, List, Dict
+from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from moPepGen.dna.DNASeqRecord import DNASeqRecord
 from moPepGen.dna.DNASeqDict import DNASeqDict
-from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
+from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation, GeneAnnotationModel, \
+    TranscriptAnnotationModel, GTFSeqFeature
 from moPepGen.seqvar import VariantRecord
 from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 from moPepGen.circ import CircRNAModel
@@ -14,6 +19,7 @@ ALT_SPLICE_TYPE_TO_RMATS = {
     'Insertion': ['SE', 'RI', 'A3SS', 'A5SS', 'MXE'],
     'Substitution': ['MXE']
 }
+STOP_CODONS = ['TAA', 'TAG', 'TGA']
 
 def create_random_dna_sequence(size:int) -> str:
     """ Create a randeom DNA sequence in str """
@@ -42,7 +48,7 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
             start = random.randint(tx_start, tx_end - 1)
             end = start + 1
         else:
-            start = random.randint(tx_start, tx_end - frames_shifted - 1)
+            start = random.randint(tx_start, tx_end - 1 + (frames_shifted - 1))
             end = start - frames_shifted + 1
         start_genomic = anno.coordinate_gene_to_genomic(start, gene_id)
         end_genomic = anno.coordinate_gene_to_genomic(end - 1, gene_id) + 1
@@ -108,15 +114,15 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
         cds_start_genomic = anno.coordinate_transcript_to_genomic(cds_start_tx, tx_id)
         cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, donor_gene_id)
         cds_end_tx = donor_tx_model.get_cds_end_index(donor_tx_seq, donor_tx_seq.orf.start)
-        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
-        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id)
+        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx - 1, tx_id)
+        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id) + 1
     else:
         cds_start_genomic = anno.coordinate_gene_to_genomic(0, donor_gene_id)
         cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, donor_gene_id)
         cds_end_tx = len(donor_tx_seq) - 1
-        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, tx_id)
-        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id)
-    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene)
+        cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx - 1, tx_id)
+        cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id) + 1
+    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
     donor_breakpoint_genomic = anno.coordinate_gene_to_genomic(donor_breakpoint, donor_gene_id)
     ref_seq = donor_gene_seq.seq[donor_breakpoint]
 
@@ -131,10 +137,10 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
     cds_start_genomic = anno.coordinate_transcript_to_genomic(0, accepter_tx_id)
     cds_start_gene = anno.coordinate_genomic_to_gene(cds_start_genomic, accepter_gene_id)
     cds_end_tx = len(accepter_tx_seq) - 1
-    cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx, accepter_tx_id)
-    cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, accepter_gene_id)
+    cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx - 1, accepter_tx_id)
+    cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, accepter_gene_id) + 1
 
-    accepter_breakpoint = random.randint(cds_start_gene, cds_end_gene)
+    accepter_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
 
     accepter_breakpoint_genomic = anno.coordinate_gene_to_genomic(
         accepter_breakpoint, accepter_gene_id)
@@ -501,3 +507,336 @@ def fake_circ_rna_model_ci(anno:GenomicAnnotation, tx_id:str
         gene_name=tx_model.transcript.gene_name,
         genomic_location=genomic_location
     )
+
+
+def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
+        start_pos:int, gene_id:str, transcript_id:str, protein_id:str,
+        cds_start_nf:bool, mrna_end_nf:bool, min_exon_size:int, max_exon_size:int,
+        min_intron_size:int, max_intron_size:int) -> TranscriptAnnotationModel:
+    """ Create a fake transcript model """
+    exon_set:List[GTFSeqFeature] = []
+    cds_set:List[GTFSeqFeature] = []
+    utr_set:List[GTFSeqFeature] = []
+    three_utr_set:List[GTFSeqFeature] = []
+    five_utr_set:List[GTFSeqFeature] = []
+    offset = start_pos
+    tx_id = f"FAKET{random.randint(1, 10000):08}"
+    attributes = {
+        'gene_id': gene_id,
+        'transcript_id': transcript_id,
+        'protein_id': protein_id,
+        'tag': []
+    }
+    if cds_start_nf:
+        attributes['tag'].append('cds_start_NF')
+    if mrna_end_nf:
+        attributes['tag'].append('mrna_end_NF')
+    for i in range(n_exons):
+        exon_len = random.randint(min_exon_size, max_exon_size)
+        loc = FeatureLocation(start=offset, end=offset + exon_len, seqname=chrom)
+        exon = GTFSeqFeature(
+            location=loc, strand=strand, type='exon', id=tx_id,
+            attributes=attributes, chrom=chrom
+        )
+        exon_set.append(exon)
+        if is_coding:
+            if i == 0:
+                if strand == 1:
+                    if cds_start_nf:
+                        cds_start = offset
+                    else:
+                        cds_start = offset + random.randint(1, exon_len - 3)
+                else:
+                    if mrna_end_nf:
+                        cds_start = offset
+                    else:
+                        cds_start = offset + random.randint(1, exon_len - 1)
+            else:
+                cds_start = offset
+
+            if i == n_exons - 1:
+                if strand == -1:
+                    if cds_start_nf:
+                        cds_end = offset + exon_len
+                    else:
+                        cds_end = offset + exon_len - random.randint(3, exon_len - 3)
+                else:
+                    if mrna_end_nf:
+                        cds_end = offset + exon_len
+                    else:
+                        cds_end = offset + exon_len - random.randint(3, exon_len - 3)
+            else:
+                cds_end = offset + exon_len
+
+            loc = FeatureLocation(start=cds_start, end=cds_end, seqname=chrom)
+            cds = GTFSeqFeature(
+                location=loc, strand=strand, type='CDS', id=tx_id,
+                attributes=attributes, chrom=chrom
+            )
+            cds_set.append(cds)
+
+        intron_size = random.randint(min_intron_size, max_intron_size)
+        offset += exon_len + intron_size
+
+    # define frame for each cds
+    if is_coding:
+        cds_len = sum(len(x.location) for x in cds_set)
+        if strand == 1:
+            for i,cds in enumerate(cds_set):
+                if i == 0:
+                    cds.frame = cds_len % 3
+                else:
+                    prev_exon = exon_set[i-1]
+                    prev_cds = cds_set[i-1]
+                    cds.frame = (3 - (len(prev_exon.location) - prev_cds.frame) % 3) % 3
+        else:
+            for i,cds in reversed(list(enumerate(cds_set))):
+                if i == len(cds_set) - 1:
+                    cds.frame = cds_len % 3
+                else:
+                    prev_exon = exon_set[i+1]
+                    prev_cds = cds_set[i+1]
+                    cds.frame = (3 - (len(prev_exon.location) - prev_cds.frame) % 3) % 3
+
+    # add UTR
+    if is_coding:
+        if cds_set[0].location.start != exon_set[0].location.start:
+            loc = FeatureLocation(
+                start=exon_set[0].location.start, end=cds_set[0].location.start,
+                seqname=chrom
+            )
+            utr = GTFSeqFeature(
+                location=loc, strand=strand, type='UTR', id=tx_id,
+                attributes=attributes, chrom=chrom
+            )
+            utr_set.append(utr)
+            if strand == 1:
+                five_utr_set.append(utr)
+            else:
+                three_utr_set.append(utr)
+
+        if cds_set[-1].location.end != exon_set[-1].location.end:
+            loc = FeatureLocation(
+                start=cds_set[-1].location.end, end=exon_set[-1].location.end,
+                seqname=chrom
+            )
+            utr = GTFSeqFeature(
+                location=loc, strand=strand, type='UTR', id=tx_id,
+                attributes=attributes, chrom=chrom
+            )
+            utr_set.append(utr)
+            if strand == 1:
+                three_utr_set.append(utr)
+            else:
+                five_utr_set.append(utr)
+
+    loc = FeatureLocation(
+        start=exon_set[0].location.start,
+        end=exon_set[-1].location.end,
+        seqname=chrom
+    )
+    transcript = GTFSeqFeature(
+        location=loc, strand=strand, type='transcript', id=tx_id,
+        attributes=attributes, chrom=chrom
+    )
+
+    return TranscriptAnnotationModel(
+        transcript=transcript, cds=cds_set, exon=exon_set, utr=utr_set,
+        five_utr=five_utr_set, three_utr=three_utr_set, is_protein_coding=is_coding,
+        transcript_id=transcript_id, gene_id=gene_id, protein_id=protein_id
+    )
+
+def fake_genomic_annotation(n_genes:int, chrom:str, min_exons:int, max_exons:int,
+        min_exon_size:int, max_exon_size:int, min_intron_size:int, max_intron_size:int,
+        min_intergenic_size:int, max_intergenic_size:int) -> GenomicAnnotation:
+    """ Create afke genomic annotation object. """
+    anno = GenomicAnnotation()
+
+    offset = 0
+    for _ in range(n_genes):
+        strand = random.choice((1, -1))
+        is_coding = random.choice((True, False))
+        n_exons = random.randint(min_exons, max_exons)
+        while True:
+            x = random.randint(1, 1000)
+            gene_id = f"FAKEG{x:08}"
+            tx_id = f"FAKET{x:08}"
+            protein_id = f"FAKEP{x:08}"
+            if gene_id not in anno.genes and tx_id not in anno.transcripts:
+                break
+        if is_coding:
+            cds_start_nf = random.choice((True, False))
+            mrna_end_nf = random.choice((True, False))
+        else:
+            cds_start_nf, mrna_end_nf = False, False
+        tx_model = fake_transcript_model(
+            n_exons=n_exons, is_coding=is_coding, chrom=chrom, strand=strand,
+            start_pos=offset, gene_id=gene_id, transcript_id=tx_id,
+            protein_id=protein_id, cds_start_nf=cds_start_nf, mrna_end_nf=mrna_end_nf,
+            min_exon_size=min_exon_size,
+            max_exon_size=max_exon_size,
+            min_intron_size=min_intron_size,
+            max_intron_size=max_intron_size
+        )
+        gene_start = tx_model.transcript.location.start
+        gene_end = tx_model.transcript.location.end
+        loc = FeatureLocation(start=gene_start, end=gene_end, seqname=chrom)
+        gene_model = GeneAnnotationModel(
+            location=loc, chrom=chrom, transcripts=[tx_id], type='gene',
+            strand=strand,
+            attributes=copy.deepcopy(tx_model.transcript.attributes)
+        )
+        anno.genes[gene_id] = gene_model
+        anno.transcripts[tx_id] = tx_model
+
+        offset += len(tx_model.transcript) \
+            + random.randint(min_intergenic_size, max_intergenic_size)
+    return anno
+
+def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
+    """ Create a fake genome from an genomic annotation. """
+    genome_sizes:Dict[str, int] = {}
+    for gene_model in anno.genes.values():
+        chrom = gene_model.chrom
+        if chrom not in genome_sizes:
+            genome_sizes[chrom] = gene_model.location.end
+        else:
+            genome_sizes[chrom] = max(genome_sizes[chrom], gene_model.location.end)
+
+    genome_nts = {k:random.choices(DNA_ALPHABET, k=v) for k,v in genome_sizes.items()}
+
+    for tx_model in anno.transcripts.values():
+        chrom_nts = genome_nts[tx_model.transcript.chrom]
+        if tx_model.is_protein_coding:
+            attrs = tx_model.transcript.attributes
+            # make sure cds start is start codon
+            if 'tag' not in attrs or 'cds_start_NF' not in attrs:
+                if tx_model.transcript.strand == 1:
+                    cds_start = tx_model.cds[0].location.start + tx_model.cds[0].frame
+                    chrom_nts[cds_start] = 'A'
+                    chrom_nts[cds_start + 1] = 'T'
+                    chrom_nts[cds_start + 2] = 'G'
+                else:
+                    cds_start = tx_model.cds[-1].location.end - tx_model.cds[-1].frame - 1
+                    chrom_nts[cds_start] = 'T'
+                    chrom_nts[cds_start - 1] = 'A'
+                    chrom_nts[cds_start - 2] = 'C'
+
+            # make sure cds end is stop codon
+            if 'tag' not in attrs or 'mrna_end_NF' not in attrs['tag']:
+                stop_codon = random.choice(STOP_CODONS)
+                if tx_model.transcript.strand == 1:
+                    cds_end = tx_model.cds[-1].location.end
+                    chrom_nts[cds_end] = stop_codon[0]
+                    chrom_nts[cds_end + 1] = stop_codon[1]
+                    chrom_nts[cds_end + 2] = stop_codon[2]
+                else:
+                    stop_codon = str(Seq(stop_codon).reverse_complement())
+                    cds_end = tx_model.cds[0].location.start
+                    chrom_nts[cds_end - 1] = stop_codon[2]
+                    chrom_nts[cds_end - 2] = stop_codon[1]
+                    chrom_nts[cds_end - 3] = stop_codon[0]
+
+            # make sure no stop codon in cds
+            if tx_model.transcript.strand == 1:
+                i = tx_model.cds[0].location.start + tx_model.cds[0].frame
+                cds_iter = iter(tx_model.cds)
+                cds = next(cds_iter, None)
+                while True:
+                    if not cds:
+                        break
+                    if i >= cds.location.end:
+                        if cds is tx_model.cds[-1]:
+                            break
+                        cds = next(cds_iter, None)
+                        i = cds.location.start
+
+                    if i + 2 > cds.location.end and cds is tx_model.cds[-1]:
+                        break
+
+                    codon = []
+                    positions = []
+                    k = i
+                    while len(codon) < 3:
+                        if k >= cds.location.end:
+                            cds = next(cds_iter, None)
+                            k = cds.location.start
+                        codon.append(chrom_nts[k])
+                        positions.append(k)
+                        k += 1
+
+                    while ''.join(codon) in STOP_CODONS:
+                        codon = random.choices(DNA_ALPHABET, k=3)
+                        for pos, nt in zip(positions, codon):
+                            chrom_nts[pos] = nt
+
+                    i = k
+            else:
+                i = tx_model.cds[-1].location.end - tx_model.cds[-1].frame - 1
+                cds_iter = reversed(tx_model.cds)
+                cds = next(cds_iter, None)
+                while True:
+                    if not cds:
+                        break
+                    if i < cds.location.start:
+                        if cds is tx_model.cds[0]:
+                            break
+                        cds = next(cds_iter, None)
+                        i = cds.location.end - 1
+                    if i - 2 < cds.location.start and cds is tx_model.cds[0]:
+                        break
+
+                    codon = []
+                    positions = []
+                    k = i
+                    while len(codon) < 3:
+                        if k < cds.location.start:
+                            cds = next(cds_iter, None)
+                            k = cds.location.end - 1
+                        codon.append(chrom_nts[k])
+                        positions.append(k)
+                        k -= 1
+
+                    while str(Seq(''.join(codon)).complement()) in STOP_CODONS:
+                        codon = random.choices(DNA_ALPHABET, k=3)
+                        for pos, nt in zip(positions, codon):
+                            chrom_nts[pos] = nt
+
+                    i = k
+
+    genome = DNASeqDict()
+    for chrom_id, chrom_nts in genome_nts.items():
+        chrom_seq = DNASeqRecord(
+            seq=Seq(''.join(chrom_nts)),
+            id=chrom_id, name=chrom_id, description=chrom_id
+        )
+        genome[chrom_id] = chrom_seq
+
+    return genome
+
+def fake_genome_and_annotation(n_genes:int) -> Tuple[DNASeqDict, GenomicAnnotation]:
+    """ Create a fake genome and annotation. """
+    params = {
+        'min_intron_size': 20,
+        'max_intron_size': 500,
+        'min_exon_size': 10,
+        'max_exon_size': 300,
+        'min_intergenic_size': 10,
+        'max_intergenic_size': 50,
+        'min_exons': 3,
+        'max_exons': 10
+    }
+    chrom = 'chrF'
+
+    anno = fake_genomic_annotation(
+        n_genes=n_genes, chrom=chrom,
+        min_exons=params['min_exons'], max_exons=params['max_exons'],
+        min_exon_size=params['min_exon_size'], max_exon_size=params['max_exon_size'],
+        min_intron_size=params['min_intron_size'], max_intron_size=params['max_intron_size'],
+        min_intergenic_size=params['min_intergenic_size'],
+        max_intergenic_size=params['max_intergenic_size']
+    )
+
+    genome = fake_genome(anno)
+
+    return genome, anno

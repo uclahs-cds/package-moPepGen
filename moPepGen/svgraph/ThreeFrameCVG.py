@@ -19,7 +19,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
 
     Attributes:
         seq (DNASeqRecordWithCoordinates): The original sequence of the
-                transcript (reference).
+                circRNA (reference).
         transcript_id (str): The transcript ID that the circRNA is associated
             with
         attrs (dict): additional attributes
@@ -79,11 +79,13 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
         """ Initiate the three reading-frame graph. """
         super().init_three_frames(truncate_head=truncate_head)
         var = self.get_circ_variant_with_coordinate()
-        for root in self.reading_frames:
+        for i,root in enumerate(self.reading_frames):
             if len(root.out_edges) > 1:
                 raise ValueError('Initiating CVG should not contain any variant')
             node = list(root.out_edges)[0].out_node
-            node.variants.append(var)
+            var_i = copy.deepcopy(var)
+            var_i.location.reading_frame_index = i
+            node.variants.append(var_i)
             self.add_edge(node, root, 'reference')
 
     def create_variant_circ_graph(self, variants:List[seqvar.VariantRecord]):

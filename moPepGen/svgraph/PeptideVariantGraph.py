@@ -1036,9 +1036,10 @@ class PeptideVariantGraph():
                             and not v.variant.is_circ_rna()]
                         orf.start_gain.update(start_gain)
 
+            # Add stop altering mutations
             for variant in target_node.variants:
                 if variant.is_stop_altering:
-                    if start_indices and variant.location.end < start_indices[-1]:
+                    if start_indices and variant.location.end - 1 < start_indices[-1]:
                         continue
                     for x in orfs:
                         x.start_gain.add(variant.variant)

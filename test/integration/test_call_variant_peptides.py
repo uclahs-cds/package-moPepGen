@@ -902,3 +902,29 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/34/brute_force.txt'
         reference = self.data_dir/'downsampled_reference/ENST00000265138.4-ENST00000650150.1'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case63(self):
+        """ Issue handling graph with a frameshift indel on the sequence
+        inserted by an alt splice inserting that causes the reading frame going
+        back to the original. #635
+        """
+        gvf = [
+            self.data_dir/'fuzz/35/fake_variants.gvf',
+            self.data_dir/'fuzz/35/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/35/brute_force.txt'
+        reference = self.data_dir/'fuzz/35'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case64(self):
+        """ Test case caught by fuzz test that the sequence missing a downstream
+        stop lost mutation called by moPepGen as a variant peptide incorrectly.
+        #637
+        """
+        gvf = [
+            self.data_dir/'fuzz/36/fake_variants.gvf',
+            self.data_dir/'fuzz/36/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/36/brute_force.txt'
+        reference = self.data_dir/'fuzz/36'
+        self.default_test_case(gvf, reference, expected)
