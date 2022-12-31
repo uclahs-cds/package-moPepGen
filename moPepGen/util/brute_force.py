@@ -208,6 +208,8 @@ class BruteForceVariantPeptideCaller():
         for i, variant_coordinate in enumerate(variants):
             variant = variant_coordinate.variant
             loc = variant_coordinate.location
+            if variant.type == 'Insertion':
+                loc = FeatureLocation(start=loc.start+1, end=loc.end)
             if loc.start > rhs + 3:
                 break
             is_start_gain = start_loc.overlaps(loc)

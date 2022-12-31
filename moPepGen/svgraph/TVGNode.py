@@ -612,7 +612,8 @@ class TVGNode():
 
         locations = []
         for loc in self.seq.locations:
-            query_start = math.floor(loc.query.start / 3)
+            rf = loc.query.reading_frame_index
+            query_start = math.floor(loc.query.start/ 3)
             query_end = math.ceil(loc.query.end / 3)
             query_start_offset = loc.query.start - query_start * 3
             query_end_offset = query_end * 3 - loc.query.end
