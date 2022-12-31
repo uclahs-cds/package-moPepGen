@@ -117,7 +117,7 @@ class PVGOrf():
             for fragment in circ_rna.fragments:
                 frag = FeatureLocation(
                     start=math.floor((fragment.location.start - 3) / 3),
-                    end=math.floor(fragment.location.end / 3)
+                    end=math.ceil(fragment.location.end / 3)
                 )
                 if i in frag:
                     if j in frag:
