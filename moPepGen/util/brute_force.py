@@ -350,11 +350,18 @@ class BruteForceVariantPeptideCaller():
         n_alt_splice = len([x for x in pool[self.tx_id].transcriptional
             if x.type in ALTERNATIVE_SPLICING_TYPES])
 
+        orf = self.tx_seq.orf
+        is_mrna_end_nf = self.tx_model.is_mrna_end_nf()
+
         if n_circ == 0:
-            start_index = self.tx_seq.orf.start + 3 if bool(self.tx_seq.orf) else 3
+            start_index = orf.start + 3 if bool(orf) else 3
             for variant in pool[self.tx_id].transcriptional:
                 if variant.location.start < start_index:
                     return True
+                if is_mrna_end_nf and orf is not None:
+                    orf_end_trinuc = FeatureLocation(start=orf.end-3, end=orf.end)
+                    if variant.location.overlaps(orf_end_trinuc):
+                        return True
 
         for fusion in pool[self.tx_id].fusion:
             accepter_tx_id = fusion.attrs['ACCEPTER_TRANSCRIPT_ID']
