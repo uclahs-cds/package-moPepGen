@@ -693,6 +693,9 @@ class TVGNode():
         ref_seq = self.get_ref_sequence(tx_seq)
         ref_seq = ref_seq[:math.floor(len(ref_seq)/3)*3]
         ref_aa = ref_seq.translate(to_stop=False)
+
+        alt_aa = self.seq.seq[:math.floor(len(self.seq)/3)*3].translate()
+
         stop_positions = [x.start() * 3 for x in re.finditer(r'\*', str(ref_aa))]
         if not stop_positions:
             return
@@ -713,6 +716,13 @@ class TVGNode():
 
             if  i_var.location.start + offset >= i_stop + 3:
                 i_stop = next(iter_stop, None)
+                continue
+
+            # Skip if it is stop retaining.
+            i_stop_aa = int(i_stop / 3)
+            var_start_aa = int(i_var.location.start / 3)
+            if ref_aa[i_stop_aa:i_stop_aa+1] == alt_aa[var_start_aa:var_start_aa+1] == '*':
+                i_var = next(iter_var, None)
                 continue
 
             i_var.is_stop_altering = True

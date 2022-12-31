@@ -198,8 +198,7 @@ class BruteForceVariantPeptideCaller():
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
-            variants_silent_mutation:List[Tuple[bool,bool,bool]],
-            is_coding:bool) -> bool:
+            variants_silent_mutation:List[Tuple[bool,bool,bool]]) -> bool:
         """ Check whether the given range of the transcript has any variant
         associated. """
         offset = 0
@@ -233,7 +232,7 @@ class BruteForceVariantPeptideCaller():
                         or is_cleavage_gain \
                         or is_stop_lost \
                         or is_stop_gain ) \
-                    and not (is_coding and is_silent_mutation):
+                    and not is_silent_mutation:
                 return True
             offset += len(variant.alt) - len(variant.ref)
         return False
@@ -833,8 +832,7 @@ class BruteForceVariantPeptideCaller():
                     tx_lhs = cds_start + lhs * 3
                     tx_rhs = cds_start + rhs * 3
                     if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
-                            variant_coordinates, stop_lost, stop_gain, silent_mutation,
-                            is_coding):
+                            variant_coordinates, stop_lost, stop_gain, silent_mutation):
                         continue
 
                     peptides = [aa_seq[lhs:rhs]]
