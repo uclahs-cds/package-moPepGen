@@ -419,7 +419,9 @@ class PeptideVariantGraph():
 
     def collapse_nodes_backward(self, nodes:Iterable[PVGNode], heads:Set[PVGNode]
             ) -> Set[PVGNode]:
-        """ """
+        """ Collapse equivalent nodes in a variant bubble from end to start.
+        Equivalent nodes are those with same sequence and share the same
+        outgoing nodes. """
         final_nodes = self.collapse_end_nodes(nodes)
         queue = deque(final_nodes)
         while queue:
