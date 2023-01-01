@@ -1060,7 +1060,7 @@ class PeptideVariantGraph():
                 orfs = [orf]
             else:
                 for orf in orfs:
-                    if not orf.start_gain:
+                    if self.is_circ_rna() or not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
                             and not v.variant.is_circ_rna()]
@@ -1315,8 +1315,10 @@ class PVGTraversal():
         curs.sort(key=cmp_to_key(func))
 
         cur = curs[0]
+        cur.orfs = [x.copy() for x in cur.orfs]
         if is_circ_rna:
             for x in curs[1:]:
-                cur.orfs += x.orfs
+                for orf in x.orfs:
+                    cur.orfs.append(orf.copy())
 
         self.queue.appendleft(cur)
