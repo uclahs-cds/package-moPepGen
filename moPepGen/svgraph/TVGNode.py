@@ -662,7 +662,7 @@ class TVGNode():
         for i, variant in enumerate(self.variants):
             if variant.variant.type in ['Deletion', 'Substitution']:
                 seq += tx_seq[variant.variant.location.start:variant.variant.location.end]
-            else:
+            elif variant.variant.type != 'Insertion':
                 seq += variant.variant.ref
             if i + 1 >= len(self.variants):
                 seq += self.seq.seq[variant.location.end:]

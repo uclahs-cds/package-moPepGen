@@ -40,6 +40,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fusion with donor breakpoint smaller than 3 causing it failed to run. #633
 
+- Alt splice Insertion recognized as stop altering incorrectly. #640
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed

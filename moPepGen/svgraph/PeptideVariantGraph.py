@@ -1042,9 +1042,9 @@ class PeptideVariantGraph():
 
             if not in_cds:
                 start_gain = set()
-                orfs = []
+                cur_orfs = []
             elif start_indices:
-                orf = orf.copy()
+                cur_orf = orf.copy()
                 # carry over variants from the target node to the next
                 # node if a start codon is found.
                 start_gain = target_node.get_variants_at(
@@ -1056,10 +1056,11 @@ class PeptideVariantGraph():
                 )
                 start_gain += [x for x in fs_variants if x.is_frameshifting()]
                 start_gain = [x for x in start_gain if not x.is_circ_rna()]
-                orf.start_gain = set(start_gain)
-                orfs = [orf]
+                cur_orf.start_gain = set(start_gain)
+                cur_orfs = [cur_orf]
             else:
-                for orf in orfs:
+                cur_orfs = [orf.copy() for orf in orfs]
+                for orf in cur_orfs:
                     if self.is_circ_rna() or not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
@@ -1071,7 +1072,7 @@ class PeptideVariantGraph():
                 if variant.is_stop_altering:
                     if start_indices and variant.location.end - 1 < start_indices[-1]:
                         continue
-                    for x in orfs:
+                    for x in cur_orfs:
                         x.start_gain.add(variant.variant)
 
             cur_cleavage_gain = copy.copy(cleavage_gain)
@@ -1079,7 +1080,7 @@ class PeptideVariantGraph():
             if self.is_circ_rna():
                 circ_rna = traversal.circ_rna
                 filtered_orfs = []
-                for orf_i in orfs:
+                for orf_i in cur_orfs:
                     orf_i_2 = orf_i.copy()
                     if orf_i_2.node_is_at_least_one_loop_downstream(
                                 out_node, self.subgraphs, circ_rna):
@@ -1091,7 +1092,7 @@ class PeptideVariantGraph():
                 if not filtered_orfs:
                     cur_in_cds = False
             else:
-                filtered_orfs = orfs
+                filtered_orfs = cur_orfs
 
             cursor = PVGCursor(target_node, out_node, cur_in_cds, filtered_orfs,
                 cur_cleavage_gain, finding_start_site)
