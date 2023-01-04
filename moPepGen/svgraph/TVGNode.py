@@ -612,11 +612,7 @@ class TVGNode():
 
         locations = []
         for loc in self.seq.locations:
-            if len(loc.query) < 3:
-                if loc.query.end != len(self.seq.seq):
-                    continue
-
-            query_start = math.floor(loc.query.start / 3)
+            query_start = math.floor(loc.query.start/ 3)
             query_end = math.ceil(loc.query.end / 3)
             query_start_offset = loc.query.start - query_start * 3
             query_end_offset = query_end * 3 - loc.query.end
@@ -665,7 +661,7 @@ class TVGNode():
         for i, variant in enumerate(self.variants):
             if variant.variant.type in ['Deletion', 'Substitution']:
                 seq += tx_seq[variant.variant.location.start:variant.variant.location.end]
-            else:
+            elif variant.variant.type != 'Insertion':
                 seq += variant.variant.ref
             if i + 1 >= len(self.variants):
                 seq += self.seq.seq[variant.location.end:]
@@ -693,6 +689,9 @@ class TVGNode():
         ref_seq = self.get_ref_sequence(tx_seq)
         ref_seq = ref_seq[:math.floor(len(ref_seq)/3)*3]
         ref_aa = ref_seq.translate(to_stop=False)
+
+        alt_aa = self.seq.seq[:math.floor(len(self.seq)/3)*3].translate()
+
         stop_positions = [x.start() * 3 for x in re.finditer(r'\*', str(ref_aa))]
         if not stop_positions:
             return
@@ -713,6 +712,17 @@ class TVGNode():
 
             if  i_var.location.start + offset >= i_stop + 3:
                 i_stop = next(iter_stop, None)
+                continue
+
+            # Skip if it is stop retaining.
+            i_stop_aa = int(i_stop / 3)
+            var_start_aa = int(i_var.location.start / 3)
+            if len(i_var.variant.location) == 1 and ref_aa[i_stop_aa:i_stop_aa+1] \
+                    == alt_aa[var_start_aa:var_start_aa+1]:
+                i_var.is_silent = True
+
+            if ref_aa[i_stop_aa:i_stop_aa+1] == alt_aa[var_start_aa:var_start_aa+1] == '*':
+                i_var = next(iter_var, None)
                 continue
 
             i_var.is_stop_altering = True

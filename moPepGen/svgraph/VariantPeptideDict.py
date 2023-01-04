@@ -210,9 +210,6 @@ class MiscleavedNodes():
                     if all(orf.is_valid_orf(x, self.subgraphs, circ_rna) for x in queue):
                         if any(n.is_missing_any_variant(in_seq_variants) for n in queue):
                             continue
-                        if queue[-1].any_unaccounted_downstream_cleavage_or_stop_altering(
-                                in_seq_variants):
-                            continue
                         metadata.orf = tuple(orf.orf)
                         valid_orf = orf
                         break
@@ -231,6 +228,11 @@ class MiscleavedNodes():
                 variants.update(valid_orf.start_gain)
                 variants.update(additional_variants)
                 variants.update(series.additional_variants)
+
+            if any(v.is_circ_rna() for v in variants) \
+                    and queue[-1].any_unaccounted_downstream_cleavage_or_stop_altering(
+                        {x for x in variants if not x.is_circ_rna()}):
+                continue
 
             if not seq:
                 continue

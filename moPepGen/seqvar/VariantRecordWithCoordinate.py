@@ -11,11 +11,12 @@ class VariantRecordWithCoordinate():
     location of variants of a node when the variable bubble expands forward
     or backward. """
     def __init__(self, variant:seqvar.VariantRecord, location:FeatureLocation,
-            is_stop_altering:bool=False):
+            is_stop_altering:bool=False, is_silent:bool=False):
         """ Constructor """
         self.variant = variant
         self.location = location
         self.is_stop_altering = is_stop_altering
+        self.is_silent = is_silent
 
     def shift(self, index:int) -> VariantRecordWithCoordinate:
         """ Shift the coordinate of the object by a given number. """
@@ -29,7 +30,8 @@ class VariantRecordWithCoordinate():
                 start_offset=self.location.start_offset,
                 end_offset=self.location.end_offset
             ),
-            is_stop_altering=self.is_stop_altering
+            is_stop_altering=self.is_stop_altering,
+            is_silent=self.is_silent
         )
 
     def to_protein_coordinates(self) -> VariantRecordWithCoordinate:
@@ -46,7 +48,8 @@ class VariantRecordWithCoordinate():
                 reading_frame_index=self.location.reading_frame_index,
                 start_offset=start_offset, end_offset=end_offset
             ),
-            is_stop_altering=self.is_stop_altering
+            is_stop_altering=self.is_stop_altering,
+            is_silent=self.is_silent
         )
 
     def __getitem__(self, index) -> VariantRecordWithCoordinate:
@@ -63,5 +66,7 @@ class VariantRecordWithCoordinate():
         )
         return VariantRecordWithCoordinate(
             variant=self.variant,
-            location=location
+            location=location,
+            is_stop_altering=self.is_stop_altering,
+            is_silent=self.is_silent
         )

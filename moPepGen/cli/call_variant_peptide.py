@@ -413,6 +413,10 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     tx_seq = tx_seqs[tx_id]
     tx_seq = tx_seq[:variant.location.start]
 
+    orf_start = tx_seq.orf.start + 3 if tx_seq.orf else 3
+    if variant.location.start < orf_start:
+        return []
+
     if tx_id in variant_pool:
         tx_variants = [x for x in variant_pool[tx_id].transcriptional
             if x.location.end < variant.location.start]

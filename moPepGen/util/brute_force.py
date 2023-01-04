@@ -198,8 +198,7 @@ class BruteForceVariantPeptideCaller():
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
-            variants_silent_mutation:List[Tuple[bool,bool,bool]],
-            is_coding:bool) -> bool:
+            variants_silent_mutation:List[Tuple[bool,bool,bool]]) -> bool:
         """ Check whether the given range of the transcript has any variant
         associated. """
         offset = 0
@@ -209,6 +208,8 @@ class BruteForceVariantPeptideCaller():
         for i, variant_coordinate in enumerate(variants):
             variant = variant_coordinate.variant
             loc = variant_coordinate.location
+            if variant.type == 'Insertion':
+                loc = FeatureLocation(start=loc.start+1, end=loc.end)
             if loc.start > rhs + 3:
                 break
             is_start_gain = start_loc.overlaps(loc)
@@ -233,7 +234,7 @@ class BruteForceVariantPeptideCaller():
                         or is_cleavage_gain \
                         or is_stop_lost \
                         or is_stop_gain ) \
-                    and not (is_coding and is_silent_mutation):
+                    and not is_silent_mutation:
                 return True
             offset += len(variant.alt) - len(variant.ref)
         return False
@@ -351,7 +352,22 @@ class BruteForceVariantPeptideCaller():
         n_alt_splice = len([x for x in pool[self.tx_id].transcriptional
             if x.type in ALTERNATIVE_SPLICING_TYPES])
 
+        orf = self.tx_seq.orf
+        is_mrna_end_nf = self.tx_model.is_mrna_end_nf()
+        start_index = orf.start + 3 if bool(orf) else 3
+
+        if n_circ == 0:
+            for variant in pool[self.tx_id].transcriptional:
+                if variant.location.start < start_index:
+                    return True
+                if is_mrna_end_nf and orf is not None:
+                    orf_end_trinuc = FeatureLocation(start=orf.end-3, end=orf.end)
+                    if variant.location.overlaps(orf_end_trinuc):
+                        return True
+
         for fusion in pool[self.tx_id].fusion:
+            if fusion.location.start < start_index:
+                return True
             accepter_tx_id = fusion.attrs['ACCEPTER_TRANSCRIPT_ID']
             if accepter_tx_id not in pool:
                 continue
@@ -833,8 +849,7 @@ class BruteForceVariantPeptideCaller():
                     tx_lhs = cds_start + lhs * 3
                     tx_rhs = cds_start + rhs * 3
                     if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
-                            variant_coordinates, stop_lost, stop_gain, silent_mutation,
-                            is_coding):
+                            variant_coordinates, stop_lost, stop_gain, silent_mutation):
                         continue
 
                     peptides = [aa_seq[lhs:rhs]]
@@ -855,10 +870,7 @@ class BruteForceVariantPeptideCaller():
                     and (variant.is_insertion() or variant.is_deletion()) \
                     and not variant.is_alternative_splicing():
                 variant.to_end_inclusion(self.tx_seq)
-            if variant.location.start < start_index:
-                continue
-            # if mrna_end_nf and variant.location.start <= self.tx_seq.orf.end - 3:
-            #     continue
+
             variant_type_mapper[variant] = 'transcriptional'
         for variant in self.variant_pool[self.tx_id].intronic:
             variant_type_mapper[variant] = 'intronic'

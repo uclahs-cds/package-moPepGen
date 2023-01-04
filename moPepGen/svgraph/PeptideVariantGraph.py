@@ -417,6 +417,22 @@ class PeptideVariantGraph():
                 collapsed_nodes.remove(node)
         return collapsed_nodes
 
+    def collapse_nodes_backward(self, nodes:Iterable[PVGNode], heads:Set[PVGNode]
+            ) -> Set[PVGNode]:
+        """ Collapse equivalent nodes in a variant bubble from end to start.
+        Equivalent nodes are those with same sequence and share the same
+        outgoing nodes. """
+        final_nodes = self.collapse_end_nodes(nodes)
+        queue = deque(final_nodes)
+        while queue:
+            cur = queue.popleft()
+            if any(x in heads for x in cur.get_in_nodes()):
+                continue
+            collapsed_nodes = self.collapse_end_nodes(cur.get_in_nodes())
+            for collapsed_node in collapsed_nodes:
+                queue.append(collapsed_node)
+        return final_nodes
+
     def pop_collapse_end_nodes(self, nodes:Iterable[PVGNode]):
         """ This function aims at resolving the issue that too may nodes are
         generated when making the cleavage graph. For nodes that share the
@@ -471,8 +487,13 @@ class PeptideVariantGraph():
         """
         reading_frame_index = node.reading_frame_index
         routes, trash = self.find_routes_for_merging(node, True)
+
+        heads = set()
+        for x in routes:
+            heads.update(x[0].get_in_nodes())
+
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
-        new_nodes = self.collapse_end_nodes(new_nodes)
+        new_nodes = self.collapse_nodes_backward(new_nodes, heads)
         if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
@@ -509,8 +530,13 @@ class PeptideVariantGraph():
         for in_node in node.in_nodes:
             routes.add((in_node, node))
             trash.add(in_node)
+
+        heads = set()
+        for x in routes:
+            heads.update(x[0].get_in_nodes())
+
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
-        new_nodes = self.collapse_end_nodes(new_nodes)
+        new_nodes = self.collapse_nodes_backward(new_nodes, heads)
         # new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         for trash_node in trash:
@@ -538,8 +564,13 @@ class PeptideVariantGraph():
         """
         reading_frame_index = node.reading_frame_index
         routes, trash = self.find_routes_for_merging(node)
+
+        heads = set()
+        for x in routes:
+            heads.update(x[0].get_in_nodes())
+
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
-        new_nodes = self.collapse_end_nodes(new_nodes)
+        new_nodes = self.collapse_nodes_backward(new_nodes, heads)
         if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
@@ -852,8 +883,9 @@ class PeptideVariantGraph():
         for out_node in target_node.out_nodes:
             if out_node is self.stop:
                 continue
+            cur_orfs = [orf.copy() for orf in orfs]
             if in_cds:
-                cur_start_gain = copy.copy(orfs[0].start_gain)
+                cur_start_gain = copy.copy(cur_orfs[0].start_gain)
                 if not cur_start_gain:
                     cur_start_gain = set()
 
@@ -876,10 +908,10 @@ class PeptideVariantGraph():
                 cur_cleavage_gain = copy.copy(cleavage_gain)
                 cleavage_gain_down = out_node.get_cleavage_gain_from_downstream()
                 cur_cleavage_gain.extend(cleavage_gain_down)
-                orfs[0].start_gain = cur_start_gain
+                cur_orfs[0].start_gain = cur_start_gain
             else:
                 cur_cleavage_gain = None
-            cur = PVGCursor(target_node, out_node, in_cds, orfs, cur_cleavage_gain)
+            cur = PVGCursor(target_node, out_node, in_cds, cur_orfs, cur_cleavage_gain)
             traversal.stage(target_node, out_node, cur)
 
     def call_and_stage_known_orf_not_in_cds(self, cursor:PVGCursor,
@@ -1012,9 +1044,9 @@ class PeptideVariantGraph():
 
             if not in_cds:
                 start_gain = set()
-                orfs = []
+                cur_orfs = []
             elif start_indices:
-                orf = orf.copy()
+                cur_orf = orf.copy()
                 # carry over variants from the target node to the next
                 # node if a start codon is found.
                 start_gain = target_node.get_variants_at(
@@ -1026,11 +1058,12 @@ class PeptideVariantGraph():
                 )
                 start_gain += [x for x in fs_variants if x.is_frameshifting()]
                 start_gain = [x for x in start_gain if not x.is_circ_rna()]
-                orf.start_gain = set(start_gain)
-                orfs = [orf]
+                cur_orf.start_gain = set(start_gain)
+                cur_orfs = [cur_orf]
             else:
-                for orf in orfs:
-                    if not orf.start_gain:
+                cur_orfs = [orf.copy() for orf in orfs]
+                for orf in cur_orfs:
+                    if self.is_circ_rna() or not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
                             and not v.variant.is_circ_rna()]
@@ -1041,7 +1074,7 @@ class PeptideVariantGraph():
                 if variant.is_stop_altering:
                     if start_indices and variant.location.end - 1 < start_indices[-1]:
                         continue
-                    for x in orfs:
+                    for x in cur_orfs:
                         x.start_gain.add(variant.variant)
 
             cur_cleavage_gain = copy.copy(cleavage_gain)
@@ -1049,7 +1082,7 @@ class PeptideVariantGraph():
             if self.is_circ_rna():
                 circ_rna = traversal.circ_rna
                 filtered_orfs = []
-                for orf_i in orfs:
+                for orf_i in cur_orfs:
                     orf_i_2 = orf_i.copy()
                     if orf_i_2.node_is_at_least_one_loop_downstream(
                                 out_node, self.subgraphs, circ_rna):
@@ -1061,7 +1094,7 @@ class PeptideVariantGraph():
                 if not filtered_orfs:
                     cur_in_cds = False
             else:
-                filtered_orfs = orfs
+                filtered_orfs = cur_orfs
 
             cursor = PVGCursor(target_node, out_node, cur_in_cds, filtered_orfs,
                 cur_cleavage_gain, finding_start_site)
@@ -1285,8 +1318,10 @@ class PVGTraversal():
         curs.sort(key=cmp_to_key(func))
 
         cur = curs[0]
+        cur.orfs = [x.copy() for x in cur.orfs]
         if is_circ_rna:
             for x in curs[1:]:
-                cur.orfs += x.orfs
+                for orf in x.orfs:
+                    cur.orfs.append(orf.copy())
 
         self.queue.appendleft(cur)

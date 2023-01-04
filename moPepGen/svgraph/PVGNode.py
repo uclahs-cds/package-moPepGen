@@ -235,7 +235,7 @@ class PVGNode():
                 return []
             if node.variants[0].location.start != 0:
                 return []
-            if not cleavage_gain:
+            if not cleavage_gain and not node.variants[0].is_silent:
                 cleavage_gain.append(node.variants[0].variant)
         return cleavage_gain
 
@@ -595,7 +595,8 @@ class PVGNode():
         additional_variants = set()
         for out_node in self.out_nodes:
             if out_node.seq.seq == '*':
-                additional_variants.update([x.variant for x in out_node.variants])
+                additional_variants.update([x.variant for x in out_node.variants
+                    if x.is_stop_altering])
                 additional_variants.update(out_node.upstream_indel_map.get(self, []))
                 if additional_variants:
                     return additional_variants
@@ -645,7 +646,7 @@ class PVGNode():
         they contain any variant in the list of variant provided and not having
         any variant that are not in the list.
         """
-        variants = set(variants)
+        variants = {v for v in variants if not v.is_circ_rna()}
 
         boundary_nodes:List[PVGNode] = []
 
