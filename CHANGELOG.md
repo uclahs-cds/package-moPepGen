@@ -36,11 +36,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Silent mutation not excluded when it is very closed to anther mutation. #638
 
-- Stop remaining mutation not excluded. #638
+- Stop retaining mutation not excluded. #638
 
-- Fusion with donor breakpoint smaller than 3 causing it failed to run. #633
+- Fusion with donor breakpoint smaller than 3 causing it fail to run. #633
 
-- Alt splice Insertion recognized as stop altering incorrectly. #640
+- Alt splice insertion recognized as stop altering incorrectly. #640
 
 ## [0.10.1] - 2022-11-2
 
