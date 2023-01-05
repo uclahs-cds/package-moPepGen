@@ -1068,7 +1068,11 @@ class PeptideVariantGraph():
             else:
                 cur_orfs = [orf.copy() for orf in orfs]
                 for orf in cur_orfs:
-                    if self.is_circ_rna() or not orf.start_gain:
+                    if self.is_circ_rna():
+                        start_gain = [v.variant for v in target_node.variants
+                            if not v.variant.is_circ_rna()]
+                        orf.start_gain.update(start_gain)
+                    elif not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
                             and not v.variant.is_circ_rna()]
