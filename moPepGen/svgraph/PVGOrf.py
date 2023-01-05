@@ -173,3 +173,18 @@ class PVGOrf():
 
         return not any(node.is_missing_variant(v) for v in start_gain) \
             and not any(x not in start_gain for x in variants)
+
+    def is_valid_orf_to_misc_nodes(self, nodes:List[PVGNode], subgraphs:SubgraphTree,
+            circ_rna:circ.CircRNAModel) -> bool:
+        """ """
+        for node in nodes:
+            if not self.is_valid_orf(node, subgraphs, circ_rna):
+                return False
+
+        downstream_valid = False
+        for out_node in nodes[-1].get_out_nodes():
+            if (out_node.seq.seq == '*' and not out_node.get_out_nodes()) \
+                    or self.is_valid_orf(out_node, subgraphs, circ_rna):
+                downstream_valid = True
+
+        return downstream_valid

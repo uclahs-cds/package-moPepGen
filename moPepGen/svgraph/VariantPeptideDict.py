@@ -207,7 +207,7 @@ class MiscleavedNodes():
             for orf in self.orfs:
                 if any(v.is_circ_rna() for v in variants) \
                         or any(v.is_circ_rna() for v in orf.start_gain):
-                    if all(orf.is_valid_orf(x, self.subgraphs, circ_rna) for x in queue):
+                    if orf.is_valid_orf_to_misc_nodes(queue, self.subgraphs, circ_rna):
                         if any(n.is_missing_any_variant(in_seq_variants) for n in queue):
                             continue
                         metadata.orf = tuple(orf.orf)
