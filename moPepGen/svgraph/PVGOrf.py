@@ -135,12 +135,12 @@ class PVGOrf():
         """ Checks whether a given node is at least one loop downstream to the
         ORF start site. """
         if node.seq.locations:
-            i = node.seq.locations[-1].ref.end
+            i = node.seq.locations[-1].ref.end - 1
             subgraph_id = node.seq.locations[-1].ref.seqname
         else:
             for v in reversed(node.variants):
                 if not v.variant.is_circ_rna():
-                    i = math.floor(v.variant.location.end / 3)
+                    i = math.floor(v.variant.location.end / 3) - 1
                     subgraph_id = v.location.seqname
                     break
             else:
@@ -150,12 +150,16 @@ class PVGOrf():
             subgraphs, circ_rna)
 
     def is_valid_orf(self, node:PVGNode, subgraphs:SubgraphTree,
-            circ_rna:circ.CircRNAModel) -> bool:
+            circ_rna:circ.CircRNAModel,
+            upstream_variants:Set[seqvar.VariantRecord]=None) -> bool:
         """ Checks if it is a valid orf of a downstream node. """
+        upstream_variants = upstream_variants or set()
+
         if not self.node_is_at_least_one_loop_downstream(node, subgraphs, circ_rna):
             return True
 
         start_gain = {x for x in self.start_gain if not x.is_circ_rna()}
+        start_gain.update(upstream_variants)
         start_gain.update(x.variant for x in self.start_node.variants
             if not x.variant.is_circ_rna())
 
@@ -177,14 +181,16 @@ class PVGOrf():
     def is_valid_orf_to_misc_nodes(self, nodes:List[PVGNode], subgraphs:SubgraphTree,
             circ_rna:circ.CircRNAModel) -> bool:
         """ """
+        upstream_variants = set()
         for node in nodes:
-            if not self.is_valid_orf(node, subgraphs, circ_rna):
+            if not self.is_valid_orf(node, subgraphs, circ_rna, upstream_variants):
                 return False
+            upstream_variants.update(x.variant for x in node.variants)
 
         downstream_valid = False
         for out_node in nodes[-1].get_out_nodes():
             if (out_node.seq.seq == '*' and not out_node.get_out_nodes()) \
-                    or self.is_valid_orf(out_node, subgraphs, circ_rna):
+                    or self.is_valid_orf(out_node, subgraphs, circ_rna, upstream_variants):
                 downstream_valid = True
 
         return downstream_valid
