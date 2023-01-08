@@ -95,13 +95,14 @@ class PVGOrf():
                 and 0 in self.start_node.seq.locations[0].query:
             loc = self.start_node.seq.locations[0]
             y_level = subgraphs[loc.ref.seqname].level
-            j = loc.ref.start - loc.query.start
+            # j = loc.ref.start - loc.query.start
+            j = loc.get_ref_dna_start()
         else:
             for v in self.start_node.variants:
                 if v.variant.is_circ_rna():
                     continue
                 if 0 in v.location:
-                    j = math.floor(v.variant.location.start / 3)
+                    j = v.variant.location.start
                     y_level = subgraphs[v.location.seqname].level
                     break
             else:
@@ -115,10 +116,11 @@ class PVGOrf():
 
         if x_level - y_level == 1:
             for fragment in circ_rna.fragments:
-                frag = FeatureLocation(
-                    start=math.floor((fragment.location.start - 3) / 3),
-                    end=math.ceil(fragment.location.end / 3)
-                )
+                frag = fragment.location
+                # frag = FeatureLocation(
+                #     start=math.floor((fragment.location.start - 3) / 3),
+                #     end=math.ceil(fragment.location.end / 3)
+                # )
                 if i in frag:
                     if j in frag:
                         return i >= j
@@ -135,12 +137,15 @@ class PVGOrf():
         """ Checks whether a given node is at least one loop downstream to the
         ORF start site. """
         if node.seq.locations:
-            i = node.seq.locations[-1].ref.end - 1
+            loc = node.seq.locations[-1]
+            rf_index = loc.query.reading_frame_index
+            i = (loc.ref.end - 1) * 3 + rf_index
             subgraph_id = node.seq.locations[-1].ref.seqname
         else:
             for v in reversed(node.variants):
                 if not v.variant.is_circ_rna():
-                    i = math.floor(v.variant.location.end / 3) - 1
+                    # i = math.floor(v.variant.location.end / 3) - 1
+                    i = v.variant.location.end - 1
                     subgraph_id = v.location.seqname
                     break
             else:
@@ -167,7 +172,8 @@ class PVGOrf():
         for v in node.variants:
             if v.variant.is_circ_rna():
                 continue
-            i = math.floor(v.variant.location.start / 3)
+            # i = math.floor(v.variant.location.start / 3)
+            i = v.variant.location.end - 1
             subgraph_id = v.location.seqname
             if self.location_is_at_least_one_loop_downstream(i, subgraph_id,
                     subgraphs, circ_rna):
