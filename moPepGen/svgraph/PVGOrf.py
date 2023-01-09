@@ -1,10 +1,8 @@
 """ PVGOrf """
 from __future__ import annotations
-import math
 from typing import Set, List
 import copy
 from moPepGen import circ, seqvar
-from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
@@ -117,10 +115,6 @@ class PVGOrf():
         if x_level - y_level == 1:
             for fragment in circ_rna.fragments:
                 frag = fragment.location
-                # frag = FeatureLocation(
-                #     start=math.floor((fragment.location.start - 3) / 3),
-                #     end=math.ceil(fragment.location.end / 3)
-                # )
                 if i in frag:
                     if j in frag:
                         return i >= j
@@ -172,7 +166,6 @@ class PVGOrf():
         for v in node.variants:
             if v.variant.is_circ_rna():
                 continue
-            # i = math.floor(v.variant.location.start / 3)
             i = v.variant.location.end - 1
             subgraph_id = v.location.seqname
             if self.location_is_at_least_one_loop_downstream(i, subgraph_id,
@@ -186,7 +179,8 @@ class PVGOrf():
 
     def is_valid_orf_to_misc_nodes(self, nodes:List[PVGNode], subgraphs:SubgraphTree,
             circ_rna:circ.CircRNAModel) -> bool:
-        """ """
+        """ Checks if the ORF is valid for a given series of miscleaved peptide
+        nodes. """
         upstream_variants = set()
         for node in nodes:
             if not self.is_valid_orf(node, subgraphs, circ_rna, upstream_variants):
