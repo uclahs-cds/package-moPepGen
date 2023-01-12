@@ -2,7 +2,6 @@
 from __future__ import annotations
 from typing import List, Tuple, Iterable
 import re
-from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen import seqvar, gtf, ERROR_INDEX_IN_INTRON
