@@ -171,9 +171,7 @@ class REDItoolsRecord():
             for sub in valid_subs:
                 ref = sub[0]
                 alt = sub[1]
-                if gene_model.strand == -1:
-                    ref = str(Seq(ref).complement())
-                    alt = str(Seq(alt).complement())
+
                 _id = f'RES-{position + 1}-{ref}-{alt}'
                 attrs = {
                     'TRANSCRIPT_ID': tx_id,
