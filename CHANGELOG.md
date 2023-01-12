@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.10.2] - 2022-11-30
+## [0.11.0] - 2023-1-12
 
 ### Fixed
 
@@ -41,6 +41,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fusion with donor breakpoint smaller than 3 causing it fail to run. #633
 
 - Alt splice insertion recognized as stop altering incorrectly. #640
+
+- Fixed `parseREDItools` that the ref and alt nucleotides were not set correctly for negative strands. #644
 
 ## [0.10.1] - 2022-11-2
 
