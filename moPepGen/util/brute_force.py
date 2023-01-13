@@ -723,15 +723,15 @@ class BruteForceVariantPeptideCaller():
                 skip_silent_mutation = True
 
             for i in range(3):
-                lhs = variant.location.start - (variant.location.start - i) % 3
-                var_ref = self.get_variant_ref_seq(variant.variant)
-                ref_seq = seq[lhs:variant.location.start] + var_ref
-                n_carry_over = 3 - (len(ref_seq) % 3)
-                rhs = min(len(seq), variant.location.end + n_carry_over)
-                ref_seq += seq[variant.location.end:rhs]
+                loc = variant.variant.location
+                lhs = loc.start - (loc.start - i) % 3
+                rhs = loc.end + (3 - (loc.end - i) % 3) % 3
+                rhs = min(len(self.tx_seq), rhs)
+                ref_seq = self.tx_seq.seq[lhs:rhs]
 
+                lhs = variant.location.start - (variant.location.start - i) % 3
                 var_seq = seq[lhs:variant.location.end]
-                n_carry_over = 3 - (len(var_seq) % 3)
+                n_carry_over = (3 - (len(var_seq) % 3)) % 3
                 rhs = min(len(seq), variant.location.end + n_carry_over)
                 var_seq += seq[variant.location.end:rhs]
 
