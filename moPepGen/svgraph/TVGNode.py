@@ -624,7 +624,7 @@ class TVGNode():
             )
             dna_query_codon_start = query_start * 3
             dna_ref_codon_start = loc.ref.start - (loc.query.start - dna_query_codon_start)
-            ref_start = math.floor((dna_ref_codon_start - self.reading_frame_index) / 3)
+            ref_start = math.floor(dna_ref_codon_start / 3)
             dna_query_codon_end = query_end * 3
             dna_ref_codon_end = loc.ref.end + (dna_query_codon_end - loc.query.end)
             ref_end = ref_start + len(query)
