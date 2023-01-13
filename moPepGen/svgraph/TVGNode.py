@@ -704,7 +704,14 @@ class TVGNode():
         i_var = next(iter_var, None)
 
         while i_stop is not None and i_var is not None:
-            # Should not contain variants other than indel or snv
+            i_stop_aa = int(i_stop / 3)
+            var_start_aa = int(i_var.location.start / 3)
+
+            if all(v.variant.is_snv() for v in self.variants) \
+                    and ref_aa[var_start_aa:var_start_aa+1] \
+                        == alt_aa[var_start_aa:var_start_aa+1]:
+                i_var.is_silent = True
+
             var_size = len(i_var.variant.location)
             if i_var.location.start + offset + var_size < i_stop:
                 i_var = next(iter_var, None)
@@ -713,13 +720,6 @@ class TVGNode():
             if  i_var.location.start + offset >= i_stop + 3:
                 i_stop = next(iter_stop, None)
                 continue
-
-            # Skip if it is stop retaining.
-            i_stop_aa = int(i_stop / 3)
-            var_start_aa = int(i_var.location.start / 3)
-            if i_var.variant.is_snv() and ref_aa[i_stop_aa:i_stop_aa+1] \
-                    == alt_aa[var_start_aa:var_start_aa+1]:
-                i_var.is_silent = True
 
             if ref_aa[i_stop_aa:i_stop_aa+1] == alt_aa[var_start_aa:var_start_aa+1] == '*':
                 i_var = next(iter_var, None)

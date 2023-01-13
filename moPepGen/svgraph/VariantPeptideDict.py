@@ -193,6 +193,8 @@ class MiscleavedNodes():
                     seq = seq + other
                 if check_variants:
                     for variant in node.variants:
+                        if variant.is_silent:
+                            continue
                         variants.add(variant.variant)
                         if not variant.variant.is_circ_rna():
                             in_seq_variants.add(variant.variant)

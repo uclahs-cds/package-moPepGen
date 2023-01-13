@@ -214,8 +214,8 @@ class BruteForceVariantPeptideCaller():
                 break
             is_start_gain = start_loc.overlaps(loc)
             is_frameshifting = cds_start < loc.start < lhs and variant.is_frameshifting()
-            is_cleavage_gain = loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
-                    or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3)) \
+            is_cleavage_gain = (loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
+                    or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))) \
                 if cds_start != lhs \
                 else loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))
 
