@@ -1648,8 +1648,8 @@ class ThreeFrameTVG():
 
                 if orf[1] and out_node.level == 0:
                     orf_end_query = out_node.seq.get_query_index(orf[1])
-                    if orf_end_query > -1 and orf_end_query % 3 == 0 \
-                            and orf_end_query <= len(out_node.seq.seq) - 3:
+                    if -1 < orf_end_query <= len(out_node.seq.seq) - 3 \
+                            and orf_end_query % 3 == 0:
                         pnode_orf_end = int(orf_end_query / 3)
                         if new_pnode.seq.seq[pnode_orf_end] != '*':
                             terminal_nodes.append((new_pnode, pnode_orf_end))
