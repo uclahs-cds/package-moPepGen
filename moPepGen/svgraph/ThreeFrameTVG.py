@@ -1623,7 +1623,7 @@ class ThreeFrameTVG():
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
         visited = {}
-        terminal_node = None
+        terminal_nodes:List[Tuple[PVGNode, int]] = []
 
         while queue:
             dnode, pnode = queue.pop()
@@ -1646,12 +1646,13 @@ class ThreeFrameTVG():
 
                 new_pnode = out_node.translate()
 
-                if orf[1] and out_node.level == 0 and \
-                        out_node.reading_frame_index == \
-                        self.get_known_reading_frame_index() and \
-                        out_node.has_ref_position(orf[1]):
-                    terminal_node = new_pnode
-                    stop_site = int(out_node.seq.get_query_index(orf[1]) / 3)
+                if orf[1] and out_node.level == 0:
+                    orf_end_query = out_node.seq.get_query_index(orf[1])
+                    if orf_end_query > -1 and orf_end_query % 3 == 0 \
+                            and orf_end_query <= len(out_node.seq.seq) - 3:
+                        pnode_orf_end = int(orf_end_query / 3)
+                        if new_pnode.seq.seq[pnode_orf_end] != '*':
+                            terminal_nodes.append((new_pnode, pnode_orf_end))
 
                 new_pnode.orf = orf
                 pnode.add_out_edge(new_pnode)
@@ -1667,19 +1668,20 @@ class ThreeFrameTVG():
         # Sometimes the annotated cds end isn't in fact a stop codon. If so,
         # a fake stop codon is added so the node won't be called as variant
         # peptide.
-        if self.has_known_orf and terminal_node:
-            right_part = terminal_node.split_node(stop_site)
-            if(len(right_part.seq.seq) > 1 and right_part.seq.seq[0] == '*'):
-                right_part.split_node(1)
-            else:
-                fake_stop = AminoAcidSeqRecordWithCoordinates(
-                    seq='*', locations=[]
-                )
-                fake_stop_node = PVGNode(
-                    seq=fake_stop,
-                    reading_frame_index=terminal_node.reading_frame_index,
-                    subgraph_id=self.id
-                )
-                terminal_node.add_out_edge(fake_stop_node)
+        if self.has_known_orf:
+            for terminal_node, stop_site in terminal_nodes:
+                right_part = terminal_node.split_node(stop_site)
+                if(len(right_part.seq.seq) > 1 and right_part.seq.seq[0] == '*'):
+                    right_part.split_node(1)
+                else:
+                    fake_stop = AminoAcidSeqRecordWithCoordinates(
+                        seq='*', locations=[]
+                    )
+                    fake_stop_node = PVGNode(
+                        seq=fake_stop,
+                        reading_frame_index=terminal_node.reading_frame_index,
+                        subgraph_id=self.id
+                    )
+                    terminal_node.add_out_edge(fake_stop_node)
 
         return pgraph
