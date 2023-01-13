@@ -693,8 +693,6 @@ class TVGNode():
         alt_aa = self.seq.seq[:math.floor(len(self.seq)/3)*3].translate()
 
         stop_positions = [x.start() * 3 for x in re.finditer(r'\*', str(ref_aa))]
-        if not stop_positions:
-            return
 
         offset = 0
         iter_stop = iter(stop_positions)
@@ -703,16 +701,20 @@ class TVGNode():
         i_stop = next(iter_stop, None)
         i_var = next(iter_var, None)
 
-        while i_stop is not None and i_var is not None:
-            i_stop_aa = int(i_stop / 3)
+        while i_var is not None:
             var_start_aa = int(i_var.location.start / 3)
-
             if all(v.variant.is_snv() for v in self.variants) \
                     and ref_aa[var_start_aa:var_start_aa+1] \
                         == alt_aa[var_start_aa:var_start_aa+1]:
                 i_var.is_silent = True
 
+            if i_stop is None:
+                i_var = next(iter_var, None)
+                continue
+
+            i_stop_aa = int(i_stop / 3)
             var_size = len(i_var.variant.location)
+
             if i_var.location.start + offset + var_size < i_stop:
                 i_var = next(iter_var, None)
                 continue
