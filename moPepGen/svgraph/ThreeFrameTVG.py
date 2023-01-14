@@ -1508,12 +1508,19 @@ class ThreeFrameTVG():
             expension is returned, and for siblings more than 1, the common
             downstream node is returned.
         """
+        downstream_empty_error_msg = 'Downstream node becomes empty when it is' \
+            + 'not the end of the graph. Something is wrong.'
         if len(start.out_edges) == 1 and len(start.get_out_nodes()[0].in_edges) > 1:
             downstream = start.get_out_nodes()[0]
             right_index = (3 - len(start.seq) % 3) % 3
             right_over = downstream.truncate_left(right_index)
             for in_node in downstream.get_in_nodes():
                 in_node.append_right(right_over)
+            if downstream.seq.seq == '':
+                if downstream.get_out_nodes():
+                    raise ValueError(downstream_empty_error_msg)
+                self.remove_node(downstream)
+                return []
             return [downstream]
         # number of NT to be carried over to the downstreams.
         if start.seq:
@@ -1555,6 +1562,11 @@ class ThreeFrameTVG():
         for in_edge in end.in_edges:
             in_node = in_edge.in_node
             in_node.append_right(right_over)
+
+        if end.seq.seq == '':
+            if end.get_out_nodes():
+                raise ValueError(downstream_empty_error_msg)
+            self.remove_node(end)
 
         if end.subgraph_id != self.id and any(x.out_node.subgraph_id == self.id
                 for x in end.out_edges):
