@@ -150,7 +150,7 @@ class TVGNode():
 
         locations = [loc.query for loc in self.seq.locations]
         locations += [v.location for v in self.variants
-            if self.global_variant is not None and v.variant != self.global_variant]
+            if self.global_variant is None or v.variant != self.global_variant]
 
         locations.sort()
 

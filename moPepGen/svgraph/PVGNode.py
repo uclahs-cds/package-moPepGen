@@ -378,7 +378,8 @@ class PVGNode():
             was_bridge=self.was_bridge,
             pre_cleaved=pre_cleave,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            cpop_collapsed=self.cpop_collapsed
         )
         new_node.orf = self.orf
 

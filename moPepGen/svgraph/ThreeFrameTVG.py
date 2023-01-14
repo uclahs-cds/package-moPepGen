@@ -1,6 +1,7 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING, Iterable
+from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING, Iterable,\
+    Callable
 from collections import deque
 import copy
 from Bio.Seq import Seq
@@ -260,6 +261,28 @@ class ThreeFrameTVG():
                     continue
                 queue.appendleft(edge.out_node)
         return k
+
+    def find_node(self, func:Callable) -> List[TVGNode]:
+        """ Find node with given sequence. """
+        queue:Deque[PVGNode] = deque([self.root])
+        visited:Set[PVGNode] = set()
+        targets:List[PVGNode] = []
+        while queue:
+            cur = queue.popleft()
+            if cur in visited:
+                continue
+            visited.add(cur)
+            # pylint: disable=W0703
+            try:
+                if func(cur):
+                    targets.append(cur)
+            except Exception:
+                pass
+            finally:
+                for out_node in cur.get_out_nodes():
+                    if not out_node in visited:
+                        queue.append(out_node)
+        return targets
 
     @staticmethod
     def get_orf_index(node:TVGNode, i:int=0) -> int:
@@ -1118,11 +1141,8 @@ class ThreeFrameTVG():
             if len_before == len_after:
                 continue
 
-            is_bridge_out = any(e.out_node.reading_frame_index != this_id
+            is_bridge_out = any(e.out_node.get_first_rf_index() != this_id
                 and e.out_node is not end for e in cur.out_edges)
-            is_bridge_out |= cur.has_multiple_segments() \
-                and cur.get_first_rf_index() != cur.get_second_rf_index() \
-                and cur.get_second_rf_index() != this_id
 
             if is_bridge_out and cur is not end:
                 bridge_out.add(cur)
