@@ -1301,6 +1301,7 @@ class ThreeFrameTVG():
 
             farthest, cur = cur, farthest
             queue.append(cur)
+            queue.append(farthest)
             exceptions.add(cur)
             continue
         return farthest
