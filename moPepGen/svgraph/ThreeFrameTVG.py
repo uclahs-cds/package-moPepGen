@@ -1,6 +1,7 @@
 """ Module for transcript (DNA) variant graph """
 from __future__ import annotations
-from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING, Iterable
+from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING, Iterable,\
+    Callable
 from collections import deque
 import copy
 from Bio.Seq import Seq
@@ -260,6 +261,28 @@ class ThreeFrameTVG():
                     continue
                 queue.appendleft(edge.out_node)
         return k
+
+    def find_node(self, func:Callable) -> List[TVGNode]:
+        """ Find node with given sequence. """
+        queue:Deque[PVGNode] = deque([self.root])
+        visited:Set[PVGNode] = set()
+        targets:List[PVGNode] = []
+        while queue:
+            cur = queue.popleft()
+            if cur in visited:
+                continue
+            visited.add(cur)
+            # pylint: disable=W0703
+            try:
+                if func(cur):
+                    targets.append(cur)
+            except Exception:
+                pass
+            finally:
+                for out_node in cur.get_out_nodes():
+                    if not out_node in visited:
+                        queue.append(out_node)
+        return targets
 
     @staticmethod
     def get_orf_index(node:TVGNode, i:int=0) -> int:
@@ -1118,11 +1141,8 @@ class ThreeFrameTVG():
             if len_before == len_after:
                 continue
 
-            is_bridge_out = any(e.out_node.reading_frame_index != this_id
+            is_bridge_out = any(e.out_node.get_first_rf_index() != this_id
                 and e.out_node is not end for e in cur.out_edges)
-            is_bridge_out |= cur.has_multiple_segments() \
-                and cur.get_first_rf_index() != cur.get_second_rf_index() \
-                and cur.get_second_rf_index() != this_id
 
             if is_bridge_out and cur is not end:
                 bridge_out.add(cur)
@@ -1281,6 +1301,7 @@ class ThreeFrameTVG():
 
             farthest, cur = cur, farthest
             queue.append(cur)
+            queue.append(farthest)
             exceptions.add(cur)
             continue
         return farthest
@@ -1488,12 +1509,19 @@ class ThreeFrameTVG():
             expension is returned, and for siblings more than 1, the common
             downstream node is returned.
         """
+        downstream_empty_error_msg = 'Downstream node becomes empty when it is' \
+            + 'not the end of the graph. Something is wrong.'
         if len(start.out_edges) == 1 and len(start.get_out_nodes()[0].in_edges) > 1:
             downstream = start.get_out_nodes()[0]
             right_index = (3 - len(start.seq) % 3) % 3
             right_over = downstream.truncate_left(right_index)
             for in_node in downstream.get_in_nodes():
                 in_node.append_right(right_over)
+            if downstream.seq.seq == '':
+                if downstream.get_out_nodes():
+                    raise ValueError(downstream_empty_error_msg)
+                self.remove_node(downstream)
+                return []
             return [downstream]
         # number of NT to be carried over to the downstreams.
         if start.seq:
@@ -1535,6 +1563,11 @@ class ThreeFrameTVG():
         for in_edge in end.in_edges:
             in_node = in_edge.in_node
             in_node.append_right(right_over)
+
+        if end.seq.seq == '':
+            if end.get_out_nodes():
+                raise ValueError(downstream_empty_error_msg)
+            self.remove_node(end)
 
         if end.subgraph_id != self.id and any(x.out_node.subgraph_id == self.id
                 for x in end.out_edges):
@@ -1623,7 +1656,7 @@ class ThreeFrameTVG():
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
         visited = {}
-        terminal_node = None
+        terminal_nodes:List[Tuple[PVGNode, int]] = []
 
         while queue:
             dnode, pnode = queue.pop()
@@ -1646,12 +1679,13 @@ class ThreeFrameTVG():
 
                 new_pnode = out_node.translate()
 
-                if orf[1] and out_node.level == 0 and \
-                        out_node.reading_frame_index == \
-                        self.get_known_reading_frame_index() and \
-                        out_node.has_ref_position(orf[1]):
-                    terminal_node = new_pnode
-                    stop_site = int(out_node.seq.get_query_index(orf[1]) / 3)
+                if orf[1] and out_node.level == 0:
+                    orf_end_query = out_node.seq.get_query_index(orf[1])
+                    if -1 < orf_end_query <= len(out_node.seq.seq) - 3 \
+                            and orf_end_query % 3 == 0:
+                        pnode_orf_end = int(orf_end_query / 3)
+                        if new_pnode.seq.seq[pnode_orf_end] != '*':
+                            terminal_nodes.append((new_pnode, pnode_orf_end))
 
                 new_pnode.orf = orf
                 pnode.add_out_edge(new_pnode)
@@ -1667,19 +1701,20 @@ class ThreeFrameTVG():
         # Sometimes the annotated cds end isn't in fact a stop codon. If so,
         # a fake stop codon is added so the node won't be called as variant
         # peptide.
-        if self.has_known_orf and terminal_node:
-            right_part = terminal_node.split_node(stop_site)
-            if(len(right_part.seq.seq) > 1 and right_part.seq.seq[0] == '*'):
-                right_part.split_node(1)
-            else:
-                fake_stop = AminoAcidSeqRecordWithCoordinates(
-                    seq='*', locations=[]
-                )
-                fake_stop_node = PVGNode(
-                    seq=fake_stop,
-                    reading_frame_index=terminal_node.reading_frame_index,
-                    subgraph_id=self.id
-                )
-                terminal_node.add_out_edge(fake_stop_node)
+        if self.has_known_orf:
+            for terminal_node, stop_site in terminal_nodes:
+                right_part = terminal_node.split_node(stop_site)
+                if(len(right_part.seq.seq) > 1 and right_part.seq.seq[0] == '*'):
+                    right_part.split_node(1)
+                else:
+                    fake_stop = AminoAcidSeqRecordWithCoordinates(
+                        seq='*', locations=[]
+                    )
+                    fake_stop_node = PVGNode(
+                        seq=fake_stop,
+                        reading_frame_index=terminal_node.reading_frame_index,
+                        subgraph_id=self.id
+                    )
+                    terminal_node.add_out_edge(fake_stop_node)
 
         return pgraph

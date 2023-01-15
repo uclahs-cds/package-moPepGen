@@ -42,6 +42,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Alt splice insertion recognized as stop altering incorrectly. #640
 
+- Fix that variants that overlap with last 3 nucleotides of the transcripts causing it to fail. #645
+
 - Fixed `parseREDItools` that the ref and alt nucleotides were not set correctly for negative strands. #644
 
 ## [0.10.1] - 2022-11-2

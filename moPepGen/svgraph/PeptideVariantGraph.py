@@ -600,8 +600,13 @@ class PeptideVariantGraph():
         # self.pop_collapse_end_nodes(new_nodes)
 
         routes, trash = self.find_routes_for_merging(head, True)
+
+        heads = set()
+        for x in routes:
+            heads.update(x[0].get_in_nodes())
+
         new_nodes, inbridge_list = self.merge_nodes_routes(routes, reading_frame_index)
-        new_nodes = self.collapse_end_nodes(new_nodes)
+        new_nodes = self.collapse_nodes_backward(new_nodes, heads)
         if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
@@ -1063,7 +1068,11 @@ class PeptideVariantGraph():
             else:
                 cur_orfs = [orf.copy() for orf in orfs]
                 for orf in cur_orfs:
-                    if self.is_circ_rna() or not orf.start_gain:
+                    if self.is_circ_rna():
+                        start_gain = [v.variant for v in target_node.variants
+                            if not v.variant.is_circ_rna()]
+                        orf.start_gain.update(start_gain)
+                    elif not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
                             and not v.variant.is_circ_rna()]

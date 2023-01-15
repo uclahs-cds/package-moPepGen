@@ -378,7 +378,8 @@ class PVGNode():
             was_bridge=self.was_bridge,
             pre_cleaved=pre_cleave,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            cpop_collapsed=self.cpop_collapsed
         )
         new_node.orf = self.orf
 
@@ -463,7 +464,8 @@ class PVGNode():
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
         self.variants = variants
-        self.upstream_indel_map = other.upstream_indel_map
+        self.upstream_indel_map = {k:copy.copy(v) for k,v in
+            other.upstream_indel_map.items()}
 
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
@@ -495,7 +497,7 @@ class PVGNode():
             level=self.level,
             npop_collapsed=self.npop_collapsed,
             cpop_collapsed=self.cpop_collapsed,
-            upstream_indel_map=self.upstream_indel_map
+            upstream_indel_map={k:copy.copy(v) for k,v in self.upstream_indel_map.items()}
         )
 
     def get_nearest_next_ref_index(self) -> int:

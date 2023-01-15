@@ -150,7 +150,7 @@ class TVGNode():
 
         locations = [loc.query for loc in self.seq.locations]
         locations += [v.location for v in self.variants
-            if self.global_variant is not None and v.variant != self.global_variant]
+            if self.global_variant is None or v.variant != self.global_variant]
 
         locations.sort()
 
@@ -624,7 +624,7 @@ class TVGNode():
             )
             dna_query_codon_start = query_start * 3
             dna_ref_codon_start = loc.ref.start - (loc.query.start - dna_query_codon_start)
-            ref_start = math.floor((dna_ref_codon_start - self.reading_frame_index) / 3)
+            ref_start = math.floor(dna_ref_codon_start / 3)
             dna_query_codon_end = query_end * 3
             dna_ref_codon_end = loc.ref.end + (dna_query_codon_end - loc.query.end)
             ref_end = ref_start + len(query)
@@ -693,8 +693,6 @@ class TVGNode():
         alt_aa = self.seq.seq[:math.floor(len(self.seq)/3)*3].translate()
 
         stop_positions = [x.start() * 3 for x in re.finditer(r'\*', str(ref_aa))]
-        if not stop_positions:
-            return
 
         offset = 0
         iter_stop = iter(stop_positions)
@@ -703,9 +701,20 @@ class TVGNode():
         i_stop = next(iter_stop, None)
         i_var = next(iter_var, None)
 
-        while i_stop is not None and i_var is not None:
-            # Should not contain variants other than indel or snv
+        while i_var is not None:
+            var_start_aa = int(i_var.location.start / 3)
+            if all(v.variant.is_snv() for v in self.variants) \
+                    and ref_aa[var_start_aa:var_start_aa+1] \
+                        == alt_aa[var_start_aa:var_start_aa+1]:
+                i_var.is_silent = True
+
+            if i_stop is None:
+                i_var = next(iter_var, None)
+                continue
+
+            i_stop_aa = int(i_stop / 3)
             var_size = len(i_var.variant.location)
+
             if i_var.location.start + offset + var_size < i_stop:
                 i_var = next(iter_var, None)
                 continue
@@ -713,13 +722,6 @@ class TVGNode():
             if  i_var.location.start + offset >= i_stop + 3:
                 i_stop = next(iter_stop, None)
                 continue
-
-            # Skip if it is stop retaining.
-            i_stop_aa = int(i_stop / 3)
-            var_start_aa = int(i_var.location.start / 3)
-            if len(i_var.variant.location) == 1 and ref_aa[i_stop_aa:i_stop_aa+1] \
-                    == alt_aa[var_start_aa:var_start_aa+1]:
-                i_var.is_silent = True
 
             if ref_aa[i_stop_aa:i_stop_aa+1] == alt_aa[var_start_aa:var_start_aa+1] == '*':
                 i_var = next(iter_var, None)

@@ -16,7 +16,10 @@ class PVGCollapseNode(PVGNode):
 
     def __eq__(self, other:PVGCollapseNode):
         """ equal to """
+        self_is_stop_altering = any(v.is_stop_altering for v in self.variants)
+        other_is_stop_altering = any(v.is_stop_altering for v in other.variants)
         result = self.seq.seq == other.seq.seq \
+            and not (self.seq.seq == '*' and self_is_stop_altering != other_is_stop_altering) \
             and self.out_nodes == other.out_nodes \
             and self.cleavage == other.cleavage \
             and self.truncated == other.truncated \
@@ -115,7 +118,11 @@ class PVGPopCollapseNode(PVGNode):
 
     def __eq__(self, other:PVGPopCollapseNode):
         """ equal to """
+        self_is_stop_altering = any(v.is_stop_altering for v in self.variants)
+        other_is_stop_altering = any(v.is_stop_altering for v in other.variants)
+
         result = self.seq.seq == other.seq.seq \
+            and not (self.seq.seq == '*' and self_is_stop_altering != other_is_stop_altering) \
             and self.out_nodes == other.out_nodes \
             and self.cleavage == other.cleavage \
             and self.truncated == other.truncated \

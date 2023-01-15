@@ -214,8 +214,8 @@ class BruteForceVariantPeptideCaller():
                 break
             is_start_gain = start_loc.overlaps(loc)
             is_frameshifting = cds_start < loc.start < lhs and variant.is_frameshifting()
-            is_cleavage_gain = loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
-                    or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3)) \
+            is_cleavage_gain = (loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
+                    or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))) \
                 if cds_start != lhs \
                 else loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))
 
@@ -723,17 +723,18 @@ class BruteForceVariantPeptideCaller():
                 skip_silent_mutation = True
 
             for i in range(3):
-                lhs = variant.location.start - (variant.location.start - i) % 3
-                var_ref = self.get_variant_ref_seq(variant.variant)
-                ref_seq = seq[lhs:variant.location.start] + var_ref
-                n_carry_over = 3 - (len(ref_seq) % 3)
-                rhs = min(len(seq), variant.location.end + n_carry_over)
-                ref_seq += seq[variant.location.end:rhs]
-
+                lhs_offset = (variant.location.start - i) % 3
+                lhs = variant.location.start - lhs_offset
                 var_seq = seq[lhs:variant.location.end]
-                n_carry_over = 3 - (len(var_seq) % 3)
+                n_carry_over = (3 - (len(var_seq) % 3)) % 3
                 rhs = min(len(seq), variant.location.end + n_carry_over)
                 var_seq += seq[variant.location.end:rhs]
+
+                loc = variant.variant.location
+                lhs = loc.start - lhs_offset
+                rhs = loc.end + (3 - (loc.end - lhs) % 3) % 3
+                rhs = min(len(self.tx_seq), rhs)
+                ref_seq = self.tx_seq.seq[lhs:rhs]
 
                 var_aa = Seq(var_seq).translate(to_stop=False)
                 ref_aa = Seq(ref_seq).translate(to_stop=False)
