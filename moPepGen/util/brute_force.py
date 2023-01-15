@@ -696,6 +696,7 @@ class BruteForceVariantPeptideCaller():
         stop_lost:List[Tuple[bool, bool, bool]] = []
         stop_gain:List[Tuple[bool, bool, bool]] = []
         silent_mutation:List[Tuple[bool, bool, bool]] = []
+        offset = 0
         for variant in variants:
             skip_stop_lost = False
             skip_stop_gain = False
@@ -723,17 +724,18 @@ class BruteForceVariantPeptideCaller():
                 skip_silent_mutation = True
 
             for i in range(3):
-                loc = variant.variant.location
-                lhs = loc.start - (loc.start - i) % 3
-                rhs = loc.end + (3 - (loc.end - i) % 3) % 3
-                rhs = min(len(self.tx_seq), rhs)
-                ref_seq = self.tx_seq.seq[lhs:rhs]
-
-                lhs = variant.location.start - (variant.location.start - i) % 3
+                lhs_offset = (variant.location.start - i) % 3
+                lhs = variant.location.start - lhs_offset
                 var_seq = seq[lhs:variant.location.end]
                 n_carry_over = (3 - (len(var_seq) % 3)) % 3
                 rhs = min(len(seq), variant.location.end + n_carry_over)
                 var_seq += seq[variant.location.end:rhs]
+
+                loc = variant.variant.location
+                lhs = loc.start - lhs_offset
+                rhs = loc.end + (3 - (loc.end - lhs) % 3) % 3
+                rhs = min(len(self.tx_seq), rhs)
+                ref_seq = self.tx_seq.seq[lhs:rhs]
 
                 var_aa = Seq(var_seq).translate(to_stop=False)
                 ref_aa = Seq(ref_seq).translate(to_stop=False)
