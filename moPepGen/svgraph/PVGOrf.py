@@ -93,7 +93,6 @@ class PVGOrf():
                 and 0 in self.start_node.seq.locations[0].query:
             loc = self.start_node.seq.locations[0]
             y_level = subgraphs[loc.ref.seqname].level
-            # j = loc.ref.start - loc.query.start
             j = loc.get_ref_dna_start()
         else:
             for v in self.start_node.variants:
@@ -138,7 +137,6 @@ class PVGOrf():
         else:
             for v in reversed(node.variants):
                 if not v.variant.is_circ_rna():
-                    # i = math.floor(v.variant.location.end / 3) - 1
                     i = v.variant.location.end - 1
                     subgraph_id = v.location.seqname
                     break
