@@ -118,8 +118,8 @@ class TestREDItoolsParser(unittest.TestCase):
         )
         self.assertEqual(variants[0].location.start, 75)
         self.assertEqual(variants[0].location.end, 76)
-        self.assertEqual(variants[0].ref, 'G')
-        self.assertEqual(variants[0].alt, 'A')
+        self.assertEqual(variants[0].ref, 'C')
+        self.assertEqual(variants[0].alt, 'T')
 
         # second exon
         record = parser.REDItoolsRecord(
@@ -141,5 +141,5 @@ class TestREDItoolsParser(unittest.TestCase):
         )
         self.assertEqual(variants[0].location.start, 150)
         self.assertEqual(variants[0].location.end, 151)
-        self.assertEqual(variants[0].ref, 'G')
-        self.assertEqual(variants[0].alt, 'A')
+        self.assertEqual(variants[0].ref, 'C')
+        self.assertEqual(variants[0].alt, 'T')
