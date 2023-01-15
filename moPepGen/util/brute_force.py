@@ -696,7 +696,6 @@ class BruteForceVariantPeptideCaller():
         stop_lost:List[Tuple[bool, bool, bool]] = []
         stop_gain:List[Tuple[bool, bool, bool]] = []
         silent_mutation:List[Tuple[bool, bool, bool]] = []
-        offset = 0
         for variant in variants:
             skip_stop_lost = False
             skip_stop_gain = False
