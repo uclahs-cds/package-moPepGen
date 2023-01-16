@@ -381,6 +381,8 @@ class ThreeFrameTVG():
         is_deletion = variant.type == 'Deletion'
         if is_deletion:
             seq = self.seq[variant.location.start:variant.location.start+1]
+            for loc in seq.locations:
+                loc.query.reading_frame_index = source.reading_frame_index
         else:
             seq = dna.DNASeqRecordWithCoordinates(
                 seq=Seq(variant.alt),
@@ -1301,7 +1303,7 @@ class ThreeFrameTVG():
 
             farthest, cur = cur, farthest
             queue.append(cur)
-            queue.append(farthest)
+            queue.append
             exceptions.add(cur)
             continue
         return farthest
