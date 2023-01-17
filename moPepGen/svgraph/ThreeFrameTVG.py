@@ -1243,7 +1243,7 @@ class ThreeFrameTVG():
             return node.get_reference_next()
 
         is_candidate_out_node = lambda x,y: \
-                subgraph_checker == False \
+                subgraph_checker is False \
                 or x.subgraph_id == y.subgraph_id \
                 or self.is_fusion_subgraph_out(x,y)
 

@@ -15,6 +15,7 @@ class SubgraphLocation():
         self.location = location
 
     def is_parent(self, other:SubgraphLocation) -> bool:
+        """ Checks if it is the parent of a given subgraph """
         return self.id == other.parent_id
 
 class SubgraphTree():
