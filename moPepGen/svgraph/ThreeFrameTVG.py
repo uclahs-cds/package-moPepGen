@@ -1244,7 +1244,7 @@ class ThreeFrameTVG():
 
         is_candidate_out_node = lambda x,y: \
                 subgraph_checker == False \
-                or x.subgraph_id == x.subgraph_id \
+                or x.subgraph_id == y.subgraph_id \
                 or self.is_fusion_subgraph_out(x,y)
 
         queue:Deque[TVGNode] = deque([])
