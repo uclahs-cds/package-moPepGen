@@ -381,6 +381,8 @@ class ThreeFrameTVG():
         is_deletion = variant.type == 'Deletion'
         if is_deletion:
             seq = self.seq[variant.location.start:variant.location.start+1]
+            for loc in seq.locations:
+                loc.query.reading_frame_index = source.reading_frame_index
         else:
             seq = dna.DNASeqRecordWithCoordinates(
                 seq=Seq(variant.alt),
@@ -1198,6 +1200,19 @@ class ThreeFrameTVG():
                     end_nodes.add(end_node)
         return end_nodes
 
+    def is_fusion_subgraph_out(self, up:TVGNode, down:TVGNode) -> bool:
+        """ Checks if the given node is a fusion subgraph out """
+        if not up.is_inbond_of(down):
+            return False
+
+        if not any(v.variant.is_fusion() for v in down.variants):
+            return False
+
+        up_subgraph = self.subgraphs[up.subgraph_id]
+        down_subgraph = self.subgraphs[down.subgraph_id]
+
+        return up_subgraph.is_parent(down_subgraph)
+
     def find_farthest_node_with_overlap(self, node:TVGNode, min_size:int=6
             ) -> TVGNode:
         r""" Find the farthest node, that within the range between the current
@@ -1226,7 +1241,16 @@ class ThreeFrameTVG():
             return None
         if not node.get_reference_next().out_edges:
             return node.get_reference_next()
-        queue:Deque[TVGNode] = deque([edge.out_node for edge in node.out_edges])
+
+        is_candidate_out_node = lambda x,y: \
+                subgraph_checker is False \
+                or x.subgraph_id == y.subgraph_id \
+                or self.is_fusion_subgraph_out(x,y)
+
+        queue:Deque[TVGNode] = deque([])
+        for out_node in node.get_out_nodes():
+            if is_candidate_out_node(node, out_node):
+                queue.append(out_node)
         visited:Set[TVGNode] = {node}
         # When a new farthest node is found, the downstream nodes of the old
         # farthest node are put into this `exceptions` container, so they
@@ -1245,9 +1269,6 @@ class ThreeFrameTVG():
                         cur.get_in_nodes()[0].subgraph_id == node.subgraph_id:
                     subgraph_checker = False
 
-            if subgraph_checker and cur.subgraph_id != node.subgraph_id:
-                continue
-
             visited_len_before = len(visited)
             visited.add(cur)
             visited_len_after = len(visited)
@@ -1264,18 +1285,21 @@ class ThreeFrameTVG():
 
                     if cur.get_reference_next().has_in_bridge() \
                             or downstream_has_subgraph_in:
-                        for edge in cur.out_edges:
-                            queue.append(edge.out_node)
+                        for out_node in cur.get_out_nodes():
+                            if is_candidate_out_node(cur, out_node):
+                                queue.append(out_node)
                     # if the farthest has less than 6 neucleotides, continue
                     # searching, because it's likely not able to keep one amino
                     # acid after translation.
                     elif len(cur.seq) < min_size:
-                        for edge in cur.out_edges:
-                            queue.append(edge.out_node)
+                        for out_node in cur.get_out_nodes():
+                            if is_candidate_out_node(cur, out_node):
+                                queue.append(out_node)
                 elif cur in exceptions:
                     for out_node in cur.get_out_nodes():
-                        queue.append(out_node)
-                        exceptions.add(out_node)
+                        if is_candidate_out_node(cur, out_node):
+                            queue.append(out_node)
+                            exceptions.add(out_node)
                     exceptions.remove(cur)
                 continue
 
@@ -1287,16 +1311,18 @@ class ThreeFrameTVG():
             if not cur.is_reference() \
                     or ( len(cur.out_edges) > 1
                         and any(len(x.in_edges) > 1 for x in cur.get_out_nodes())):
-                for edge in cur.out_edges:
-                    queue.append(edge.out_node)
+                for out_node in cur.get_out_nodes():
+                    if is_candidate_out_node(cur, out_node):
+                        queue.append(out_node)
                 continue
 
             if cur.is_stop_node():
                 continue
 
             if self.first_node_is_smaller(cur, farthest):
-                for edge in cur.out_edges:
-                    queue.append(edge.out_node)
+                for out_node in cur.get_out_nodes():
+                    if is_candidate_out_node(cur, out_node):
+                        queue.append(out_node)
                 continue
 
             farthest, cur = cur, farthest

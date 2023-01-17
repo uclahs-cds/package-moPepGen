@@ -406,6 +406,8 @@ class PeptideVariantGraph():
         after 'routes' are merged. Then redundant end nodes are collapsed. """
         group:Dict[Tuple[PVGNode],PVGNodeCollapser] = {}
         for node in nodes:
+            if len(node.out_nodes) == 1 and self.next_is_stop(node):
+                continue
             out_nodes = tuple(node.out_nodes)
             collapser = group.setdefault(out_nodes, PVGNodeCollapser())
             redundant_node = collapser.collapse(node)
