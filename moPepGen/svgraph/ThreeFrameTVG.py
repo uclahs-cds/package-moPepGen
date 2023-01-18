@@ -72,7 +72,7 @@ class ThreeFrameTVG():
     def should_clip_trailing_nodes(self) -> bool:
         """ Checks whether the transcript (or circRNA) sequence trailing peptides
         should be avoided to be called as variant peptides. """
-        return self.is_circ_rna() or not self.mrna_end_nf
+        return self.is_circ_rna() or self.mrna_end_nf
 
     def add_default_sequence_locations(self):
         """ Add default sequence locations """

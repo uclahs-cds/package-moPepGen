@@ -196,7 +196,7 @@ class BruteForceVariantPeptideCaller():
     def should_clip_trailing_nodes(self, variants:List[seqvar.VariantRecordWithCoordinate]):
         """ Checks whether the trailing nodes should be excluded """
         return any(v.variant.is_circ_rna() for v in variants) \
-            or not self.tx_model.is_mrna_end_nf()
+            or self.tx_model.is_mrna_end_nf()
 
     @staticmethod
     def has_any_variant(lhs:int, rhs:int, cds_start:int,
