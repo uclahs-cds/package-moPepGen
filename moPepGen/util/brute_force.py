@@ -193,6 +193,11 @@ class BruteForceVariantPeptideCaller():
             i += 3
         return False
 
+    def should_clip_trailing_nodes(self, variants:List[seqvar.VariantRecordWithCoordinate]):
+        """ Checks whether the trailing nodes should be excluded """
+        return any(v.variant.is_circ_rna() for v in variants) \
+            or self.tx_model.is_mrna_end_nf()
+
     @staticmethod
     def has_any_variant(lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
@@ -849,6 +854,9 @@ class BruteForceVariantPeptideCaller():
                     rhs = sites[k]
                     tx_lhs = cds_start + lhs * 3
                     tx_rhs = cds_start + rhs * 3
+                    if self.should_clip_trailing_nodes(variant_coordinates) \
+                            and tx_rhs + 3 > len(seq):
+                        continue
                     if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
                             variant_coordinates, stop_lost, stop_gain, silent_mutation):
                         continue

@@ -69,6 +69,11 @@ class ThreeFrameTVG():
         """ If the graph is a circRNA """
         return self.global_variant and self.global_variant.is_circ_rna()
 
+    def should_clip_trailing_nodes(self) -> bool:
+        """ Checks whether the transcript (or circRNA) sequence trailing peptides
+        should be avoided to be called as variant peptides. """
+        return self.is_circ_rna() or self.mrna_end_nf
+
     def add_default_sequence_locations(self):
         """ Add default sequence locations """
         self.seq.locations = [MatchedLocation(
@@ -1695,6 +1700,8 @@ class ThreeFrameTVG():
             dnode, pnode = queue.pop()
             if not dnode.out_edges:
                 pgraph.add_stop(pnode)
+                if self.should_clip_trailing_nodes():
+                    pnode.truncated = True
                 continue
             for edge in dnode.out_edges:
                 out_node:TVGNode = edge.out_node
@@ -1711,6 +1718,11 @@ class ThreeFrameTVG():
                 out_node.check_stop_altering(self.seq.seq, orf[1])
 
                 new_pnode = out_node.translate()
+
+                if new_pnode.seq.seq == '' and not out_node.get_out_nodes():
+                    if not self.should_clip_trailing_nodes():
+                        new_pnode.seq.seq = Seq('*')
+                    continue
 
                 if orf[1] and out_node.level == 0:
                     orf_end_query = out_node.seq.get_query_index(orf[1])

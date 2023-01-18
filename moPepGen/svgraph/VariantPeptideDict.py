@@ -91,7 +91,7 @@ class MiscleavedNodes():
             subgraphs=subgraphs
         )
 
-        if not node.cpop_collapsed:
+        if not (node.cpop_collapsed or node.truncated):
             additional_variants = leading_node.get_downstream_stop_altering_variants()
             series = MiscleavedNodeSeries([node], additional_variants)
             nodes.data.append(series)
