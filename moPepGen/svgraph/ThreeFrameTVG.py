@@ -1251,6 +1251,13 @@ class ThreeFrameTVG():
         for out_node in node.get_out_nodes():
             if is_candidate_out_node(node, out_node):
                 queue.append(out_node)
+
+        if not queue:
+            # This means the input node is an end of a subgraph of alt splice
+            # insertion/deletion, so no further aligning is needed. Thus return
+            # the input node itself.
+            return node
+
         visited:Set[TVGNode] = {node}
         # When a new farthest node is found, the downstream nodes of the old
         # farthest node are put into this `exceptions` container, so they
