@@ -379,7 +379,8 @@ class PVGNode():
             pre_cleaved=pre_cleave,
             subgraph_id=self.subgraph_id,
             level=self.level,
-            cpop_collapsed=self.cpop_collapsed
+            cpop_collapsed=self.cpop_collapsed,
+            truncated=self.truncated
         )
         new_node.orf = self.orf
 
@@ -391,6 +392,8 @@ class PVGNode():
             new_node.npop_collapsed = True
             if new_node.is_bridge():
                 self.was_bridge = True
+
+        self.truncated = False
 
         while self.out_nodes:
             node = self.out_nodes.pop()
@@ -474,6 +477,7 @@ class PVGNode():
             self.variants.append(variant.shift(len(self.seq.seq)))
         self.seq = new_seq
         self.cpop_collapsed = other.cpop_collapsed
+        self.truncated = other.truncated
 
     def find_start_index(self) -> int:
         """ Find the start amino acid position """

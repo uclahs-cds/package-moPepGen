@@ -46,6 +46,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `parseREDItools` that the ref and alt nucleotides were not set correctly for negative strands. #644
 
+### Changed
+
+- The transcript trailing peptides (peptides at the end of the transcript sequence) are now excluded for transcripts with the `mRNA_end_NF` tag and circRNA regardless of it. Otherwise for transcripts (either coding or noncoding) that the mRNA end is confirmed (without the `mRNA_end_NF`) they are now included in the final FASTA. #649
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed
