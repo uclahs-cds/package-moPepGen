@@ -871,9 +871,6 @@ class PeptideVariantGraph():
         elif not target_node.npop_collapsed:
             node_copy = target_node.copy(in_nodes=False)
 
-            if not node_copy.out_nodes:
-                node_copy.truncated = True
-
             additional_variants = cursor.cleavage_gain
             upstream_indels = target_node.upstream_indel_map.get(cursor.in_node)
             if upstream_indels:

@@ -123,8 +123,6 @@ class MiscleavedNodes():
             for _node in cur_node.out_nodes:
                 if is_circ_rna and _node.is_hybrid_node(subgraphs):
                     continue
-                if not _node.out_nodes:
-                    continue
                 if _node.truncated:
                     continue
                 new_batch = copy.copy(cur_batch)
