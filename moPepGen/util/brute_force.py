@@ -199,7 +199,7 @@ class BruteForceVariantPeptideCaller():
             or not self.tx_model.is_mrna_end_nf()
 
     @staticmethod
-    def has_any_variant(lhs:int, rhs:int, cds_start:int, seq:Seq,
+    def has_any_variant(lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
@@ -239,7 +239,7 @@ class BruteForceVariantPeptideCaller():
                         or is_cleavage_gain \
                         or is_stop_lost \
                         or is_stop_gain ) \
-                    and not (is_silent_mutation):
+                    and not is_silent_mutation:
                 return True
             offset += len(variant.alt) - len(variant.ref)
         return False
@@ -857,7 +857,7 @@ class BruteForceVariantPeptideCaller():
                     if self.should_clip_trailing_nodes(variant_coordinates) \
                             and tx_rhs + 3 > len(seq):
                         continue
-                    if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start, seq,
+                    if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
                             variant_coordinates, stop_lost, stop_gain, silent_mutation):
                         continue
 
