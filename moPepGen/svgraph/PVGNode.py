@@ -644,6 +644,83 @@ class PVGNode():
         """ Checks if the node is missing any of the variants. """
         return any(self.is_missing_variant(v) for v in variants)
 
+    def is_hybrid_node(self, tree:SubgraphTree) -> bool:
+        """ Checks if the node is hybrid. A hybrid node is when two parts of
+        the node sequence are from different subgraphs, and have the different
+        states. """
+        variants = {v.variant for v in self.variants}
+
+        seq_iter = iter(self.seq.locations)
+        var_iter = iter(self.variants)
+
+        cur_seq = next(seq_iter, None)
+        cur_var = next(var_iter, None)
+
+        start, end = 0, 0
+        cur_level = -1
+
+        while cur_seq or cur_var:
+            if cur_var and cur_var.variant.is_circ_rna():
+                cur_var = next(var_iter, None)
+                continue
+
+            seq_level, var_level = -1, -1
+            seq_start, seq_end = -1, -1
+            var_start, var_end = -1, -1
+
+            if cur_seq:
+                seq_level = tree[cur_seq.ref.seqname].level
+                seq_start = cur_seq.query.start
+                seq_end = cur_seq.query.end
+
+            if cur_var:
+                var_level = tree[cur_var.location.seqname].level
+                var_start = cur_var.location.start
+                var_end = cur_var.location.end
+
+            seq_is_smaller = (not cur_var ) \
+                or (cur_seq and (seq_level < var_level or seq_start < var_start))
+
+            if seq_is_smaller:
+                if cur_level == -1:
+                    cur_level = seq_level
+                    start, end = seq_start, seq_end
+                elif seq_level > cur_level:
+                    seg = self[start:end]
+                    if seg.is_missing_any_variant(variants):
+                        return True
+                    cur_level = seq_level
+                    start, end = seq_start, seq_end
+                else:
+                    end = seq_end
+
+                if cur_seq is self.seq.locations[-1] and not cur_var:
+                    seg = self[start:seq_end]
+                    return seg.is_missing_any_variant(variants)
+
+                cur_seq = next(seq_iter, None)
+
+            else:
+                if cur_level == -1:
+                    cur_level = var_level
+                    start, end = var_start, var_end
+                elif var_level > cur_level:
+                    seg = self[start:end]
+                    if seg.is_missing_any_variant(variants):
+                        return True
+                    cur_level = var_level
+                    start, end = var_start, var_end
+                else:
+                    end = var_end
+
+                if cur_var is self.variants[-1] and not cur_seq:
+                    seg = self[start:var_end]
+                    return seg.is_missing_any_variant(variants)
+
+                cur_var = next(var_iter, None)
+
+        return False
+
     def any_unaccounted_downstream_cleavage_or_stop_altering(self,
             variants:Iterable[seqvar.VariantRecord]) -> bool:
         """ Checks if the node has any unaccounted cleavage or stop altering

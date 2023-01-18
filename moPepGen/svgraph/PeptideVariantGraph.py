@@ -48,7 +48,10 @@ class PeptideVariantGraph():
         self.root = root
         self.id = _id
         self.known_orf = known_orf
-        self.stop = PVGNode(aa.AminoAcidSeqRecord(Seq('*')), None, subgraph_id=self.id)
+        stop_seq = aa.AminoAcidSeqRecordWithCoordinates(
+            seq=Seq('*'), locations=[]
+        )
+        self.stop = PVGNode(stop_seq, None, subgraph_id=self.id)
         self.orfs = orfs or set()
         self.reading_frames = reading_frames or [None, None, None]
         self.orf_id_map = orf_id_map or {}
@@ -816,7 +819,11 @@ class PeptideVariantGraph():
             if cur.out_node is self.stop:
                 continue
 
-            if self.has_known_orf():
+            if self.is_circ_rna() and cur.out_node.is_hybrid_node(self.subgraphs):
+                self.call_and_stage_silently(
+                    cursor=cur, traversal=traversal
+                )
+            elif self.has_known_orf():
                 # add out nodes to the queue
                 self.call_and_stage_known_orf(
                     cursor=cur,
@@ -985,6 +992,16 @@ class PeptideVariantGraph():
                     )
                     traversal.stage(target_node, out_node, cur)
             self.remove_node(node_copy)
+
+    def call_and_stage_silently(self, cursor:PVGCursor, traversal:PVGTraversal):
+        """ This is called when the cursor node is invalid. """
+        target_node = cursor.out_node
+        finding_start_site = cursor.finding_start_site
+
+        for node in target_node.out_nodes:
+            cursor = PVGCursor(target_node, node, False, [],
+                [], finding_start_site)
+            traversal.stage(target_node, node, cursor)
 
     def call_and_stage_unknown_orf(self, cursor:PVGCursor,
             traversal:PVGTraversal) -> None:
