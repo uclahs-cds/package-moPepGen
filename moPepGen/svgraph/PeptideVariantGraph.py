@@ -911,7 +911,8 @@ class PeptideVariantGraph():
                     upstream_indels = target_node.upstream_indel_map.get(cursor.in_node)
                     if upstream_indels:
                         for variant in upstream_indels:
-                            cur_start_gain.add(variant)
+                            if variant.is_frameshifting():
+                                cur_start_gain.add(variant)
 
                     stop_index = self.known_orf[1]
                     stop_lost = target_node.get_stop_lost_variants(stop_index)
