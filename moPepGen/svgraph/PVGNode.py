@@ -656,7 +656,7 @@ class PVGNode():
         return any(self.is_missing_variant(v, upstream) for v in variants)
 
     def has_variants_not_in(self, variants:Set[seqvar.VariantRecord]) -> bool:
-        """ """
+        """ Checks if the node has any variants that is not in a given set. """
         if not variants:
             return False
         var_start = sorted(variants, key=lambda x: x.location.start)[0].location.start

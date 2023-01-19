@@ -991,7 +991,8 @@ class PeptideVariantGraph():
                     traversal.stage(target_node, out_node, cur)
             self.remove_node(node_copy)
 
-    def call_and_stage_silently(self, cursor:PVGCursor, traversal:PVGTraversal):
+    @staticmethod
+    def call_and_stage_silently(cursor:PVGCursor, traversal:PVGTraversal):
         """ This is called when the cursor node is invalid. """
         target_node = cursor.out_node
         finding_start_site = cursor.finding_start_site
