@@ -655,6 +655,21 @@ class PVGNode():
         """ Checks if the node is missing any of the variants. """
         return any(self.is_missing_variant(v, upstream) for v in variants)
 
+    def has_variants_not_in(self, variants:Set[seqvar.VariantRecord]) -> bool:
+        """ """
+        if not variants:
+            return False
+        var_start = sorted(variants, key=lambda x: x.location.start)[0].location.start
+        var_end = sorted(variants, key=lambda x: x.location.end)[-1].location.end
+        var_range = FeatureLocation(start=var_start, end=var_end)
+        for v in self.variants:
+            if v.variant.is_circ_rna():
+                continue
+            if v.variant.location.overlaps(var_range) \
+                    and v.variant not in variants:
+                return True
+        return False
+
     def is_hybrid_node(self, tree:SubgraphTree) -> bool:
         """ Checks if the node is hybrid. A hybrid node is when two parts of
         the node sequence are from different subgraphs, and have the different
@@ -759,7 +774,6 @@ class PVGNode():
         for node in boundary_nodes:
             if node.is_missing_any_variant(variants, self):
                 return True
-            for v in node.variants:
-                if not v.variant.is_circ_rna() and v.variant not in variants:
-                    return True
+            if node.has_variants_not_in(variants):
+                return True
         return False
