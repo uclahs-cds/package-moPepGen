@@ -470,7 +470,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.cleavage_params.miscleavage = 1
         peptides = graph.call_variant_peptides()
         received = {str(x.seq) for x in peptides}
-        expected = {'SSSSR', 'SSSSRSSSIR', 'SSSIR'}
+        expected = {'SSSSR', 'SSSSRSSSIR', 'SSSIR', 'SSSIRSSSSS'}
         self.assertEqual(received, expected)
 
     def test_call_variant_peptides_stop_gain(self):
