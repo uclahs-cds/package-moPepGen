@@ -1722,7 +1722,8 @@ class ThreeFrameTVG():
                 if new_pnode.seq.seq == '' and not out_node.get_out_nodes():
                     if not self.should_clip_trailing_nodes():
                         new_pnode.seq.seq = Seq('*')
-                    continue
+                    elif len(dnode.out_edges) == 1:
+                        pnode.truncated = True
 
                 if orf[1] and out_node.level == 0:
                     orf_end_query = out_node.seq.get_query_index(orf[1])

@@ -56,7 +56,8 @@ class MiscleavedNodes():
     @staticmethod
     def find_miscleaved_nodes(node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams, tx_id:str,
-            leading_node:PVGNode, subgraphs:SubgraphTree) -> MiscleavedNodes:
+            leading_node:PVGNode, subgraphs:SubgraphTree, is_circ_rna:bool
+            ) -> MiscleavedNodes:
         """ Find all miscleaved nodes.
 
         node vs leading_node:
@@ -120,7 +121,7 @@ class MiscleavedNodes():
                     allowed_n_vars += n_cleavages * cleavage_params.additional_variants_per_misc
 
             for _node in cur_node.out_nodes:
-                if not _node.out_nodes:
+                if is_circ_rna and _node.is_hybrid_node(subgraphs):
                     continue
                 if _node.truncated:
                     continue
@@ -388,7 +389,7 @@ class VariantPeptideDict():
         miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
             node=node, orfs=orfs, cleavage_params=cleavage_params,
             tx_id=self.tx_id, leading_node=leading_node,
-            subgraphs=subgraphs
+            subgraphs=subgraphs, is_circ_rna=circ_rna is not None
         )
         if self.global_variant and self.global_variant not in additional_variants:
             additional_variants.append(self.global_variant)

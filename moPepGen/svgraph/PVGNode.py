@@ -78,6 +78,11 @@ class PVGNode():
         npop_collapsed = self.npop_collapsed and start == 0
         cpop_collapsed = self.cpop_collapsed and stop == len(seq) or stop == -1
 
+        if start == 0:
+            upstream_indel_map = {k:copy.copy(v) for k,v in self.upstream_indel_map.items()}
+        else:
+            upstream_indel_map = []
+
         return PVGNode(
             seq=seq,
             variants=variants,
@@ -88,7 +93,8 @@ class PVGNode():
             subgraph_id=self.subgraph_id,
             level=self.level,
             npop_collapsed=npop_collapsed,
-            cpop_collapsed=cpop_collapsed
+            cpop_collapsed=cpop_collapsed,
+            upstream_indel_map=upstream_indel_map
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -616,7 +622,8 @@ class PVGNode():
                 return True
         return False
 
-    def is_missing_variant(self, variant:seqvar.VariantRecord) -> bool:
+    def is_missing_variant(self, variant:seqvar.VariantRecord, upstream:PVGNode=None
+            ) -> bool:
         """ Checks if in the coordinates of the node if any variant from a
         given set is missing. This is used for circRNA to ensure that the
         same variant is either on or off in each loop. """
@@ -634,15 +641,111 @@ class PVGNode():
                     continue
                 locs.append(v.variant.location)
         variants = {x.variant for x in self.variants}
+        if upstream:
+            upstream_indels = self.upstream_indel_map.get(upstream, [])
+            variants.update(v for v in upstream_indels)
         for loc in locs:
             if loc.overlaps(variant.location) \
                     and not any(variant == v for v in variants):
                 return True
         return False
 
-    def is_missing_any_variant(self, variants:Iterable[seqvar.VariantRecord]) -> bool:
+    def is_missing_any_variant(self, variants:Iterable[seqvar.VariantRecord],
+            upstream:PVGNode=None) -> bool:
         """ Checks if the node is missing any of the variants. """
-        return any(self.is_missing_variant(v) for v in variants)
+        return any(self.is_missing_variant(v, upstream) for v in variants)
+
+    def has_variants_not_in(self, variants:Set[seqvar.VariantRecord]) -> bool:
+        """ Checks if the node has any variants that is not in a given set. """
+        if not variants:
+            return False
+        var_start = sorted(variants, key=lambda x: x.location.start)[0].location.start
+        var_end = sorted(variants, key=lambda x: x.location.end)[-1].location.end
+        var_range = FeatureLocation(start=var_start, end=var_end)
+        for v in self.variants:
+            if v.variant.is_circ_rna():
+                continue
+            if v.variant.location.overlaps(var_range) \
+                    and v.variant not in variants:
+                return True
+        return False
+
+    def is_hybrid_node(self, tree:SubgraphTree) -> bool:
+        """ Checks if the node is hybrid. A hybrid node is when two parts of
+        the node sequence are from different subgraphs, and have the different
+        states. """
+        variants = {v.variant for v in self.variants}
+
+        seq_iter = iter(self.seq.locations)
+        var_iter = iter(self.variants)
+
+        cur_seq = next(seq_iter, None)
+        cur_var = next(var_iter, None)
+
+        start, end = 0, 0
+        cur_level = -1
+
+        while cur_seq or cur_var:
+            if cur_var and cur_var.variant.is_circ_rna():
+                cur_var = next(var_iter, None)
+                continue
+
+            seq_level, var_level = -1, -1
+            seq_start, seq_end = -1, -1
+            var_start, var_end = -1, -1
+
+            if cur_seq:
+                seq_level = tree[cur_seq.ref.seqname].level
+                seq_start = cur_seq.query.start
+                seq_end = cur_seq.query.end
+
+            if cur_var:
+                var_level = tree[cur_var.location.seqname].level
+                var_start = cur_var.location.start
+                var_end = cur_var.location.end
+
+            seq_is_smaller = (not cur_var ) \
+                or (cur_seq and (seq_level < var_level or seq_start < var_start))
+
+            if seq_is_smaller:
+                if cur_level == -1:
+                    cur_level = seq_level
+                    start, end = seq_start, seq_end
+                elif seq_level > cur_level:
+                    seg = self[start:end]
+                    if seg.is_missing_any_variant(variants):
+                        return True
+                    cur_level = seq_level
+                    start, end = seq_start, seq_end
+                else:
+                    end = seq_end
+
+                if cur_seq is self.seq.locations[-1] and not cur_var:
+                    seg = self[start:seq_end]
+                    return seg.is_missing_any_variant(variants)
+
+                cur_seq = next(seq_iter, None)
+
+            else:
+                if cur_level == -1:
+                    cur_level = var_level
+                    start, end = var_start, var_end
+                elif var_level > cur_level:
+                    seg = self[start:end]
+                    if seg.is_missing_any_variant(variants):
+                        return True
+                    cur_level = var_level
+                    start, end = var_start, var_end
+                else:
+                    end = var_end
+
+                if cur_var is self.variants[-1] and not cur_seq:
+                    seg = self[start:var_end]
+                    return seg.is_missing_any_variant(variants)
+
+                cur_var = next(var_iter, None)
+
+        return False
 
     def any_unaccounted_downstream_cleavage_or_stop_altering(self,
             variants:Iterable[seqvar.VariantRecord]) -> bool:
@@ -669,9 +772,8 @@ class PVGNode():
                 boundary_nodes.append(upstream[-1:])
 
         for node in boundary_nodes:
-            if node.is_missing_any_variant(variants):
+            if node.is_missing_any_variant(variants, self):
                 return True
-            for v in node.variants:
-                if not v.variant.is_circ_rna() and v.variant not in variants:
-                    return True
+            if node.has_variants_not_in(variants):
+                return True
         return False
