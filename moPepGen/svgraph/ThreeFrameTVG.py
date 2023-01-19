@@ -1724,7 +1724,6 @@ class ThreeFrameTVG():
                         new_pnode.seq.seq = Seq('*')
                     elif len(dnode.out_edges) == 1:
                         pnode.truncated = True
-                    continue
 
                 if orf[1] and out_node.level == 0:
                     orf_end_query = out_node.seq.get_query_index(orf[1])
