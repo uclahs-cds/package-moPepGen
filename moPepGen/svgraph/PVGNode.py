@@ -399,17 +399,17 @@ class PVGNode():
                 else:
                     left_variants.append(variant[:index])
             elif variant.location.start == index and cleavage:
-                dummy_var = variant[index:index+1]
-                dummy_var = dummy_var.shift(-1)
-                dummy_var.downstream_cleavage_altering = True
-                left_variants.append(dummy_var)
+                cleave_alts = variant[index:index+1]
+                cleave_alts = cleave_alts.shift(-1)
+                cleave_alts.downstream_cleavage_altering = True
+                left_variants.append(cleave_alts)
 
             if variant.location.end > index:
                 right_variants.append(variant.shift(-index))
             elif variant.location.end == index and cleavage:
-                dummy_var = variant.shift(-index)
-                dummy_var.upstream_cleavage_altering = True
-                right_variants.append(dummy_var)
+                cleave_alts = variant.shift(-index)
+                cleave_alts.upstream_cleavage_altering = True
+                right_variants.append(cleave_alts)
 
         self.seq = left_seq
         self.variants = left_variants
