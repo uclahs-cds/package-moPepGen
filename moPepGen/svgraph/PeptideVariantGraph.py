@@ -1097,12 +1097,16 @@ class PeptideVariantGraph():
                     elif not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
-                            and not v.variant.is_circ_rna()]
+                                and not v.upstream_cleavage_altering
+                                and not v.downstream_cleavage_altering
+                                and not v.variant.is_circ_rna()]
                         orf.start_gain.update(start_gain)
 
             # Add stop altering mutations
             for variant in target_node.variants:
-                if variant.is_stop_altering:
+                if variant.is_stop_altering \
+                        and not variant.upstream_cleavage_altering \
+                        and not variant.downstream_cleavage_altering:
                     if start_indices and variant.location.end - 1 < start_indices[-1]:
                         continue
                     for x in cur_orfs:
