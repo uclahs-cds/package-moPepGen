@@ -117,8 +117,7 @@ class MiscleavedNodes():
                 allowed_n_vars = float('Inf')
             else:
                 allowed_n_vars = cleavage_params.max_variants_per_node
-                if n_cleavages > 0:
-                    allowed_n_vars += n_cleavages * cleavage_params.additional_variants_per_misc
+                allowed_n_vars += (n_cleavages + 1) * cleavage_params.additional_variants_per_misc
 
             for _node in cur_node.out_nodes:
                 if is_circ_rna and _node.is_hybrid_node(subgraphs):
@@ -139,8 +138,9 @@ class MiscleavedNodes():
                     cur_vars = copy.copy(batch_vars)
                     for var in _node.variants:
                         cur_vars.add(var.variant)
-
-                    if len(cur_vars) + len(additional_variants) > allowed_n_vars:
+                    cur_vars_plus_additional = copy.copy(cur_vars)
+                    cur_vars_plus_additional.update(additional_variants)
+                    if len(cur_vars_plus_additional) > allowed_n_vars:
                         continue
 
                     series = MiscleavedNodeSeries(copy.copy(new_batch), additional_variants)

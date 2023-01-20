@@ -48,6 +48,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that hybrid peptide sequences were called from circRNA. #653
 
+- Fixed `callVariant` that peptides with variants of in-frame mutation causing deletion/insertion between two cleavage sites were missed. #655
+
+- Fixed `callVariant` that when setting the max number of variants per peptide, the number of miscleavages was not used correctly. #657
+
 ### Changed
 
 - The transcript trailing peptides (peptides at the end of the transcript sequence) are now excluded for transcripts with the `mRNA_end_NF` tag and circRNA regardless of it. Otherwise for transcripts (either coding or noncoding) that the mRNA end is confirmed (without the `mRNA_end_NF`) they are now included in the final FASTA. #649

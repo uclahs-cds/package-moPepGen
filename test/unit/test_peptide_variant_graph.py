@@ -689,6 +689,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             # 4: ('SS*PK', [2], [variant_1], [((0,2),(11,13)), ((3,5),(14,16))], 0)
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
+        nodes[5].variants[0].is_stop_altering = True
         graph.known_orf = [0,90]
         pool = VariantPeptideDict(graph.id)
         traversal = PVGTraversal(True, False, pool, (0,90), (0,30))

@@ -11,12 +11,16 @@ class VariantRecordWithCoordinate():
     location of variants of a node when the variable bubble expands forward
     or backward. """
     def __init__(self, variant:seqvar.VariantRecord, location:FeatureLocation,
-            is_stop_altering:bool=False, is_silent:bool=False):
+            is_stop_altering:bool=False, is_silent:bool=False,
+            downstream_cleavage_altering:bool=False,
+            upstream_cleavage_altering:bool=False):
         """ Constructor """
         self.variant = variant
         self.location = location
         self.is_stop_altering = is_stop_altering
         self.is_silent = is_silent
+        self.downstream_cleavage_altering = downstream_cleavage_altering
+        self.upstream_cleavage_altering = upstream_cleavage_altering
 
     def shift(self, index:int) -> VariantRecordWithCoordinate:
         """ Shift the coordinate of the object by a given number. """

@@ -1032,7 +1032,9 @@ class PeptideVariantGraph():
         # for further start sites.
         if finding_start_site:
             for variant in target_node.variants:
-                if variant.variant.is_real_fusion:
+                if variant.variant.is_real_fusion \
+                        and not variant.upstream_cleavage_altering \
+                        and not variant.downstream_cleavage_altering:
                     finding_start_site = False
                     real_fusion_position = variant.location.start
                     break
@@ -1074,10 +1076,14 @@ class PeptideVariantGraph():
                 # node if a start codon is found.
                 start_gain = target_node.get_variants_at(
                     start=start_indices[-1],
-                    end=min(start_indices[-1] + 1, len(target_node.seq.seq))
+                    end=min(start_indices[-1] + 1, len(target_node.seq.seq)),
+                    upstream_cleavage_altering=False,
+                    downstream_cleavage_altering=False
                 )
                 fs_variants = target_node.get_variants_at(
-                    start=start_indices[-1], end=-1
+                    start=start_indices[-1], end=-1,
+                    upstream_cleavage_altering=False,
+                    downstream_cleavage_altering=False
                 )
                 start_gain += [x for x in fs_variants if x.is_frameshifting()]
                 start_gain = [x for x in start_gain if not x.is_circ_rna()]
@@ -1093,12 +1099,16 @@ class PeptideVariantGraph():
                     elif not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
-                            and not v.variant.is_circ_rna()]
+                                and not v.upstream_cleavage_altering
+                                and not v.downstream_cleavage_altering
+                                and not v.variant.is_circ_rna()]
                         orf.start_gain.update(start_gain)
 
             # Add stop altering mutations
             for variant in target_node.variants:
-                if variant.is_stop_altering:
+                if variant.is_stop_altering \
+                        and not variant.upstream_cleavage_altering \
+                        and not variant.downstream_cleavage_altering:
                     if start_indices and variant.location.end - 1 < start_indices[-1]:
                         continue
                     for x in cur_orfs:
