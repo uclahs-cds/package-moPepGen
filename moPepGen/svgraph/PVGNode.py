@@ -46,7 +46,9 @@ class PVGNode():
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
             was_bridge:bool=False, pre_cleaved:bool=False, level:int=0,
             npop_collapsed:bool=False, cpop_collapsed:bool=False,
-            upstream_indel_map:Dict[PVGNode, List[seqvar.VariantRecord]]=None):
+            upstream_indel_map:Dict[PVGNode, List[seqvar.VariantRecord]]=None,
+            collapsed_variants:Dict[PVGNode, List[seqvar.VariantRecordWithCoordinate]]=None
+            ):
         """ Construct a PVGNode object. """
         self.seq = seq
         self.variants = variants or []
@@ -63,6 +65,7 @@ class PVGNode():
         self.npop_collapsed = npop_collapsed
         self.cpop_collapsed = cpop_collapsed
         self.upstream_indel_map = upstream_indel_map or {}
+        self.collapsed_variants = collapsed_variants or {}
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -83,6 +86,18 @@ class PVGNode():
         else:
             upstream_indel_map = []
 
+        collapsed_variants = {}
+        for upstream, variants in self.collapsed_variants.items():
+            filtered_variants = []
+            for v in variants:
+                if v.location.overlaps(location):
+                    v = v[start:stop]
+                    v = v.shift(-start)
+                    filtered_variants.append(v)
+            if filtered_variants:
+                collapsed_variants[upstream] = filtered_variants
+
+
         return PVGNode(
             seq=seq,
             variants=variants,
@@ -94,7 +109,8 @@ class PVGNode():
             level=self.level,
             npop_collapsed=npop_collapsed,
             cpop_collapsed=cpop_collapsed,
-            upstream_indel_map=upstream_indel_map
+            upstream_indel_map=upstream_indel_map,
+            collapsed_variants=collapsed_variants
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -212,7 +228,10 @@ class PVGNode():
         """ Checks if there is any indel """
         return any(x.variant.is_indel() for x in self.variants)
 
-    def get_variants_at(self, start:int, end:int=-1) -> List[seqvar.VariantRecord]:
+    def get_variants_at(self, start:int, end:int=-1,
+            upstream_cleavage_altering:bool=True,
+            downstream_cleavage_altering:bool=True
+            ) -> List[seqvar.VariantRecord]:
         """ Get the variant at position i """
         if end == -1:
             end = len(self.seq)
@@ -221,6 +240,10 @@ class PVGNode():
         variants = []
         location = FeatureLocation(start=start, end=end)
         for variant in self.variants:
+            if not upstream_cleavage_altering and variant.upstream_cleavage_altering:
+                continue
+            if not downstream_cleavage_altering and variant.downstream_cleavage_altering:
+                continue
             if variant.location.overlaps(location):
                 variants.append(variant.variant)
         return variants
@@ -241,8 +264,12 @@ class PVGNode():
                 return []
             if node.variants[0].location.start != 0:
                 return []
-            if not cleavage_gain and not node.variants[0].is_silent:
-                cleavage_gain.append(node.variants[0].variant)
+            for v in self.variants:
+                if v.location.start != 0:
+                    break
+                if not cleavage_gain and not v.is_silent \
+                        and not v.downstream_cleavage_altering:
+                    cleavage_gain.append(v.variant)
         return cleavage_gain
 
     def get_stop_lost_variants(self, stop_index:int) -> List[seqvar.VariantRecord]:
@@ -371,8 +398,19 @@ class PVGNode():
                     left_variants.append(variant)
                 else:
                     left_variants.append(variant[:index])
+            elif variant.location.start == index and cleavage:
+                dummy_var = variant[index:index+1]
+                dummy_var = dummy_var.shift(-1)
+                dummy_var.downstream_cleavage_altering = True
+                left_variants.append(dummy_var)
+
             if variant.location.end > index:
                 right_variants.append(variant.shift(-index))
+            elif variant.location.end == index and cleavage:
+                dummy_var = variant.shift(-index)
+                dummy_var.upstream_cleavage_altering = True
+                right_variants.append(dummy_var)
+
         self.seq = left_seq
         self.variants = left_variants
 
@@ -479,8 +517,15 @@ class PVGNode():
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
         new_seq = self.seq + other.seq
+        variants = []
+        for variant in self.variants:
+            if not variant.downstream_cleavage_altering:
+                variants.append(variant)
+        self.variants = variants
+
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
+
         self.seq = new_seq
         self.cpop_collapsed = other.cpop_collapsed
         self.truncated = other.truncated
@@ -604,15 +649,18 @@ class PVGNode():
 
     def get_downstream_stop_altering_variants(self) -> Set[VariantRecord]:
         """ Get downstream stop altering variants """
-        additional_variants = set()
+        final_variants = set()
         for out_node in self.out_nodes:
             if out_node.seq.seq == '*':
-                additional_variants.update([x.variant for x in out_node.variants
-                    if x.is_stop_altering])
-                additional_variants.update(out_node.upstream_indel_map.get(self, []))
-                if additional_variants:
-                    return additional_variants
-        return additional_variants
+                stop_alts = set()
+                stop_alts.update([x.variant for x in out_node.variants
+                    if x.is_stop_altering and not x.downstream_cleavage_altering])
+                stop_alts.update(out_node.upstream_indel_map.get(self, []))
+                if not stop_alts:
+                    return set()
+                if not final_variants:
+                    final_variants = stop_alts
+        return final_variants
 
     def has_variant_at(self, start:int, end:int) -> bool:
         """ Checks if the node has any variant at a given position """

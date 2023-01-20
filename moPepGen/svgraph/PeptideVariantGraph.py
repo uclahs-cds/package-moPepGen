@@ -1074,10 +1074,14 @@ class PeptideVariantGraph():
                 # node if a start codon is found.
                 start_gain = target_node.get_variants_at(
                     start=start_indices[-1],
-                    end=min(start_indices[-1] + 1, len(target_node.seq.seq))
+                    end=min(start_indices[-1] + 1, len(target_node.seq.seq)),
+                    upstream_cleavage_altering=False,
+                    downstream_cleavage_altering=False
                 )
                 fs_variants = target_node.get_variants_at(
-                    start=start_indices[-1], end=-1
+                    start=start_indices[-1], end=-1,
+                    upstream_cleavage_altering=False,
+                    downstream_cleavage_altering=False
                 )
                 start_gain += [x for x in fs_variants if x.is_frameshifting()]
                 start_gain = [x for x in start_gain if not x.is_circ_rna()]

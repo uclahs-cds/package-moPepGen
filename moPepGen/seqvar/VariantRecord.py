@@ -289,6 +289,11 @@ class VariantRecord():
             alt_len = len(self.alt)
         return (ref_len - alt_len) % 3 != 0
 
+    def is_inframe_indel(self) -> bool:
+        """ checks if it is a inframe indel """
+        return self.type in {'INDEL', 'Insertion', 'Deletion', 'Substitution'} \
+            and not self.is_frameshifting()
+
     def set_end_inclusion(self):
         """ Set end inclusion to True """
         self.attrs['END_INCLUSION'] = True
