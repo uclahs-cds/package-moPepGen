@@ -1032,7 +1032,9 @@ class PeptideVariantGraph():
         # for further start sites.
         if finding_start_site:
             for variant in target_node.variants:
-                if variant.variant.is_real_fusion:
+                if variant.variant.is_real_fusion \
+                        and not variant.upstream_cleavage_altering \
+                        and not variant.downstream_cleavage_altering:
                     finding_start_site = False
                     real_fusion_position = variant.location.start
                     break
