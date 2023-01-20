@@ -5,13 +5,11 @@ import copy
 from collections import deque
 import math
 import re
+from Bio.Seq import Seq
 from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph, aa
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
-
-if TYPE_CHECKING:
-    from Bio.Seq import Seq
 
 class TVGNode():
     """ Defines the nodes in the TranscriptVariantGraph
@@ -652,6 +650,34 @@ class TVGNode():
             level=self.level
         )
 
+    def get_ith_variant_var_aa(self, i:int) -> Seq:
+        """ Get the variant amino acid sequence of the ith variant """
+        v = self.variants[i]
+        loc = v.location
+        lhs = loc.start - loc.start % 3
+        rhs = loc.end + (3 - loc.end % 3) % 3
+        rhs = min(rhs, len(self.seq.seq))
+        seq = self.seq.seq[lhs:rhs]
+        seq = seq[:len(seq) - len(seq) % 3]
+        return seq.translate(to_stop=False)
+
+    def get_ith_variant_ref_aa(self, i:int, tx_seq:Seq) -> Seq:
+        """ Get the reference amino acid sequence of the ith variant. """
+        v = self.variants[i]
+        loc = v.location
+        lhs = loc.start - loc.start % 3
+        seq = Seq(v.variant.ref)
+        if lhs < loc.start:
+            seq = self.seq.seq[lhs:loc.start] + seq
+
+        rhs = v.variant.location.end + (3 - len(seq) % 3) % 3
+        rhs = min(rhs, len(tx_seq))
+
+        if rhs > v.variant.location.end:
+            seq += tx_seq[v.variant.location.end:rhs]
+        seq = seq[:len(seq) - len(seq) % 3]
+        return seq.translate(to_stop=False)
+
     def get_ref_sequence(self, tx_seq:Seq) -> Seq:
         """ Get the reference sequence """
         if not self.variants:
@@ -672,6 +698,34 @@ class TVGNode():
         return seq
 
     def check_stop_altering(self, tx_seq:Seq, cds_end:int=None):
+        """ """
+        if not self.variants:
+            return
+
+        if cds_end:
+            stop_codon = FeatureLocation(start=cds_end, end=cds_end + 3)
+            if not self.get_node_start_reference_index() < cds_end < \
+                    self.get_node_end_reference_index():
+                return
+            for variant in self.variants:
+                if stop_codon.overlaps(variant.variant.location):
+                    variant.is_stop_altering = True
+            return
+
+        for i,v in enumerate(self.variants):
+            if v.variant.type not in set(seqvar.SINGLE_NUCLEOTIDE_SUBSTITUTION):
+                continue
+            ref_aa = self.get_ith_variant_ref_aa(i, tx_seq)
+            var_aa = self.get_ith_variant_var_aa(i)
+            v.is_silent = v.variant.is_snv() and ref_aa == var_aa
+            v.is_stop_altering = \
+                (v.variant.is_snv() and ref_aa == '*' and var_aa != '*') \
+                or (v.variant.is_insertion() and ref_aa =='*'
+                    and not var_aa.startswith('*')) \
+                or (v.variant.is_deletion() and '*' in ref_aa
+                    and not (ref_aa.startswith('*') and var_aa.startswith('*')))
+
+    def check_stop_altering2(self, tx_seq:Seq, cds_end:int=None):
         """ Checks whether each variant is stop lost """
         if not self.variants:
             return
