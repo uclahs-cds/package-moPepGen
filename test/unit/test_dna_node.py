@@ -45,7 +45,7 @@ class TestTVGNode(unittest.TestCase):
             location=FeatureLocation(start=7, end=8)
         )
         node = svgraph.TVGNode(seq, [variant])
-        node.check_stop_altering(12)
+        node.check_stop_altering(seq.seq, 12)
         self.assertFalse(variant.is_stop_altering)
 
     def test_check_stop_altering_true(self):
@@ -77,5 +77,5 @@ class TestTVGNode(unittest.TestCase):
             location=FeatureLocation(start=8, end=9)
         )
         node = svgraph.TVGNode(seq, [variant])
-        node.check_stop_altering(None, None)
+        node.check_stop_altering(seq.seq, None)
         self.assertTrue(variant.is_stop_altering)
