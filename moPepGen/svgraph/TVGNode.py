@@ -666,7 +666,13 @@ class TVGNode():
         v = self.variants[i]
         loc = v.location
         lhs = loc.start - loc.start % 3
-        seq = Seq(v.variant.ref)
+
+        seq = Seq('')
+        if v.variant.type in ['Deletion', 'Substitution']:
+            seq += tx_seq[v.variant.location.start:v.variant.location.end]
+        elif v.variant.type != 'Insertion':
+            seq += Seq(v.variant.ref)
+
         if lhs < loc.start:
             seq = self.seq.seq[lhs:loc.start] + seq
 
@@ -712,8 +718,11 @@ class TVGNode():
                     variant.is_stop_altering = True
             return
 
+        if self.global_variant and self.global_variant.is_fusion():
+            return
+
         for i,v in enumerate(self.variants):
-            if v.variant.type not in set(seqvar.SINGLE_NUCLEOTIDE_SUBSTITUTION):
+            if v.variant.type in {'Fusion', 'circRNA'}:
                 continue
             ref_aa = self.get_ith_variant_ref_aa(i, tx_seq)
             var_aa = self.get_ith_variant_var_aa(i)
@@ -723,7 +732,9 @@ class TVGNode():
                 or (v.variant.is_insertion() and ref_aa =='*'
                     and not var_aa.startswith('*')) \
                 or (v.variant.is_deletion() and '*' in ref_aa
-                    and not (ref_aa.startswith('*') and var_aa.startswith('*')))
+                    and not (ref_aa.startswith('*') and var_aa.startswith('*'))) \
+                or (v.variant.type == 'Substitution'
+                    and '*' in ref_aa and ref_aa != var_aa)
 
     def check_stop_altering2(self, tx_seq:Seq, cds_end:int=None):
         """ Checks whether each variant is stop lost """
