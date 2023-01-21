@@ -1148,8 +1148,12 @@ class ThreeFrameTVG():
             if len_before == len_after:
                 continue
 
-            is_bridge_out = any(e.out_node.get_last_rf_index() != this_id
-                and e.out_node is not end for e in cur.out_edges)
+            is_bridge_out = any(
+                e.out_node.get_first_rf_index() != this_id
+                    and e.out_node.get_last_rf_index() != this_id
+                    and e.out_node is not end
+                for e in cur.out_edges
+            )
 
             if is_bridge_out and cur is not end:
                 bridge_out.add(cur)
