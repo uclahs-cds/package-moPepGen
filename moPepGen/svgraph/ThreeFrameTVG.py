@@ -1148,7 +1148,7 @@ class ThreeFrameTVG():
             if len_before == len_after:
                 continue
 
-            is_bridge_out = any(e.out_node.get_first_rf_index() != this_id
+            is_bridge_out = any(e.out_node.get_last_rf_index() != this_id
                 and e.out_node is not end for e in cur.out_edges)
 
             if is_bridge_out and cur is not end:
@@ -1168,7 +1168,7 @@ class ThreeFrameTVG():
                     continue
 
             for e in cur.in_edges:
-                if e.in_node.reading_frame_index != this_id or e.in_node.was_bridge:
+                if e.in_node.get_first_rf_index() != this_id or e.in_node.was_bridge:
                     bridge_in.add(e.in_node)
                 elif not self.is_circ_rna() and e.in_node.subgraph_id != cur.subgraph_id:
                     if not e.in_node.is_inframe_subgraph(start, end):
