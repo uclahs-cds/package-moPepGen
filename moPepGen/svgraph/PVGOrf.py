@@ -158,7 +158,7 @@ class PVGOrf():
         start_gain = {x for x in self.start_gain if not x.is_circ_rna()}
         start_gain.update(upstream_variants)
         start_gain.update(x.variant for x in self.start_node.variants
-            if not x.variant.is_circ_rna())
+            if not x.variant.is_circ_rna() and x.not_cleavage_altering())
 
         variants = set()
         for v in node.variants:

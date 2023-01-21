@@ -1032,9 +1032,7 @@ class PeptideVariantGraph():
         # for further start sites.
         if finding_start_site:
             for variant in target_node.variants:
-                if variant.variant.is_real_fusion \
-                        and not variant.upstream_cleavage_altering \
-                        and not variant.downstream_cleavage_altering:
+                if variant.variant.is_real_fusion and variant.not_cleavage_altering():
                     finding_start_site = False
                     real_fusion_position = variant.location.start
                     break
@@ -1094,13 +1092,12 @@ class PeptideVariantGraph():
                 for orf in cur_orfs:
                     if self.is_circ_rna():
                         start_gain = [v.variant for v in target_node.variants
-                            if not v.variant.is_circ_rna()]
+                            if not v.variant.is_circ_rna() and v.not_cleavage_altering()]
                         orf.start_gain.update(start_gain)
                     elif not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
-                                and not v.upstream_cleavage_altering
-                                and not v.downstream_cleavage_altering
+                                and v.not_cleavage_altering()
                                 and not v.variant.is_circ_rna()]
                         orf.start_gain.update(start_gain)
 

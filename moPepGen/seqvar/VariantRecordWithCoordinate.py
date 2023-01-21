@@ -22,6 +22,10 @@ class VariantRecordWithCoordinate():
         self.downstream_cleavage_altering = downstream_cleavage_altering
         self.upstream_cleavage_altering = upstream_cleavage_altering
 
+    def not_cleavage_altering(self) -> bool:
+        """ Whether is not downstream or upstream cleavage altering """
+        return not (self.upstream_cleavage_altering or self.downstream_cleavage_altering)
+
     def shift(self, index:int) -> VariantRecordWithCoordinate:
         """ Shift the coordinate of the object by a given number. """
         return self.__class__(
