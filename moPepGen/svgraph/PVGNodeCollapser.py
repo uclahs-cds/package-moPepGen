@@ -103,7 +103,8 @@ class PVGNodeCollapser():
             node_to_discard = None
 
         if node.has_any_indel():
-            indels = [x.variant for x in node.variants if x.variant.is_indel()]
+            indels = [x.variant for x in node.variants
+                if x.variant.is_indel() and not x.downstream_cleavage_altering]
             for upstream in node.in_nodes:
                 node_to_keep.upstream_indel_map[upstream] = indels
 
@@ -193,7 +194,8 @@ class PVGNodePopCollapser():
             node_to_discard = None
 
         if node.has_any_indel():
-            indels = [x.variant for x in node.variants if x.variant.is_indel()]
+            indels = [x.variant for x in node.variants
+                if x.variant.is_indel() and not x.downstream_cleavage_altering]
             for upstream in node.in_nodes:
                 node_to_keep.upstream_indel_map[upstream] = indels
 

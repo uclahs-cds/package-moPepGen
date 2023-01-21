@@ -1104,9 +1104,7 @@ class PeptideVariantGraph():
 
             # Add stop altering mutations
             for variant in target_node.variants:
-                if variant.is_stop_altering \
-                        and not variant.upstream_cleavage_altering \
-                        and not variant.downstream_cleavage_altering:
+                if variant.is_stop_altering and variant.not_cleavage_altering():
                     if start_indices and variant.location.end - 1 < start_indices[-1]:
                         continue
                     for x in cur_orfs:
@@ -1124,7 +1122,8 @@ class PeptideVariantGraph():
                         if orf_i.is_valid_orf(out_node, self.subgraphs, circ_rna):
                             filtered_orfs.append(orf_i_2)
                     else:
-                        orf_i_2.start_gain.update({x.variant for x in out_node.variants})
+                        orf_i_2.start_gain.update({x.variant for x in out_node.variants
+                            if x.not_cleavage_altering()})
                         filtered_orfs.append(orf_i_2)
                 if not filtered_orfs:
                     cur_in_cds = False
