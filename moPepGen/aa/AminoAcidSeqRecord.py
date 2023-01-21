@@ -343,10 +343,12 @@ class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
         """hash"""
         return hash(self.seq)
 
-    def get_query_index(self, ref_index:int, seqname:str) -> int:
+    def get_query_index(self, ref_index:int, seqname:str, reading_frame:int=None) -> int:
         """ Returns the query index wiht a given reference index """
         for location in self.locations:
             if location.ref.seqname != seqname:
+                continue
+            if reading_frame is not None and location.query.reading_frame_index != reading_frame:
                 continue
             if ref_index in location.ref:
                 return location.query.start + ref_index - location.ref.start

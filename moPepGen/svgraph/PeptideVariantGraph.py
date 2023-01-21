@@ -941,7 +941,8 @@ class PeptideVariantGraph():
 
         start_index = target_node.seq.get_query_index(
             ref_index=traversal.known_orf_aa[0],
-            seqname=self.id
+            seqname=self.id,
+            reading_frame=traversal.known_orf_tx[0] % 3
         )
         if start_index == -1:
             for out_node in target_node.out_nodes:
