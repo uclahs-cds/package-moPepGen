@@ -1129,7 +1129,7 @@ class ThreeFrameTVG():
 
         return out_nodes
 
-    def find_bridge_nodes_between(self, start:TVGNode, end=TVGNode
+    def find_bridge_nodes_between(self, start:TVGNode, end:TVGNode, members:Set[TVGNode]
             ) -> Tuple[Set[TVGNode], Set[TVGNode], Set[TVGNode], Set[TVGNode]]:
         """ Find all bridge in and bridge out nodes between a start and a
         end node. """
@@ -1150,8 +1150,10 @@ class ThreeFrameTVG():
 
             is_bridge_out = any(
                 e.out_node.get_first_rf_index() != this_id
-                    and e.out_node.get_last_rf_index() != this_id
-                    and e.out_node is not end
+                    or e.out_node.get_last_rf_index() != this_id
+                    and any(v.variant.is_frameshifting() for v in cur.variants)
+                    and not cur.is_reference()
+                    and e.out_node not in members
                 for e in cur.out_edges
             )
 
@@ -1172,7 +1174,8 @@ class ThreeFrameTVG():
                     continue
 
             for e in cur.in_edges:
-                if e.in_node.get_first_rf_index() != this_id or e.in_node.was_bridge:
+                if e.in_node.get_first_rf_index() != this_id or e.in_node.was_bridge \
+                        and e.in_node not in visited and e.in_node is not start:
                     bridge_in.add(e.in_node)
                 elif not self.is_circ_rna() and e.in_node.subgraph_id != cur.subgraph_id:
                     if not e.in_node.is_inframe_subgraph(start, end):
@@ -1222,8 +1225,8 @@ class ThreeFrameTVG():
 
         return up_subgraph.is_parent(down_subgraph)
 
-    def find_farthest_node_with_overlap(self, node:TVGNode, min_size:int=6
-            ) -> TVGNode:
+    def find_variant_bubble(self, node:TVGNode, min_size:int=6
+            ) -> Tuple[TVGNode, Set[TVGNode]]:
         r""" Find the farthest node, that within the range between the current
         node and it, there is at least one varint at any position of the
         reference sequence. If the farthest node found has an exclusive single
@@ -1247,9 +1250,9 @@ class ThreeFrameTVG():
         # find the range of overlaps
         farthest = None
         if not node.get_reference_next():
-            return None
+            return None, set()
         if not node.get_reference_next().out_edges:
-            return node.get_reference_next()
+            return node.get_reference_next(), set()
 
         is_candidate_out_node = lambda x,y: \
                 subgraph_checker is False \
@@ -1265,7 +1268,7 @@ class ThreeFrameTVG():
             # This means the input node is an end of a subgraph of alt splice
             # insertion/deletion, so no further aligning is needed. Thus return
             # the input node itself.
-            return node
+            return node, set()
 
         visited:Set[TVGNode] = {node}
         # When a new farthest node is found, the downstream nodes of the old
@@ -1346,7 +1349,7 @@ class ThreeFrameTVG():
             queue.append(farthest)
             exceptions.add(cur)
             continue
-        return farthest
+        return farthest, visited
 
     def first_node_is_smaller(self, first:TVGNode, second:TVGNode) -> bool:
         """ Check if the first node is larger """
@@ -1405,7 +1408,7 @@ class ThreeFrameTVG():
         rf_index = node.reading_frame_index
         if rf_index is None:
             raise ValueError('reading_frame_index not found')
-        end_node = self.find_farthest_node_with_overlap(node)
+        end_node, members = self.find_variant_bubble(node)
         if not self.is_circ_rna() and end_node.is_subgraph_end():
             subgraph_ends = {end_node}
             subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node))
@@ -1414,7 +1417,7 @@ class ThreeFrameTVG():
                 end_nodes.update(subgraph_end.get_out_nodes())
         else:
             end_nodes = {end_node}
-        bridges = self.find_bridge_nodes_between(start_node, end_node)
+        bridges = self.find_bridge_nodes_between(start_node, end_node, members)
         bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges
 
         for bridge in bridge_outs:

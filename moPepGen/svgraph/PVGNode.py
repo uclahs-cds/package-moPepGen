@@ -281,6 +281,10 @@ class PVGNode():
                 stop_lost.append(variant.variant)
         return stop_lost
 
+    def get_frames_shifted(self) -> int:
+        """ Get total frames shifted of all variants """
+        return sum([v.variant.frames_shifted for v in self.variants]) % 3
+
     def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. The next reference node
         is defined as the out node that has not variant, or not any variant
