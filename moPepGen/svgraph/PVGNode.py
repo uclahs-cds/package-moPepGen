@@ -252,7 +252,7 @@ class PVGNode():
         """ Get cleavage gain variants """
         cleavage_gain = []
         for variant in self.variants:
-            if variant.location.end == len(self.seq):
+            if variant.location.end == len(self.seq) and not variant.is_silent:
                 cleavage_gain.append(variant.variant)
         return cleavage_gain
 
