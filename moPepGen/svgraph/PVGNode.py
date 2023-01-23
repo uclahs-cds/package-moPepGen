@@ -440,6 +440,8 @@ class PVGNode():
             new_node.npop_collapsed = True
             if new_node.is_bridge():
                 self.was_bridge = True
+        else:
+            self.cpop_collapsed = False
 
         self.truncated = False
 
