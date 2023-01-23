@@ -1,6 +1,6 @@
 """ Module for TVGNode class """
 from __future__ import annotations
-from typing import List, Set, Tuple, Dict, Deque, TYPE_CHECKING
+from typing import List, Set, Tuple, Dict, Deque
 import copy
 from collections import deque
 import math
@@ -704,7 +704,7 @@ class TVGNode():
         return seq
 
     def check_stop_altering(self, tx_seq:Seq, cds_end:int=None):
-        """ """
+        """ Checks if any variant is stop altering """
         if not self.variants:
             return
 
