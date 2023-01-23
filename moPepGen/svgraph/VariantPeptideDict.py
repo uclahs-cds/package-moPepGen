@@ -196,7 +196,7 @@ class MiscleavedNodes():
                     for variant in node.variants:
                         if variant.is_silent:
                             continue
-                        if i > 0 and variant.upstream_cleavage_altering:
+                        if variant.upstream_cleavage_altering:
                             continue
                         variants.add(variant.variant)
                         if not variant.variant.is_circ_rna():
