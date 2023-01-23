@@ -39,7 +39,9 @@ class VariantRecordWithCoordinate():
                 end_offset=self.location.end_offset
             ),
             is_stop_altering=self.is_stop_altering,
-            is_silent=self.is_silent
+            is_silent=self.is_silent,
+            upstream_cleavage_altering=self.upstream_cleavage_altering,
+            downstream_cleavage_altering=self.downstream_cleavage_altering
         )
 
     def to_protein_coordinates(self) -> VariantRecordWithCoordinate:
