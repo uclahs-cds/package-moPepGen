@@ -82,6 +82,9 @@ class PVGNodeCollapser():
         collapse_node = PVGCollapseNode.from_pvg_node(node)
         same_collapse_node = get_equivalent(self.pool, collapse_node)
         original_upstreams = node.get_in_nodes()
+        # If it already has the upstream indel map, the node must be already
+        # collapsed at least once.
+        upstream_indel_resolved = bool(node.upstream_indel_map)
         if same_collapse_node:
             same_node = self.mapper[same_collapse_node]
 
@@ -105,7 +108,7 @@ class PVGNodeCollapser():
             node_to_keep = node
             node_to_discard = None
 
-        if node.has_any_indel():
+        if not upstream_indel_resolved and node.has_any_indel():
             indels = [x.variant for x in node.variants
                 if x.variant.is_indel() and not x.downstream_cleavage_altering]
             for upstream in original_upstreams:
