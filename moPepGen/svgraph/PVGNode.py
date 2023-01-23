@@ -267,8 +267,9 @@ class PVGNode():
             for v in node.variants:
                 if v.location.start != 0:
                     break
-                if not cleavage_gain and not v.is_silent \
-                        and not v.downstream_cleavage_altering:
+                if not cleavage_gain and not v.is_silent and v.not_cleavage_altering():
+                    # Avoid upstream cleavage altering variants in case the node
+                    # is carried over from a different upstream node after collapsing.
                     cleavage_gain.append(v.variant)
         return cleavage_gain
 

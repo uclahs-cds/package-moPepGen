@@ -1,5 +1,6 @@
 """ Module to collapse PNVNode if they have the same sequence """
 from __future__ import annotations
+import copy
 from typing import Dict, Set
 from moPepGen import get_equivalent
 from moPepGen.svgraph.PVGNode import PVGNode
@@ -80,6 +81,7 @@ class PVGNodeCollapser():
         """ Collapse the given node if it has the same in the pool """
         collapse_node = PVGCollapseNode.from_pvg_node(node)
         same_collapse_node = get_equivalent(self.pool, collapse_node)
+        original_upstreams = node.get_in_nodes()
         if same_collapse_node:
             same_node = self.mapper[same_collapse_node]
 
@@ -95,7 +97,8 @@ class PVGNodeCollapser():
                 node.transfer_in_nodes_to(same_node)
                 node_to_keep = same_node
                 node_to_discard = node
-            node_to_keep.upstream_indel_map.update(node_to_discard.upstream_indel_map)
+            indel_map = {k:copy.copy(v) for k,v in node_to_discard.upstream_indel_map.items()}
+            node_to_keep.upstream_indel_map.update(indel_map)
         else:
             self.pool.add(collapse_node)
             self.mapper[collapse_node] = node
@@ -105,8 +108,8 @@ class PVGNodeCollapser():
         if node.has_any_indel():
             indels = [x.variant for x in node.variants
                 if x.variant.is_indel() and not x.downstream_cleavage_altering]
-            for upstream in node.in_nodes:
-                node_to_keep.upstream_indel_map[upstream] = indels
+            for upstream in original_upstreams:
+                node_to_keep.upstream_indel_map[upstream] = copy.copy(indels)
 
         return node_to_discard
 
