@@ -140,6 +140,45 @@ class PVGNode():
         """ Get incoming nodes as a list """
         return list(self.in_nodes)
 
+    def has_multiple_segments(self) -> bool:
+        """ Whether the node has multiple segments, which is when the node
+        is merged from several individual nodes. """
+        n = len(self.seq.locations)
+        for v in self.variants:
+            if not (v.variant.is_fusion() \
+                    or v.variant.is_circ_rna() \
+                    or (v.variant.is_alternative_splicing() and not v.variant.is_deletion())):
+                n += 1
+        return n > 1
+
+    def _get_nth_rf_index(self, i:int) -> int:
+        """ """
+        if (i > 0 or i < -1) and not self.has_multiple_segments():
+            raise ValueError('Node does not have multiple segments')
+
+        locations = [loc.query for loc in self.seq.locations]
+        for v in self.variants:
+            if not (v.variant.is_fusion() \
+                    or v.variant.is_circ_rna() \
+                    or (v.variant.is_alternative_splicing() and not v.variant.is_deletion())):
+                locations.append(v.location)
+
+        locations.sort()
+
+        return locations[i].reading_frame_index
+
+    def get_first_rf_index(self) -> int:
+        """ Get the first fragment's reading frame index """
+        return self._get_nth_rf_index(0)
+
+    def get_second_rf_index(self) -> int:
+        """ Get the second fragment's reading frame index """
+        return self._get_nth_rf_index(1)
+
+    def get_last_rf_index(self) -> int:
+        """ Get the last fragment's reading frame index """
+        return self._get_nth_rf_index(-1)
+
     def remove_out_edges(self) -> None:
         """ remove output nodes """
         for node in copy.copy(self.out_nodes):
@@ -252,13 +291,15 @@ class PVGNode():
         """ Get cleavage gain variants """
         cleavage_gain = []
         for variant in self.variants:
-            if variant.location.end == len(self.seq):
+            if variant.location.end == len(self.seq) and not variant.is_silent:
                 cleavage_gain.append(variant.variant)
         return cleavage_gain
 
     def get_cleavage_gain_from_downstream(self) -> List[seqvar.VariantRecord]:
         """ Get the variants that gains the cleavage by downstream nodes """
         cleavage_gain = []
+        upstream_cleave_alts = [v.variant for v in self.variants
+            if v.location.end == len(self.seq.seq)]
         for node in self.out_nodes:
             if not node.variants:
                 return []
@@ -269,6 +310,9 @@ class PVGNode():
                     break
                 if not cleavage_gain and not v.is_silent \
                         and not v.downstream_cleavage_altering:
+                    if v.upstream_cleavage_altering:
+                        if not any(x == v.variant for x in upstream_cleave_alts):
+                            continue
                     cleavage_gain.append(v.variant)
         return cleavage_gain
 
@@ -280,6 +324,10 @@ class PVGNode():
             if variant.variant.location.overlaps(stop_codon):
                 stop_lost.append(variant.variant)
         return stop_lost
+
+    def frames_shifted(self) -> int:
+        """ Get total frames shifted of all variants """
+        return sum([v.variant.frames_shifted() for v in self.variants]) % 3
 
     def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. The next reference node
@@ -398,7 +446,8 @@ class PVGNode():
                     left_variants.append(variant)
                 else:
                     left_variants.append(variant[:index])
-            elif variant.location.start == index and cleavage:
+            elif variant.location.start == index and cleavage \
+                    and not variant.downstream_cleavage_altering:
                 cleave_alts = variant[index:index+1]
                 cleave_alts = cleave_alts.shift(-1)
                 cleave_alts.downstream_cleavage_altering = True
@@ -406,7 +455,8 @@ class PVGNode():
 
             if variant.location.end > index:
                 right_variants.append(variant.shift(-index))
-            elif variant.location.end == index and cleavage:
+            elif variant.location.end == index and cleavage \
+                    and not variant.upstream_cleavage_altering:
                 cleave_alts = variant.shift(-index)
                 cleave_alts.upstream_cleavage_altering = True
                 right_variants.append(cleave_alts)
@@ -436,6 +486,8 @@ class PVGNode():
             new_node.npop_collapsed = True
             if new_node.is_bridge():
                 self.was_bridge = True
+        else:
+            self.cpop_collapsed = False
 
         self.truncated = False
 

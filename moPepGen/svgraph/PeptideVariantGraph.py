@@ -108,6 +108,14 @@ class PeptideVariantGraph():
             node.remove_out_edge(out_node)
         del node
 
+    def remove_edge(self, in_node:PVGNode, out_node:PVGNode) -> None:
+        """ Remove an edge """
+        in_node.remove_out_edge(out_node)
+        if not in_node.out_nodes:
+            self.remove_node(in_node)
+        if not out_node.in_nodes:
+            self.remove_node(out_node)
+
     def known_reading_frame_index(self) -> int:
         """ Get the readign frame index of the known ORF. """
         return self.known_orf[0] % 3
@@ -340,8 +348,17 @@ class PeptideVariantGraph():
         `merge_nodes_routes` in the graph updating functions such as
         merge_forward, merge_backward etc. """
         downstreams:Set[PVGNode] = set()
+        downstream_2_nodes:Dict[FrozenSet[PVGNode], List[PVGNode]] = {}
         for node in nodes:
-            if node.reading_frame_index != reading_frame_index:
+            out_nodes = frozenset(node.out_nodes)
+            if out_nodes in downstream_2_nodes:
+                downstream_2_nodes[out_nodes].append(node)
+            else:
+                downstream_2_nodes[out_nodes] = [node]
+        for node in nodes:
+            if node.seq.seq == '*' and not node.out_nodes:
+                continue
+            if node.get_last_rf_index() != reading_frame_index:
                 continue
             is_deletion_only_end = any(x.variant.type == 'Deletion' for x in node.variants) \
                 and len(node.out_nodes) == 1 \
@@ -369,7 +386,7 @@ class PeptideVariantGraph():
                     downstreams.add(node)
             else:
                 if len(node.out_nodes) > 1:
-                    downstreams.add(node)
+                    downstreams.update(downstream_2_nodes[frozenset(node.out_nodes)])
                     continue
                 for downstream in node.out_nodes:
                     if downstream is self.stop:
@@ -491,7 +508,7 @@ class PeptideVariantGraph():
             singleton, or the downstream node otherwise.
         """
         reading_frame_index = node.reading_frame_index
-        routes, trash = self.find_routes_for_merging(node, True)
+        routes, _ = self.find_routes_for_merging(node, True)
 
         heads = set()
         for x in routes:
@@ -502,8 +519,6 @@ class PeptideVariantGraph():
         if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
-        for trash_node in trash:
-            self.remove_node(trash_node)
         return downstreams, inbridge_list
 
     def expand_forward(self, node:PVGNode) -> T:
@@ -544,8 +559,6 @@ class PeptideVariantGraph():
         new_nodes = self.collapse_nodes_backward(new_nodes, heads)
         # new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
-        for trash_node in trash:
-            self.remove_node(trash_node)
         return downstreams, inbridge_list
 
     def merge_join(self, node:PVGNode) -> T:
@@ -568,7 +581,7 @@ class PeptideVariantGraph():
             singleton, or the downstream node otherwise.
         """
         reading_frame_index = node.reading_frame_index
-        routes, trash = self.find_routes_for_merging(node)
+        routes, _ = self.find_routes_for_merging(node)
 
         heads = set()
         for x in routes:
@@ -579,8 +592,6 @@ class PeptideVariantGraph():
         if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
-        for trash_node in trash:
-            self.remove_node(trash_node)
         return downstreams, inbridge_list
 
     def cross_join(self, node:PVGNode, site:int) -> T:
@@ -604,7 +615,7 @@ class PeptideVariantGraph():
         self.collapse_end_nodes(left_nodes)
         # self.pop_collapse_end_nodes(new_nodes)
 
-        routes, trash = self.find_routes_for_merging(head, True)
+        routes, _ = self.find_routes_for_merging(head, True)
 
         heads = set()
         for x in routes:
@@ -615,8 +626,6 @@ class PeptideVariantGraph():
         if len(new_nodes) > self.cleavage_params.min_nodes_to_collapse:
             new_nodes = self.pop_collapse_end_nodes(new_nodes)
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
-        for trash_node in trash:
-            self.remove_node(trash_node)
         return downstreams, inbridge_list
 
     def create_cleavage_graph(self) -> None:
@@ -941,7 +950,8 @@ class PeptideVariantGraph():
 
         start_index = target_node.seq.get_query_index(
             ref_index=traversal.known_orf_aa[0],
-            seqname=self.id
+            seqname=self.id,
+            reading_frame=traversal.known_orf_tx[0] % 3
         )
         if start_index == -1:
             for out_node in target_node.out_nodes:
@@ -1032,9 +1042,7 @@ class PeptideVariantGraph():
         # for further start sites.
         if finding_start_site:
             for variant in target_node.variants:
-                if variant.variant.is_real_fusion \
-                        and not variant.upstream_cleavage_altering \
-                        and not variant.downstream_cleavage_altering:
+                if variant.variant.is_real_fusion and variant.not_cleavage_altering():
                     finding_start_site = False
                     real_fusion_position = variant.location.start
                     break
@@ -1094,21 +1102,18 @@ class PeptideVariantGraph():
                 for orf in cur_orfs:
                     if self.is_circ_rna():
                         start_gain = [v.variant for v in target_node.variants
-                            if not v.variant.is_circ_rna()]
+                            if not v.variant.is_circ_rna() and v.not_cleavage_altering()]
                         orf.start_gain.update(start_gain)
                     elif not orf.start_gain:
                         start_gain = [v.variant for v in target_node.variants
                             if v.variant.is_frameshifting()
-                                and not v.upstream_cleavage_altering
-                                and not v.downstream_cleavage_altering
+                                and v.not_cleavage_altering()
                                 and not v.variant.is_circ_rna()]
                         orf.start_gain.update(start_gain)
 
             # Add stop altering mutations
             for variant in target_node.variants:
-                if variant.is_stop_altering \
-                        and not variant.upstream_cleavage_altering \
-                        and not variant.downstream_cleavage_altering:
+                if variant.is_stop_altering and variant.not_cleavage_altering():
                     if start_indices and variant.location.end - 1 < start_indices[-1]:
                         continue
                     for x in cur_orfs:
@@ -1126,7 +1131,8 @@ class PeptideVariantGraph():
                         if orf_i.is_valid_orf(out_node, self.subgraphs, circ_rna):
                             filtered_orfs.append(orf_i_2)
                     else:
-                        orf_i_2.start_gain.update({x.variant for x in out_node.variants})
+                        orf_i_2.start_gain.update({x.variant for x in out_node.variants
+                            if x.not_cleavage_altering()})
                         filtered_orfs.append(orf_i_2)
                 if not filtered_orfs:
                     cur_in_cds = False

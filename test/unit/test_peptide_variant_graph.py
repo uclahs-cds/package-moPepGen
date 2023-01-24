@@ -25,7 +25,9 @@ def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
         locs = []
         for (query_start, query_end), (ref_start, ref_end) in val[3]:
             loc = MatchedLocation(
-                query=FeatureLocation(start=query_start, end=query_end),
+                query=FeatureLocation(
+                    start=query_start, end=query_end, reading_frame_index=val[4]
+                ),
                 ref=FeatureLocation(start=ref_start, end=ref_end, seqname=_id)
             )
             locs.append(loc)
@@ -42,10 +44,12 @@ def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
         for it in val[2]:
             if it is None:
                 continue
-            location_transcirpt = FeatureLocation(start=it[0], end=it[1])
-            location_peptide = FeatureLocation(start=it[6], end=it[7])
+            location_transcript = FeatureLocation(start=it[0], end=it[1])
+            location_peptide = FeatureLocation(
+                start=it[6], end=it[7], reading_frame_index=val[4]
+            )
             var_record = seqvar.VariantRecord(
-                location=location_transcirpt,
+                location=location_transcript,
                 ref=it[2],
                 alt=it[3],
                 _type=it[4],

@@ -1094,7 +1094,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
         seq = 'ATGGTCTGACCCT'
         graph, nodes = create_three_frame_tvg(data, seq)
-        node = graph.find_farthest_node_with_overlap(nodes[1])
+        node, _ = graph.find_variant_bubble(nodes[1])
         self.assertIs(node, nodes[6])
 
     def test_find_farthest_node_with_overlap_case2(self):
@@ -1119,7 +1119,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
         seq = 'ATGGTCTGCCCT'
         graph, nodes = create_three_frame_tvg(data, seq)
-        node = graph.find_farthest_node_with_overlap(nodes[1])
+        node, _ = graph.find_variant_bubble(nodes[1])
         print(node.seq.seq)
         self.assertIs(node, nodes[9])
 
@@ -1137,7 +1137,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
         seq = 'ATGGT'
         graph, nodes = create_three_frame_tvg(data, seq)
-        node = graph.find_farthest_node_with_overlap(nodes[1])
+        node, _ = graph.find_variant_bubble(nodes[1])
         self.assertEqual(str(node.seq.seq), 'T')
 
     def test_find_farthest_node_with_overlap_case5_with_branch(self):
@@ -1158,7 +1158,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
         seq = 'ATGGTCTGACGCCCT'
         graph, nodes = create_three_frame_tvg(data, seq)
-        node = graph.find_farthest_node_with_overlap(nodes[1])
+        node, _ = graph.find_variant_bubble(nodes[1])
         self.assertIs(node, nodes[5])
 
     def test_find_farthest_node_with_exclusive_outbond(self):
@@ -1180,5 +1180,5 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         }
         seq = 'ATGGTCTCGCCCTGTTGGCCC'
         graph, nodes = create_three_frame_tvg(data, seq)
-        node = graph.find_farthest_node_with_overlap(nodes[1])
+        node, _ = graph.find_variant_bubble(nodes[1])
         self.assertIs(node, nodes[7])

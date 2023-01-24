@@ -131,8 +131,7 @@ class PVGOrf():
         ORF start site. """
         if node.seq.locations:
             loc = node.seq.locations[-1]
-            rf_index = loc.query.reading_frame_index
-            i = (loc.ref.end - 1) * 3 + rf_index
+            i = loc.ref.end * 3 - loc.query.end_offset
             subgraph_id = node.seq.locations[-1].ref.seqname
         else:
             for v in reversed(node.variants):
@@ -158,7 +157,7 @@ class PVGOrf():
         start_gain = {x for x in self.start_gain if not x.is_circ_rna()}
         start_gain.update(upstream_variants)
         start_gain.update(x.variant for x in self.start_node.variants
-            if not x.variant.is_circ_rna())
+            if not x.variant.is_circ_rna() and x.not_cleavage_altering())
 
         variants = set()
         for v in node.variants:

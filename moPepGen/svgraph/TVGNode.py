@@ -1,17 +1,14 @@
 """ Module for TVGNode class """
 from __future__ import annotations
-from typing import List, Set, Tuple, Dict, Deque, TYPE_CHECKING
+from typing import List, Set, Tuple, Dict, Deque
 import copy
 from collections import deque
 import math
-import re
+from Bio.Seq import Seq
 from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph, aa
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
-
-if TYPE_CHECKING:
-    from Bio.Seq import Seq
 
 class TVGNode():
     """ Defines the nodes in the TranscriptVariantGraph
@@ -652,6 +649,40 @@ class TVGNode():
             level=self.level
         )
 
+    def get_ith_variant_var_aa(self, i:int) -> Seq:
+        """ Get the variant amino acid sequence of the ith variant """
+        v = self.variants[i]
+        loc = v.location
+        lhs = loc.start - loc.start % 3
+        rhs = loc.end + (3 - loc.end % 3) % 3
+        rhs = min(rhs, len(self.seq.seq))
+        seq = self.seq.seq[lhs:rhs]
+        seq = seq[:len(seq) - len(seq) % 3]
+        return seq.translate(to_stop=False)
+
+    def get_ith_variant_ref_aa(self, i:int, tx_seq:Seq) -> Seq:
+        """ Get the reference amino acid sequence of the ith variant. """
+        v = self.variants[i]
+        loc = v.location
+        lhs = loc.start - loc.start % 3
+
+        seq = Seq('')
+        if v.variant.type in ['Deletion', 'Substitution']:
+            seq += tx_seq[v.variant.location.start:v.variant.location.end]
+        elif v.variant.type != 'Insertion':
+            seq += Seq(v.variant.ref)
+
+        if lhs < loc.start:
+            seq = self.seq.seq[lhs:loc.start] + seq
+
+        rhs = v.variant.location.end + (3 - len(seq) % 3) % 3
+        rhs = min(rhs, len(tx_seq))
+
+        if rhs > v.variant.location.end:
+            seq += tx_seq[v.variant.location.end:rhs]
+        seq = seq[:len(seq) - len(seq) % 3]
+        return seq.translate(to_stop=False)
+
     def get_ref_sequence(self, tx_seq:Seq) -> Seq:
         """ Get the reference sequence """
         if not self.variants:
@@ -672,7 +703,7 @@ class TVGNode():
         return seq
 
     def check_stop_altering(self, tx_seq:Seq, cds_end:int=None):
-        """ Checks whether each variant is stop lost """
+        """ Checks if any variant is stop altering """
         if not self.variants:
             return
 
@@ -686,50 +717,23 @@ class TVGNode():
                     variant.is_stop_altering = True
             return
 
-        ref_seq = self.get_ref_sequence(tx_seq)
-        ref_seq = ref_seq[:math.floor(len(ref_seq)/3)*3]
-        ref_aa = ref_seq.translate(to_stop=False)
+        if self.global_variant and self.global_variant.is_fusion():
+            return
 
-        alt_aa = self.seq.seq[:math.floor(len(self.seq)/3)*3].translate()
-
-        stop_positions = [x.start() * 3 for x in re.finditer(r'\*', str(ref_aa))]
-
-        offset = 0
-        iter_stop = iter(stop_positions)
-        iter_var = iter(self.variants)
-
-        i_stop = next(iter_stop, None)
-        i_var = next(iter_var, None)
-
-        while i_var is not None:
-            var_start_aa = int(i_var.location.start / 3)
-            if all(v.variant.is_snv() for v in self.variants) \
-                    and ref_aa[var_start_aa:var_start_aa+1] \
-                        == alt_aa[var_start_aa:var_start_aa+1]:
-                i_var.is_silent = True
-
-            if i_stop is None:
-                i_var = next(iter_var, None)
+        for i,v in enumerate(self.variants):
+            if v.variant.type in {'Fusion', 'circRNA'}:
                 continue
-
-            i_stop_aa = int(i_stop / 3)
-            var_size = len(i_var.variant.location)
-
-            if i_var.location.start + offset + var_size < i_stop:
-                i_var = next(iter_var, None)
-                continue
-
-            if  i_var.location.start + offset >= i_stop + 3:
-                i_stop = next(iter_stop, None)
-                continue
-
-            if ref_aa[i_stop_aa:i_stop_aa+1] == alt_aa[var_start_aa:var_start_aa+1] == '*':
-                i_var = next(iter_var, None)
-                continue
-
-            i_var.is_stop_altering = True
-            offset += i_var.variant.frames_shifted()
-            i_var = next(iter_var, None)
+            ref_aa = self.get_ith_variant_ref_aa(i, tx_seq)
+            var_aa = self.get_ith_variant_var_aa(i)
+            v.is_silent = v.variant.is_snv() and ref_aa == var_aa
+            v.is_stop_altering = \
+                (v.variant.is_snv() and ref_aa == '*' and var_aa != '*') \
+                or (v.variant.is_insertion() and ref_aa =='*'
+                    and not var_aa.startswith('*')) \
+                or (v.variant.is_deletion() and '*' in ref_aa
+                    and not (ref_aa.startswith('*') and var_aa.startswith('*'))) \
+                or (v.variant.type == 'Substitution'
+                    and '*' in ref_aa and ref_aa != var_aa)
 
     def is_less_mutated_than(self, other:TVGNode) -> bool:
         """ Checks if this node has less mutation than the other """
