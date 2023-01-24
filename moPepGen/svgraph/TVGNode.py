@@ -4,7 +4,6 @@ from typing import List, Set, Tuple, Dict, Deque
 import copy
 from collections import deque
 import math
-import re
 from Bio.Seq import Seq
 from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph, aa
