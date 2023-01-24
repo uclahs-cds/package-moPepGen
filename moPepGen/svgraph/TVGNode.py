@@ -736,66 +736,6 @@ class TVGNode():
                 or (v.variant.type == 'Substitution'
                     and '*' in ref_aa and ref_aa != var_aa)
 
-    def check_stop_altering2(self, tx_seq:Seq, cds_end:int=None):
-        """ Checks whether each variant is stop lost """
-        if not self.variants:
-            return
-
-        if cds_end:
-            stop_codon = FeatureLocation(start=cds_end, end=cds_end + 3)
-            if not self.get_node_start_reference_index() < cds_end < \
-                    self.get_node_end_reference_index():
-                return
-            for variant in self.variants:
-                if stop_codon.overlaps(variant.variant.location):
-                    variant.is_stop_altering = True
-            return
-
-        ref_seq = self.get_ref_sequence(tx_seq)
-        ref_seq = ref_seq[:math.floor(len(ref_seq)/3)*3]
-        ref_aa = ref_seq.translate(to_stop=False)
-
-        alt_aa = self.seq.seq[:math.floor(len(self.seq)/3)*3].translate()
-
-        stop_positions = [x.start() * 3 for x in re.finditer(r'\*', str(ref_aa))]
-
-        offset = 0
-        iter_stop = iter(stop_positions)
-        iter_var = iter(self.variants)
-
-        i_stop = next(iter_stop, None)
-        i_var = next(iter_var, None)
-
-        while i_var is not None:
-            var_start_aa = int(i_var.location.start / 3)
-            if all(v.variant.is_snv() for v in self.variants) \
-                    and ref_aa[var_start_aa:var_start_aa+1] \
-                        == alt_aa[var_start_aa:var_start_aa+1]:
-                i_var.is_silent = True
-
-            if i_stop is None:
-                i_var = next(iter_var, None)
-                continue
-
-            i_stop_aa = int(i_stop / 3)
-            var_size = len(i_var.variant.location)
-
-            if i_var.location.start + offset + var_size < i_stop:
-                i_var = next(iter_var, None)
-                continue
-
-            if  i_var.location.start + offset >= i_stop + 3:
-                i_stop = next(iter_stop, None)
-                continue
-
-            if ref_aa[i_stop_aa:i_stop_aa+1] == alt_aa[var_start_aa:var_start_aa+1] == '*':
-                i_var = next(iter_var, None)
-                continue
-
-            i_var.is_stop_altering = True
-            offset += i_var.variant.frames_shifted()
-            i_var = next(iter_var, None)
-
     def is_less_mutated_than(self, other:TVGNode) -> bool:
         """ Checks if this node has less mutation than the other """
         self_vars = [v for v in self.variants if v.variant is not self.global_variant]
