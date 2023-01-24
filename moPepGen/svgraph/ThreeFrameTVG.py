@@ -1227,11 +1227,10 @@ class ThreeFrameTVG():
 
     def find_variant_bubble(self, node:TVGNode, min_size:int=6
             ) -> Tuple[TVGNode, Set[TVGNode]]:
-        r""" Find the farthest node, that within the range between the current
-        node and it, there is at least one varint at any position of the
-        reference sequence. If the farthest node found has an exclusive single
-        out node, it extends to. For circular graph, this extension won't
-        continue if the exclusive single node is root.
+        r""" Find the variable bubble, and return the end node and all
+        member nodes of the bubble. The end node is defined as the first node
+        downstream that no any variant is at its location, and the length is
+        at longer or equal to `min_size`.
 
         For example, in a graph like below, the node ATGG's farthest node
         with overlap would be node 'CCCT'
