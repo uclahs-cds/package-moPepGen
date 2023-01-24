@@ -348,8 +348,15 @@ class PeptideVariantGraph():
         `merge_nodes_routes` in the graph updating functions such as
         merge_forward, merge_backward etc. """
         downstreams:Set[PVGNode] = set()
+        downstream_2_nodes:Dict[FrozenSet[PVGNode], List[PVGNode]] = {}
         for node in nodes:
-            if node.reading_frame_index != reading_frame_index:
+            out_nodes = frozenset(node.out_nodes)
+            if out_nodes in downstream_2_nodes:
+                downstream_2_nodes[out_nodes].append(node)
+            else:
+                downstream_2_nodes[out_nodes] = [node]
+        for node in nodes:
+            if node.get_last_rf_index() != reading_frame_index:
                 continue
             is_deletion_only_end = any(x.variant.type == 'Deletion' for x in node.variants) \
                 and len(node.out_nodes) == 1 \
@@ -377,7 +384,7 @@ class PeptideVariantGraph():
                     downstreams.add(node)
             else:
                 if len(node.out_nodes) > 1:
-                    downstreams.add(node)
+                    downstreams.update(downstream_2_nodes[frozenset(node.out_nodes)])
                     continue
                 for downstream in node.out_nodes:
                     if downstream is self.stop:

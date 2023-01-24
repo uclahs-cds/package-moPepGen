@@ -140,6 +140,45 @@ class PVGNode():
         """ Get incoming nodes as a list """
         return list(self.in_nodes)
 
+    def has_multiple_segments(self) -> bool:
+        """ Whether the node has multiple segments, which is when the node
+        is merged from several individual nodes. """
+        n = len(self.seq.locations)
+        for v in self.variants:
+            if not (v.variant.is_fusion() \
+                    or v.variant.is_circ_rna() \
+                    or (v.variant.is_alternative_splicing() and not v.variant.is_deletion())):
+                n += 1
+        return n > 1
+
+    def _get_nth_rf_index(self, i:int) -> int:
+        """ """
+        if (i > 0 or i < -1) and not self.has_multiple_segments():
+            raise ValueError('Node does not have multiple segments')
+
+        locations = [loc.query for loc in self.seq.locations]
+        for v in self.variants:
+            if not (v.variant.is_fusion() \
+                    or v.variant.is_circ_rna() \
+                    or (v.variant.is_alternative_splicing() and not v.variant.is_deletion())):
+                locations.append(v.location)
+
+        locations.sort()
+
+        return locations[i].reading_frame_index
+
+    def get_first_rf_index(self) -> int:
+        """ Get the first fragment's reading frame index """
+        return self._get_nth_rf_index(0)
+
+    def get_second_rf_index(self) -> int:
+        """ Get the second fragment's reading frame index """
+        return self._get_nth_rf_index(1)
+
+    def get_last_rf_index(self) -> int:
+        """ Get the last fragment's reading frame index """
+        return self._get_nth_rf_index(-1)
+
     def remove_out_edges(self) -> None:
         """ remove output nodes """
         for node in copy.copy(self.out_nodes):
@@ -286,9 +325,9 @@ class PVGNode():
                 stop_lost.append(variant.variant)
         return stop_lost
 
-    def get_frames_shifted(self) -> int:
+    def frames_shifted(self) -> int:
         """ Get total frames shifted of all variants """
-        return sum([v.variant.frames_shifted for v in self.variants]) % 3
+        return sum([v.variant.frames_shifted() for v in self.variants]) % 3
 
     def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. The next reference node

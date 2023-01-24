@@ -29,8 +29,8 @@ class PVGCollapseNode(PVGNode):
             and self.npop_collapsed == other.npop_collapsed == False \
             and {v.variant for v in self.variants if v.variant.is_alternative_splicing()} \
                 == {v.variant for v in other.variants if v.variant.is_alternative_splicing()} \
-            and {v.variant for v in self.variants if v.variant.is_inframe_indel()} \
-                == {v.variant for v in other.variants if v.variant.is_inframe_indel()} \
+            and {v.variant for v in self.variants if v.variant.is_frameshifting()} \
+                == {v.variant for v in other.variants if v.variant.is_frameshifting()} \
             and self.subgraph_id == other.subgraph_id \
             and self.level == other.level
 
