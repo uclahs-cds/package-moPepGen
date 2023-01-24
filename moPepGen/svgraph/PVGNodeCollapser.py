@@ -100,6 +100,12 @@ class PVGNodeCollapser():
                 node.transfer_in_nodes_to(same_node)
                 node_to_keep = same_node
                 node_to_discard = node
+
+            for out_node in node_to_discard.get_out_nodes():
+                if node_to_discard in out_node.upstream_indel_map:
+                    indels = out_node.upstream_indel_map.pop(node_to_discard)
+                    out_node.upstream_indel_map[node_to_keep] = indels
+
             indel_map = {k:copy.copy(v) for k,v in node_to_discard.upstream_indel_map.items()}
             node_to_keep.upstream_indel_map.update(indel_map)
         else:
@@ -193,6 +199,12 @@ class PVGNodePopCollapser():
                 node.transfer_in_nodes_to(same_node)
                 node_to_keep = same_node
                 node_to_discard = node
+
+            for out_node in node_to_discard.get_out_nodes():
+                if node_to_discard in out_node.upstream_indel_map:
+                    indels = out_node.upstream_indel_map.pop(node_to_discard)
+                    out_node.upstream_indel_map[node_to_keep] = indels
+
         else:
             self.pool.add(collapse_node)
             self.mapper[collapse_node] = node
