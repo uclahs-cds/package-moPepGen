@@ -29,8 +29,8 @@ class PVGCollapseNode(PVGNode):
             and self.npop_collapsed == other.npop_collapsed == False \
             and {v.variant for v in self.variants if v.variant.is_alternative_splicing()} \
                 == {v.variant for v in other.variants if v.variant.is_alternative_splicing()} \
-            and {v.variant for v in self.variants if v.variant.is_frameshifting()} \
-                == {v.variant for v in other.variants if v.variant.is_frameshifting()} \
+            and {v.variant for v in self.variants if v.variant.is_indel()} \
+                == {v.variant for v in other.variants if v.variant.is_indel()} \
             and self.subgraph_id == other.subgraph_id \
             and self.level == other.level
 
@@ -100,6 +100,12 @@ class PVGNodeCollapser():
                 node.transfer_in_nodes_to(same_node)
                 node_to_keep = same_node
                 node_to_discard = node
+
+            for out_node in node_to_discard.get_out_nodes():
+                if node_to_discard in out_node.upstream_indel_map:
+                    indels = out_node.upstream_indel_map.pop(node_to_discard)
+                    out_node.upstream_indel_map[node_to_keep] = indels
+
             indel_map = {k:copy.copy(v) for k,v in node_to_discard.upstream_indel_map.items()}
             node_to_keep.upstream_indel_map.update(indel_map)
         else:
@@ -142,8 +148,8 @@ class PVGPopCollapseNode(PVGNode):
             and self.subgraph_id == other.subgraph_id \
             and {v.variant for v in self.variants if v.variant.is_alternative_splicing()}\
                 == {v.variant for v in other.variants if v.variant.is_alternative_splicing()} \
-            and {v.variant for v in self.variants if v.variant.is_inframe_indel()} \
-                == {v.variant for v in other.variants if v.variant.is_inframe_indel()} \
+            and {v.variant for v in self.variants if v.variant.is_indel()} \
+                == {v.variant for v in other.variants if v.variant.is_indel()} \
             and self.subgraph_id == other.subgraph_id \
             and self.level == other.level
 
@@ -193,6 +199,12 @@ class PVGNodePopCollapser():
                 node.transfer_in_nodes_to(same_node)
                 node_to_keep = same_node
                 node_to_discard = node
+
+            for out_node in node_to_discard.get_out_nodes():
+                if node_to_discard in out_node.upstream_indel_map:
+                    indels = out_node.upstream_indel_map.pop(node_to_discard)
+                    out_node.upstream_indel_map[node_to_keep] = indels
+
         else:
             self.pool.add(collapse_node)
             self.mapper[collapse_node] = node
