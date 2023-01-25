@@ -1018,7 +1018,6 @@ class PeptideVariantGraph():
         is in CDS. For each of its outbond node, stage it until all inbond
         edges of the outbond node is visited. """
         target_node = cursor.out_node
-        source_node = cursor.in_node
         in_cds = cursor.in_cds
         orfs = [orf.copy() for orf in cursor.orfs]
         finding_start_site = cursor.finding_start_site
