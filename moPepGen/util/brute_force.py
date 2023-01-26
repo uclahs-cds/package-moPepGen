@@ -2,6 +2,7 @@
 import copy
 import sys
 import argparse
+import math
 from typing import Iterable, List, Dict, Set, Tuple
 from pathlib import Path
 from itertools import combinations
@@ -198,8 +199,7 @@ class BruteForceVariantPeptideCaller():
         return any(v.variant.is_circ_rna() for v in variants) \
             or self.tx_model.is_mrna_end_nf()
 
-    @staticmethod
-    def has_any_variant(lhs:int, rhs:int, cds_start:int,
+    def has_any_variant(self, lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
@@ -210,6 +210,10 @@ class BruteForceVariantPeptideCaller():
         query = FeatureLocation(start=lhs, end=rhs)
         start_loc = FeatureLocation(start=cds_start, end=cds_start + 3)
         rf_index = cds_start % 3
+        frames_shifted = 0
+        upstream_indels:List[VariantRecordWithCoordinate] = []
+        is_coding = self.tx_model.is_protein_coding \
+            and not any(v.variant.is_circ_rna() for v in variants)
         for i, variant_coordinate in enumerate(variants):
             variant = variant_coordinate.variant
             loc = variant_coordinate.location
@@ -219,6 +223,11 @@ class BruteForceVariantPeptideCaller():
                 break
             is_start_gain = start_loc.overlaps(loc)
             is_frameshifting = cds_start < loc.start < lhs and variant.is_frameshifting()
+            if cds_start < loc.start < lhs:
+                frames_shifted = (frames_shifted + variant.frames_shifted()) % 3
+                if variant.is_frameshifting() \
+                        and not (variant.is_fusion() or variant.is_circ_rna()):
+                    upstream_indels.append(variant_coordinate)
             is_cleavage_gain = (loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
                     or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))) \
                 if cds_start != lhs \
@@ -235,14 +244,33 @@ class BruteForceVariantPeptideCaller():
 
             if (loc.overlaps(query) \
                         or is_start_gain \
-                        or is_frameshifting \
+                        or (is_frameshifting and not is_coding) \
                         or is_cleavage_gain \
                         or is_stop_lost \
                         or is_stop_gain ) \
                     and not is_silent_mutation:
                 return True
             offset += len(variant.alt) - len(variant.ref)
+
+        if frames_shifted > 0:
+            return True
+
+        # If there are multiple frameshifts but the overall frames shifted is 0,
+        # then checks if the reference sequence skipped has any stop codon.
+        if len(upstream_indels) > 1:
+            first_start = upstream_indels[0].variant.location.start
+            last_end = upstream_indels[-1].variant.location.end
+            rf_index = cds_start % 3
+            if self.has_any_stop_codon_between(first_start, last_end, rf_index):
+                return True
         return False
+
+    def has_any_stop_codon_between(self, start:int, end:int, rf_index:int) -> bool:
+        """ Checks if there is any stop codon between a given range of the tx. """
+        aa_start = math.floor((start - rf_index) / 3)
+        aa_end = math.ceil((end - rf_index) / 3)
+        aa_end = min(aa_end, math.floor((len(self.tx_seq) - rf_index)/3))
+        return '*' in self.tx_seq[rf_index:].translate()[aa_start:aa_end]
 
     @staticmethod
     def has_overlapping_variants(variants:List[VariantRecord]) -> bool:
