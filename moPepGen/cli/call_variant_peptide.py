@@ -13,7 +13,7 @@ import argparse
 import copy
 from typing import List, Set, TYPE_CHECKING, Dict
 from pathlib import Path
-import ray
+from pathos.pools import ParallelPool
 from moPepGen import svgraph, aa, seqvar, logger, gtf, params
 from moPepGen.cli import common
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
@@ -242,13 +242,8 @@ def call_variant_peptides_wrapper(tx_id:str,
 
     return peptide_pool
 
-@ray.remote
-def wrapper_remote(dispatch):
+def wrapper(dispatch):
     """ wrapper for ParallelPool """
-    return call_variant_peptides_wrapper(*dispatch)
-
-def wrapper_local(dispatch):
-    """ wrapper for local """
     return call_variant_peptides_wrapper(*dispatch)
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
@@ -271,9 +266,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
         # Not providing canonical peptide pool to each task for now.
         canonical_peptides = set()
+
         if caller.threads > 1:
-            ray.init(num_cpus=caller.threads)
-            # ray.put(canonical_peptides)
+            process_pool = ParallelPool(ncpus=caller.threads)
 
         dispatches = []
         i = 0
@@ -347,10 +342,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 if caller.verbose >= 2:
                     logger([x[0] for x in dispatches])
                 if caller.threads > 1:
-                    # results = process_pool.map(wrapper, dispatches)
-                    results = ray.get([wrapper_remote.remote(d) for d in dispatches])
+                    results = process_pool.map(wrapper, dispatches)
                 else:
-                    results = [wrapper_local(dispatches[0])]
+                    results = [wrapper(dispatches[0])]
 
                 for peptide_series in results:
                     for peptides in peptide_series:
