@@ -212,6 +212,8 @@ class BruteForceVariantPeptideCaller():
         rf_index = cds_start % 3
         frames_shifted = 0
         upstream_indels:List[VariantRecordWithCoordinate] = []
+        is_coding = self.tx_model.is_protein_coding \
+            and not any(v.variant.is_circ_rna() for v in variants)
         for i, variant_coordinate in enumerate(variants):
             variant = variant_coordinate.variant
             loc = variant_coordinate.location
@@ -220,7 +222,7 @@ class BruteForceVariantPeptideCaller():
             if loc.start > rhs + 3:
                 break
             is_start_gain = start_loc.overlaps(loc)
-            # is_frameshifting = cds_start < loc.start < lhs and variant.is_frameshifting()
+            is_frameshifting = cds_start < loc.start < lhs and variant.is_frameshifting()
             if cds_start < loc.start < lhs:
                 frames_shifted = (frames_shifted + variant.frames_shifted()) % 3
                 if variant.is_frameshifting() \
@@ -242,7 +244,7 @@ class BruteForceVariantPeptideCaller():
 
             if (loc.overlaps(query) \
                         or is_start_gain \
-                        # or is_frameshifting \
+                        or (is_frameshifting and not is_coding) \
                         or is_cleavage_gain \
                         or is_stop_lost \
                         or is_stop_gain ) \
