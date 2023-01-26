@@ -223,7 +223,8 @@ class BruteForceVariantPeptideCaller():
             # is_frameshifting = cds_start < loc.start < lhs and variant.is_frameshifting()
             if cds_start < loc.start < lhs:
                 frames_shifted = (frames_shifted + variant.frames_shifted()) % 3
-                if variant.is_frameshifting() and not (variant.is_fusion() or variant.is_circ_rna()):
+                if variant.is_frameshifting() \
+                        and not (variant.is_fusion() or variant.is_circ_rna()):
                     upstream_indels.append(variant_coordinate)
             is_cleavage_gain = (loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
                     or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))) \
@@ -254,7 +255,7 @@ class BruteForceVariantPeptideCaller():
 
         # If there are multiple frameshifts but the overall frames shifted is 0,
         # then checks if the reference sequence skipped has any stop codon.
-        if self.tx_model.is_protein_coding and len(upstream_indels) > 1:
+        if len(upstream_indels) > 1:
             first_start = upstream_indels[0].variant.location.start
             last_end = upstream_indels[-1].variant.location.end
             rf_index = cds_start % 3
