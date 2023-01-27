@@ -163,7 +163,8 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         _id=tx_id,
         cds_start_nf=True,
         has_known_orf=False,
-        cleavage_params=cleavage_params
+        cleavage_params=cleavage_params,
+        gene_id=tx_model.gene_id
     )
     dgraph.init_three_frames()
     pgraph = dgraph.translate()
