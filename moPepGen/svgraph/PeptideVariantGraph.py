@@ -42,8 +42,8 @@ class PeptideVariantGraph():
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
             hypermutated_region_warned:bool=False, blacklist:Set[str]=None,
-            global_variant:VariantRecord=None, subgraphs:SubgraphTree=None
-            ):
+            global_variant:VariantRecord=None, subgraphs:SubgraphTree=None,
+            gene_id:str=None):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
@@ -61,6 +61,7 @@ class PeptideVariantGraph():
         self.cleavage_params = cleavage_params or params.CleavageParams()
         self.global_variant = global_variant
         self.subgraphs = subgraphs
+        self.gene_id = gene_id
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -802,7 +803,8 @@ class PeptideVariantGraph():
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
         peptide_pool = VariantPeptideDict(
             tx_id=self.id,
-            global_variant=self.global_variant
+            global_variant=self.global_variant,
+            gene_id=self.gene_id
         )
         traversal = PVGTraversal(
             check_variants=check_variants, check_orf=check_orf,

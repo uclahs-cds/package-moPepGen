@@ -43,19 +43,20 @@ class MiscleavedNodes():
     """
     def __init__(self, data:Deque[MiscleavedNodeSeries],
             cleavage_params:params.CleavageParams,
-            orfs:List[PVGOrf]=None, tx_id:str=None,
+            orfs:List[PVGOrf]=None, tx_id:str=None, gene_id:str=None,
             leading_node:PVGNode=None, subgraphs:SubgraphTree=None):
         """ constructor """
         self.data = data
         self.orfs = orfs or []
         self.tx_id = tx_id
+        self.gene_id = gene_id
         self.cleavage_params = cleavage_params
         self.leading_node = leading_node
         self.subgraphs = subgraphs
 
     @staticmethod
     def find_miscleaved_nodes(node:PVGNode, orfs:List[PVGOrf],
-            cleavage_params:params.CleavageParams, tx_id:str,
+            cleavage_params:params.CleavageParams, tx_id:str, gene_id:str,
             leading_node:PVGNode, subgraphs:SubgraphTree, is_circ_rna:bool
             ) -> MiscleavedNodes:
         """ Find all miscleaved nodes.
@@ -88,6 +89,7 @@ class MiscleavedNodes():
             cleavage_params=cleavage_params,
             orfs=orfs,
             tx_id=tx_id,
+            gene_id=gene_id,
             leading_node=leading_node,
             subgraphs=subgraphs
         )
@@ -257,7 +259,10 @@ class MiscleavedNodes():
             metadata.is_pure_circ_rna = len(variants) == 1 and \
                 list(variants)[0].is_circ_rna()
 
-            label = vpi.create_variant_peptide_id(self.tx_id, variants, None)
+            label = vpi.create_variant_peptide_id(
+                transcript_id=self.tx_id, variants=variants, orf_id=None,
+                gene_id=self.gene_id
+            )
             metadata.label = label
 
             if is_valid:
@@ -355,12 +360,13 @@ class VariantPeptideDict():
           argument is the circRNA variant.
     """
     def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None,
-            global_variant:VariantRecord=None):
+            global_variant:VariantRecord=None, gene_id:str=None):
         """ constructor """
         self.tx_id = tx_id
         self.peptides = peptides or {}
         self.labels = labels or {}
         self.global_variant = global_variant
+        self.gene_id = gene_id
 
     def add_miscleaved_sequences(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams,
@@ -390,7 +396,7 @@ class VariantPeptideDict():
             leading_node = node
         miscleaved_nodes = MiscleavedNodes.find_miscleaved_nodes(
             node=node, orfs=orfs, cleavage_params=cleavage_params,
-            tx_id=self.tx_id, leading_node=leading_node,
+            tx_id=self.tx_id, gene_id=self.gene_id, leading_node=leading_node,
             subgraphs=subgraphs, is_circ_rna=circ_rna is not None
         )
         if self.global_variant and self.global_variant not in additional_variants:
