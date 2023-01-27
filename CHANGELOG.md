@@ -58,6 +58,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Change from ray back to pathos for parallelization. #643
 
+- Gene ID of the transcript from which a noncoding peptide is called is added to the FASTA header. #662
+
 ## [0.10.1] - 2022-11-2
 
 ### Fixed

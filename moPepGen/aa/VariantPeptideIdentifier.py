@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from moPepGen.seqvar import VariantRecord
 
 def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
-        orf_id:str=None, index:int=None) -> str:
+        orf_id:str=None, index:int=None, gene_id:str=None) -> str:
     """ Create variant peptide ID """
     variant_id_map:Dict[str,List[VariantRecord]] = {}
     is_fusion = False
@@ -54,7 +54,7 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
     if is_circ_rna:
         label = CircRNAVariantPeptideIdentifier(circ_rna_id, variant_ids, orf_id, index)
     else:
-        label = BaseVariantPeptideIdentifier(transcript_id, variant_ids, orf_id, index)
+        label = BaseVariantPeptideIdentifier(transcript_id, variant_ids, orf_id, index, gene_id)
     return str(label)
 
 def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
@@ -108,16 +108,19 @@ class VariantPeptideIdentifier(ABC):
 class BaseVariantPeptideIdentifier(VariantPeptideIdentifier):
     """ Variant peptide identifier for output FASTA header """
     def __init__(self, transcript_id:str, variant_ids:List[str],
-            orf_id:str=None, index:int=None):
+            orf_id:str=None, index:int=None, gene_id:str=None):
         """ constructor """
         self.transcript_id = transcript_id
         self.variant_ids = variant_ids
         self.index = index
         self.orf_id = orf_id
+        self.gene_id = gene_id
 
     def __str__(self) -> str:
         """ str """
         x = [self.transcript_id]
+        if self.gene_id:
+            x.append(self.gene_id)
         if self.orf_id:
             x.append(self.orf_id)
         x += self.variant_ids
