@@ -174,10 +174,10 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         check_orf=True,
         blacklist=canonical_peptides
     )
-    orfs = get_orf_sequences(pgraph, tx_id, tx_seq)
+    orfs = get_orf_sequences(pgraph, tx_id, tx_model.gene_id, tx_seq)
     return peptides, orfs
 
-def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str,
+def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str,
         tx_seq:DNASeqRecordWithCoordinates) -> List[aa.AminoAcidSeqRecord]:
     """ Get the full ORF sequences """
     seqs = []
@@ -193,7 +193,7 @@ def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str,
             seq_len = len(translate_seq.seq) - seq_start
         orf_end = orf_start + seq_len * 3
         seq_end = seq_start + seq_len
-        seqname = f"{tx_id}|{orf_id}|{orf_start}-{orf_end}"
+        seqname = f"{tx_id}|{gene_id}|{orf_id}|{orf_start}-{orf_end}"
         seq = translate_seq[seq_start:seq_end]
         seq.id = seqname
         seq.name = seqname
