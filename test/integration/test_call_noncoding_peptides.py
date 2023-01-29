@@ -21,6 +21,7 @@ def create_base_args() -> argparse.Namespace:
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
     args.min_tx_length = 21
+    args.orf_assignment = 'max'
     args.cleavage_rule = 'trypsin'
     args.miscleavage = '2'
     args.min_mw = '500.'

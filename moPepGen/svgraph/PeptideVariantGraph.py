@@ -779,7 +779,7 @@ class PeptideVariantGraph():
 
     def call_variant_peptides(self, check_variants:bool=True,
             check_orf:bool=False, keep_all_occurrence:bool=True, blacklist:Set[str]=None,
-            circ_rna:circ.CircRNAModel=None) -> Set[aa.AminoAcidSeqRecord]:
+            circ_rna:circ.CircRNAModel=None, orf_assignment:str='max') -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
         Args:
@@ -808,7 +808,8 @@ class PeptideVariantGraph():
         )
         traversal = PVGTraversal(
             check_variants=check_variants, check_orf=check_orf,
-            queue=queue, pool=peptide_pool, circ_rna=circ_rna
+            queue=queue, pool=peptide_pool, circ_rna=circ_rna,
+            orf_assignment=orf_assignment
         )
 
         if self.has_known_orf():
@@ -1066,8 +1067,10 @@ class PeptideVariantGraph():
                     orf=cur_orf, start_gain=set(), start_node=target_node,
                     subgraph_id=orf_subgraph_id, node_offset = start_index
                 )
+                orfs.append(orf)
                 additional_variants = copy.copy(cleavage_gain_down)
-                node_list.append((cur_copy, [orf], True, additional_variants))
+                cur_orfs = [orfs[0]] if traversal.orf_assignment == 'min' else [orfs[-1]]
+                node_list.append((cur_copy, cur_orfs, True, additional_variants))
                 trash.add(cur_copy)
 
         cleavage_gain = target_node.get_cleavage_gain_variants()
@@ -1184,7 +1187,8 @@ class PVGTraversal():
             pool:VariantPeptideDict, known_orf_tx:Tuple[int,int]=None,
             known_orf_aa:Tuple[int,int]=None, circ_rna:circ.CircRNAModel=None,
             queue:Deque[PVGCursor]=None,
-            stack:Dict[PVGNode, Dict[PVGNode, PVGCursor]]=None):
+            stack:Dict[PVGNode, Dict[PVGNode, PVGCursor]]=None,
+            orf_assignment:str='max'):
         """ constructor """
         self.check_variants = check_variants
         self.check_orf = check_orf
@@ -1194,6 +1198,7 @@ class PVGTraversal():
         self.queue = queue or deque([])
         self.pool = pool
         self.stack = stack or {}
+        self.orf_assignment = orf_assignment
 
     def is_done(self) -> bool:
         """ Check if the traversal is done """
@@ -1275,8 +1280,7 @@ class PVGTraversal():
 
         return -1
 
-    @staticmethod
-    def cmp_unknown_orf_check_orf(x:PVGCursor, y:PVGCursor) -> bool:
+    def cmp_unknown_orf_check_orf(self, x:PVGCursor, y:PVGCursor) -> bool:
         """ comparison for unknown ORF and check ORFs. """
         # pylint: disable=R0911
         if x.in_cds and not y.in_cds:
@@ -1295,9 +1299,9 @@ class PVGTraversal():
         if x_orf[0] is not None and x_orf[0] != -1 and \
                 y_orf[0] is not None and y_orf[0] != -1:
             if x_orf[0] > y_orf[0]:
-                return -1
+                return -1 if self.orf_assignment == 'max' else 1
             if x_orf[0] < y_orf[0]:
-                return 1
+                return 1 if self.orf_assignment == 'max' else -1
 
         x_start_gain = x.orfs[0].start_gain
         y_start_gain = y.orfs[0].start_gain
