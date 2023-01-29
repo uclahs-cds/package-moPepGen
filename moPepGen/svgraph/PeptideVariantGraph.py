@@ -779,7 +779,8 @@ class PeptideVariantGraph():
 
     def call_variant_peptides(self, check_variants:bool=True,
             check_orf:bool=False, keep_all_occurrence:bool=True, blacklist:Set[str]=None,
-            circ_rna:circ.CircRNAModel=None, orf_assignment:str='max') -> Set[aa.AminoAcidSeqRecord]:
+            circ_rna:circ.CircRNAModel=None, orf_assignment:str='max'
+            ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
         Args:
