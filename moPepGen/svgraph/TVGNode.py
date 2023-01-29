@@ -669,7 +669,7 @@ class TVGNode():
         seq = Seq('')
         if v.variant.type in ['Deletion', 'Substitution']:
             seq += tx_seq[v.variant.location.start:v.variant.location.end]
-        elif v.variant.type != 'Insertion':
+        else:
             seq += Seq(v.variant.ref)
 
         if left_offset > 0:

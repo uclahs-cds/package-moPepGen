@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.11.1] - 2023-1-30
+
+### Fixed
+
+- Fixed `callVariant` that alt splice insertions were treated as stop altering when they are not.
+
 ## [0.11.0] - 2023-1-29
 
 ### Fixed
