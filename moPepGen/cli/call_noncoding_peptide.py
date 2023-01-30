@@ -20,7 +20,7 @@ OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 # pylint: disable=W0212
 def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen callNoncoding """
-    p = subparsers.add_parser(
+    p:argparse.ArgumentParser = subparsers.add_parser(
         name='callNoncoding',
         help='Call non-canonical peptides from noncoding transcripts.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -48,6 +48,16 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         help='Minimal transcript length.',
         metavar='<number>',
         default=21
+    )
+    p.add_argument(
+        '--orf-assignment',
+        type=str,
+        help='Defines how ORF assignment should be done. The last ORF upstream'
+        ' to the peptide is used for `max` and the first (most upstream) one is'
+        ' used for `min`',
+        choices=['max', 'min'],
+        default='max',
+        metavar='<choice>'
     )
     p.add_argument(
         '--inclusion-biotypes',
@@ -113,7 +123,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
         try:
             peptides, orfs = call_noncoding_peptide_main(tx_id, tx_model, genome,
-                canonical_peptides, cleavage_params)
+                canonical_peptides, cleavage_params, args.orf_assignment)
 
             if not orfs:
                 continue
@@ -147,7 +157,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
 def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         genome:DNASeqDict, canonical_peptides:Set[str],
-        cleavage_params:params.CleavageParams
+        cleavage_params:params.CleavageParams, orf_assignment:str
         ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
     """ Call noncoding peptides """
     chrom = tx_model.transcript.location.seqname
@@ -172,7 +182,8 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     peptides = pgraph.call_variant_peptides(
         check_variants=False,
         check_orf=True,
-        blacklist=canonical_peptides
+        blacklist=canonical_peptides,
+        orf_assignment=orf_assignment
     )
     orfs = get_orf_sequences(pgraph, tx_id, tx_model.gene_id, tx_seq)
     return peptides, orfs
