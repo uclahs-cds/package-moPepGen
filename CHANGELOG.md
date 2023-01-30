@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.11.1] - 2023-1-30
+
+- Argument `--orf-assignment` added to `callNoncoding` to allow choosing the min or max ORF. #667
+
 ## [0.11.0] - 2023-1-29
 
 ### Fixed
