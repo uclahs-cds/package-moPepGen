@@ -125,7 +125,11 @@ class VariantPeptideInfo():
         info_list:List[VariantPeptideInfo] = []
         variant_ids = pi.parse_variant_peptide_id(peptide.description)
         for variant_id in variant_ids:
-            if isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
+            if isinstance(variant_id, pi.NoncodingPeptideIdentifier):
+                gene_ids = [variant_id.gene_id]
+                var_ids = {}
+
+            elif isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
                 gene_ids = None
                 var_ids = {}
 
@@ -156,7 +160,12 @@ class VariantPeptideInfo():
         info_list = []
         variant_ids = pi.parse_variant_peptide_id(peptide.description)
         for variant_id in variant_ids:
-            if isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
+            if isinstance(variant_id, pi.NoncodingPeptideIdentifier):
+                tx_id = variant_id.transcript_id
+                gene_ids = [variant_id.gene_id]
+                var_ids = {}
+
+            elif isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
                 circ_rna_id = variant_id.circ_rna_id
                 tx_id = circ_rna_id.split('-', 2)[1]
                 gene_ids = [anno.transcripts[tx_id].transcript.gene_id]

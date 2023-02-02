@@ -68,29 +68,36 @@ def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
     """
     variant_ids = []
     for it in label.split(VARIANT_PEPTIDE_SOURCE_DELIMITER):
-        x_id, *var_ids, index = it.split('|')
+        fields = it.split('|')
+        if fields[-2].startswith('ORF'):
+            # Noncoding peptide
+            tx_id, gene_id, orf_id, index = fields
+            variant_id = NoncodingPeptideIdentifier(tx_id, gene_id, orf_id, int(index))
 
-        orf_id = None
-        if len(var_ids) > 0 and var_ids[0].startswith('ORF'):
-            orf_id = var_ids.pop(0)
-
-        if x_id.startswith('FUSION-'):
-            first_variants:List[str] = []
-            second_variants:List[str] = []
-            for var_id in var_ids:
-                which_gene, var_id = var_id.split('-', 1)
-                if int(which_gene) == 1:
-                    first_variants.append(var_id)
-                elif int(which_gene) == 2:
-                    second_variants.append(var_id)
-                else:
-                    raise ValueError('Variant is not valid')
-            variant_id = FusionVariantPeptideIdentifier(x_id, first_variants,
-                second_variants, orf_id, index)
-        elif x_id.startswith('CIRC-') or x_id.startswith('CI-'):
-            variant_id = CircRNAVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
         else:
-            variant_id = BaseVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
+            x_id, *var_ids, index = fields
+
+            orf_id = None
+            if len(var_ids) > 0 and var_ids[0].startswith('ORF'):
+                orf_id = var_ids.pop(0)
+
+            if x_id.startswith('FUSION-'):
+                first_variants:List[str] = []
+                second_variants:List[str] = []
+                for var_id in var_ids:
+                    which_gene, var_id = var_id.split('-', 1)
+                    if int(which_gene) == 1:
+                        first_variants.append(var_id)
+                    elif int(which_gene) == 2:
+                        second_variants.append(var_id)
+                    else:
+                        raise ValueError('Variant is not valid')
+                variant_id = FusionVariantPeptideIdentifier(x_id, first_variants,
+                    second_variants, orf_id, index)
+            elif x_id.startswith('CIRC-') or x_id.startswith('CI-'):
+                variant_id = CircRNAVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
+            else:
+                variant_id = BaseVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
 
         variant_ids.append(variant_id)
     return variant_ids
@@ -185,3 +192,23 @@ class FusionVariantPeptideIdentifier(VariantPeptideIdentifier):
         """ get first gene id """
         _,_,second = self.fusion_id.split('-')
         return second.split(':')[0]
+
+class NoncodingPeptideIdentifier(VariantPeptideIdentifier):
+    """ Noncoding peptide identifier """
+    def __init__(self, transcript_id:str, gene_id:str, orf_id:str=None, index:int=None):
+        """ constructor """
+        self.transcript_id = transcript_id
+        self.gene_id = gene_id
+        self.orf_id = orf_id
+        self.index = index
+
+    def __str__(self) -> str:
+        """ str """
+        fields = [self.transcript_id]
+        if self.gene_id:
+            fields.append(self.gene_id)
+        if self.orf_id:
+            fields.append(self.orf_id)
+        if self.index:
+            fields.append(str(self.index))
+        return '|'.join(fields)
