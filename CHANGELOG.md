@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.11.2] - 2023-2-3
+
+### Fixed
+
+- Noncoding peptide headers not parsed successfully by summarizeFasta #672
+
 ## [0.11.1] - 2023-1-31
 
 ### Fixed
