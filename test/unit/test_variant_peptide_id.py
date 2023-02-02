@@ -208,11 +208,11 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_orf(self):
         """ parse variant with orf """
-        label = 'ENST0001|ORF1|1'
+        label = 'ENST0001|ENSG0001|ORF1|1'
         peptide_ids = aa.parse_variant_peptide_id(label)
         self.assertEqual(len(peptide_ids), 1)
-        self.assertIsInstance(peptide_ids[0], pi.BaseVariantPeptideIdentifier)
-        peptide_ids:List[pi.BaseVariantPeptideIdentifier]
+        self.assertIsInstance(peptide_ids[0], pi.NoncodingPeptideIdentifier)
+        peptide_ids:List[pi.NoncodingPeptideIdentifier]
         self.assertEqual(peptide_ids[0].transcript_id, 'ENST0001')
         self.assertEqual(peptide_ids[0].orf_id, 'ORF1')
         self.assertEqual(str(peptide_ids[0]), label)

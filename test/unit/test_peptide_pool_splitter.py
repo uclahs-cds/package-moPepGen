@@ -258,7 +258,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         label_map_data = {'ENSG0001': {'SNV-1157-G-A': 'sSNV'}}
         label_map = LabelSourceMapping(label_map_data)
 
-        peptide = create_aa_record('KHIRJ','ENST0004|ORF1|1')
+        peptide = create_aa_record('KHIRJ','ENST0004|ENSG0004|ORF1|1')
         infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
         self.assertIn('Noncoding', infos[0].sources)
 
