@@ -4,7 +4,7 @@
 ##reference_index=/data/Index/GRCh38-EBI-GENCODE34
 ##genome_fasta=
 ##annotation_gtf=
-##source=rMATs
+##source=rMATS
 ##CHROM=<Description='{'Description': "'Gene ID'"}'>
 ##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">

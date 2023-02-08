@@ -21,7 +21,7 @@ OUTPUT_FILE_FORMATS = ['.gvf']
 
 def add_rmats_input_arg(parser:argparse.ArgumentParser, name:str, message:str,
         dest:str):
-    """ add input arg for rMATs """
+    """ add input arg for rMATS """
     message += f" Valid formats: {INPUT_FILE_FORMATS}"
     parser.add_argument(
         name,
@@ -48,35 +48,35 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     add_rmats_input_arg(
         p, '--se',
         message="File path to the SE (skipped exons) junction count file output"
-        " by rMATs. The file name should look like '*_SE.MATS.JC.txt' or "
+        " by rMATS. The file name should look like '*_SE.MATS.JC.txt' or "
         "'*_SE.MATS.JCEC.txt'.",
         dest='skipped_exon'
     )
     add_rmats_input_arg(
         p, '--a5ss',
         message="File path to the A5SS (alternative 5' splicint site) junction"
-        " count file output by rMATs. The file name should look like"
+        " count file output by rMATS. The file name should look like"
         " '_S5SS.MATS.JC.txt' or '*_A5SS.MATS.JCEC.txt'.",
         dest='alternative_5_splicing'
     )
     add_rmats_input_arg(
         p, '--a3ss',
         message="File path to the A3SS (alternative 3' splicint site) junction"
-        " count file output by rMATs. The file name should look like"
+        " count file output by rMATS. The file name should look like"
         " '_S3SS.MATS.JC.txt' or '*_A3SS.MATS.JCEC.txt'.",
         dest='alternative_3_splicing'
     )
     add_rmats_input_arg(
         p, '--mxe',
         message="File path to the MXE (mutually exclusive exons) junction"
-        " count file output by rMATs. The file name should look like"
+        " count file output by rMATS. The file name should look like"
         " '_MXE.MATS.JC.txt' or '*_MXE.MATS.JCEC.txt'.",
         dest='mutually_exclusive_exons'
     )
     add_rmats_input_arg(
         p, '--ri',
         message="File path to the RI (retained intron) junction"
-        " count file output by rMATs. The file name should look like"
+        " count file output by rMATS. The file name should look like"
         " '_RI.MATS.JC.txt' or '*_RI.MATS.JCEC.txt'.",
         dest='retained_intron'
     )

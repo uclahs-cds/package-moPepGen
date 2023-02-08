@@ -484,7 +484,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case26(self):
         """ Test case reported in #357 with two alternative splicing events. """
         gvf = [
-            self.data_dir/'comb/CPCG0266_ENST00000381461.6/rMATs.gvf',
+            self.data_dir/'comb/CPCG0266_ENST00000381461.6/rMATS.gvf',
             self.data_dir/'comb/CPCG0266_ENST00000381461.6/gsnp.gvf'
         ]
         expected = self.data_dir/'comb/CPCG0266_ENST00000381461.6_expected.txt'
@@ -495,7 +495,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Test case reported in #360 with one alternative splicing and an
         indel. """
         gvf = [
-            self.data_dir/'comb/CPCG0235_ENST00000525687.5/rMATs.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000525687.5/rMATS.gvf',
             self.data_dir/'comb/CPCG0235_ENST00000525687.5/gindel.gvf'
         ]
         expected = self.data_dir/'comb/CPCG0235_ENST00000525687.5_expected.txt'
@@ -508,7 +508,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         collapsing end nodes, the one with lower subgraph level should be kept.
         """
         gvf = [
-            self.data_dir/'comb/CPCG0235_ENST00000590400.1/rMATs.gvf',
+            self.data_dir/'comb/CPCG0235_ENST00000590400.1/rMATS.gvf',
             self.data_dir/'comb/CPCG0235_ENST00000590400.1/gsnp.gvf',
             self.data_dir/'comb/CPCG0235_ENST00000590400.1/gindel.gvf'
         ]
@@ -522,7 +522,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         aligning nodes in TVG, it failed to limit inside the same subgraph.
         """
         gvf = [
-            self.data_dir/'comb/CPCG0333_ENST00000452737.5/rMATs.gvf',
+            self.data_dir/'comb/CPCG0333_ENST00000452737.5/rMATS.gvf',
             self.data_dir/'comb/CPCG0333_ENST00000452737.5/gsnp.gvf',
             self.data_dir/'comb/CPCG0333_ENST00000452737.5/gindel.gvf'
         ]
@@ -536,7 +536,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         aligning nodes in TVG, it failed to limit inside the same subgraph.
         """
         gvf = [
-            self.data_dir/'comb/CPCG0462_ENST00000483923.5/rMATs.gvf',
+            self.data_dir/'comb/CPCG0462_ENST00000483923.5/rMATS.gvf',
             self.data_dir/'comb/CPCG0462_ENST00000483923.5/gsnp.gvf'
         ]
         expected = self.data_dir/'comb/CPCG0462_ENST00000483923.5_expected.txt'
