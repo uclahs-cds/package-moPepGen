@@ -43,7 +43,7 @@ class TestParseRMATS(TestCaseIntegration):
             -o {self.work_dir}/reditools.gvf \\
             -g {self.data_dir}/genome.fasta \\
             -a {self.data_dir}/annotation.gtf \\
-            --source rMATs
+            --source rMATS
         """
         res = sp.run(cmd, shell=True, check=False, capture_output=True)
         try:
