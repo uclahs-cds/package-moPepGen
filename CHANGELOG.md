@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.11.3] - 2023-2-9
+
+### Fixed
+
+- `filterFasta` failed with the new noncoding peptide FASTA header. #675
+
 ## [0.11.2] - 2023-2-3
 
 ### Fixed
