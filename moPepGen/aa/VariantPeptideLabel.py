@@ -258,6 +258,8 @@ class VariantPeptideInfo():
             return [variant_id.first_tx_id, variant_id.second_tx_id]
         if isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
             return [variant_id.transcript_id]
+        if isinstance(variant_id, pi.NoncodingPeptideIdentifier):
+            return [variant_id.transcript_id]
         raise ValueError('Variant ID unrecognized')
 
     def __str__(self) -> str:
