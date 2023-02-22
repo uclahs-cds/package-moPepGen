@@ -436,6 +436,7 @@ class VariantPeptideDict():
             labels = []
             metadatas = list(metadatas)
             metadatas.sort(key=lambda x: x.orf[0])
+            unique_labels = set()
             had_pure_circ_rna = False
             for metadata in metadatas:
                 if metadata.is_pure_circ_rna:
@@ -449,6 +450,10 @@ class VariantPeptideDict():
                 label = metadata.label
                 if orf_id:
                     label += f"|{orf_id}"
+
+                if label in unique_labels:
+                    continue
+                unique_labels.add(label)
 
                 if label in self.labels:
                     self.labels[label] += 1

@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.11.4] - 2023-2-23
+
+### Fixed
+
+- Fixed `callVariant` that variant peptides may get redundant labels with same information (transcript ID and variants). #679
+
 ## [0.11.3] - 2023-2-9
 
 ### Fixed
