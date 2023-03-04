@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.11.5] - 2023-3-5
+
+### Fixed
+
+- Fixed `callVariant` that the command line argument `--max-variants-per-node` and `--additional-variants-per-misc` not passed to it and the default value was always used.
+
 ## [0.11.4] - 2023-2-23
 
 ### Fixed

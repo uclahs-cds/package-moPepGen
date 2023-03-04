@@ -127,12 +127,12 @@ class VariantPeptideCaller():
             miscleavage=int(args.miscleavage),
             min_mw=float(args.min_mw),
             min_length=args.min_length,
-            max_length=args.max_length
+            max_length=args.max_length,
+            max_variants_per_node = args.max_variants_per_node,
+            additional_variants_per_misc = args.additional_variants_per_misc,
+            min_nodes_to_collapse = args.min_nodes_to_collapse,
+            naa_to_collapse = args.naa_to_collapse
         )
-        self.max_variants_per_node:int = args.max_variants_per_node
-        self.additional_variants_per_misc:int = args.additional_variants_per_misc
-        self.min_nodes_to_collapse:int = args.min_nodes_to_collapse
-        self.naa_to_collapse:int = args.naa_to_collapse
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
         self.verbose = args.verbose_level
