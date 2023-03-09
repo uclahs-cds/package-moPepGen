@@ -1727,6 +1727,9 @@ class ThreeFrameTVG():
 
                 new_pnode = out_node.translate()
 
+                if not self.is_circ_rna() and out_node.level == 0:
+                    new_pnode.fix_selenocysteines(self.seq.selenocysteine)
+
                 if new_pnode.seq.seq == '' and not out_node.get_out_nodes():
                     if not self.should_clip_trailing_nodes():
                         new_pnode.seq.seq = Seq('*')

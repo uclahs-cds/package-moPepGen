@@ -278,7 +278,8 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
         orf (FeatureLocation): The open reading frame start and end.
     """
     def __init__(self, seq:Seq, locations:List[MatchedLocation],
-            *args, orf:FeatureLocation=None, **kwargs, ):
+            *args, orf:FeatureLocation=None, selenocysteine:List[FeatureLocation]=None,
+            **kwargs,):
         """ Constract a DNASeqRecordWithCoordinates object.
 
         Args:
@@ -291,6 +292,7 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
         self.locations = locations
         # query index
         self.orf = orf
+        self.selenocysteine = selenocysteine or []
 
     def __add__(self, other:DNASeqRecordWithCoordinates
             ) -> DNASeqRecordWithCoordinates:
@@ -318,6 +320,7 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
 
         new.locations = left_locs + [loc.shift(len(self)) for loc in right_locs]
         new.orf = self.orf
+        new.selenocysteine = self.selenocysteine
         return new
 
     def __getitem__(self, index)->DNASeqRecordWithCoordinates:
@@ -354,6 +357,7 @@ class DNASeqRecordWithCoordinates(DNASeqRecord):
             seq=self.seq[index],
             locations=locations,
             orf = self.orf,
+            selenocysteine=self.selenocysteine,
             id=self.id,
             name=self.name,
             description=self.description

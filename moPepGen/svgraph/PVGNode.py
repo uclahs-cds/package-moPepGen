@@ -4,7 +4,7 @@ import copy
 from functools import cmp_to_key
 import math
 from typing import Dict, List, Set, Iterable
-from moPepGen import aa, circ, seqvar
+from moPepGen import aa, circ, seqvar, err
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
@@ -877,3 +877,41 @@ class PVGNode():
             if node.has_variants_not_in(variants):
                 return True
         return False
+
+    def fix_selenocysteines(self, selenocysteine:List[FeatureLocation]):
+        """ """
+        iter_loc = iter(self.seq.locations)
+        iter_sec = iter(selenocysteine)
+        loc = next(iter_loc, None)
+        sec = next(iter_sec, None)
+
+        while loc and sec:
+            rf_index = loc.query.reading_frame_index
+            if rf_index != sec.start % 3:
+                sec = next(iter_sec, None)
+                continue
+
+            dna_start = loc.get_ref_dna_start()
+            dna_end = loc.get_ref_dna_end()
+
+            dna_loc = FeatureLocation(dna_start, dna_end)
+            if dna_loc.is_superset(sec):
+                k = loc.query.start + int((sec.start - dna_loc.start) / 3)
+                if self.seq.seq[k] != '*':
+                    err.warn(
+                        'The codon at the given Selenocysteine position is not' +
+                        ' a stop codon.'
+                    )
+                new_seq = self.seq.seq[:k] + 'U'
+                if k + 1 < len(self.seq.seq):
+                    new_seq += self.seq.seq[k+1:]
+                self.seq.seq = new_seq
+
+                sec = next(iter_sec, None)
+                loc = next(iter_loc, None)
+                continue
+
+            if dna_loc > sec:
+                sec = next(iter_sec, None)
+            else:
+                loc = next(iter_loc, None)
