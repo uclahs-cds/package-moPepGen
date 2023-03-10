@@ -43,6 +43,7 @@ class PVGNode():
             reading_frame_index:int, subgraph_id:str,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
+            selenocysteins:List[seqvar.VariantRecordWithCoordinate]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
             was_bridge:bool=False, pre_cleaved:bool=False, level:int=0,
             npop_collapsed:bool=False, cpop_collapsed:bool=False,
@@ -54,6 +55,7 @@ class PVGNode():
         self.variants = variants or []
         self.in_nodes = in_nodes or set()
         self.out_nodes = out_nodes or set()
+        self.selenocysteins = selenocysteins or []
         self.cleavage = cleavage
         self.truncated = truncated
         self.orf = orf or [None, None]
@@ -97,12 +99,17 @@ class PVGNode():
             if filtered_variants:
                 collapsed_variants[upstream] = filtered_variants
 
+        secs = []
+        for sec in self.selenocysteins:
+            if start <= sec.location.start < stop:
+                secs.append(sec.shift(-start))
 
         return PVGNode(
             seq=seq,
             variants=variants,
             cleavage=self.cleavage,
             orf=self.orf,
+            selenocysteins=secs,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
@@ -418,6 +425,17 @@ class PVGNode():
 
         return sorted(self.out_nodes, key=cmp_to_key(sort_func))[0]
 
+    def split_selenocysteins(self, index:int):
+        """ Split selenocysterines """
+        left_secs:List[seqvar.VariantRecordWithCoordinate] = []
+        right_secs:List[seqvar.VariantRecordWithCoordinate] = []
+        for sec in self.selenocysteins:
+            if sec.location.start < index:
+                left_secs.append(sec)
+            else:
+                right_secs.append(sec.shift(-index))
+        return left_secs, right_secs
+
     def split_node(self, index:int, cleavage:bool=False, pre_cleave:bool=False,
             pop_collapse:bool=False) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
@@ -478,6 +496,10 @@ class PVGNode():
         )
         new_node.orf = self.orf
 
+        left_secs, right_secs = self.split_selenocysteins(index)
+        self.selenocysteins = left_secs
+        new_node.selenocysteins = right_secs
+
         if cleavage:
             new_node.cleavage = True
 
@@ -523,6 +545,10 @@ class PVGNode():
         self.seq = self.seq[:i]
         self.variants = left_variants
 
+        left_secs, right_secs = self.split_selenocysteins(i)
+        self.selenocysteins = left_secs
+        right_node.selenocysteins = right_secs
+
         return right_node
 
     def truncate_left(self, i:int) -> PVGNode:
@@ -554,10 +580,14 @@ class PVGNode():
         self.seq = self.seq[i:]
         self.variants = right_variants
 
+        left_secs, right_secs = self.split_selenocysteins(i)
+        left_node.selenocysteins = left_secs
+        self.selenocysteins = right_secs
+
         return left_node
 
     def append_left(self, other:PVGNode) -> None:
-        """ Combine the other node the the left. """
+        """ Combine the other node to the left. """
         self.seq = other.seq + self.seq
         variants = copy.copy(other.variants)
         for variant in self.variants:
@@ -565,6 +595,12 @@ class PVGNode():
         self.variants = variants
         self.upstream_indel_map = {k:copy.copy(v) for k,v in
             other.upstream_indel_map.items()}
+
+        secs = copy.copy(other.selenocysteins)
+        for sec in self.selenocysteins:
+            sec = sec.shift(len(other.seq.seq))
+            secs.append(sec)
+        self.selenocysteins = secs
 
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
@@ -582,6 +618,10 @@ class PVGNode():
         self.cpop_collapsed = other.cpop_collapsed
         self.truncated = other.truncated
 
+        for sec in other.selenocysteins:
+            sec = sec.shift(len(self.seq.seq))
+            self.selenocysteins.append(sec)
+
     def find_start_index(self) -> int:
         """ Find the start amino acid position """
         return self.seq.seq.find('M')
@@ -598,6 +638,7 @@ class PVGNode():
             cleavage=self.cleavage,
             truncated=self.truncated,
             orf=self.orf,
+            selenocysteins=copy.copy(self.selenocysteins),
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
@@ -878,56 +919,61 @@ class PVGNode():
                 return True
         return False
 
-    def fix_selenocysteines(self, selenocysteine:List[FeatureLocation],
-            sec_truncate:bool) -> None:
-        """ """
+    def fix_selenocysteines(self,
+            sect_variants:List[seqvar.VariantRecordWithCoordinate]) -> None:
+        """ Fix Selenocysteines from the amin acid sequence. """
         iter_loc = iter(self.seq.locations)
-        iter_sec = iter(selenocysteine)
+        iter_sec = iter(sect_variants)
         loc = next(iter_loc, None)
-        sec = next(iter_sec, None)
+        sect = next(iter_sec, None)
 
-        secs = []
+        sects:List[seqvar.VariantRecordWithCoordinate] = []
 
-        while loc and sec:
+        while loc and sect:
             rf_index = loc.query.reading_frame_index
-            if rf_index != sec.start % 3:
-                sec = next(iter_sec, None)
+            if rf_index != sect.location.start % 3:
+                sect = next(iter_sec, None)
                 continue
 
             dna_start = loc.get_ref_dna_start()
             dna_end = loc.get_ref_dna_end()
 
             dna_loc = FeatureLocation(dna_start, dna_end)
-            if dna_loc.is_superset(sec):
-                k = loc.query.start + int((sec.start - dna_loc.start) / 3)
+            if dna_loc.is_superset(sect.location):
+                k = loc.query.start + int((sect.location.start - dna_loc.start) / 3)
+                sect_local = seqvar.VariantRecordWithCoordinate(
+                    location=FeatureLocation(k, k+1),
+                    variant=sect.variant
+                )
                 if self.seq.seq[k] != '*':
-                    err.warn(
+                    err.warning(
                         'The codon at the given Selenocysteine position is not' +
                         ' a stop codon.'
                     )
-                secs.append(k)
+                sects.append(sect_local)
 
-                sec = next(iter_sec, None)
+                sect = next(iter_sec, None)
                 loc = next(iter_loc, None)
                 continue
 
-            if dna_loc > sec:
-                sec = next(iter_sec, None)
+            if dna_loc > sect.location:
+                sect = next(iter_sec, None)
             else:
                 loc = next(iter_loc, None)
 
-        if not secs:
+        if not sects:
             return
 
-        if not sec_truncate:
-            for i,k in enumerate(secs):
-                if i == 0:
-                    new_seq = self.seq.seq[:k]
-                elif secs[i-1] + 1 < k:
-                    new_seq += self.seq.seq[secs[i-1] + 1:k]
-                new_seq += 'U'
-                if k == secs[-1]:
-                    if k + 1 < len(self.seq.seq):
-                        new_seq += self.seq.seq[k+1:]
-            self.seq.seq = new_seq
-            return
+        for i,sect in enumerate(sects):
+            k = sect.location.start
+            if i == 0:
+                new_seq = self.seq.seq[:k]
+            elif sects[i-1] + 1 < k:
+                new_seq += self.seq.seq[sects[i-1] + 1:k]
+            new_seq += 'U'
+            if k == sects[-1]:
+                if k + 1 < len(self.seq.seq):
+                    new_seq += self.seq.seq[k+1:]
+
+        self.selenocysteins = sects
+        self.seq.seq = new_seq

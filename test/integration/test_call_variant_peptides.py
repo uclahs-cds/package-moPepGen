@@ -21,7 +21,7 @@ def create_base_args() -> argparse.Namespace:
     args.proteome_fasta = None
     args.reference_source = None
     args.output_path = None
-    args.sec_truncate = False
+    args.selenocysteine_termination = False
     args.max_variants_per_node = 7
     args.additional_variants_per_misc = 2
     args.min_nodes_to_collapse = 30

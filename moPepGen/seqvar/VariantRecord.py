@@ -22,7 +22,7 @@ RMATS_TYPES = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
 
 
 def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRecord:
-    """ """
+    """ Create a VariantRecord for Selenocysteine Termination. """
     gene_id = anno.transcripts[tx_id].gene_id
     start_tx = pos
     end_tx = pos + 2
@@ -32,7 +32,7 @@ def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRe
     end_gene = anno.coordinate_genomic_to_gene(end_genome, gene_id)
     end_gene += 1
     location = FeatureLocation(start_gene, end_gene)
-    ref = 'T'
+    ref = 'TGA'
     alt = '<SECT>'
     _id = f"SECT-{start_gene}"
     return VariantRecord(location=location, ref=ref, alt=alt, _type='SECT', _id=_id)

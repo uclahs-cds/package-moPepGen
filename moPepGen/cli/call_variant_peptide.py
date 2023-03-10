@@ -45,7 +45,7 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     )
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
-        '--sec-truncate',
+        '--selenocysteine-termination',
         action='store_true',
         help=''
     )
@@ -138,7 +138,7 @@ class VariantPeptideCaller():
             min_nodes_to_collapse = args.min_nodes_to_collapse,
             naa_to_collapse = args.naa_to_collapse
         )
-        self.sec_truncate:bool = args.sec_truncate
+        self.truncate_sec:bool = args.selenocysteine_termination
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
         self.verbose = args.verbose_level
@@ -341,7 +341,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             dispatch = (
                 tx_id, variant_series, tx_seqs, gene_seqs, reference_data,
                 dummy_pool, caller.cleavage_params, noncanonical_transcripts,
-                caller.sec_truncate
+                caller.truncate_sec
             )
             dispatches.append(dispatch)
 
@@ -392,8 +392,9 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         has_known_orf=tx_model.is_protein_coding,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
         cleavage_params=cleavage_params,
-        sec_truncate=sec_truncate
+        truncate_sec=sec_truncate
     )
+    dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()
     dgraph.create_variant_graph(
         variants=tx_variants, variant_pool=variant_pool, genome=ref.genome,

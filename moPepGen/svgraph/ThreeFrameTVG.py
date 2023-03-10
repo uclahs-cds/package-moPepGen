@@ -44,7 +44,8 @@ class ThreeFrameTVG():
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
             cleavage_params:params.CleavageParams=None, gene_id:str=None,
-            sec_truncate:bool=False):
+            truncate_sec:bool=False,
+            sect_variants:List[seqvar.VariantRecordWithCoordinate]=None):
         """ Constructor to create a TranscriptVariantGraph object. """
         self.seq = seq
         self.id = _id
@@ -66,7 +67,8 @@ class ThreeFrameTVG():
         self.hypermutated_region_warned = hypermutated_region_warned
         self.cleavage_params = cleavage_params or params.CleavageParams('trypsin')
         self.gene_id = gene_id
-        self.sec_truncate = sec_truncate
+        self.truncate_sec = truncate_sec
+        self.sect_variants = sect_variants or []
 
     def is_circ_rna(self) -> bool:
         """ If the graph is a circRNA """
@@ -291,6 +293,17 @@ class ThreeFrameTVG():
                     if not out_node in visited:
                         queue.append(out_node)
         return targets
+
+    def gather_sect_variants(self, anno:gtf.GenomicAnnotation):
+        """ Create selenocysteine trunction map """
+        sect_variants = []
+        for sec in self.seq.selenocysteine:
+            sect_var = seqvar.create_variant_sect(anno, self.id, sec.start)
+            sect_loc = FeatureLocation(sec.start, sec.end)
+            sect_variants.append(seqvar.VariantRecordWithCoordinate(
+                location=sect_loc, variant=sect_var
+            ))
+        self.sect_variants = sect_variants
 
     @staticmethod
     def get_orf_index(node:TVGNode, i:int=0) -> int:
@@ -1698,7 +1711,8 @@ class ThreeFrameTVG():
             hypermutated_region_warned=self.hypermutated_region_warned,
             global_variant=self.global_variant,
             subgraphs=self.subgraphs,
-            gene_id=self.gene_id
+            gene_id=self.gene_id,
+            truncate_sec=self.truncate_sec
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])
@@ -1729,7 +1743,7 @@ class ThreeFrameTVG():
                 new_pnode = out_node.translate()
 
                 if not self.is_circ_rna() and out_node.level == 0:
-                    new_pnode.fix_selenocysteines(self.seq.selenocysteine, self.sec_truncate)
+                    new_pnode.fix_selenocysteines(self.sect_variants)
 
                 if new_pnode.seq.seq == '' and not out_node.get_out_nodes():
                     if not self.should_clip_trailing_nodes():
