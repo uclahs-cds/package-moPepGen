@@ -31,10 +31,10 @@ def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRe
     start_gene = anno.coordinate_genomic_to_gene(start_genome, gene_id)
     end_gene = anno.coordinate_genomic_to_gene(end_genome, gene_id)
     end_gene += 1
-    location = FeatureLocation(start_gene, end_gene)
+    location = FeatureLocation(start_tx, end_tx + 1)
     ref = 'TGA'
     alt = '<SECT>'
-    _id = f"SECT-{start_gene}"
+    _id = f"SECT-{start_gene + 1}"
     attrs = {
         'TRANSCRIPT_ID': tx_id
     }
