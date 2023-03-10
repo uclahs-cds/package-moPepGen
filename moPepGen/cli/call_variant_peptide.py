@@ -47,7 +47,8 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--selenocysteine-termination',
         action='store_true',
-        help=''
+        help='Include peptides of selenoprotiens that the UGA is treated as '
+        'termination instead of Sec.'
     )
     p.add_argument(
         '--max-variants-per-node',
@@ -183,7 +184,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         pool:seqvar.VariantRecordPool,
         cleavage_params:params.CleavageParams,
         noncanonical_transcripts:bool,
-        sec_truncate:bool
+        truncate_sec:bool
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
@@ -196,7 +197,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                     variant_pool=pool, ref=reference_data,
                     tx_seqs=tx_seqs, gene_seqs=gene_seqs,
                     cleavage_params=cleavage_params,
-                    sec_truncate=sec_truncate
+                    truncate_sec=truncate_sec
                 )
                 peptide_pool.append(peptides)
         except:
@@ -379,7 +380,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
-        sec_truncate:bool
+        truncate_sec:bool
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
@@ -392,7 +393,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         has_known_orf=tx_model.is_protein_coding,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
         cleavage_params=cleavage_params,
-        truncate_sec=sec_truncate
+        truncate_sec=truncate_sec
     )
     dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()

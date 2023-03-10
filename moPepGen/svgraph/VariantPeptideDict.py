@@ -196,10 +196,10 @@ class MiscleavedNodes():
                 if seq is None:
                     seq = other
                     if truncate_sec:
-                        selenocysteins = copy.copy(node.selenocysteins)
+                        selenocysteins = copy.copy(node.selenocysteines)
                 else:
                     if truncate_sec:
-                        selenocysteins += [x.shift(len(seq)) for x in node.selenocysteins]
+                        selenocysteins += [x.shift(len(seq)) for x in node.selenocysteines]
                     seq = seq + other
 
                 if check_variants:

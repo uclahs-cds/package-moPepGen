@@ -55,7 +55,7 @@ class PVGNode():
         self.variants = variants or []
         self.in_nodes = in_nodes or set()
         self.out_nodes = out_nodes or set()
-        self.selenocysteins = selenocysteins or []
+        self.selenocysteines = selenocysteins or []
         self.cleavage = cleavage
         self.truncated = truncated
         self.orf = orf or [None, None]
@@ -100,7 +100,7 @@ class PVGNode():
                 collapsed_variants[upstream] = filtered_variants
 
         secs = []
-        for sec in self.selenocysteins:
+        for sec in self.selenocysteines:
             if start <= sec.location.start < stop:
                 secs.append(sec.shift(-start))
 
@@ -425,11 +425,11 @@ class PVGNode():
 
         return sorted(self.out_nodes, key=cmp_to_key(sort_func))[0]
 
-    def split_selenocysteins(self, index:int):
-        """ Split selenocysterines """
+    def split_selenocysteines(self, index:int):
+        """ Split selenocysteines """
         left_secs:List[seqvar.VariantRecordWithCoordinate] = []
         right_secs:List[seqvar.VariantRecordWithCoordinate] = []
-        for sec in self.selenocysteins:
+        for sec in self.selenocysteines:
             if sec.location.start < index:
                 left_secs.append(sec)
             else:
@@ -496,9 +496,9 @@ class PVGNode():
         )
         new_node.orf = self.orf
 
-        left_secs, right_secs = self.split_selenocysteins(index)
-        self.selenocysteins = left_secs
-        new_node.selenocysteins = right_secs
+        left_secs, right_secs = self.split_selenocysteines(index)
+        self.selenocysteines = left_secs
+        new_node.selenocysteines = right_secs
 
         if cleavage:
             new_node.cleavage = True
@@ -545,9 +545,9 @@ class PVGNode():
         self.seq = self.seq[:i]
         self.variants = left_variants
 
-        left_secs, right_secs = self.split_selenocysteins(i)
-        self.selenocysteins = left_secs
-        right_node.selenocysteins = right_secs
+        left_secs, right_secs = self.split_selenocysteines(i)
+        self.selenocysteines = left_secs
+        right_node.selenocysteines = right_secs
 
         return right_node
 
@@ -580,9 +580,9 @@ class PVGNode():
         self.seq = self.seq[i:]
         self.variants = right_variants
 
-        left_secs, right_secs = self.split_selenocysteins(i)
-        left_node.selenocysteins = left_secs
-        self.selenocysteins = right_secs
+        left_secs, right_secs = self.split_selenocysteines(i)
+        left_node.selenocysteines = left_secs
+        self.selenocysteines = right_secs
 
         return left_node
 
@@ -596,11 +596,11 @@ class PVGNode():
         self.upstream_indel_map = {k:copy.copy(v) for k,v in
             other.upstream_indel_map.items()}
 
-        secs = copy.copy(other.selenocysteins)
-        for sec in self.selenocysteins:
+        secs = copy.copy(other.selenocysteines)
+        for sec in self.selenocysteines:
             sec = sec.shift(len(other.seq.seq))
             secs.append(sec)
-        self.selenocysteins = secs
+        self.selenocysteines = secs
 
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
@@ -618,9 +618,9 @@ class PVGNode():
         self.cpop_collapsed = other.cpop_collapsed
         self.truncated = other.truncated
 
-        for sec in other.selenocysteins:
+        for sec in other.selenocysteines:
             sec = sec.shift(len(self.seq.seq))
-            self.selenocysteins.append(sec)
+            self.selenocysteines.append(sec)
 
     def find_start_index(self) -> int:
         """ Find the start amino acid position """
@@ -638,7 +638,7 @@ class PVGNode():
             cleavage=self.cleavage,
             truncated=self.truncated,
             orf=self.orf,
-            selenocysteins=copy.copy(self.selenocysteins),
+            selenocysteins=copy.copy(self.selenocysteines),
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
@@ -975,5 +975,5 @@ class PVGNode():
                 if k + 1 < len(self.seq.seq):
                     new_seq += self.seq.seq[k+1:]
 
-        self.selenocysteins = sects
+        self.selenocysteines = sects
         self.seq.seq = new_seq
