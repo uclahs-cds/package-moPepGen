@@ -109,7 +109,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = {'vep_moPepGen.fasta'}
         self.assertEqual(files, expected)
 
-        args.sec_truncate = True
+        args.selenocysteine_termination = True
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta'}

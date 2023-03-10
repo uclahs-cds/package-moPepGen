@@ -35,7 +35,11 @@ def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRe
     ref = 'TGA'
     alt = '<SECT>'
     _id = f"SECT-{start_gene}"
-    return VariantRecord(location=location, ref=ref, alt=alt, _type='SECT', _id=_id)
+    attrs = {
+        'TRANSCRIPT_ID': tx_id
+    }
+    return VariantRecord(location=location, ref=ref, alt=alt, _type='SECT',
+        _id=_id, attrs=attrs)
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
