@@ -977,10 +977,10 @@ class PVGNode():
             k = sect.location.start
             if i == 0:
                 new_seq = self.seq.seq[:k]
-            elif sects[i-1] + 1 < k:
+            else:
                 new_seq += self.seq.seq[sects[i-1] + 1:k]
             new_seq += 'U'
-            if k == sects[-1]:
+            if sect is sects[-1]:
                 if k + 1 < len(self.seq.seq):
                     new_seq += self.seq.seq[k+1:]
 
