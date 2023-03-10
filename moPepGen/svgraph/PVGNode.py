@@ -878,12 +878,15 @@ class PVGNode():
                 return True
         return False
 
-    def fix_selenocysteines(self, selenocysteine:List[FeatureLocation]):
+    def fix_selenocysteines(self, selenocysteine:List[FeatureLocation],
+            sec_truncate:bool) -> None:
         """ """
         iter_loc = iter(self.seq.locations)
         iter_sec = iter(selenocysteine)
         loc = next(iter_loc, None)
         sec = next(iter_sec, None)
+
+        secs = []
 
         while loc and sec:
             rf_index = loc.query.reading_frame_index
@@ -902,10 +905,7 @@ class PVGNode():
                         'The codon at the given Selenocysteine position is not' +
                         ' a stop codon.'
                     )
-                new_seq = self.seq.seq[:k] + 'U'
-                if k + 1 < len(self.seq.seq):
-                    new_seq += self.seq.seq[k+1:]
-                self.seq.seq = new_seq
+                secs.append(k)
 
                 sec = next(iter_sec, None)
                 loc = next(iter_loc, None)
@@ -915,3 +915,19 @@ class PVGNode():
                 sec = next(iter_sec, None)
             else:
                 loc = next(iter_loc, None)
+
+        if not secs:
+            return
+
+        if not sec_truncate:
+            for i,k in enumerate(secs):
+                if i == 0:
+                    new_seq = self.seq.seq[:k]
+                elif secs[i-1] + 1 < k:
+                    new_seq += self.seq.seq[secs[i-1] + 1:k]
+                new_seq += 'U'
+                if k == secs[-1]:
+                    if k + 1 < len(self.seq.seq):
+                        new_seq += self.seq.seq[k+1:]
+            self.seq.seq = new_seq
+            return

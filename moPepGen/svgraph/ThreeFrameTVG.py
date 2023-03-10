@@ -43,7 +43,8 @@ class ThreeFrameTVG():
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
-            cleavage_params:params.CleavageParams=None, gene_id:str=None):
+            cleavage_params:params.CleavageParams=None, gene_id:str=None,
+            sec_truncate:bool=False):
         """ Constructor to create a TranscriptVariantGraph object. """
         self.seq = seq
         self.id = _id
@@ -65,6 +66,7 @@ class ThreeFrameTVG():
         self.hypermutated_region_warned = hypermutated_region_warned
         self.cleavage_params = cleavage_params or params.CleavageParams('trypsin')
         self.gene_id = gene_id
+        self.sec_truncate = sec_truncate
 
     def is_circ_rna(self) -> bool:
         """ If the graph is a circRNA """
@@ -932,8 +934,7 @@ class ThreeFrameTVG():
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
             gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
-            active_frames:List[bool]=None,
-            known_orf_index:int=None) -> None:
+            active_frames:List[bool]=None, known_orf_index:int=None) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
@@ -1728,7 +1729,7 @@ class ThreeFrameTVG():
                 new_pnode = out_node.translate()
 
                 if not self.is_circ_rna() and out_node.level == 0:
-                    new_pnode.fix_selenocysteines(self.seq.selenocysteine)
+                    new_pnode.fix_selenocysteines(self.seq.selenocysteine, self.sec_truncate)
 
                 if new_pnode.seq.seq == '' and not out_node.get_out_nodes():
                     if not self.should_clip_trailing_nodes():
