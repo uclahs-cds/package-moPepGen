@@ -783,7 +783,7 @@ class TVGNode():
 
     def get_selenocysteine_positions(self, selenocysteines:List[FeatureLocation]
             ) -> List[int]:
-        """ Find selenocystein position form the sequence """
+        """ Find selenocysteine position from the sequence """
         positions = []
         for sec in selenocysteines:
             query_i = self.seq.get_query_index(sec.start)

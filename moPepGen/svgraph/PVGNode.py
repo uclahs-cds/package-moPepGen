@@ -43,7 +43,7 @@ class PVGNode():
             reading_frame_index:int, subgraph_id:str,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
-            selenocysteins:List[seqvar.VariantRecordWithCoordinate]=None,
+            selenocysteines:List[seqvar.VariantRecordWithCoordinate]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
             was_bridge:bool=False, pre_cleaved:bool=False, level:int=0,
             npop_collapsed:bool=False, cpop_collapsed:bool=False,
@@ -55,7 +55,7 @@ class PVGNode():
         self.variants = variants or []
         self.in_nodes = in_nodes or set()
         self.out_nodes = out_nodes or set()
-        self.selenocysteines = selenocysteins or []
+        self.selenocysteines = selenocysteines or []
         self.cleavage = cleavage
         self.truncated = truncated
         self.orf = orf or [None, None]
@@ -109,7 +109,7 @@ class PVGNode():
             variants=variants,
             cleavage=self.cleavage,
             orf=self.orf,
-            selenocysteins=secs,
+            selenocysteines=secs,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
@@ -638,7 +638,7 @@ class PVGNode():
             cleavage=self.cleavage,
             truncated=self.truncated,
             orf=self.orf,
-            selenocysteins=copy.copy(self.selenocysteines),
+            selenocysteines=copy.copy(self.selenocysteines),
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,

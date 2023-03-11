@@ -189,17 +189,17 @@ class MiscleavedNodes():
             variants:Set[VariantRecord] = set()
             in_seq_variants:Set[VariantRecord] = set()
 
-            selenocysteins = []
+            selenocysteines = []
 
             for i, node in enumerate(queue):
                 other = str(node.seq.seq)
                 if seq is None:
                     seq = other
                     if truncate_sec:
-                        selenocysteins = copy.copy(node.selenocysteines)
+                        selenocysteines = copy.copy(node.selenocysteines)
                 else:
                     if truncate_sec:
-                        selenocysteins += [x.shift(len(seq)) for x in node.selenocysteines]
+                        selenocysteines += [x.shift(len(seq)) for x in node.selenocysteines]
                     seq = seq + other
 
                 if check_variants:
@@ -252,20 +252,20 @@ class MiscleavedNodes():
             if not seq:
                 continue
 
-            if check_variants and not (variants or selenocysteins):
+            if check_variants and not (variants or selenocysteines):
                 continue
 
             metadata.is_pure_circ_rna = len(variants) == 1 and \
                 list(variants)[0].is_circ_rna()
 
             seqs = self.translational_modification(Seq(seq), metadata, blacklist,
-                variants, is_start_codon, selenocysteins, check_variants)
+                variants, is_start_codon, selenocysteines, check_variants)
             for seq, metadata in seqs:
                 yield seq, metadata
 
     def translational_modification(self, seq:Seq, metadata:VariantPeptideMetadata,
             blacklist:Set[str], variants:List[VariantRecord], is_start_codon:bool,
-            selenocysteins:List[seqvar.VariantRecordWithCoordinate],
+            selenocysteines:List[seqvar.VariantRecordWithCoordinate],
             check_variants:bool
             ) -> Iterable[Tuple[str,VariantPeptideMetadata]]:
         """ Apply any modification that could happen during translation. The
@@ -294,7 +294,7 @@ class MiscleavedNodes():
                     aa_seq = aa.AminoAcidSeqRecord(seq=seq[1:])
                     yield aa_seq, cur_metadata
 
-        for sec in selenocysteins:
+        for sec in selenocysteines:
             seq_mod = seq[:sec.location.start]
             is_valid = self.is_valid_seq(seq_mod, blacklist)
             is_valid_start = is_start_codon and seq_mod.startswith('M') and\
