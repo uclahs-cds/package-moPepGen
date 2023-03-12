@@ -5,7 +5,7 @@ import copy
 from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from Bio.Seq import Seq
 from Bio import SeqUtils
-from moPepGen import aa, circ, get_equivalent
+from moPepGen import aa, circ, get_equivalent, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
@@ -168,7 +168,8 @@ class MiscleavedNodes():
 
     def join_miscleaved_peptides(self, check_variants:bool,
             additional_variants:List[VariantRecord], blacklist:Set[str],
-            is_start_codon:bool=False, circ_rna:circ.CircRNAModel=None
+            is_start_codon:bool=False, circ_rna:circ.CircRNAModel=None,
+            truncate_sec:bool=False
             ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -188,12 +189,19 @@ class MiscleavedNodes():
             variants:Set[VariantRecord] = set()
             in_seq_variants:Set[VariantRecord] = set()
 
+            selenocysteines = []
+
             for i, node in enumerate(queue):
                 other = str(node.seq.seq)
                 if seq is None:
                     seq = other
+                    if truncate_sec:
+                        selenocysteines = copy.copy(node.selenocysteines)
                 else:
+                    if truncate_sec:
+                        selenocysteines += [x.shift(len(seq)) for x in node.selenocysteines]
                     seq = seq + other
+
                 if check_variants:
                     for variant in node.variants:
                         if variant.is_silent:
@@ -244,34 +252,72 @@ class MiscleavedNodes():
             if not seq:
                 continue
 
-            if check_variants and not variants:
-                continue
-
-            seq = Seq(seq)
-
-            is_valid = self.is_valid_seq(seq, blacklist)
-            is_valid_start = is_start_codon and seq.startswith('M') and\
-                self.is_valid_seq(seq[1:], blacklist)
-
-            if not (is_valid or is_valid_start):
+            if check_variants and not (variants or selenocysteines):
                 continue
 
             metadata.is_pure_circ_rna = len(variants) == 1 and \
                 list(variants)[0].is_circ_rna()
 
-            label = vpi.create_variant_peptide_id(
-                transcript_id=self.tx_id, variants=variants, orf_id=None,
-                gene_id=self.gene_id
-            )
-            metadata.label = label
+            seqs = self.translational_modification(Seq(seq), metadata, blacklist,
+                variants, is_start_codon, selenocysteines, check_variants)
+            for seq, metadata in seqs:
+                yield seq, metadata
 
-            if is_valid:
-                aa_seq = aa.AminoAcidSeqRecord(seq=seq)
-                yield aa_seq, metadata
+    def translational_modification(self, seq:Seq, metadata:VariantPeptideMetadata,
+            blacklist:Set[str], variants:List[VariantRecord], is_start_codon:bool,
+            selenocysteines:List[seqvar.VariantRecordWithCoordinate],
+            check_variants:bool
+            ) -> Iterable[Tuple[str,VariantPeptideMetadata]]:
+        """ Apply any modification that could happen during translation. The
+        kinds of modifications that could happen are:
+        1. Leading Methionine truncation.
+        2. Selenocysteine truncation.
+        """
+        if variants or not check_variants:
+            is_valid = self.is_valid_seq(seq, blacklist)
+            is_valid_start = is_start_codon and seq.startswith('M') and\
+                self.is_valid_seq(seq[1:], blacklist)
 
-            if is_valid_start:
-                aa_seq = aa.AminoAcidSeqRecord(seq=seq[1:])
-                yield aa_seq, metadata
+            if is_valid or is_valid_start:
+                cur_metadata = copy.copy(metadata)
+                label = vpi.create_variant_peptide_id(
+                    transcript_id=self.tx_id, variants=variants, orf_id=None,
+                    gene_id=self.gene_id
+                )
+                cur_metadata.label = label
+
+                if is_valid:
+                    aa_seq = aa.AminoAcidSeqRecord(seq=seq)
+                    yield aa_seq, cur_metadata
+
+                if is_valid_start:
+                    aa_seq = aa.AminoAcidSeqRecord(seq=seq[1:])
+                    yield aa_seq, cur_metadata
+
+        for sec in selenocysteines:
+            seq_mod = seq[:sec.location.start]
+            is_valid = self.is_valid_seq(seq_mod, blacklist)
+            is_valid_start = is_start_codon and seq_mod.startswith('M') and\
+                self.is_valid_seq(seq_mod[1:], blacklist)
+
+            if is_valid or is_valid_start:
+                cur_metadata = copy.copy(metadata)
+                cur_variants = [v for v in variants if v.location.end
+                    <= sec.variant.location.start]
+                cur_variants.append(sec.variant)
+                label = vpi.create_variant_peptide_id(
+                    transcript_id=self.tx_id, variants=cur_variants, orf_id=None,
+                    gene_id=self.gene_id
+                )
+                cur_metadata.label = label
+
+                if is_valid:
+                    aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod)
+                    yield aa_seq, cur_metadata
+
+                if is_valid_start:
+                    aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod[1:])
+                    yield aa_seq, cur_metadata
 
     @staticmethod
     def any_overlaps_and_all_missing_variant(nodes:Iterable[PVGNode], variant:VariantRecord):
@@ -360,13 +406,15 @@ class VariantPeptideDict():
           argument is the circRNA variant.
     """
     def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None,
-            global_variant:VariantRecord=None, gene_id:str=None):
+            global_variant:VariantRecord=None, gene_id:str=None,
+            truncate_sec:bool=False):
         """ constructor """
         self.tx_id = tx_id
         self.peptides = peptides or {}
         self.labels = labels or {}
         self.global_variant = global_variant
         self.gene_id = gene_id
+        self.truncate_sec = truncate_sec
 
     def add_miscleaved_sequences(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams,
@@ -406,7 +454,8 @@ class VariantPeptideDict():
             additional_variants=additional_variants,
             blacklist=blacklist,
             is_start_codon=is_start_codon,
-            circ_rna=circ_rna
+            circ_rna=circ_rna,
+            truncate_sec=self.truncate_sec
         )
         for seq, metadata in seqs:
             if 'X' in seq.seq:

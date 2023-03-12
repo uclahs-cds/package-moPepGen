@@ -45,6 +45,12 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     )
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
+        '--selenocysteine-termination',
+        action='store_true',
+        help='Include peptides of selenoprotiens that the UGA is treated as '
+        'termination instead of Sec.'
+    )
+    p.add_argument(
         '--max-variants-per-node',
         type=int,
         help='Maximal number of variants per node. This argument can be useful'
@@ -133,6 +139,7 @@ class VariantPeptideCaller():
             min_nodes_to_collapse = args.min_nodes_to_collapse,
             naa_to_collapse = args.naa_to_collapse
         )
+        self.truncate_sec:bool = args.selenocysteine_termination
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
         self.verbose = args.verbose_level
@@ -176,7 +183,8 @@ def call_variant_peptides_wrapper(tx_id:str,
         reference_data:params.ReferenceData,
         pool:seqvar.VariantRecordPool,
         cleavage_params:params.CleavageParams,
-        noncanonical_transcripts:bool
+        noncanonical_transcripts:bool,
+        truncate_sec:bool
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
@@ -188,7 +196,8 @@ def call_variant_peptides_wrapper(tx_id:str,
                     tx_id=tx_id, tx_variants=variant_series.transcriptional,
                     variant_pool=pool, ref=reference_data,
                     tx_seqs=tx_seqs, gene_seqs=gene_seqs,
-                    cleavage_params=cleavage_params
+                    cleavage_params=cleavage_params,
+                    truncate_sec=truncate_sec
                 )
                 peptide_pool.append(peptides)
         except:
@@ -332,7 +341,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
             dispatch = (
                 tx_id, variant_series, tx_seqs, gene_seqs, reference_data,
-                dummy_pool, caller.cleavage_params, noncanonical_transcripts
+                dummy_pool, caller.cleavage_params, noncanonical_transcripts,
+                caller.truncate_sec
             )
             dispatches.append(dispatch)
 
@@ -369,7 +379,8 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         ref:params.ReferenceData,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
-        cleavage_params:params.CleavageParams
+        cleavage_params:params.CleavageParams,
+        truncate_sec:bool
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
@@ -381,12 +392,14 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         cds_start_nf=tx_model.is_cds_start_nf(),
         has_known_orf=tx_model.is_protein_coding,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
-        cleavage_params=cleavage_params
+        cleavage_params=cleavage_params,
+        truncate_sec=truncate_sec
     )
+    dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()
     dgraph.create_variant_graph(
         variants=tx_variants, variant_pool=variant_pool, genome=ref.genome,
-        anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs,
+        anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()

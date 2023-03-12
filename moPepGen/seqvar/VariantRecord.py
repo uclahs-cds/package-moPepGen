@@ -14,11 +14,32 @@ if TYPE_CHECKING:
     from moPepGen.dna import DNASeqDict, DNASeqRecord, DNASeqRecordWithCoordinates
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
-    'Insertion', 'Deletion', 'Substitution', 'circRNA']
+    'Insertion', 'Deletion', 'Substitution', 'circRNA', 'SECT']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'RNAEditingSite']
 ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
 ALTERNATIVE_SPLICING_TYPES = ['Insertion', 'Deletion', 'Substitution']
 RMATS_TYPES = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
+
+
+def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRecord:
+    """ Create a VariantRecord for Selenocysteine Termination. """
+    gene_id = anno.transcripts[tx_id].gene_id
+    start_tx = pos
+    end_tx = pos + 2
+    start_genome = anno.coordinate_transcript_to_genomic(start_tx, tx_id)
+    end_genome = anno.coordinate_transcript_to_genomic(end_tx, tx_id)
+    start_gene = anno.coordinate_genomic_to_gene(start_genome, gene_id)
+    end_gene = anno.coordinate_genomic_to_gene(end_genome, gene_id)
+    end_gene += 1
+    location = FeatureLocation(start_tx, end_tx + 1)
+    ref = 'TGA'
+    alt = '<SECT>'
+    _id = f"SECT-{start_gene + 1}"
+    attrs = {
+        'TRANSCRIPT_ID': tx_id
+    }
+    return VariantRecord(location=location, ref=ref, alt=alt, _type='SECT',
+        _id=_id, attrs=attrs)
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.

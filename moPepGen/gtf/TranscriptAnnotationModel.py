@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from Bio.Seq import Seq
 
 GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon',
-    'utr']
+    'utr', 'selenocysteine']
 
 class TranscriptAnnotationModel():
     """ A TranscriptAnnotationModel holds all the annotations associated with
@@ -34,6 +34,7 @@ class TranscriptAnnotationModel():
             utr:List[GTFSeqFeature]=None,
             five_utr:List[GTFSeqFeature]=None,
             three_utr:List[GTFSeqFeature]=None,
+            selenocysteine:List[GTFSeqFeature]=None,
             is_protein_coding:bool=None,
             _seq:dna.DNASeqRecordWithCoordinates=None,
             transcript_id:str=None,
@@ -50,6 +51,7 @@ class TranscriptAnnotationModel():
         self.utr = utr or []
         self.five_utr = five_utr or []
         self.three_utr = three_utr or []
+        self.selenocysteine = selenocysteine or []
         self.is_protein_coding = is_protein_coding
         self._seq = _seq
         self.transcript_id = transcript_id
@@ -120,6 +122,7 @@ class TranscriptAnnotationModel():
         self.utr.sort()
         self.three_utr.sort()
         self.five_utr.sort()
+        self.selenocysteine.sort()
 
     def get_cds_start_index(self) -> int:
         """ Returns the CDS start index of the transcript """
@@ -187,6 +190,16 @@ class TranscriptAnnotationModel():
         else:
             orf = None
 
+        selenocystein = []
+        for sec in self.selenocysteine:
+            if sec.strand == 1:
+                sec_start = self.get_transcript_index(sec.location.start)
+                sec_end = self.get_transcript_index(sec.location.end - 1) + 1
+            else:
+                sec_start = self.get_transcript_index(sec.location.end - 1)
+                sec_end = self.get_transcript_index(sec.location.start) + 1
+            selenocystein.append(FeatureLocation(start=sec_start, end=sec_end))
+
         location = MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),
             ref=FeatureLocation(
@@ -198,6 +211,7 @@ class TranscriptAnnotationModel():
         transcript = dna.DNASeqRecordWithCoordinates(
             seq=seq,
             orf=orf,
+            selenocysteine=selenocystein,
             locations=[location]
         )
         transcript.id = self.transcript.transcript_id

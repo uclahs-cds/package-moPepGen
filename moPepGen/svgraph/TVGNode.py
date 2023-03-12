@@ -780,3 +780,19 @@ class TVGNode():
             and upstream.reading_frame_index == start.reading_frame_index \
             and upstream.seq.locations[0].ref > start.seq.locations[0].ref \
             and downstream.seq.locations[0].ref < end.seq.locations[0].ref
+
+    def get_selenocysteine_positions(self, selenocysteines:List[FeatureLocation]
+            ) -> List[int]:
+        """ Find selenocysteine position from the sequence """
+        positions = []
+        for sec in selenocysteines:
+            query_i = self.seq.get_query_index(sec.start)
+            if query_i == -1:
+                continue
+            if query_i % 3 != 0:
+                continue
+            sec_query = FeatureLocation(start=query_i, end=query_i + 3)
+            if any(v.location.overlaps(sec_query) for v in self.variants):
+                continue
+            positions.append(query_i)
+        return positions

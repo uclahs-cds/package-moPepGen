@@ -21,6 +21,7 @@ def create_base_args() -> argparse.Namespace:
     args.proteome_fasta = None
     args.reference_source = None
     args.output_path = None
+    args.selenocysteine_termination = False
     args.max_variants_per_node = 7
     args.additional_variants_per_misc = 2
     args.min_nodes_to_collapse = 30
@@ -103,6 +104,12 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+
+        args.selenocysteine_termination = True
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta'}

@@ -111,5 +111,6 @@ def write(handle:IO, anno:GenomicAnnotation) -> None:
             records = tx_model.cds + tx_model.exon
             records.sort()
             records.extend(tx_model.utr)
+            records = tx_model.selenocysteine + records
             for record in records:
                 handle.write(to_gtf_record(record) + '\n')

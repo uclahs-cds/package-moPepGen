@@ -7,6 +7,7 @@
 		- [1.3 Fusion](#13-fusion)
 		- [1.4 Alternative Splicing Site](#14-alternative-splicing-site)
 		- [1.5 CircRNA](#15-circrna)
+		- [1.6 Selenocysteine Termination](#16-selenocysteine-termination)
 	- [2 Variant Peptide FASTA](#2-variant-peptide-fasta)
 
 
@@ -144,7 +145,7 @@ RI is represented as an insertion or the intron sequence.
 ENSG0001  110  SE-300        C    <INS>  .     .       TRANSCRIPT_ID=ENST00011;DONOR_GENE_ID=ENSG0005;DONOR_START=300;DONOR_END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
 ENSG0002  210  A5SS-210      T    <DEL>  .     .       TRANSCRIPT_ID=ENST00021;DONOR_GENE_ID=ENSG0006;DONOR_START=210;DONOR_END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ENSG0003  115  A3SS-320      T    <INS>  .     .       TRANSCRIPT_ID=ENST00031;DONOR_GENE_ID=ENSG0007;DONOR_START=320;DONOR_END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
-ENSG0004  277  MXE-477-1103  T    <SUB>  .     .       TRANSCRIPT_ID=ENST00041;DONOR_GENE_ID=ENSG0008;DONOR_START=477;DONOREND=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENSG0004  277  MXE-477-1103  T    <SUB>  .     .       TRANSCRIPT_ID=ENST00041;DONOR_GENE_ID=ENSG0008;DONOR_START=477;DONOR_END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
 **Examples:**
@@ -209,6 +210,11 @@ Technically, circRNAs are not variants that alters the gene/transcript sequence.
 + **`GENE_SYMBOL`** The name of the gene.
 
 The ID of circRNAs consist of two components. They all start with \<transcript_id>-circRNA or \<transcript_id>-ciRNA where `transcript_id` is the value from the `CHROM` column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example,ENSG0001-circRNA-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
+
+### 1.6 Selenocysteine Termination
+
+In eukaryotes, the UGA on some mRNAs can be decoded into Selenocysteine instead of being recognized as a stop codon, and those proteins are called selenoproteins. However the decoding of UGA is regulated by complex signals including mRNA and sec-tRNA abundance, which could result two isoforms: one with UGA read through and one being truncated. Selenocysteine termination is used to represent the later situation. Selenocysteine terminations are not written into any GVF file but they are represented in the format of `SECT-<pos>` where `pos` is the position of the selenocysteine UGA being recognized as a stop codon in the **gene**.
+
 ## 2 Variant Peptide FASTA
 
 In moPepGen, the headers of the final output variant peptide FASTA contains the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the GVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. A integer index is thus always added to the end to resolve redundancies.
