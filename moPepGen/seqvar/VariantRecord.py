@@ -44,7 +44,7 @@ def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRe
         _id=_id, attrs=attrs)
 
 def create_variant_w2f(tx_id:str, pos:int) -> VariantRecord:
-    """ """
+    """ Create a W2F codon reassignment variant. """
     return VariantRecord(
         location=FeatureLocation(pos, pos + 1),
         ref='W',
@@ -277,8 +277,8 @@ class VariantRecord():
         """ Check if this is an alternative splicing event """
         return any(self.id.startswith(x) for x in RMATS_TYPES)
 
-    def is_substitutants(self) -> bool:
-        """ """
+    def is_codon_reassignment(self) -> bool:
+        """ Check if the variant is a codon reassignment """
         return self.type in CODON_REASSIGNMENTS_TYPES
 
     def is_in_frame_fusion(self, anno:GenomicAnnotation):

@@ -269,7 +269,7 @@ class MiscleavedNodes():
                 yield seq, metadata
 
     def find_codon_reassignments(self, seq:Seq, w2f:bool=False) -> List[VariantRecord]:
-        """ """
+        """ Find potential codon reassignments from the given sequence. """
         variants = []
         if w2f:
             i = 0

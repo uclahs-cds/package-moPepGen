@@ -111,7 +111,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide_case1_sect_and_w2f(self):
-        """ """
+        """ Test case for peptide calling and with sect and w2f enabled. """
         args = create_base_args()
         args.input_path = [self.data_dir/'vep'/'vep_gSNP.gvf']
         args.output_path = self.work_dir/'vep_moPepGen.fasta'
