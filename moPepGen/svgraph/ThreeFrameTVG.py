@@ -44,7 +44,6 @@ class ThreeFrameTVG():
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
             cleavage_params:params.CleavageParams=None, gene_id:str=None,
-            truncate_sec:bool=False,
             sect_variants:List[seqvar.VariantRecordWithCoordinate]=None):
         """ Constructor to create a TranscriptVariantGraph object. """
         self.seq = seq
@@ -67,7 +66,6 @@ class ThreeFrameTVG():
         self.hypermutated_region_warned = hypermutated_region_warned
         self.cleavage_params = cleavage_params or params.CleavageParams('trypsin')
         self.gene_id = gene_id
-        self.truncate_sec = truncate_sec
         self.sect_variants = sect_variants or []
 
     def is_circ_rna(self) -> bool:
@@ -1712,7 +1710,6 @@ class ThreeFrameTVG():
             global_variant=self.global_variant,
             subgraphs=self.subgraphs,
             gene_id=self.gene_id,
-            truncate_sec=self.truncate_sec
         )
 
         queue = deque([(dnode, root) for dnode in self.reading_frames])

@@ -1,6 +1,7 @@
 """ Module for variant peptide dict """
 from __future__ import annotations
 from collections import deque
+import itertools
 import copy
 from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from Bio.Seq import Seq
@@ -11,6 +12,7 @@ from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.aa import VariantPeptideIdentifier as vpi
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
+from moPepGen.seqvar import create_variant_w2f
 
 
 if TYPE_CHECKING:
@@ -169,7 +171,7 @@ class MiscleavedNodes():
     def join_miscleaved_peptides(self, check_variants:bool,
             additional_variants:List[VariantRecord], blacklist:Set[str],
             is_start_codon:bool=False, circ_rna:circ.CircRNAModel=None,
-            truncate_sec:bool=False
+            truncate_sec:bool=False, w2f:bool=False
             ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -252,21 +254,39 @@ class MiscleavedNodes():
             if not seq:
                 continue
 
-            if check_variants and not (variants or selenocysteines):
+            seq = Seq(seq)
+            substitutants = self.find_codon_reassignments(seq, w2f)
+
+            if check_variants and not (variants or selenocysteines or substitutants):
                 continue
 
             metadata.is_pure_circ_rna = len(variants) == 1 and \
                 list(variants)[0].is_circ_rna()
 
-            seqs = self.translational_modification(Seq(seq), metadata, blacklist,
-                variants, is_start_codon, selenocysteines, check_variants)
+            seqs = self.translational_modification(seq, metadata, blacklist,
+                variants, is_start_codon, selenocysteines, substitutants, check_variants)
             for seq, metadata in seqs:
                 yield seq, metadata
 
+    def find_codon_reassignments(self, seq:Seq, w2f:bool=False) -> List[VariantRecord]:
+        """ """
+        variants = []
+        if w2f:
+            i = 0
+            while i > -1:
+                i = seq.find('W', start=i)
+                if i > -1:
+                    w2f_var = create_variant_w2f(self.tx_id, i)
+                    variants.append(w2f_var)
+                    i += 1
+                    if i >= len(seq):
+                        break
+        return variants
+
     def translational_modification(self, seq:Seq, metadata:VariantPeptideMetadata,
-            blacklist:Set[str], variants:List[VariantRecord], is_start_codon:bool,
+            blacklist:Set[str], variants:Set[VariantRecord], is_start_codon:bool,
             selenocysteines:List[seqvar.VariantRecordWithCoordinate],
-            check_variants:bool
+            reassignments:List[VariantRecord], check_variants:bool
             ) -> Iterable[Tuple[str,VariantPeptideMetadata]]:
         """ Apply any modification that could happen during translation. The
         kinds of modifications that could happen are:
@@ -294,6 +314,7 @@ class MiscleavedNodes():
                     aa_seq = aa.AminoAcidSeqRecord(seq=seq[1:])
                     yield aa_seq, cur_metadata
 
+        # Selenocysteine termination
         for sec in selenocysteines:
             seq_mod = seq[:sec.location.start]
             is_valid = self.is_valid_seq(seq_mod, blacklist)
@@ -318,6 +339,38 @@ class MiscleavedNodes():
                 if is_valid_start:
                     aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod[1:])
                     yield aa_seq, cur_metadata
+
+        # W > F codon reassignments
+        for k in range(1, len(reassignments) + 1):
+            for comb in itertools.combinations(reassignments, k):
+                seq_mod = seq
+                for v in comb:
+                    seq_mod_new = seq_mod[:v.location.start] + v.alt
+                    if v.location.end < len(seq):
+                        seq_mod_new += seq_mod[v.location.end:]
+                    seq_mod = seq_mod_new
+
+                is_valid = self.is_valid_seq(seq_mod, blacklist)
+                is_valid_start = is_start_codon and seq_mod.startswith('M') and\
+                    self.is_valid_seq(seq_mod[1:], blacklist)
+
+                if is_valid or is_valid_start:
+                    cur_metadata = copy.copy(metadata)
+                    cur_variants = copy.copy(variants)
+                    cur_variants.update(comb)
+                    label = vpi.create_variant_peptide_id(
+                        transcript_id=self.tx_id, variants=cur_variants, orf_id=None,
+                        gene_id=self.gene_id
+                    )
+                    cur_metadata.label = label
+
+                    if is_valid:
+                        aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod)
+                        yield aa_seq, cur_metadata
+
+                    if is_valid_start:
+                        aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod[1:])
+                        yield aa_seq, cur_metadata
 
     @staticmethod
     def any_overlaps_and_all_missing_variant(nodes:Iterable[PVGNode], variant:VariantRecord):
@@ -407,7 +460,7 @@ class VariantPeptideDict():
     """
     def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None,
             global_variant:VariantRecord=None, gene_id:str=None,
-            truncate_sec:bool=False):
+            truncate_sec:bool=False, w2f:bool=False):
         """ constructor """
         self.tx_id = tx_id
         self.peptides = peptides or {}
@@ -415,6 +468,7 @@ class VariantPeptideDict():
         self.global_variant = global_variant
         self.gene_id = gene_id
         self.truncate_sec = truncate_sec
+        self.w2f = w2f
 
     def add_miscleaved_sequences(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams,
@@ -455,7 +509,8 @@ class VariantPeptideDict():
             blacklist=blacklist,
             is_start_codon=is_start_codon,
             circ_rna=circ_rna,
-            truncate_sec=self.truncate_sec
+            truncate_sec=self.truncate_sec,
+            w2f=self.w2f
         )
         for seq, metadata in seqs:
             if 'X' in seq.seq:

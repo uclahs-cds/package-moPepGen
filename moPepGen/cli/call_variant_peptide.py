@@ -51,6 +51,12 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         'termination instead of Sec.'
     )
     p.add_argument(
+        '--w2f-reassignment',
+        action='store_true',
+        help='Include peptides with W > F (Tryptophan to Phenylalanine) '
+        'reassignment.'
+    )
+    p.add_argument(
         '--max-variants-per-node',
         type=int,
         help='Maximal number of variants per node. This argument can be useful'
@@ -140,6 +146,7 @@ class VariantPeptideCaller():
             naa_to_collapse = args.naa_to_collapse
         )
         self.truncate_sec:bool = args.selenocysteine_termination
+        self.w2f_reassignment = args.w2f_reassignment
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
         self.verbose = args.verbose_level
@@ -184,7 +191,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         pool:seqvar.VariantRecordPool,
         cleavage_params:params.CleavageParams,
         noncanonical_transcripts:bool,
-        truncate_sec:bool
+        truncate_sec:bool, w2f_reassignment:bool
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
@@ -197,7 +204,8 @@ def call_variant_peptides_wrapper(tx_id:str,
                     variant_pool=pool, ref=reference_data,
                     tx_seqs=tx_seqs, gene_seqs=gene_seqs,
                     cleavage_params=cleavage_params,
-                    truncate_sec=truncate_sec
+                    truncate_sec=truncate_sec,
+                    w2f=w2f_reassignment
                 )
                 peptide_pool.append(peptides)
         except:
@@ -224,7 +232,8 @@ def call_variant_peptides_wrapper(tx_id:str,
             variant_pool[tx_id].transcriptional = filtered_variants
             _peptides = call_peptide_fusion(
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
-                tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params
+                tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params,
+                w2f_reassignment=w2f_reassignment
             )
         except:
             logger(
@@ -241,7 +250,8 @@ def call_variant_peptides_wrapper(tx_id:str,
             _peptides = call_peptide_circ_rna(
                 record=circ_model, ref=reference_data,
                 variant_pool=pool, gene_seqs=gene_seqs,
-                cleavage_params=cleavage_params
+                cleavage_params=cleavage_params,
+                w2f_reassignment=w2f_reassignment
             )
         except:
             logger(f"Exception raised from {circ_model.id}")
@@ -342,7 +352,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             dispatch = (
                 tx_id, variant_series, tx_seqs, gene_seqs, reference_data,
                 dummy_pool, caller.cleavage_params, noncanonical_transcripts,
-                caller.truncate_sec
+                caller.truncate_sec, caller.w2f_reassignment
             )
             dispatches.append(dispatch)
 
@@ -380,7 +390,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
-        truncate_sec:bool
+        truncate_sec:bool, w2f:bool
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
@@ -392,8 +402,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         cds_start_nf=tx_model.is_cds_start_nf(),
         has_known_orf=tx_model.is_protein_coding,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
-        cleavage_params=cleavage_params,
-        truncate_sec=truncate_sec
+        cleavage_params=cleavage_params
     )
     dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()
@@ -405,14 +414,18 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
     pgraph = dgraph.translate()
 
     pgraph.create_cleavage_graph()
-    return pgraph.call_variant_peptides(blacklist=ref.canonical_peptides)
+    return pgraph.call_variant_peptides(
+        blacklist=ref.canonical_peptides,
+        truncate_sec=truncate_sec,
+        w2f=w2f
+    )
 
 def call_peptide_fusion(variant:seqvar.VariantRecord,
         variant_pool:seqvar.VariantRecordPoolOnDisk,
         ref:params.ReferenceData,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
-        cleavage_params:params.CleavageParams
+        cleavage_params:params.CleavageParams, w2f_reassignment:bool
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for fusion """
     tx_id = variant.location.seqname
@@ -448,12 +461,16 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
     pgraph.create_cleavage_graph()
-    return pgraph.call_variant_peptides(blacklist=ref.canonical_peptides)
+    return pgraph.call_variant_peptides(
+        blacklist=ref.canonical_peptides,
+        w2f=w2f_reassignment
+    )
 
 def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
-        cleavage_params:params.CleavageParams
+        cleavage_params:params.CleavageParams,
+        w2f_reassignment:bool
         )-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
@@ -496,4 +513,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
     cgraph.fit_into_codons()
     pgraph = cgraph.translate()
     pgraph.create_cleavage_graph()
-    return pgraph.call_variant_peptides(blacklist=ref.canonical_peptides, circ_rna=record)
+    return pgraph.call_variant_peptides(
+        blacklist=ref.canonical_peptides, circ_rna=record,
+        w2f=w2f_reassignment
+    )

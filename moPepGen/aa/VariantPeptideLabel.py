@@ -2,13 +2,16 @@
 from __future__ import annotations
 from typing import Dict, Iterable, List, TYPE_CHECKING
 from moPepGen import err, seqvar, circ,SPLIT_DATABASE_KEY_SEPARATER
+from moPepGen.seqvar import SEC_TERMINATION_TYPE, CODON_REASSIGNMENTS_TYPES
 from . import VariantPeptideIdentifier as pi
 
 if TYPE_CHECKING:
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
     from moPepGen.gtf import GenomicAnnotation
 
-NONCODING_SOURCE = 'Noncoding'
+SOURCE_NONCODING = 'Noncoding'
+SOURCE_CODONG_REASSIGNMENT = 'CodonReassign'
+SOURCE_SECT_TERMINATION = 'SECT'
 
 class VariantSourceSet(set):
     """ Variant source set. This is a class of ordered set.
@@ -193,12 +196,17 @@ class VariantPeptideInfo():
 
             if check_source:
                 if anno.transcripts[tx_id].is_protein_coding is False:
-                    info.sources.add(NONCODING_SOURCE)
+                    info.sources.add(SOURCE_NONCODING)
 
                 for gene_id, _ids in var_ids.items():
                     for var_id in _ids:
-                        source = label_map.get_source(gene_id, var_id)
-                        info.sources.add(source)
+                        if var_id.split('-')[0] == SEC_TERMINATION_TYPE:
+                            info.sources.add(SOURCE_SECT_TERMINATION)
+                        elif var_id.split('-')[0] in CODON_REASSIGNMENTS_TYPES:
+                            info.sources.add(SOURCE_CODONG_REASSIGNMENT)
+                        else:
+                            source = label_map.get_source(gene_id, var_id)
+                            info.sources.add(source)
 
             info_list.append(info)
         return info_list
