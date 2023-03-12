@@ -272,7 +272,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         """ Test the group order noncoding """
         levels = copy.copy(SOURCE_ORDER)
         splitter = PeptidePoolSplitter(order=levels)
-        splitter.append_order_noncoding()
+        splitter.append_order_internal_sources()
         self.assertEqual(splitter.order['Noncoding'], 6)
 
     def test_load_gvf(self):
@@ -344,7 +344,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
             label_map=label_map,
-            sources=copy.copy(list(SOURCE_ORDER.keys()))
+            sources=copy.copy(set(SOURCE_ORDER.keys()))
         )
         splitter.split(1, [], anno)
         self.assertIn('gSNP', splitter.databases.keys())
@@ -365,7 +365,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
             label_map=label_map,
-            sources=copy.copy(list(SOURCE_ORDER.keys()))
+            sources=copy.copy(set(SOURCE_ORDER.keys()))
         )
         splitter.split(1, [], anno)
 
@@ -393,7 +393,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
             label_map=label_map,
-            sources=copy.copy(list(SOURCE_ORDER.keys()))
+            sources=copy.copy(set(SOURCE_ORDER.keys()))
         )
         splitter.split(2, [], anno)
 
@@ -420,7 +420,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
             label_map=label_map,
-            sources=copy.copy(list(SOURCE_ORDER.keys()))
+            sources=copy.copy(set(SOURCE_ORDER.keys()))
         )
         splitter.split(1, [], anno)
 
@@ -449,7 +449,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
             label_map=label_map,
-            sources=copy.copy(list(SOURCE_ORDER.keys()))
+            sources=copy.copy(set(SOURCE_ORDER.keys()))
         )
         splitter.split(1, [{'sINDEL'}], anno)
 
@@ -478,7 +478,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
             label_map=label_map,
-            sources=copy.copy(list(SOURCE_ORDER.keys()))
+            sources=copy.copy(set(SOURCE_ORDER.keys()))
         )
         splitter.split(1, [{'circRNA'}], anno)
 
@@ -501,7 +501,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
             label_map=label_map,
-            sources=copy.copy(list(SOURCE_ORDER.keys()))
+            sources=copy.copy(set(SOURCE_ORDER.keys()))
         )
         splitter.split(1, [{'Fusion'}], anno)
 

@@ -111,7 +111,7 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         with open(gvf, 'rt') as handle:
             summarizer.update_label_map(handle)
 
-    summarizer.append_order_noncoding()
+    summarizer.append_order_internal_sources()
 
     with open(args.variant_peptides, 'rt') as handle:
         summarizer.load_database(handle)
