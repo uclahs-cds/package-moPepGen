@@ -45,6 +45,12 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     )
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
+        '--max-adjacent-as-mnv',
+        type=int,
+        help='Max number of adjacent variants that should be merged.',
+        default=2
+    )
+    p.add_argument(
         '--selenocysteine-termination',
         action='store_true',
         help='Include peptides of selenoprotiens that the UGA is treated as '
@@ -145,6 +151,7 @@ class VariantPeptideCaller():
             min_nodes_to_collapse = args.min_nodes_to_collapse,
             naa_to_collapse = args.naa_to_collapse
         )
+        self.max_adjacent_as_mnv = args.max_adjacent_as_mnv
         self.truncate_sec:bool = args.selenocysteine_termination
         self.w2f_reassignment = args.w2f_reassignment
         self.noncanonical_transcripts = args.noncanonical_transcripts
@@ -191,7 +198,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         pool:seqvar.VariantRecordPool,
         cleavage_params:params.CleavageParams,
         noncanonical_transcripts:bool,
-        truncate_sec:bool, w2f_reassignment:bool
+        max_adjacent_as_mnv:bool, truncate_sec:bool, w2f_reassignment:bool
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
@@ -204,6 +211,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                     variant_pool=pool, ref=reference_data,
                     tx_seqs=tx_seqs, gene_seqs=gene_seqs,
                     cleavage_params=cleavage_params,
+                    max_adjacent_as_mnv=max_adjacent_as_mnv,
                     truncate_sec=truncate_sec,
                     w2f=w2f_reassignment
                 )
@@ -233,7 +241,7 @@ def call_variant_peptides_wrapper(tx_id:str,
             _peptides = call_peptide_fusion(
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
                 tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params,
-                w2f_reassignment=w2f_reassignment
+                max_adjacent_as_mnv=max_adjacent_as_mnv, w2f_reassignment=w2f_reassignment
             )
         except:
             logger(
@@ -251,6 +259,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                 record=circ_model, ref=reference_data,
                 variant_pool=pool, gene_seqs=gene_seqs,
                 cleavage_params=cleavage_params,
+                max_adjacent_as_mnv=max_adjacent_as_mnv,
                 w2f_reassignment=w2f_reassignment
             )
         except:
@@ -352,7 +361,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             dispatch = (
                 tx_id, variant_series, tx_seqs, gene_seqs, reference_data,
                 dummy_pool, caller.cleavage_params, noncanonical_transcripts,
-                caller.truncate_sec, caller.w2f_reassignment
+                caller.max_adjacent_as_mnv, caller.truncate_sec, caller.w2f_reassignment
             )
             dispatches.append(dispatch)
 
@@ -390,7 +399,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
-        truncate_sec:bool, w2f:bool
+        max_adjacent_as_mnv:bool, truncate_sec:bool, w2f:bool
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
@@ -408,7 +417,8 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
     dgraph.init_three_frames()
     dgraph.create_variant_graph(
         variants=tx_variants, variant_pool=variant_pool, genome=ref.genome,
-        anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
+        anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs,
+        max_adjacent_as_mnv=max_adjacent_as_mnv
     )
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
@@ -425,7 +435,8 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         ref:params.ReferenceData,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
-        cleavage_params:params.CleavageParams, w2f_reassignment:bool
+        cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
+        w2f_reassignment:bool
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for fusion """
     tx_id = variant.location.seqname
@@ -457,6 +468,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     dgraph.create_variant_graph(
         variants=tx_variants, variant_pool=variant_pool, genome=ref.genome,
         anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs,
+        max_adjacent_as_mnv=max_adjacent_as_mnv
     )
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
@@ -469,7 +481,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
 def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
-        cleavage_params:params.CleavageParams,
+        cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
         w2f_reassignment:bool
         )-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
@@ -507,7 +519,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
         cleavage_params=cleavage_params
     )
     cgraph.init_three_frames()
-    cgraph.create_variant_circ_graph(variant_records)
+    cgraph.create_variant_circ_graph(variant_records, max_adjacent_as_mnv)
     cgraph.extend_loop()
     cgraph.truncate_three_frames()
     cgraph.fit_into_codons()

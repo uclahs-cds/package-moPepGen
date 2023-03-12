@@ -1,7 +1,7 @@
 """ Module for generic variant record """
 from __future__ import annotations
 import copy
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Iterable
 from moPepGen import ERROR_NO_TX_AVAILABLE, \
     ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
         ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from moPepGen.gtf import GenomicAnnotation
     from moPepGen.dna import DNASeqDict, DNASeqRecord, DNASeqRecordWithCoordinates
 
-_VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
+_VARIANT_TYPES = ['SNV', 'INDEL', 'MNV', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution', 'circRNA', 'SECT', 'W2F']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'RNAEditingSite']
 ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
@@ -52,6 +52,42 @@ def create_variant_w2f(tx_id:str, pos:int) -> VariantRecord:
         _type='W2F',
         _id=f"W2F-{pos+1}",
         attrs={'TRANSCRIPT_ID': tx_id}
+    )
+
+def create_mnv_from_adjacent(variants:Iterable[VariantRecord]) -> VariantRecord:
+    """ Create MNV from abdjacent variants. """
+    var_ids = []
+    for v in variants:
+        if not var_ids:
+            seqname = v.location.seqname
+            if 'TRANSCRIPT_ID' in v.attrs:
+                tx_id = v.attrs['TRANSCRIPT_ID']
+                gene_id = seqname
+            else:
+                tx_id = seqname
+                gene_id = v.attrs['GENE_ID']
+            start = v.location.start
+            ref = v.ref
+            alt = v.alt
+            var_ids.append(v.id)
+        else:
+            ref += v.ref
+            alt += v.alt
+            var_ids.append(v.id)
+    end = variants[-1].location.end
+
+    return VariantRecord(
+        location=FeatureLocation(start, end, seqname=seqname),
+        ref=ref,
+        alt=alt,
+        _type='MNV',
+        _id=f"MNV-{start}-{ref}-{end}",
+        attrs={
+            'GENE_ID': gene_id,
+            'TRANSCRIPT_ID': tx_id,
+            'INDIVIDUAL_VARIANT_IDS': var_ids,
+            'MERGED_MNV': True
+        }
     )
 
 class VariantRecord():
@@ -280,6 +316,10 @@ class VariantRecord():
     def is_codon_reassignment(self) -> bool:
         """ Check if the variant is a codon reassignment """
         return self.type in CODON_REASSIGNMENTS_TYPES
+
+    def is_merged_mnv(self) -> bool:
+        """ Check if the variant is a MNV merged from individual adjacent variants. """
+        return self.attrs.get('MERGED_MNV', False)
 
     def is_in_frame_fusion(self, anno:GenomicAnnotation):
         """ Check if this is a in-frame fusion. A in-frame fusion is only when

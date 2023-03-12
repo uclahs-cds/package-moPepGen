@@ -10,13 +10,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.12.0] - 2023-03-12
+## [0.12.0] - 2023-03-13
 
 ### Added
 
 - Added the support for calling peptides of Selenocysteine terminated. #684
 
 - Added the support for calling peptides of W > F codon reassignments. #484
+
+- Added the support for calling peptides with adjacent SNP/INDEL. #691
 
 ## [0.11.5] - 2023-3-5
 

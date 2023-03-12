@@ -21,6 +21,7 @@ def create_base_args() -> argparse.Namespace:
     args.proteome_fasta = None
     args.reference_source = None
     args.output_path = None
+    args.max_adjacent_as_mnv = 0
     args.selenocysteine_termination = False
     args.w2f_reassignment = False
     args.max_variants_per_node = 7
@@ -118,6 +119,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.max_adjacent_as_mnv = 2
         args.selenocysteine_termination = True
         args.w2f_reassignment = True
         cli.call_variant_peptide(args)
