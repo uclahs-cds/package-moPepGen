@@ -449,6 +449,9 @@ class FuzzTestCase():
         args.reference_source = None
         args.output_path = self.record.call_variant_fasta
         args.quiet = True
+        args.max_adjacent_as_mnv = 0
+        args.selenocysteine_termination = False
+        args.w2f_reassignment = False
         args.cleavage_rule = 'trypsin'
         args.miscleavage = 2
         args.min_mw = 500.
@@ -473,6 +476,9 @@ class FuzzTestCase():
         args.reference_dir = self.config.ref_dir
         args.force = True
         args.variant_ids = []
+        args.max_adjacent_as_mnv = 0
+        args.selenocysteine_termination = False
+        args.w2f_reassignment = False
         args.cleavage_rule = self.config.cleavage_rule
         args.miscleavage = self.config.miscleavage
         args.min_mw = self.config.min_mw

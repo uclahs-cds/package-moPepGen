@@ -6,7 +6,7 @@ from moPepGen import fake
 
 class TestCaseFake(unittest.TestCase):
     """ Test cases for fake """
-    def assertNoStopCodonBesidesSec(self, tx_seq):
+    def assert_no_stop_codon_besides_sec(self, tx_seq):
         """ Asserts that the given transcript sequence contains no stop codon
         other than selenocysteines. """
         aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
@@ -53,6 +53,6 @@ class TestCaseFake(unittest.TestCase):
                 aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
                 if not tx_model.is_cds_start_nf():
                     self.assertTrue(aa_seq.startswith('M'))
-                self.assertNoStopCodonBesidesSec(tx_seq)
+                self.assert_no_stop_codon_besides_sec(tx_seq)
                 for sec in tx_seq.selenocysteine:
                     self.assertEqual(tx_seq.seq[sec.start:sec.end], 'TGA')

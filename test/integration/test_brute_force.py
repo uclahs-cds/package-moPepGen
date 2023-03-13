@@ -39,6 +39,7 @@ class TestBruteForce(TestCaseIntegration):
         args.reference_dir = reference
         args.max_adjacent_as_mnv = 0
         args.w2f_reassignment = False
+        args.selenocysteine_termination = False
         stream = io.StringIO()
         with contextlib.redirect_stdout(stream):
             util.brute_force(args)

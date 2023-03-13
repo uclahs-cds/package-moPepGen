@@ -58,6 +58,12 @@ def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
         default=2
     )
     parser.add_argument(
+        '--selenocysteine-termination',
+        action='store_true',
+        help='Include peptides of selenoprotiens that the UGA is treated as '
+        'termination instead of Sec.'
+    )
+    parser.add_argument(
         '--w2f-reassignment',
         action='store_true',
         help='Include peptides with W > F (Tryptophan to Phenylalanine) '
@@ -94,7 +100,8 @@ class BruteForceVariantPeptideCaller():
             tx_model:gtf.TranscriptAnnotationModel=None,
             tx_seq:dna.DNASeqRecord=None, gene_seq:dna.DNASeqRecord=None,
             start_index:int=None, variant_peptides:Set[str]=None,
-            max_adjacent_as_mnv:int=2, w2f:bool=False):
+            max_adjacent_as_mnv:int=2, w2f:bool=False,
+            selenocysteine_termination:bool=False):
         """ Constructor """
         self.reference_data = reference_data
         self.cleavage_params = cleavage_params
@@ -107,6 +114,7 @@ class BruteForceVariantPeptideCaller():
         self.start_index = start_index
         self.variant_peptides = variant_peptides or set()
         self.max_adjacent_as_mnv = max_adjacent_as_mnv
+        self.selenocysteine_termination = selenocysteine_termination
         self.w2f = w2f
 
     def create_canonical_peptide_pool(self):
@@ -939,10 +947,19 @@ class BruteForceVariantPeptideCaller():
                         self.variant_peptides.add(peptide_seq)
 
     def translational_modification(self, seq:Seq, lhs:int) -> Iterable[str]:
-        """ """
+        """ Apply any modification that could happen during translation. """
         candidates = [seq]
         if lhs == 0 and seq.startswith('M'):
             candidates.append(seq[1:])
+
+        if self.selenocysteine_termination:
+            k = 0
+            while k > -1:
+                k = seq.find('U', k)
+                if k == -1:
+                    break
+                candidate.append(seq[:k])
+                k += 1
 
         # W > F
         if self.w2f:
@@ -968,7 +985,7 @@ class BruteForceVariantPeptideCaller():
 
         for candidate in candidates:
             if self.peptide_is_valid(candidate):
-                yield(str(candidate))
+                yield str(candidate)
 
     def generate_variant_comb(self) -> Iterable[seqvar.VariantRecordPool]:
         """ Generate combination of variants. """
@@ -1067,6 +1084,7 @@ def brute_force(args):
         )
         caller.max_adjacent_as_mnv = args.max_adjacent_as_mnv
         caller.w2f = args.w2f_reassignment
+        caller.selenocysteine_termination = args.selenocysteine_termination
 
         caller.cleavage_params = params.CleavageParams(
             enzyme=args.cleavage_rule,
