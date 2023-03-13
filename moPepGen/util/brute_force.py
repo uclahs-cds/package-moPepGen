@@ -51,6 +51,11 @@ def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
         help='List of variant labels.',
         nargs='*'
     )
+    parser.add_argument(
+        '--max-adjacent-as-mnv',
+        type=int,
+        help='Max number of adjacent SNPs or INDELs to be merged as a MNV.'
+    )
     add_args_cleavage(parser)
     parser.set_defaults(func=brute_force)
     print_help_if_missing_args(parser)
@@ -81,7 +86,8 @@ class BruteForceVariantPeptideCaller():
             canonical_peptides=None, tx_id:str=None,
             tx_model:gtf.TranscriptAnnotationModel=None,
             tx_seq:dna.DNASeqRecord=None, gene_seq:dna.DNASeqRecord=None,
-            start_index:int=None, variant_peptides:Set[str]=None):
+            start_index:int=None, variant_peptides:Set[str]=None,
+            max_adjacent_as_mnv:int=2):
         """ Constructor """
         self.reference_data = reference_data
         self.cleavage_params = cleavage_params
@@ -93,6 +99,7 @@ class BruteForceVariantPeptideCaller():
         self.gene_seq = gene_seq
         self.start_index = start_index
         self.variant_peptides = variant_peptides or set()
+        self.max_adjacent_as_mnv = max_adjacent_as_mnv
 
     def create_canonical_peptide_pool(self):
         """ Create canonical peptide pool. """
@@ -272,15 +279,37 @@ class BruteForceVariantPeptideCaller():
         aa_end = min(aa_end, math.floor((len(self.tx_seq) - rf_index)/3))
         return '*' in self.tx_seq[rf_index:].translate()[aa_start:aa_end]
 
-    @staticmethod
-    def has_overlapping_variants(variants:List[VariantRecord]) -> bool:
+    def has_overlapping_variants(self, variants:List[VariantRecord]) -> bool:
         """ Checks if any variants overlap. """
+        compatible_type_map = {
+            'SNV': 'SNV',
+            'RNAEditingSite': 'SNV',
+            'INDEL': 'INDEL'
+        }
+        right_map:Dict[VariantRecord,VariantRecord] = {}
         for i, left in enumerate(variants):
             if i == len(variants) - 1:
                 continue
             for right in variants[i+1:]:
-                if left.location.end >= right.location.start:
+                if left.location.end > right.location.start:
                     return True
+
+                if left.location.end == right.location.start:
+                    if right.type not in compatible_type_map \
+                            or left.type not in compatible_type_map:
+                        return True
+                    if compatible_type_map[right.type] != compatible_type_map[left.type]:
+                        return True
+                    right_map[right] = left
+
+                k = 2
+                cur = left
+                while cur in right_map:
+                    k += 1
+                    cur = right_map[cur]
+                if k > self.max_adjacent_as_mnv:
+                    return True
+
         return False
 
     def has_any_invalid_variants_on_inserted_sequences(self,
@@ -992,6 +1021,7 @@ def brute_force(args):
         caller.tx_seq = caller.tx_model.get_transcript_sequence(
             caller.reference_data.genome[caller.tx_model.transcript.chrom]
         )
+        caller.max_adjacent_as_mnv = args.max_adjacent_as_mnv
 
         caller.cleavage_params = params.CleavageParams(
             enzyme=args.cleavage_rule,
