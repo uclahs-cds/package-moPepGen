@@ -4,7 +4,7 @@ import unittest
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
-    TranscriptionStartSiteMutationError, MNVParsingError
+    TranscriptionStartSiteMutationError
 
 
 GENOME_DATA = {

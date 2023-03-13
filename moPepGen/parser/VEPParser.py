@@ -5,7 +5,7 @@ from typing import List, Tuple, Iterable, IO
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.err import TranscriptionStopSiteMutationError, \
-    TranscriptionStartSiteMutationError, MNVParsingError
+    TranscriptionStartSiteMutationError
 from moPepGen import seqvar, dna, gtf
 
 
