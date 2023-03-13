@@ -71,7 +71,12 @@ def line_to_variant_record(line:str) -> VariantRecord:
 
     if not alt.startswith('<'):
         end = start + len(ref)
-        _type = 'SNV' if len(ref) == len(alt) else 'INDEL'
+        if len(ref) == len(alt) == 1:
+            _type = 'SNV'
+        elif len(ref) == 1 or len(alt) == 1:
+            _type = 'INDEL'
+        else:
+            _type = 'MNV'
     elif alt == '<FUSION>':
         end = start + 1
         _type = 'Fusion'

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'MNV', 'Fusion', 'RNAEditingSite',
     'Insertion', 'Deletion', 'Substitution', 'circRNA', 'SECT', 'W2F']
-SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'RNAEditingSite']
+SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'MNV', 'RNAEditingSite']
 ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
 ALTERNATIVE_SPLICING_TYPES = ['Insertion', 'Deletion', 'Substitution']
 RMATS_TYPES = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
