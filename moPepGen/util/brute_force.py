@@ -54,7 +54,14 @@ def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
     parser.add_argument(
         '--max-adjacent-as-mnv',
         type=int,
-        help='Max number of adjacent SNPs or INDELs to be merged as a MNV.'
+        help='Max number of adjacent SNPs or INDELs to be merged as a MNV.',
+        default=2
+    )
+    parser.add_argument(
+        '--w2f-reassignment',
+        action='store_true',
+        help='Include peptides with W > F (Tryptophan to Phenylalanine) '
+        'reassignment.'
     )
     add_args_cleavage(parser)
     parser.set_defaults(func=brute_force)
@@ -87,7 +94,7 @@ class BruteForceVariantPeptideCaller():
             tx_model:gtf.TranscriptAnnotationModel=None,
             tx_seq:dna.DNASeqRecord=None, gene_seq:dna.DNASeqRecord=None,
             start_index:int=None, variant_peptides:Set[str]=None,
-            max_adjacent_as_mnv:int=2):
+            max_adjacent_as_mnv:int=2, w2f:bool=False):
         """ Constructor """
         self.reference_data = reference_data
         self.cleavage_params = cleavage_params
@@ -100,6 +107,7 @@ class BruteForceVariantPeptideCaller():
         self.start_index = start_index
         self.variant_peptides = variant_peptides or set()
         self.max_adjacent_as_mnv = max_adjacent_as_mnv
+        self.w2f = w2f
 
     def create_canonical_peptide_pool(self):
         """ Create canonical peptide pool. """
@@ -206,7 +214,7 @@ class BruteForceVariantPeptideCaller():
         return any(v.variant.is_circ_rna() for v in variants) \
             or self.tx_model.is_mrna_end_nf()
 
-    def has_any_variant(self, lhs:int, rhs:int, cds_start:int,
+    def has_any_variant(self, peptide_seq:Seq, lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
@@ -270,6 +278,9 @@ class BruteForceVariantPeptideCaller():
             rf_index = cds_start % 3
             if self.has_any_stop_codon_between(first_start, last_end, rf_index):
                 return True
+
+        if self.w2f and 'W' in peptide_seq:
+            return True
         return False
 
     def has_any_stop_codon_between(self, start:int, end:int, rf_index:int) -> bool:
@@ -302,13 +313,13 @@ class BruteForceVariantPeptideCaller():
                         return True
                     right_map[right] = left
 
-                k = 2
-                cur = left
-                while cur in right_map:
-                    k += 1
-                    cur = right_map[cur]
-                if k > self.max_adjacent_as_mnv:
-                    return True
+                    k = 2
+                    cur = left
+                    while cur in right_map:
+                        k += 1
+                        cur = right_map[cur]
+                    if k > self.max_adjacent_as_mnv:
+                        return True
 
         return False
 
@@ -914,17 +925,50 @@ class BruteForceVariantPeptideCaller():
                     if self.should_clip_trailing_nodes(variant_coordinates) \
                             and tx_rhs + 3 > len(seq):
                         continue
-                    if not self.has_any_variant(tx_lhs, tx_rhs, actual_cds_start,
-                            variant_coordinates, stop_lost, stop_gain, silent_mutation):
+                    peptide = aa_seq.seq[lhs:rhs]
+                    has_any_variant = self.has_any_variant(
+                        peptide_seq=peptide, lhs=tx_lhs, rhs=tx_rhs,
+                        cds_start=actual_cds_start, variants=variant_coordinates,
+                        variants_stop_lost=stop_lost, variants_stop_gain=stop_gain,
+                        variants_silent_mutation=silent_mutation
+                    )
+                    if not has_any_variant:
                         continue
 
-                    peptides = [aa_seq[lhs:rhs]]
-                    if peptides[0].seq.startswith('M') and lhs == 0:
-                        peptides.append(peptides[0][1:])
-                    for peptide in peptides:
-                        is_valid = self.peptide_is_valid(peptide.seq)
-                        if is_valid:
-                            self.variant_peptides.add(str(peptide.seq))
+                    for peptide_seq in self.translational_modification(peptide, lhs):
+                        self.variant_peptides.add(peptide_seq)
+
+    def translational_modification(self, seq:Seq, lhs:int) -> Iterable[str]:
+        """ """
+        candidates = [seq]
+        if lhs == 0 and seq.startswith('M'):
+            candidates.append(seq[1:])
+
+        # W > F
+        if self.w2f:
+            w2f_indices = []
+            i = 0
+            while i > -1:
+                i = seq.find('W', start=i)
+                if i > -1:
+                    w2f_indices.append(i)
+                    i += 1
+                    if i > len(seq):
+                        break
+
+            for k in range(1, len(w2f_indices) + 1):
+                for comb in combinations(w2f_indices, k):
+                    seq_mod = seq
+                    for i in comb:
+                        seq_mod_new = seq_mod[:i] + 'F'
+                        if i + 1 < len(seq):
+                            seq_mod_new += seq_mod[i+1:]
+                        seq_mod = seq_mod_new
+                    candidates.append(seq_mod)
+
+        for candidate in candidates:
+            if self.peptide_is_valid(candidate):
+                yield(str(candidate))
 
     def generate_variant_comb(self) -> Iterable[seqvar.VariantRecordPool]:
         """ Generate combination of variants. """
@@ -1022,6 +1066,7 @@ def brute_force(args):
             caller.reference_data.genome[caller.tx_model.transcript.chrom]
         )
         caller.max_adjacent_as_mnv = args.max_adjacent_as_mnv
+        caller.w2f = args.w2f_reassignment
 
         caller.cleavage_params = params.CleavageParams(
             enzyme=args.cleavage_rule,
