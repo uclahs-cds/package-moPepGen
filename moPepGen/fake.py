@@ -13,6 +13,8 @@ from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 from moPepGen.circ import CircRNAModel
 
 
+# pylint: disable=R0912, R0915
+
 DNA_ALPHABET = ['A', 'T', 'G', 'C']
 ALT_SPLICE_TYPE_TO_RMATS = {
     'Deletion': ['SE', 'RI', 'A3SS', 'A5SS', 'MXE'],
@@ -512,10 +514,11 @@ def fake_circ_rna_model_ci(anno:GenomicAnnotation, tx_id:str
     )
 
 
-def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
-        start_pos:int, gene_id:str, transcript_id:str, protein_id:str,
-        cds_start_nf:bool, mrna_end_nf:bool, min_exon_size:int, max_exon_size:int,
-        min_intron_size:int, max_intron_size:int) -> TranscriptAnnotationModel:
+def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
+        chrom:str, strand:int, start_pos:int, gene_id:str, transcript_id:str,
+        protein_id:str, cds_start_nf:bool, mrna_end_nf:bool, min_exon_size:int,
+        max_exon_size:int, min_intron_size:int, max_intron_size:int
+        ) -> TranscriptAnnotationModel:
     """ Create a fake transcript model """
     exon_set:List[GTFSeqFeature] = []
     cds_set:List[GTFSeqFeature] = []
@@ -601,6 +604,55 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
                     prev_cds = cds_set[i+1]
                     cds.frame = (3 - (len(prev_exon.location) - prev_cds.frame) % 3) % 3
 
+    # add selenocysteine
+    sec_set = []
+    sec_pos_cds_set = []
+    if is_selenoprotein:
+        n_sec = random.choices([1,2,3], weights=(10,5,1))[0]
+        cds_iter = iter(cds_set) if strand == 1 else reversed(cds_set)
+        cds_len = 0
+        cds_junctions = []
+        for cds in cds_iter:
+            cds_len += cds.location.end - cds.location.start
+            cds_junctions.append(cds_len)
+        n_codons = int(cds_len/3)
+        offset = 1
+        for i in range(n_sec):
+            if offset >= n_codons - 1:
+                break
+            while True:
+                sec_pos_codon = random.randint(offset, n_codons - 1)
+                sec_pos_cds = sec_pos_codon * 3
+                if not any(sec_pos_cds < j < sec_pos_cds + 3 for j in cds_junctions):
+                    break
+            offset = sec_pos_codon + 1
+            sec_pos_cds_set.append(sec_pos_codon * 3)
+
+        sec_pos_cds_iter = iter(sec_pos_cds_set)
+        sec_pos_cds = next(sec_pos_cds_iter, None)
+        k = 0
+        cds_iter = iter(cds_set) if strand == 1 else reversed(cds_set)
+        cds = next(cds_iter, None)
+        while cds and sec_pos_cds:
+            cds_size = cds.location.end - cds.location.start
+            if k + cds_size < sec_pos_cds:
+                k += cds_size
+                cds = next(cds_iter, None)
+                continue
+
+            if strand == 1:
+                sec_pos = sec_pos_cds - k + cds.location.start
+                loc = FeatureLocation(sec_pos, sec_pos + 3)
+            else:
+                sec_pos = cds.location.end - (sec_pos_cds - k)
+                loc = FeatureLocation(sec_pos - 2, sec_pos + 1)
+            sec = GTFSeqFeature(
+                location=loc, strand=strand, type='selenocysteine', id=tx_id,
+                attributes=attributes, chrom=chrom
+            )
+            sec_set.append(sec)
+            sec_pos_cds = next(sec_pos_cds_iter, None)
+
     # add UTR
     if is_coding:
         if cds_set[0].location.start != exon_set[0].location.start:
@@ -645,8 +697,9 @@ def fake_transcript_model(n_exons:int, is_coding:bool, chrom:str, strand:int,
 
     return TranscriptAnnotationModel(
         transcript=transcript, cds=cds_set, exon=exon_set, utr=utr_set,
-        five_utr=five_utr_set, three_utr=three_utr_set, is_protein_coding=is_coding,
-        transcript_id=transcript_id, gene_id=gene_id, protein_id=protein_id
+        selenocysteine=sec_set, five_utr=five_utr_set, three_utr=three_utr_set,
+        is_protein_coding=is_coding, transcript_id=transcript_id,
+        gene_id=gene_id, protein_id=protein_id
     )
 
 def fake_genomic_annotation(n_genes:int, chrom:str, min_exons:int, max_exons:int,
@@ -672,13 +725,16 @@ def fake_genomic_annotation(n_genes:int, chrom:str, min_exons:int, max_exons:int
             mrna_end_nf = random.choice((True, False))
         else:
             cds_start_nf, mrna_end_nf = False, False
+
+        is_selenoprotein = random.choices([True, False], weights=(19,1))[0] \
+            if is_coding else False
+
         tx_model = fake_transcript_model(
-            n_exons=n_exons, is_coding=is_coding, chrom=chrom, strand=strand,
-            start_pos=offset, gene_id=gene_id, transcript_id=tx_id,
-            protein_id=protein_id, cds_start_nf=cds_start_nf, mrna_end_nf=mrna_end_nf,
-            min_exon_size=min_exon_size,
-            max_exon_size=max_exon_size,
-            min_intron_size=min_intron_size,
+            n_exons=n_exons, is_coding=is_coding, is_selenoprotein=is_selenoprotein,
+            chrom=chrom, strand=strand, start_pos=offset, gene_id=gene_id,
+            transcript_id=tx_id, protein_id=protein_id, cds_start_nf=cds_start_nf,
+            mrna_end_nf=mrna_end_nf, min_exon_size=min_exon_size,
+            max_exon_size=max_exon_size, min_intron_size=min_intron_size,
             max_intron_size=max_intron_size
         )
         gene_start = tx_model.transcript.location.start
@@ -806,6 +862,17 @@ def fake_genome(anno:GenomicAnnotation) -> DNASeqDict:
                             chrom_nts[pos] = nt
 
                     i = k
+
+            # make sure selenocysteine position is TGA
+            for sec in tx_model.selenocysteine:
+                if tx_model.transcript.strand == 1:
+                    chrom_nts[sec.location.start] = 'T'
+                    chrom_nts[sec.location.start + 1] = 'G'
+                    chrom_nts[sec.location.start + 2] = 'A'
+                else:
+                    chrom_nts[sec.location.start] = 'T'
+                    chrom_nts[sec.location.start + 1] = 'C'
+                    chrom_nts[sec.location.start + 2] = 'A'
 
     genome = DNASeqDict()
     for chrom_id, chrom_nts in genome_nts.items():

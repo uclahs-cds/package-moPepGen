@@ -6,11 +6,25 @@ from moPepGen import fake
 
 class TestCaseFake(unittest.TestCase):
     """ Test cases for fake """
+    def assertNoStopCodonBesidesSec(self, tx_seq):
+        """ Asserts that the given transcript sequence contains no stop codon
+        other than selenocysteines. """
+        aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
+        sec_sites = {int(sec.start - tx_seq.orf.start)/3
+            for sec in tx_seq.selenocysteine}
+        k = 0
+        while k > -1:
+            k = aa_seq.find('*', k)
+            if k == -1:
+                break
+            self.assertIn(k, sec_sites)
+            k += 1
+
     def test_fake_transcript_model(self):
         """ Test fake_transcript_model """
         tx_model = fake.fake_transcript_model(
-            n_exons=2, is_coding=True, chrom='chrF', strand=1, start_pos=0,
-            gene_id='FAKEG000001', transcript_id='FAKET000001',
+            n_exons=2, is_coding=True, is_selenoprotein=True, chrom='chrF',
+            strand=1, start_pos=0, gene_id='FAKEG000001', transcript_id='FAKET000001',
             protein_id='FAKEP000001', cds_start_nf=False, mrna_end_nf=False,
             min_exon_size=10, max_exon_size=300, min_intron_size=20,
             max_intron_size=500
@@ -39,4 +53,6 @@ class TestCaseFake(unittest.TestCase):
                 aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
                 if not tx_model.is_cds_start_nf():
                     self.assertTrue(aa_seq.startswith('M'))
-                self.assertTrue('*' not in aa_seq)
+                self.assertNoStopCodonBesidesSec(tx_seq)
+                for sec in tx_seq.selenocysteine:
+                    self.assertEqual(tx_seq.seq[sec.start:sec.end], 'TGA')
