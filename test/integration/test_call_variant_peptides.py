@@ -22,6 +22,7 @@ def create_base_args() -> argparse.Namespace:
     args.reference_source = None
     args.output_path = None
     args.selenocysteine_termination = False
+    args.w2f_reassignment = False
     args.max_variants_per_node = 7
     args.additional_variants_per_misc = 2
     args.min_nodes_to_collapse = 30
@@ -109,7 +110,16 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = {'vep_moPepGen.fasta'}
         self.assertEqual(files, expected)
 
+    def test_call_variant_peptide_case1_sect_and_w2f(self):
+        """ Test case for peptide calling and with sect and w2f enabled. """
+        args = create_base_args()
+        args.input_path = [self.data_dir/'vep'/'vep_gSNP.gvf']
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.selenocysteine_termination = True
+        args.w2f_reassignment = True
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta'}

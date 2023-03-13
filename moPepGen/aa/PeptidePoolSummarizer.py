@@ -9,8 +9,11 @@ from moPepGen.aa.VariantPeptideLabel import VariantPeptideInfo, \
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
-from moPepGen.aa.PeptidePoolSplitter import NONCODING_SOURCE
+from moPepGen.aa.VariantPeptideLabel import SOURCE_NONCODING, \
+    SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT
 
+
+SOURCES_INTERNAL = [SOURCE_NONCODING, SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT]
 
 MUTUALLY_EXCLUSIVE_PARSERS:Dict[str,List[str]] = {
     'parseSTARFusion': [
@@ -158,11 +161,12 @@ class PeptidePoolSummarizer():
         self.source_parser_map = source_parser_map or {}
         self.ignore_missing_source = ignore_missing_source
 
-    def append_order_noncoding(self):
-        """ Add noncoding to the end of order """
-        source = NONCODING_SOURCE
-        if source not in self.order:
-            self.append_order(source)
+    def append_order_internal_sources(self):
+        """ Add internal sources that are not present in any GTFs, including
+        noncoding, sec termination, and codon reassignment. """
+        for source in SOURCES_INTERNAL:
+            if source not in self.order:
+                self.append_order(source)
 
     def append_order(self, source:str):
         """ Add a group to the end of the order. """
@@ -197,7 +201,7 @@ class PeptidePoolSummarizer():
         """ Checks whether the given sources contains any mutually exclusive
         parsers. """
         for source in sources:
-            if source == NONCODING_SOURCE:
+            if source in SOURCES_INTERNAL:
                 continue
             parser = self.source_parser_map[source]
             if parser not in MUTUALLY_EXCLUSIVE_PARSERS:
@@ -205,7 +209,7 @@ class PeptidePoolSummarizer():
             # Checks if any of parsers of the rest sources are mutually
             # exclusive to the current one.
             rest_parsers = {self.source_parser_map[x] for x in sources
-                if x not in {source, NONCODING_SOURCE}}
+                if x not in {source, *SOURCES_INTERNAL}}
             if any(x in rest_parsers for x in MUTUALLY_EXCLUSIVE_PARSERS[parser]):
                 return True
         return False

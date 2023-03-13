@@ -14,11 +14,13 @@ if TYPE_CHECKING:
     from moPepGen.dna import DNASeqDict, DNASeqRecord, DNASeqRecordWithCoordinates
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'Fusion', 'RNAEditingSite',
-    'Insertion', 'Deletion', 'Substitution', 'circRNA', 'SECT']
+    'Insertion', 'Deletion', 'Substitution', 'circRNA', 'SECT', 'W2F']
 SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'RNAEditingSite']
 ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
 ALTERNATIVE_SPLICING_TYPES = ['Insertion', 'Deletion', 'Substitution']
 RMATS_TYPES = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
+CODON_REASSIGNMENTS_TYPES = ['W2F']
+SEC_TERMINATION_TYPE = 'SECT'
 
 
 def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRecord:
@@ -40,6 +42,17 @@ def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRe
     }
     return VariantRecord(location=location, ref=ref, alt=alt, _type='SECT',
         _id=_id, attrs=attrs)
+
+def create_variant_w2f(tx_id:str, pos:int) -> VariantRecord:
+    """ Create a W2F codon reassignment variant. """
+    return VariantRecord(
+        location=FeatureLocation(pos, pos + 1),
+        ref='W',
+        alt='F',
+        _type='W2F',
+        _id=f"W2F-{pos+1}",
+        attrs={'TRANSCRIPT_ID': tx_id}
+    )
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.
@@ -263,6 +276,10 @@ class VariantRecord():
     def is_alternative_splicing(self) -> bool:
         """ Check if this is an alternative splicing event """
         return any(self.id.startswith(x) for x in RMATS_TYPES)
+
+    def is_codon_reassignment(self) -> bool:
+        """ Check if the variant is a codon reassignment """
+        return self.type in CODON_REASSIGNMENTS_TYPES
 
     def is_in_frame_fusion(self, anno:GenomicAnnotation):
         """ Check if this is a in-frame fusion. A in-frame fusion is only when

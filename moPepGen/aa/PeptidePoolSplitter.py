@@ -7,13 +7,12 @@ from moPepGen import seqvar, circ, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
     SPLIT_DATABASE_KEY_SEPARATER
 from .VariantPeptidePool import VariantPeptidePool
 from .VariantPeptideLabel import VariantPeptideInfo, VariantSourceSet, \
-    LabelSourceMapping
+    LabelSourceMapping, SOURCE_NONCODING, SOURCE_CODON_REASSIGNMENT, \
+    SOURCE_SEC_TERMINATION
 
 if TYPE_CHECKING:
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
     from moPepGen.gtf import GenomicAnnotation
-
-NONCODING_SOURCE = 'Noncoding'
 
 Databases = Dict[str,VariantPeptidePool]
 
@@ -43,14 +42,16 @@ class PeptidePoolSplitter():
         self.order = order or {}
         self.sources = sources or set()
 
-    def append_order_noncoding(self):
-        """ Add noncoding to the end of order """
-        source = NONCODING_SOURCE
-        if source in self.sources:
-            return
-        self.sources.add(source)
-        if source not in self.order:
-            self.append_order(source)
+    def append_order_internal_sources(self):
+        """ Add internal sources that are not present in any GTFs, including
+        noncoding, sec termination, and codon reassignment. """
+        sources = [SOURCE_NONCODING, SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT]
+        for source in sources:
+            if source in self.sources:
+                continue
+            self.sources.add(source)
+            if source not in self.order:
+                self.append_order(source)
 
     def append_order(self, source:str):
         """ Add a group to the end of the order. """
@@ -107,7 +108,7 @@ class PeptidePoolSplitter():
     def split(self, max_groups:int, additional_split:List[Set],
             anno:GenomicAnnotation):
         """ Split peptide pool into separate databases """
-        self.append_order_noncoding()
+        self.append_order_internal_sources()
         VariantSourceSet.set_levels(self.order)
         delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         additional_split = [VariantSourceSet(x) for x in additional_split]

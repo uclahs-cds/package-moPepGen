@@ -64,7 +64,8 @@ class TestSplitDatabase(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'test_gINDEL.fasta','test_gSNP.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
-            'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta'}
+            'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta',
+            'test_CodonReassign.fasta', 'test_SECT.fasta'}
         self.assertEqual(files, expected)
 
     def test_split_fasta_case2(self):
@@ -86,7 +87,7 @@ class TestSplitDatabase(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'test_coding.fasta', 'test_RNAEditingSite.fasta',
             'test_circRNA.fasta', 'test_Remaining.fasta', 'test_circRNA.fasta',
-            'test_Noncoding.fasta'}
+            'test_Noncoding.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'}
         self.assertEqual(files, expected)
 
     def test_split_fasta_case3(self):
@@ -109,7 +110,7 @@ class TestSplitDatabase(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'test_coding.fasta', 'test_RNAEditingSite.fasta',
             'test_circRNA.fasta', 'test_Remaining.fasta', 'test_circRNA.fasta',
-            'test_Noncoding.fasta'}
+            'test_Noncoding.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'}
         self.assertEqual(files, expected)
 
     def test_split_fasta_case4(self):
@@ -131,5 +132,6 @@ class TestSplitDatabase(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'test_gINDEL.fasta','test_gSNP.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
-            'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta'}
+            'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta',
+            'test_CodonReassign.fasta', 'test_SECT.fasta'}
         self.assertEqual(files, expected)

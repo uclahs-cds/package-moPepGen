@@ -43,7 +43,7 @@ class PeptideVariantGraph():
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
             hypermutated_region_warned:bool=False, blacklist:Set[str]=None,
             global_variant:VariantRecord=None, subgraphs:SubgraphTree=None,
-            gene_id:str=None, truncate_sec:bool=False):
+            gene_id:str=None):
         """ Construct a PeptideVariantGraph """
         self.root = root
         self.id = _id
@@ -62,7 +62,6 @@ class PeptideVariantGraph():
         self.global_variant = global_variant
         self.subgraphs = subgraphs
         self.gene_id = gene_id
-        self.truncate_sec = truncate_sec
 
     def add_stop(self, node:PVGNode):
         """ Add the stop node after the specified node. """
@@ -780,7 +779,8 @@ class PeptideVariantGraph():
 
     def call_variant_peptides(self, check_variants:bool=True,
             check_orf:bool=False, keep_all_occurrence:bool=True, blacklist:Set[str]=None,
-            circ_rna:circ.CircRNAModel=None, orf_assignment:str='max'
+            circ_rna:circ.CircRNAModel=None, orf_assignment:str='max',
+            truncate_sec:bool=False, w2f:bool=False
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
@@ -807,7 +807,8 @@ class PeptideVariantGraph():
             tx_id=self.id,
             global_variant=self.global_variant,
             gene_id=self.gene_id,
-            truncate_sec=self.truncate_sec
+            truncate_sec=truncate_sec,
+            w2f=w2f
         )
         traversal = PVGTraversal(
             check_variants=check_variants, check_orf=check_orf,
