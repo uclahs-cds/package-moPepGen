@@ -959,7 +959,7 @@ class ThreeFrameTVG():
         Args:
             variant [seqvar.VariantRecord]: The variant record.
         """
-        merged_mnvs = self.find_mnvs_from_adjacent_varants(variants, max_adjacent_as_mnv)
+        merged_mnvs = self.find_mnvs_from_adjacent_variants(variants, max_adjacent_as_mnv)
         varinats_with_mnv = sorted(variants + merged_mnvs)
         variant_iter = iter(varinats_with_mnv)
         variant = next(variant_iter, None)
@@ -1088,28 +1088,29 @@ class ThreeFrameTVG():
 
             variant = next(variant_iter, None)
 
-    def find_mnvs_from_adjacent_varants(self, variants:List[seqvar.VariantRecord],
+    @staticmethod
+    def find_mnvs_from_adjacent_variants(variants:List[seqvar.VariantRecord],
             max_adjacent_as_mnv:int=2) -> List[seqvar.VariantRecord]:
-        """ """
+        """ Find MNVs grouped from adjacent variants """
         mnvs = []
         compatible_type_map = {
             'SNV': 'SNV',
             'RNAEditingSite': 'SNV',
             'INDEL': 'INDEL'
         }
-        for i,v0 in enumerate(variants):
-            if v0.type not in compatible_type_map:
+        for i,v_0 in enumerate(variants):
+            if v_0.type not in compatible_type_map:
                 continue
-            type0 = compatible_type_map[v0.type]
+            type0 = compatible_type_map[v_0.type]
             for k in range(1, max_adjacent_as_mnv):
-                adjacent_vars = [v0]
-                for vi in variants[i + 1:]:
-                    if vi.location.start < v0.location.end:
+                adjacent_vars = [v_0]
+                for v_i in variants[i + 1:]:
+                    if v_i.location.start < v_0.location.end:
                         continue
-                    if vi.location.start > v0.location.end:
+                    if v_i.location.start > v_0.location.end:
                         break
-                    if compatible_type_map[vi.type] == type0:
-                        adjacent_vars.append(vi)
+                    if compatible_type_map[v_i.type] == type0:
+                        adjacent_vars.append(v_i)
                         if len(adjacent_vars) >= k + 1:
                             break
                 if len(adjacent_vars) < k + 1:

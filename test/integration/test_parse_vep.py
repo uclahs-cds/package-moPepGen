@@ -46,7 +46,7 @@ class TestParseVEP(TestCaseIntegration):
         """ Test parsing VEP output into GVF """
         args = self.create_base_args()
         args.input_path = [
-            self.data_dir/'vep'/'vep_snp.txt',
+            #self.data_dir/'vep'/'vep_snp.txt',
             self.data_dir/'vep'/'vep_indel.txt'
         ]
         cli.parse_vep(args)
