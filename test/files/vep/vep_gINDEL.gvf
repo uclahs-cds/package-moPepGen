@@ -1,14 +1,15 @@
 ##fileformat=VCFv4.2
-##mopepgen_version=0.0.1
+##mopepgen_version=0.12.0
 ##parser=parseVEP
 ##reference_index=
-##genome_fasta=/home/chenghaozhu/projects/private-moPepGen-copy/test/files/genome.fasta
-##annotation_gtf=/home/chenghaozhu/projects/private-moPepGen-copy/test/files/annotation.gtf
+##genome_fasta=/home/chenghaozhu/projects/private-moPepGen/test/files/genome.fasta
+##annotation_gtf=/home/chenghaozhu/projects/private-moPepGen/test/files/annotation.gtf
 ##source=gINDEL
-##CHROM=<Description='Gene ID'>
+##CHROM=<Description="Gene ID">
 ##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
 ENSG00000128408.9	399	INDEL-399-A-AC	A	AC	.	.	TRANSCRIPT_ID=ENST00000614167.2;GENOMIC_POSITION=chr22:399-400;GENE_SYMBOL=RIBC2
-ENSG00000099949.21	1	INDEL-1-GAC-T	GAC	T	.	.	TRANSCRIPT_ID=ENST00000642151.1;GENOMIC_POSITION=chr22:4981-4983;GENE_SYMBOL=LZTR1
+ENSG00000128408.9	399	MNV-399-ACC-TAA	ACC	TAA	.	.	TRANSCRIPT_ID=ENST00000614167.2;GENOMIC_POSITION=chr22:399-401;GENE_SYMBOL=RIBC2
+ENSG00000099949.21	1	MNV-1-GACG-G	GACG	G	.	.	TRANSCRIPT_ID=ENST00000642151.1;GENOMIC_POSITION=chr22:4981-4983;GENE_SYMBOL=LZTR1

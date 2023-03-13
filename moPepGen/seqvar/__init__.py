@@ -9,4 +9,5 @@ from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
 from moPepGen.seqvar.VariantRecordPoolOnDisk import VariantRecordPoolOnDisk, \
     TranscriptionalVariantSeries, VariantRecordPoolOnDiskOpener
-from moPepGen.seqvar.VariantRecord import create_variant_sect, create_variant_w2f
+from moPepGen.seqvar.VariantRecord import create_variant_sect, create_variant_w2f, \
+    create_mnv_from_adjacent

@@ -945,7 +945,8 @@ class ThreeFrameTVG():
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
             gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
-            active_frames:List[bool]=None, known_orf_index:int=None) -> None:
+            active_frames:List[bool]=None, known_orf_index:int=None,
+            max_adjacent_as_mnv:bool=2) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
@@ -958,7 +959,9 @@ class ThreeFrameTVG():
         Args:
             variant [seqvar.VariantRecord]: The variant record.
         """
-        variant_iter = iter(variants)
+        merged_mnvs = self.find_mnvs_from_adjacent_variants(variants, max_adjacent_as_mnv)
+        varinats_with_mnv = sorted(variants + merged_mnvs)
+        variant_iter = iter(varinats_with_mnv)
         variant = next(variant_iter, None)
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
 
@@ -1084,6 +1087,37 @@ class ThreeFrameTVG():
                         variant)
 
             variant = next(variant_iter, None)
+
+    @staticmethod
+    def find_mnvs_from_adjacent_variants(variants:List[seqvar.VariantRecord],
+            max_adjacent_as_mnv:int=2) -> List[seqvar.VariantRecord]:
+        """ Find MNVs grouped from adjacent variants """
+        mnvs = []
+        compatible_type_map = {
+            'SNV': 'SNV',
+            'RNAEditingSite': 'SNV',
+            'INDEL': 'INDEL'
+        }
+        for i,v_0 in enumerate(variants):
+            if v_0.type not in compatible_type_map:
+                continue
+            type0 = compatible_type_map[v_0.type]
+            for k in range(1, max_adjacent_as_mnv):
+                adjacent_vars = [v_0]
+                for v_i in variants[i + 1:]:
+                    if v_i.location.start < v_0.location.end:
+                        continue
+                    if v_i.location.start > v_0.location.end:
+                        break
+                    if compatible_type_map[v_i.type] == type0:
+                        adjacent_vars.append(v_i)
+                        if len(adjacent_vars) >= k + 1:
+                            break
+                if len(adjacent_vars) < k + 1:
+                    break
+                mnv = seqvar.create_mnv_from_adjacent(adjacent_vars)
+                mnvs.append(mnv)
+        return mnvs
 
     def copy_node(self, node:TVGNode) -> TVGNode:
         """ Create a copy of a node and connect to the same up and downstream
