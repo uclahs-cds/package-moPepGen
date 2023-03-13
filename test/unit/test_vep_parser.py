@@ -4,7 +4,7 @@ import unittest
 from test.unit import create_genomic_annotation, create_dna_record_dict
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, \
-    TranscriptionStartSiteMutationError, MNVParsingError
+    TranscriptionStartSiteMutationError
 
 
 GENOME_DATA = {
@@ -479,7 +479,7 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(record.ref, 'CTAT')
         self.assertEqual(record.alt, 'T')
 
-    def test_vep_to_variant_mnv_error(self):
+    def test_vep_to_variant_mnv(self):
         """ error is raised for MNV """
         genome = create_dna_record_dict(GENOME_DATA)
         anno = create_genomic_annotation(ANNOTATION_DATA)
@@ -500,8 +500,8 @@ class TestVEPRecord(unittest.TestCase):
             existing_variation='-',
             extra={}
         )
-        with self.assertRaises(MNVParsingError):
-            vep_record.convert_to_variant_record(anno, genome)
+        record = vep_record.convert_to_variant_record(anno, genome)
+        self.assertEqual(record.type, 'MNV')
 
 if __name__ == '__main__':
     unittest.main()

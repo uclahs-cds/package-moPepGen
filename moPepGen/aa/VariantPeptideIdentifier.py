@@ -29,7 +29,10 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
                         seqname = tx_id
             if seqname not in variant_id_map:
                 variant_id_map[seqname] = []
-            variant_id_map[seqname].append(variant.id)
+            if variant.is_merged_mnv():
+                variant_id_map[seqname].extend(variant.attrs['INDIVIDUAL_VARIANT_IDS'])
+            else:
+                variant_id_map[seqname].append(variant.id)
     if is_fusion:
         fusion_id = fusion_variant.id
         first_tx_id = fusion_variant.location.seqname

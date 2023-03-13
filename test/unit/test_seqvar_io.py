@@ -67,4 +67,4 @@ class TestSeqvarIO(unittest.TestCase):
         self.assertEqual(metadata.source, 'gSNP')
         self.assertEqual(metadata.parser, 'parseVEP')
         self.assertIn('TRANSCRIPT_ID', metadata.info)
-        self.assertEqual(len(records), 9)
+        self.assertEqual(len(records), 10)

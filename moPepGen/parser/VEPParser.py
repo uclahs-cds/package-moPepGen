@@ -5,7 +5,7 @@ from typing import List, Tuple, Iterable, IO
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.err import TranscriptionStopSiteMutationError, \
-    TranscriptionStartSiteMutationError, MNVParsingError
+    TranscriptionStartSiteMutationError
 from moPepGen import seqvar, dna, gtf
 
 
@@ -169,22 +169,25 @@ class VEPRecord():
             allele = self.allele
             if strand == -1:
                 allele = str(Seq(allele).reverse_complement())
-            if alt_end - alt_start == 1:
+            if alt_end - alt_start == 1:  # SNV
                 if len(allele) > 1:
-                    raise MNVParsingError()
+                    raise ValueError("Don't know how to process this variant.")
                 ref = str(seq.seq[alt_start])
                 alt = allele
-            elif alt_end - alt_start == 2:
+            elif alt_end - alt_start == 2:  # insertion
                 alt_end -= 1
                 ref = str(seq.seq[alt_start])
                 alt = ref + allele
             else:
-                if len(allele) > 1:
-                    raise MNVParsingError()
                 ref = str(seq.seq[alt_start:alt_end])
                 alt = allele
 
-        _type = 'SNV' if len(ref) == 1 and len(alt) == 1 else 'INDEL'
+        if len(ref) == len(alt) == 1:
+            _type = 'SNV'
+        elif len(ref) == 1 or len(ref) == 1:
+            _type = 'INDEL'
+        else:
+            _type = 'MNV'
         _id = f'{_type}-{alt_start + 1}-{ref}-{alt}'
 
         attrs = {

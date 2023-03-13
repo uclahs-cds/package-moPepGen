@@ -88,7 +88,8 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             node.variants.append(var_i)
             self.add_edge(node, root, 'reference')
 
-    def create_variant_circ_graph(self, variants:List[seqvar.VariantRecord]):
+    def create_variant_circ_graph(self, variants:List[seqvar.VariantRecord],
+            max_adjacent_as_mnv:bool=2):
         """ Apply a list of variants to the graph. Variants not in the
         range are ignored. Variants at the first nucleotide of each fragment
         of the sequence are also ignored, because it causes the exon splice
@@ -109,7 +110,10 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                 if location.start <= variant.location.start < location.end:
                     filtered_variants.append(variant)
                     break
-        super().create_variant_graph(filtered_variants, None, None, None)
+        super().create_variant_graph(
+            filtered_variants, None, None, None,
+            max_adjacent_as_mnv=max_adjacent_as_mnv
+        )
 
     def get_tail_nodes(self) -> Dict[TVGNode, TVGNode]:
         """ The the last node of each reading frame. """
