@@ -294,7 +294,7 @@ class ThreeFrameTVG():
 
     def gather_sect_variants(self, anno:gtf.GenomicAnnotation):
         """ Create selenocysteine trunction map """
-        sect_variants = []
+        sect_variants:List[seqvar.VariantRecordWithCoordinate] = []
         for sec in self.seq.selenocysteine:
             sect_var = seqvar.create_variant_sect(anno, self.id, sec.start)
             sect_loc = FeatureLocation(sec.start, sec.end)
