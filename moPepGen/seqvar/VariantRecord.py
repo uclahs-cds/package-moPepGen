@@ -234,6 +234,19 @@ class VariantRecord():
                 f"variant type {self.type}")
         return int(self.attrs['ACCEPTER_POSITION'])
 
+    def get_ref_len(self) -> int:
+        """ Get the length of the ref """
+        if not self.alt.startswith('<'):
+            return len(self.ref)
+        if self.type == 'Fusion':
+            return 1
+        if self.type == 'Insertion':
+            return 0
+        if self.type in ['Deletion', 'Substitution']:
+            return self.location.end - self.location.start
+        raise ValueError(f"Don't know how to get ref len for variant type "
+            f"{self.type}")
+
     def get_alt_len(self) -> int:
         """ Get the length of the alt """
         if not self.alt.startswith('<'):

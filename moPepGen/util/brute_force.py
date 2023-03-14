@@ -852,9 +852,9 @@ class BruteForceVariantPeptideCaller():
                 if var_i.variant.is_fusion():
                     return sec_positions
                 if var_i.variant.location.end < sec_i.start:
-                    ref_len = var_i.variant.location.end - var_i.variant.location.start
+                    ref_len = var_i.variant.get_ref_len()
                     alt_len = var_i.variant.get_alt_len()
-                    offset += (ref_len - alt_len)
+                    offset += (alt_len - ref_len)
                     var_i = next(var_iter, None)
                     continue
                 if var_i.variant.location.overlaps(sec_i):
