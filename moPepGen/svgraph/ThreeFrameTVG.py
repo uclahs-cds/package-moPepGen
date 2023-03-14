@@ -44,7 +44,8 @@ class ThreeFrameTVG():
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
             cleavage_params:params.CleavageParams=None, gene_id:str=None,
-            sect_variants:List[seqvar.VariantRecordWithCoordinate]=None):
+            sect_variants:List[seqvar.VariantRecordWithCoordinate]=None,
+            max_adjacent_as_mnv:int=2):
         """ Constructor to create a TranscriptVariantGraph object. """
         self.seq = seq
         self.id = _id
@@ -67,6 +68,7 @@ class ThreeFrameTVG():
         self.cleavage_params = cleavage_params or params.CleavageParams('trypsin')
         self.gene_id = gene_id
         self.sect_variants = sect_variants or []
+        self.max_adjacent_as_mnv = max_adjacent_as_mnv
 
     def is_circ_rna(self) -> bool:
         """ If the graph is a circRNA """
@@ -516,7 +518,8 @@ class ThreeFrameTVG():
         branch = ThreeFrameTVG(
             seq, subgraph_id,
             global_variant=var.variant,
-            cleavage_params=self.cleavage_params
+            cleavage_params=self.cleavage_params,
+            max_adjacent_as_mnv=self.max_adjacent_as_mnv
         )
         level = cursors[0].level + 1
         branch.update_node_level(level)
@@ -760,7 +763,10 @@ class ThreeFrameTVG():
         subgraph_id = self.subgraphs.generate_subgraph_id()
         for loc in seq.locations:
             loc.ref.seqname = subgraph_id
-        branch = ThreeFrameTVG(seq, subgraph_id, global_variant=var.variant)
+        branch = ThreeFrameTVG(
+            seq, subgraph_id, global_variant=var.variant,
+            max_adjacent_as_mnv=self.max_adjacent_as_mnv
+        )
         level = cursors[0].level + 1
         branch.update_node_level(level)
         parent_id = cursors[0].subgraph_id
@@ -945,8 +951,7 @@ class ThreeFrameTVG():
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
             gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
-            active_frames:List[bool]=None, known_orf_index:int=None,
-            max_adjacent_as_mnv:bool=2) -> None:
+            active_frames:List[bool]=None, known_orf_index:int=None) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
@@ -959,7 +964,7 @@ class ThreeFrameTVG():
         Args:
             variant [seqvar.VariantRecord]: The variant record.
         """
-        merged_mnvs = self.find_mnvs_from_adjacent_variants(variants, max_adjacent_as_mnv)
+        merged_mnvs = self.find_mnvs_from_adjacent_variants(variants)
         varinats_with_mnv = sorted(variants + merged_mnvs)
         variant_iter = iter(varinats_with_mnv)
         variant = next(variant_iter, None)
@@ -1088,9 +1093,8 @@ class ThreeFrameTVG():
 
             variant = next(variant_iter, None)
 
-    @staticmethod
-    def find_mnvs_from_adjacent_variants(variants:List[seqvar.VariantRecord],
-            max_adjacent_as_mnv:int=2) -> List[seqvar.VariantRecord]:
+    def find_mnvs_from_adjacent_variants(self, variants:List[seqvar.VariantRecord]
+            ) -> List[seqvar.VariantRecord]:
         """ Find MNVs grouped from adjacent variants """
         mnvs = []
         compatible_type_map = {
@@ -1102,7 +1106,7 @@ class ThreeFrameTVG():
             if v_0.type not in compatible_type_map:
                 continue
             type0 = compatible_type_map[v_0.type]
-            for k in range(1, max_adjacent_as_mnv):
+            for k in range(1, self.max_adjacent_as_mnv):
                 adjacent_vars = [v_0]
                 for v_i in variants[i + 1:]:
                     if v_i.location.start < v_0.location.end:
@@ -1773,8 +1777,8 @@ class ThreeFrameTVG():
 
                 new_pnode = out_node.translate()
 
-                if not self.is_circ_rna() and out_node.level == 0:
-                    new_pnode.fix_selenocysteines(self.sect_variants)
+                if not self.is_circ_rna():
+                    new_pnode.fix_selenocysteines(self.sect_variants, self.subgraphs)
 
                 if new_pnode.seq.seq == '' and not out_node.get_out_nodes():
                     if not self.should_clip_trailing_nodes():

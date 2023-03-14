@@ -920,7 +920,8 @@ class PVGNode():
         return False
 
     def fix_selenocysteines(self,
-            sect_variants:List[seqvar.VariantRecordWithCoordinate]) -> None:
+            sect_variants:List[seqvar.VariantRecordWithCoordinate],
+            subgraphs:SubgraphTree) -> None:
         """ Fix Selenocysteines from the amin acid sequence. """
         iter_loc = iter(self.seq.locations)
         iter_sec = iter(sect_variants)
@@ -930,6 +931,10 @@ class PVGNode():
         sects:List[seqvar.VariantRecordWithCoordinate] = []
 
         while loc and sect:
+            if subgraphs[loc.ref.seqname].level != 0:
+                loc = next(iter_loc, None)
+                continue
+
             rf_index = loc.query.reading_frame_index
             if rf_index != sect.location.start % 3:
                 sect = next(iter_sec, None)
