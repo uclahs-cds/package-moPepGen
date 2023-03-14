@@ -243,7 +243,7 @@ class VariantRecord():
         if self.type == 'Deletion':
             return 1
         if self.type in ['Insertion', 'Substitution']:
-            return self.get_donor_end - self.get_donor_start()
+            return self.get_donor_end() - self.get_donor_start()
         raise ValueError(f"Don't know how to get alt len for variant type "
             f"{self.type}")
 
