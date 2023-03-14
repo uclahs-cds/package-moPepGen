@@ -994,7 +994,7 @@ class BruteForceVariantPeptideCaller():
                 k = seq.find('U', k)
                 if k == -1:
                     break
-                candidate.append(seq[:k])
+                candidates.append(seq[:k])
                 k += 1
 
         # W > F

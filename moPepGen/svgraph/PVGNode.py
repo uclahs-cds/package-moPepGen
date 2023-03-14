@@ -962,7 +962,6 @@ class PVGNode():
                 sects.append(sect_local)
 
                 sect = next(iter_sec, None)
-                loc = next(iter_loc, None)
                 continue
 
             if dna_loc > sect.location:
@@ -978,7 +977,7 @@ class PVGNode():
             if i == 0:
                 new_seq = self.seq.seq[:k]
             else:
-                new_seq += self.seq.seq[sects[i-1] + 1:k]
+                new_seq += self.seq.seq[sects[i-1].location.start + 1:k]
             new_seq += 'U'
             if sect is sects[-1]:
                 if k + 1 < len(self.seq.seq):
