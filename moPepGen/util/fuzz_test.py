@@ -335,6 +335,9 @@ class FuzzTestCase():
                 continue
             tx_seq = tx_model.get_transcript_sequence(genome[tx_model.transcript.chrom])
             aa_seq = tx_seq[tx_seq.orf.start:tx_seq.orf.end].translate()
+            for sec in tx_seq.selenocysteine:
+                sec_start = int((sec.start - tx_seq.orf.start) / 3)
+                aa_seq = aa_seq[:sec_start] + 'U' + aa_seq[sec_start+1:]
             aa_seq.description = \
                 f"{tx_model.protein_id}|{tx_model.transcript_id}|{tx_model.gene_id}|XXX"
             proteome[tx_model.transcript_id] = aa_seq

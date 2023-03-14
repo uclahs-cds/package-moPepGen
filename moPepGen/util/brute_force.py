@@ -98,7 +98,7 @@ class BruteForceVariantPeptideCaller():
             variant_pool:seqvar.VariantRecordPool=None,
             canonical_peptides=None, tx_id:str=None,
             tx_model:gtf.TranscriptAnnotationModel=None,
-            tx_seq:dna.DNASeqRecord=None, gene_seq:dna.DNASeqRecord=None,
+            tx_seq:dna.DNASeqRecordWithCoordinates=None, gene_seq:dna.DNASeqRecord=None,
             start_index:int=None, variant_peptides:Set[str]=None,
             max_adjacent_as_mnv:int=2, w2f:bool=False,
             selenocysteine_termination:bool=False):
@@ -837,6 +837,33 @@ class BruteForceVariantPeptideCaller():
             silent_mutation.append(tuple(silent_mutation_i))
         return stop_lost, stop_gain, silent_mutation
 
+    def get_sec_positions(self, variants:List[VariantRecordWithCoordinate]):
+        """ """
+        sec_iter = iter(self.tx_seq.selenocysteine)
+        var_iter = iter(variants)
+        sec_i = next(sec_iter, None)
+        var_i = next(var_iter, None)
+
+        sec_positions = []
+        offset = 0
+        while sec_i and var_i:
+            # Not consider Sec after fusion breakpoint.
+            if var_i.variant.is_fusion():
+                return sec_positions
+            ref_len = var_i.variant.location.end - var_i.variant.location.start
+            alt_len = var_i.variant.get_alt_len()
+            if var_i.variant.location.end < sec_i.start:
+                offset += (ref_len - alt_len)
+                var_i = next(var_iter, None)
+                continue
+            if var_i.variant.location.overlaps(sec_i):
+                sec_i = next(sec_iter, None)
+                continue
+            sec_start = sec_i.start + offset
+            sec_positions.append(sec_start)
+            sec_i = next(sec_iter, None)
+        return sec_positions
+
     def call_peptides_main(self, variants:seqvar.VariantRecordPool):
         """ Call peptide main """
         tx_model = self.tx_model
@@ -869,6 +896,7 @@ class BruteForceVariantPeptideCaller():
 
         variant_effects = self.check_variant_effect(seq, variant_coordinates)
         stop_lost, stop_gain, silent_mutation = variant_effects
+        sec_positions = self.get_sec_positions(variant_coordinates)
 
         if not (is_coding and tx_model.is_mrna_end_nf()):
             cur_cds_end = len(seq)
@@ -896,7 +924,14 @@ class BruteForceVariantPeptideCaller():
         for cds_start in cds_start_positions:
             cur_cds_end = len(seq) - (len(seq) - cds_start) % 3
 
-            aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=True)
+            aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=False)
+            for sec_start in sec_positions:
+                if (sec_start - cds_start) % 3 == 0:
+                    sec_start_aa = int((sec_start - cds_start) / 3)
+                    aa_seq = aa_seq[:sec_start_aa] + 'U' + aa_seq[sec_start_aa+1:]
+            stop_index = aa_seq.find('*')
+            if stop_index > -1:
+                aa_seq = aa_seq[:stop_index]
             aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
 
             sites = aa_seq.find_all_enzymatic_cleave_sites(rule, exception)
