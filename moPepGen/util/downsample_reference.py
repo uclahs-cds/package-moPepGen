@@ -221,6 +221,8 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
                 shift_seq_feature(cds, shift_offset, seqname)
             for utr in tx_model.utr:
                 shift_seq_feature(utr, shift_offset, seqname)
+            for sec in tx_model.selenocysteine:
+                shift_seq_feature(sec, shift_offset, seqname)
     return genome, anno
 
 def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
