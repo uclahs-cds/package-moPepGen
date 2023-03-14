@@ -897,7 +897,8 @@ class BruteForceVariantPeptideCaller():
 
         variant_effects = self.check_variant_effect(seq, variant_coordinates)
         stop_lost, stop_gain, silent_mutation = variant_effects
-        sec_positions = self.get_sec_positions(variant_coordinates)
+        sec_positions = [] if is_circ_rna else \
+            self.get_sec_positions(variant_coordinates)
 
         if not (is_coding and tx_model.is_mrna_end_nf()):
             cur_cds_end = len(seq)
