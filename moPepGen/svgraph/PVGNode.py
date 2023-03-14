@@ -931,7 +931,8 @@ class PVGNode():
         sects:List[seqvar.VariantRecordWithCoordinate] = []
 
         while loc and sect:
-            if subgraphs[loc.ref.seqname].level != 0:
+            if loc.ref.seqname not in subgraphs.data \
+                    or subgraphs[loc.ref.seqname].level != 0:
                 loc = next(iter_loc, None)
                 continue
 
