@@ -846,19 +846,20 @@ class BruteForceVariantPeptideCaller():
 
         sec_positions = []
         offset = 0
-        while sec_i and var_i:
-            # Not consider Sec after fusion breakpoint.
-            if var_i.variant.is_fusion():
-                return sec_positions
-            ref_len = var_i.variant.location.end - var_i.variant.location.start
-            alt_len = var_i.variant.get_alt_len()
-            if var_i.variant.location.end < sec_i.start:
-                offset += (ref_len - alt_len)
-                var_i = next(var_iter, None)
-                continue
-            if var_i.variant.location.overlaps(sec_i):
-                sec_i = next(sec_iter, None)
-                continue
+        while sec_i:
+            if var_i:
+                # Not consider Sec after fusion breakpoint.
+                if var_i.variant.is_fusion():
+                    return sec_positions
+                if var_i.variant.location.end < sec_i.start:
+                    ref_len = var_i.variant.location.end - var_i.variant.location.start
+                    alt_len = var_i.variant.get_alt_len()
+                    offset += (ref_len - alt_len)
+                    var_i = next(var_iter, None)
+                    continue
+                if var_i.variant.location.overlaps(sec_i):
+                    sec_i = next(sec_iter, None)
+                    continue
             sec_start = sec_i.start + offset
             sec_positions.append(sec_start)
             sec_i = next(sec_iter, None)
