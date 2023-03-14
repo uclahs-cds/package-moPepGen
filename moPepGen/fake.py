@@ -641,10 +641,10 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
                 continue
 
             if strand == 1:
-                sec_pos = sec_pos_cds - k + 2 + cds.location.start
+                sec_pos = sec_pos_cds - k + cds_set[0].frame + cds.location.start
                 loc = FeatureLocation(sec_pos, sec_pos + 3)
             else:
-                sec_pos = cds.location.end - 2 - (sec_pos_cds - k)
+                sec_pos = cds.location.end - cds_set[-1].frame - (sec_pos_cds - k)
                 loc = FeatureLocation(sec_pos - 3, sec_pos)
             sec = GTFSeqFeature(
                 location=loc, strand=strand, type='selenocysteine', id=tx_id,
