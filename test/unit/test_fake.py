@@ -55,4 +55,5 @@ class TestCaseFake(unittest.TestCase):
                     self.assertTrue(aa_seq.startswith('M'))
                 self.assert_no_stop_codon_besides_sec(tx_seq)
                 for sec in tx_seq.selenocysteine:
+                    self.assertEqual((sec.start - tx_seq.orf.start) % 3, 0)
                     self.assertEqual(tx_seq.seq[sec.start:sec.end], 'TGA')
