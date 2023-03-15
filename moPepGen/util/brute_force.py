@@ -859,13 +859,24 @@ class BruteForceVariantPeptideCaller():
                     fusion_breakpoint = var_i.variant.location.start
                     var_i = None
                     continue
-                if var_i.variant.location.end < sec_i.start:
+                if var_i.variant.location.end <= sec_i.start:
                     ref_len = var_i.variant.get_ref_len()
                     alt_len = var_i.variant.get_alt_len()
                     offset += (alt_len - ref_len)
                     var_i = next(var_iter, None)
                     continue
-                if var_i.variant.location.overlaps(sec_i):
+
+                if var_i.variant.type == 'Deletion':
+                    # Because for Deletion, the sequence after the REF
+                    # nucleotide is deleted so the first nucleotide is unchanged.
+                    var_loc = FeatureLocation(
+                        var_i.variant.location.start+1,
+                        var_i.variant.location.end
+                    )
+                else:
+                    var_loc = var_i.variant.location
+
+                if var_loc.overlaps(sec_i):
                     sec_i = next(sec_iter, None)
                     continue
             if fusion_breakpoint and sec_i.end >= fusion_breakpoint:
