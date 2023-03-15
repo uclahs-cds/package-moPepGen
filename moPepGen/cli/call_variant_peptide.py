@@ -411,14 +411,14 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         cds_start_nf=tx_model.is_cds_start_nf(),
         has_known_orf=tx_model.is_protein_coding,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
-        cleavage_params=cleavage_params
+        cleavage_params=cleavage_params,
+        max_adjacent_as_mnv=max_adjacent_as_mnv
     )
     dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()
     dgraph.create_variant_graph(
         variants=tx_variants, variant_pool=variant_pool, genome=ref.genome,
-        anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs,
-        max_adjacent_as_mnv=max_adjacent_as_mnv
+        anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
@@ -462,13 +462,16 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         cds_start_nf=tx_model.is_cds_start_nf(),
         has_known_orf=tx_model.is_protein_coding,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
-        cleavage_params=cleavage_params
+        cleavage_params=cleavage_params,
+        max_adjacent_as_mnv=max_adjacent_as_mnv
     )
+    dgraph.gather_sect_variants(ref.anno)
+    dgraph.sect_variants = [v for v in dgraph.sect_variants
+        if v.location.end < variant.location.start]
     dgraph.init_three_frames()
     dgraph.create_variant_graph(
         variants=tx_variants, variant_pool=variant_pool, genome=ref.genome,
-        anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs,
-        max_adjacent_as_mnv=max_adjacent_as_mnv
+        anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
@@ -516,10 +519,11 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
 
     cgraph = svgraph.ThreeFrameCVG(
         circ_seq, _id=record.id, circ_record=record,
-        cleavage_params=cleavage_params
+        cleavage_params=cleavage_params,
+        max_adjacent_as_mnv=max_adjacent_as_mnv
     )
     cgraph.init_three_frames()
-    cgraph.create_variant_circ_graph(variant_records, max_adjacent_as_mnv)
+    cgraph.create_variant_circ_graph(variant_records)
     cgraph.extend_loop()
     cgraph.truncate_three_frames()
     cgraph.fit_into_codons()

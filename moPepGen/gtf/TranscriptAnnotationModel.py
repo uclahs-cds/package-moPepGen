@@ -199,6 +199,7 @@ class TranscriptAnnotationModel():
                 sec_start = self.get_transcript_index(sec.location.end - 1)
                 sec_end = self.get_transcript_index(sec.location.start) + 1
             selenocystein.append(FeatureLocation(start=sec_start, end=sec_end))
+        selenocystein.sort()
 
         location = MatchedLocation(
             query=FeatureLocation(start=0, end=len(seq)),

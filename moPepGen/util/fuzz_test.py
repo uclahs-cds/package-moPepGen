@@ -335,6 +335,9 @@ class FuzzTestCase():
                 continue
             tx_seq = tx_model.get_transcript_sequence(genome[tx_model.transcript.chrom])
             aa_seq = tx_seq[tx_seq.orf.start:tx_seq.orf.end].translate()
+            for sec in tx_seq.selenocysteine:
+                sec_start = int((sec.start - tx_seq.orf.start) / 3)
+                aa_seq = aa_seq[:sec_start] + 'U' + aa_seq[sec_start+1:]
             aa_seq.description = \
                 f"{tx_model.protein_id}|{tx_model.transcript_id}|{tx_model.gene_id}|XXX"
             proteome[tx_model.transcript_id] = aa_seq
@@ -449,6 +452,9 @@ class FuzzTestCase():
         args.reference_source = None
         args.output_path = self.record.call_variant_fasta
         args.quiet = True
+        args.max_adjacent_as_mnv = 0
+        args.selenocysteine_termination = False
+        args.w2f_reassignment = False
         args.cleavage_rule = 'trypsin'
         args.miscleavage = 2
         args.min_mw = 500.
@@ -473,6 +479,9 @@ class FuzzTestCase():
         args.reference_dir = self.config.ref_dir
         args.force = True
         args.variant_ids = []
+        args.max_adjacent_as_mnv = 0
+        args.selenocysteine_termination = False
+        args.w2f_reassignment = False
         args.cleavage_rule = self.config.cleavage_rule
         args.miscleavage = self.config.miscleavage
         args.min_mw = self.config.min_mw

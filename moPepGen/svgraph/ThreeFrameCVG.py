@@ -28,7 +28,8 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=False,
             circ_record:circ.CircRNAModel=None, attrs:dict=None,
-            subgraphs:SubgraphTree=None, cleavage_params:params.CleavageParams=None):
+            subgraphs:SubgraphTree=None, cleavage_params:params.CleavageParams=None,
+            max_adjacent_as_mnv:int=2):
         """ Construct a CircularVariantGraph
 
         Args:
@@ -62,7 +63,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             seq=seq, _id=_id, root=root, reading_frames=reading_frames,
             cds_start_nf=cds_start_nf, has_known_orf=has_known_orf,
             global_variant=circ_variant, subgraphs=subgraphs,
-            cleavage_params=cleavage_params
+            cleavage_params=cleavage_params, max_adjacent_as_mnv=max_adjacent_as_mnv
         )
 
     def get_circ_variant_with_coordinate(self) -> seqvar.VariantRecordWithCoordinate:
@@ -88,8 +89,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
             node.variants.append(var_i)
             self.add_edge(node, root, 'reference')
 
-    def create_variant_circ_graph(self, variants:List[seqvar.VariantRecord],
-            max_adjacent_as_mnv:bool=2):
+    def create_variant_circ_graph(self, variants:List[seqvar.VariantRecord]):
         """ Apply a list of variants to the graph. Variants not in the
         range are ignored. Variants at the first nucleotide of each fragment
         of the sequence are also ignored, because it causes the exon splice
@@ -110,10 +110,7 @@ class ThreeFrameCVG(svgraph.ThreeFrameTVG):
                 if location.start <= variant.location.start < location.end:
                     filtered_variants.append(variant)
                     break
-        super().create_variant_graph(
-            filtered_variants, None, None, None,
-            max_adjacent_as_mnv=max_adjacent_as_mnv
-        )
+        super().create_variant_graph(filtered_variants, None, None, None)
 
     def get_tail_nodes(self) -> Dict[TVGNode, TVGNode]:
         """ The the last node of each reading frame. """

@@ -920,7 +920,8 @@ class PVGNode():
         return False
 
     def fix_selenocysteines(self,
-            sect_variants:List[seqvar.VariantRecordWithCoordinate]) -> None:
+            sect_variants:List[seqvar.VariantRecordWithCoordinate],
+            subgraphs:SubgraphTree) -> None:
         """ Fix Selenocysteines from the amin acid sequence. """
         iter_loc = iter(self.seq.locations)
         iter_sec = iter(sect_variants)
@@ -930,26 +931,39 @@ class PVGNode():
         sects:List[seqvar.VariantRecordWithCoordinate] = []
 
         while loc and sect:
-            rf_index = loc.query.reading_frame_index
-            if rf_index != sect.location.start % 3:
-                sect = next(iter_sec, None)
-                continue
-
-            dna_start = loc.get_ref_dna_start()
-            if loc.ref.start_offset != rf_index:
-                dna_start += 3
-
-            dna_end = loc.get_ref_dna_end()
-            if loc.ref.end_offset != rf_index:
-                dna_end -= 3
-
-            if dna_start >= dna_end:
+            if loc.ref.seqname not in subgraphs.data \
+                    or subgraphs[loc.ref.seqname].level != 0:
                 loc = next(iter_loc, None)
                 continue
 
-            dna_loc = FeatureLocation(dna_start, dna_end)
+            rf_index = loc.query.reading_frame_index
+            if rf_index != sect.location.start % 3:
+                if loc.get_ref_dna_start() > sect.location.start:
+                    sect = next(iter_sec, None)
+                else:
+                    loc = next(iter_loc, None)
+                continue
+
+            dna_start = loc.get_ref_codon_start()
+            dna_end = loc.get_ref_codon_end()
+
+            if loc.query.start_offset > 0:
+                ref_codon_start = dna_start + 3
+            else:
+                ref_codon_start = dna_start
+
+            if loc.query.end_offset > 0:
+                ref_codon_end = dna_end - 3
+            else:
+                ref_codon_end = dna_end
+
+            if ref_codon_start >= ref_codon_end:
+                loc = next(iter_loc, None)
+                continue
+
+            dna_loc = FeatureLocation(ref_codon_start, ref_codon_end)
             if dna_loc.is_superset(sect.location):
-                k = loc.query.start + int((sect.location.start - dna_loc.start) / 3)
+                k = loc.query.start + int((sect.location.start - dna_start) / 3)
                 sect_local = seqvar.VariantRecordWithCoordinate(
                     location=FeatureLocation(k, k+1, seqname=sect.variant.transcript_id),
                     variant=sect.variant
@@ -962,7 +976,6 @@ class PVGNode():
                 sects.append(sect_local)
 
                 sect = next(iter_sec, None)
-                loc = next(iter_loc, None)
                 continue
 
             if dna_loc > sect.location:
@@ -978,7 +991,7 @@ class PVGNode():
             if i == 0:
                 new_seq = self.seq.seq[:k]
             else:
-                new_seq += self.seq.seq[sects[i-1] + 1:k]
+                new_seq += self.seq.seq[sects[i-1].location.start + 1:k]
             new_seq += 'U'
             if sect is sects[-1]:
                 if k + 1 < len(self.seq.seq):

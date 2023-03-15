@@ -20,6 +20,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added the support for calling peptides with adjacent SNP/INDEL. #691
 
+- Updated fake.py and bruteForce to handle selenocysteine, W2F and MNV. #689
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed

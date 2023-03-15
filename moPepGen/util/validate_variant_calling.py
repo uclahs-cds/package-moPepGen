@@ -101,6 +101,9 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path):
     args.annotation_gtf = ref_dir/'annotation.gtf'
     args.proteome_fasta = ref_dir/'proteome.fasta'
     args.reference_source = None
+    args.max_adjacent_as_mnv = 0
+    args.selenocysteine_termination = False
+    args.w2f_reassignment = False
     args.invalid_protein_as_noncoding = False
     args.output_path = output_fasta
     args.quiet = False
@@ -126,6 +129,9 @@ def call_brute_force(gvf_files:Path, ref_dir:Path, output_path:str, force:bool,
     args.reference_dir = ref_dir
     args.force = force
     args.variant_ids = variant_ids
+    args.max_adjacent_as_mnv = 0
+    args.selenocysteine_termination = False
+    args.w2f_reassignment = False
     args.cleavage_rule = 'trypsin'
     args.miscleavage = 2
     args.min_mw = 500.
