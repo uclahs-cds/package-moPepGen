@@ -222,7 +222,7 @@ class BruteForceVariantPeptideCaller():
         return any(v.variant.is_circ_rna() for v in variants) \
             or self.tx_model.is_mrna_end_nf()
 
-    def has_any_variant(self, peptide_seq:Seq, lhs:int, rhs:int, cds_start:int,
+    def has_any_variant(self, lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
