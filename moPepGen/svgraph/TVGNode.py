@@ -663,7 +663,10 @@ class TVGNode():
     def get_ith_variant_ref_aa(self, i:int, tx_seq:Seq) -> Seq:
         """ Get the reference amino acid sequence of the ith variant. """
         v = self.variants[i]
-        left_offset = v.location.start % 3
+        if v.variant.type == 'Insertion':
+            left_offset = (v.location.start - 1) % 3
+        else:
+            left_offset = v.location.start % 3
         lhs = v.variant.location.start - left_offset
 
         seq = Seq('')
