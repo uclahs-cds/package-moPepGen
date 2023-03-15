@@ -614,13 +614,13 @@ class PVGNode():
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
 
-        self.seq = new_seq
-        self.cpop_collapsed = other.cpop_collapsed
-        self.truncated = other.truncated
-
         for sec in other.selenocysteines:
             sec = sec.shift(len(self.seq.seq))
             self.selenocysteines.append(sec)
+
+        self.seq = new_seq
+        self.cpop_collapsed = other.cpop_collapsed
+        self.truncated = other.truncated
 
     def find_start_index(self) -> int:
         """ Find the start amino acid position """
