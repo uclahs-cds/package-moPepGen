@@ -938,7 +938,10 @@ class PVGNode():
 
             rf_index = loc.query.reading_frame_index
             if rf_index != sect.location.start % 3:
-                sect = next(iter_sec, None)
+                if loc.get_ref_dna_start() > sect.location.start:
+                    sect = next(iter_sec, None)
+                else:
+                    loc = next(iter_loc, None)
                 continue
 
             dna_start = loc.get_ref_codon_start()
