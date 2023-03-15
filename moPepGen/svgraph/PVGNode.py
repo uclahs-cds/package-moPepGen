@@ -941,13 +941,8 @@ class PVGNode():
                 sect = next(iter_sec, None)
                 continue
 
-            dna_start = loc.get_ref_dna_start()
-            if loc.ref.start_offset != rf_index:
-                dna_start += 3
-
-            dna_end = loc.get_ref_dna_end()
-            if loc.ref.end_offset != rf_index:
-                dna_end -= 3
+            dna_start = loc.get_ref_codon_start()
+            dna_end = loc.get_ref_codon_end()
 
             if dna_start >= dna_end:
                 loc = next(iter_loc, None)
