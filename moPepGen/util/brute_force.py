@@ -996,7 +996,7 @@ class BruteForceVariantPeptideCaller():
                         continue
                     peptide = aa_seq.seq[lhs:rhs]
                     has_any_variant = self.has_any_variant(
-                        peptide_seq=peptide, lhs=tx_lhs, rhs=tx_rhs,
+                        lhs=tx_lhs, rhs=tx_rhs,
                         cds_start=actual_cds_start, variants=variant_coordinates,
                         variants_stop_lost=stop_lost, variants_stop_gain=stop_gain,
                         variants_silent_mutation=silent_mutation
