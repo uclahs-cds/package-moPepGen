@@ -945,13 +945,19 @@ class PVGNode():
                 continue
 
             dna_start = loc.get_ref_codon_start()
-            if loc.query.start_offset > 0:
-                dna_start += 1
             dna_end = loc.get_ref_codon_end()
-            if loc.query.end_offset > 0:
-                dna_end -= 1
 
-            if dna_start >= dna_end:
+            if loc.query.start_offset > 0:
+                ref_dna_start = dna_start + 1
+            else:
+                ref_dna_start = dna_start
+
+            if loc.query.end_offset > 0:
+                ref_dna_end = dna_end - 1
+            else:
+                ref_dna_end = dna_end
+
+            if ref_dna_start >= ref_dna_end:
                 loc = next(iter_loc, None)
                 continue
 
