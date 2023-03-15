@@ -849,7 +849,7 @@ class BruteForceVariantPeptideCaller():
         return stop_lost, stop_gain, silent_mutation
 
     def get_sec_positions(self, variants:List[VariantRecordWithCoordinate]) -> List[int]:
-        """ """
+        """ Get Sec positions in the altered sequence. """
         sec_iter = iter(self.tx_seq.selenocysteine)
         var_iter = iter(variants)
         sec_i = next(sec_iter, None)

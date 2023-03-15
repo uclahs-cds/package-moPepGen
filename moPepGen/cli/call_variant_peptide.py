@@ -466,7 +466,8 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         max_adjacent_as_mnv=max_adjacent_as_mnv
     )
     dgraph.gather_sect_variants(ref.anno)
-    dgraph.sect_variants = [v for v in dgraph.sect_variants if v.location.end < variant.location.start]
+    dgraph.sect_variants = [v for v in dgraph.sect_variants
+        if v.location.end < variant.location.start]
     dgraph.init_three_frames()
     dgraph.create_variant_graph(
         variants=tx_variants, variant_pool=variant_pool, genome=ref.genome,
