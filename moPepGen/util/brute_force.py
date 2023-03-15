@@ -287,11 +287,6 @@ class BruteForceVariantPeptideCaller():
             rf_index = cds_start % 3
             if self.has_any_stop_codon_between(first_start, last_end, rf_index):
                 return True
-
-        if self.w2f and 'W' in peptide_seq:
-            return True
-        if self.selenocysteine_termination and 'U' in peptide_seq:
-            return True
         return False
 
     def has_any_stop_codon_between(self, start:int, end:int, rf_index:int) -> bool:
@@ -1006,18 +1001,26 @@ class BruteForceVariantPeptideCaller():
                         variants_stop_lost=stop_lost, variants_stop_gain=stop_gain,
                         variants_silent_mutation=silent_mutation
                     )
-                    if not has_any_variant:
+
+                    if not has_any_variant \
+                            and not (self.w2f and 'W' in peptide) \
+                            and not (self.selenocysteine_termination and 'U' in peptide):
                         continue
 
-                    for peptide_seq in self.translational_modification(peptide, lhs):
+                    peptide_seqs = self.translational_modification(
+                        peptide, lhs, has_any_variant
+                    )
+                    for peptide_seq in peptide_seqs:
                         self.variant_peptides.add(peptide_seq)
 
-    def translational_modification(self, seq:Seq, lhs:int) -> Iterable[str]:
+    def translational_modification(self, seq:Seq, lhs:int, has_any_variant:bool) -> Iterable[str]:
         """ Apply any modification that could happen during translation. """
-        candidates = [seq]
+        candidates = []
         is_start = lhs == 0 and seq.startswith('M')
-        if is_start:
-            candidates.append(seq[1:])
+        if has_any_variant:
+            candidates.append(seq)
+            if is_start:
+                candidates.append(seq[1:])
 
         if self.selenocysteine_termination:
             k = 0
