@@ -290,6 +290,8 @@ class BruteForceVariantPeptideCaller():
 
         if self.w2f and 'W' in peptide_seq:
             return True
+        if self.selenocysteine_termination and 'U' in peptide_seq:
+            return True
         return False
 
     def has_any_stop_codon_between(self, start:int, end:int, rf_index:int) -> bool:
@@ -1013,7 +1015,8 @@ class BruteForceVariantPeptideCaller():
     def translational_modification(self, seq:Seq, lhs:int) -> Iterable[str]:
         """ Apply any modification that could happen during translation. """
         candidates = [seq]
-        if lhs == 0 and seq.startswith('M'):
+        is_start = lhs == 0 and seq.startswith('M')
+        if is_start:
             candidates.append(seq[1:])
 
         if self.selenocysteine_termination:
@@ -1023,6 +1026,8 @@ class BruteForceVariantPeptideCaller():
                 if k == -1:
                     break
                 candidates.append(seq[:k])
+                if is_start:
+                    candidates.append(seq[1:k])
                 k += 1
 
         # W > F
@@ -1046,6 +1051,8 @@ class BruteForceVariantPeptideCaller():
                             seq_mod_new += seq_mod[i+1:]
                         seq_mod = seq_mod_new
                     candidates.append(seq_mod)
+                    if is_start:
+                        candidates.append(seq_mod[1:])
 
         for candidate in candidates:
             if self.peptide_is_valid(candidate):
@@ -1083,6 +1090,12 @@ class BruteForceVariantPeptideCaller():
             variant_type_mapper[variant] = 'circ_rna'
 
         all_variants = list(variant_type_mapper.keys())
+
+        if self.w2f:
+            pool = seqvar.VariantRecordPool()
+            pool.anno = self.variant_pool.anno
+            pool.data[self.tx_id] = seqvar.TranscriptionalVariantSeries()
+            yield pool
 
         for i in range(len(all_variants)):
             for inds in combinations(range(len(all_variants)), i + 1):
