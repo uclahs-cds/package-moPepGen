@@ -263,7 +263,8 @@ class BruteForceVariantPeptideCaller():
                 and variants[i].location.start > cds_start
 
             is_stop_gain = variants_stop_gain[i][cds_start % 3] \
-                and int((variants[i].location.start - rf_index) / 3) == rhs
+                and int((variants[i].location.start - rf_index) / 3) \
+                    == int((rhs - rf_index)/3)
 
             if (loc.overlaps(query) \
                         or is_start_gain \
@@ -829,13 +830,18 @@ class BruteForceVariantPeptideCaller():
                     is_stop_lost = '*' not in var_aa and '*' in ref_aa
                     stop_lost_i.append(is_stop_lost)
 
+                sec_altering = any(loc.overlaps(sec) for sec in self.tx_seq.selenocysteine)
+
                 if not skip_stop_gain:
                     is_stop_gain = var_aa == '' or var_aa.startswith('*') \
-                        and not (ref_aa == '' or ref_aa.startswith('*'))
+                        and (
+                            not (ref_aa == '' or ref_aa.startswith('*'))
+                            or sec_altering
+                        )
                     stop_gain_i.append(is_stop_gain)
 
                 if not skip_silent_mutation:
-                    is_silent_mutation = ref_aa == var_aa
+                    is_silent_mutation = ref_aa == var_aa and not sec_altering
                     silent_mutation_i.append(is_silent_mutation)
             stop_lost.append(tuple(stop_lost_i))
             stop_gain.append(tuple(stop_gain_i))
