@@ -961,9 +961,9 @@ class PVGNode():
                 loc = next(iter_loc, None)
                 continue
 
-            dna_loc = FeatureLocation(dna_start, dna_end)
+            dna_loc = FeatureLocation(ref_codon_start, ref_codon_end)
             if dna_loc.is_superset(sect.location):
-                k = loc.query.start + int((sect.location.start - dna_loc.start) / 3)
+                k = loc.query.start + int((sect.location.start - dna_start) / 3)
                 sect_local = seqvar.VariantRecordWithCoordinate(
                     location=FeatureLocation(k, k+1, seqname=sect.variant.transcript_id),
                     variant=sect.variant
