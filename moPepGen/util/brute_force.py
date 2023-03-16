@@ -1031,7 +1031,7 @@ class BruteForceVariantPeptideCaller():
                 k = seq.find('U', k)
                 if k == -1:
                     break
-                if any(v.location.start < tx_lhs + k for v in effective_variants):
+                if any(v.location.start < tx_lhs + k * 3 for v in effective_variants):
                     candidates.append(seq[:k])
                     if is_start:
                         candidates.append(seq[1:k])
