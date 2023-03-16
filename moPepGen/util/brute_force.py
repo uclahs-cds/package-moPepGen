@@ -306,7 +306,6 @@ class BruteForceVariantPeptideCaller():
             if aa_start * 3 + rf_index + i * 3 not in sec_sites:
                 return True
             i += 3
-
         return False
 
     def has_overlapping_variants(self, variants:List[VariantRecord]) -> bool:
@@ -804,6 +803,7 @@ class BruteForceVariantPeptideCaller():
                 rhs = loc.end + (3 - (loc.end - lhs) % 3) % 3
                 rhs = min(len(self.tx_seq), rhs)
                 ref_seq = self.tx_seq.seq[lhs:rhs]
+                ref_rf_index = lhs % 3
 
                 var_aa = Seq(var_seq).translate(to_stop=False)
                 ref_aa = Seq(ref_seq).translate(to_stop=False)
@@ -814,7 +814,9 @@ class BruteForceVariantPeptideCaller():
                         ref_aa = ref_aa[:sec_aa] + 'U' + ref_aa[sec_aa+1:]
 
                 if not skip_stop_lost:
-                    is_stop_lost = '*' not in var_aa and '*' in ref_aa
+                    is_stop_lost = '*' not in var_aa and '*' in ref_aa \
+                        and (self.tx_seq.orf is None
+                            or ref_rf_index == self.tx_seq.orf.start % 3)
                     stop_lost_i.append(is_stop_lost)
 
                 sec_altering = any(loc.overlaps(sec) for sec in self.tx_seq.selenocysteine)

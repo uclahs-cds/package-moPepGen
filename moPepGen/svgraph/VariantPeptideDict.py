@@ -296,7 +296,7 @@ class MiscleavedNodes():
             selenocysteines:List[seqvar.VariantRecordWithCoordinate],
             reassignments:List[VariantRecord], check_variants:bool,
             check_external_variants:bool
-            ) -> Iterable[Tuple[str,VariantPeptideMetadata]]:
+            ) -> Iterable[Tuple[aa.AminoAcidSeqRecord,VariantPeptideMetadata]]:
         """ Apply any modification that could happen during translation. The
         kinds of modifications that could happen are:
         1. Leading Methionine truncation.
