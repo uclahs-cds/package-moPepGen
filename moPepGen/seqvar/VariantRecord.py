@@ -1,7 +1,7 @@
 """ Module for generic variant record """
 from __future__ import annotations
 import copy
-from typing import TYPE_CHECKING, Dict, Iterable
+from typing import TYPE_CHECKING, Dict, Iterable, List
 from moPepGen import ERROR_NO_TX_AVAILABLE, \
     ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
         ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
@@ -89,6 +89,36 @@ def create_mnv_from_adjacent(variants:Iterable[VariantRecord]) -> VariantRecord:
             'MERGED_MNV': True
         }
     )
+
+def find_mnvs_from_adjacent_variants(variants:List[VariantRecord],
+        max_adjacent_as_mnv:int) -> List[VariantRecord]:
+    """ """
+    mnvs = []
+    compatible_type_map = {
+        'SNV': 'SNV',
+        'RNAEditingSite': 'SNV',
+        'INDEL': 'INDEL'
+    }
+    for i,v_0 in enumerate(variants):
+        if v_0.type not in compatible_type_map:
+            continue
+        type0 = compatible_type_map[v_0.type]
+        for k in range(1, max_adjacent_as_mnv):
+            adjacent_vars = [v_0]
+            for v_i in variants[i + 1:]:
+                if v_i.location.start < v_0.location.end:
+                    continue
+                if v_i.location.start > v_0.location.end:
+                    break
+                if compatible_type_map[v_i.type] == type0:
+                    adjacent_vars.append(v_i)
+                    if len(adjacent_vars) >= k + 1:
+                        break
+            if len(adjacent_vars) < k + 1:
+                break
+            mnv = create_mnv_from_adjacent(adjacent_vars)
+            mnvs.append(mnv)
+    return mnvs
 
 class VariantRecord():
     """ Defines the location, ref and alt of a genomic variant.

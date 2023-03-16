@@ -100,8 +100,7 @@ class BruteForceVariantPeptideCaller():
             tx_model:gtf.TranscriptAnnotationModel=None,
             tx_seq:dna.DNASeqRecordWithCoordinates=None, gene_seq:dna.DNASeqRecord=None,
             start_index:int=None, variant_peptides:Set[str]=None,
-            max_adjacent_as_mnv:int=2, w2f:bool=False,
-            selenocysteine_termination:bool=False):
+            w2f:bool=False, selenocysteine_termination:bool=False):
         """ Constructor """
         self.reference_data = reference_data
         self.cleavage_params = cleavage_params
@@ -113,7 +112,6 @@ class BruteForceVariantPeptideCaller():
         self.gene_seq = gene_seq
         self.start_index = start_index
         self.variant_peptides = variant_peptides or set()
-        self.max_adjacent_as_mnv = max_adjacent_as_mnv
         self.selenocysteine_termination = selenocysteine_termination
         self.w2f = w2f
 
@@ -302,35 +300,12 @@ class BruteForceVariantPeptideCaller():
 
     def has_overlapping_variants(self, variants:List[VariantRecord]) -> bool:
         """ Checks if any variants overlap. """
-        compatible_type_map = {
-            'SNV': 'SNV',
-            'RNAEditingSite': 'SNV',
-            'INDEL': 'INDEL'
-        }
-        right_map:Dict[VariantRecord,VariantRecord] = {}
         for i, left in enumerate(variants):
             if i == len(variants) - 1:
                 continue
             for right in variants[i+1:]:
-                if left.location.end > right.location.start:
+                if left.location.end >= right.location.start:
                     return True
-
-                if left.location.end == right.location.start:
-                    if right.type not in compatible_type_map \
-                            or left.type not in compatible_type_map:
-                        return True
-                    if compatible_type_map[right.type] != compatible_type_map[left.type]:
-                        return True
-                    right_map[right] = left
-
-                    k = 2
-                    cur = left
-                    while cur in right_map:
-                        k += 1
-                        cur = right_map[cur]
-                    if k > self.max_adjacent_as_mnv:
-                        return True
-
         return False
 
     def has_any_invalid_variants_on_inserted_sequences(self,
@@ -1065,6 +1040,36 @@ class BruteForceVariantPeptideCaller():
             if self.peptide_is_valid(candidate):
                 yield str(candidate)
 
+    def find_mnvs_from_adjacent_variants(self, variants:List[VariantRecord]
+            ) -> List[VariantRecord]:
+        """ """
+        mnvs = []
+        compatible_type_map = {
+            'SNV': 'SNV',
+            'RNAEditingSite': 'SNV',
+            'INDEL': 'INDEL'
+        }
+        for i,v_0 in enumerate(variants):
+            if v_0.type not in compatible_type_map:
+                continue
+            type0 = compatible_type_map[v_0.type]
+            for k in range(1, self.max_adjacent_as_mnv):
+                adjacent_vars = [v_0]
+                for v_i in variants[i + 1:]:
+                    if v_i.location.start < v_0.location.end:
+                        continue
+                    if v_i.location.start > v_0.location.end:
+                        break
+                    if compatible_type_map[v_i.type] == type0:
+                        adjacent_vars.append(v_i)
+                        if len(adjacent_vars) >= k + 1:
+                            break
+                if len(adjacent_vars) < k + 1:
+                    break
+                mnv = seqvar.create_mnv_from_adjacent(adjacent_vars)
+                mnvs.append(mnv)
+        return mnvs
+
     def generate_variant_comb(self) -> Iterable[seqvar.VariantRecordPool]:
         """ Generate combination of variants. """
         variant_type_mapper:Dict[seqvar.VariantRecord, str] = {}
@@ -1131,6 +1136,23 @@ class BruteForceVariantPeptideCaller():
         for comb in self.generate_variant_comb():
             self.call_peptides_main(comb)
 
+def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
+        ) -> seqvar.VariantRecordPool:
+    """ """
+    for tx_id in pool.data.keys():
+        mnvs = seqvar.find_mnvs_from_adjacent_variants(
+            pool[tx_id].transcriptional,
+            max_adjacent_as_mnv
+        )
+        pool[tx_id].transcriptional = sorted(pool[tx_id].transcriptional + mnvs)
+
+        mnvs = seqvar.find_mnvs_from_adjacent_variants(
+            pool[tx_id].intronic,
+            max_adjacent_as_mnv
+        )
+        pool[tx_id].intronic = sorted(pool[tx_id].intronic + mnvs)
+    return pool
+
 def brute_force(args):
     """ main """
     # Load genomic references
@@ -1156,6 +1178,7 @@ def brute_force(args):
                 anno=reference_data.anno,
                 genome=reference_data.genome
             )
+    variant_pool = create_mnvs(variant_pool, args.max_adjacent_as_mnv)
     variant_peptides:Set[str] = set()
     for tx_id in variant_pool.data.keys():
         caller = BruteForceVariantPeptideCaller()
@@ -1166,7 +1189,6 @@ def brute_force(args):
         caller.tx_seq = caller.tx_model.get_transcript_sequence(
             caller.reference_data.genome[caller.tx_model.transcript.chrom]
         )
-        caller.max_adjacent_as_mnv = args.max_adjacent_as_mnv
         caller.w2f = args.w2f_reassignment
         caller.selenocysteine_termination = args.selenocysteine_termination
 

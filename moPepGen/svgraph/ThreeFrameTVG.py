@@ -965,8 +965,8 @@ class ThreeFrameTVG():
             variant [seqvar.VariantRecord]: The variant record.
         """
         merged_mnvs = self.find_mnvs_from_adjacent_variants(variants)
-        varinats_with_mnv = sorted(variants + merged_mnvs)
-        variant_iter = iter(varinats_with_mnv)
+        variants_with_mnv = sorted(variants + merged_mnvs)
+        variant_iter = iter(variants_with_mnv)
         variant = next(variant_iter, None)
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
 
