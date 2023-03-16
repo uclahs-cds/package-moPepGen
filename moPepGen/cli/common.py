@@ -166,7 +166,7 @@ def add_args_output_path(parser:argparse.ArgumentParser, formats:List[str]):
     )
 
 def add_args_input_path(parser:argparse.ArgumentParser, formats:List[str],
-        plural:bool=False, message:str=None):
+        plural:bool=False, message:str=None, required:bool=True):
     """ Add input file path """
     if message is None:
         message = f"File path to the input file{'s' if plural else ''}."
@@ -175,7 +175,11 @@ def add_args_input_path(parser:argparse.ArgumentParser, formats:List[str],
         f"{formats}"
 
     metavar = ["<files>"] if plural else "<file>"
-    nargs = '+' if plural else None
+
+    if plural:
+        nargs = '+' if required else '*'
+    else:
+        nargs = None
 
     parser.add_argument(
         '-i', '--input-path',
@@ -183,7 +187,7 @@ def add_args_input_path(parser:argparse.ArgumentParser, formats:List[str],
         help=message,
         nargs=nargs,
         metavar=metavar,
-        required=True
+        required=required
     )
 
 

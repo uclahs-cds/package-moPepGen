@@ -780,7 +780,7 @@ class PeptideVariantGraph():
     def call_variant_peptides(self, check_variants:bool=True,
             check_orf:bool=False, keep_all_occurrence:bool=True, blacklist:Set[str]=None,
             circ_rna:circ.CircRNAModel=None, orf_assignment:str='max',
-            truncate_sec:bool=False, w2f:bool=False
+            truncate_sec:bool=False, w2f:bool=False, check_external_variants:bool=True
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Walk through the graph and find all variated peptides.
 
@@ -808,7 +808,8 @@ class PeptideVariantGraph():
             global_variant=self.global_variant,
             gene_id=self.gene_id,
             truncate_sec=truncate_sec,
-            w2f=w2f
+            w2f=w2f,
+            check_external_variants=check_external_variants
         )
         traversal = PVGTraversal(
             check_variants=check_variants, check_orf=check_orf,
