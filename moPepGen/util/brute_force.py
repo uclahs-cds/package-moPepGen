@@ -822,7 +822,7 @@ class BruteForceVariantPeptideCaller():
                 var_aa = Seq(var_seq).translate(to_stop=False)
                 ref_aa = Seq(ref_seq).translate(to_stop=False)
                 for sec in self.tx_seq.selenocysteine:
-                    if lhs < sec.start < sec.end <= rhs \
+                    if lhs <= sec.start < sec.end <= rhs \
                             and (sec.start - lhs) % 3 == 0:
                         sec_aa = int((sec.start - lhs) / 3)
                         ref_aa = ref_aa[:sec_aa] + 'U' + ref_aa[sec_aa+1:]
