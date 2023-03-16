@@ -222,13 +222,14 @@ class BruteForceVariantPeptideCaller():
         return any(v.variant.is_circ_rna() for v in variants) \
             or self.tx_model.is_mrna_end_nf()
 
-    def has_any_variant(self, lhs:int, rhs:int, cds_start:int,
+    def get_effective_variants(self, lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
             variants_silent_mutation:List[Tuple[bool,bool,bool]]) -> bool:
         """ Check whether the given range of the transcript has any variant
         associated. """
+        effective_variants:List[seqvar.VariantRecordWithCoordinate] = []
         offset = 0
         query = FeatureLocation(start=lhs, end=rhs)
         start_loc = FeatureLocation(start=cds_start, end=cds_start + 3)
@@ -273,21 +274,24 @@ class BruteForceVariantPeptideCaller():
                         or is_stop_lost \
                         or is_stop_gain ) \
                     and not is_silent_mutation:
-                return True
+                effective_variants.append(variant_coordinate)
             offset += len(variant.alt) - len(variant.ref)
 
         if frames_shifted > 0:
-            return True
-
-        # If there are multiple frameshifts but the overall frames shifted is 0,
-        # then checks if the reference sequence skipped has any stop codon.
-        if len(upstream_indels) > 1:
-            first_start = upstream_indels[0].variant.location.start
-            last_end = upstream_indels[-1].variant.location.end
-            rf_index = cds_start % 3
-            if self.has_any_stop_codon_between(first_start, last_end, rf_index):
-                return True
-        return False
+            for v in upstream_indels:
+                if v.variant.is_frameshifting():
+                    effective_variants.append(v)
+        else:
+            # If there are multiple frameshifts but the overall frames shifted is 0,
+            # then checks if the reference sequence skipped has any stop codon.
+            if len(upstream_indels) > 1:
+                first_start = upstream_indels[0].variant.location.start
+                last_end = upstream_indels[-1].variant.location.end
+                rf_index = cds_start % 3
+                if self.has_any_stop_codon_between(first_start, last_end, rf_index):
+                    effective_variants.extend(upstream_indels)
+        effective_variants.sort(key=lambda v: v.location)
+        return effective_variants
 
     def has_any_stop_codon_between(self, start:int, end:int, rf_index:int) -> bool:
         """ Checks if there is any stop codon between a given range of the tx. """
@@ -995,29 +999,28 @@ class BruteForceVariantPeptideCaller():
                             and tx_rhs + 3 > len(seq):
                         continue
                     peptide = aa_seq.seq[lhs:rhs]
-                    has_any_variant = self.has_any_variant(
+                    effective_variants = self.get_effective_variants(
                         lhs=tx_lhs, rhs=tx_rhs,
                         cds_start=actual_cds_start, variants=variant_coordinates,
                         variants_stop_lost=stop_lost, variants_stop_gain=stop_gain,
                         variants_silent_mutation=silent_mutation
                     )
 
-                    if not has_any_variant \
-                            and not (self.w2f and 'W' in peptide) \
-                            and not (self.selenocysteine_termination and 'U' in peptide):
+                    if not effective_variants:
                         continue
 
                     peptide_seqs = self.translational_modification(
-                        peptide, lhs, has_any_variant
+                        peptide, lhs, tx_lhs, effective_variants
                     )
                     for peptide_seq in peptide_seqs:
                         self.variant_peptides.add(peptide_seq)
 
-    def translational_modification(self, seq:Seq, lhs:int, has_any_variant:bool) -> Iterable[str]:
+    def translational_modification(self, seq:Seq, lhs:int, tx_lhs:int,
+            effective_variants:List[VariantRecordWithCoordinate]) -> Iterable[str]:
         """ Apply any modification that could happen during translation. """
         candidates = []
         is_start = lhs == 0 and seq.startswith('M')
-        if has_any_variant:
+        if effective_variants:
             candidates.append(seq)
             if is_start:
                 candidates.append(seq[1:])
@@ -1028,9 +1031,10 @@ class BruteForceVariantPeptideCaller():
                 k = seq.find('U', k)
                 if k == -1:
                     break
-                candidates.append(seq[:k])
-                if is_start:
-                    candidates.append(seq[1:k])
+                if any(v.location.start < tx_lhs + k for v in effective_variants):
+                    candidates.append(seq[:k])
+                    if is_start:
+                        candidates.append(seq[1:k])
                 k += 1
 
         # W > F
