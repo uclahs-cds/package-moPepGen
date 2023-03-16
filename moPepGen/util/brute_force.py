@@ -296,7 +296,18 @@ class BruteForceVariantPeptideCaller():
         aa_start = math.floor((start - rf_index) / 3)
         aa_end = math.ceil((end - rf_index) / 3)
         aa_end = min(aa_end, math.floor((len(self.tx_seq) - rf_index)/3))
-        return '*' in self.tx_seq[rf_index:].translate()[aa_start:aa_end]
+        aa_seq:Seq = self.tx_seq.seq[rf_index:].translate()[aa_start:aa_end]
+        i = 0
+        sec_sites = {int(x.start) for x in self.tx_seq.selenocysteine}
+        while i > -1:
+            i = aa_seq.find('*', i)
+            if i == -1:
+                return False
+            if aa_start * 3 + rf_index + i * 3 not in sec_sites:
+                return True
+            i += 3
+
+        return False
 
     def has_overlapping_variants(self, variants:List[VariantRecord]) -> bool:
         """ Checks if any variants overlap. """
