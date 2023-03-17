@@ -950,10 +950,11 @@ class BruteForceVariantPeptideCaller():
             cur_cds_end = len(seq) - (len(seq) - cds_start) % 3
 
             aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=False)
-            for sec_start in sec_positions:
-                if (sec_start - cds_start) % 3 == 0:
-                    sec_start_aa = int((sec_start - cds_start) / 3)
-                    aa_seq = aa_seq[:sec_start_aa] + 'U' + aa_seq[sec_start_aa+1:]
+            if not is_circ_rna:
+                for sec_start in sec_positions:
+                    if (sec_start - cds_start) % 3 == 0:
+                        sec_start_aa = int((sec_start - cds_start) / 3)
+                        aa_seq = aa_seq[:sec_start_aa] + 'U' + aa_seq[sec_start_aa+1:]
             stop_index = aa_seq.find('*')
             if stop_index > -1:
                 aa_seq = aa_seq[:stop_index]
