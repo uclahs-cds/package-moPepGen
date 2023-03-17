@@ -106,6 +106,8 @@ def find_mnvs_from_adjacent_variants(variants:List[VariantRecord],
         for k in range(1, max_adjacent_as_mnv):
             adjacent_vars = [v_0]
             for v_i in variants[i + 1:]:
+                if v_i.type not in compatible_type_map:
+                    continue
                 if v_i.location.start < v_0.location.end:
                     continue
                 if v_i.location.start > v_0.location.end:

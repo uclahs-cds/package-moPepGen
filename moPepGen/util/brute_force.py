@@ -187,11 +187,13 @@ class BruteForceVariantPeptideCaller():
         else:
             self.start_index = 3
 
-    def peptide_is_valid(self, peptide:str, check_canonical) -> bool:
+    def peptide_is_valid(self, peptide:str, blacklist:List[str], check_canonical) -> bool:
         """ Check whether the peptide is valid """
         if check_canonical \
                 and self.canonical_peptides \
                 and peptide in self.canonical_peptides:
+            return False
+        if peptide in blacklist:
             return False
         min_len = self.cleavage_params.min_length
         max_len = self.cleavage_params.max_length
@@ -1008,7 +1010,7 @@ class BruteForceVariantPeptideCaller():
                         effective_variants = []
 
                     peptide_seqs = self.translational_modification(
-                        peptide, lhs, tx_lhs, effective_variants,
+                        peptide, lhs, tx_lhs, effective_variants, blacklist,
                         check_variants, check_canonical
                     )
                     for peptide_seq in peptide_seqs:
@@ -1017,7 +1019,8 @@ class BruteForceVariantPeptideCaller():
 
     def translational_modification(self, seq:Seq, lhs:int, tx_lhs:int,
             effective_variants:List[VariantRecordWithCoordinate],
-            check_variants:bool, check_canonical:bool) -> Iterable[str]:
+            blacklist:List[str], check_variants:bool, check_canonical:bool
+            ) -> Iterable[str]:
         """ Apply any modification that could happen during translation. """
         candidates = []
         is_start = lhs == 0 and seq.startswith('M')
@@ -1064,7 +1067,7 @@ class BruteForceVariantPeptideCaller():
                         candidates.append(seq_mod[1:])
 
         for candidate in candidates:
-            if self.peptide_is_valid(candidate, check_canonical):
+            if self.peptide_is_valid(candidate, blacklist, check_canonical):
                 yield str(candidate)
 
     def find_mnvs_from_adjacent_variants(self, variants:List[VariantRecord]
@@ -1130,11 +1133,11 @@ class BruteForceVariantPeptideCaller():
 
         all_variants = list(variant_type_mapper.keys())
 
-        if self.w2f:
-            pool = seqvar.VariantRecordPool()
-            pool.anno = self.variant_pool.anno
-            pool.data[self.tx_id] = seqvar.TranscriptionalVariantSeries()
-            yield pool
+        # if self.w2f:
+        #     pool = seqvar.VariantRecordPool()
+        #     pool.anno = self.variant_pool.anno
+        #     pool.data[self.tx_id] = seqvar.TranscriptionalVariantSeries()
+        #     yield pool
 
         for i in range(len(all_variants)):
             for inds in combinations(range(len(all_variants)), i + 1):
@@ -1163,9 +1166,11 @@ class BruteForceVariantPeptideCaller():
         empty_pool = seqvar.VariantRecordPool()
         empty_pool[self.tx_id] = seqvar.TranscriptionalVariantSeries()
         blacklist = self.call_peptides_main(empty_pool, set(), False, False)
-        self.canonical_peptides.update(blacklist)
         for comb in self.generate_variant_comb():
-            peptides = self.call_peptides_main(comb, blacklist, True, True)
+            if comb[self.tx_id].fusion or comb[self.tx_id].circ_rna:
+                peptides = self.call_peptides_main(comb, set(), True, True)
+            else:
+                peptides = self.call_peptides_main(comb, blacklist, True, True)
             self.variant_peptides.update(peptides)
 
 def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
