@@ -255,6 +255,9 @@ class MiscleavedNodes():
             if not seq:
                 continue
 
+            if seq in blacklist:
+                continue
+
             seq = Seq(seq)
             substitutants = self.find_codon_reassignments(seq, w2f)
 
@@ -334,7 +337,7 @@ class MiscleavedNodes():
                 cur_metadata = copy.copy(metadata)
                 cur_variants = [v for v in variants if v.location.end
                     <= sec.variant.location.start]
-                if check_external_variants and not cur_variants:
+                if check_variants and check_external_variants and not cur_variants:
                     continue
                 cur_variants.append(sec.variant)
                 label = vpi.create_variant_peptide_id(

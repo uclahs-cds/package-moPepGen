@@ -216,6 +216,15 @@ def call_variant_peptides_wrapper(tx_id:str,
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
+    try:
+        blacklist = call_canonical_peptides(
+            tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
+            cleavage_params=cleavage_params, truncate_sec=truncate_sec,
+            w2f=w2f_reassignment
+        )
+    except:
+            logger(f'Exception raised from {tx_id}')
+            raise
     if variant_series.transcriptional or process_all_transcripts:
         try:
             if not noncanonical_transcripts or \
@@ -228,7 +237,8 @@ def call_variant_peptides_wrapper(tx_id:str,
                     max_adjacent_as_mnv=max_adjacent_as_mnv,
                     truncate_sec=truncate_sec,
                     w2f=w2f_reassignment,
-                    check_external_variants=check_external_variants
+                    check_external_variants=check_external_variants,
+                    blacklist=blacklist
                 )
                 peptide_pool.append(peptides)
         except:
@@ -414,6 +424,27 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     caller.write_fasta()
 
 
+def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
+        tx_seq:dna.DNASeqRecordWithCoordinates,
+        cleavage_params:params.CleavageParams,
+        truncate_sec:bool, w2f:bool):
+    """ """
+    tx_model = ref.anno.transcripts[tx_id]
+    dgraph = svgraph.ThreeFrameTVG(
+        seq=tx_seq, _id=tx_id,
+        has_known_orf=tx_model.is_protein_coding,
+        mrna_end_nf=tx_model.is_mrna_end_nf(),
+        cleavage_params=cleavage_params
+    )
+    dgraph.gather_sect_variants(ref.anno)
+    dgraph.init_three_frames()
+    pgraph = dgraph.translate()
+    pgraph.create_cleavage_graph()
+    peptides = pgraph.call_variant_peptides(
+        check_variants=False, truncate_sec=truncate_sec, w2f=w2f
+    )
+    return {str(x.seq) for x in peptides}
+
 def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         variant_pool:seqvar.VariantRecordPoolOnDisk,
         ref:params.ReferenceData,
@@ -421,7 +452,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
         max_adjacent_as_mnv:bool, truncate_sec:bool, w2f:bool,
-        check_external_variants:bool
+        check_external_variants:bool, blacklist:Set[str]
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
@@ -447,7 +478,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
 
     pgraph.create_cleavage_graph()
     return pgraph.call_variant_peptides(
-        blacklist=ref.canonical_peptides,
+        blacklist=blacklist,
         truncate_sec=truncate_sec,
         w2f=w2f,
         check_external_variants=check_external_variants
