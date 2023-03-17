@@ -92,7 +92,7 @@ def create_mnv_from_adjacent(variants:Iterable[VariantRecord]) -> VariantRecord:
 
 def find_mnvs_from_adjacent_variants(variants:List[VariantRecord],
         max_adjacent_as_mnv:int) -> List[VariantRecord]:
-    """ """
+    """ Find MVNs from adjacent variants """
     mnvs = []
     compatible_type_map = {
         'SNV': 'SNV',

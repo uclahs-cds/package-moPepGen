@@ -313,7 +313,8 @@ class BruteForceVariantPeptideCaller():
             i += 3
         return False
 
-    def has_overlapping_variants(self, variants:List[VariantRecord]) -> bool:
+    @staticmethod
+    def has_overlapping_variants(variants:List[VariantRecord]) -> bool:
         """ Checks if any variants overlap. """
         for i, left in enumerate(variants):
             if i == len(variants) - 1:
@@ -1071,36 +1072,6 @@ class BruteForceVariantPeptideCaller():
             if self.peptide_is_valid(candidate, blacklist, check_canonical):
                 yield str(candidate)
 
-    def find_mnvs_from_adjacent_variants(self, variants:List[VariantRecord]
-            ) -> List[VariantRecord]:
-        """ """
-        mnvs = []
-        compatible_type_map = {
-            'SNV': 'SNV',
-            'RNAEditingSite': 'SNV',
-            'INDEL': 'INDEL'
-        }
-        for i,v_0 in enumerate(variants):
-            if v_0.type not in compatible_type_map:
-                continue
-            type0 = compatible_type_map[v_0.type]
-            for k in range(1, self.max_adjacent_as_mnv):
-                adjacent_vars = [v_0]
-                for v_i in variants[i + 1:]:
-                    if v_i.location.start < v_0.location.end:
-                        continue
-                    if v_i.location.start > v_0.location.end:
-                        break
-                    if compatible_type_map[v_i.type] == type0:
-                        adjacent_vars.append(v_i)
-                        if len(adjacent_vars) >= k + 1:
-                            break
-                if len(adjacent_vars) < k + 1:
-                    break
-                mnv = seqvar.create_mnv_from_adjacent(adjacent_vars)
-                mnvs.append(mnv)
-        return mnvs
-
     def generate_variant_comb(self) -> Iterable[seqvar.VariantRecordPool]:
         """ Generate combination of variants. """
         variant_type_mapper:Dict[seqvar.VariantRecord, str] = {}
@@ -1176,7 +1147,7 @@ class BruteForceVariantPeptideCaller():
 
 def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
         ) -> seqvar.VariantRecordPool:
-    """ """
+    """ Create MNVs """
     for tx_id in pool.data.keys():
         mnvs = seqvar.find_mnvs_from_adjacent_variants(
             pool[tx_id].transcriptional,

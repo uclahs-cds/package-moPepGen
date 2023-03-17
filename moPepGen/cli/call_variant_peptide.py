@@ -166,7 +166,7 @@ class VariantPeptideCaller():
         self.variant_record_pool:seqvar.VariantRecordPoolOnDisk = None
 
         if not self.variant_files:
-            if not (self.w2f_reassignment or self.selenocysteine_termination):
+            if not (self.w2f_reassignment or self.truncate_sec):
                 raise ValueError('Please provide at least a GVF file.')
             self.process_all_transcripts = True
             self.check_external_variants = False
@@ -216,19 +216,15 @@ def call_variant_peptides_wrapper(tx_id:str,
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
-    try:
-        blacklist = call_canonical_peptides(
-            tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
-            cleavage_params=cleavage_params, truncate_sec=truncate_sec,
-            w2f=w2f_reassignment
-        )
-    except:
-            logger(f'Exception raised from {tx_id}')
-            raise
     if variant_series.transcriptional or process_all_transcripts:
         try:
             if not noncanonical_transcripts or \
                     variant_series.has_any_alternative_splicing():
+                blacklist = call_canonical_peptides(
+                    tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
+                    cleavage_params=cleavage_params, truncate_sec=truncate_sec,
+                    w2f=w2f_reassignment
+                )
                 peptides = call_peptide_main(
                     tx_id=tx_id, tx_variants=variant_series.transcriptional,
                     variant_pool=pool, ref=reference_data,
@@ -428,7 +424,7 @@ def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
         tx_seq:dna.DNASeqRecordWithCoordinates,
         cleavage_params:params.CleavageParams,
         truncate_sec:bool, w2f:bool):
-    """ """
+    """ Call canonical peptides """
     tx_model = ref.anno.transcripts[tx_id]
     dgraph = svgraph.ThreeFrameTVG(
         seq=tx_seq, _id=tx_id,
