@@ -1043,7 +1043,8 @@ class PeptideVariantGraph():
         if in_cds and not target_node.npop_collapsed:
             cur_copy = target_node.copy(in_nodes=False)
             additional_variants = cursor.cleavage_gain
-            node_list.append((cur_copy, orfs, False, additional_variants))
+            cur_orfs = copy.copy(orfs)
+            node_list.append((cur_copy, cur_orfs, False, additional_variants))
             trash.add(cur_copy)
 
         # if the current node contains the actual fusion variant, stop looking
