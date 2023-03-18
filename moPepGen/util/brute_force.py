@@ -310,7 +310,7 @@ class BruteForceVariantPeptideCaller():
                 return False
             if aa_start * 3 + rf_index + i * 3 not in sec_sites:
                 return True
-            i += 3
+            i += 1
         return False
 
     @staticmethod
