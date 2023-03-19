@@ -171,7 +171,8 @@ class MiscleavedNodes():
     def join_miscleaved_peptides(self, check_variants:bool,
             additional_variants:List[VariantRecord], blacklist:Set[str],
             is_start_codon:bool=False, circ_rna:circ.CircRNAModel=None,
-            truncate_sec:bool=False, w2f:bool=False
+            truncate_sec:bool=False, w2f:bool=False,
+            check_external_variants:bool=True
             ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -254,17 +255,27 @@ class MiscleavedNodes():
             if not seq:
                 continue
 
+            if seq in blacklist:
+                continue
+
             seq = Seq(seq)
             substitutants = self.find_codon_reassignments(seq, w2f)
 
-            if check_variants and not (variants or selenocysteines or substitutants):
-                continue
+            if check_variants:
+                if check_external_variants:
+                    if not variants:
+                        continue
+                else:
+                    if not (variants or selenocysteines or substitutants):
+                        continue
 
             metadata.is_pure_circ_rna = len(variants) == 1 and \
                 list(variants)[0].is_circ_rna()
 
             seqs = self.translational_modification(seq, metadata, blacklist,
-                variants, is_start_codon, selenocysteines, substitutants, check_variants)
+                variants, is_start_codon, selenocysteines, substitutants,
+                check_variants, check_external_variants
+            )
             for seq, metadata in seqs:
                 yield seq, metadata
 
@@ -286,8 +297,9 @@ class MiscleavedNodes():
     def translational_modification(self, seq:Seq, metadata:VariantPeptideMetadata,
             blacklist:Set[str], variants:Set[VariantRecord], is_start_codon:bool,
             selenocysteines:List[seqvar.VariantRecordWithCoordinate],
-            reassignments:List[VariantRecord], check_variants:bool
-            ) -> Iterable[Tuple[str,VariantPeptideMetadata]]:
+            reassignments:List[VariantRecord], check_variants:bool,
+            check_external_variants:bool
+            ) -> Iterable[Tuple[aa.AminoAcidSeqRecord,VariantPeptideMetadata]]:
         """ Apply any modification that could happen during translation. The
         kinds of modifications that could happen are:
         1. Leading Methionine truncation.
@@ -325,6 +337,8 @@ class MiscleavedNodes():
                 cur_metadata = copy.copy(metadata)
                 cur_variants = [v for v in variants if v.location.end
                     <= sec.variant.location.start]
+                if check_variants and check_external_variants and not cur_variants:
+                    continue
                 cur_variants.append(sec.variant)
                 label = vpi.create_variant_peptide_id(
                     transcript_id=self.tx_id, variants=cur_variants, orf_id=None,
@@ -460,7 +474,7 @@ class VariantPeptideDict():
     """
     def __init__(self, tx_id:str, peptides:T=None, labels:Dict[str,int]=None,
             global_variant:VariantRecord=None, gene_id:str=None,
-            truncate_sec:bool=False, w2f:bool=False):
+            truncate_sec:bool=False, w2f:bool=False, check_external_variants:bool=True):
         """ constructor """
         self.tx_id = tx_id
         self.peptides = peptides or {}
@@ -469,6 +483,7 @@ class VariantPeptideDict():
         self.gene_id = gene_id
         self.truncate_sec = truncate_sec
         self.w2f = w2f
+        self.check_external_variants = check_external_variants
 
     def add_miscleaved_sequences(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams,
@@ -510,7 +525,8 @@ class VariantPeptideDict():
             is_start_codon=is_start_codon,
             circ_rna=circ_rna,
             truncate_sec=self.truncate_sec,
-            w2f=self.w2f
+            w2f=self.w2f,
+            check_external_variants=self.check_external_variants
         )
         for seq, metadata in seqs:
             if 'X' in seq.seq:

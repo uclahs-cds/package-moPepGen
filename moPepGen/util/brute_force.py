@@ -100,8 +100,7 @@ class BruteForceVariantPeptideCaller():
             tx_model:gtf.TranscriptAnnotationModel=None,
             tx_seq:dna.DNASeqRecordWithCoordinates=None, gene_seq:dna.DNASeqRecord=None,
             start_index:int=None, variant_peptides:Set[str]=None,
-            max_adjacent_as_mnv:int=2, w2f:bool=False,
-            selenocysteine_termination:bool=False):
+            w2f:bool=False, selenocysteine_termination:bool=False):
         """ Constructor """
         self.reference_data = reference_data
         self.cleavage_params = cleavage_params
@@ -113,7 +112,6 @@ class BruteForceVariantPeptideCaller():
         self.gene_seq = gene_seq
         self.start_index = start_index
         self.variant_peptides = variant_peptides or set()
-        self.max_adjacent_as_mnv = max_adjacent_as_mnv
         self.selenocysteine_termination = selenocysteine_termination
         self.w2f = w2f
 
@@ -189,9 +187,13 @@ class BruteForceVariantPeptideCaller():
         else:
             self.start_index = 3
 
-    def peptide_is_valid(self, peptide:str) -> bool:
+    def peptide_is_valid(self, peptide:str, blacklist:List[str], check_canonical) -> bool:
         """ Check whether the peptide is valid """
-        if self.canonical_peptides and peptide in self.canonical_peptides:
+        if check_canonical \
+                and self.canonical_peptides \
+                and peptide in self.canonical_peptides:
+            return False
+        if peptide in blacklist:
             return False
         min_len = self.cleavage_params.min_length
         max_len = self.cleavage_params.max_length
@@ -222,13 +224,15 @@ class BruteForceVariantPeptideCaller():
         return any(v.variant.is_circ_rna() for v in variants) \
             or self.tx_model.is_mrna_end_nf()
 
-    def has_any_variant(self, lhs:int, rhs:int, cds_start:int,
+    def get_effective_variants(self, lhs:int, rhs:int, cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
-            variants_silent_mutation:List[Tuple[bool,bool,bool]]) -> bool:
+            variants_silent_mutation:List[Tuple[bool,bool,bool]]
+            ) -> List[VariantRecordWithCoordinate]:
         """ Check whether the given range of the transcript has any variant
         associated. """
+        effective_variants:List[seqvar.VariantRecordWithCoordinate] = []
         offset = 0
         query = FeatureLocation(start=lhs, end=rhs)
         start_loc = FeatureLocation(start=cds_start, end=cds_start + 3)
@@ -273,60 +277,51 @@ class BruteForceVariantPeptideCaller():
                         or is_stop_lost \
                         or is_stop_gain ) \
                     and not is_silent_mutation:
-                return True
+                effective_variants.append(variant_coordinate)
             offset += len(variant.alt) - len(variant.ref)
 
         if frames_shifted > 0:
-            return True
-
-        # If there are multiple frameshifts but the overall frames shifted is 0,
-        # then checks if the reference sequence skipped has any stop codon.
-        if len(upstream_indels) > 1:
-            first_start = upstream_indels[0].variant.location.start
-            last_end = upstream_indels[-1].variant.location.end
-            rf_index = cds_start % 3
-            if self.has_any_stop_codon_between(first_start, last_end, rf_index):
-                return True
-        return False
+            for v in upstream_indels:
+                if v.variant.is_frameshifting():
+                    effective_variants.append(v)
+        else:
+            # If there are multiple frameshifts but the overall frames shifted is 0,
+            # then checks if the reference sequence skipped has any stop codon.
+            if len(upstream_indels) > 1:
+                first_start = upstream_indels[0].variant.location.start
+                last_end = upstream_indels[-1].variant.location.end
+                rf_index = cds_start % 3
+                if self.has_any_stop_codon_between(first_start, last_end, rf_index):
+                    effective_variants.extend(upstream_indels)
+        effective_variants.sort(key=lambda v: v.location)
+        return effective_variants
 
     def has_any_stop_codon_between(self, start:int, end:int, rf_index:int) -> bool:
         """ Checks if there is any stop codon between a given range of the tx. """
         aa_start = math.floor((start - rf_index) / 3)
         aa_end = math.ceil((end - rf_index) / 3)
         aa_end = min(aa_end, math.floor((len(self.tx_seq) - rf_index)/3))
-        return '*' in self.tx_seq[rf_index:].translate()[aa_start:aa_end]
+        aa_seq:Seq = self.tx_seq.seq[rf_index:].translate()[aa_start:aa_end]
+        i = 0
+        sec_sites = {int(x.start) for x in self.tx_seq.selenocysteine}
+        while i > -1:
+            i = aa_seq.find('*', i)
+            if i == -1:
+                return False
+            if aa_start * 3 + rf_index + i * 3 not in sec_sites:
+                return True
+            i += 1
+        return False
 
-    def has_overlapping_variants(self, variants:List[VariantRecord]) -> bool:
+    @staticmethod
+    def has_overlapping_variants(variants:List[VariantRecord]) -> bool:
         """ Checks if any variants overlap. """
-        compatible_type_map = {
-            'SNV': 'SNV',
-            'RNAEditingSite': 'SNV',
-            'INDEL': 'INDEL'
-        }
-        right_map:Dict[VariantRecord,VariantRecord] = {}
         for i, left in enumerate(variants):
             if i == len(variants) - 1:
                 continue
             for right in variants[i+1:]:
-                if left.location.end > right.location.start:
+                if left.location.end >= right.location.start:
                     return True
-
-                if left.location.end == right.location.start:
-                    if right.type not in compatible_type_map \
-                            or left.type not in compatible_type_map:
-                        return True
-                    if compatible_type_map[right.type] != compatible_type_map[left.type]:
-                        return True
-                    right_map[right] = left
-
-                    k = 2
-                    cur = left
-                    while cur in right_map:
-                        k += 1
-                        cur = right_map[cur]
-                    if k > self.max_adjacent_as_mnv:
-                        return True
-
         return False
 
     def has_any_invalid_variants_on_inserted_sequences(self,
@@ -814,17 +809,20 @@ class BruteForceVariantPeptideCaller():
                 rhs = loc.end + (3 - (loc.end - lhs) % 3) % 3
                 rhs = min(len(self.tx_seq), rhs)
                 ref_seq = self.tx_seq.seq[lhs:rhs]
+                ref_rf_index = lhs % 3
 
                 var_aa = Seq(var_seq).translate(to_stop=False)
                 ref_aa = Seq(ref_seq).translate(to_stop=False)
                 for sec in self.tx_seq.selenocysteine:
-                    if lhs < sec.start < sec.end <= rhs \
+                    if lhs <= sec.start < sec.end <= rhs \
                             and (sec.start - lhs) % 3 == 0:
                         sec_aa = int((sec.start - lhs) / 3)
                         ref_aa = ref_aa[:sec_aa] + 'U' + ref_aa[sec_aa+1:]
 
                 if not skip_stop_lost:
-                    is_stop_lost = '*' not in var_aa and '*' in ref_aa
+                    is_stop_lost = '*' not in var_aa and '*' in ref_aa \
+                        and (self.tx_seq.orf is None
+                            or ref_rf_index == self.tx_seq.orf.start % 3)
                     stop_lost_i.append(is_stop_lost)
 
                 sec_altering = any(loc.overlaps(sec) for sec in self.tx_seq.selenocysteine)
@@ -889,8 +887,10 @@ class BruteForceVariantPeptideCaller():
             sec_i = next(sec_iter, None)
         return sec_positions
 
-    def call_peptides_main(self, variants:seqvar.VariantRecordPool):
+    def call_peptides_main(self, variants:seqvar.VariantRecordPool,
+            blacklist:Set[str], check_variants:bool, check_canonical:bool):
         """ Call peptide main """
+        variant_peptides = set()
         tx_model = self.tx_model
         tx_seq = self.tx_seq
         rule = self.cleavage_params.enzyme
@@ -951,10 +951,11 @@ class BruteForceVariantPeptideCaller():
             cur_cds_end = len(seq) - (len(seq) - cds_start) % 3
 
             aa_seq = seq[cds_start:cur_cds_end].translate(to_stop=False)
-            for sec_start in sec_positions:
-                if (sec_start - cds_start) % 3 == 0:
-                    sec_start_aa = int((sec_start - cds_start) / 3)
-                    aa_seq = aa_seq[:sec_start_aa] + 'U' + aa_seq[sec_start_aa+1:]
+            if not is_circ_rna:
+                for sec_start in sec_positions:
+                    if (sec_start - cds_start) % 3 == 0:
+                        sec_start_aa = int((sec_start - cds_start) / 3)
+                        aa_seq = aa_seq[:sec_start_aa] + 'U' + aa_seq[sec_start_aa+1:]
             stop_index = aa_seq.find('*')
             if stop_index > -1:
                 aa_seq = aa_seq[:stop_index]
@@ -995,29 +996,37 @@ class BruteForceVariantPeptideCaller():
                             and tx_rhs + 3 > len(seq):
                         continue
                     peptide = aa_seq.seq[lhs:rhs]
-                    has_any_variant = self.has_any_variant(
-                        lhs=tx_lhs, rhs=tx_rhs,
-                        cds_start=actual_cds_start, variants=variant_coordinates,
-                        variants_stop_lost=stop_lost, variants_stop_gain=stop_gain,
-                        variants_silent_mutation=silent_mutation
-                    )
-
-                    if not has_any_variant \
-                            and not (self.w2f and 'W' in peptide) \
-                            and not (self.selenocysteine_termination and 'U' in peptide):
+                    if str(peptide) in blacklist:
                         continue
+                    if check_variants:
+                        effective_variants = self.get_effective_variants(
+                            lhs=tx_lhs, rhs=tx_rhs,
+                            cds_start=actual_cds_start, variants=variant_coordinates,
+                            variants_stop_lost=stop_lost, variants_stop_gain=stop_gain,
+                            variants_silent_mutation=silent_mutation
+                        )
+
+                        if not effective_variants:
+                            continue
+                    else:
+                        effective_variants = []
 
                     peptide_seqs = self.translational_modification(
-                        peptide, lhs, has_any_variant
+                        peptide, lhs, tx_lhs, effective_variants, blacklist,
+                        check_variants, check_canonical
                     )
                     for peptide_seq in peptide_seqs:
-                        self.variant_peptides.add(peptide_seq)
+                        variant_peptides.add(peptide_seq)
+        return variant_peptides
 
-    def translational_modification(self, seq:Seq, lhs:int, has_any_variant:bool) -> Iterable[str]:
+    def translational_modification(self, seq:Seq, lhs:int, tx_lhs:int,
+            effective_variants:List[VariantRecordWithCoordinate],
+            blacklist:List[str], check_variants:bool, check_canonical:bool
+            ) -> Iterable[str]:
         """ Apply any modification that could happen during translation. """
         candidates = []
         is_start = lhs == 0 and seq.startswith('M')
-        if has_any_variant:
+        if effective_variants or not check_variants:
             candidates.append(seq)
             if is_start:
                 candidates.append(seq[1:])
@@ -1028,9 +1037,11 @@ class BruteForceVariantPeptideCaller():
                 k = seq.find('U', k)
                 if k == -1:
                     break
-                candidates.append(seq[:k])
-                if is_start:
-                    candidates.append(seq[1:k])
+                if not check_variants or \
+                        any(v.location.start < tx_lhs + k * 3 for v in effective_variants):
+                    candidates.append(seq[:k])
+                    if is_start:
+                        candidates.append(seq[1:k])
                 k += 1
 
         # W > F
@@ -1058,7 +1069,7 @@ class BruteForceVariantPeptideCaller():
                         candidates.append(seq_mod[1:])
 
         for candidate in candidates:
-            if self.peptide_is_valid(candidate):
+            if self.peptide_is_valid(candidate, blacklist, check_canonical):
                 yield str(candidate)
 
     def generate_variant_comb(self) -> Iterable[seqvar.VariantRecordPool]:
@@ -1094,11 +1105,11 @@ class BruteForceVariantPeptideCaller():
 
         all_variants = list(variant_type_mapper.keys())
 
-        if self.w2f:
-            pool = seqvar.VariantRecordPool()
-            pool.anno = self.variant_pool.anno
-            pool.data[self.tx_id] = seqvar.TranscriptionalVariantSeries()
-            yield pool
+        # if self.w2f:
+        #     pool = seqvar.VariantRecordPool()
+        #     pool.anno = self.variant_pool.anno
+        #     pool.data[self.tx_id] = seqvar.TranscriptionalVariantSeries()
+        #     yield pool
 
         for i in range(len(all_variants)):
             for inds in combinations(range(len(all_variants)), i + 1):
@@ -1124,8 +1135,32 @@ class BruteForceVariantPeptideCaller():
 
     def call_peptides(self):
         """ Call variant peptides """
+        empty_pool = seqvar.VariantRecordPool()
+        empty_pool[self.tx_id] = seqvar.TranscriptionalVariantSeries()
+        blacklist = self.call_peptides_main(empty_pool, set(), False, False)
         for comb in self.generate_variant_comb():
-            self.call_peptides_main(comb)
+            if comb[self.tx_id].fusion or comb[self.tx_id].circ_rna:
+                peptides = self.call_peptides_main(comb, set(), True, True)
+            else:
+                peptides = self.call_peptides_main(comb, blacklist, True, True)
+            self.variant_peptides.update(peptides)
+
+def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
+        ) -> seqvar.VariantRecordPool:
+    """ Create MNVs """
+    for tx_id in pool.data.keys():
+        mnvs = seqvar.find_mnvs_from_adjacent_variants(
+            pool[tx_id].transcriptional,
+            max_adjacent_as_mnv
+        )
+        pool[tx_id].transcriptional = sorted(pool[tx_id].transcriptional + mnvs)
+
+        mnvs = seqvar.find_mnvs_from_adjacent_variants(
+            pool[tx_id].intronic,
+            max_adjacent_as_mnv
+        )
+        pool[tx_id].intronic = sorted(pool[tx_id].intronic + mnvs)
+    return pool
 
 def brute_force(args):
     """ main """
@@ -1152,6 +1187,7 @@ def brute_force(args):
                 anno=reference_data.anno,
                 genome=reference_data.genome
             )
+    variant_pool = create_mnvs(variant_pool, args.max_adjacent_as_mnv)
     variant_peptides:Set[str] = set()
     for tx_id in variant_pool.data.keys():
         caller = BruteForceVariantPeptideCaller()
@@ -1162,7 +1198,6 @@ def brute_force(args):
         caller.tx_seq = caller.tx_model.get_transcript_sequence(
             caller.reference_data.genome[caller.tx_model.transcript.chrom]
         )
-        caller.max_adjacent_as_mnv = args.max_adjacent_as_mnv
         caller.w2f = args.w2f_reassignment
         caller.selenocysteine_termination = args.selenocysteine_termination
 
