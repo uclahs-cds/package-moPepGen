@@ -104,7 +104,7 @@ class MiscleavedNodes():
         while queue:
             cur_batch = queue.pop()
             cur_node = cur_batch[-1]
-            batch_vars = set()
+            batch_vars:Set[VariantRecord] = set()
 
             for _node in cur_batch:
                 for var in _node.variants:
@@ -136,25 +136,23 @@ class MiscleavedNodes():
 
                 new_batch.append(_node)
 
+                additional_variants = _node.get_downstream_stop_altering_variants()
+
+                cur_vars = {v.id for v in batch_vars}
+                for var in _node.variants:
+                    cur_vars.add(var.variant.id)
+                cur_vars.update({v.id for v in additional_variants})
+                if len(cur_vars) > allowed_n_vars:
+                    continue
+
                 if not _node.cpop_collapsed:
-                    additional_variants = _node.get_downstream_stop_altering_variants()
-
-                    cur_vars = copy.copy(batch_vars)
-                    for var in _node.variants:
-                        cur_vars.add(var.variant)
-                    cur_vars_plus_additional = copy.copy(cur_vars)
-                    cur_vars_plus_additional.update(additional_variants)
-                    if len(cur_vars_plus_additional) > allowed_n_vars:
-                        continue
-
                     series = MiscleavedNodeSeries(copy.copy(new_batch), additional_variants)
                     nodes.data.append(series)
-
                     if n_cleavages + 1 == cleavage_params.miscleavage:
                         continue
                     if n_cleavages + 1 > cleavage_params.miscleavage:
                         raise ValueError('Something just went wrong')
-                queue.appendleft(new_batch)
+                queue.append(new_batch)
         return nodes
 
     def is_valid_seq(self, seq:Seq, blacklist:Set[str]) -> bool:
