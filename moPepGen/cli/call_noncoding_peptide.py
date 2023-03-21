@@ -60,6 +60,12 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         metavar='<choice>'
     )
     p.add_argument(
+        '--w2f-reassignment',
+        action='store_true',
+        help='Include peptides with W > F (Tryptophan to Phenylalanine) '
+        'reassignment.'
+    )
+    p.add_argument(
         '--inclusion-biotypes',
         type=Path,
         help='Inclusion biotype list.',
@@ -83,7 +89,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     return p
 
 def call_noncoding_peptide(args:argparse.Namespace) -> None:
-    """ Main entry poitn for calling noncoding peptide """
+    """ Main entrypoint for calling noncoding peptide """
     common.validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
     if args.output_orf:
         common.validate_file_format(args.output_orf, OUTPUT_FILE_FORMATS)
@@ -122,8 +128,13 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             continue
 
         try:
-            peptides, orfs = call_noncoding_peptide_main(tx_id, tx_model, genome,
-                canonical_peptides, cleavage_params, args.orf_assignment)
+            peptides, orfs = call_noncoding_peptide_main(
+                tx_id=tx_id, tx_model=tx_model, genome=genome,
+                canonical_peptides=canonical_peptides,
+                cleavage_params=cleavage_params,
+                orf_assignment=args.orf_assignment,
+                w2f_reassignment=args.w2f_reassignment
+            )
 
             if not orfs:
                 continue
@@ -157,7 +168,8 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
 def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         genome:DNASeqDict, canonical_peptides:Set[str],
-        cleavage_params:params.CleavageParams, orf_assignment:str
+        cleavage_params:params.CleavageParams, orf_assignment:str,
+        w2f_reassignment:bool
         ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
     """ Call noncoding peptides """
     chrom = tx_model.transcript.location.seqname
@@ -183,7 +195,8 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         check_variants=False,
         check_orf=True,
         blacklist=canonical_peptides,
-        orf_assignment=orf_assignment
+        orf_assignment=orf_assignment,
+        w2f=w2f_reassignment
     )
     orfs = get_orf_sequences(pgraph, tx_id, tx_model.gene_id, tx_seq)
     return peptides, orfs

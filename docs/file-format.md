@@ -7,8 +7,6 @@
 		- [1.3 Fusion](#13-fusion)
 		- [1.4 Alternative Splicing Site](#14-alternative-splicing-site)
 		- [1.5 CircRNA](#15-circrna)
-		- [1.6 Selenocysteine Termination](#16-selenocysteine-termination)
-		- [1.7 Tryptophan \> Phenylalanine Codon Reassignment](#17-tryptophan--phenylalanine-codon-reassignment)
 	- [2 Variant Peptide FASTA](#2-variant-peptide-fasta)
 
 
@@ -211,14 +209,6 @@ Technically, circRNAs are not variants that alters the gene/transcript sequence.
 + **`GENE_SYMBOL`** The name of the gene.
 
 The ID of circRNAs consist of two components. They all start with \<transcript_id>-circRNA or \<transcript_id>-ciRNA where `transcript_id` is the value from the `CHROM` column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example,ENSG0001-circRNA-E2-I2-E3 is made up of the second exon, second intron, and the third exon of the gene ENSG0001.
-
-### 1.6 Selenocysteine Termination
-
-In eukaryotes, the UGA on some mRNAs can be decoded into selenocysteine instead of being recognized as a stop codon, and those proteins are called selenoproteins. However the decoding of UGA is regulated by complex signals including mRNA and sec-tRNA abundance, which could result two isoforms: one with UGA read through and one being truncated. Selenocysteine termination is used to represent the later situation. Selenocysteine terminations are not written into any GVF file but they are represented in the format of `SECT-<pos>` where `pos` is the position of the selenocysteine UGA being recognized as a stop codon in the **gene**.
-
-### 1.7 Tryptophan > Phenylalanine Codon Reassignment
-
-Tryptophan > Phenylalanine substitutants, described in [Patasker, et al.](https://pubmed.ncbi.nlm.nih.gov/35264796/), happens when cellular tryptophan is depleted and phenylalanine is reassigned to tryptophan codons to have protein synthesis continue. The process largely exists in tumor cells. Similar to selenocysteine termination, W > F substitutants are also not written into GVFs, but is represented in the format of `W2F-<pos>`. Noted that the `pos` is at peptide coordinate (*i.e.,* zeroed at the beginning of the peptide).
 
 ## 2 Variant Peptide FASTA
 

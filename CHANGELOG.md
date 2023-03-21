@@ -22,6 +22,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Updated fake.py and bruteForce to handle selenocysteine, W2F and MNV. #689
 
+- `callAltTranslation` added to call peptides with alternative translation without any genomic or transcriptomic variations.
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed

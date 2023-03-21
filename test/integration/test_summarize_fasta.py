@@ -33,6 +33,7 @@ class TestSummarizeFasta(TestCaseIntegration):
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
         args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/"annotation.gtf"
         args.proteome_fasta = self.data_dir/"translate.fasta"
         cli.summarize_fasta(args)
@@ -52,6 +53,7 @@ class TestSummarizeFasta(TestCaseIntegration):
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
         args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.alt_translation_peptides = None
         args.annotation_gtf = self.data_dir/"annotation.gtf"
         args.proteome_fasta = self.data_dir/"translate.fasta"
         args.order_source = 'gSNP,gINDEL,RNAEditingSite,Fusion,circRNA,rMATS,Noncoding'
