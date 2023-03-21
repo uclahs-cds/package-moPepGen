@@ -74,8 +74,12 @@ def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
         fields = it.split('|')
         if fields[-2].startswith('ORF'):
             # Noncoding peptide
-            tx_id, gene_id, orf_id, index = fields
-            variant_id = NoncodingPeptideIdentifier(tx_id, gene_id, orf_id, int(index))
+            tx_id, gene_id, *codon_reassigns, orf_id, index = fields
+            variant_id = NoncodingPeptideIdentifier(
+                transcript_id=tx_id, gene_id=gene_id,
+                codon_reassigns=codon_reassigns,
+                orf_id=orf_id, index=int(index)
+            )
 
         else:
             x_id, *var_ids, index = fields
@@ -198,10 +202,12 @@ class FusionVariantPeptideIdentifier(VariantPeptideIdentifier):
 
 class NoncodingPeptideIdentifier(VariantPeptideIdentifier):
     """ Noncoding peptide identifier """
-    def __init__(self, transcript_id:str, gene_id:str, orf_id:str=None, index:int=None):
+    def __init__(self, transcript_id:str, gene_id:str, codon_reassigns:List[str],
+             orf_id:str=None, index:int=None):
         """ constructor """
         self.transcript_id = transcript_id
         self.gene_id = gene_id
+        self.codon_reassigns = codon_reassigns
         self.orf_id = orf_id
         self.index = index
 
@@ -210,6 +216,7 @@ class NoncodingPeptideIdentifier(VariantPeptideIdentifier):
         fields = [self.transcript_id]
         if self.gene_id:
             fields.append(self.gene_id)
+        fields += self.codon_reassigns
         if self.orf_id:
             fields.append(self.orf_id)
         if self.index:

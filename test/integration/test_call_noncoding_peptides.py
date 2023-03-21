@@ -22,6 +22,7 @@ def create_base_args() -> argparse.Namespace:
     args.exclusion_biotypes = None
     args.min_tx_length = 21
     args.orf_assignment = 'max'
+    args.w2f_reassignment = False
     args.cleavage_rule = 'trypsin'
     args.miscleavage = '2'
     args.min_mw = '500.'
@@ -85,3 +86,23 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
         self.assertEqual(size, 0)
         size = os.stat(self.work_dir/'noncoding_orf.fasta').st_size
         self.assertEqual(size, 0)
+
+    def test_call_noncoding_peptides_w2f(self):
+        """ With w2f reassignment """
+        args = create_base_args()
+        args.w2f_reassignment = True
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.output_path = self.work_dir/'noncoding_peptide.fasta'
+        args.output_orf = self.work_dir/'noncoding_orf.fasta'
+        cli.call_noncoding_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'noncoding_peptide.fasta', 'noncoding_orf.fasta'}
+        self.assertEqual(files, expected)
+        with open(self.work_dir/'noncoding_peptide.fasta', 'rt') as handle:
+            peptides = list(SeqIO.parse(handle, 'fasta'))
+            ids = [p.id for p in peptides]
+            self.assertEqual(len(ids),len(set(ids)))
+            self.assertTrue(peptides[0].id.split('|')[0] != 'None')
+            self.assertTrue(any('W2F' in x for x in ids))
