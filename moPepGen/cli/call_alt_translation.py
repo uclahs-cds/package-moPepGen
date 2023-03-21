@@ -25,7 +25,7 @@ def add_subparser_call_alt_translation(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '-o', '--output-path',
         type=Path,
-        help='Output path to the noncanonical noncoding peptide FASTA.'
+        help='Output path to the alternative translation peptide FASTA.'
         f" Valid formats: {OUTPUT_FILE_FORMATS}",
         metavar='<file>',
         required=True
@@ -65,6 +65,12 @@ def call_alt_translation(args:argparse.Namespace) -> None:
         max_length=args.max_length
     )
 
+    if not (args.selenocysteine_termination or args.w2f_reassignment):
+        raise ValueError(
+            'At least one of --selenocysteine-termination and --w2f-reassignment'
+            ' must be given.'
+        )
+
     common.print_start_message(args)
 
     genome, anno, _, canonical_peptides = common.load_references(
@@ -99,7 +105,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
     peptide_pool.write(args.output_path)
 
     if not args.quiet:
-        logger('Noncanonical peptide FASTA file written to disk.')
+        logger('Alternative translation peptide FASTA file written to disk.')
 
 def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         genome:DNASeqDict, anno:GenomicAnnotation,
