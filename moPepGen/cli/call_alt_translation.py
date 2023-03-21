@@ -1,7 +1,8 @@
-""" callAltTranslation """
+""" `callAltTranslation` calls peptide sequences from coding transcripts that
+harbor any alternative translation event. """
 from __future__ import annotations
 import argparse
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING
 from pathlib import Path
 from moPepGen import params, svgraph, logger, aa
 from moPepGen.cli import common
