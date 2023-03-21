@@ -89,7 +89,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     return p
 
 def call_noncoding_peptide(args:argparse.Namespace) -> None:
-    """ Main entry poitn for calling noncoding peptide """
+    """ Main entrypoint for calling noncoding peptide """
     common.validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
     if args.output_orf:
         common.validate_file_format(args.output_orf, OUTPUT_FILE_FORMATS)
