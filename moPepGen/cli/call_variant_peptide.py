@@ -395,7 +395,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 and len(dispatches) > 0
             if reloaded:
                 if caller.verbose >= 2:
-                    logger([x[0] for x in dispatches])
+                    logger([x['tx_id'] for x in dispatches])
                 if caller.threads > 1:
                     results = process_pool.map(wrapper, dispatches)
                 else:
