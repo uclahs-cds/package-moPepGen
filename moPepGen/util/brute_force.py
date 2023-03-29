@@ -1008,6 +1008,9 @@ class BruteForceVariantPeptideCaller():
 
                         if not effective_variants:
                             continue
+                        if is_fusion and \
+                                not any(v.variant.is_fusion() for v in effective_variants):
+                            continue
                     else:
                         effective_variants = []
 
