@@ -1075,7 +1075,8 @@ class BruteForceVariantPeptideCaller():
             if self.peptide_is_valid(candidate, blacklist, check_canonical):
                 yield str(candidate)
 
-    def generate_variant_comb(self) -> Iterable[seqvar.VariantRecordPool]:
+    def generate_variant_comb(self, fusion:bool, circ_rna:bool
+            ) -> Iterable[seqvar.VariantRecordPool]:
         """ Generate combination of variants. """
         variant_type_mapper:Dict[seqvar.VariantRecord, str] = {}
         start_index = self.tx_seq.orf.start + 3 if bool(self.tx_seq.orf) else 3
@@ -1089,34 +1090,34 @@ class BruteForceVariantPeptideCaller():
             variant_type_mapper[variant] = 'transcriptional'
         for variant in self.variant_pool[self.tx_id].intronic:
             variant_type_mapper[variant] = 'intronic'
-        for variant in self.variant_pool[self.tx_id].fusion:
-            if variant.location.start < start_index - 1:
-                continue
-            if mrna_end_nf and variant.location.start >= self.tx_seq.orf.end - 3:
-                continue
-            variant_type_mapper[variant] = 'fusion'
-            accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
-            if accepter_tx_id not in self.variant_pool:
-                continue
-            accepter_var_series = self.variant_pool[accepter_tx_id]
-            for accepter_var in accepter_var_series.transcriptional:
-                variant_type_mapper[accepter_var] = 'transcriptional'
-            for accepter_var in accepter_var_series.intronic:
-                variant_type_mapper[accepter_var] = 'intronic'
-        for variant in self.variant_pool[self.tx_id].circ_rna:
-            variant_type_mapper[variant] = 'circ_rna'
+        if fusion:
+            for variant in self.variant_pool[self.tx_id].fusion:
+                if variant.location.start < start_index - 1:
+                    continue
+                if mrna_end_nf and variant.location.start >= self.tx_seq.orf.end - 3:
+                    continue
+                variant_type_mapper[variant] = 'fusion'
+                accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
+                if accepter_tx_id not in self.variant_pool:
+                    continue
+                accepter_var_series = self.variant_pool[accepter_tx_id]
+                for accepter_var in accepter_var_series.transcriptional:
+                    variant_type_mapper[accepter_var] = 'transcriptional'
+                for accepter_var in accepter_var_series.intronic:
+                    variant_type_mapper[accepter_var] = 'intronic'
+        if circ_rna:
+            for variant in self.variant_pool[self.tx_id].circ_rna:
+                variant_type_mapper[variant] = 'circ_rna'
 
         all_variants = list(variant_type_mapper.keys())
-
-        # if self.w2f:
-        #     pool = seqvar.VariantRecordPool()
-        #     pool.anno = self.variant_pool.anno
-        #     pool.data[self.tx_id] = seqvar.TranscriptionalVariantSeries()
-        #     yield pool
 
         for i in range(len(all_variants)):
             for inds in combinations(range(len(all_variants)), i + 1):
                 variants = [all_variants[i] for i in inds]
+                if fusion and not any(variant_type_mapper[v] == 'fusion' for v in variants):
+                    continue
+                if circ_rna and not any(variant_type_mapper[v] == 'circ_rna' for v in variants):
+                    continue
                 pool = seqvar.VariantRecordPool()
                 pool.anno = self.variant_pool.anno
                 for variant in variants:
@@ -1141,7 +1142,19 @@ class BruteForceVariantPeptideCaller():
         empty_pool = seqvar.VariantRecordPool()
         empty_pool[self.tx_id] = seqvar.TranscriptionalVariantSeries()
         blacklist = self.call_peptides_main(empty_pool, set(), False, False)
-        for comb in self.generate_variant_comb():
+        main_peptides = set()
+
+        for comb in self.generate_variant_comb(fusion=False, circ_rna=False):
+            peptides = self.call_peptides_main(comb, blacklist, True, True)
+            self.variant_peptides.update(peptides)
+            main_peptides.update(peptides)
+
+        for comb in self.generate_variant_comb(fusion=True, circ_rna=False):
+            peptides = self.call_peptides_main(comb, blacklist, True, True)
+            self.variant_peptides.update(peptides)
+
+        blacklist.update(main_peptides)
+        for comb in self.generate_variant_comb(fusion=False, circ_rna=True):
             peptides = self.call_peptides_main(comb, blacklist, True, True)
             self.variant_peptides.update(peptides)
 
