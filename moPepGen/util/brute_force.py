@@ -1142,10 +1142,7 @@ class BruteForceVariantPeptideCaller():
         empty_pool[self.tx_id] = seqvar.TranscriptionalVariantSeries()
         blacklist = self.call_peptides_main(empty_pool, set(), False, False)
         for comb in self.generate_variant_comb():
-            if comb[self.tx_id].fusion or comb[self.tx_id].circ_rna:
-                peptides = self.call_peptides_main(comb, set(), True, True)
-            else:
-                peptides = self.call_peptides_main(comb, blacklist, True, True)
+            peptides = self.call_peptides_main(comb, blacklist, True, True)
             self.variant_peptides.update(peptides)
 
 def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
