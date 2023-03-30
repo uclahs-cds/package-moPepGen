@@ -45,6 +45,21 @@ def create_base_args() -> argparse.Namespace:
 class TestCallVariantPeptides(TestCaseIntegration):
     """ Test cases for moPepGen callPeptides """
 
+    def assert_no_canonical_peptide_with_circ(self, seqs):
+        """ """
+        no_canonical_peptides_with_circ = False
+        for seq in seqs:
+            labels = vpi.parse_variant_peptide_id(seq.description)
+            for label in labels:
+                if isinstance(label, vpi.CircRNAVariantPeptideIdentifier):
+                    for other_label in labels:
+                        if other_label is label:
+                            continue
+                        if isinstance(other_label, vpi.BaseVariantPeptideIdentifier) \
+                                and set(other_label.variant_ids) == set(label.variant_ids):
+                            no_canonical_peptides_with_circ = True
+        self.assertFalse(no_canonical_peptides_with_circ)
+
     def default_test_case(self, gvf:List[Path], reference:Path, expect:Path=None):
         """ Wrapper function to test actual cases.
 
@@ -159,6 +174,26 @@ class TestCallVariantPeptides(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta'}
         self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_circ_no_canoincal(self):
+        """ Variant peptides called from circRNA should not contain those that
+        can be called from the canonical transcript. """
+        args = create_base_args()
+        args.input_path = [
+            self.data_dir/'reditools/reditools.gvf',
+            self.data_dir/'circRNA'/'circ_rna.gvf'
+        ]
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_moPepGen.fasta'}
+        self.assertEqual(files, expected)
+
+        seqs = list(SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'))
+        self.assert_no_canonical_peptide_with_circ(seqs)
 
     def test_call_variant_peptide_all_sources(self):
         """ Test variant peptide calling with fusion and circRNA,
