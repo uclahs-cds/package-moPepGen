@@ -1008,6 +1008,9 @@ class BruteForceVariantPeptideCaller():
 
                         if not effective_variants:
                             continue
+                        if is_fusion and \
+                                not any(v.variant.is_fusion() for v in effective_variants):
+                            continue
                     else:
                         effective_variants = []
 
@@ -1139,10 +1142,7 @@ class BruteForceVariantPeptideCaller():
         empty_pool[self.tx_id] = seqvar.TranscriptionalVariantSeries()
         blacklist = self.call_peptides_main(empty_pool, set(), False, False)
         for comb in self.generate_variant_comb():
-            if comb[self.tx_id].fusion or comb[self.tx_id].circ_rna:
-                peptides = self.call_peptides_main(comb, set(), True, True)
-            else:
-                peptides = self.call_peptides_main(comb, blacklist, True, True)
+            peptides = self.call_peptides_main(comb, blacklist, True, True)
             self.variant_peptides.update(peptides)
 
 def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
@@ -1160,6 +1160,27 @@ def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
             max_adjacent_as_mnv
         )
         pool[tx_id].intronic = sorted(pool[tx_id].intronic + mnvs)
+    return pool
+
+def fix_indel_after_start_codon(pool:seqvar.VariantRecordPool,
+        ref:params.ReferenceData) -> seqvar.VariantRecordPool:
+    """ Fix indel variants that are right after the start codon by shifting
+    it to end inclusion to be consistant with callVariant """
+    for tx_id in pool.data.keys():
+        tx_model = ref.anno.transcripts[tx_id]
+        chrom = tx_model.transcript.chrom
+        tx_seq = tx_model.get_transcript_sequence(ref.genome[chrom])
+
+        if not tx_model.cds:
+            continue
+
+        start = tx_seq.orf.start
+        for v in pool[tx_id].transcriptional:
+            if v.location.start == start + 2 \
+                    and (v.is_insertion() or v.is_deletion()) \
+                    and not v.is_fusion() \
+                    and not v.is_alternative_splicing():
+                v.to_end_inclusion(tx_seq)
     return pool
 
 def brute_force(args):
@@ -1187,6 +1208,7 @@ def brute_force(args):
                 anno=reference_data.anno,
                 genome=reference_data.genome
             )
+    variant_pool = fix_indel_after_start_codon(variant_pool, reference_data)
     variant_pool = create_mnvs(variant_pool, args.max_adjacent_as_mnv)
     variant_peptides:Set[str] = set()
     for tx_id in variant_pool.data.keys():

@@ -214,15 +214,15 @@ def call_variant_peptides_wrapper(tx_id:str,
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
+    blacklist = call_canonical_peptides(
+        tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
+        cleavage_params=cleavage_params, truncate_sec=truncate_sec,
+        w2f=w2f_reassignment
+    )
     if variant_series.transcriptional:
         try:
             if not noncanonical_transcripts or \
                     variant_series.has_any_alternative_splicing():
-                blacklist = call_canonical_peptides(
-                    tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
-                    cleavage_params=cleavage_params, truncate_sec=truncate_sec,
-                    w2f=w2f_reassignment
-                )
                 peptides = call_peptide_main(
                     tx_id=tx_id, tx_variants=variant_series.transcriptional,
                     variant_pool=pool, ref=reference_data,
@@ -259,7 +259,8 @@ def call_variant_peptides_wrapper(tx_id:str,
             _peptides = call_peptide_fusion(
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
                 tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params,
-                max_adjacent_as_mnv=max_adjacent_as_mnv, w2f_reassignment=w2f_reassignment
+                max_adjacent_as_mnv=max_adjacent_as_mnv, w2f_reassignment=w2f_reassignment,
+                blacklist=blacklist
             )
         except:
             logger(
@@ -274,11 +275,10 @@ def call_variant_peptides_wrapper(tx_id:str,
     for circ_model in variant_series.circ_rna:
         try:
             _peptides = call_peptide_circ_rna(
-                record=circ_model, ref=reference_data,
-                variant_pool=pool, gene_seqs=gene_seqs,
+                record=circ_model, variant_pool=pool, gene_seqs=gene_seqs,
                 cleavage_params=cleavage_params,
                 max_adjacent_as_mnv=max_adjacent_as_mnv,
-                w2f_reassignment=w2f_reassignment
+                w2f_reassignment=w2f_reassignment, blacklist=blacklist
             )
         except:
             logger(f"Exception raised from {circ_model.id}")
@@ -485,7 +485,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
-        w2f_reassignment:bool
+        w2f_reassignment:bool, blacklist:Set[str]
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for fusion """
     tx_id = variant.location.seqname
@@ -526,16 +526,16 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     pgraph = dgraph.translate()
     pgraph.create_cleavage_graph()
     return pgraph.call_variant_peptides(
-        blacklist=ref.canonical_peptides,
+        blacklist=blacklist,
         w2f=w2f_reassignment,
         check_external_variants=True
     )
 
-def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
+def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
-        w2f_reassignment:bool
+        w2f_reassignment:bool, blacklist:Set[str]
         )-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
@@ -580,6 +580,6 @@ def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
     pgraph = cgraph.translate()
     pgraph.create_cleavage_graph()
     return pgraph.call_variant_peptides(
-        blacklist=ref.canonical_peptides, circ_rna=record,
+        blacklist=blacklist, circ_rna=record,
         w2f=w2f_reassignment, check_external_variants=True
     )
