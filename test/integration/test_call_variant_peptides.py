@@ -46,7 +46,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
     """ Test cases for moPepGen callPeptides """
 
     def assert_no_canonical_peptide_with_circ(self, seqs):
-        """ """
+        """ Assert that no canonical peptide with circRNA """
         no_canonical_peptides_with_circ = False
         for seq in seqs:
             labels = vpi.parse_variant_peptide_id(seq.description)
