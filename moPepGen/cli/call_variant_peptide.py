@@ -275,8 +275,7 @@ def call_variant_peptides_wrapper(tx_id:str,
     for circ_model in variant_series.circ_rna:
         try:
             _peptides = call_peptide_circ_rna(
-                record=circ_model, ref=reference_data,
-                variant_pool=pool, gene_seqs=gene_seqs,
+                record=circ_model, variant_pool=pool, gene_seqs=gene_seqs,
                 cleavage_params=cleavage_params,
                 max_adjacent_as_mnv=max_adjacent_as_mnv,
                 w2f_reassignment=w2f_reassignment, blacklist=blacklist
@@ -532,7 +531,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         check_external_variants=True
     )
 
-def call_peptide_circ_rna(record:circ.CircRNAModel, ref:params.ReferenceData,
+def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,

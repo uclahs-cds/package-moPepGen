@@ -1164,7 +1164,8 @@ def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
 
 def fix_indel_after_start_codon(pool:seqvar.VariantRecordPool,
         ref:params.ReferenceData) -> seqvar.VariantRecordPool:
-    """ """
+    """ Fix indel variants that are right after the start codon by shifting
+    it to end inclusion to be consistant with callVariant """
     for tx_id in pool.data.keys():
         tx_model = ref.anno.transcripts[tx_id]
         chrom = tx_model.transcript.chrom
