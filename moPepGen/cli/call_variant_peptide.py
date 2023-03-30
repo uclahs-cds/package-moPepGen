@@ -214,15 +214,15 @@ def call_variant_peptides_wrapper(tx_id:str,
         ) -> List[Set[aa.AminoAcidSeqRecord]]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
+    blacklist = call_canonical_peptides(
+        tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
+        cleavage_params=cleavage_params, truncate_sec=truncate_sec,
+        w2f=w2f_reassignment
+    )
     if variant_series.transcriptional:
         try:
             if not noncanonical_transcripts or \
                     variant_series.has_any_alternative_splicing():
-                blacklist = call_canonical_peptides(
-                    tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
-                    cleavage_params=cleavage_params, truncate_sec=truncate_sec,
-                    w2f=w2f_reassignment
-                )
                 peptides = call_peptide_main(
                     tx_id=tx_id, tx_variants=variant_series.transcriptional,
                     variant_pool=pool, ref=reference_data,
