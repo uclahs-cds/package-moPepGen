@@ -205,9 +205,15 @@ def fake_exon_deletion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str,
 
     # sample an exon
     if gene_model.strand == 1:
-        i = random.choice(list(range(1, len(tx_model.exon))))
+        if rmats_type in ['A3SS', 'MXE']:
+            i = random.choice(list(range(1, len(tx_model.exon) - 1)))
+        else:
+            i = random.choice(list(range(1, len(tx_model.exon))))
     else:
-        i = random.choice(list(range(len(tx_model.exon) - 1)))
+        if rmats_type in ['A5SS', 'MXE']:
+            i = random.choice(list(range(1, len(tx_model.exon) - 1)))
+        else:
+            i = random.choice(list(range(len(tx_model.exon) - 1)))
 
     exon = tx_model.exon[i]
 
@@ -622,12 +628,18 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
             if offset >= n_codons - 1:
                 break
             while True:
-                sec_pos_codon = random.randint(offset, n_codons - 1)
+                sec_pos_codon = random.randint(offset, n_codons - 2)
                 sec_pos_cds = sec_pos_codon * 3
-                if not any(sec_pos_cds < j <= sec_pos_cds + 3 for j in cds_junctions):
-                    break
+                if strand == 1:
+                    sec_pos_cds += cds_set[0].frame
+                    if not any(sec_pos_cds < j <= sec_pos_cds + 3 for j in cds_junctions):
+                        break
+                else:
+                    sec_pos_cds += cds_set[-1].frame
+                    if not any(sec_pos_cds <= j < sec_pos_cds + 3 for j in cds_junctions):
+                        break
             offset = sec_pos_codon + 1
-            sec_pos_cds_set.append(sec_pos_codon * 3)
+            sec_pos_cds_set.append(sec_pos_cds)
 
         sec_pos_cds_iter = iter(sec_pos_cds_set)
         sec_pos_cds = next(sec_pos_cds_iter, None)
@@ -636,7 +648,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
         cds = next(cds_iter, None)
         while cds and sec_pos_cds:
             cds_size = cds.location.end - cds.location.start
-            if k + cds_size < sec_pos_cds:
+            if k + cds_size <= sec_pos_cds:
                 k += cds_size
                 cds = next(cds_iter, None)
                 continue
