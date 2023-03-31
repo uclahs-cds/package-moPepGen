@@ -563,6 +563,7 @@ class TVGNode():
 
         variants = copy.copy(other.variants)
         for v_r in self.variants:
+            v_l = None
             should_combine_variants = False
 
             for v_l in other.variants:
@@ -572,8 +573,9 @@ class TVGNode():
                     continue
                 if v_l.variant == v_r.variant:
                     should_combine_variants = False
+                    break
 
-            if should_combine_variants:
+            if should_combine_variants and v_l:
                 v_l.location = FeatureLocation(
                     start=v_l.location.start,
                     end=v_r.location.end + len(other.seq.seq),
@@ -590,6 +592,7 @@ class TVGNode():
         new_seq = self.seq + other.seq
 
         for v_r in other.variants:
+            v_l = None
             should_combine_variants = False
             for v_l in self.variants:
                 if v_r.location.start != 0:
@@ -598,8 +601,9 @@ class TVGNode():
                     continue
                 if v_l.variant == v_r.variant:
                     should_combine_variants = True
+                    break
 
-            if should_combine_variants:
+            if should_combine_variants and v_l:
                 v_l.location = FeatureLocation(
                     start=v_l.location.start,
                     end=v_r.location.end + len(self.seq.seq),
