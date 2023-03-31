@@ -36,6 +36,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed fusion with very small intronic insertion. #707
 
+- In ThreeFrameTVG when aligning variant bubbles and when nodes are merged, variants were not merged correctly.
+
 ## [0.11.4] - 2023-2-23
 
 ### Fixed
