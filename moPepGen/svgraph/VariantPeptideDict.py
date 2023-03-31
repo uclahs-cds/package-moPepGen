@@ -155,19 +155,19 @@ class MiscleavedNodes():
                 queue.append(new_batch)
         return nodes
 
-    def is_valid_seq(self, seq:Seq, blacklist:Set[str]) -> bool:
+    def is_valid_seq(self, seq:Seq, denylist:Set[str]) -> bool:
         """ Check whether the seq is valid """
         min_length = self.cleavage_params.min_length
         max_length = self.cleavage_params.max_length
         min_mw = self.cleavage_params.min_mw
 
-        return seq not in blacklist \
+        return seq not in denylist \
             and min_length <= len(seq) <= max_length \
             and 'X' not in seq \
             and SeqUtils.molecular_weight(seq, 'protein') >= min_mw
 
     def join_miscleaved_peptides(self, check_variants:bool,
-            additional_variants:List[VariantRecord], blacklist:Set[str],
+            additional_variants:List[VariantRecord], denylist:Set[str],
             is_start_codon:bool=False, circ_rna:circ.CircRNAModel=None,
             truncate_sec:bool=False, w2f:bool=False,
             check_external_variants:bool=True
@@ -180,7 +180,7 @@ class MiscleavedNodes():
               reported (e.g. noncoding).
             - `additional_variants` (List[VariantRecord]): Additional variants,
               e.g., start gain, cleavage gain, stop lost.
-            - `blacklist` (Set[str]): Peptide sequences that should be excluded.
+            - `denylist` (Set[str]): Peptide sequences that should be excluded.
             - `is_start_codon` (bool): Whether the node contains start codon.
         """
         for series in self.data:
@@ -253,7 +253,7 @@ class MiscleavedNodes():
             if not seq:
                 continue
 
-            if seq in blacklist:
+            if seq in denylist:
                 continue
 
             seq = Seq(seq)
@@ -270,7 +270,7 @@ class MiscleavedNodes():
             metadata.is_pure_circ_rna = len(variants) == 1 and \
                 list(variants)[0].is_circ_rna()
 
-            seqs = self.translational_modification(seq, metadata, blacklist,
+            seqs = self.translational_modification(seq, metadata, denylist,
                 variants, is_start_codon, selenocysteines, substitutants,
                 check_variants, check_external_variants
             )
@@ -293,7 +293,7 @@ class MiscleavedNodes():
         return variants
 
     def translational_modification(self, seq:Seq, metadata:VariantPeptideMetadata,
-            blacklist:Set[str], variants:Set[VariantRecord], is_start_codon:bool,
+            denylist:Set[str], variants:Set[VariantRecord], is_start_codon:bool,
             selenocysteines:List[seqvar.VariantRecordWithCoordinate],
             reassignments:List[VariantRecord], check_variants:bool,
             check_external_variants:bool
@@ -304,9 +304,9 @@ class MiscleavedNodes():
         2. Selenocysteine truncation.
         """
         if variants or not check_variants:
-            is_valid = self.is_valid_seq(seq, blacklist)
+            is_valid = self.is_valid_seq(seq, denylist)
             is_valid_start = is_start_codon and seq.startswith('M') and\
-                self.is_valid_seq(seq[1:], blacklist)
+                self.is_valid_seq(seq[1:], denylist)
 
             if is_valid or is_valid_start:
                 cur_metadata = copy.copy(metadata)
@@ -327,9 +327,9 @@ class MiscleavedNodes():
         # Selenocysteine termination
         for sec in selenocysteines:
             seq_mod = seq[:sec.location.start]
-            is_valid = self.is_valid_seq(seq_mod, blacklist)
+            is_valid = self.is_valid_seq(seq_mod, denylist)
             is_valid_start = is_start_codon and seq_mod.startswith('M') and\
-                self.is_valid_seq(seq_mod[1:], blacklist)
+                self.is_valid_seq(seq_mod[1:], denylist)
 
             if is_valid or is_valid_start:
                 cur_metadata = copy.copy(metadata)
@@ -362,9 +362,9 @@ class MiscleavedNodes():
                         seq_mod_new += seq_mod[v.location.end:]
                     seq_mod = seq_mod_new
 
-                is_valid = self.is_valid_seq(seq_mod, blacklist)
+                is_valid = self.is_valid_seq(seq_mod, denylist)
                 is_valid_start = is_start_codon and seq_mod.startswith('M') and\
-                    self.is_valid_seq(seq_mod[1:], blacklist)
+                    self.is_valid_seq(seq_mod[1:], denylist)
 
                 if is_valid or is_valid_start:
                     cur_metadata = copy.copy(metadata)
@@ -486,7 +486,7 @@ class VariantPeptideDict():
     def add_miscleaved_sequences(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams,
             check_variants:bool, is_start_codon:bool,
-            additional_variants:List[VariantRecord], blacklist:Set[str],
+            additional_variants:List[VariantRecord], denylist:Set[str],
             leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
             circ_rna:circ.CircRNAModel=None):
         """ Add amino acid sequences starting from the given node, with number
@@ -503,7 +503,7 @@ class VariantPeptideDict():
               codon (M).
             - `additional_variants` (List[VariantRecord]): Additional variants,
               e.g., start gain, cleavage gain, stop lost.
-            - `blacklist` (Set[str]): Peptide sequences that should be excluded.
+            - `denylist` (Set[str]): Peptide sequences that should be excluded.
             - `leading_node` (PVGNode): The start node that the miscleaved
               peptides are called from. This node must present in the PVG graph.
         """
@@ -519,7 +519,7 @@ class VariantPeptideDict():
         seqs = miscleaved_nodes.join_miscleaved_peptides(
             check_variants=check_variants,
             additional_variants=additional_variants,
-            blacklist=blacklist,
+            denylist=denylist,
             is_start_codon=is_start_codon,
             circ_rna=circ_rna,
             truncate_sec=self.truncate_sec,

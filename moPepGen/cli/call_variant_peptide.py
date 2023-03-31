@@ -215,7 +215,7 @@ def call_variant_peptides_wrapper(tx_id:str,
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
     main_peptides = None
-    blacklist = call_canonical_peptides(
+    denylist = call_canonical_peptides(
         tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
         cleavage_params=cleavage_params, truncate_sec=truncate_sec,
         w2f=w2f_reassignment
@@ -232,7 +232,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                     max_adjacent_as_mnv=max_adjacent_as_mnv,
                     truncate_sec=truncate_sec,
                     w2f=w2f_reassignment,
-                    blacklist=blacklist
+                    denylist=denylist
                 )
                 peptide_pool.append(main_peptides)
         except:
@@ -261,7 +261,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
                 tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params,
                 max_adjacent_as_mnv=max_adjacent_as_mnv, w2f_reassignment=w2f_reassignment,
-                blacklist=blacklist
+                denylist=denylist
             )
         except:
             logger(
@@ -274,14 +274,14 @@ def call_variant_peptides_wrapper(tx_id:str,
     peptide_pool.append(peptides)
     peptides = set()
     if main_peptides:
-        blacklist.update([str(x.seq) for x in main_peptides])
+        denylist.update([str(x.seq) for x in main_peptides])
     for circ_model in variant_series.circ_rna:
         try:
             _peptides = call_peptide_circ_rna(
                 record=circ_model, variant_pool=pool, gene_seqs=gene_seqs,
                 cleavage_params=cleavage_params,
                 max_adjacent_as_mnv=max_adjacent_as_mnv,
-                w2f_reassignment=w2f_reassignment, blacklist=blacklist
+                w2f_reassignment=w2f_reassignment, denylist=denylist
             )
         except:
             logger(f"Exception raised from {circ_model.id}")
@@ -450,7 +450,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
         max_adjacent_as_mnv:bool, truncate_sec:bool, w2f:bool,
-        blacklist:Set[str]
+        denylist:Set[str]
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
@@ -476,7 +476,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
 
     pgraph.create_cleavage_graph()
     return pgraph.call_variant_peptides(
-        blacklist=blacklist,
+        denylist=denylist,
         truncate_sec=truncate_sec,
         w2f=w2f,
         check_external_variants=True
@@ -488,7 +488,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
-        w2f_reassignment:bool, blacklist:Set[str]
+        w2f_reassignment:bool, denylist:Set[str]
         ) -> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides for fusion """
     tx_id = variant.location.seqname
@@ -529,7 +529,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     pgraph = dgraph.translate()
     pgraph.create_cleavage_graph()
     return pgraph.call_variant_peptides(
-        blacklist=blacklist,
+        denylist=denylist,
         w2f=w2f_reassignment,
         check_external_variants=True
     )
@@ -538,7 +538,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
-        w2f_reassignment:bool, blacklist:Set[str]
+        w2f_reassignment:bool, denylist:Set[str]
         )-> Set[aa.AminoAcidSeqRecord]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
@@ -583,6 +583,6 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     pgraph = cgraph.translate()
     pgraph.create_cleavage_graph()
     return pgraph.call_variant_peptides(
-        blacklist=blacklist, circ_rna=record,
+        denylist=denylist, circ_rna=record,
         w2f=w2f_reassignment, check_external_variants=True
     )

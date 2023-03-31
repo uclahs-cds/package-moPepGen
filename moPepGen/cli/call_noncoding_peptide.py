@@ -194,7 +194,7 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     peptides = pgraph.call_variant_peptides(
         check_variants=False,
         check_orf=True,
-        blacklist=canonical_peptides,
+        denylist=canonical_peptides,
         orf_assignment=orf_assignment,
         w2f=w2f_reassignment
     )

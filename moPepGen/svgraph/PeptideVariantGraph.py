@@ -41,7 +41,7 @@ class PeptideVariantGraph():
             known_orf:List[int,int], cleavage_params:params.CleavageParams=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
-            hypermutated_region_warned:bool=False, blacklist:Set[str]=None,
+            hypermutated_region_warned:bool=False, denylist:Set[str]=None,
             global_variant:VariantRecord=None, subgraphs:SubgraphTree=None,
             gene_id:str=None):
         """ Construct a PeptideVariantGraph """
@@ -57,7 +57,7 @@ class PeptideVariantGraph():
         self.orf_id_map = orf_id_map or {}
         self.cds_start_nf = cds_start_nf
         self.hypermutated_region_warned = hypermutated_region_warned
-        self.blacklist = blacklist or set()
+        self.denylist = denylist or set()
         self.cleavage_params = cleavage_params or params.CleavageParams()
         self.global_variant = global_variant
         self.subgraphs = subgraphs
@@ -778,7 +778,7 @@ class PeptideVariantGraph():
         self.orf_id_map = {v:f"ORF{i+1}" for i,v in enumerate(orfs)}
 
     def call_variant_peptides(self, check_variants:bool=True,
-            check_orf:bool=False, keep_all_occurrence:bool=True, blacklist:Set[str]=None,
+            check_orf:bool=False, keep_all_occurrence:bool=True, denylist:Set[str]=None,
             circ_rna:circ.CircRNAModel=None, orf_assignment:str='max',
             truncate_sec:bool=False, w2f:bool=False, check_external_variants:bool=True
             ) -> Set[aa.AminoAcidSeqRecord]:
@@ -800,7 +800,7 @@ class PeptideVariantGraph():
         if self.is_circ_rna() and not circ_rna:
             raise ValueError('`circ_rna` must be given.')
 
-        self.blacklist = blacklist or set()
+        self.denylist = denylist or set()
         cur = PVGCursor(None, self.root, True, [], [])
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
         peptide_pool = VariantPeptideDict(
@@ -900,7 +900,7 @@ class PeptideVariantGraph():
                 check_variants=traversal.check_variants,
                 is_start_codon=False,
                 additional_variants=additional_variants,
-                blacklist=self.blacklist,
+                denylist=self.denylist,
                 leading_node=target_node,
                 subgraphs=self.subgraphs
             )
@@ -983,7 +983,7 @@ class PeptideVariantGraph():
                 check_variants=traversal.check_variants,
                 is_start_codon=True,
                 additional_variants=additional_variants,
-                blacklist=self.blacklist,
+                denylist=self.denylist,
                 leading_node=target_node,
                 subgraphs=self.subgraphs
             )
@@ -1162,7 +1162,7 @@ class PeptideVariantGraph():
                 check_variants=traversal.check_variants,
                 is_start_codon=is_start_codon,
                 additional_variants=additional_variants,
-                blacklist=self.blacklist,
+                denylist=self.denylist,
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
                 circ_rna=traversal.circ_rna
