@@ -565,7 +565,7 @@ class TVGNode():
         for variant in self.variants:
             should_combine_variants = variants and \
                 variants[-1].location.end == variant.location.start and \
-                variants[-1] == variant.variant
+                variants[-1].variant == variant.variant
             if should_combine_variants:
                 variant.location = FeatureLocation(
                     start=other.variants[-1].location.start,
