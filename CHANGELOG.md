@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `fake` that the last exon was picked for A3SS or first exon for A5SS.
 
+- Fixed fusion with very small intronic insertion. #707
+
 ## [0.11.4] - 2023-2-23
 
 ### Fixed

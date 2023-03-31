@@ -124,7 +124,7 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
         cds_end_tx = len(donor_tx_seq) - 1
         cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx - 1, tx_id)
         cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id) + 1
-    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
+    donor_breakpoint = random.randint(cds_start_gene + 1, cds_end_gene - 1)
     donor_breakpoint_genomic = anno.coordinate_gene_to_genomic(donor_breakpoint, donor_gene_id)
     ref_seq = donor_gene_seq.seq[donor_breakpoint]
 

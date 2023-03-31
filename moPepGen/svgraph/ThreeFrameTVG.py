@@ -1655,6 +1655,12 @@ class ThreeFrameTVG():
 
         end = ref_node.get_reference_next()
         right_index = (3 - len(ref_node.seq) % 3) % 3
+
+        if right_index >= len(end.seq.seq) and len(end.get_out_nodes()) == 1:
+            # This is when the left or right intronic insertion of a fusion
+            # is smaller than 3. The `end` should contain an unique out node
+            end = self.merge_with_outbonds(end)[0]
+
         right_over = end.truncate_left(right_index)
 
         for in_edge in end.in_edges:
