@@ -187,13 +187,13 @@ class BruteForceVariantPeptideCaller():
         else:
             self.start_index = 3
 
-    def peptide_is_valid(self, peptide:str, blacklist:List[str], check_canonical) -> bool:
+    def peptide_is_valid(self, peptide:str, denylist:List[str], check_canonical) -> bool:
         """ Check whether the peptide is valid """
         if check_canonical \
                 and self.canonical_peptides \
                 and peptide in self.canonical_peptides:
             return False
-        if peptide in blacklist:
+        if peptide in denylist:
             return False
         min_len = self.cleavage_params.min_length
         max_len = self.cleavage_params.max_length
@@ -888,7 +888,7 @@ class BruteForceVariantPeptideCaller():
         return sec_positions
 
     def call_peptides_main(self, variants:seqvar.VariantRecordPool,
-            blacklist:Set[str], check_variants:bool, check_canonical:bool):
+            denylist:Set[str], check_variants:bool, check_canonical:bool):
         """ Call peptide main """
         variant_peptides = set()
         tx_model = self.tx_model
@@ -996,7 +996,7 @@ class BruteForceVariantPeptideCaller():
                             and tx_rhs + 3 > len(seq):
                         continue
                     peptide = aa_seq.seq[lhs:rhs]
-                    if str(peptide) in blacklist:
+                    if str(peptide) in denylist:
                         continue
                     if check_variants:
                         effective_variants = self.get_effective_variants(
@@ -1015,7 +1015,7 @@ class BruteForceVariantPeptideCaller():
                         effective_variants = []
 
                     peptide_seqs = self.translational_modification(
-                        peptide, lhs, tx_lhs, effective_variants, blacklist,
+                        peptide, lhs, tx_lhs, effective_variants, denylist,
                         check_variants, check_canonical
                     )
                     for peptide_seq in peptide_seqs:
@@ -1024,7 +1024,7 @@ class BruteForceVariantPeptideCaller():
 
     def translational_modification(self, seq:Seq, lhs:int, tx_lhs:int,
             effective_variants:List[VariantRecordWithCoordinate],
-            blacklist:List[str], check_variants:bool, check_canonical:bool
+            denylist:List[str], check_variants:bool, check_canonical:bool
             ) -> Iterable[str]:
         """ Apply any modification that could happen during translation. """
         candidates = []
@@ -1072,7 +1072,7 @@ class BruteForceVariantPeptideCaller():
                         candidates.append(seq_mod[1:])
 
         for candidate in candidates:
-            if self.peptide_is_valid(candidate, blacklist, check_canonical):
+            if self.peptide_is_valid(candidate, denylist, check_canonical):
                 yield str(candidate)
 
     def generate_variant_comb(self, fusion:bool, circ_rna:bool
@@ -1141,21 +1141,21 @@ class BruteForceVariantPeptideCaller():
         """ Call variant peptides """
         empty_pool = seqvar.VariantRecordPool()
         empty_pool[self.tx_id] = seqvar.TranscriptionalVariantSeries()
-        blacklist = self.call_peptides_main(empty_pool, set(), False, False)
+        denylist = self.call_peptides_main(empty_pool, set(), False, False)
         main_peptides = set()
 
         for comb in self.generate_variant_comb(fusion=False, circ_rna=False):
-            peptides = self.call_peptides_main(comb, blacklist, True, True)
+            peptides = self.call_peptides_main(comb, denylist, True, True)
             self.variant_peptides.update(peptides)
             main_peptides.update(peptides)
 
         for comb in self.generate_variant_comb(fusion=True, circ_rna=False):
-            peptides = self.call_peptides_main(comb, blacklist, True, True)
+            peptides = self.call_peptides_main(comb, denylist, True, True)
             self.variant_peptides.update(peptides)
 
-        blacklist.update(main_peptides)
+        denylist.update(main_peptides)
         for comb in self.generate_variant_comb(fusion=False, circ_rna=True):
-            peptides = self.call_peptides_main(comb, blacklist, True, True)
+            peptides = self.call_peptides_main(comb, denylist, True, True)
             self.variant_peptides.update(peptides)
 
 def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
