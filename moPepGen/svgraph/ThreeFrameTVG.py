@@ -1461,6 +1461,10 @@ class ThreeFrameTVG():
         if rf_index is None:
             raise ValueError('reading_frame_index not found')
         end_node, members = self.find_variant_bubble(node)
+
+        if not end_node:
+            raise err.FailedToFindVariantBubbleError()
+
         if not self.is_circ_rna() and end_node.is_subgraph_end():
             subgraph_ends = {end_node}
             subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node))
@@ -1638,14 +1642,16 @@ class ThreeFrameTVG():
             out_node = out_edge.out_node
             out_node.append_left(left_over)
 
+        ref_node = start.get_reference_next()
         for edge in start.out_edges:
             out_node = edge.out_node
             if start.subgraph_id != out_node.subgraph_id and\
                     not any(x.out_node.subgraph_id == start.subgraph_id \
-                        for x in out_node.out_edges):
+                        for x in out_node.out_edges) \
+                    and not out_node is ref_node \
+                    and not out_node.is_bridge():
                 end_nodes.append(out_node)
 
-        ref_node = start.get_reference_next()
         if not ref_node.out_edges:
             return end_nodes
 
@@ -1724,6 +1730,7 @@ class ThreeFrameTVG():
                 continue
 
             self.align_variants(cur)
+
             self.collapse_equivalent_nodes(cur)
             if cur.out_edges:
                 end_nodes = self.expand_alignments(cur)

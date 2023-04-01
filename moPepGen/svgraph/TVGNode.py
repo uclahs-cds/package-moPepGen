@@ -118,6 +118,16 @@ class TVGNode():
             level=self.level
         )
 
+    def is_bridge(self) -> None:
+        """ Check if this is a bridge node to another reading frame """
+        for edge in self.out_edges:
+            node = edge.out_node
+            if node.reading_frame_index != self.reading_frame_index:
+                return True
+        if self.was_bridge:
+            return True
+        return False
+
     def get_edge_to(self, other:TVGNode) -> svgraph.TVGEdge:
         """ Find the edge from this to the other node """
         for edge in self.out_edges:
