@@ -562,41 +562,58 @@ class TVGNode():
         self.seq = other.seq + self.seq
 
         variants = copy.copy(other.variants)
-        for variant in self.variants:
-            should_combine_variants = variants and \
-                variants[-1].location.end == variant.location.start and \
-                variants[-1] == variant.variant
-            if should_combine_variants:
-                variant.location = FeatureLocation(
-                    start=other.variants[-1].location.start,
-                    end=variant.location.end,
-                    reading_frame_index=other.variants[-1].location.reading_frame_index,
-                    start_offset=other.variants[-1].location.start_offset,
-                    end_offset=variant.location.start_offset
+        for v_r in self.variants:
+            v_l = None
+            should_combine_variants = False
+
+            for v_l in other.variants:
+                if v_r.location.start != 0:
+                    break
+                if v_l.location.end != len(other.seq.seq):
+                    continue
+                if v_l.variant == v_r.variant:
+                    should_combine_variants = False
+                    break
+
+            if should_combine_variants and v_l:
+                v_l.location = FeatureLocation(
+                    start=v_l.location.start,
+                    end=v_r.location.end + len(other.seq.seq),
+                    reading_frame_index=v_l.location.reading_frame_index,
+                    start_offset=v_l.location.start_offset,
+                    end_offset=v_r.location.end_offset
                 )
             else:
-                variants.append(variant.shift(len(other.seq.seq)))
+                variants.append(v_r.shift(len(other.seq.seq)))
         self.variants = variants
 
     def append_right(self, other:TVGNode) -> None:
         """ Combine the other node the the right. """
         new_seq = self.seq + other.seq
 
-        for variant in other.variants:
-            should_combine_variants = self.variants and \
-                self.variants[-1].location.end == variant.location.start and \
-                self.variants[-1].variant == variant.variant
-            if should_combine_variants:
-                self.variants[-1].location = FeatureLocation(
-                    start=self.variants[-1].location.start,
-                    end=variant.location.end,
-                    seqname=self.variants[-1].location.seqname,
-                    reading_frame_index=self.variants[-1].location.reading_frame_index,
-                    start_offset=self.variants[-1].location.start_offset,
-                    end_offset=variant.location.end_offset
+        for v_r in other.variants:
+            v_l = None
+            should_combine_variants = False
+            for v_l in self.variants:
+                if v_r.location.start != 0:
+                    break
+                if v_l.location.end != len(self.seq.seq):
+                    continue
+                if v_l.variant == v_r.variant:
+                    should_combine_variants = True
+                    break
+
+            if should_combine_variants and v_l:
+                v_l.location = FeatureLocation(
+                    start=v_l.location.start,
+                    end=v_r.location.end + len(self.seq.seq),
+                    seqname=v_l.location.seqname,
+                    reading_frame_index=v_l.location.reading_frame_index,
+                    start_offset=v_l.location.start_offset,
+                    end_offset=v_r.location.end_offset
                 )
             else:
-                self.variants.append(variant.shift(len(self.seq.seq)))
+                self.variants.append(v_r.shift(len(self.seq.seq)))
 
         self.seq = new_seq
 

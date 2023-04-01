@@ -124,7 +124,7 @@ def fake_fusion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str) -> Variant
         cds_end_tx = len(donor_tx_seq) - 1
         cds_end_genomic = anno.coordinate_transcript_to_genomic(cds_end_tx - 1, tx_id)
         cds_end_gene = anno.coordinate_genomic_to_gene(cds_end_genomic, donor_gene_id) + 1
-    donor_breakpoint = random.randint(cds_start_gene, cds_end_gene - 1)
+    donor_breakpoint = random.randint(cds_start_gene + 1, cds_end_gene - 1)
     donor_breakpoint_genomic = anno.coordinate_gene_to_genomic(donor_breakpoint, donor_gene_id)
     ref_seq = donor_gene_seq.seq[donor_breakpoint]
 
@@ -205,9 +205,15 @@ def fake_exon_deletion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str,
 
     # sample an exon
     if gene_model.strand == 1:
-        i = random.choice(list(range(1, len(tx_model.exon))))
+        if rmats_type in ['A3SS', 'MXE']:
+            i = random.choice(list(range(1, len(tx_model.exon) - 1)))
+        else:
+            i = random.choice(list(range(1, len(tx_model.exon))))
     else:
-        i = random.choice(list(range(len(tx_model.exon) - 1)))
+        if rmats_type in ['A5SS', 'MXE']:
+            i = random.choice(list(range(1, len(tx_model.exon) - 1)))
+        else:
+            i = random.choice(list(range(len(tx_model.exon) - 1)))
 
     exon = tx_model.exon[i]
 
@@ -622,12 +628,18 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
             if offset >= n_codons - 1:
                 break
             while True:
-                sec_pos_codon = random.randint(offset, n_codons - 1)
+                sec_pos_codon = random.randint(offset, n_codons - 2)
                 sec_pos_cds = sec_pos_codon * 3
-                if not any(sec_pos_cds < j <= sec_pos_cds + 3 for j in cds_junctions):
-                    break
+                if strand == 1:
+                    sec_pos_cds += cds_set[0].frame
+                    if not any(sec_pos_cds < j <= sec_pos_cds + 3 for j in cds_junctions):
+                        break
+                else:
+                    sec_pos_cds += cds_set[-1].frame
+                    if not any(sec_pos_cds <= j < sec_pos_cds + 3 for j in cds_junctions):
+                        break
             offset = sec_pos_codon + 1
-            sec_pos_cds_set.append(sec_pos_codon * 3)
+            sec_pos_cds_set.append(sec_pos_cds)
 
         sec_pos_cds_iter = iter(sec_pos_cds_set)
         sec_pos_cds = next(sec_pos_cds_iter, None)
@@ -636,16 +648,16 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
         cds = next(cds_iter, None)
         while cds and sec_pos_cds:
             cds_size = cds.location.end - cds.location.start
-            if k + cds_size < sec_pos_cds:
+            if k + cds_size <= sec_pos_cds:
                 k += cds_size
                 cds = next(cds_iter, None)
                 continue
 
             if strand == 1:
-                sec_pos = sec_pos_cds - k + cds_set[0].frame + cds.location.start
+                sec_pos = sec_pos_cds - k + cds.location.start
                 loc = FeatureLocation(sec_pos, sec_pos + 3)
             else:
-                sec_pos = cds.location.end - cds_set[-1].frame - (sec_pos_cds - k)
+                sec_pos = cds.location.end - (sec_pos_cds - k)
                 loc = FeatureLocation(sec_pos - 3, sec_pos)
             sec = GTFSeqFeature(
                 location=loc, strand=strand, type='selenocysteine', id=tx_id,
