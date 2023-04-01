@@ -46,9 +46,6 @@ class TranscriptionStartSiteMutationError(Exception):
 
 class FailedToFindVariantBubbleError(Exception):
     """ Error to hanlde when variant bubble was not found correctly. """
-    def __init__(self, msg:str=None):
-        """ Constructor """
-        super().__init__(msg)
 
 class MuteableErrorMixin():
     """ Mixin for muteable errors """
