@@ -888,7 +888,8 @@ class BruteForceVariantPeptideCaller():
         return sec_positions
 
     def call_peptides_main(self, variants:seqvar.VariantRecordPool,
-            denylist:Set[str], check_variants:bool, check_canonical:bool):
+            denylist:Set[str], check_variants:bool, check_canonical:bool,
+            selenocysteine_termination:bool=False):
         """ Call peptide main """
         variant_peptides = set()
         tx_model = self.tx_model
@@ -1016,7 +1017,7 @@ class BruteForceVariantPeptideCaller():
 
                     peptide_seqs = self.translational_modification(
                         peptide, lhs, tx_lhs, effective_variants, denylist,
-                        check_variants, check_canonical
+                        check_variants, check_canonical, selenocysteine_termination
                     )
                     for peptide_seq in peptide_seqs:
                         variant_peptides.add(peptide_seq)
@@ -1024,7 +1025,8 @@ class BruteForceVariantPeptideCaller():
 
     def translational_modification(self, seq:Seq, lhs:int, tx_lhs:int,
             effective_variants:List[VariantRecordWithCoordinate],
-            denylist:List[str], check_variants:bool, check_canonical:bool
+            denylist:List[str], check_variants:bool, check_canonical:bool,
+            selenocysteine_termination:bool
             ) -> Iterable[str]:
         """ Apply any modification that could happen during translation. """
         candidates = []
@@ -1034,7 +1036,7 @@ class BruteForceVariantPeptideCaller():
             if is_start:
                 candidates.append(seq[1:])
 
-        if self.selenocysteine_termination:
+        if selenocysteine_termination:
             k = 0
             while k > -1:
                 k = seq.find('U', k)
@@ -1141,21 +1143,35 @@ class BruteForceVariantPeptideCaller():
         """ Call variant peptides """
         empty_pool = seqvar.VariantRecordPool()
         empty_pool[self.tx_id] = seqvar.TranscriptionalVariantSeries()
-        denylist = self.call_peptides_main(empty_pool, set(), False, False)
+        denylist = self.call_peptides_main(
+            variants=empty_pool, denylist=set(),
+            check_variants=False, check_canonical=False,
+            selenocysteine_termination=self.selenocysteine_termination
+        )
         main_peptides = set()
 
         for comb in self.generate_variant_comb(fusion=False, circ_rna=False):
-            peptides = self.call_peptides_main(comb, denylist, True, True)
+            peptides = self.call_peptides_main(
+                variants=comb, denylist=denylist,
+                check_variants=True,  check_canonical=True,
+                selenocysteine_termination=self.selenocysteine_termination
+            )
             self.variant_peptides.update(peptides)
             main_peptides.update(peptides)
 
         for comb in self.generate_variant_comb(fusion=True, circ_rna=False):
-            peptides = self.call_peptides_main(comb, denylist, True, True)
+            peptides = self.call_peptides_main(
+                variants=comb, denylist=denylist,
+                check_variants=True, check_canonical=True
+            )
             self.variant_peptides.update(peptides)
 
         denylist.update(main_peptides)
         for comb in self.generate_variant_comb(fusion=False, circ_rna=True):
-            peptides = self.call_peptides_main(comb, denylist, True, True)
+            peptides = self.call_peptides_main(
+                variants=comb, denylist=denylist,
+                check_variants=True, check_canonical=True
+            )
             self.variant_peptides.update(peptides)
 
 def create_mnvs(pool:seqvar.VariantRecordPool, max_adjacent_as_mnv:int
