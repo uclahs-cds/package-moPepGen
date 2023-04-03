@@ -986,7 +986,7 @@ class ThreeFrameTVG():
 
             # if the transcript is mrna_end_NF, we are not going to use any
             # variants in the annotated 3'UTR region.
-            if self.mrna_end_nf:
+            if self.mrna_end_nf and self.seq.orf:
                 orf_end_trinuc = FeatureLocation(
                     start=self.seq.orf.end-3, end=self.seq.orf.end
                 )
