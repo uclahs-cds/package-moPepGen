@@ -495,6 +495,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     tx_model = ref.anno.transcripts[tx_id]
     tx_seq = tx_seqs[tx_id]
     tx_seq = tx_seq[:variant.location.start]
+    donor_tx_id = variant.accepter_transcript_id
 
     orf_start = tx_seq.orf.start + 3 if tx_seq.orf else 3
     if variant.location.start < orf_start:
@@ -513,7 +514,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         _id=tx_id,
         cds_start_nf=tx_model.is_cds_start_nf(),
         has_known_orf=tx_model.is_protein_coding,
-        mrna_end_nf=tx_model.is_mrna_end_nf(),
+        mrna_end_nf=ref.anno.transcripts[donor_tx_id].is_mrna_end_nf(),
         cleavage_params=cleavage_params,
         max_adjacent_as_mnv=max_adjacent_as_mnv
     )
