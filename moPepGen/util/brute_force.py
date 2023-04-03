@@ -889,7 +889,7 @@ class BruteForceVariantPeptideCaller():
 
     def call_peptides_main(self, variants:seqvar.VariantRecordPool,
             denylist:Set[str], check_variants:bool, check_canonical:bool,
-            selenocysteine_termination:bool=False):
+            selenocysteine_termination:bool=False, is_mrna_end_nf:bool=False):
         """ Call peptide main """
         variant_peptides = set()
         tx_model = self.tx_model
@@ -993,8 +993,7 @@ class BruteForceVariantPeptideCaller():
                     rhs = sites[k]
                     tx_lhs = cds_start + lhs * 3
                     tx_rhs = cds_start + rhs * 3
-                    if self.should_clip_trailing_nodes(variant_coordinates) \
-                            and tx_rhs + 3 > len(seq):
+                    if is_mrna_end_nf and tx_rhs + 3 > len(seq):
                         continue
                     peptide = aa_seq.seq[lhs:rhs]
                     if str(peptide) in denylist:
@@ -1146,7 +1145,8 @@ class BruteForceVariantPeptideCaller():
         denylist = self.call_peptides_main(
             variants=empty_pool, denylist=set(),
             check_variants=False, check_canonical=False,
-            selenocysteine_termination=self.selenocysteine_termination
+            selenocysteine_termination=self.selenocysteine_termination,
+            is_mrna_end_nf=False
         )
         main_peptides = set()
 
@@ -1154,7 +1154,8 @@ class BruteForceVariantPeptideCaller():
             peptides = self.call_peptides_main(
                 variants=comb, denylist=denylist,
                 check_variants=True,  check_canonical=True,
-                selenocysteine_termination=self.selenocysteine_termination
+                selenocysteine_termination=self.selenocysteine_termination,
+                is_mrna_end_nf=self.tx_model.is_mrna_end_nf()
             )
             self.variant_peptides.update(peptides)
             main_peptides.update(peptides)
@@ -1162,7 +1163,8 @@ class BruteForceVariantPeptideCaller():
         for comb in self.generate_variant_comb(fusion=True, circ_rna=False):
             peptides = self.call_peptides_main(
                 variants=comb, denylist=denylist,
-                check_variants=True, check_canonical=True
+                check_variants=True, check_canonical=True,
+                is_mrna_end_nf=False
             )
             self.variant_peptides.update(peptides)
 
@@ -1170,7 +1172,8 @@ class BruteForceVariantPeptideCaller():
         for comb in self.generate_variant_comb(fusion=False, circ_rna=True):
             peptides = self.call_peptides_main(
                 variants=comb, denylist=denylist,
-                check_variants=True, check_canonical=True
+                check_variants=True, check_canonical=True,
+                is_mrna_end_nf=False
             )
             self.variant_peptides.update(peptides)
 
