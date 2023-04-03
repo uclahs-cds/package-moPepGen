@@ -84,7 +84,6 @@ def create_mnv_from_adjacent(variants:Iterable[VariantRecord]) -> VariantRecord:
         _id=f"MNV-{start}-{ref}-{end}",
         attrs={
             'GENE_ID': gene_id,
-            'TRANSCRIPT_ID': tx_id,
             'INDIVIDUAL_VARIANT_IDS': var_ids,
             'MERGED_MNV': True
         }
