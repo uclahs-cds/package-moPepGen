@@ -242,6 +242,11 @@ class VariantRecord():
             return self.attrs['TRANSCRIPT_ID']
         return self.location.seqname
 
+    @property
+    def accepter_transcript_id(self) -> str:
+        """ accetper transcript ID """
+        return self.attrs['ACCEPTER_TRANSCRIPT_ID']
+
     def get_donor_start(self) -> int:
         """ Get donor start position """
         if self.type in ['Insertion', 'Substitution']:
