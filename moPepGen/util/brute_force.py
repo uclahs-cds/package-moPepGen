@@ -785,7 +785,8 @@ class BruteForceVariantPeptideCaller():
             if variant.variant.is_fusion() \
                     or variant.variant.is_circ_rna() \
                     or variant.variant.transcript_id != self.tx_id \
-                    or 'TRANSCRIPT_ID' in variant.variant.attrs:
+                    or ('TRANSCRIPT_ID' in variant.variant.attrs
+                        and not variant.variant.is_merged_mnv()):
                 stop_lost_i = (False, False, False)
                 skip_stop_lost = True
 
