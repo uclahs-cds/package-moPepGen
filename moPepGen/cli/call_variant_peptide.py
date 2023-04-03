@@ -431,7 +431,7 @@ def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
     dgraph = svgraph.ThreeFrameTVG(
         seq=tx_seq, _id=tx_id,
         has_known_orf=tx_model.is_protein_coding,
-        mrna_end_nf=tx_model.is_mrna_end_nf(),
+        mrna_end_nf=False,
         cleavage_params=cleavage_params
     )
     dgraph.gather_sect_variants(ref.anno)

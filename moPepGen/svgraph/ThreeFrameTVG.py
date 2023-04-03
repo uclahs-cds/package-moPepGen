@@ -964,8 +964,39 @@ class ThreeFrameTVG():
         Args:
             variant [seqvar.VariantRecord]: The variant record.
         """
-        merged_mnvs = self.find_mnvs_from_adjacent_variants(variants)
-        variants_with_mnv = sorted(variants + merged_mnvs)
+        ## Fitler variants
+        # skipping start lost mutations
+        start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
+
+        filtered_variants = []
+        for v in variants:
+            if v.location.start == start_index - 1 \
+                    and (v.is_insertion() or v.is_deletion()) \
+                    and not v.is_fusion() \
+                    and not v.is_alternative_splicing():
+                v.to_end_inclusion(self.seq)
+
+            # Skip variants that the position is smaller than the first NT
+            # after start codon. Exception for fusion, that if the donor
+            # breakpoint is at the last NT of the start codon it is retained
+            # because it won't break the start codon.
+            if v.location.start < start_index and not \
+                    (v.is_fusion() and v.location.start == start_index - 1):
+                continue
+
+            # if the transcript is mrna_end_NF, we are not going to use any
+            # variants in the annotated 3'UTR region.
+            if self.mrna_end_nf:
+                orf_end_trinuc = FeatureLocation(
+                    start=self.seq.orf.end-3, end=self.seq.orf.end
+                )
+                if v.location.overlaps(orf_end_trinuc):
+                    continue
+
+            filtered_variants.append(v)
+
+        merged_mnvs = self.find_mnvs_from_adjacent_variants(filtered_variants)
+        variants_with_mnv = sorted(filtered_variants + merged_mnvs)
         variant_iter = iter(variants_with_mnv)
         variant = next(variant_iter, None)
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
@@ -982,34 +1013,6 @@ class ThreeFrameTVG():
         while variant:
             if not any(cursors):
                 break
-
-            # skipping start lost mutations
-            start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
-
-            if variant.location.start == start_index - 1 \
-                    and (variant.is_insertion() or variant.is_deletion()) \
-                    and not variant.is_fusion() \
-                    and not variant.is_alternative_splicing():
-                variant.to_end_inclusion(self.seq)
-
-            # Skip variants that the position is smaller than the first NT
-            # after start codon. Exception for fusion, that if the donor
-            # breakpoint is at the last NT of the start codon it is retained
-            # because it won't break the start codon.
-            if variant.location.start < start_index and not \
-                    (variant.is_fusion() and variant.location.start == start_index - 1):
-                variant = next(variant_iter, None)
-                continue
-
-            # if the transcript is mrna_end_NF, we are not going to use any
-            # variants in the annotated 3'UTR region.
-            if self.mrna_end_nf:
-                orf_end_trinuc = FeatureLocation(
-                    start=self.seq.orf.end-3, end=self.seq.orf.end
-                )
-                if variant.location.overlaps(orf_end_trinuc):
-                    variant = next(variant_iter, None)
-                    continue
 
             if any(c.seq.locations[0].ref.start > variant.location.start for c in cursors):
                 variant = next(variant_iter, None)
@@ -1461,6 +1464,10 @@ class ThreeFrameTVG():
         if rf_index is None:
             raise ValueError('reading_frame_index not found')
         end_node, members = self.find_variant_bubble(node)
+
+        if not end_node:
+            raise err.FailedToFindVariantBubbleError()
+
         if not self.is_circ_rna() and end_node.is_subgraph_end():
             subgraph_ends = {end_node}
             subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node))
@@ -1638,14 +1645,16 @@ class ThreeFrameTVG():
             out_node = out_edge.out_node
             out_node.append_left(left_over)
 
+        ref_node = start.get_reference_next()
         for edge in start.out_edges:
             out_node = edge.out_node
             if start.subgraph_id != out_node.subgraph_id and\
                     not any(x.out_node.subgraph_id == start.subgraph_id \
-                        for x in out_node.out_edges):
+                        for x in out_node.out_edges) \
+                    and not out_node is ref_node \
+                    and not out_node.is_bridge():
                 end_nodes.append(out_node)
 
-        ref_node = start.get_reference_next()
         if not ref_node.out_edges:
             return end_nodes
 
@@ -1724,6 +1733,7 @@ class ThreeFrameTVG():
                 continue
 
             self.align_variants(cur)
+
             self.collapse_equivalent_nodes(cur)
             if cur.out_edges:
                 end_nodes = self.expand_alignments(cur)

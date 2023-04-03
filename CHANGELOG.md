@@ -24,11 +24,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `callAltTranslation` added to call peptides with alternative translation without any genomic or transcriptomic variations.
 
-## [0.11.5] - 2023-3-5
-
 ### Fixed
-
-- Fixed `callVariant` that the command line argument `--max-variants-per-node` and `--additional-variants-per-misc` not passed to it and the default value was always used.
 
 - Fixed `fake` that simulated selenocysteine positions could be in introns.
 
@@ -37,6 +33,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed fusion with very small intronic insertion. #707
 
 - In ThreeFrameTVG when aligning variant bubbles and when nodes are merged, variants were not merged correctly.
+
+- Fixed TVG that indel merged with downstream fusion treated as subgraph out. #708
+
+## [0.11.5] - 2023-3-5
+
+### Fixed
+
+- Fixed `callVariant` that the command line argument `--max-variants-per-node` and `--additional-variants-per-misc` not passed to it and the default value was always used.
 
 ## [0.11.4] - 2023-2-23
 
