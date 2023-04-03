@@ -1173,7 +1173,7 @@ class BruteForceVariantPeptideCaller():
             peptides = self.call_peptides_main(
                 variants=comb, denylist=denylist,
                 check_variants=True, check_canonical=True,
-                is_mrna_end_nf=False
+                is_mrna_end_nf=True
             )
             self.variant_peptides.update(peptides)
 
