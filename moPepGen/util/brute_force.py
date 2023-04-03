@@ -925,7 +925,7 @@ class BruteForceVariantPeptideCaller():
         variant_effects = self.check_variant_effect(seq, variant_coordinates)
         stop_lost, stop_gain, silent_mutation = variant_effects
 
-        if not (is_coding and tx_model.is_mrna_end_nf()):
+        if not (is_coding and is_mrna_end_nf):
             cur_cds_end = len(seq)
 
         if not is_coding or is_circ_rna:
@@ -1094,8 +1094,6 @@ class BruteForceVariantPeptideCaller():
         if fusion:
             for variant in self.variant_pool[self.tx_id].fusion:
                 if variant.location.start < start_index - 1:
-                    continue
-                if mrna_end_nf and variant.location.start >= self.tx_seq.orf.end - 3:
                     continue
                 variant_type_mapper[variant] = 'fusion'
                 accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']

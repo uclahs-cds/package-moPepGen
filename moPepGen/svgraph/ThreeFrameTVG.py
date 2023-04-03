@@ -967,6 +967,7 @@ class ThreeFrameTVG():
         ## Fitler variants
         # skipping start lost mutations
         start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
+        is_fusion = any(v.is_fusion() for v in variants)
 
         filtered_variants = []
         for v in variants:
@@ -986,7 +987,7 @@ class ThreeFrameTVG():
 
             # if the transcript is mrna_end_NF, we are not going to use any
             # variants in the annotated 3'UTR region.
-            if self.mrna_end_nf and self.seq.orf:
+            if self.mrna_end_nf and not is_fusion:
                 orf_end_trinuc = FeatureLocation(
                     start=self.seq.orf.end-3, end=self.seq.orf.end
                 )
