@@ -762,7 +762,7 @@ class TVGNode():
                     and not var_aa.startswith('*')) \
                 or (v.variant.is_deletion() and '*' in ref_aa
                     and not (ref_aa.startswith('*') and var_aa.startswith('*'))) \
-                or (v.variant.type == 'Substitution'
+                or (v.variant.type in ['Substitution', 'MNV']
                     and '*' in ref_aa and ref_aa != var_aa)
 
     def is_less_mutated_than(self, other:TVGNode) -> bool:
