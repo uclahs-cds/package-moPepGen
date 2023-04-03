@@ -964,8 +964,39 @@ class ThreeFrameTVG():
         Args:
             variant [seqvar.VariantRecord]: The variant record.
         """
-        merged_mnvs = self.find_mnvs_from_adjacent_variants(variants)
-        variants_with_mnv = sorted(variants + merged_mnvs)
+        ## Fitler variants
+        # skipping start lost mutations
+        start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
+
+        filtered_variants = []
+        for v in variants:
+            if v.location.start == start_index - 1 \
+                    and (v.is_insertion() or v.is_deletion()) \
+                    and not v.is_fusion() \
+                    and not v.is_alternative_splicing():
+                v.to_end_inclusion(self.seq)
+
+            # Skip variants that the position is smaller than the first NT
+            # after start codon. Exception for fusion, that if the donor
+            # breakpoint is at the last NT of the start codon it is retained
+            # because it won't break the start codon.
+            if v.location.start < start_index and not \
+                    (v.is_fusion() and v.location.start == start_index - 1):
+                continue
+
+            # if the transcript is mrna_end_NF, we are not going to use any
+            # variants in the annotated 3'UTR region.
+            if self.mrna_end_nf:
+                orf_end_trinuc = FeatureLocation(
+                    start=self.seq.orf.end-3, end=self.seq.orf.end
+                )
+                if v.location.overlaps(orf_end_trinuc):
+                    continue
+
+            filtered_variants.append(v)
+
+        merged_mnvs = self.find_mnvs_from_adjacent_variants(filtered_variants)
+        variants_with_mnv = sorted(filtered_variants + merged_mnvs)
         variant_iter = iter(variants_with_mnv)
         variant = next(variant_iter, None)
         cursors = copy.copy([x.get_reference_next() for x in self.reading_frames])
@@ -982,34 +1013,6 @@ class ThreeFrameTVG():
         while variant:
             if not any(cursors):
                 break
-
-            # skipping start lost mutations
-            start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
-
-            if variant.location.start == start_index - 1 \
-                    and (variant.is_insertion() or variant.is_deletion()) \
-                    and not variant.is_fusion() \
-                    and not variant.is_alternative_splicing():
-                variant.to_end_inclusion(self.seq)
-
-            # Skip variants that the position is smaller than the first NT
-            # after start codon. Exception for fusion, that if the donor
-            # breakpoint is at the last NT of the start codon it is retained
-            # because it won't break the start codon.
-            if variant.location.start < start_index and not \
-                    (variant.is_fusion() and variant.location.start == start_index - 1):
-                variant = next(variant_iter, None)
-                continue
-
-            # if the transcript is mrna_end_NF, we are not going to use any
-            # variants in the annotated 3'UTR region.
-            if self.mrna_end_nf:
-                orf_end_trinuc = FeatureLocation(
-                    start=self.seq.orf.end-3, end=self.seq.orf.end
-                )
-                if variant.location.overlaps(orf_end_trinuc):
-                    variant = next(variant_iter, None)
-                    continue
 
             if any(c.seq.locations[0].ref.start > variant.location.start for c in cursors):
                 variant = next(variant_iter, None)
