@@ -62,8 +62,10 @@ def create_mnv_from_adjacent(variants:Iterable[VariantRecord]) -> VariantRecord:
             seqname = v.location.seqname
             if 'TRANSCRIPT_ID' in v.attrs:
                 gene_id = seqname
+                tx_id = v.attrs['TRANSCRIPT_ID']
             else:
                 gene_id = v.attrs['GENE_ID']
+                tx_id = seqname
             start = v.location.start
             ref = v.ref
             alt = v.alt
@@ -74,17 +76,22 @@ def create_mnv_from_adjacent(variants:Iterable[VariantRecord]) -> VariantRecord:
             var_ids.append(v.id)
     end = variants[-1].location.end
 
+    attrs = {
+        'INDIVIDUAL_VARIANT_IDS': var_ids,
+        'MERGED_MNV': True
+    }
+    if seqname == tx_id:
+        attrs['GENE_ID'] = gene_id
+    else:
+        attrs['TRANSCRIPT_ID'] = tx_id
+
     return VariantRecord(
         location=FeatureLocation(start, end, seqname=seqname),
         ref=ref,
         alt=alt,
         _type='MNV',
         _id=f"MNV-{start}-{ref}-{end}",
-        attrs={
-            'GENE_ID': gene_id,
-            'INDIVIDUAL_VARIANT_IDS': var_ids,
-            'MERGED_MNV': True
-        }
+        attrs=attrs
     )
 
 def find_mnvs_from_adjacent_variants(variants:List[VariantRecord],
