@@ -1737,8 +1737,6 @@ class ThreeFrameTVG():
                 queue.appendleft(cur)
                 continue
 
-            cur_seq = cur.seq.seq
-
             self.align_variants(cur)
 
             self.collapse_equivalent_nodes(cur)
