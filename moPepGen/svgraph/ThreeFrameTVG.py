@@ -1473,8 +1473,11 @@ class ThreeFrameTVG():
             subgraph_ends = {end_node}
             subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node))
             end_nodes = set()
-            for subgraph_end in subgraph_ends:
-                end_nodes.update(subgraph_end.get_out_nodes())
+            if len(subgraph_ends) > 1:
+                for subgraph_end in subgraph_ends:
+                    end_nodes.update(subgraph_end.get_out_nodes())
+            else:
+                end_nodes = {end_node}
         else:
             end_nodes = {end_node}
         bridges = self.find_bridge_nodes_between(start_node, end_node, members)
@@ -1683,7 +1686,8 @@ class ThreeFrameTVG():
             self.remove_node(end)
 
         if end.subgraph_id != self.id and any(x.out_node.subgraph_id == self.id
-                for x in end.out_edges):
+                for x in end.out_edges) \
+                or ref_node.subgraph_id != self.id and end.subgraph_id == self.id:
             return end_nodes
         end_nodes.append(end)
         return end_nodes
