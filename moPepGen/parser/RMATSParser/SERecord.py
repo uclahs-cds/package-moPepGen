@@ -99,12 +99,12 @@ class SERecord(RMATSRecord):
         """ Align the SE record to a transcript """
         upstream_index = tx_model.get_exon_with_end(self.upstream_exon_end)
         if upstream_index == -1:
-            return
+            return None
         downstream_index = tx_model.get_exon_with_start(
             self.downstream_exon_start, upstream_index + 1
         )
         if downstream_index == -1:
-            return
+            return None
 
         target_exons = tx_model.get_exon_inner(se_loc, upstream_index)
 
