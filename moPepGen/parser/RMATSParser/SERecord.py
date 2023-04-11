@@ -116,6 +116,22 @@ class SERecord(RMATSRecord):
             target_indices=target_exons
         )
 
+    def create_variant_id(self, anno:gtf.GenomicAnnotation) -> str:
+        """ Create variant ID """
+        uee = anno.coordinate_genomic_to_gene(self.upstream_exon_end, self.gene_id)
+        es = anno.coordinate_genomic_to_gene(self.exon_start, self.gene_id)
+        ee = anno.coordinate_genomic_to_gene(self.exon_end - 1, self.gene_id)
+        des = anno.coordinate_genomic_to_gene(self.downstream_exon_start - 1, self.gene_id)
+
+        gene_model = anno.genes[self.gene_id]
+        if gene_model.strand == -1:
+            es, ee = ee, es
+            uee, des = des, uee
+        ee += 1
+        des += 1
+
+        return f"SE_{uee}-{es}-{ee}-{des}"
+
     def has_novel_splicing(self, anno:gtf.GenomicAnnotation) -> bool:
         """ Checks if the AS event is novel, i.e. whether both retained and
         skipped version already exist in reference. """
@@ -145,7 +161,7 @@ class SERecord(RMATSRecord):
         return not has_retained or not has_skipped
 
     def create_target_deletion(self, alignment:SETranscriptAlignment,
-            anno:gtf.GenomicAnnotation, gene_seq:dna.DNASeqRecord
+            anno:gtf.GenomicAnnotation, gene_seq:dna.DNASeqRecord, var_id:str
             ) -> seqvar.VariantRecord:
         """ Create a deletion of the target exons """
         gene_model = anno.genes[self.gene_id]
@@ -172,12 +188,11 @@ class SERecord(RMATSRecord):
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Deletion'
-        _id = f'SE_{start}'
-        return seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_upstream_interjacent_deletion(self, alignment:SETranscriptAlignment,
             upstream_interjacent:List[GTFSeqFeature], anno:gtf.GenomicAnnotation,
-            gene_seq:dna.DNASeqRecord) -> seqvar.VariantRecord:
+            gene_seq:dna.DNASeqRecord, var_id:str) -> seqvar.VariantRecord:
         """ Create a deletion of the upstream interjacent exons. """
         gene_model = anno.genes[self.gene_id]
         tx_id = alignment.tx_model.transcript_id
@@ -203,12 +218,11 @@ class SERecord(RMATSRecord):
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Deletion'
-        _id = f'SE_{start}'
-        return seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_upstream_interjacent_substitution(self, alignment:SETranscriptAlignment,
             upstream_interjacent:List[GTFSeqFeature], anno:gtf.GenomicAnnotation,
-            gene_seq:dna.DNASeqRecord) -> seqvar.VariantRecord:
+            gene_seq:dna.DNASeqRecord, var_id:str) -> seqvar.VariantRecord:
         """ Create a substitution of the upstream interjacent exons with the
         skipped exon when it is included. """
         gene_model = anno.genes[self.gene_id]
@@ -244,19 +258,18 @@ class SERecord(RMATSRecord):
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Substitution'
-        _id = f'SE_{start}'
-        return seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_downstream_interjacent_deletion(self, alignment:SETranscriptAlignment,
             downstream_interjacent:List[GTFSeqFeature], anno:gtf.GenomicAnnotation,
-            gene_seq:dna.DNASeqRecord) -> seqvar.VariantRecord:
+            gene_seq:dna.DNASeqRecord, var_id:str) -> seqvar.VariantRecord:
         """ Create a deletion of the downstream interjacent exons. """
         gene_model = anno.genes[self.gene_id]
         tx_id = alignment.tx_model.transcript_id
         chrom = gene_model.chrom
         start = self.exon_end
         start = anno.coordinate_genomic_to_gene(start, self.gene_id)
-        end = downstream_interjacent[0].location.start
+        end = downstream_interjacent[-1].location.end
         end = anno.coordinate_genomic_to_gene(end - 1, self.gene_id)
         if gene_model.strand == -1:
             start, end = end, start
@@ -274,13 +287,12 @@ class SERecord(RMATSRecord):
             'GENE_SYMBOL': gene_model.gene_name,
             'GENOMIC_POSITION': genomic_position
         }
-        _type = 'Substitution'
-        _id = f'SE_{start}'
-        return seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+        _type = 'Deletion'
+        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_downstream_interjacent_substitution(self, alignment:SETranscriptAlignment,
             downstream_interjacent:List[GTFSeqFeature], anno:gtf.GenomicAnnotation,
-            gene_seq:dna.DNASeqRecord) -> seqvar.VariantRecord:
+            gene_seq:dna.DNASeqRecord, var_id:str) -> seqvar.VariantRecord:
         """ Create a substitution of the downstream interjacent exons with the
         target skipped exon when it is included. """
         gene_model = anno.genes[self.gene_id]
@@ -316,11 +328,10 @@ class SERecord(RMATSRecord):
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Substitution'
-        _id = f'SE_{start}'
-        return seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_target_insertion(self, alignment:SETranscriptAlignment,
-            anno:gtf.GenomicAnnotation, gene_seq:dna.DNASeqRecord
+            anno:gtf.GenomicAnnotation, gene_seq:dna.DNASeqRecord, var_id:str
             ) -> seqvar.VariantRecord:
         """ Create a insertion of the target skipped exon when it is included. """
         gene_model = anno.genes[self.gene_id]
@@ -338,9 +349,9 @@ class SERecord(RMATSRecord):
                 gene=self.gene_id
             )
 
-        donor_start = alignment.tx_model.exon[alignment.upstream_index + 1].location.start
+        donor_start = self.exon_start
         donor_start = anno.coordinate_genomic_to_gene(donor_start, self.gene_id)
-        donor_end = alignment.tx_model.exon[alignment.downstream_index - 1].location.end
+        donor_end = self.exon_end
         donor_end = anno.coordinate_genomic_to_gene(donor_end - 1, self.gene_id)
         if gene_model.strand == -1:
             donor_start, donor_end = donor_end, donor_start
@@ -367,11 +378,11 @@ class SERecord(RMATSRecord):
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Insertion'
-        _id = f'SE_{donor_start}'
-        return seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_target_substitution(self, alignment:SETranscriptAlignment,
-            anno:gtf.GenomicAnnotation, gene_seq:dna.DNASeqRecord) -> seqvar.VariantRecord:
+            anno:gtf.GenomicAnnotation, gene_seq:dna.DNASeqRecord, var_id:str
+            ) -> seqvar.VariantRecord:
         """ Create a substitution of the upstream and/or downstream interjacent
         exons with the skipped exon when it is included. """
         interjacent_exons = alignment.tx_model.exon[
@@ -409,8 +420,7 @@ class SERecord(RMATSRecord):
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Substitution'
-        _id = f'SE_{start}'
-        return seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
+        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict, min_ijc:int, min_sjc:int
@@ -436,11 +446,13 @@ class SERecord(RMATSRecord):
             if alignment:
                 tx_alignments[tx_id] = alignment
 
+        var_id = self.create_variant_id(anno)
+
         # For SE, the skipped is 'skipped', and inclusion is 'inclusion'
         # what a nonsense comment
         for tx_id, alignment in tx_alignments.items():
             if alignment.target_indices and self.sjc_sample_1 >= min_sjc:
-                record = self.create_target_deletion(alignment, anno, gene_seq)
+                record = self.create_target_deletion(alignment, anno, gene_seq, var_id)
                 variants.append(record)
 
             upstream_interjacent = alignment.get_upstream_interjacent_exons()
@@ -449,14 +461,16 @@ class SERecord(RMATSRecord):
                     # This is a Deletion
                     if self.ijc_sample_1 >= min_ijc:
                         record = self.create_upstream_interjacent_deletion(
-                            alignment, upstream_interjacent, anno, gene_seq
+                            alignment, upstream_interjacent, anno, gene_seq,
+                            var_id
                         )
                         variants.append(record)
                 else:
                     # This is a Substitution
                     if self.sjc_sample_1 >= min_sjc:
                         record = self.create_upstream_interjacent_substitution(
-                            alignment, upstream_interjacent, anno, gene_seq
+                            alignment, upstream_interjacent, anno, gene_seq,
+                            var_id
                         )
                         variants.append(record)
 
@@ -465,21 +479,23 @@ class SERecord(RMATSRecord):
                 if alignment.target_indices:
                     if self.ijc_sample_1 >= min_ijc:
                         record = self.create_downstream_interjacent_deletion(
-                            alignment, downstream_interjacent, anno, gene_seq
+                            alignment, downstream_interjacent, anno, gene_seq,
+                            var_id
                         )
                         variants.append(record)
                 else:
                     if self.sjc_sample_1 >= min_sjc:
                         record = self.create_downstream_interjacent_substitution(
-                            alignment, downstream_interjacent, anno, gene_seq
+                            alignment, downstream_interjacent, anno, gene_seq,
+                            var_id
                         )
                         variants.append(record)
 
             if not alignment.target_indices and self.ijc_sample_1 >= min_ijc:
                 if alignment.upstream_index + 1 == alignment.downstream_index:
                     # No interjacent exons
-                    record = self.create_target_insertion(alignment, anno, gene_seq)
+                    record = self.create_target_insertion(alignment, anno, gene_seq, var_id)
                 else:
-                    record = self.create_target_substitution(alignment, anno, gene_seq)
+                    record = self.create_target_substitution(alignment, anno, gene_seq, var_id)
                 variants.append(record)
         return variants

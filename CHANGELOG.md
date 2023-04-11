@@ -36,6 +36,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed TVG that indel merged with downstream fusion treated as subgraph out. #708
 
+- Fixed `parseRMATS` to accept SE when the skipped region has intron(s). #715
+
+- Fixed `parseRMATS` to accept SE when upstreamES/downstreamEE don't match. #716
+
+- Fixed `parseRMATS` to handle cases when there are upstream/downstream interjacent exons. #717
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed
