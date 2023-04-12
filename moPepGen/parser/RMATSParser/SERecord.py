@@ -15,7 +15,7 @@ class SETranscriptAlignment():
     def __init__(self, se_record:SERecord, tx_model:TranscriptAnnotationModel,
             upstream_index:int, downstream_index:int, target_indices:List[int],
             junctions:List[Tuple[int,int]]=None):
-        """ """
+        """ Constructor """
         self.se_record = se_record
         self.tx_model = tx_model
         self.upstream_index = upstream_index
