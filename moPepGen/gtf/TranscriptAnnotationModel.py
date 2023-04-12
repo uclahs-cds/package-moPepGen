@@ -387,7 +387,7 @@ class TranscriptAnnotationModel():
         return ind
 
     def get_exon_with_start(self, start:int, offset:int=0) -> int:
-        """ Get the exon with a given end position. """
+        """ Get the exon with a given START position. """
         for i, exon in enumerate(self.exon[offset:]):
             if exon.location.start == start:
                 return i + offset

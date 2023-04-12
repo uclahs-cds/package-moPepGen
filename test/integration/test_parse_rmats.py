@@ -86,7 +86,7 @@ class TestParseRMATS(TestCaseIntegration):
         1. Multiple exons skipped.
         2. Upstream adjacent exons
         3. Downtream adjacent exons
-        4. """
+        """
         args = self.create_base_args()
         args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_3.txt'
         cli.parse_rmats(args)
