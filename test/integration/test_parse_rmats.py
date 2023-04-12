@@ -81,6 +81,42 @@ class TestParseRMATS(TestCaseIntegration):
         self.assertTrue(record.type, 'Insertion')
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
+    def test_parse_rmats_se_case_3(self):
+        """ Complex cases with:
+        1. Multiple exons skipped.
+        2. Upstream adjacent exons
+        3. Downtream adjacent exons
+        """
+        args = self.create_base_args()
+        args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_3.txt'
+        cli.parse_rmats(args)
+        records = list(seqvar.io.parse(args.output_path))
+        expect_values = [
+            ('Deletion', 323, 405),
+            ('Substitution', 323, 405, 405, 750),
+            ('Deletion', 323, 750),
+            ('Deletion', 405, 869),
+            ('Deletion', 750, 869)
+        ]
+        for expect in expect_values:
+            match = False
+            for record in records:
+                receive = (
+                    record.type,
+                    int(record.attrs['START']),
+                    int(record.attrs['END'])
+                )
+                if record.type == 'Substitution':
+                    receive = (
+                        *receive,
+                        int(record.attrs['DONOR_START']),
+                        int(record.attrs['DONOR_END'])
+                    )
+                if receive == expect:
+                    match = True
+                    break
+            self.assertTrue(match)
+
     def test_parse_rmats_a5ss_case_1(self):
         """ rMATS A5SS when the longer version is annotated. This should
         results a deletion. """
