@@ -262,8 +262,14 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 3)
-        self.assertEqual(var_records[0].location.start, 20)
-        self.assertEqual(var_records[0].location.end, 23)
+        self.assertEqual(
+            var_records[0].location.start,
+            anno.coordinate_genomic_to_gene(record.short_exon_end, gene_id)
+        )
+        self.assertEqual(
+            var_records[0].location.end,
+            anno.coordinate_genomic_to_gene(record.long_exon_end - 1, gene_id) + 1
+        )
 
     def test_a5ss_record_neg_strand(self):
         """ Test A5SSRecord with neg strand """
@@ -296,8 +302,14 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 3)
-        self.assertEqual(var_records[0].location.start, 29)
-        self.assertEqual(var_records[0].location.end, 32)
+        self.assertEqual(
+            var_records[0].location.start,
+            anno.coordinate_genomic_to_gene(record.short_exon_start - 1, gene_id)
+        )
+        self.assertEqual(
+            var_records[0].location.end,
+            anno.coordinate_genomic_to_gene(record.long_exon_start, gene_id) + 1
+        )
 
     def test_a5ss_record_has_short(self):
         """ Test that reference has the short version """
@@ -349,8 +361,8 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].type, 'Insertion')
-        self.assertEqual(var_records[0].attrs['START'], 17)
-        self.assertEqual(var_records[0].attrs['END'], 20)
+        self.assertEqual(var_records[0].attrs['DONOR_START'], 17)
+        self.assertEqual(var_records[0].attrs['DONOR_END'], 20)
 
     def test_a3ss_pos_long_spanning(self):
         """ Test A5SSRecord with pos strand, long exon and spanning exon """

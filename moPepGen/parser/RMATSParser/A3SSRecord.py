@@ -306,7 +306,7 @@ class A3SSRecord(RMATSRecord):
                 genomic_donor_start = self.long_exon_start
             else:
                 genomic_donor_start = tx_model.exon[interjacent[0] - 1].location.end
-            donor_end = anno.coordinate_genomic_to_gene(genomic_end, self.gene_id) + 1
+            donor_end = anno.coordinate_genomic_to_gene(genomic_donor_end, self.gene_id) + 1
 
         ref = str(gene_seq.seq[start])
         genomic_position = f'{chrom}:{genomic_start + 1}:{genomic_end}'
@@ -372,8 +372,8 @@ class A3SSRecord(RMATSRecord):
         alt = '<Ins>'
         attrs = {
             'TRANSCRIPT_ID': tx_id,
-            'START': donor_start,
-            'END': donor_end,
+            'DONOR_START': donor_start,
+            'DONOR_END': donor_end,
             'GENE_SYMBOL': gene_model.gene_name,
             'GENOMIC_POSITION': genomic_position
         }
@@ -398,13 +398,13 @@ class A3SSRecord(RMATSRecord):
                 genomic_start = tx_model.exon[spanning].location.start
             start = anno.coordinate_genomic_to_gene(genomic_start, self.gene_id)
             genomic_end = min(self.short_exon_start, tx_model.exon[spanning].location.end)
-            end = anno.coordinate_gene_to_genomic(genomic_end - 1, self.gene_id) + 1
+            end = anno.coordinate_genomic_to_gene(genomic_end - 1, self.gene_id) + 1
         else:
             if interjacent:
                 genomic_end = tx_model.exon[interjacent[-1]].location.end
             else:
                 genomic_end = tx_model.exon[spanning].location.end
-            start = anno.coordinate_gene_to_genomic(genomic_end - 1, self.gene_id)
+            start = anno.coordinate_genomic_to_gene(genomic_end - 1, self.gene_id)
             genomic_start = max(self.short_exon_end, tx_model.exon[spanning].location.start)
             end = anno.coordinate_genomic_to_gene(genomic_start, self.gene_id) + 1
         ref = str(gene_seq.seq[start])
@@ -534,8 +534,8 @@ class A3SSRecord(RMATSRecord):
         alt = '<Ins>'
         attrs = {
             'TRANSCRIPT_ID': tx_id,
-            'START': donor_start,
-            'END': donor_end,
+            'DONOR_START': donor_start,
+            'DONOR_END': donor_end,
             'GENE_SYMBOL': gene_model.gene_name,
             'GENOMIC_POSITION': genomic_position
         }
