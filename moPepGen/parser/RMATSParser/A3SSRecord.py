@@ -66,7 +66,8 @@ class A3SSTranscriptAlignment():
         return interjacent
 
     def get_long_spanning_exon(self) -> int:
-        """ """
+        """ Get exon that spanning over the long exon start (or end for -
+        strand) position """
         strand = self.tx_model.transcript.strand
         if strand == 1:
             for i in range(self.upstream_index + 1, len(self.tx_model.exon)):
@@ -76,12 +77,13 @@ class A3SSTranscriptAlignment():
         else:
             for i in reversed(range(0, self.upstream_index)):
                 exon = self.tx_model.exon[i]
-                if self.as_record.long_exon_start in exon.location:
+                if self.as_record.long_exon_end - 1 in exon.location:
                     return i
         return -1
 
     def get_short_spanning_exon(self) -> int:
-        """ """
+        """ Get exon that spanning over the short exon start (or end for -
+        strand) position """
         strand = self.tx_model.transcript.strand
         if strand == 1:
             for i in range(self.upstream_index + 1, len(self.tx_model.exon)):
@@ -219,9 +221,10 @@ class A3SSRecord(RMATSRecord):
     def create_long_deletion(self, alignment:A3SSTranscriptAlignment,
             spanning:int, interjacent:List[int], anno:gtf.GenomicAnnotation,
             gene_seq:dna.DNASeqRecord, var_id:str) -> seqvar.VariantRecord:
-        """ """
+        """ Create deletion that results the junction between the upstream exon
+        and the long exon start/end. """
         gene_model = anno.genes[self.gene_id]
-        tx_id = alignment.tx_model.transcript_id
+        tx_id = alignment.tx_model.transcript.transcript_id
         chrom = gene_model.chrom
         strand = gene_model.strand
         tx_model = alignment.tx_model
@@ -240,7 +243,7 @@ class A3SSRecord(RMATSRecord):
             else:
                 genomic_end = tx_model.exon[spanning].location.end
             start = anno.coordinate_gene_to_genomic(genomic_end - 1, self.gene_id)
-            genomic_start = max(self.long_exon.end, tx_model.exon[spanning].location.start)
+            genomic_start = max(self.long_exon_end, tx_model.exon[spanning].location.start)
             end = anno.coordinate_genomic_to_gene(genomic_start, self.gene_id) + 1
         ref = str(gene_seq.seq[start])
 
@@ -261,9 +264,10 @@ class A3SSRecord(RMATSRecord):
     def create_long_substitution(self, alignment:A3SSTranscriptAlignment,
             interjacent:List[int], anno:gtf.GenomicAnnotation,
             gene_seq:dna.DNASeqRecord, var_id:str) -> seqvar.VariantRecord:
-        """ """
+        """ Create substitution that results the junction between the upstream exon
+        and the long exon start/end. """
         gene_model = anno.genes[self.gene_id]
-        tx_id = alignment.tx_model.transcript_id
+        tx_id = alignment.tx_model.transcript.transcript_id
         chrom = gene_model.chrom
         strand = gene_model.strand
         tx_model = alignment.tx_model
@@ -325,9 +329,10 @@ class A3SSRecord(RMATSRecord):
     def create_long_insertion(self, alignment:A3SSTranscriptAlignment,
             anno:gtf.GenomicAnnotation, gene_seq:dna.DNASeqRecord, var_id:str
             ) -> seqvar.VariantRecord:
-        """ """
+        """ Create insertion that results the junction between the upstream exon
+        and the long exon start/end. """
         gene_model = anno.genes[self.gene_id]
-        tx_id = alignment.tx_model.transcript_id
+        tx_id = alignment.tx_model.transcript.transcript_id
         chrom = gene_model.chrom
         strand = gene_model.strand
         tx_model = alignment.tx_model
@@ -378,9 +383,10 @@ class A3SSRecord(RMATSRecord):
     def create_short_deletion(self, alignment:A3SSTranscriptAlignment,
             spanning:int, interjacent:List[int], anno:gtf.GenomicAnnotation,
             gene_seq:dna.DNASeqRecord, var_id:str) -> seqvar.VariantRecord:
-        """ """
+        """ Create deletion that results the junction between the upstream exon
+        and the short exon start/end. """
         gene_model = anno.genes[self.gene_id]
-        tx_id = alignment.tx_model.transcript_id
+        tx_id = alignment.tx_model.transcript.transcript_id
         chrom = gene_model.chrom
         strand = gene_model.strand
         tx_model = alignment.tx_model
@@ -392,7 +398,7 @@ class A3SSRecord(RMATSRecord):
                 genomic_start = tx_model.exon[spanning].location.start
             start = anno.coordinate_genomic_to_gene(genomic_start, self.gene_id)
             genomic_end = min(self.short_exon_start, tx_model.exon[spanning].location.end)
-            end = anno.coordinate_gene_to_genomic(end - 1, self.gene_id) + 1
+            end = anno.coordinate_gene_to_genomic(genomic_end - 1, self.gene_id) + 1
         else:
             if interjacent:
                 genomic_end = tx_model.exon[interjacent[-1]].location.end
@@ -420,9 +426,10 @@ class A3SSRecord(RMATSRecord):
     def create_short_substitution(self, alignment:A3SSTranscriptAlignment,
             interjacent:List[int], anno:gtf.GenomicAnnotation,
             gene_seq:dna.DNASeqRecord, var_id:str) -> seqvar.VariantRecord:
-        """ """
+        """ Create substitution that results the junction between the upstream exon
+        and the short exon start/end. """
         gene_model = anno.genes[self.gene_id]
-        tx_id = alignment.tx_model.transcript_id
+        tx_id = alignment.tx_model.transcript.transcript_id
         chrom = gene_model.chrom
         strand = gene_model.strand
         tx_model = alignment.tx_model
@@ -484,9 +491,10 @@ class A3SSRecord(RMATSRecord):
     def create_short_insertion(self, alignment:A3SSTranscriptAlignment,
             anno:gtf.GenomicAnnotation, gene_seq:dna.DNASeqRecord, var_id:str
             ) -> seqvar.VariantRecord:
-        """ """
+        """ Create insertion that results the junction between the upstream exon
+        and the short exon start/end. """
         gene_model = anno.genes[self.gene_id]
-        tx_id = alignment.tx_model.transcript_id
+        tx_id = alignment.tx_model.transcript.transcript_id
         chrom = gene_model.chrom
         strand = gene_model.strand
         tx_model = alignment.tx_model
@@ -537,6 +545,7 @@ class A3SSRecord(RMATSRecord):
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict, min_ijc:int, min_sjc:int
             ) -> List[seqvar.VariantRecord]:
+        """ Convert A3SS record to VariantRecord """
         variants = []
         if not self.has_novel_splicing(anno):
             return variants
@@ -563,7 +572,7 @@ class A3SSRecord(RMATSRecord):
             short_spanning = alignment.get_short_spanning_exon()
             long_spanning = alignment.get_long_spanning_exon()
 
-            if alignment.long_index == -1:
+            if alignment.long_index == -1 and self.ijc_sample_1 >= min_ijc:
                 if long_spanning > -1:
                     record = self.create_long_deletion(
                         alignment, long_spanning, long_interjacent,
@@ -580,7 +589,7 @@ class A3SSRecord(RMATSRecord):
                     )
                 variants.append(record)
 
-            if alignment.short_index == -1:
+            if alignment.short_index == -1 and self.sjc_sample_1 >= min_sjc:
                 if short_spanning > -1:
                     record = self.create_short_deletion(
                         alignment, short_spanning, short_interjacent,
