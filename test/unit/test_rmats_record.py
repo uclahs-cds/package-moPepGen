@@ -373,8 +373,8 @@ class TestRMATSRecord(unittest.TestCase):
         anno = create_genomic_annotation(anno_data)
         record = create_a3ss_pos()
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
-        self.assertEqual(len(var_records), 1)
-        self.assertTrue(var_records[0].type, 'Deletion')
+        self.assertEqual(len(var_records), 2)
+        self.assertTrue(all(x.type == 'Deletion' for x in var_records))
 
     def test_a3ss_neg_long(self):
         """ Test A5SSRecord with neg strand """
@@ -419,8 +419,8 @@ class TestRMATSRecord(unittest.TestCase):
         record = create_a3ss_neg()
         record.flanking_exon_start = 30
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
-        self.assertEqual(len(var_records), 1)
-        self.assertEqual(var_records[0].type, 'Deletion')
+        self.assertEqual(len(var_records), 2)
+        self.assertTrue(all(x.type == 'Deletion' for x in var_records))
 
     def test_a3ss_pos_short_spanning(self):
         """ Test A5SSRecord with pos strand, short exon, and spanning exon """
@@ -442,8 +442,8 @@ class TestRMATSRecord(unittest.TestCase):
         anno = create_genomic_annotation(anno_data)
         record = create_a3ss_pos()
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
-        self.assertEqual(len(var_records), 1)
-        self.assertTrue(var_records[0].type, 'Substitution')
+        self.assertEqual(len(var_records), 2)
+        self.assertEqual({x.type for x in var_records}, {'Substitution', 'Deletion'})
 
     def test_a3ss_neg_short_spanning(self):
         """ Test A5SSRecord with neg strand """

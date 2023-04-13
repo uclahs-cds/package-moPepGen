@@ -572,7 +572,10 @@ class A3SSRecord(RMATSRecord):
             short_spanning = alignment.get_short_spanning_exon()
             long_spanning = alignment.get_long_spanning_exon()
 
-            if alignment.long_index == -1 and self.ijc_sample_1 >= min_ijc:
+            missing_long_junction = alignment.long_index == -1 \
+                or len(long_interjacent) > 0
+
+            if missing_long_junction and self.ijc_sample_1 >= min_ijc:
                 if long_spanning > -1:
                     record = self.create_long_deletion(
                         alignment, long_spanning, long_interjacent,
@@ -589,7 +592,10 @@ class A3SSRecord(RMATSRecord):
                     )
                 variants.append(record)
 
-            if alignment.short_index == -1 and self.sjc_sample_1 >= min_sjc:
+            missing_short_junction = alignment.short_index == -1 \
+                or len(short_interjacent) > 0
+
+            if missing_short_junction and self.sjc_sample_1 >= min_sjc:
                 if short_spanning > -1:
                     record = self.create_short_deletion(
                         alignment, short_spanning, short_interjacent,
