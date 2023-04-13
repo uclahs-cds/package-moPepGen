@@ -1,6 +1,6 @@
 """ Module for rMATS parser """
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Tuple, Dict
+from typing import TYPE_CHECKING, List, Dict
 from moPepGen import gtf, dna, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 from .RMATSRecord import RMATSRecord

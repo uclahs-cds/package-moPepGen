@@ -43,7 +43,7 @@ ANNOTATION_DATA  = {
 }
 
 def create_a3ss_pos() -> RMATSParser.A5SSRecord:
-    """ A3SS with short exon """
+    """ A3SS with positive strand """
     return RMATSParser.A3SSRecord(
         gene_id='ENSG0001',
         gene_symbol='CRAP',
@@ -66,7 +66,7 @@ def create_a3ss_pos() -> RMATSParser.A5SSRecord:
 
 
 def create_a3ss_neg() -> RMATSParser.A5SSRecord:
-    """ """
+    """ Create A3SS with negative strand """
     return RMATSParser.A3SSRecord(
         gene_id='ENSG0001',
         gene_symbol='CRAP',
@@ -329,7 +329,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].attrs['DONOR_END'], 25)
 
     def test_a3ss_pos_long(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test A5SSRecord with pos strand and long exon """
         genome = create_dna_record_dict(GENOME_DATA)
         anno = create_genomic_annotation(ANNOTATION_DATA)
         record = create_a3ss_pos()
@@ -340,7 +340,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].location.end, 20)
 
     def test_a3ss_pos_short(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test A5SSRecord with pos strand and short exon """
         genome = create_dna_record_dict(GENOME_DATA)
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['transcripts'][0]['exon'][1] = (20, 23, ANNOTATION_ATTRS[1])
@@ -353,7 +353,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].attrs['END'], 20)
 
     def test_a3ss_pos_long_spanning(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test A5SSRecord with pos strand, long exon and spanning exon """
         genome = create_dna_record_dict(GENOME_DATA)
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['transcripts'][0]['exon'][1] = (15, 23, ANNOTATION_ATTRS[1])
@@ -366,7 +366,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertTrue({x.location.end for x in var_records} == {17, 20})
 
     def test_a3ss_pos_long_interjacent(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test A5SSRecord with pos strand, long exon and interjacent exon """
         genome = create_dna_record_dict(GENOME_DATA)
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['transcripts'][0]['exon'].insert(1, (14, 15, ANNOTATION_ATTRS[1]))
@@ -377,7 +377,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertTrue(all(x.type == 'Deletion' for x in var_records))
 
     def test_a3ss_neg_long(self):
-        """ Test A5SSRecord with neg strand """
+        """ Test A5SSRecord with neg strand, long exon """
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['genes'][0]['strand'] = -1
         anno_data['transcripts'][0]['strand'] = -1
@@ -391,7 +391,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].location.end, 30)
 
     def test_a3ss_neg_long_spanning(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test A5SSRecord with neg strand, long exon, and spanning exon """
         genome = create_dna_record_dict(GENOME_DATA)
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['transcripts'][0]['exon'][1] = (17, 25, ANNOTATION_ATTRS[1])
@@ -407,7 +407,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertTrue({x.location.end for x in var_records} == {27, 30})
 
     def test_a3ss_neg_long_interjacent(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test A5SSRecord with neg strand, long exon, and an interjacent exon """
         genome = create_dna_record_dict(GENOME_DATA)
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['transcripts'][0]['exon'][2] = (30, 35, ANNOTATION_ATTRS[1])
@@ -434,7 +434,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual({x.type for x in var_records}, {'Insertion', 'Deletion'})
 
     def test_a3ss_pos_short_interjacent(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test A5SSRecord with positive strand, short exon and interjacent exons """
         genome = create_dna_record_dict(GENOME_DATA)
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['transcripts'][0]['exon'][1] = (20, 23, ANNOTATION_ATTRS[1])
@@ -446,7 +446,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual({x.type for x in var_records}, {'Substitution', 'Deletion'})
 
     def test_a3ss_neg_short_spanning(self):
-        """ Test A5SSRecord with neg strand """
+        """ Test A5SS with neg strand and spanning exon """
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['transcripts'][0]['exon'][1] = (17, 21, ANNOTATION_ATTRS[1])
         anno_data['genes'][0]['strand'] = -1
@@ -459,7 +459,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual({x.type for x in var_records}, {'Insertion', 'Deletion'})
 
     def test_a3ss_neg_short_interjacent(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test A5SS with neg strand, short exon and interjacent exon """
         genome = create_dna_record_dict(GENOME_DATA)
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['transcripts'][0]['exon'][2] = (30, 35, ANNOTATION_ATTRS[1])
@@ -472,7 +472,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertTrue(var_records[0].type, 'Substitution')
 
     def test_mxe_record_pos_strand(self):
-        """ Test A5SSRecord with pos strand """
+        """ Test MXE with pos strand """
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         exons:list = anno_data['transcripts'][0]['exon']
         exons.pop(1)
