@@ -433,7 +433,6 @@ class TestRMATSRecord(unittest.TestCase):
         anno_data['transcripts'][0]['exon'][2] = (32, 37, ANNOTATION_ATTRS[1])
         anno_data['transcripts'][0]['exon'].insert(2, (26, 29, ANNOTATION_ATTRS[1]))
         anno = create_genomic_annotation(anno_data)
-        gene_id = 'ENSG0001'
         record = create_a5ss_pos()
         record.flanking_exon_start = 32
         record.flanking_exon_end = 35
