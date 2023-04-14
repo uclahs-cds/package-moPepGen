@@ -183,13 +183,13 @@ class A5SSRecord(RMATSRecord):
     def create_variant_id(self, anno:gtf.GenomicAnnotation) -> str:
         """ Create variant ID """
         if anno.genes[self.gene_id].strand == 1:
-            lee = anno.coordinate_genomic_to_gene(self.long_exon_end, self.gene_id)
-            see = anno.coordinate_genomic_to_gene(self.short_exon_end, self.gene_id)
+            lee = anno.coordinate_genomic_to_gene(self.long_exon_end - 1, self.gene_id) + 1
+            see = anno.coordinate_genomic_to_gene(self.short_exon_end - 1, self.gene_id) + 1
             des = anno.coordinate_genomic_to_gene(self.flanking_exon_start, self.gene_id)
         else:
-            lee = anno.coordinate_genomic_to_gene(self.long_exon_start, self.gene_id)
-            see = anno.coordinate_genomic_to_gene(self.short_exon_start, self.gene_id)
-            des = anno.coordinate_genomic_to_gene(self.flanking_exon_end, self.gene_id)
+            lee = anno.coordinate_genomic_to_gene(self.long_exon_start, self.gene_id) + 1
+            see = anno.coordinate_genomic_to_gene(self.short_exon_start, self.gene_id) + 1
+            des = anno.coordinate_genomic_to_gene(self.flanking_exon_end - 1, self.gene_id)
 
         return f"A5SS_{lee}-{see}-{des}"
 
@@ -245,7 +245,7 @@ class A5SSRecord(RMATSRecord):
                 genomic_end = tx_model.exon[spanning].location.end
             end = anno.coordinate_genomic_to_gene(genomic_end - 1, self.gene_id) + 1
         else:
-            genomic_end = max(self.long_exon_start, tx_model.exon[spanning].location.end)
+            genomic_end = min(self.long_exon_start, tx_model.exon[spanning].location.end)
             start = anno.coordinate_genomic_to_gene(genomic_end - 1, self.gene_id)
             if interjacent:
                 genomic_start = tx_model.exon[interjacent[0]].location.start
@@ -499,8 +499,8 @@ class A5SSRecord(RMATSRecord):
 
         location = FeatureLocation(
             seqname=self.gene_id,
-            start=insert_pos,
-            end=insert_pos + 1
+            start=insert_pos - 1,
+            end=insert_pos
         )
         alt = '<Ins>'
         attrs = {

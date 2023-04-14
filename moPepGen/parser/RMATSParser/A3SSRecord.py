@@ -176,13 +176,13 @@ class A3SSRecord(RMATSRecord):
     def create_variant_id(self, anno:gtf.GenomicAnnotation) -> str:
         """ Create variant ID """
         if anno.genes[self.gene_id].strand == 1:
-            uee = anno.coordinate_genomic_to_gene(self.flanking_exon_end, self.gene_id)
+            uee = anno.coordinate_genomic_to_gene(self.flanking_exon_end - 1, self.gene_id) + 1
             les = anno.coordinate_genomic_to_gene(self.long_exon_start, self.gene_id)
             ses = anno.coordinate_genomic_to_gene(self.short_exon_start, self.gene_id)
         else:
-            uee = anno.coordinate_genomic_to_gene(self.flanking_exon_start, self.gene_id)
-            les = anno.coordinate_genomic_to_gene(self.long_exon_end, self.gene_id)
-            ses = anno.coordinate_genomic_to_gene(self.short_exon_end, self.gene_id)
+            uee = anno.coordinate_genomic_to_gene(self.flanking_exon_start, self.gene_id) + 1
+            les = anno.coordinate_genomic_to_gene(self.long_exon_end - 1, self.gene_id)
+            ses = anno.coordinate_genomic_to_gene(self.short_exon_end - 1, self.gene_id)
 
         return f"A5SS_{uee}-{les}-{ses}"
 

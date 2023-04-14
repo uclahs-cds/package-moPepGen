@@ -43,7 +43,7 @@ ANNOTATION_DATA  = {
 }
 
 def create_a3ss_pos() -> RMATSParser.A5SSRecord:
-    """ A3SS with positive strand """
+    """ A3SS on positive strand """
     return RMATSParser.A3SSRecord(
         gene_id='ENSG0001',
         gene_symbol='CRAP',
@@ -66,7 +66,7 @@ def create_a3ss_pos() -> RMATSParser.A5SSRecord:
 
 
 def create_a3ss_neg() -> RMATSParser.A5SSRecord:
-    """ Create A3SS with negative strand """
+    """ Create A3SS on negative strand """
     return RMATSParser.A3SSRecord(
         gene_id='ENSG0001',
         gene_symbol='CRAP',
@@ -77,6 +77,50 @@ def create_a3ss_neg() -> RMATSParser.A5SSRecord:
         short_exon_end=20,
         flanking_exon_start=27,
         flanking_exon_end=35,
+        ijc_sample_1=1,
+        sjc_sample_1=1,
+        ijc_sample_2='',
+        sjc_sample_2='',
+        inc_form_len=300,
+        skip_form_len=74,
+        pvalue='NA',
+        fdr='NA'
+    )
+
+def create_a5ss_pos() -> RMATSParser.A5SSRecord:
+    """ Create A5SS on negative strand """
+    return RMATSParser.A5SSRecord(
+        gene_id='ENSG0001',
+        gene_symbol='CRAP',
+        chrom='chr1',
+        long_exon_start=17,
+        long_exon_end=23,
+        short_exon_start=17,
+        short_exon_end=20,
+        flanking_exon_start=27,
+        flanking_exon_end=35,
+        ijc_sample_1=1,
+        sjc_sample_1=1,
+        ijc_sample_2='',
+        sjc_sample_2='',
+        inc_form_len=300,
+        skip_form_len=74,
+        pvalue='NA',
+        fdr='NA'
+    )
+
+def create_a5ss_neg() -> RMATSParser.A5SSRecord:
+    """ Create A5SS on negative strand """
+    return RMATSParser.A5SSRecord(
+        gene_id='ENSG0001',
+        gene_symbol='CRAP',
+        chrom='chr1',
+        long_exon_start=17,
+        long_exon_end=23,
+        short_exon_start=20,
+        short_exon_end=23,
+        flanking_exon_start=5,
+        flanking_exon_end=12,
         ijc_sample_1=1,
         sjc_sample_1=1,
         ijc_sample_2='',
@@ -234,34 +278,16 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].attrs['DONOR_START'], 27)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 33)
 
-    def test_a5ss_record_pos_strand(self):
+    def test_a5ss_pos_long(self):
         """ Test A5SSRecord with pos strand """
         genome = create_dna_record_dict(GENOME_DATA)
         anno = create_genomic_annotation(ANNOTATION_DATA)
         gene_id = 'ENSG0001'
-        chrom = 'chr1'
-        record = RMATSParser.A5SSRecord(
-            gene_id=gene_id,
-            gene_symbol='CRAP',
-            chrom=chrom,
-            long_exon_start=17,
-            long_exon_end=23,
-            short_exon_start=17,
-            short_exon_end=20,
-            flanking_exon_start=27,
-            flanking_exon_end=35,
-            ijc_sample_1=1,
-            sjc_sample_1=1,
-            ijc_sample_2='',
-            sjc_sample_2='',
-            inc_form_len=300,
-            skip_form_len=74,
-            pvalue='NA',
-            fdr='NA'
-        )
+        record = create_a5ss_pos()
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(len(var_records[0].location), 3)
+        self.assertEqual(var_records[0].type, 'Deletion')
         self.assertEqual(
             var_records[0].location.start,
             anno.coordinate_genomic_to_gene(record.short_exon_end, gene_id)
@@ -270,8 +296,13 @@ class TestRMATSRecord(unittest.TestCase):
             var_records[0].location.end,
             anno.coordinate_genomic_to_gene(record.long_exon_end - 1, gene_id) + 1
         )
+        del_seq_genome = genome['chr1'].seq[record.short_exon_end:record.long_exon_end]
+        gene_model = anno.genes[gene_id]
+        gene_seq = gene_model.get_gene_sequence(genome['chr1'])
+        del_seq_gene = gene_seq.seq[var_records[0].location.start:var_records[0].location.end]
+        self.assertEqual(del_seq_genome, del_seq_gene)
 
-    def test_a5ss_record_neg_strand(self):
+    def test_a5ss_neg_long(self):
         """ Test A5SSRecord with neg strand """
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno_data['genes'][0]['strand'] = -1
@@ -279,28 +310,10 @@ class TestRMATSRecord(unittest.TestCase):
         genome = create_dna_record_dict(GENOME_DATA)
         anno = create_genomic_annotation(anno_data)
         gene_id = 'ENSG0001'
-        chrom = 'chr1'
-        record = RMATSParser.A5SSRecord(
-            gene_id=gene_id,
-            gene_symbol='CRAP',
-            chrom=chrom,
-            long_exon_start=17,
-            long_exon_end=23,
-            short_exon_start=20,
-            short_exon_end=23,
-            flanking_exon_start=5,
-            flanking_exon_end=12,
-            ijc_sample_1=1,
-            sjc_sample_1=1,
-            ijc_sample_2='',
-            sjc_sample_2='',
-            inc_form_len=300,
-            skip_form_len=74,
-            pvalue='NA',
-            fdr='NA'
-        )
+        record = create_a5ss_neg()
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].type, 'Deletion')
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(
             var_records[0].location.start,
@@ -310,35 +323,152 @@ class TestRMATSRecord(unittest.TestCase):
             var_records[0].location.end,
             anno.coordinate_genomic_to_gene(record.long_exon_start, gene_id) + 1
         )
+        del_seq_genome = genome['chr1'].seq[record.long_exon_start:record.short_exon_start]
+        gene_model = anno.genes[gene_id]
+        gene_seq = gene_model.get_gene_sequence(genome['chr1'])
+        del_seq_gene = gene_seq.seq[var_records[0].location.start:var_records[0].location.end]
+        self.assertEqual(del_seq_genome, del_seq_gene.reverse_complement())
 
-    def test_a5ss_record_has_short(self):
+    def test_a5ss_pos_short(self):
         """ Test that reference has the short version """
         genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTATION_DATA)
-        record = RMATSParser.A5SSRecord(
-            gene_id='ENSG0001',
-            gene_symbol='CRAP',
-            chrom='chr1',
-            long_exon_start=17,
-            long_exon_end=25,
-            short_exon_start=17,
-            short_exon_end=23,
-            flanking_exon_start=27,
-            flanking_exon_end=35,
-            ijc_sample_1=1,
-            sjc_sample_1=1,
-            ijc_sample_2='',
-            sjc_sample_2='',
-            inc_form_len=300,
-            skip_form_len=74,
-            pvalue='NA',
-            fdr='NA'
-        )
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'][1] = (17, 20, ANNOTATION_ATTRS[1])
+        anno = create_genomic_annotation(anno_data)
+        record = create_a5ss_pos()
+        gene_id = record.gene_id
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
-        self.assertEqual(var_records[0].location.start, 22)
-        self.assertEqual(var_records[0].attrs['DONOR_START'], 23)
-        self.assertEqual(var_records[0].attrs['DONOR_END'], 25)
+        self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].location.start, 19)
+        self.assertEqual(var_records[0].attrs['DONOR_START'], 20)
+        self.assertEqual(var_records[0].attrs['DONOR_END'], 23)
+        del_seq_genome = genome['chr1'].seq[record.short_exon_end:record.long_exon_end]
+        gene_model = anno.genes[gene_id]
+        gene_seq = gene_model.get_gene_sequence(genome['chr1'])
+        insert_start = var_records[0].attrs['DONOR_START']
+        insert_end = var_records[0].attrs['DONOR_END']
+        del_seq_gene = gene_seq.seq[insert_start:insert_end]
+        self.assertEqual(del_seq_genome, del_seq_gene)
+
+    def test_a5ss_neg_short(self):
+        """ Test that reference has the short version """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'][1] = (20, 23, ANNOTATION_ATTRS[1])
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(anno_data)
+        record = create_a5ss_neg()
+        gene_id = record.gene_id
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].type, 'Insertion')
+        insert_pos = anno.coordinate_genomic_to_gene(20, record.gene_id)
+        self.assertEqual(var_records[0].location.start, insert_pos)
+        insert_start = anno.coordinate_genomic_to_gene(20 - 1, record.gene_id)
+        self.assertEqual(var_records[0].attrs['DONOR_START'], insert_start)
+        insert_end = anno.coordinate_genomic_to_gene(17, record.gene_id) + 1
+        self.assertEqual(var_records[0].attrs['DONOR_END'], insert_end)
+        ins_seq_genome = genome['chr1'].seq[record.long_exon_start:record.short_exon_start]
+        gene_model = anno.genes[gene_id]
+        gene_seq = gene_model.get_gene_sequence(genome['chr1'])
+        insert_start = var_records[0].attrs['DONOR_START']
+        insert_end = var_records[0].attrs['DONOR_END']
+        ins_seq_gene = gene_seq.seq[insert_start:insert_end]
+        self.assertEqual(ins_seq_genome, ins_seq_gene.reverse_complement())
+
+    def test_a5ss_pos_long_interjacent(self):
+        """ Test A5SSRecord with pos strand """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'][2] = (32, 37, ANNOTATION_ATTRS[1])
+        anno_data['transcripts'][0]['exon'].insert(2, (26, 29, ANNOTATION_ATTRS[1]))
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        record = create_a5ss_pos()
+        record.flanking_exon_start = 32
+        record.flanking_exon_end = 35
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 2)
+        self.assertEqual({x.type for x in var_records}, {'Deletion'})
+        self.assertEqual(
+            {x.location.start for x in var_records},
+            {
+                anno.coordinate_genomic_to_gene(record.long_exon_end - 1, gene_id) + 1,
+                anno.coordinate_gene_to_genomic(record.short_exon_end - 1, gene_id) + 1
+            }
+        )
+        self.assertEqual({x.location.end for x in var_records}, {29})
+
+    def test_a5ss_neg_long_interjacent(self):
+        """ Test A5SSRecord with pos strand """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'][0] = (2, 6, ANNOTATION_ATTRS[1])
+        anno_data['transcripts'][0]['exon'].insert(1, (9, 14, ANNOTATION_ATTRS[1]))
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        record = create_a5ss_neg()
+        record.flanking_exon_start = 2
+        record.flanking_exon_end = 6
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 2)
+        self.assertEqual({x.type for x in var_records}, {'Deletion'})
+        self.assertEqual(
+            {x.location.start for x in var_records},
+            {
+                anno.coordinate_genomic_to_gene(record.long_exon_start, gene_id) + 1,
+                anno.coordinate_gene_to_genomic(record.short_exon_start, gene_id) + 1
+            }
+        )
+
+    def test_a5ss_pos_short_interjacent(self):
+        """ A5SS on pos strand with short exon and an interjacent exon """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'][1] = (17, 20, ANNOTATION_ATTRS[1])
+        anno_data['transcripts'][0]['exon'][2] = (32, 37, ANNOTATION_ATTRS[1])
+        anno_data['transcripts'][0]['exon'].insert(2, (26, 29, ANNOTATION_ATTRS[1]))
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        record = create_a5ss_pos()
+        record.flanking_exon_start = 32
+        record.flanking_exon_end = 35
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 2)
+        self.assertEqual({x.type for x in var_records}, {'Substitution', 'Deletion'})
+        self.assertEqual(
+            {x.location.start for x in var_records},
+            {26, 20}
+        )
+
+    def test_a5ss_neg_short_interjacent(self):
+        """ A5SS on neg strand with short exon and an interjacent exon """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'][1] = (20, 23, ANNOTATION_ATTRS[1])
+        anno_data['transcripts'][0]['exon'][0] = (2, 6, ANNOTATION_ATTRS[1])
+        anno_data['transcripts'][0]['exon'].insert(1, (9, 14, ANNOTATION_ATTRS[1]))
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        record = create_a5ss_neg()
+        record.flanking_exon_start = 2
+        record.flanking_exon_end = 6
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 2)
+        self.assertEqual({x.type for x in var_records}, {'Substitution', 'Deletion'})
+        self.assertEqual(
+            {x.location.start for x in var_records},
+            {
+                anno.coordinate_genomic_to_gene(record.short_exon_start - 1, gene_id),
+                anno.coordinate_genomic_to_gene(14 - 1, gene_id)
+            }
+        )
 
     def test_a3ss_pos_long(self):
         """ Test A5SSRecord with pos strand and long exon """
@@ -347,6 +477,7 @@ class TestRMATSRecord(unittest.TestCase):
         record = create_a3ss_pos()
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].type, 'Deletion')
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 17)
         self.assertEqual(var_records[0].location.end, 20)
@@ -361,6 +492,7 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].location.start, 11)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 17)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 20)
 
@@ -401,6 +533,25 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 27)
         self.assertEqual(var_records[0].location.end, 30)
+
+    def test_a3ss_neg_short(self):
+        """ Test A5SSRecord with pos strand and short exon """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'][1] = (17, 20, ANNOTATION_ATTRS[1])
+        anno_data['genes'][0]['strand'] = -1
+        anno_data['transcripts'][0]['strand'] = -1
+        anno = create_genomic_annotation(anno_data)
+        record = create_a3ss_neg()
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual(var_records[0].type, 'Insertion')
+        insert_pos = anno.coordinate_gene_to_genomic(27, record.gene_id)
+        self.assertEqual(var_records[0].location.start, insert_pos)
+        insert_start = anno.coordinate_gene_to_genomic(23 - 1, record.gene_id)
+        self.assertEqual(var_records[0].attrs['DONOR_START'], insert_start)
+        insert_end = anno.coordinate_gene_to_genomic(20, record.gene_id) + 1
+        self.assertEqual(var_records[0].attrs['DONOR_END'], insert_end)
 
     def test_a3ss_neg_long_spanning(self):
         """ Test A5SSRecord with neg strand, long exon, and spanning exon """
