@@ -29,7 +29,7 @@ class A5SSTranscriptAlignment():
         if strand == 1:
             for i in reversed(range(0, self.downstream_index)):
                 exon = self.tx_model.exon[i]
-                if exon.location.end > self.as_record.long_exon_end:
+                if exon.location.start > self.as_record.long_exon_end:
                     interjacent.append(i)
                 if exon.location.end <= self.as_record.long_exon_end:
                     break
@@ -37,7 +37,7 @@ class A5SSTranscriptAlignment():
         else:
             for i in range(self.downstream_index + 1, len(self.tx_model.exon)):
                 exon = self.tx_model.exon[i]
-                if exon.location.start < self.as_record.long_exon_start:
+                if exon.location.end < self.as_record.long_exon_start:
                     interjacent.append(i)
                 if exon.location.start >= self.as_record.long_exon_start:
                     break
@@ -51,7 +51,7 @@ class A5SSTranscriptAlignment():
         if strand == 1:
             for i in reversed(range(0, self.downstream_index)):
                 exon = self.tx_model.exon[i]
-                if exon.location.end > self.as_record.short_exon_end:
+                if exon.location.start > self.as_record.short_exon_end:
                     interjacent.append(i)
                 if exon.location.end <= self.as_record.short_exon_end:
                     break
@@ -59,7 +59,7 @@ class A5SSTranscriptAlignment():
         else:
             for i in range(self.downstream_index + 1, len(self.tx_model.exon)):
                 exon = self.tx_model.exon[i]
-                if exon.location.start < self.as_record.short_exon_start:
+                if exon.location.end < self.as_record.short_exon_start:
                     interjacent.append(i)
                 if exon.location.start >= self.as_record.short_exon_start:
                     break
@@ -237,16 +237,24 @@ class A5SSRecord(RMATSRecord):
         tx_model = alignment.tx_model
 
         if strand == 1:
-            genomic_start = max(self.long_exon_end, tx_model.exon[spanning].location.start)
+            if tx_model.exon[spanning].location.end == self.long_exon_end:
+                genomic_start = tx_model.exon[interjacent[0]].location.start
+            else:
+                genomic_start = self.long_exon_end
             start = anno.coordinate_genomic_to_gene(genomic_start, self.gene_id)
+
             if interjacent:
                 genomic_end = tx_model.exon[interjacent[-1]].location.end
             else:
                 genomic_end = tx_model.exon[spanning].location.end
             end = anno.coordinate_genomic_to_gene(genomic_end - 1, self.gene_id) + 1
         else:
-            genomic_end = min(self.long_exon_start, tx_model.exon[spanning].location.end)
+            if tx_model.exon[spanning].location.start == self.long_exon_start:
+                genomic_end = tx_model.exon[interjacent[-1]].location.end
+            else:
+                genomic_end = self.long_exon_start
             start = anno.coordinate_genomic_to_gene(genomic_end - 1, self.gene_id)
+
             if interjacent:
                 genomic_start = tx_model.exon[interjacent[0]].location.start
             else:
@@ -381,16 +389,24 @@ class A5SSRecord(RMATSRecord):
         tx_model = alignment.tx_model
 
         if strand == 1:
-            genomic_start = max(self.short_exon_end, tx_model.exon[spanning].location.start)
+            if tx_model.exon[spanning].location.end == self.short_exon_end:
+                genomic_start = tx_model.exon[interjacent[0]].location.start
+            else:
+                genomic_start = self.short_exon_end
             start = anno.coordinate_genomic_to_gene(genomic_start, self.gene_id)
+
             if interjacent:
                 genomic_end = tx_model.exon[interjacent[-1]].location.end
             else:
                 genomic_end = tx_model.exon[spanning].location.end
             end = anno.coordinate_genomic_to_gene(genomic_end - 1, self.gene_id) + 1
         else:
-            genomic_end = min(self.short_exon_start, tx_model.exon[spanning].location.end)
+            if tx_model.exon[spanning].location.start == self.short_exon_start:
+                genomic_end = tx_model.exon[interjacent[-1]].location.end
+            else:
+                genomic_end = self.short_exon_start
             start = anno.coordinate_genomic_to_gene(genomic_end - 1, self.gene_id)
+
             if interjacent:
                 genomic_start = tx_model.exon[interjacent[0]].location.start
             else:

@@ -301,6 +301,8 @@ class TestRMATSRecord(unittest.TestCase):
         gene_seq = gene_model.get_gene_sequence(genome['chr1'])
         del_seq_gene = gene_seq.seq[var_records[0].location.start:var_records[0].location.end]
         self.assertEqual(del_seq_genome, del_seq_gene)
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a5ss_neg_long(self):
         """ Test A5SSRecord with neg strand """
@@ -328,6 +330,8 @@ class TestRMATSRecord(unittest.TestCase):
         gene_seq = gene_model.get_gene_sequence(genome['chr1'])
         del_seq_gene = gene_seq.seq[var_records[0].location.start:var_records[0].location.end]
         self.assertEqual(del_seq_genome, del_seq_gene.reverse_complement())
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a5ss_pos_short(self):
         """ Test that reference has the short version """
@@ -350,6 +354,8 @@ class TestRMATSRecord(unittest.TestCase):
         insert_end = var_records[0].attrs['DONOR_END']
         del_seq_gene = gene_seq.seq[insert_start:insert_end]
         self.assertEqual(del_seq_genome, del_seq_gene)
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a5ss_neg_short(self):
         """ Test that reference has the short version """
@@ -377,6 +383,8 @@ class TestRMATSRecord(unittest.TestCase):
         insert_end = var_records[0].attrs['DONOR_END']
         ins_seq_gene = gene_seq.seq[insert_start:insert_end]
         self.assertEqual(ins_seq_genome, ins_seq_gene.reverse_complement())
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a5ss_pos_long_interjacent(self):
         """ Test A5SSRecord with pos strand """
@@ -395,11 +403,13 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(
             {x.location.start for x in var_records},
             {
-                anno.coordinate_genomic_to_gene(record.long_exon_end - 1, gene_id) + 1,
-                anno.coordinate_gene_to_genomic(record.short_exon_end - 1, gene_id) + 1
+                anno.coordinate_genomic_to_gene(26, gene_id),
+                anno.coordinate_genomic_to_gene(20, gene_id)
             }
         )
         self.assertEqual({x.location.end for x in var_records}, {29})
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a5ss_neg_long_interjacent(self):
         """ Test A5SSRecord with pos strand """
@@ -420,10 +430,12 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(
             {x.location.start for x in var_records},
             {
-                anno.coordinate_genomic_to_gene(record.long_exon_start, gene_id) + 1,
-                anno.coordinate_gene_to_genomic(record.short_exon_start, gene_id) + 1
+                anno.coordinate_genomic_to_gene(14 - 1, gene_id),
+                anno.coordinate_genomic_to_gene(record.short_exon_start - 1, gene_id)
             }
         )
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a5ss_pos_short_interjacent(self):
         """ A5SS on pos strand with short exon and an interjacent exon """
@@ -441,8 +453,10 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual({x.type for x in var_records}, {'Substitution', 'Deletion'})
         self.assertEqual(
             {x.location.start for x in var_records},
-            {26, 20}
+            {26}
         )
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a5ss_neg_short_interjacent(self):
         """ A5SS on neg strand with short exon and an interjacent exon """
@@ -464,10 +478,11 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(
             {x.location.start for x in var_records},
             {
-                anno.coordinate_genomic_to_gene(record.short_exon_start - 1, gene_id),
                 anno.coordinate_genomic_to_gene(14 - 1, gene_id)
             }
         )
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_pos_long(self):
         """ Test A5SSRecord with pos strand and long exon """
@@ -480,6 +495,8 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 17)
         self.assertEqual(var_records[0].location.end, 20)
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_pos_short(self):
         """ Test A5SSRecord with pos strand and short exon """
@@ -494,6 +511,8 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].location.start, 11)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 17)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 20)
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_pos_long_spanning(self):
         """ Test A5SSRecord with pos strand, long exon and spanning exon """
@@ -507,6 +526,8 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertTrue(all(x.type == 'Deletion' for x in var_records))
         self.assertTrue(all(x.location.start == 15 for x in var_records))
         self.assertTrue({x.location.end for x in var_records} == {17, 20})
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_pos_long_interjacent(self):
         """ Test A5SSRecord with pos strand, long exon and interjacent exon """
@@ -518,6 +539,8 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 2)
         self.assertTrue(all(x.type == 'Deletion' for x in var_records))
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_neg_long(self):
         """ Test A5SSRecord with neg strand, long exon """
@@ -532,6 +555,8 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(len(var_records[0].location), 3)
         self.assertEqual(var_records[0].location.start, 27)
         self.assertEqual(var_records[0].location.end, 30)
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_neg_short(self):
         """ Test A5SSRecord with pos strand and short exon """
@@ -551,6 +576,8 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].attrs['DONOR_START'], insert_start)
         insert_end = anno.coordinate_gene_to_genomic(20, record.gene_id) + 1
         self.assertEqual(var_records[0].attrs['DONOR_END'], insert_end)
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_neg_long_spanning(self):
         """ Test A5SSRecord with neg strand, long exon, and spanning exon """
@@ -567,6 +594,8 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertTrue(all(x.type == 'Deletion' for x in var_records))
         self.assertTrue(all(x.location.start == 25 for x in var_records))
         self.assertTrue({x.location.end for x in var_records} == {27, 30})
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_neg_long_interjacent(self):
         """ Test A5SSRecord with neg strand, long exon, and an interjacent exon """
@@ -583,6 +612,8 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 2)
         self.assertTrue(all(x.type == 'Deletion' for x in var_records))
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_pos_short_spanning(self):
         """ Test A5SSRecord with pos strand, short exon, and spanning exon """
@@ -594,6 +625,8 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 2)
         self.assertEqual({x.type for x in var_records}, {'Insertion', 'Deletion'})
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_pos_short_interjacent(self):
         """ Test A5SSRecord with positive strand, short exon and interjacent exons """
@@ -606,6 +639,8 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 2)
         self.assertEqual({x.type for x in var_records}, {'Substitution', 'Deletion'})
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_neg_short_spanning(self):
         """ Test A5SS with neg strand and spanning exon """
@@ -619,6 +654,8 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 2)
         self.assertEqual({x.type for x in var_records}, {'Insertion', 'Deletion'})
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_a3ss_neg_short_interjacent(self):
         """ Test A5SS with neg strand, short exon and interjacent exon """
@@ -632,6 +669,8 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertTrue(var_records[0].type, 'Substitution')
+        for v in var_records:
+            v.to_transcript_variant(anno, genome, 'ENST0001.1')
 
     def test_mxe_record_pos_strand(self):
         """ Test MXE with pos strand """
