@@ -456,7 +456,8 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         self.assertEqual(received, expected)
 
     def test_apply_insertion_case1(self):
-        """ apply_insertion """
+        """ apply_insertion. Sequence is inserted after the nucleotide at the
+        position. """
         anno = create_genomic_annotation(ANNOTATION_DATA)
         genome = create_dna_record_dict(GENOME_DATA)
         data = {

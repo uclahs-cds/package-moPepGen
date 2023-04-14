@@ -1,6 +1,6 @@
 """ Module for rMATS parser """
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Tuple, Dict
+from typing import TYPE_CHECKING, List, Dict
 from moPepGen import gtf, dna, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 from .RMATSRecord import RMATSRecord
@@ -13,15 +13,13 @@ if TYPE_CHECKING:
 class SETranscriptAlignment():
     """ Alignment of an SE coordinates to an transcript exons. """
     def __init__(self, se_record:SERecord, tx_model:TranscriptAnnotationModel,
-            upstream_index:int, downstream_index:int, target_indices:List[int],
-            junctions:List[Tuple[int,int]]=None):
+            upstream_index:int, downstream_index:int, target_indices:List[int]):
         """ Constructor """
         self.se_record = se_record
         self.tx_model = tx_model
         self.upstream_index = upstream_index
         self.downstream_index = downstream_index
         self.target_indices = target_indices
-        self.junctions = junctions or []
 
     def get_upstream_interjacent_exons(self) -> List[GTFSeqFeature]:
         """ Get upstream interjacent exons between the annotated upstream exon
@@ -369,8 +367,6 @@ class SERecord(RMATSRecord):
         alt = '<Ins>'
         attrs = {
             'TRANSCRIPT_ID': tx_id,
-            'START': donor_start,
-            'END': donor_end,
             'DONOR_START': donor_start,
             'DONOR_END': donor_end,
             'DONOR_GENE_ID': self.gene_id,
