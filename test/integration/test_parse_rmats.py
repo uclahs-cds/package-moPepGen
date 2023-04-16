@@ -1,6 +1,5 @@
 """ Test the moPepGen parseRMATS """
 import argparse
-import os
 from pathlib import Path
 import subprocess as sp
 import sys
