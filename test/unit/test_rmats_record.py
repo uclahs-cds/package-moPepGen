@@ -396,7 +396,7 @@ class TestRMATSRecord(unittest.TestCase):
         gene_id = 'ENSG0001'
         record = create_a5ss_pos()
         record.flanking_exon_start = 32
-        record.flanking_exon_end = 35
+        record.flanking_exon_end = 37
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 2)
         self.assertEqual({x.type for x in var_records}, {'Deletion'})
@@ -703,10 +703,19 @@ class TestRMATSRecord(unittest.TestCase):
             fdr='NA'
         )
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
-        self.assertEqual(len(var_records), 1)
-        self.assertEqual(len(var_records[0].location), 8)
-        self.assertEqual(var_records[0].location.start, 27)
-        self.assertEqual(var_records[0].location.end, 35)
+        self.assertEqual(len(var_records), 2)
+        self.assertEqual(
+            {v.type for v in var_records},
+            {'Insertion', 'Substitution'}
+        )
+        self.assertEqual(
+            {v.location.start for v in var_records},
+            {11, 27}
+        )
+        self.assertEqual(
+            {v.location.end for v in var_records},
+            {12, 35}
+        )
 
     def test_mxe_record_neg_strand(self):
         """ Test A5SSRecord with neg strand """
@@ -741,10 +750,11 @@ class TestRMATSRecord(unittest.TestCase):
             fdr='NA'
         )
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
-        self.assertEqual(len(var_records), 1)
-        self.assertEqual(len(var_records[0].location), 8)
-        self.assertEqual(var_records[0].location.start, 15)
-        self.assertEqual(var_records[0].location.end, 23)
+        self.assertEqual(len(var_records), 2)
+        self.assertEqual(
+            {v.type for v in var_records},
+            {'Insertion', 'Substitution'}
+        )
 
     def test_ri_record_pos_strand(self):
         """ Test RIRecord with pos strand """
