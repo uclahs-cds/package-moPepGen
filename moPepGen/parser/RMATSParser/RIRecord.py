@@ -100,6 +100,8 @@ class RIRecord(RMATSRecord):
 
         genomic_position = f'{chrom}:{self.upstream_exon_end}-{self.downstream_exon_start}'
 
+        var_id = f"RI_{start_gene}-{end_gene}"
+
         if not retained_in_ref and self.ijc_sample_1 >= min_ijc:
             insert_position = start_gene - 1
             location = FeatureLocation(seqname=self.gene_id,
@@ -117,7 +119,7 @@ class RIRecord(RMATSRecord):
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Insertion'
-                _id = f'RI_{start_gene}'
+                _id = var_id
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
         if not spliced_in_ref and self.sjc_sample_1 >= min_sjc:
@@ -136,7 +138,7 @@ class RIRecord(RMATSRecord):
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Deletion'
-                _id = f'RI_{start_gene}'
+                _id = var_id
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
         return variants

@@ -11,3 +11,5 @@ from moPepGen.seqvar.VariantRecordPoolOnDisk import VariantRecordPoolOnDisk, \
     TranscriptionalVariantSeries, VariantRecordPoolOnDiskOpener
 from moPepGen.seqvar.VariantRecord import create_variant_sect, create_variant_w2f, \
     create_mnv_from_adjacent, find_mnvs_from_adjacent_variants
+from moPepGen.seqvar.SplicingJunction import SpliceJunction, \
+    SpliceJunctionTranscriptAlignment
