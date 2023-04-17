@@ -75,17 +75,19 @@ class RIRecord(RMATSRecord):
             exon = next(it, None)
 
             while exon:
-                if int(exon.location.start) == self.upstream_exon_start and \
-                        int(exon.location.end) == self.upstream_exon_end:
+                if int(exon.location.end) == self.upstream_exon_end:
                     exon = next(it, None)
                     if not exon:
                         break
-                    if exon.location.start == self.downstream_exon_start and \
-                            exon.location.end == self.downstream_exon_end:
+                    if int(exon.location.start) == self.downstream_exon_start:
                         spliced_in_ref.append(tx_id)
+
                         break
-                if int(exon.location.start) == self.upstream_exon_start and \
-                        int(exon.location.end) == self.downstream_exon_end:
+                exon_start = int(exon.location.start)
+                exon_end = int(exon.location.end)
+
+                if exon_start < self.upstream_exon_end \
+                        < self.downstream_exon_start < exon_end - 1:
                     retained_in_ref.append(tx_id)
                 exon = next(it, None)
 
@@ -99,6 +101,8 @@ class RIRecord(RMATSRecord):
         end_gene += 1
 
         genomic_position = f'{chrom}:{self.upstream_exon_end}-{self.downstream_exon_start}'
+
+        var_id = f"RI_{start_gene}-{end_gene}"
 
         if not retained_in_ref and self.ijc_sample_1 >= min_ijc:
             insert_position = start_gene - 1
@@ -117,7 +121,7 @@ class RIRecord(RMATSRecord):
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Insertion'
-                _id = f'RI_{start_gene}'
+                _id = var_id
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
         if not spliced_in_ref and self.sjc_sample_1 >= min_sjc:
@@ -136,7 +140,7 @@ class RIRecord(RMATSRecord):
                     'GENOMIC_POSITION': genomic_position
                 }
                 _type = 'Deletion'
-                _id = f'RI_{start_gene}'
+                _id = var_id
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
         return variants

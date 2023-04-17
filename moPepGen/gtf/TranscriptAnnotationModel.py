@@ -400,13 +400,20 @@ class TranscriptAnnotationModel():
                 return i + offset
         return -1
 
-    def get_exon_overlap(self, loc:FeatureLocation, offset:int=0) -> int:
+    def get_exon_overlaps(self, loc:FeatureLocation, offset:int=0) -> int:
         """ Get exons that overlap with a given location """
         indices = []
         for i, exon in enumerate(self.exon[offset:]):
             if exon.location.overlaps(loc):
                 indices.append(i + offset)
         return indices
+
+    def get_exon_containing(self, pos:int) -> int:
+        """ Get exon that contains a position """
+        for i, exon in enumerate(self.exon):
+            if pos in exon.location:
+                return i
+        return -1
 
     def get_exon_inner(self, loc:FeatureLocation, offset:int=0) -> int:
         """ get exon that are inner subset of a given location """
