@@ -75,17 +75,19 @@ class RIRecord(RMATSRecord):
             exon = next(it, None)
 
             while exon:
-                if int(exon.location.start) == self.upstream_exon_start and \
-                        int(exon.location.end) == self.upstream_exon_end:
+                if int(exon.location.end) == self.upstream_exon_end:
                     exon = next(it, None)
                     if not exon:
                         break
-                    if exon.location.start == self.downstream_exon_start and \
-                            exon.location.end == self.downstream_exon_end:
+                    if int(exon.location.start) == self.downstream_exon_start:
                         spliced_in_ref.append(tx_id)
+
                         break
-                if int(exon.location.start) == self.upstream_exon_start and \
-                        int(exon.location.end) == self.downstream_exon_end:
+                exon_start = int(exon.location.start)
+                exon_end = int(exon.location.end)
+
+                if exon_start < self.upstream_exon_end \
+                        < self.downstream_exon_start < exon_end - 1:
                     retained_in_ref.append(tx_id)
                 exon = next(it, None)
 
