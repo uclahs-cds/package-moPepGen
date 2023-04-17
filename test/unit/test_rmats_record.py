@@ -703,19 +703,10 @@ class TestRMATSRecord(unittest.TestCase):
             fdr='NA'
         )
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
-        self.assertEqual(len(var_records), 2)
-        self.assertEqual(
-            {v.type for v in var_records},
-            {'Insertion', 'Substitution'}
-        )
-        self.assertEqual(
-            {v.location.start for v in var_records},
-            {11, 27}
-        )
-        self.assertEqual(
-            {v.location.end for v in var_records},
-            {12, 35}
-        )
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual({v.type for v in var_records}, {'Substitution'})
+        self.assertEqual({v.location.start for v in var_records}, {27})
+        self.assertEqual({v.location.end for v in var_records}, {35})
 
     def test_mxe_record_neg_strand(self):
         """ Test A5SSRecord with neg strand """
@@ -750,11 +741,8 @@ class TestRMATSRecord(unittest.TestCase):
             fdr='NA'
         )
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
-        self.assertEqual(len(var_records), 2)
-        self.assertEqual(
-            {v.type for v in var_records},
-            {'Insertion', 'Substitution'}
-        )
+        self.assertEqual(len(var_records), 1)
+        self.assertEqual({v.type for v in var_records}, {'Substitution'})
 
     def test_ri_record_pos_strand(self):
         """ Test RIRecord with pos strand """

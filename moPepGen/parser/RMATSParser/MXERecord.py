@@ -87,14 +87,6 @@ class MXERecord(RMATSRecord):
     def create_splice_junctions(self
             ) -> Tuple[SpliceJunction, SpliceJunction, SpliceJunction, SpliceJunction]:
         """ Create splice junctions """
-        first_upstream_junction = seqvar.SpliceJunction(
-            upstream_start=self.upstream_exon_start,
-            upstream_end=self.upstream_exon_end,
-            downstream_start=self.first_exon_start,
-            downstream_end=self.first_exon_end,
-            gene_id=self.gene_id,
-            chrom=self.chrom
-        )
         first_downstream_junction = seqvar.SpliceJunction(
             upstream_start=self.first_exon_start,
             upstream_end=self.first_exon_end,
@@ -111,16 +103,7 @@ class MXERecord(RMATSRecord):
             gene_id=self.gene_id,
             chrom=self.chrom
         )
-        second_downstream_junction = seqvar.SpliceJunction(
-            upstream_start=self.second_exon_start,
-            upstream_end=self.second_exon_end,
-            downstream_start=self.downstream_exon_start,
-            downstream_end=self.downstream_exon_end,
-            gene_id=self.gene_id,
-            chrom=self.chrom
-        )
-        return first_upstream_junction, first_downstream_junction, \
-            second_upstream_junction, second_downstream_junction
+        return first_downstream_junction, second_upstream_junction
 
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict, min_ijc:int, min_sjc:int
@@ -129,14 +112,11 @@ class MXERecord(RMATSRecord):
 
         gene_model = anno.genes[self.gene_id]
 
-        first_upstream_junction, first_downstream_junction, \
-            second_upstream_junction, second_downstream_junction \
+        first_downstream_junction, second_upstream_junction \
             = self.create_splice_junctions()
 
-        if not first_upstream_junction.is_novel(anno) \
-                and not first_downstream_junction.is_novel(anno)\
-                and not second_upstream_junction.is_novel(anno) \
-                and not second_downstream_junction.is_novel(anno):
+        if not first_downstream_junction.is_novel(anno)\
+                and not second_upstream_junction.is_novel(anno):
             return variants
 
         tx_ids = gene_model.transcripts
@@ -149,20 +129,12 @@ class MXERecord(RMATSRecord):
 
             # For MXE, the first exon is 'inclusion' and second is 'skipped'.
             if self.ijc_sample_1 >= min_ijc:
-                aln = first_upstream_junction.align_to_transcript(tx_model, False, True)
-                if aln:
-                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
-
                 aln = first_downstream_junction.align_to_transcript(tx_model, True, False)
                 if aln:
                     variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
             if self.sjc_sample_1 > min_sjc:
                 aln = second_upstream_junction.align_to_transcript(tx_model, False, True)
-                if aln:
-                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
-
-                aln = second_downstream_junction.align_to_transcript(tx_model, True, False)
                 if aln:
                     variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
