@@ -178,8 +178,6 @@ class TestRMATSRecord(unittest.TestCase):
         anno_data['transcripts'][0]['exon'].pop(0)
         anno_data['transcripts'][0]['exon'].pop(0)
         anno = create_genomic_annotation(anno_data)
-        gene_id = 'ENSG0001'
-        chrom = 'chr1'
         record = create_se_pos()
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 0)
