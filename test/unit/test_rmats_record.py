@@ -131,18 +131,11 @@ def create_a5ss_neg() -> RMATSParser.A5SSRecord:
         fdr='NA'
     )
 
-class TestRMATSRecord(unittest.TestCase):
-    """ Tset cases for RMATSRecord """
-    def test_se_record_pos_strand(self):
-        """ Test SERecord """
-        genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTATION_DATA)
-        gene_id = 'ENSG0001'
-        chrom = 'chr1'
-        record = RMATSParser.SERecord(
-            gene_id=gene_id,
+def create_se_pos() -> RMATSParser.SERecord:
+    return RMATSParser.SERecord(
+            gene_id='ENSG0001',
             gene_symbol='CRAP',
-            chrom=chrom,
+            chrom='CRAP',
             exon_start=17,
             exon_end=23,
             upstream_exon_start=5,
@@ -158,6 +151,16 @@ class TestRMATSRecord(unittest.TestCase):
             pvalue='NA',
             fdr='NA'
         )
+
+class TestRMATSRecord(unittest.TestCase):
+    """ Tset cases for RMATSRecord """
+    def test_se_record_pos_strand(self):
+        """ Test SERecord """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = create_se_pos()
         gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
@@ -165,6 +168,21 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].ref, str(gene_seq.seq[17]))
         self.assertEqual(var_records[0].attrs['START'], 17)
         self.assertEqual(var_records[0].attrs['END'], 23)
+
+    def test_se_record_pos_missing_upstream(self):
+        """ When upstream exon is unmatched, aka tx head is matched to the
+        downstream exon. """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'].pop(0)
+        anno_data['transcripts'][0]['exon'].pop(0)
+        anno = create_genomic_annotation(anno_data)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = create_se_pos()
+        gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 0)
 
     def test_se_record_neg_strand(self):
         """ Test SERecord on - strand """

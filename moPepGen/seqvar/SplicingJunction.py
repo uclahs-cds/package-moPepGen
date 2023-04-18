@@ -457,15 +457,17 @@ class SpliceJunctionTranscriptAlignment():
                     v = self.create_upstream_deletion(
                         spanning, interjacent, anno, gene_seq, var_id
                     )
+                    variants.append(v)
                 elif len(interjacent) > 0:
                     v = self.create_upstream_substitution(
                         interjacent, anno, gene_seq, var_id
                     )
-                else:
-                    v = self.create_upstream_insertion(
-                        anno, gene_seq, var_id
-                    )
-                variants.append(v)
+                    variants.append(v)
+                elif self.downstream_start_index > 0:
+                        v = self.create_upstream_insertion(
+                            anno, gene_seq, var_id
+                        )
+                        variants.append(v)
 
         if self.downstream_novel:
             if self.downstream_start_index == -1 or len(interjacent) > 0:
@@ -474,15 +476,17 @@ class SpliceJunctionTranscriptAlignment():
                     v = self.create_downstream_deletion(
                         spanning, interjacent, anno, gene_seq, var_id
                     )
+                    variants.append(v)
                 elif len(interjacent) > 0:
                     v = self.create_downstream_substitution(
                         interjacent, anno, gene_seq, var_id
                     )
-                else:
+                    variants.append(v)
+                elif -1 < self.downstream_end_index < len(self.tx_model.exon) - 1:
                     v = self.create_downstream_insertion(
                         anno, gene_seq, var_id
                     )
-                variants.append(v)
+                    variants.append(v)
 
         if not self.downstream_novel and not self.upstream_novel:
             if self.downstream_end_index != -1 \
