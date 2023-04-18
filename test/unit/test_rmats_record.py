@@ -132,6 +132,7 @@ def create_a5ss_neg() -> RMATSParser.A5SSRecord:
     )
 
 def create_se_pos() -> RMATSParser.SERecord:
+    """ Create an SE of transcript on the pos strand """
     return RMATSParser.SERecord(
             gene_id='ENSG0001',
             gene_symbol='CRAP',
@@ -153,7 +154,7 @@ def create_se_pos() -> RMATSParser.SERecord:
         )
 
 class TestRMATSRecord(unittest.TestCase):
-    """ Tset cases for RMATSRecord """
+    """ Test cases for RMATSRecord """
     def test_se_record_pos_strand(self):
         """ Test SERecord """
         genome = create_dna_record_dict(GENOME_DATA)
@@ -180,7 +181,6 @@ class TestRMATSRecord(unittest.TestCase):
         gene_id = 'ENSG0001'
         chrom = 'chr1'
         record = create_se_pos()
-        gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 0)
 

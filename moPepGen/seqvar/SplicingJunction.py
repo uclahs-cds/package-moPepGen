@@ -464,10 +464,10 @@ class SpliceJunctionTranscriptAlignment():
                     )
                     variants.append(v)
                 elif self.downstream_start_index > 0:
-                        v = self.create_upstream_insertion(
-                            anno, gene_seq, var_id
-                        )
-                        variants.append(v)
+                    v = self.create_upstream_insertion(
+                        anno, gene_seq, var_id
+                    )
+                    variants.append(v)
 
         if self.downstream_novel:
             if self.downstream_start_index == -1 or len(interjacent) > 0:
