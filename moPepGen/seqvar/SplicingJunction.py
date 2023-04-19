@@ -279,6 +279,7 @@ class SpliceJunctionTranscriptAlignment():
             'TRANSCRIPT_ID': tx_id,
             'START': start,
             'END': end,
+            'DONOR_GENE_ID': gene_id,
             'DONOR_START': donor_start,
             'DONOR_END': donor_end,
             'DONOR_GENE_ID': gene_id,
@@ -333,6 +334,7 @@ class SpliceJunctionTranscriptAlignment():
             'TRANSCRIPT_ID': tx_id,
             'START': start,
             'END': end,
+            'DONOR_GENE_ID': gene_id,
             'DONOR_START': donor_start,
             'DONOR_END': donor_end,
             'DONOR_GENE_ID': gene_id,
@@ -384,6 +386,7 @@ class SpliceJunctionTranscriptAlignment():
         alt = '<Ins>'
         attrs = {
             'TRANSCRIPT_ID': tx_id,
+            'DONOR_GENE_ID': gene_id,
             'DONOR_START': donor_start,
             'DONOR_END': donor_end,
             'GENE_SYMBOL': gene_model.gene_name,
@@ -436,6 +439,7 @@ class SpliceJunctionTranscriptAlignment():
         alt = '<Ins>'
         attrs = {
             'TRANSCRIPT_ID': tx_id,
+            'DONOR_GENE_ID': gene_id,
             'DONOR_START': donor_start,
             'DONOR_END': donor_end,
             'GENE_SYMBOL': gene_model.gene_name,
