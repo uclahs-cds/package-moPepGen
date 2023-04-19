@@ -126,7 +126,7 @@ class SpliceJunctionTranscriptAlignment():
     def get_upstream_end_spanning(self) -> int:
         """ Get exons that are spanning over the upstream end position. """
         if self.downstream_start_index == -1:
-            raise ValueError('Downstream start not matched.')
+            return self.tx_model.get_exon_containing(self.junction.upstream_end - 1)
 
         i = self.downstream_start_index - 1
         while i >= 0:
@@ -139,7 +139,7 @@ class SpliceJunctionTranscriptAlignment():
     def get_downstream_start_spanning(self) -> int:
         """ Get exons that are spanning over the downstream start position. """
         if self.upstream_end_index == -1:
-            raise ValueError('Upstream start not matched.')
+            return self.tx_model.get_exon_containing(self.junction.downstream_start)
 
         i = self.upstream_end_index + 1
         while i < len(self.tx_model.exon):
