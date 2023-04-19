@@ -1161,7 +1161,6 @@ class ThreeFrameTVG():
 
     def merge_with_outbonds(self, node:TVGNode) -> List[TVGNode]:
         """ For a given node, merge it with all its outbound nodes. """
-
         in_edges = copy.copy(node.in_edges)
         out_edges:Set[TVGEdge] = copy.copy(node.out_edges)
         out_nodes = []
@@ -1185,6 +1184,26 @@ class ThreeFrameTVG():
         self.remove_node(node)
 
         return out_nodes
+
+    def merge_into_inbonds(self, node:TVGNode) -> List[TVGNode]:
+        """ Merge the target node into its inbond nodes. """
+        in_nodes = node.get_in_nodes()
+        out_nodes = node.get_out_nodes()
+        for in_node in in_nodes:
+            if len(in_node.out_edges) > 1:
+                new_in_node = in_node.copy()
+                for upstream in in_node.get_in_nodes():
+                    self.add_edge(upstream, new_in_node)
+                new_in_node.append_right(node)
+                for edge in node.out_edges:
+                    self.add_edge(new_in_node, edge.out_node, edge.type)
+            else:
+                in_node.append_right(node)
+                in_node.out_edges = set()
+                for edge in node.out_edges:
+                    self.add_edge(in_node, edge.out_node, edge.type)
+        self.remove_node(node)
+        return in_nodes
 
     def find_bridge_nodes_between(self, start:TVGNode, end:TVGNode, members:Set[TVGNode]
             ) -> Tuple[Set[TVGNode], Set[TVGNode], Set[TVGNode], Set[TVGNode]]:
@@ -1669,10 +1688,16 @@ class ThreeFrameTVG():
         end = ref_node.get_reference_next()
         right_index = (3 - len(ref_node.seq) % 3) % 3
 
-        if right_index >= len(end.seq.seq) and len(end.get_out_nodes()) == 1:
-            # This is when the left or right intronic insertion of a fusion
-            # is smaller than 3. The `end` should contain an unique out node
-            end = self.merge_with_outbonds(end)[0]
+        if right_index >= len(end.seq.seq):
+            if len(end.get_out_nodes()) == 1 \
+                    and len(end.get_out_nodes()[0].get_in_nodes()) == 1:
+                # This is when the left or right intronic insertion of a fusion
+                # is smaller than 3. The `end` should contain an unique out node
+                end = self.merge_with_outbonds(end)[0]
+            else:
+                # Similar to above but here for AltSplice.
+                self.merge_into_inbonds(end)
+                return []
 
         right_over = end.truncate_left(right_index)
 
@@ -1736,6 +1761,8 @@ class ThreeFrameTVG():
                     cur = self.merge_with_outbonds(cur)[0]
                 queue.appendleft(cur)
                 continue
+
+            cur_seq = cur.seq.seq
 
             self.align_variants(cur)
 
