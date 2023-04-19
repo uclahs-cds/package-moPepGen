@@ -213,7 +213,7 @@ class SpliceJunctionTranscriptAlignment():
             genomic_end = tx_model.exon[interjacent[-1]].location.end
         else:
             genomic_end = self.junction.downstream_start
-        end = anno.coordinate_gene_to_genomic(genomic_end - 1, gene_id)
+        end = anno.coordinate_genomic_to_gene(genomic_end - 1, gene_id)
 
         if strand == -1:
             start, end = end, start
