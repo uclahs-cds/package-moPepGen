@@ -38,6 +38,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `parseRMATS` to handle more complex situations such as exons interjacent between splicing sites and exons spanning over the splicing site. #715, #716, #717, and PR #720
 
+- Fixed `callVariant` that failed when there is a SNV very close to the end on a AltSplice insertion. #723
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed
