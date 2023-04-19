@@ -1188,12 +1188,12 @@ class ThreeFrameTVG():
     def merge_into_inbonds(self, node:TVGNode) -> List[TVGNode]:
         """ Merge the target node into its inbond nodes. """
         in_nodes = node.get_in_nodes()
-        out_nodes = node.get_out_nodes()
         for in_node in in_nodes:
             if len(in_node.out_edges) > 1:
                 new_in_node = in_node.copy()
-                for upstream in in_node.get_in_nodes():
-                    self.add_edge(upstream, new_in_node)
+                for edge in in_node.in_edge:
+                    upstream = edge.in_node
+                    self.add_edge(upstream, new_in_node, edge.type)
                 new_in_node.append_right(node)
                 for edge in node.out_edges:
                     self.add_edge(new_in_node, edge.out_node, edge.type)
@@ -1761,8 +1761,6 @@ class ThreeFrameTVG():
                     cur = self.merge_with_outbonds(cur)[0]
                 queue.appendleft(cur)
                 continue
-
-            cur_seq = cur.seq.seq
 
             self.align_variants(cur)
 
