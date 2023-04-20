@@ -491,8 +491,7 @@ class SpliceJunctionTranscriptAlignment():
                     variants.append(v)
 
         if not self.downstream_novel and not self.upstream_novel:
-            if self.downstream_end_index != -1 \
-                    and self.upstream_start_index != -1 \
+            if (self.downstream_start_index != -1 or self.upstream_end_index != -1) \
                     and len(interjacent) > 0:
                 spanning = self.get_upstream_end_spanning()
                 v = self.create_upstream_deletion(spanning, interjacent, anno, gene_seq, var_id)
