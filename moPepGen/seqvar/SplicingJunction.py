@@ -126,7 +126,7 @@ class SpliceJunctionTranscriptAlignment():
     def get_upstream_end_spanning(self) -> int:
         """ Get exons that are spanning over the upstream end position. """
         if self.downstream_start_index == -1:
-            raise ValueError('Downstream start not matched.')
+            return self.tx_model.get_exon_containing(self.junction.upstream_end - 1)
 
         i = self.downstream_start_index - 1
         while i >= 0:
@@ -139,7 +139,7 @@ class SpliceJunctionTranscriptAlignment():
     def get_downstream_start_spanning(self) -> int:
         """ Get exons that are spanning over the downstream start position. """
         if self.upstream_end_index == -1:
-            raise ValueError('Upstream start not matched.')
+            return self.tx_model.get_exon_containing(self.junction.downstream_start)
 
         i = self.upstream_end_index + 1
         while i < len(self.tx_model.exon):
@@ -213,7 +213,7 @@ class SpliceJunctionTranscriptAlignment():
             genomic_end = tx_model.exon[interjacent[-1]].location.end
         else:
             genomic_end = self.junction.downstream_start
-        end = anno.coordinate_gene_to_genomic(genomic_end - 1, gene_id)
+        end = anno.coordinate_genomic_to_gene(genomic_end - 1, gene_id)
 
         if strand == -1:
             start, end = end, start
@@ -384,6 +384,7 @@ class SpliceJunctionTranscriptAlignment():
         alt = '<Ins>'
         attrs = {
             'TRANSCRIPT_ID': tx_id,
+            'DONOR_GENE_ID': gene_id,
             'DONOR_START': donor_start,
             'DONOR_END': donor_end,
             'GENE_SYMBOL': gene_model.gene_name,
@@ -436,6 +437,7 @@ class SpliceJunctionTranscriptAlignment():
         alt = '<Ins>'
         attrs = {
             'TRANSCRIPT_ID': tx_id,
+            'DONOR_GENE_ID': gene_id,
             'DONOR_START': donor_start,
             'DONOR_END': donor_end,
             'GENE_SYMBOL': gene_model.gene_name,
@@ -457,15 +459,17 @@ class SpliceJunctionTranscriptAlignment():
                     v = self.create_upstream_deletion(
                         spanning, interjacent, anno, gene_seq, var_id
                     )
+                    variants.append(v)
                 elif len(interjacent) > 0:
                     v = self.create_upstream_substitution(
                         interjacent, anno, gene_seq, var_id
                     )
-                else:
+                    variants.append(v)
+                elif self.downstream_start_index > 0:
                     v = self.create_upstream_insertion(
                         anno, gene_seq, var_id
                     )
-                variants.append(v)
+                    variants.append(v)
 
         if self.downstream_novel:
             if self.downstream_start_index == -1 or len(interjacent) > 0:
@@ -474,22 +478,38 @@ class SpliceJunctionTranscriptAlignment():
                     v = self.create_downstream_deletion(
                         spanning, interjacent, anno, gene_seq, var_id
                     )
+                    variants.append(v)
                 elif len(interjacent) > 0:
                     v = self.create_downstream_substitution(
                         interjacent, anno, gene_seq, var_id
                     )
-                else:
+                    variants.append(v)
+                elif -1 < self.downstream_end_index < len(self.tx_model.exon) - 1:
                     v = self.create_downstream_insertion(
                         anno, gene_seq, var_id
                     )
-                variants.append(v)
+                    variants.append(v)
 
-        if not self.downstream_novel and not self.upstream_novel:
-            if self.downstream_end_index != -1 \
-                    and self.upstream_start_index != -1 \
-                    and len(interjacent) > 0:
-                spanning = self.get_upstream_end_spanning()
-                v = self.create_upstream_deletion(spanning, interjacent, anno, gene_seq, var_id)
-                variants.append(v)
+        if not self.downstream_novel and not self.upstream_novel \
+                and len(interjacent) > 0:
+            strand = self.tx_model.transcript.strand
+            tx_start = self.tx_model.transcript.location.start
+            tx_end = self.tx_model.transcript.location.end
+            is_after_tx_start = \
+                (strand == 1 and tx_start < self.junction.upstream_end) \
+                or (strand == -1 and tx_end > self.junction.downstream_start + 1)
+            if is_after_tx_start:
+                if self.downstream_start_index != -1:
+                    spanning = self.get_downstream_start_spanning()
+                    v = self.create_downstream_deletion(
+                        spanning, interjacent, anno, gene_seq, var_id
+                    )
+                    variants.append(v)
+                elif self.upstream_end_index != -1:
+                    spanning = self.get_upstream_end_spanning()
+                    v = self.create_upstream_deletion(
+                        spanning, interjacent, anno, gene_seq, var_id
+                    )
+                    variants.append(v)
 
         return variants

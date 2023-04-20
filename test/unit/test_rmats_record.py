@@ -131,18 +131,12 @@ def create_a5ss_neg() -> RMATSParser.A5SSRecord:
         fdr='NA'
     )
 
-class TestRMATSRecord(unittest.TestCase):
-    """ Tset cases for RMATSRecord """
-    def test_se_record_pos_strand(self):
-        """ Test SERecord """
-        genome = create_dna_record_dict(GENOME_DATA)
-        anno = create_genomic_annotation(ANNOTATION_DATA)
-        gene_id = 'ENSG0001'
-        chrom = 'chr1'
-        record = RMATSParser.SERecord(
-            gene_id=gene_id,
+def create_se_pos() -> RMATSParser.SERecord:
+    """ Create an SE of transcript on the pos strand """
+    return RMATSParser.SERecord(
+            gene_id='ENSG0001',
             gene_symbol='CRAP',
-            chrom=chrom,
+            chrom='CRAP',
             exon_start=17,
             exon_end=23,
             upstream_exon_start=5,
@@ -158,6 +152,16 @@ class TestRMATSRecord(unittest.TestCase):
             pvalue='NA',
             fdr='NA'
         )
+
+class TestRMATSRecord(unittest.TestCase):
+    """ Test cases for RMATSRecord """
+    def test_se_record_pos_strand(self):
+        """ Test SERecord """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = 'ENSG0001'
+        chrom = 'chr1'
+        record = create_se_pos()
         gene_seq = anno.genes[gene_id].get_gene_sequence(genome[chrom])
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
@@ -165,6 +169,18 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].ref, str(gene_seq.seq[17]))
         self.assertEqual(var_records[0].attrs['START'], 17)
         self.assertEqual(var_records[0].attrs['END'], 23)
+
+    def test_se_record_pos_missing_upstream(self):
+        """ When upstream exon is unmatched, aka tx head is matched to the
+        downstream exon. """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno_data = copy.deepcopy(ANNOTATION_DATA)
+        anno_data['transcripts'][0]['exon'].pop(0)
+        anno_data['transcripts'][0]['exon'].pop(0)
+        anno = create_genomic_annotation(anno_data)
+        record = create_se_pos()
+        var_records = record.convert_to_variant_records(anno, genome, 1, 1)
+        self.assertEqual(len(var_records), 0)
 
     def test_se_record_neg_strand(self):
         """ Test SERecord on - strand """
@@ -236,6 +252,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].location.start, 11)
         self.assertEqual(var_records[0].ref, str(gene_seq.seq[11]))
         self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].attrs['DONOR_GENE_ID'], gene_id)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 17)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 23)
 
@@ -275,6 +292,7 @@ class TestRMATSRecord(unittest.TestCase):
         self.assertEqual(var_records[0].location.start, 22)
         self.assertEqual(var_records[0].ref, str(gene_seq.seq[22]))
         self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].attrs['DONOR_GENE_ID'], gene_id)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 27)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 33)
 
@@ -344,6 +362,7 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].attrs['DONOR_GENE_ID'], gene_id)
         self.assertEqual(var_records[0].location.start, 19)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 20)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 23)
@@ -370,6 +389,7 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].attrs['DONOR_GENE_ID'], gene_id)
         insert_pos = anno.coordinate_genomic_to_gene(20, record.gene_id)
         self.assertEqual(var_records[0].location.start, insert_pos)
         insert_start = anno.coordinate_genomic_to_gene(20 - 1, record.gene_id)
@@ -508,6 +528,7 @@ class TestRMATSRecord(unittest.TestCase):
         var_records = record.convert_to_variant_records(anno, genome, 1, 1)
         self.assertEqual(len(var_records), 1)
         self.assertEqual(var_records[0].type, 'Insertion')
+        self.assertEqual(var_records[0].attrs['DONOR_GENE_ID'], 'ENSG0001')
         self.assertEqual(var_records[0].location.start, 11)
         self.assertEqual(var_records[0].attrs['DONOR_START'], 17)
         self.assertEqual(var_records[0].attrs['DONOR_END'], 20)
