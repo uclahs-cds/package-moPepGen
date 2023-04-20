@@ -140,4 +140,4 @@ class SERecord(RMATSRecord):
                 if aln:
                     variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
-        return list(set(variants))
+        return variants
