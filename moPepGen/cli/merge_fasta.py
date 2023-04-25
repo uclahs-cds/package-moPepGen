@@ -35,9 +35,13 @@ def merge_fasta(args:argparse.Namespace):
     """ Merge mulitple variant peptide FASTA files into one. """
     input_files = args.input_path
     for file in input_files:
-        common.validate_file_format(file, INPUT_FILE_FORMATS, True)
+        common.validate_file_format(
+            file, INPUT_FILE_FORMATS, check_readable=True
+        )
     output_file = args.output_path
-    common.validate_file_format(output_file, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(
+        output_file, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     pool = None
 

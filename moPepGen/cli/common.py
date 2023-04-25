@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse
 import lzma
+import os
 import sys
 from typing import Tuple, Set, List
 from pathlib import Path
@@ -338,7 +339,8 @@ def parse_range(x:str) -> Tuple[int,int]:
         raise ValueError('Range invalid')
     return tuple(int(i) for i in y)
 
-def validate_file_format(file:Path, types:List[str], check_exist:bool=False):
+def validate_file_format(file:Path, types:List[str], check_readable:bool=False,
+            check_writable:bool=False):
     """ Validate the file type """
     suffixes = file.suffixes
     actual_suffixes = [suffixes[-1]]
@@ -348,6 +350,15 @@ def validate_file_format(file:Path, types:List[str], check_exist:bool=False):
         raise ValueError(
             f'The file {file} is invalid. Valid file types are {types}.'
         )
-    if check_exist:
+    if check_readable:
         if not file.exists():
-            raise FileNotFoundError(f'File does not exist: {file}')
+            raise FileNotFoundError(f"File does not exist: '{file}'")
+        if not os.access(file, os.R_OK):
+            raise PermissionError(f"Permission denied: '{file}'")
+    if check_writable:
+        if file.exists():
+            if not os.access(file, os.W_OK):
+                raise PermissionError(f"Permission denied: '{file}'")
+        else:
+            if not os.access(file.parent, os.W_OK):
+                raise PermissionError(f"Permission denied: '{file}'")
