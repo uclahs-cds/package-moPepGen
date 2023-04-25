@@ -95,7 +95,7 @@ class TestParseRMATS(TestCaseIntegration):
             ('Deletion', 323, 750),
             ('Deletion', 405, 869),
             ('Deletion', 750, 869),
-            ('Deletion', 750, 1097),
+            ('Substitution', 750, 1097, 1097, 1264),
             ('Substitution', 323, 405, 405, 750),
             ('Insertion', 404, 405, 750)
         }

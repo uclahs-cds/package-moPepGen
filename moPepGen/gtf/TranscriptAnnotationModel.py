@@ -318,7 +318,7 @@ class TranscriptAnnotationModel():
     def is_mrna_end_nf(self) -> bool:
         """ Returns if the transcript has the tag of mrna_end_NF """
         return 'tag' in self.transcript.attributes and \
-            'mrna_end_NF' in self.transcript.attributes['tag']
+            'mRNA_end_NF' in self.transcript.attributes['tag']
 
     def transcript_len(self) -> int:
         """ Get the transcript length minus introns """

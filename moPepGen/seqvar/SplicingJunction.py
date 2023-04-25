@@ -493,23 +493,35 @@ class SpliceJunctionTranscriptAlignment():
         if not self.downstream_novel and not self.upstream_novel \
                 and len(interjacent) > 0:
             strand = self.tx_model.transcript.strand
+            is_upstream_aligned = (strand == 1 and self.upstream_end_index != -1) \
+                    or (strand == -1 and self.downstream_start_index != -1)
             tx_start = self.tx_model.transcript.location.start
             tx_end = self.tx_model.transcript.location.end
             is_after_tx_start = \
                 (strand == 1 and tx_start < self.junction.upstream_end) \
                 or (strand == -1 and tx_end > self.junction.downstream_start + 1)
-            if is_after_tx_start:
-                if self.downstream_start_index != -1:
+            if is_upstream_aligned and is_after_tx_start:
+                if strand == 1:
                     spanning = self.get_downstream_start_spanning()
-                    v = self.create_downstream_deletion(
-                        spanning, interjacent, anno, gene_seq, var_id
-                    )
+                    if spanning > -1:
+                        v = self.create_downstream_deletion(
+                            spanning, interjacent, anno, gene_seq, var_id
+                        )
+                    else:
+                        v = self.create_downstream_substitution(
+                            interjacent, anno, gene_seq, var_id
+                        )
                     variants.append(v)
-                elif self.upstream_end_index != -1:
+                else:
                     spanning = self.get_upstream_end_spanning()
-                    v = self.create_upstream_deletion(
-                        spanning, interjacent, anno, gene_seq, var_id
-                    )
+                    if spanning > -1:
+                        v = self.create_upstream_deletion(
+                            spanning, interjacent, anno, gene_seq, var_id
+                        )
+                    else:
+                        v = self.create_upstream_substitution(
+                            interjacent, anno, gene_seq, var_id
+                        )
                     variants.append(v)
 
         return variants
