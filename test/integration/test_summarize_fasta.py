@@ -76,7 +76,7 @@ class TestSummarizeFasta(TestCaseIntegration):
             --variant-peptides {self.data_dir}/peptides/variant.fasta \\
             -a {self.data_dir}/annotation.gtf \\
             -p {self.data_dir}/translate.fasta \\
-            -o {self.work_dir}/test
+            -o {self.work_dir}/test.txt
         """
         res = sp.run(cmd, shell=True, check=False, capture_output=True)
         try:

@@ -102,6 +102,10 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         args.variant_peptides, FASTA_FILE_FORMAT, check_readable=True
     )
 
+    common.validate_file_format(
+        args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
+
     common.print_start_message(args)
 
     _, anno, *_ = common.load_references(
