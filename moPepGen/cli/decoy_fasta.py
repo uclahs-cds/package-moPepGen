@@ -141,8 +141,12 @@ class DecoyFasta():
 
         input_path:Path = args.input_path
         output_path:Path = args.output_path
-        common.validate_file_format(input_path, INPUT_FILE_FORMATS, True)
-        common.validate_file_format(input_path, OUTPUT_FILE_FORMATS, True)
+        common.validate_file_format(
+            input_path, INPUT_FILE_FORMATS, check_readable=True
+        )
+        common.validate_file_format(
+            output_path, OUTPUT_FILE_FORMATS, check_writable=True
+        )
 
         keep_peptide_nterm = args.keep_peptide_nterm == 'true'
         keep_peptide_cterm = args.keep_peptide_cterm == 'true'

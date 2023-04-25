@@ -82,8 +82,12 @@ def parse_reditools(args:argparse.Namespace) -> None:
     # unpack args
     table_file:Path = args.input_path
     output_path:Path = args.output_path
-    common.validate_file_format(table_file, INPUT_FILE_FORMATS, True)
-    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(
+        table_file, INPUT_FILE_FORMATS, check_readable=True
+    )
+    common.validate_file_format(
+        output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     transcript_id_column = args.transcript_id_column - 1
     min_coverage_alt:int = args.min_coverage_alt

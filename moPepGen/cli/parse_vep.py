@@ -49,9 +49,13 @@ def parse_vep(args:argparse.Namespace) -> None:
     # unpack args
     vep_files:List[Path] = args.input_path
     for file in vep_files:
-        common.validate_file_format(file, INPUT_FILE_FORMATS, True)
+        common.validate_file_format(
+            file, INPUT_FILE_FORMATS, check_readable=True
+        )
     output_path:Path = args.output_path
-    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(
+        output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     common.print_start_message(args)
 

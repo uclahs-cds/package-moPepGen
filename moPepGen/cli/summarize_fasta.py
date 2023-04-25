@@ -95,8 +95,16 @@ def output_context(file:Path) -> IO:
 def summarize_fasta(args:argparse.Namespace) -> None:
     """ Summarize varaint peptide FASTA """
     for file in args.gvf:
-        common.validate_file_format(file, GVF_FILE_FORMAT, True)
-    common.validate_file_format(args.variant_peptides, FASTA_FILE_FORMAT, True)
+        common.validate_file_format(
+            file, GVF_FILE_FORMAT, check_readable=True
+        )
+    common.validate_file_format(
+        args.variant_peptides, FASTA_FILE_FORMAT, check_readable=True
+    )
+
+    common.validate_file_format(
+        args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     common.print_start_message(args)
 

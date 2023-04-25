@@ -115,8 +115,12 @@ def parse_rmats(args:argparse.Namespace) -> None:
     for file in [skipped_exon, alternative_3, alternative_5, mutually_exclusive,
             retained_intron]:
         if file is not None:
-            common.validate_file_format(file, INPUT_FILE_FORMATS, True)
-    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+            common.validate_file_format(
+                file, INPUT_FILE_FORMATS, check_readable=True
+            )
+    common.validate_file_format(
+        output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     common.print_start_message(args)
 

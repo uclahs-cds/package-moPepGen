@@ -40,6 +40,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that failed when there is a SNV very close to the end on a AltSplice insertion. #723
 
+- Fixed `TranscriptAnnotationModel` for not recognizing transcripts with `mRNA_end_NF` correctly. #724
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed
