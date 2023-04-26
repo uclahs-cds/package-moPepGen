@@ -1344,6 +1344,8 @@ class ThreeFrameTVG():
             #     is_in_subgraph = x.subgraph_id == y.subgraph_id
             return subgraph_checker is False \
                 or x.get_max_subgraph_id(self.subgraphs) == y.subgraph_id \
+                or (len(y.variants) == 1 and y.variants[0].variant.is_deletion()
+                    and y.variants[0].variant.frames_shifted() == 0) \
                 or self.is_fusion_subgraph_out(x,y)
 
         queue:Deque[TVGNode] = deque([])
