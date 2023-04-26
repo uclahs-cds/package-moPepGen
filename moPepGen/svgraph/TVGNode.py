@@ -1,6 +1,6 @@
 """ Module for TVGNode class """
 from __future__ import annotations
-from typing import List, Set, Tuple, Dict, Deque
+from typing import List, Set, Tuple, Dict, Deque, TYPE_CHECKING
 import copy
 from collections import deque
 import math
@@ -9,6 +9,9 @@ from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, svgraph, aa
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 
+
+if TYPE_CHECKING:
+    from moPepGen.svgraph import SubgraphTree
 
 class TVGNode():
     """ Defines the nodes in the TranscriptVariantGraph
@@ -187,6 +190,26 @@ class TVGNode():
         locations = sorted(locations, key=lambda x: x[0])
 
         return locations[i][1]
+
+    def get_max_subgraph_id(self, subgraphs:SubgraphTree) -> str:
+        """ Get the max subgraph ID """
+        max_subgraph_id = None
+        max_level = -1
+        for loc in self.seq.locations:
+            subgraph_id = loc.ref.seqname
+            level = subgraphs[subgraph_id].level
+            if level > max_level:
+                max_subgraph_id = subgraph_id
+        for v in self.variants:
+            subgraph_id = v.location.seqname
+            level = subgraphs[subgraph_id].level
+            if level > max_level:
+                max_subgraph_id = subgraph_id
+
+        if not max_subgraph_id:
+            max_subgraph_id = self.subgraph_id
+
+        return max_subgraph_id
 
     def get_first_subgraph_id(self) -> str:
         """ Get the first fragment's subgraph ID """

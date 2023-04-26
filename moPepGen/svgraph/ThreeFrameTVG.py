@@ -540,7 +540,7 @@ class ThreeFrameTVG():
         for rf_index, root in enumerate(branch.reading_frames):
             var_i = copy.deepcopy(var)
             var_i.location.reading_frame_index = rf_index
-            var_i.location.subgraph_id = subgraph_id
+            var_i.location.seqname = subgraph_id
             node = list(root.out_edges)[0].out_node
             node.variants.append(var_i)
         branch.create_variant_graph(
@@ -1338,12 +1338,12 @@ class ThreeFrameTVG():
         def is_candidate_out_node(x, y):
             # Note: have to use y.subgraph_id because for deletion, subgraph_id
             # is different from get_first_subgraph_id()
-            try:
-                is_in_subgraph = x.get_last_subgraph_id() == y.subgraph_id
-            except IndexError:
-                is_in_subgraph = x.subgraph_id == y.subgraph_id
+            # try:
+            #     is_in_subgraph = x.get_last_subgraph_id() == y.subgraph_id
+            # except IndexError:
+            #     is_in_subgraph = x.subgraph_id == y.subgraph_id
             return subgraph_checker is False \
-                or is_in_subgraph \
+                or x.get_max_subgraph_id(self.subgraphs) == y.subgraph_id \
                 or self.is_fusion_subgraph_out(x,y)
 
         queue:Deque[TVGNode] = deque([])
