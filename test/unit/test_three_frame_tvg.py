@@ -878,17 +878,23 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             2:  ['TA', [1], []],
             3:  ['GTT', [2], []]
         }
-        graph, nodes = create_three_frame_tvg(data, 'AAAAATAGTT', 'ENST01')
+        tx_id = 'ENST01'
+        graph, nodes = create_three_frame_tvg(data, 'AAAAATAGTT', tx_id)
         data = {
             11: ['TGCTGC', ['RF0'], []],
             12: ['T', [11], []],
             13: ['A', [12], [(0, 'A', 'G', 'SNV', '')]],
             14: ['GC', [12, 13], []]
         }
-        graph2, nodes2 = create_three_frame_tvg(data, 'TGCTGCTAGC')
+        subgraph_id = graph.subgraphs.generate_subgraph_id()
+        graph2, nodes2 = create_three_frame_tvg(data, 'TGCTGCTAGC', subgraph_id)
         for edge in copy.copy(nodes2[11].in_edges):
             graph2.remove_edge(edge)
         graph2.add_edge(nodes[1], nodes2[11], 'variant_start')
+        graph.subgraphs.add_subgraph(
+            child_id=subgraph_id, parent_id=tx_id, level=1,
+            start=5, end=6
+        )
         graph.align_variants(nodes[1])
         out_node_seqs = {x.out_node.seq.seq for x in nodes[1].out_edges}
         expected = {'TA', 'TGCTGC'}

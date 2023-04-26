@@ -515,6 +515,8 @@ class ThreeFrameTVG():
         cursors = copy.copy(cursors)
         var_tails = []
         subgraph_id = self.subgraphs.generate_subgraph_id()
+        for loc in seq.locations:
+            loc.ref.seqname = subgraph_id
         branch = ThreeFrameTVG(
             seq, subgraph_id,
             global_variant=var.variant,
@@ -538,6 +540,7 @@ class ThreeFrameTVG():
         for rf_index, root in enumerate(branch.reading_frames):
             var_i = copy.deepcopy(var)
             var_i.location.reading_frame_index = rf_index
+            var_i.location.subgraph_id = subgraph_id
             node = list(root.out_edges)[0].out_node
             node.variants.append(var_i)
         branch.create_variant_graph(
@@ -778,6 +781,7 @@ class ThreeFrameTVG():
         for rf_index, root in enumerate(branch.reading_frames):
             var_i = copy.deepcopy(var)
             var_i.location.reading_frame_index = rf_index
+            var_i.location.seqname = subgraph_id
             node = list(root.out_edges)[0].out_node
             node.variants.append(var_i)
             is_frameshifting = False
@@ -1333,7 +1337,7 @@ class ThreeFrameTVG():
 
         is_candidate_out_node = lambda x,y: \
                 subgraph_checker is False \
-                or x.subgraph_id == y.subgraph_id \
+                or x.get_last_subgraph_id() == y.get_first_subgraph_id() \
                 or self.is_fusion_subgraph_out(x,y)
 
         queue:Deque[TVGNode] = deque([])
