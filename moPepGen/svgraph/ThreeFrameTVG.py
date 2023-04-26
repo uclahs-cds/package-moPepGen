@@ -967,6 +967,7 @@ class ThreeFrameTVG():
         ## Fitler variants
         # skipping start lost mutations
         start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
+        is_fusion = any(v.is_fusion() for v in variants)
 
         filtered_variants = []
         for v in variants:
@@ -1162,7 +1163,6 @@ class ThreeFrameTVG():
 
     def merge_with_outbonds(self, node:TVGNode) -> List[TVGNode]:
         """ For a given node, merge it with all its outbound nodes. """
-
         in_edges = copy.copy(node.in_edges)
         out_edges:Set[TVGEdge] = copy.copy(node.out_edges)
         out_nodes = []
@@ -1186,6 +1186,26 @@ class ThreeFrameTVG():
         self.remove_node(node)
 
         return out_nodes
+
+    def merge_into_inbonds(self, node:TVGNode) -> List[TVGNode]:
+        """ Merge the target node into its inbond nodes. """
+        in_nodes = node.get_in_nodes()
+        for in_node in in_nodes:
+            if len(in_node.out_edges) > 1:
+                new_in_node = in_node.copy()
+                for edge in in_node.in_edge:
+                    upstream = edge.in_node
+                    self.add_edge(upstream, new_in_node, edge.type)
+                new_in_node.append_right(node)
+                for edge in node.out_edges:
+                    self.add_edge(new_in_node, edge.out_node, edge.type)
+            else:
+                in_node.append_right(node)
+                in_node.out_edges = set()
+                for edge in node.out_edges:
+                    self.add_edge(in_node, edge.out_node, edge.type)
+        self.remove_node(node)
+        return in_nodes
 
     def find_bridge_nodes_between(self, start:TVGNode, end:TVGNode, members:Set[TVGNode]
             ) -> Tuple[Set[TVGNode], Set[TVGNode], Set[TVGNode], Set[TVGNode]]:
@@ -1474,8 +1494,11 @@ class ThreeFrameTVG():
             subgraph_ends = {end_node}
             subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node))
             end_nodes = set()
-            for subgraph_end in subgraph_ends:
-                end_nodes.update(subgraph_end.get_out_nodes())
+            if len(subgraph_ends) > 1:
+                for subgraph_end in subgraph_ends:
+                    end_nodes.update(subgraph_end.get_out_nodes())
+            else:
+                end_nodes = {end_node}
         else:
             end_nodes = {end_node}
         bridges = self.find_bridge_nodes_between(start_node, end_node, members)
@@ -1667,10 +1690,16 @@ class ThreeFrameTVG():
         end = ref_node.get_reference_next()
         right_index = (3 - len(ref_node.seq) % 3) % 3
 
-        if right_index >= len(end.seq.seq) and len(end.get_out_nodes()) == 1:
-            # This is when the left or right intronic insertion of a fusion
-            # is smaller than 3. The `end` should contain an unique out node
-            end = self.merge_with_outbonds(end)[0]
+        if right_index >= len(end.seq.seq):
+            if len(end.get_out_nodes()) == 1 \
+                    and len(end.get_out_nodes()[0].get_in_nodes()) == 1:
+                # This is when the left or right intronic insertion of a fusion
+                # is smaller than 3. The `end` should contain an unique out node
+                end = self.merge_with_outbonds(end)[0]
+            else:
+                # Similar to above but here for AltSplice.
+                self.merge_into_inbonds(end)
+                return []
 
         right_over = end.truncate_left(right_index)
 
@@ -1684,7 +1713,8 @@ class ThreeFrameTVG():
             self.remove_node(end)
 
         if end.subgraph_id != self.id and any(x.out_node.subgraph_id == self.id
-                for x in end.out_edges):
+                for x in end.out_edges) \
+                or ref_node.subgraph_id != self.id and end.subgraph_id == self.id:
             return end_nodes
         end_nodes.append(end)
         return end_nodes

@@ -1,9 +1,12 @@
 """ Module for Altervative 5' Splicing Site """
 from __future__ import annotations
-from typing import List
-from moPepGen import seqvar, gtf, dna
-from moPepGen.SeqFeature import FeatureLocation
+from typing import TYPE_CHECKING, List, Tuple
+from moPepGen import gtf, dna, seqvar
 from .RMATSRecord import RMATSRecord
+
+
+if TYPE_CHECKING:
+    from moPepGen.seqvar import SpliceJunction
 
 
 class A5SSRecord(RMATSRecord):
@@ -55,92 +58,96 @@ class A5SSRecord(RMATSRecord):
             fdr=None if fields[19] == 'NA' else float(fields[19])
         )
 
+    def create_variant_id(self, anno:gtf.GenomicAnnotation) -> str:
+        """ Create variant ID """
+        if anno.genes[self.gene_id].strand == 1:
+            lee = anno.coordinate_genomic_to_gene(self.long_exon_end - 1, self.gene_id) + 1
+            see = anno.coordinate_genomic_to_gene(self.short_exon_end - 1, self.gene_id) + 1
+            des = anno.coordinate_genomic_to_gene(self.flanking_exon_start, self.gene_id)
+        else:
+            lee = anno.coordinate_genomic_to_gene(self.long_exon_start, self.gene_id) + 1
+            see = anno.coordinate_genomic_to_gene(self.short_exon_start, self.gene_id) + 1
+            des = anno.coordinate_genomic_to_gene(self.flanking_exon_end - 1, self.gene_id)
+
+        return f"A5SS_{lee}-{see}-{des}"
+
+    def create_splice_junctions(self, strand:int) -> Tuple[SpliceJunction, SpliceJunction]:
+        """ Create splice junctions """
+        if strand == 1:
+            long_junction = seqvar.SpliceJunction(
+                upstream_start=self.long_exon_start,
+                upstream_end=self.long_exon_end,
+                downstream_start=self.flanking_exon_start,
+                downstream_end=self.flanking_exon_end,
+                gene_id=self.gene_id,
+                chrom=self.chrom
+            )
+            short_junction = seqvar.SpliceJunction(
+                upstream_start=self.short_exon_start,
+                upstream_end=self.short_exon_end,
+                downstream_start=self.flanking_exon_start,
+                downstream_end=self.flanking_exon_end,
+                gene_id=self.gene_id,
+                chrom=self.chrom
+            )
+        else:
+            long_junction = seqvar.SpliceJunction(
+                upstream_start=self.flanking_exon_start,
+                upstream_end=self.flanking_exon_end,
+                downstream_start=self.long_exon_start,
+                downstream_end=self.long_exon_end,
+                gene_id=self.gene_id,
+                chrom=self.chrom
+            )
+            short_junction = seqvar.SpliceJunction(
+                upstream_start=self.flanking_exon_start,
+                upstream_end=self.flanking_exon_end,
+                downstream_start=self.short_exon_start,
+                downstream_end=self.short_exon_end,
+                gene_id=self.gene_id,
+                chrom=self.chrom
+            )
+        return long_junction, short_junction
+
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict, min_ijc:int, min_sjc:int) -> List[seqvar.VariantRecord]:
+        """ Convert to variant records """
         variants = []
+
         gene_model = anno.genes[self.gene_id]
+        strand = gene_model.strand
+        long_junction, short_junction = self.create_splice_junctions(strand)
+
+        if not long_junction.is_novel(anno) and not short_junction.is_novel(anno):
+            return variants
+
         tx_ids = gene_model.transcripts
         chrom = gene_model.location.seqname
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
+        var_id = self.create_variant_id(anno)
 
-        short_in_ref:List[str] = []
-        long_in_ref:List[str] = []
-
-        for tx_id in tx_ids:
-            model = anno.transcripts[tx_id]
-            if gene_model.location.strand == 1:
-                it = iter(model.exon)
-            else:
-                it = reversed(model.exon)
-            exon = next(it, None)
-
-            while exon:
-                if int(exon.location.start) == self.long_exon_start and \
-                    int(exon.location.end) == self.long_exon_end:
-                    exon = next(it, None)
-                    if exon and exon.location.start == self.flanking_exon_start:
-                        long_in_ref.append(tx_id)
-                    break
-                if int(exon.location.start) == self.short_exon_start and \
-                        int(exon.location.end) == self.short_exon_end:
-                    exon = next(it, None)
-                    if exon and exon.location.start == self.flanking_exon_start:
-                        short_in_ref.append(tx_id)
-                    break
-                exon = next(it, None)
-
-        if (long_in_ref and short_in_ref) or (not long_in_ref and not short_in_ref):
-            return variants
-
-        if anno.genes[self.gene_id].location.strand == 1:
-            start_gene = anno.coordinate_genomic_to_gene(self.short_exon_end - 1,
-                self.gene_id) + 1
-            end_gene = anno.coordinate_genomic_to_gene(self.long_exon_end - 1,
-                self.gene_id) + 1
-            genomic_position = f'{chrom}:{self.short_exon_end+1}-{self.long_exon_end}'
+        if gene_model.strand == 1:
+            upstream_novel = True
+            downstream_novel = False
         else:
-            start_gene = anno.coordinate_genomic_to_gene(self.short_exon_start,
-                self.gene_id)
-            end_gene = anno.coordinate_genomic_to_gene(self.long_exon_start,
-                self.gene_id)
-            genomic_position = f'{chrom}:{self.long_exon_start+1}-{self.short_exon_end}'
+            upstream_novel = False
+            downstream_novel = True
 
-        # For A5SS, the long version is 'inclusion' and short is 'skipped'.
-        if not short_in_ref and self.sjc_sample_1 >= min_sjc:
-            location = FeatureLocation(seqname=self.gene_id, start=start_gene,
-                end=end_gene)
-            for tx_id in long_in_ref:
-                ref = str(gene_seq.seq[start_gene])
-                alt = '<DEL>'
-                attrs = {
-                    'TRANSCRIPT_ID': tx_id,
-                    'START': start_gene,
-                    'END': end_gene,
-                    'GENE_SYMBOL': gene_model.gene_name,
-                    'GENOMIC_POSITION': genomic_position
-                }
-                _type = 'Deletion'
-                _id = f'A5SS_{start_gene}'
-                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-                variants.append(record)
+        # Long is inclusion for A5SS
+        for tx_id in tx_ids:
+            tx_model = anno.transcripts[tx_id]
 
-        if not long_in_ref and self.ijc_sample_1 >= min_ijc:
-            insert_position = start_gene - 1
-            location = FeatureLocation(seqname=self.gene_id, start=insert_position,
-                end=insert_position + 1)
-            for tx_id in short_in_ref:
-                ref = str(gene_seq.seq[insert_position])
-                alt = '<INS>'
-                attrs = {
-                    'TRANSCRIPT_ID': tx_id,
-                    'DONOR_START': start_gene,
-                    'DONOR_END': end_gene,
-                    'DONOR_GENE_ID': self.gene_id,
-                    'GENE_SYMBOL': gene_model.gene_name,
-                    'GENOMIC_POSITION': genomic_position
-                }
-                _type = 'Insertion'
-                _id = f'SE_{start_gene}'
-                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-                variants.append(record)
+            if self.ijc_sample_1 >= min_ijc:
+                aln = long_junction.align_to_transcript(
+                    tx_model, upstream_novel, downstream_novel
+                )
+                if aln:
+                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
+
+            if self.sjc_sample_1 >= min_sjc:
+                aln = short_junction.align_to_transcript(
+                    tx_model, upstream_novel, downstream_novel
+                )
+                if aln:
+                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
         return variants

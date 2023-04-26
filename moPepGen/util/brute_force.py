@@ -925,7 +925,7 @@ class BruteForceVariantPeptideCaller():
         variant_effects = self.check_variant_effect(seq, variant_coordinates)
         stop_lost, stop_gain, silent_mutation = variant_effects
 
-        if not (is_coding and tx_model.is_mrna_end_nf()):
+        if not (is_coding and is_mrna_end_nf):
             cur_cds_end = len(seq)
 
         if not is_coding or is_circ_rna:
@@ -1081,7 +1081,6 @@ class BruteForceVariantPeptideCaller():
         """ Generate combination of variants. """
         variant_type_mapper:Dict[seqvar.VariantRecord, str] = {}
         start_index = self.tx_seq.orf.start + 3 if bool(self.tx_seq.orf) else 3
-        mrna_end_nf = self.tx_model.is_mrna_end_nf()
         for variant in self.variant_pool[self.tx_id].transcriptional:
             if variant.location.start == start_index - 1 \
                     and (variant.is_insertion() or variant.is_deletion()) \
@@ -1094,8 +1093,6 @@ class BruteForceVariantPeptideCaller():
         if fusion:
             for variant in self.variant_pool[self.tx_id].fusion:
                 if variant.location.start < start_index - 1:
-                    continue
-                if mrna_end_nf and variant.location.start >= self.tx_seq.orf.end - 3:
                     continue
                 variant_type_mapper[variant] = 'fusion'
                 accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
@@ -1161,10 +1158,12 @@ class BruteForceVariantPeptideCaller():
             main_peptides.update(peptides)
 
         for comb in self.generate_variant_comb(fusion=True, circ_rna=False):
+            donor_tx_id = comb[self.tx_id].fusion[0].accepter_transcript_id
+            donor_tx_model = self.reference_data.anno.transcripts[donor_tx_id]
             peptides = self.call_peptides_main(
                 variants=comb, denylist=denylist,
                 check_variants=True, check_canonical=True,
-                is_mrna_end_nf=False
+                is_mrna_end_nf=donor_tx_model.is_mrna_end_nf()
             )
             self.variant_peptides.update(peptides)
 
@@ -1173,7 +1172,7 @@ class BruteForceVariantPeptideCaller():
             peptides = self.call_peptides_main(
                 variants=comb, denylist=denylist,
                 check_variants=True, check_canonical=True,
-                is_mrna_end_nf=False
+                is_mrna_end_nf=True
             )
             self.variant_peptides.update(peptides)
 

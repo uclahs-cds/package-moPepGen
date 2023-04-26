@@ -115,8 +115,12 @@ def parse_rmats(args:argparse.Namespace) -> None:
     for file in [skipped_exon, alternative_3, alternative_5, mutually_exclusive,
             retained_intron]:
         if file is not None:
-            common.validate_file_format(file, INPUT_FILE_FORMATS, True)
-    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+            common.validate_file_format(
+                file, INPUT_FILE_FORMATS, check_readable=True
+            )
+    common.validate_file_format(
+        output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     common.print_start_message(args)
 
@@ -140,18 +144,18 @@ def parse_rmats(args:argparse.Namespace) -> None:
                     logger(record.gene_id)
                     raise
                 for var_record in var_records:
-                    gene_id = var_record.location.seqname
-                    if gene_id not in variants:
-                        variants[gene_id] = set()
-                    variants[gene_id].add(var_record)
+                    tx_id = var_record.transcript_id
+                    if tx_id not in variants:
+                        variants[tx_id] = set()
+                    variants[tx_id].add(var_record)
 
     if not variants:
         if not args.quiet:
             warning('No variant record is saved.')
         return
 
-    genes_rank = anno.get_genes_rank()
-    ordered_keys = sorted(variants.keys(), key=lambda x:genes_rank[x])
+    tx_rank = anno.get_transcript_rank()
+    ordered_keys = sorted(variants.keys(), key=lambda x:tx_rank[x])
     variants_sorted = []
     for key in ordered_keys:
         val = list(variants[key])

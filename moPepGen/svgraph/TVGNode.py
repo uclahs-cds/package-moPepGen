@@ -762,7 +762,7 @@ class TVGNode():
                     and not var_aa.startswith('*')) \
                 or (v.variant.is_deletion() and '*' in ref_aa
                     and not (ref_aa.startswith('*') and var_aa.startswith('*'))) \
-                or (v.variant.type == 'Substitution'
+                or (v.variant.type in ['Substitution', 'MNV']
                     and '*' in ref_aa and ref_aa != var_aa)
 
     def is_less_mutated_than(self, other:TVGNode) -> bool:
@@ -808,7 +808,8 @@ class TVGNode():
             and upstream.subgraph_id == start.subgraph_id \
             and downstream.reading_frame_index == start.reading_frame_index \
             and upstream.reading_frame_index == start.reading_frame_index \
-            and upstream.seq.locations[0].ref > start.seq.locations[0].ref \
+            and (upstream.seq.seq == ''
+                or (upstream.seq.locations[0].ref > start.seq.locations[0].ref)) \
             and downstream.seq.locations[0].ref < end.seq.locations[0].ref
 
     def get_selenocysteine_positions(self, selenocysteines:List[FeatureLocation]

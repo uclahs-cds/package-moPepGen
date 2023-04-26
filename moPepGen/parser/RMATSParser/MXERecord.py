@@ -1,9 +1,13 @@
 """ Module fro Mutually Exclusive Exons """
 from __future__ import annotations
-from typing import List
-from moPepGen import seqvar, gtf, dna
-from moPepGen.SeqFeature import FeatureLocation
+from typing import TYPE_CHECKING, List, Tuple
+from moPepGen import gtf, dna, seqvar
 from .RMATSRecord import RMATSRecord
+
+
+if TYPE_CHECKING:
+    from moPepGen.seqvar import SpliceJunction
+
 
 class MXERecord(RMATSRecord):
     """ Mutually Exclusive Exons """
@@ -59,124 +63,79 @@ class MXERecord(RMATSRecord):
             fdr=None if fields[21] == 'NA' else float(fields[21])
         )
 
+    def create_variant_id(self, anno:gtf.GenomicAnnotation) -> str:
+        """ Create variant ID """
+        uee = anno.coordinate_genomic_to_gene(self.upstream_exon_end - 1, self.gene_id)
+        fes = anno.coordinate_genomic_to_gene(self.first_exon_start, self.gene_id)
+        fee = anno.coordinate_genomic_to_gene(self.first_exon_end - 1, self.gene_id)
+        ses = anno.coordinate_genomic_to_gene(self.second_exon_start, self.gene_id)
+        see = anno.coordinate_genomic_to_gene(self.second_exon_end - 1, self.gene_id)
+        des = anno.coordinate_genomic_to_gene(self.downstream_exon_start, self.gene_id)
+
+        gene_model = anno.genes[self.gene_id]
+        if gene_model.strand == -1:
+            uee, des = des, uee
+            fes, fee = fee, fes
+            ses, see = see, ses
+
+        uee += 1
+        fee += 1
+        see += 1
+
+        return f"MXE_{uee}-{fes}-{fee}-{ses}-{see}-{des}"
+
+    def create_splice_junctions(self
+            ) -> Tuple[SpliceJunction, SpliceJunction, SpliceJunction, SpliceJunction]:
+        """ Create splice junctions """
+        first_downstream_junction = seqvar.SpliceJunction(
+            upstream_start=self.first_exon_start,
+            upstream_end=self.first_exon_end,
+            downstream_start=self.downstream_exon_start,
+            downstream_end=self.downstream_exon_end,
+            gene_id=self.gene_id,
+            chrom=self.chrom
+        )
+        second_upstream_junction = seqvar.SpliceJunction(
+            upstream_start=self.upstream_exon_start,
+            upstream_end=self.upstream_exon_end,
+            downstream_start=self.second_exon_start,
+            downstream_end=self.second_exon_end,
+            gene_id=self.gene_id,
+            chrom=self.chrom
+        )
+        return first_downstream_junction, second_upstream_junction
+
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict, min_ijc:int, min_sjc:int
             ) -> List[seqvar.VariantRecord]:
         variants = []
+
         gene_model = anno.genes[self.gene_id]
-        tx_ids = gene_model.transcripts
-        chrom = gene_model.location.seqname
-        strand = gene_model.location.strand
-        gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-        ref_has_first:List[str] = []
-        ref_has_second:List[str] = []
+        first_downstream_junction, second_upstream_junction \
+            = self.create_splice_junctions()
 
-        for tx_id in tx_ids:
-            model = anno.transcripts[tx_id]
-            it = iter(model.exon)
-            exon = next(it, None)
-            while exon:
-                if int(exon.location.end) != self.upstream_exon_end:
-                    exon = next(it, None)
-                    continue
-                exon = next(it, None)
-                if not exon:
-                    break
-                if int(exon.location.start) == self.first_exon_start and \
-                        int(exon.location.end) == self.first_exon_end:
-                    exon = next(it, None)
-                    if not exon:
-                        break
-                    if int(exon.location.start) == self.downstream_exon_start:
-                        if strand == 1:
-                            ref_has_first.append(tx_id)
-                        else:
-                            ref_has_second.append(tx_id)
-                    elif int(exon.location.start) == self.second_exon_start and \
-                            int(exon.location.end) == self.second_exon_end:
-                        exon = next(it, None)
-                        if not exon:
-                            break
-                elif int(exon.location.start) == self.second_exon_start and \
-                        int(exon.location.end) == self.second_exon_end:
-                    exon = next(it, None)
-                    if not exon:
-                        break
-                    if int(exon.location.start) == self.downstream_exon_start:
-                        if strand == 1:
-                            ref_has_second.append(tx_id)
-                        else:
-                            ref_has_first.append(tx_id)
-
-        if (ref_has_first and ref_has_second) or \
-                (not ref_has_first and not ref_has_second):
+        if not first_downstream_junction.is_novel(anno)\
+                and not second_upstream_junction.is_novel(anno):
             return variants
 
-        if strand == 1:
-            first_start = anno.coordinate_genomic_to_gene(
-                self.first_exon_start, self.gene_id)
-            first_end = anno.coordinate_genomic_to_gene(
-                self.first_exon_end - 1, self.gene_id) + 1
-            second_start = anno.coordinate_genomic_to_gene(
-                self.second_exon_start, self.gene_id)
-            second_end = anno.coordinate_genomic_to_gene(
-                self.second_exon_end - 1, self.gene_id) + 1
-        else:
-            first_start = anno.coordinate_genomic_to_gene(
-                self.second_exon_end - 1, self.gene_id)
-            first_end = anno.coordinate_genomic_to_gene(
-                self.second_exon_start, self.gene_id) + 1
-            second_start = anno.coordinate_genomic_to_gene(
-                self.first_exon_end - 1, self.gene_id)
-            second_end = anno.coordinate_genomic_to_gene(
-                self.first_exon_start, self.gene_id) + 1
+        tx_ids = gene_model.transcripts
+        chrom = gene_model.location.seqname
+        gene_seq = gene_model.get_gene_sequence(genome[chrom])
+        var_id = self.create_variant_id(anno)
 
-        _id = f'MXE_{first_start + 1}-{first_end}:' +\
-            f'{second_start}-{second_end}'
+        for tx_id in tx_ids:
+            tx_model = anno.transcripts[tx_id]
 
-        if not ref_has_second and self.sjc_sample_1 >= min_sjc:
-            location = FeatureLocation(seqname=self.gene_id, start=first_start,
-                end=first_end)
-            for tx_id in ref_has_first:
-                ref = str(gene_seq.seq[first_start])
-                alt = '<SUB>'
-                attrs = {
-                    'TRANSCRIPT_ID': tx_id,
-                    'START': first_start,
-                    'END': first_end,
-                    'DONOR_START': second_start,
-                    'DONOR_END': second_end,
-                    'DONOR_GENE_ID': self.gene_id,
-                    'COORDINATE': 'gene',
-                    'GENE_SYMBOL': model.transcript.gene_name,
-                    'GENOMIC_POSITION': f'{chrom}-{first_start + 1}:{first_end}-'
-                    f'{second_start + 1}:{second_end}'
-                }
-                _type = 'Substitution'
-                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-                variants.append(record)
+            # For MXE, the first exon is 'inclusion' and second is 'skipped'.
+            if self.ijc_sample_1 >= min_ijc:
+                aln = first_downstream_junction.align_to_transcript(tx_model, True, False)
+                if aln:
+                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
-        # For MXE, the first exon is 'inclusion' and second is 'skipped'.
-        if not ref_has_first and self.ijc_sample_1 >= min_ijc:
-            location = FeatureLocation(seqname=self.gene_id, start=second_start,
-                end=second_end)
-            for tx_id in ref_has_second:
-                ref = str(gene_seq.seq[second_start])
-                alt = '<SUB>'
-                attrs = {
-                    'TRANSCRIPT_ID': tx_id,
-                    'START': second_start,
-                    'END': second_end,
-                    'DONOR_START': first_start,
-                    'DONOR_END': first_end,
-                    'DONOR_GENE_ID': self.gene_id,
-                    'GENE_SYMBOL': gene_model.gene_name,
-                    'GENOMIC_POSITION': f'{chrom}-{second_start + 1}:{second_end}-'
-                    f'{first_start + 1}:{first_end}'
-                }
-                _type = 'Substitution'
-                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-                variants.append(record)
+            if self.sjc_sample_1 > min_sjc:
+                aln = second_upstream_junction.align_to_transcript(tx_model, False, True)
+                if aln:
+                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
-        return variants
+        return list(set(variants))

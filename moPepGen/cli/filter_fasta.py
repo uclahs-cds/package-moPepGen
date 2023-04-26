@@ -128,8 +128,12 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
 
 def filter_fasta(args:argparse.Namespace) -> None:
     """ Filter noncanonical peptide FASTA """
-    common.validate_file_format(args.input_path, INPUT_FILE_FORMATS, True)
-    common.validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(
+        args.input_path, INPUT_FILE_FORMATS, check_readable=True
+    )
+    common.validate_file_format(
+        args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     if args.miscleavages is not None and not ':' in args.miscleavages:
         raise ValueError('Value invalid for --miscleavages. Must be [min]:[max]')

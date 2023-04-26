@@ -1,9 +1,13 @@
 """ Module for rMATS parser """
 from __future__ import annotations
-from typing import List
+from typing import TYPE_CHECKING, List, Tuple
 from moPepGen import gtf, dna, seqvar
-from moPepGen.SeqFeature import FeatureLocation
 from .RMATSRecord import RMATSRecord
+
+
+if TYPE_CHECKING:
+    from moPepGen.seqvar import SpliceJunction
+
 
 class SERecord(RMATSRecord):
     """ Skipped Exon """
@@ -54,104 +58,86 @@ class SERecord(RMATSRecord):
             fdr=None if fields[19] == 'NA' else float(fields[19])
         )
 
+    def create_variant_id(self, anno:gtf.GenomicAnnotation) -> str:
+        """ Create variant ID """
+        uee = anno.coordinate_genomic_to_gene(self.upstream_exon_end - 1, self.gene_id)
+        es = anno.coordinate_genomic_to_gene(self.exon_start, self.gene_id)
+        ee = anno.coordinate_genomic_to_gene(self.exon_end - 1, self.gene_id)
+        des = anno.coordinate_genomic_to_gene(self.downstream_exon_start, self.gene_id)
+
+        gene_model = anno.genes[self.gene_id]
+        if gene_model.strand == -1:
+            es, ee = ee, es
+            uee, des = des, uee
+        ee += 1
+        des += 1
+
+        return f"SE_{uee}-{es}-{ee}-{des}"
+
+    def create_splice_junctions(self
+            ) -> Tuple[SpliceJunction, SpliceJunction, SpliceJunction]:
+        """ Create splice junctions """
+        skip_junction = seqvar.SpliceJunction(
+            upstream_start=self.upstream_exon_start,
+            upstream_end=self.upstream_exon_end,
+            downstream_start=self.downstream_exon_start,
+            downstream_end=self.downstream_exon_end,
+            gene_id=self.gene_id,
+            chrom=self.chrom
+        )
+        upstream_junction = seqvar.SpliceJunction(
+            upstream_start=self.upstream_exon_start,
+            upstream_end=self.upstream_exon_end,
+            downstream_start=self.exon_start,
+            downstream_end=self.exon_end,
+            gene_id=self.gene_id,
+            chrom=self.chrom
+        )
+        downstream_junction = seqvar.SpliceJunction(
+            upstream_start=self.exon_start,
+            upstream_end=self.exon_end,
+            downstream_start=self.downstream_exon_start,
+            downstream_end=self.downstream_exon_end,
+            gene_id=self.gene_id,
+            chrom=self.chrom
+        )
+        return skip_junction, upstream_junction, downstream_junction
+
     def convert_to_variant_records(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict, min_ijc:int, min_sjc:int
             ) -> List[seqvar.VariantRecord]:
         """ Convert to variant records """
         variants = []
+
         gene_model = anno.genes[self.gene_id]
-        transcript_ids = gene_model.transcripts
+
+        skip_junction, upstream_junction, downstream_junction \
+            = self.create_splice_junctions()
+
+        if not skip_junction.is_novel(anno) \
+                and not upstream_junction.is_novel(anno)\
+                and not downstream_junction.is_novel(anno):
+            return variants
+
+        tx_ids = gene_model.transcripts
         chrom = gene_model.location.seqname
         gene_seq = gene_model.get_gene_sequence(genome[chrom])
+        var_id = self.create_variant_id(anno)
 
-        skipped_in_ref:List[str] = []
-        retained_in_ref:List[str] = []
+        for tx_id in tx_ids:
+            tx_model = anno.transcripts[tx_id]
 
-        for tx_id in transcript_ids:
-            model = anno.transcripts[tx_id]
-            it = iter(model.exon)
-            exon = next(it, None)
+            if self.sjc_sample_1 >= min_sjc:
+                aln = skip_junction.align_to_transcript(tx_model, False, False)
+                if aln:
+                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
-            while exon:
-                if exon.location.start != self.upstream_exon_start:
-                    exon = next(it, None)
-                    continue
+            if self.ijc_sample_1 >= min_ijc:
+                aln = upstream_junction.align_to_transcript( tx_model, False, True)
+                if aln:
+                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
+                aln = downstream_junction.align_to_transcript(tx_model, True, False)
+                if aln:
+                    variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
-                exon = next(it, None)
-                if not exon:
-                    continue
-
-                if int(exon.location.start) == self.downstream_exon_start:
-                    skipped_in_ref.append(tx_id)
-                    break
-                if exon.location.start == self.exon_start and \
-                        exon.location.end == self.exon_end:
-                    exon = next(it, None)
-                    if not exon:
-                        continue
-                    if int(exon.location.start) == self.downstream_exon_start:
-                        retained_in_ref.append(tx_id)
-                        break
-
-        if skipped_in_ref and retained_in_ref:
-            return variants
-
-        if not skipped_in_ref and not retained_in_ref:
-            return variants
-
-        start = anno.coordinate_genomic_to_gene(self.exon_start, self.gene_id)
-        end = anno.coordinate_genomic_to_gene(self.exon_end - 1, self.gene_id)
-        if gene_model.strand == -1:
-            start, end = end, start
-        end += 1
-        ref = str(gene_seq.seq[start])
-
-        genomic_position = f'{chrom}:{self.exon_start+1}:{self.exon_end}'
-
-        # For SE, the skipped is 'skipped', and inclusion is 'inclusion'
-        # what a nonsense comment
-        if not skipped_in_ref and self.sjc_sample_1 >= min_sjc:
-            location = FeatureLocation(seqname=self.gene_id, start=start, end=end)
-            for tx_id in retained_in_ref:
-                alt = '<DEL>'
-                attrs = {
-                    'TRANSCRIPT_ID': tx_id,
-                    'START': start,
-                    'END': end,
-                    'GENE_SYMBOL': gene_model.gene_name,
-                    'GENOMIC_POSITION': genomic_position
-                }
-                _type = 'Deletion'
-                _id = f'SE_{start}'
-                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-                variants.append(record)
-
-        if not retained_in_ref and self.ijc_sample_1 >= min_ijc:
-            if gene_model.strand == 1:
-                insert_position = anno.coordinate_genomic_to_gene(
-                    index=self.upstream_exon_end - 1,
-                    gene=self.gene_id
-                )
-            else:
-                insert_position = anno.coordinate_genomic_to_gene(
-                    index=self.downstream_exon_start,
-                    gene=self.gene_id
-                )
-            location = FeatureLocation(seqname=self.gene_id, start=insert_position,
-                end=insert_position + 1)
-            for tx_id in skipped_in_ref:
-                ref = str(gene_seq.seq[insert_position])
-                alt = '<INS>'
-                attrs = {
-                    'TRANSCRIPT_ID': tx_id,
-                    'DONOR_START': start,
-                    'DONOR_END': end,
-                    'DONOR_GENE_ID': self.gene_id,
-                    'GENE_SYMBOL': gene_model.gene_name,
-                    'GENOMIC_POSITION': genomic_position
-                }
-                _type = 'Insertion'
-                _id = f'SE_{start}'
-                record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
-                variants.append(record)
         return variants

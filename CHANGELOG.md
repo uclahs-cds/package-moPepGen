@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.12.0] - 2023-03-13
+## [0.12.0] - 2023-04-18
 
 ### Added
 
@@ -35,6 +35,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - In ThreeFrameTVG when aligning variant bubbles and when nodes are merged, variants were not merged correctly.
 
 - Fixed TVG that indel merged with downstream fusion treated as subgraph out. #708
+
+- Fixed `parseRMATS` to handle more complex situations such as exons interjacent between splicing sites and exons spanning over the splicing site. #715, #716, #717, and PR #720
+
+- Fixed `callVariant` that failed when there is a SNV very close to the end on a AltSplice insertion. #723
+
+- Fixed `TranscriptAnnotationModel` for not recognizing transcripts with `mRNA_end_NF` correctly. #724
 
 ## [0.11.5] - 2023-3-5
 

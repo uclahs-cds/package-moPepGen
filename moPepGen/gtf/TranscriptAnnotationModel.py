@@ -318,7 +318,7 @@ class TranscriptAnnotationModel():
     def is_mrna_end_nf(self) -> bool:
         """ Returns if the transcript has the tag of mrna_end_NF """
         return 'tag' in self.transcript.attributes and \
-            'mrna_end_NF' in self.transcript.attributes['tag']
+            'mRNA_end_NF' in self.transcript.attributes['tag']
 
     def transcript_len(self) -> int:
         """ Get the transcript length minus introns """
@@ -385,3 +385,53 @@ class TranscriptAnnotationModel():
         if ind == -1:
             raise ValueError("Could not find the upstream exon end.")
         return ind
+
+    def get_exon_with_start(self, start:int, offset:int=0) -> int:
+        """ Get the exon with a given START position. """
+        for i, exon in enumerate(self.exon[offset:]):
+            if exon.location.start == start:
+                return i + offset
+        return -1
+
+    def get_exon_with_end(self, end:int, offset:int=0) -> int:
+        """ Get the exon with a given end position. """
+        for i, exon in enumerate(self.exon[offset:]):
+            if exon.location.end == end:
+                return i + offset
+        return -1
+
+    def get_exon_overlaps(self, loc:FeatureLocation, offset:int=0) -> int:
+        """ Get exons that overlap with a given location """
+        indices = []
+        for i, exon in enumerate(self.exon[offset:]):
+            if exon.location.overlaps(loc):
+                indices.append(i + offset)
+        return indices
+
+    def get_exon_containing(self, pos:int) -> int:
+        """ Get exon that contains a position """
+        for i, exon in enumerate(self.exon):
+            if pos in exon.location:
+                return i
+        return -1
+
+    def get_exon_inner(self, loc:FeatureLocation, offset:int=0) -> int:
+        """ get exon that are inner subset of a given location """
+        indices = []
+        for i, exon in enumerate(self.exon[offset:]):
+            if loc.is_superset(exon.location):
+                indices.append(i + offset)
+        return indices
+
+    def has_junction(self, junction:FeatureLocation) -> bool:
+        """ Checks if has the given junction """
+        for i, exon1 in enumerate(self.exon):
+            if exon1 is self.exon[-1]:
+                break
+            exon2 = self.exon[i + 1]
+            if exon2.location.start > junction.end:
+                break
+            if exon1.location.end == junction.start \
+                    and exon2.location.start == junction.end:
+                return True
+        return False

@@ -90,9 +90,13 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
 
 def call_noncoding_peptide(args:argparse.Namespace) -> None:
     """ Main entrypoint for calling noncoding peptide """
-    common.validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(
+        args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
     if args.output_orf:
-        common.validate_file_format(args.output_orf, OUTPUT_FILE_FORMATS)
+        common.validate_file_format(
+            args.output_orf, OUTPUT_FILE_FORMATS, check_writable=True
+        )
 
     cleavage_params = params.CleavageParams(
         enzyme=args.cleavage_rule,

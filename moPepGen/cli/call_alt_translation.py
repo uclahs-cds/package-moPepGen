@@ -54,7 +54,9 @@ def add_subparser_call_alt_translation(subparsers:argparse._SubParsersAction):
 
 def call_alt_translation(args:argparse.Namespace) -> None:
     """ Main entrypoint for calling alternative translation peptides """
-    common.validate_file_format(args.output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(
+        args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     cleavage_params = params.CleavageParams(
         enzyme=args.cleavage_rule,

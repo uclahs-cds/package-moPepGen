@@ -1,6 +1,5 @@
 """ Test the moPepGen parseRMATS """
 import argparse
-import os
 from pathlib import Path
 import subprocess as sp
 import sys
@@ -81,6 +80,43 @@ class TestParseRMATS(TestCaseIntegration):
         self.assertTrue(record.type, 'Insertion')
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
+    def test_parse_rmats_se_case_3(self):
+        """ Complex cases with:
+        1. Multiple exons skipped.
+        2. Upstream adjacent exons
+        3. Downstream adjacent exons
+        """
+        args = self.create_base_args()
+        args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_3.txt'
+        cli.parse_rmats(args)
+        records = list(seqvar.io.parse(args.output_path))
+        expect_values = {
+            ('Deletion', 323, 405),
+            ('Deletion', 323, 750),
+            ('Deletion', 405, 869),
+            ('Deletion', 750, 869),
+            ('Substitution', 750, 1097, 1097, 1264),
+            ('Substitution', 323, 405, 405, 750),
+            ('Insertion', 404, 405, 750)
+        }
+        received_values = set()
+        for record in records:
+            if record.type == 'Deletion':
+                received_values.add(
+                    ('Deletion', int(record.attrs['START']), int(record.attrs['END']))
+                )
+            elif record.type == 'Substitution':
+                received_values.add((
+                    'Substitution', int(record.attrs['START']), int(record.attrs['END']),
+                    int(record.attrs['DONOR_START']), int(record.attrs['DONOR_END'])
+                ))
+            else:
+                received_values.add((
+                    'Insertion', record.location.start,
+                    int(record.attrs['DONOR_START']), int(record.attrs['DONOR_END'])
+                ))
+        self.assertEqual(received_values, expect_values)
+
     def test_parse_rmats_a5ss_case_1(self):
         """ rMATS A5SS when the longer version is annotated. This should
         results a deletion. """
@@ -132,13 +168,12 @@ class TestParseRMATS(TestCaseIntegration):
         self.assert_gvf_order(Path(args.output_path), args.annotation_gtf)
 
     def test_parse_rmats_mxe_case_2(self):
-        """ rMATS MXE when both exons are annotated. MXE on transcript that
-        contains both, no records should be kept. """
+        """ rMATS MXE when both exons are annotated. Should be two deletions """
         args = self.create_base_args()
         args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_2.txt'
         cli.parse_rmats(args)
-        filename = Path(args.output_path).name
-        self.assertNotIn(filename, os.listdir(self.work_dir))
+        records = list(seqvar.io.parse(args.output_path))
+        self.assertTrue(all(v.type == 'Deletion' for v in records))
 
     def test_parse_rmats_ri(self):
         """ rMATS RI. """

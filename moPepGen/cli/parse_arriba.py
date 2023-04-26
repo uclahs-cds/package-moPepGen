@@ -63,8 +63,12 @@ def parse_arriba(args:argparse.Namespace) -> None:
     # unpack args
     fusion = args.input_path
     output_path:Path = args.output_path
-    common.validate_file_format(fusion, INPUT_FILE_FORMATS, True)
-    common.validate_file_format(output_path, OUTPUT_FILE_FORMATS)
+    common.validate_file_format(
+        fusion, INPUT_FILE_FORMATS, check_readable=True
+    )
+    common.validate_file_format(
+        output_path, OUTPUT_FILE_FORMATS, check_writable=True
+    )
 
     min_split_read1:int = args.min_split_read1
     min_split_read2:int = args.min_split_read2

@@ -104,10 +104,14 @@ def add_subparser_split_fasta(subparser:argparse._SubParsersAction):
 def split_fasta(args:argparse.Namespace) -> None:
     """ Split peptide database """
     for file in args.gvf:
-        common.validate_file_format(file, GVF_FILE_FORMAT, True)
+        common.validate_file_format(
+            file, GVF_FILE_FORMAT, check_readable=True
+        )
     for file in [args.variant_peptides, args.noncoding_peptides]:
         if file is not None:
-            common.validate_file_format(file, FASTA_FILE_FORMAT, True)
+            common.validate_file_format(
+                file, FASTA_FILE_FORMAT, check_readable=True
+            )
 
     common.print_start_message(args)
 
