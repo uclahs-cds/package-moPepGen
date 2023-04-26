@@ -1335,9 +1335,15 @@ class ThreeFrameTVG():
         if not node.get_reference_next().out_edges:
             return node.get_reference_next(), set()
 
-        is_candidate_out_node = lambda x,y: \
-                subgraph_checker is False \
-                or x.get_last_subgraph_id() == y.get_first_subgraph_id() \
+        def is_candidate_out_node(x, y):
+            # Note: have to use y.subgraph_id because for deletion, subgraph_id
+            # is different from get_first_subgraph_id()
+            try:
+                is_in_subgraph = x.get_last_subgraph_id() == y.subgraph_id
+            except IndexError:
+                is_in_subgraph = x.subgraph_id == y.subgraph_id
+            return subgraph_checker is False \
+                or is_in_subgraph \
                 or self.is_fusion_subgraph_out(x,y)
 
         queue:Deque[TVGNode] = deque([])

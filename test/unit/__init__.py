@@ -215,7 +215,7 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
                 query=FeatureLocation(start=left, end=right,
                     reading_frame_index=orf_idx),
                 ref=FeatureLocation(start=ref_start, end=ref_end,
-                    reading_frame_index=orf_idx)
+                    reading_frame_index=orf_idx, seqname=graph_id)
             )
             seq_locations.append(seq_location)
 
