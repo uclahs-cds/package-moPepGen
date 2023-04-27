@@ -1244,7 +1244,7 @@ class ThreeFrameTVG():
             # of indel on AltSplice Ins/Sub that goes back to original reading
             # frame. We may have to change it to check whether any segment of
             # the node has different rf index. Issue #726
-            is_hybrid_bridge_out = cur.get_last_rf_index() != this_id
+            is_hybrid_bridge_out = cur.get_last_rf_index() != this_id and cur not in members
 
             is_bridge_out |= is_hybrid_bridge_out
 
