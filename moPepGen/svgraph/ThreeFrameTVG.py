@@ -1687,16 +1687,15 @@ class ThreeFrameTVG():
                 # The downstream should be end of a subgraph so nothing needs
                 # to be returned.
                 return []
-            else:
-                right_over = downstream.truncate_left(right_index)
-                for in_node in downstream.get_in_nodes():
-                    in_node.append_right(right_over)
-                if downstream.seq.seq == '':
-                    if downstream.get_out_nodes():
-                        raise ValueError(downstream_empty_error_msg)
-                    self.remove_node(downstream)
-                    return []
-                return [downstream]
+            right_over = downstream.truncate_left(right_index)
+            for in_node in downstream.get_in_nodes():
+                in_node.append_right(right_over)
+            if downstream.seq.seq == '':
+                if downstream.get_out_nodes():
+                    raise ValueError(downstream_empty_error_msg)
+                self.remove_node(downstream)
+                return []
+            return [downstream]
         # number of NT to be carried over to the downstreams.
         if start.seq:
             left_index = len(start.seq) - len(start.seq) % 3
