@@ -1682,15 +1682,21 @@ class ThreeFrameTVG():
         if len(start.out_edges) == 1 and len(start.get_out_nodes()[0].in_edges) > 1:
             downstream = start.get_out_nodes()[0]
             right_index = (3 - len(start.seq) % 3) % 3
-            right_over = downstream.truncate_left(right_index)
-            for in_node in downstream.get_in_nodes():
-                in_node.append_right(right_over)
-            if downstream.seq.seq == '':
-                if downstream.get_out_nodes():
-                    raise ValueError(downstream_empty_error_msg)
-                self.remove_node(downstream)
+            if right_index >= len(downstream.seq.seq):
+                self.merge_into_inbonds(downstream)
+                # The downstream should be end of a subgraph so nothing needs
+                # to be returned.
                 return []
-            return [downstream]
+            else:
+                right_over = downstream.truncate_left(right_index)
+                for in_node in downstream.get_in_nodes():
+                    in_node.append_right(right_over)
+                if downstream.seq.seq == '':
+                    if downstream.get_out_nodes():
+                        raise ValueError(downstream_empty_error_msg)
+                    self.remove_node(downstream)
+                    return []
+                return [downstream]
         # number of NT to be carried over to the downstreams.
         if start.seq:
             left_index = len(start.seq) - len(start.seq) % 3
@@ -1803,6 +1809,7 @@ class ThreeFrameTVG():
                 queue.appendleft(cur)
                 continue
 
+            cur_seq = str(cur.seq.seq)
             self.align_variants(cur)
 
             self.collapse_equivalent_nodes(cur)
