@@ -1244,9 +1244,13 @@ class ThreeFrameTVG():
             # of indel on AltSplice Ins/Sub that goes back to original reading
             # frame. We may have to change it to check whether any segment of
             # the node has different rf index. Issue #726
-            is_hybrid_bridge_out = cur.get_last_rf_index() != this_id and cur not in members
+            is_hybrid_bridge_out = cur.get_last_rf_index() != this_id \
+                and not cur.is_reference()
 
-            is_bridge_out |= is_hybrid_bridge_out
+            is_internal_bridge = all(x in members for x in cur.get_in_nodes()) \
+                and all(x in members for x in cur.get_out_nodes())
+
+            is_bridge_out |= (is_hybrid_bridge_out and not is_internal_bridge)
 
             if is_bridge_out and cur is not end:
                 bridge_out.add(cur)
@@ -1354,7 +1358,6 @@ class ThreeFrameTVG():
             return subgraph_checker is False \
                 or x.get_max_subgraph_id(self.subgraphs) == y.subgraph_id \
                 or self.is_fusion_subgraph_out(x,y)
-                # or len(y.variants) == 1 and y.variants[0].variant.type == 'Deletion' and y.variants[0].variant.frames_shifted() == 0
 
         queue:Deque[TVGNode] = deque([])
         for out_node in node.get_out_nodes():
