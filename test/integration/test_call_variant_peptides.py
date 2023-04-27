@@ -982,3 +982,16 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/36/brute_force.txt'
         reference = self.data_dir/'fuzz/36'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case65(self):
+        """ Test case when an altSplice insertion carries an intronic indel
+        that goes back to orignial reading frame. #726
+        """
+        gvf = [
+            self.data_dir/'comb/CPCG0196_ENST00000554360.5/altSplice.gvf',
+            self.data_dir/'comb/CPCG0196_ENST00000554360.5/gIndel.gvf',
+            self.data_dir/'comb/CPCG0196_ENST00000554360.5/gSNP.gvf'
+        ]
+        expected = self.data_dir/'comb/CPCG0196_ENST00000554360.5/brute_force.txt'
+        reference = self.data_dir/'comb/CPCG0196_ENST00000554360.5'
+        self.default_test_case(gvf, reference, expected)

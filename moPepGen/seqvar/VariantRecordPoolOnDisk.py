@@ -116,6 +116,7 @@ class VariantRecordPoolOnDisk():
         records:List[Union[VariantRecord, CircRNAModel]] = []
         for pointer in self.pointers[key]:
             records += pointer.load()
+        records = set(records)
         series = TranscriptionalVariantSeries()
         cached_seqs:Dict[str, DNASeqRecordWithCoordinates] = {}
         for record in records:

@@ -201,7 +201,7 @@ class VariantRecord():
         right_insert_start = self.attrs.get('RIGHT_INSERT_START')
         right_insert_end = self.attrs.get('RIGHT_INSERT_END')
         return hash((self.location.start, self.location.end, self.ref, self.alt,
-            self.type, self.id, donor_tx_id, start, end, donor_start, donor_end,
+            self.type, donor_tx_id, start, end, donor_start, donor_end,
             left_insert_start, left_insert_end, right_insert_start, right_insert_end))
 
     def __repr__(self) -> str:

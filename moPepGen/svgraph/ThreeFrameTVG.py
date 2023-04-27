@@ -515,6 +515,8 @@ class ThreeFrameTVG():
         cursors = copy.copy(cursors)
         var_tails = []
         subgraph_id = self.subgraphs.generate_subgraph_id()
+        for loc in seq.locations:
+            loc.ref.seqname = subgraph_id
         branch = ThreeFrameTVG(
             seq, subgraph_id,
             global_variant=var.variant,
@@ -538,6 +540,7 @@ class ThreeFrameTVG():
         for rf_index, root in enumerate(branch.reading_frames):
             var_i = copy.deepcopy(var)
             var_i.location.reading_frame_index = rf_index
+            var_i.location.seqname = subgraph_id
             node = list(root.out_edges)[0].out_node
             node.variants.append(var_i)
         branch.create_variant_graph(
@@ -778,6 +781,7 @@ class ThreeFrameTVG():
         for rf_index, root in enumerate(branch.reading_frames):
             var_i = copy.deepcopy(var)
             var_i.location.reading_frame_index = rf_index
+            var_i.location.seqname = subgraph_id
             node = list(root.out_edges)[0].out_node
             node.variants.append(var_i)
             is_frameshifting = False
@@ -988,8 +992,10 @@ class ThreeFrameTVG():
             # if the transcript is mrna_end_NF, we are not going to use any
             # variants in the annotated 3'UTR region.
             if self.mrna_end_nf and not is_fusion:
+                tx_end = self.seq.orf.end if self.seq.orf is not None \
+                    else len(self.seq.seq)
                 orf_end_trinuc = FeatureLocation(
-                    start=self.seq.orf.end-3, end=self.seq.orf.end
+                    start=tx_end - 3, end=tx_end
                 )
                 if v.location.overlaps(orf_end_trinuc):
                     continue
@@ -1232,6 +1238,19 @@ class ThreeFrameTVG():
                     and e.out_node not in members
                 for e in cur.out_edges
             )
+            # hybrid bridge out is when the node is already processed at least
+            # once by merging it with downstream nodes, so different segment.
+            # of the node has different rf index. This is to handle a combination
+            # of indel on AltSplice Ins/Sub that goes back to original reading
+            # frame. We may have to change it to check whether any segment of
+            # the node has different rf index. Issue #726
+            is_hybrid_bridge_out = cur.get_last_rf_index() != this_id \
+                and not cur.is_reference()
+
+            is_internal_bridge = all(x in members for x in cur.get_in_nodes()) \
+                and all(x in members for x in cur.get_out_nodes())
+
+            is_bridge_out |= (is_hybrid_bridge_out and not is_internal_bridge)
 
             if is_bridge_out and cur is not end:
                 bridge_out.add(cur)
@@ -1329,9 +1348,15 @@ class ThreeFrameTVG():
         if not node.get_reference_next().out_edges:
             return node.get_reference_next(), set()
 
-        is_candidate_out_node = lambda x,y: \
-                subgraph_checker is False \
-                or x.subgraph_id == y.subgraph_id \
+        def is_candidate_out_node(x, y):
+            # Note: have to use y.subgraph_id because for deletion, subgraph_id
+            # is different from get_first_subgraph_id()
+            # try:
+            #     is_in_subgraph = x.get_last_subgraph_id() == y.subgraph_id
+            # except IndexError:
+            #     is_in_subgraph = x.subgraph_id == y.subgraph_id
+            return subgraph_checker is False \
+                or x.get_max_subgraph_id(self.subgraphs) == y.subgraph_id \
                 or self.is_fusion_subgraph_out(x,y)
 
         queue:Deque[TVGNode] = deque([])
@@ -1543,9 +1568,25 @@ class ThreeFrameTVG():
                     new_bridges.add(cur)
                 continue
 
+            # When all out nodes are in `end_nodes`. This is to avoid the `cur`
+            # to be replicated.
+            if all(x in end_nodes for x in cur.get_out_nodes()):
+                new_node = cur.copy()
+                trash.add(cur)
+                for edge in cur.out_edges:
+                    self.add_edge(new_node, edge.out_node, _type=edge.type)
+                if cur not in bridge_map:
+                    new_nodes.add(new_node)
+                else:
+                    bridge_map[new_node] = bridge_map[cur]
+                    new_bridges.add(new_node)
+                continue
+
             for out_edge in copy.copy(cur.out_edges):
                 out_node:TVGNode = out_edge.out_node
 
+                # So this is the case that some of the end_nodes are in end_nodes
+                # but not the others.
                 if out_node in end_nodes:
                     new_node = cur.copy()
                     trash.add(cur)
@@ -1641,6 +1682,11 @@ class ThreeFrameTVG():
         if len(start.out_edges) == 1 and len(start.get_out_nodes()[0].in_edges) > 1:
             downstream = start.get_out_nodes()[0]
             right_index = (3 - len(start.seq) % 3) % 3
+            if right_index >= len(downstream.seq.seq):
+                self.merge_into_inbonds(downstream)
+                # The downstream should be end of a subgraph so nothing needs
+                # to be returned.
+                return []
             right_over = downstream.truncate_left(right_index)
             for in_node in downstream.get_in_nodes():
                 in_node.append_right(right_over)

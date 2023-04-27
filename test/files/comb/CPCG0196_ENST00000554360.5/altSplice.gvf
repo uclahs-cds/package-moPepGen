@@ -1,0 +1,20 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.12.0
+##parser=parseRMATS
+##reference_index=/hot/project/method/AlgorithmDevelopment/ALGO-000074-moPepGen/ref/GRCh38-EBI-GENCODE34/index
+##genome_fasta=
+##annotation_gtf=
+##source=altSplice
+##CHROM=<Description="Gene ID">
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000257621.8	12379	SE_6499-23999-24156-30742	A	<SUB>	.	.	TRANSCRIPT_ID=ENST00000554360.5;START=12379;END=12544;DONOR_START=24000;DONOR_END=24124;DONOR_GENE_ID=ENSG00000257621.8;GENE_SYMBOL=PSMA3-AS1;GENOMIC_POSITION=chr14:58285591:58285756
+ENSG00000257621.8	12379	SE_6499-23999-24156-30742	A	<DEL>	.	.	TRANSCRIPT_ID=ENST00000554360.5;START=12379;END=24156;GENE_SYMBOL=PSMA3-AS1;GENOMIC_POSITION=chr14:58273979:58285756
+ENSG00000257621.8	12544	SE_12543-23999-24038-24125	G	<INS>	.	.	TRANSCRIPT_ID=ENST00000554360.5;DONOR_GENE_ID=ENSG00000257621.8;DONOR_START=24000;DONOR_END=24038;GENE_SYMBOL=PSMA3-AS1;GENOMIC_POSITION=chr14:58285591:58285592

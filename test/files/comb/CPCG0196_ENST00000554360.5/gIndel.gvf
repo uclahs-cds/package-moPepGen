@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.12.0
+##parser=parseVEP
+##reference_index=/hot/project/method/AlgorithmDevelopment/ALGO-000074-moPepGen/ref/GRCh38-EBI-GENCODE34/index
+##genome_fasta=
+##annotation_gtf=
+##source=gIndel
+##CHROM=<Description="Gene ID">
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000257621.8	24121	MNV-24121-TT-T	TT	T	.	.	TRANSCRIPT_ID=ENST00000554360.5;GENOMIC_POSITION=chr14:58274013;GENE_SYMBOL=PSMA3-AS1

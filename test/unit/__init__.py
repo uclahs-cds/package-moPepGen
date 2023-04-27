@@ -178,8 +178,10 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
             var_start = var_data[5] if len(var_data) >= 6 else var_data[0]
             var_end = var_data[6] if len(var_data) >= 7 else \
                     var_start + len(var_data[1])
-            var_location = FeatureLocation(start=var_start, end=var_end,
-                reading_frame_index=orf_idx)
+            var_location = FeatureLocation(
+                start=var_start, end=var_end, reading_frame_index=orf_idx,
+                seqname=graph_id
+            )
             variant = seqvar.VariantRecordWithCoordinate(
                 variant=var_record,
                 location=var_location
@@ -198,7 +200,8 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
                         start=left, end=right, reading_frame_index=orf_idx
                     ),
                     ref=FeatureLocation(
-                        start=ref_start, end=ref_end, reading_frame_index=orf_idx
+                        start=ref_start, end=ref_end, reading_frame_index=orf_idx,
+                        seqname=graph_id
                     )
                 )
                 seq_locations.append(seq_location)
@@ -212,7 +215,7 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
                 query=FeatureLocation(start=left, end=right,
                     reading_frame_index=orf_idx),
                 ref=FeatureLocation(start=ref_start, end=ref_end,
-                    reading_frame_index=orf_idx)
+                    reading_frame_index=orf_idx, seqname=graph_id)
             )
             seq_locations.append(seq_location)
 

@@ -42,6 +42,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `TranscriptAnnotationModel` for not recognizing transcripts with `mRNA_end_NF` correctly. #724
 
+- Fixed `callVariant` issue of altSplice insertion carries an intronic indel that goes back to the original reading frame. #726
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed

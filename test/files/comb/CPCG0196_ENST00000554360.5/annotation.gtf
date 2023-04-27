@@ -1,0 +1,7 @@
+chr1	.	gene	1	32770	.	-	.	 gene_id ENSG00000257621.8; gene_type lncRNA; gene_name PSMA3-AS1; tag ncRNA_host; tag overlapping_locus;
+chr1	.	transcript	1	32765	.	-	.	 gene_id ENSG00000257621.8; transcript_id ENST00000554360.5; gene_type lncRNA; gene_name PSMA3-AS1; tag basic;
+chr1	.	exon	1	2029	.	-	.	 gene_id ENSG00000257621.8; transcript_id ENST00000554360.5; gene_type lncRNA; gene_name PSMA3-AS1; tag basic;
+chr1	.	exon	8615	8646	.	-	.	 gene_id ENSG00000257621.8; transcript_id ENST00000554360.5; gene_type lncRNA; gene_name PSMA3-AS1; tag basic;
+chr1	.	exon	20227	20392	.	-	.	 gene_id ENSG00000257621.8; transcript_id ENST00000554360.5; gene_type lncRNA; gene_name PSMA3-AS1; tag basic;
+chr1	.	exon	26271	26343	.	-	.	 gene_id ENSG00000257621.8; transcript_id ENST00000554360.5; gene_type lncRNA; gene_name PSMA3-AS1; tag basic;
+chr1	.	exon	32591	32765	.	-	.	 gene_id ENSG00000257621.8; transcript_id ENST00000554360.5; gene_type lncRNA; gene_name PSMA3-AS1; tag basic;
