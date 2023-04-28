@@ -490,8 +490,7 @@ class SpliceJunctionTranscriptAlignment():
                     )
                     variants.append(v)
 
-        if not self.downstream_novel and not self.upstream_novel \
-                and len(interjacent) > 0:
+        if not self.downstream_novel and not self.upstream_novel:
             strand = self.tx_model.transcript.strand
             is_upstream_aligned = (strand == 1 and self.upstream_end_index != -1) \
                     or (strand == -1 and self.downstream_start_index != -1)
@@ -502,26 +501,30 @@ class SpliceJunctionTranscriptAlignment():
                 or (strand == -1 and tx_end > self.junction.downstream_start + 1)
             if is_upstream_aligned and is_after_tx_start:
                 if strand == 1:
-                    spanning = self.get_downstream_start_spanning()
-                    if spanning > -1:
-                        v = self.create_downstream_deletion(
-                            spanning, interjacent, anno, gene_seq, var_id
-                        )
-                    else:
-                        v = self.create_downstream_substitution(
-                            interjacent, anno, gene_seq, var_id
-                        )
-                    variants.append(v)
+                    if self.downstream_start_index == -1 or len(interjacent) > 0:
+                        spanning = self.get_downstream_start_spanning()
+                        if spanning > -1:
+                            v = self.create_downstream_deletion(
+                                spanning, interjacent, anno, gene_seq, var_id
+                            )
+                            variants.append(v)
+                        elif len(interjacent) > 0:
+                            v = self.create_downstream_substitution(
+                                interjacent, anno, gene_seq, var_id
+                            )
+                            variants.append(v)
                 else:
                     spanning = self.get_upstream_end_spanning()
-                    if spanning > -1:
-                        v = self.create_upstream_deletion(
-                            spanning, interjacent, anno, gene_seq, var_id
-                        )
-                    else:
-                        v = self.create_upstream_substitution(
-                            interjacent, anno, gene_seq, var_id
-                        )
-                    variants.append(v)
+                    if self.upstream_end_index == -1 or len(interjacent) > 0:
+                        if spanning > -1:
+                            v = self.create_upstream_deletion(
+                                spanning, interjacent, anno, gene_seq, var_id
+                            )
+                            variants.append(v)
+                        elif len(interjacent) > 0:
+                            v = self.create_upstream_substitution(
+                                interjacent, anno, gene_seq, var_id
+                            )
+                            variants.append(v)
 
         return variants
