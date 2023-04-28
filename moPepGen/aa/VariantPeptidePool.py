@@ -28,10 +28,9 @@ class VariantPeptidePool():
 
         Args:
             peptide (AminoAcidSeqRecord): The amino acid sequence to be added.
-            min_mw (int): Minimal molecular weight.
-            min_length (int): Minimal peptide sequence length.
-            max_length (int): Maximal peptide sequence length.
             canonical_peptides (Set[str]): Canonical peptides.
+            cleavage_params (CleavageParams): cleavage parameters.
+            skip_checking (bool): whether to skip checking cleavage parameters.
         """
         if not skip_checking:
             min_mw = cleavage_params.min_mw
