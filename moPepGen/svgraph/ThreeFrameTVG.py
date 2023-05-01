@@ -1197,7 +1197,7 @@ class ThreeFrameTVG():
         for in_node in in_nodes:
             if len(in_node.out_edges) > 1:
                 new_in_node = in_node.copy()
-                for edge in in_node.in_edge:
+                for edge in in_node.in_edges:
                     upstream = edge.in_node
                     self.add_edge(upstream, new_in_node, edge.type)
                 new_in_node.append_right(node)
