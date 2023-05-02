@@ -1695,6 +1695,8 @@ class ThreeFrameTVG():
                     raise ValueError(downstream_empty_error_msg)
                 self.remove_node(downstream)
                 return []
+            if downstream.is_subgraph_end():
+                return []
             return [downstream]
         # number of NT to be carried over to the downstreams.
         if start.seq:
@@ -1808,6 +1810,7 @@ class ThreeFrameTVG():
                 queue.appendleft(cur)
                 continue
 
+            cur_copy = cur.copy()
             self.align_variants(cur)
 
             self.collapse_equivalent_nodes(cur)
