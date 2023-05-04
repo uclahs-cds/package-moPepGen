@@ -6,9 +6,9 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 from pathlib import Path
-import matplotlib.pyplot as plt
 import sys
 from typing import IO
+import matplotlib.pyplot as plt
 from moPepGen.cli import common
 from moPepGen.aa.PeptidePoolSummarizer import PeptidePoolSummarizer
 
