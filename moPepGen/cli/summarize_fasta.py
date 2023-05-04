@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 from pathlib import Path
+import matplotlib.pyplot as plt
 import sys
 from typing import IO
 from moPepGen.cli import common
@@ -15,6 +16,7 @@ from moPepGen.aa.PeptidePoolSummarizer import PeptidePoolSummarizer
 GVF_FILE_FORMAT = ['.gvf']
 FASTA_FILE_FORMAT = ['.fasta', '.fa']
 OUTPUT_FILE_FORMATS = ['.txt', 'tsv']
+OUTPUT_IMAGE_FORMATS = ['.pdf', '.jpg', '.jpeg', '.png']
 
 
 # pylint: disable=W0212
@@ -71,6 +73,13 @@ def add_subparser_summarize_fasta(subparser:argparse._SubParsersAction):
         default=None
     )
     p.add_argument(
+        '--output-image',
+        type=Path,
+        help=f"File path to the output barplot. Valid formats: {OUTPUT_IMAGE_FORMATS}",
+        metavar='<file>',
+        default=None
+    )
+    p.add_argument(
         '--ignore-missing-source',
         action='store_true',
         help='Ignore the sources missing from input GVF.'
@@ -102,9 +111,14 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         args.variant_peptides, FASTA_FILE_FORMAT, check_readable=True
     )
 
-    common.validate_file_format(
-        args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
-    )
+    if args.output_path is not None:
+        common.validate_file_format(
+            args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
+        )
+    if args.output_image is not None:
+        common.validate_file_format(
+            args.output_image, OUTPUT_IMAGE_FORMATS, check_writable=True
+        )
 
     common.print_start_message(args)
 
@@ -142,3 +156,8 @@ def summarize_fasta(args:argparse.Namespace) -> None:
 
     with output_context(args.output_path) as handle:
         summarizer.write_summary_table(handle)
+
+    if args.output_image:
+        fig, ax = plt.subplots(figsize=(8, 8))
+        summarizer.create_barplot(ax=ax)
+        fig.savefig(args.output_image, bbox_inches="tight")

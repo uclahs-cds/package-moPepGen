@@ -1,7 +1,8 @@
 """ module for peptide pool summarizer """
 from __future__ import annotations
 import itertools
-from typing import Dict, IO, List, Set, FrozenSet, Tuple
+from typing import Dict, IO, List, Set, FrozenSet, Tuple, Optional
+import matplotlib.pyplot as plt
 from moPepGen import gtf, seqvar
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from moPepGen.aa.VariantPeptideLabel import VariantPeptideInfo, \
@@ -47,6 +48,13 @@ MUTUALLY_EXCLUSIVE_PARSERS:Dict[str,List[str]] = {
         'parseCIRCexplorer'
     ]
 }
+
+# BPF default color scheme.
+# Hopefully no one is using more than 11 miscleavages
+COLOR_SCHEME = [
+    "#FFA500", "#458B00", "#68228B", "#FFD700", "#1E90FF", "#CD2626", "#9ACD32"
+    "#FF7F00", "#473C8B", "#43CD80", "#CD3278", "#00C5CD"
+]
 
 class NoncanonicalPeptideSummaryTable():
     """ Summary table for noncaonincal peptides
@@ -231,3 +239,44 @@ class PeptidePoolSummarizer():
                 key = frozenset(comb)
                 record = self.summary_table.get_stringified_summary_entry(key)
                 handle.write(record + '\n')
+
+    def create_barplot(self, width:float=6, height:float=8, ax:Optional[plt.Axes]=None
+            ) -> plt.Axes:
+        """ Make a barplot of the summarized data. """
+        data:Dict[int,List[int]] = {}
+        keys:List[str] = []
+        sources = [it[0] for it in sorted(self.order.items(), key=lambda x:x[1])]
+        for i in range(len(sources)):
+            for comb in itertools.combinations(sources, i + 1):
+                if self.ignore_missing_source:
+                    # Ignore it if the source isn't present in any GVF given.
+                    if any(not self.summary_table.has_source(k) for k in comb):
+                        continue
+                if self.contains_exclusive_sources(comb):
+                    continue
+                key = frozenset(comb)
+                if key not in self.summary_table.data:
+                    continue
+
+                keys.append('-'.join(key))
+                for x in range(self.summary_table.max_misc + 1):
+                    n = self.summary_table.get_n_x_misc(key, x)
+                    if x not in data:
+                        data[x] = []
+                    data[x].append(n)
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(width, height))
+        offset = None
+        for i,n in enumerate(data.keys()):
+            vals = list(reversed(data[n]))
+            if offset:
+                vals = [x + y for x,y in zip(vals, offset)]
+            ax.barh(
+                y=list(reversed(keys)), width=vals, left=offset, label=n,
+                color=COLOR_SCHEME[i]
+            )
+            offset = vals
+        ax.set_xlabel('Number of Peptides')
+        ax.legend(title='Miscleavages')
+        return ax

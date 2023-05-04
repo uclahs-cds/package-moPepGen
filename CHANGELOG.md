@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `callAltTranslation` added to call peptides with alternative translation without any genomic or transcriptomic variations.
 
+- Enabled `summarizeFasta` to create bar plot of the summary results.
+
 ### Fixed
 
 - Fixed `fake` that simulated selenocysteine positions could be in introns.
