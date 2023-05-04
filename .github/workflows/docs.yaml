@@ -21,6 +21,7 @@ jobs:
           echo 'jinja2==3.0.0' >> requirements.txt
           echo 'mkdocstrings==0.16.2' >> requirements.txt
           echo 'mkdocs-macros-plugin==0.6.0' >> requirements.txt
+          echo 'matplotlib==3.3.1' >> requirements.txt
           echo '.' >> requirements.txt
 
       - name: Deploy docs
