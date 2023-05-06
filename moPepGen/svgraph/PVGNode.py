@@ -744,7 +744,7 @@ class PVGNode():
         """ Get downstream stop altering variants """
         final_variants = set()
         for out_node in self.out_nodes:
-            if out_node.seq.seq == '*':
+            if len(out_node.seq.seq) == 1 and out_node.seq.seq.startswith('*'):
                 stop_alts = set()
                 stop_alts.update([x.variant for x in out_node.variants
                     if x.is_stop_altering and not x.downstream_cleavage_altering])

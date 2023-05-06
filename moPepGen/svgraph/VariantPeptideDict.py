@@ -104,11 +104,13 @@ class MiscleavedNodes():
         while queue:
             cur_batch = queue.pop()
             cur_node = cur_batch[-1]
-            batch_vars:Set[VariantRecord] = set()
+            # Turn it into a doct of id to variant
+            batch_vars:Dict[str, VariantRecord] = {}
 
             for _node in cur_batch:
                 for var in _node.variants:
-                    batch_vars.add(var.variant)
+                    if var.variant.id not in batch_vars:
+                        batch_vars[var.variant.id] = var.variant
 
             n_cleavages = len([x for x in cur_batch if not x.cpop_collapsed]) - 1
 
@@ -138,7 +140,7 @@ class MiscleavedNodes():
 
                 additional_variants = _node.get_downstream_stop_altering_variants()
 
-                cur_vars = {v.id for v in batch_vars}
+                cur_vars = set(batch_vars.keys())
                 for var in _node.variants:
                     cur_vars.add(var.variant.id)
                 cur_vars.update({v.id for v in additional_variants})
@@ -188,7 +190,7 @@ class MiscleavedNodes():
             metadata = VariantPeptideMetadata()
             seq:str = None
             variants:Set[VariantRecord] = set()
-            in_seq_variants:Set[VariantRecord] = set()
+            in_seq_variants:Dict[str,VariantRecord] = {}
 
             selenocysteines = []
 
@@ -211,7 +213,8 @@ class MiscleavedNodes():
                             continue
                         variants.add(variant.variant)
                         if not variant.variant.is_circ_rna():
-                            in_seq_variants.add(variant.variant)
+                            if variant.variant.id not in in_seq_variants:
+                                in_seq_variants[variant.variant.id] = variant.variant
                     if i < len(queue) - 1:
                         _node = self.leading_node if i == 0 else node
                         indels = queue[i + 1].upstream_indel_map.get(_node)
@@ -224,7 +227,7 @@ class MiscleavedNodes():
                 if any(v.is_circ_rna() for v in variants) \
                         or any(v.is_circ_rna() for v in orf.start_gain):
                     if orf.is_valid_orf_to_misc_nodes(queue, self.subgraphs, circ_rna):
-                        if any(n.is_missing_any_variant(in_seq_variants) for n in queue):
+                        if any(n.is_missing_any_variant(in_seq_variants.values()) for n in queue):
                             continue
                         metadata.orf = tuple(orf.orf)
                         valid_orf = orf
