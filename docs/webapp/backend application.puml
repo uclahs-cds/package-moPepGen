@@ -9,6 +9,7 @@ System_Boundary(BackendApplication, "Backend Application", "The application coor
     Container(DatabaseConnector, "Database Connector", "Database connection manager")
     Container(SSMConnector, "SSM Connector", "SSM configuration connector")
     Container(Config, "Config", "Non-SSM application configuration")
+    Container(UserAuth, "User Auth", "Mechanisms for authenticating and authorizing users")
 
     Rel_Right(PythonApplication, HTTPRequestHandler, "Uses")
     Rel_Left(HTTPRequestHandler, PythonApplication, "Routes behavior through application")
@@ -18,6 +19,7 @@ System_Boundary(BackendApplication, "Backend Application", "The application coor
     Rel(PythonApplication, DatabaseConnector, "Uses")
     Rel(PythonApplication, SSMConnector, "Uses")
     Rel(PythonApplication, Config, "Uses")
+    Rel(PythonApplication, UserAuth, "Uses")
 
     Rel_Left(JobHandler, ClusterConnector, "Uses")
 }
