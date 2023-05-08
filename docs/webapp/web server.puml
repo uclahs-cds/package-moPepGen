@@ -1,0 +1,38 @@
+@startuml
+!include C4.iuml!config
+
+System_Boundary(UCLAHS, "UCLA Health") {
+    System_Ext(Splunk, "Splunk", "Logging service")
+}
+
+System_Boundary(AWS, "AWS") {
+    ' could be EC2 or Elastic Beanstalk
+    System_Boundary(WebServer, "Web Server") {
+        System_Boundary(BackendApplication, "Backend Application", "The application coordinating MoPepGen execution") {
+            Container(BackendPythonApplication, "Backend Python Application", "The application coordinating MoPepGen execution")
+        }
+        Container_Ext("Gunicorn", "Gunicorn", "Python HTTP request handler")
+        Container_Ext(NGINX, "NGINX", "HTTP request server")
+        Container_Ext(rsyslog, "rsyslog", "Logging service")
+        System_Ext(CloudWatchAgent, "CloudWatch Agent", "Log forwarder")
+        System_Ext(SplunkAgent, "Splunk Agent", "Log forwarder")
+    }
+    System_Ext(SSMConfiguration, "SSM Configuration", "Simple Systems Manager configuration service")
+    SystemDb(Database, "Database", "Application storage")
+    System_Ext(CloudWatch, "CloudWatch", "Logging service")
+
+    Rel(BackendApplication, Database, "Uses")
+    Rel(BackendApplication, SSMConfiguration, "Uses")
+    
+    Rel(NGINX, Gunicorn, "Forwards HTTP requests")
+    Rel(Gunicorn, BackendApplication, "Executes HTTP request")
+
+    Rel_Left(BackendApplication, rsyslog, "Writes logs to syslog")
+    Rel_Up(CloudWatchAgent, rsyslog, "Reads logs")
+    Rel_Up(SplunkAgent, rsyslog, "Reads logs")
+    Rel(CloudWatchAgent, CloudWatch, "Reads and forwards logs")
+
+}
+Rel(BackendApplication, UCLAHS, "Uses")
+Rel(SplunkAgent, Splunk, "Reads and forwards logs")
+@enduml

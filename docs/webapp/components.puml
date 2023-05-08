@@ -37,7 +37,5 @@ Rel(BackendApplication, Okta, "Uses")
 Person(User, "The user of MoPepGen")
 Rel(User, FrontendApplication, "Uses")
 Rel(User, Okta, "Uses")
-Rel(User, Cluster, "Uses")
-Rel(User, MoPepGen, "Uses")
 
 @enduml
