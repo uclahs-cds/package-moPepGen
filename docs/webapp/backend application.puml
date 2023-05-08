@@ -1,0 +1,32 @@
+@startuml
+!include C4.iuml!config
+
+System_Boundary(BackendApplication, "Backend Application", "The application coordinating MoPepGen execution") {
+    Container(PythonApplication, "Python Application", "The Python application actually running")
+    Container(HTTPRequestHandler, "HTTP Request Handler", "Mechanism for handling HTTP requests")
+    Container(ClusterConnector, "Cluster Connector", "Mechanism for connecting to or receiving connections from the cluster")
+    Container(JobHandler, "Job Handler", "Cluster job manager")
+    Container(DatabaseConnector, "Database Connector", "Database connection manager")
+    Container(SSMConnector, "SSM Connector", "SSM configuration connector")
+    Container(Config, "Config", "Non-SSM application configuration")
+
+    Rel_Right(PythonApplication, HTTPRequestHandler, "Uses")
+    Rel_Left(HTTPRequestHandler, PythonApplication, "Routes behavior through application")
+
+    Rel(PythonApplication, ClusterConnector, "Uses")
+    Rel(PythonApplication, JobHandler, "Uses")
+    Rel(PythonApplication, DatabaseConnector, "Uses")
+    Rel(PythonApplication, SSMConnector, "Uses")
+    Rel(PythonApplication, Config, "Uses")
+
+    Rel_Left(JobHandler, ClusterConnector, "Uses")
+}
+
+System_Ext(Flask, "Flask", "The Flask Python library")
+Rel(HTTPRequestHandler, Flask, "Uses")
+Rel(Config, Flask, "Uses")
+
+System_Ext(SQLAlchemy, "SQLAlchemy", "Database ORM")
+Rel(DatabaseConnector, SQLAlchemy, "Uses")
+
+@enduml
