@@ -189,7 +189,7 @@ class MiscleavedNodes():
             queue = series.nodes
             metadata = VariantPeptideMetadata()
             seq:str = None
-            variants:Set[VariantRecord] = set()
+            variants:Dict[str,VariantRecord] = {}
             in_seq_variants:Dict[str,VariantRecord] = {}
 
             selenocysteines = []
@@ -211,7 +211,8 @@ class MiscleavedNodes():
                             continue
                         if variant.upstream_cleavage_altering:
                             continue
-                        variants.add(variant.variant)
+                        if variant.variant.id not in variants:
+                            variants[variant.variant.id] = variant.variant
                         if not variant.variant.is_circ_rna():
                             if variant.variant.id not in in_seq_variants:
                                 in_seq_variants[variant.variant.id] = variant.variant
@@ -220,11 +221,12 @@ class MiscleavedNodes():
                         indels = queue[i + 1].upstream_indel_map.get(_node)
                         if indels:
                             for variant in indels:
-                                variants.add(variant)
+                                if variant.id not in variants:
+                                    variants[variant.id] = variant
 
             valid_orf = None
             for orf in self.orfs:
-                if any(v.is_circ_rna() for v in variants) \
+                if any(v.is_circ_rna() for v in variants.values()) \
                         or any(v.is_circ_rna() for v in orf.start_gain):
                     if orf.is_valid_orf_to_misc_nodes(queue, self.subgraphs, circ_rna):
                         if any(n.is_missing_any_variant(in_seq_variants.values()) for n in queue):
@@ -241,16 +243,24 @@ class MiscleavedNodes():
                 continue
 
             cleavage_gain_down = queue[-1].get_cleavage_gain_from_downstream()
-            variants.update(cleavage_gain_down)
+            for v in cleavage_gain_down:
+                if v not in variants:
+                    variants[v.id] = v
 
             if check_variants:
-                variants.update(valid_orf.start_gain)
-                variants.update(additional_variants)
-                variants.update(series.additional_variants)
+                for v in valid_orf.start_gain:
+                    if v.id not in variants:
+                        variants[v.id] = v
+                for v in additional_variants:
+                    if v.id not in variants:
+                        variants[v.id] = v
+                for v in series.additional_variants:
+                    if v.id not in variants:
+                        variants[v.id] = v
 
-            if any(v.is_circ_rna() for v in variants) \
+            if any(v.is_circ_rna() for v in variants.values()) \
                     and queue[-1].any_unaccounted_downstream_cleavage_or_stop_altering(
-                        {x for x in variants if not x.is_circ_rna()}):
+                        {x for x in variants.values() if not x.is_circ_rna()}):
                 continue
 
             if not seq:
@@ -271,10 +281,10 @@ class MiscleavedNodes():
                         continue
 
             metadata.is_pure_circ_rna = len(variants) == 1 and \
-                list(variants)[0].is_circ_rna()
+                list(variants.values())[0].is_circ_rna()
 
             seqs = self.translational_modification(seq, metadata, denylist,
-                variants, is_start_codon, selenocysteines, substitutants,
+                variants.values(), is_start_codon, selenocysteines, substitutants,
                 check_variants, check_external_variants
             )
             for seq, metadata in seqs:
@@ -371,7 +381,7 @@ class MiscleavedNodes():
 
                 if is_valid or is_valid_start:
                     cur_metadata = copy.copy(metadata)
-                    cur_variants = copy.copy(variants)
+                    cur_variants = set(variants)
                     cur_variants.update(comb)
                     label = vpi.create_variant_peptide_id(
                         transcript_id=self.tx_id, variants=cur_variants, orf_id=None,
