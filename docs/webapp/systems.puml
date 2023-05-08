@@ -1,43 +1,27 @@
 @startuml
 !include C4.iuml!config
 
+
 System_Boundary(AWS, "AWS") {
-    ' could be EC2 or Elastic Beanstalk
-    System_Boundary(WebServer, "Web Server") {
-        Container(BackendApplication, "Backend Application", "The application coordinating MoPepGen execution")
-    }
-    System_Ext(SSMConfiguration, "SSM Configuration", "Simple Systems Manager configuration service")
-    SystemDb(Database, "Database", "Application storage")
-    System_Ext(CloudWatch, "CloudWatch", "Logging service")
-    System_Boundary(FrontendApplication, "Website UI") {
-        System_Ext(S3Bucket, "S3 Bucket", "Storage for UI components")
-        System_Ext(CloudFront, "CloudFront", "CDN to route UI traffic to S3 bucket")
-    }
-
-    Rel(BackendApplication, Database, "Uses")
-    Rel(BackendApplication, SSMConfiguration, "Uses")
-    Rel(BackendApplication, CloudWatch, "Uses")
-
-    Rel(FrontendApplication, WebServer, "Uses")
-    Rel_Right(CloudFront, S3Bucket, "Uses")
+    Container(BackendApplication, "Backend Application", "The application coordinating MoPepGen execution")
+    Container(FrontendApplication, "Website UI", "The application the user sees and interacts with")
 }
+Rel(FrontendApplication, BackendApplication, "Uses")
 
 System_Boundary(UCLAHS, "UCLA Health") {
+    System_Ext(Cluster, "Cluster")
     System_Ext(Okta, "Okta", "User authentication")
-    System_Ext(Splunk, "Splunk", "Internal logging service")
-    System_Boundary(Cluster, "Cluster") {
-        Container(MoPepGen, "MoPepGen", "The MoPepGen pipeline execution system")
-    }
-    Rel_Left(BackendApplication, MoPepGen, "Uses")
 }
-Rel(BackendApplication, Splunk, "Uses")
-Rel(BackendApplication, Okta, "Uses")
 
+System_Ext(ExternalAuth, "Non-Okta authentication")
+
+Rel(BackendApplication, Cluster, "Uses")
+Rel(BackendApplication, Okta, "Uses <optional - UCLAHS users only>")
+Rel(BackendApplication, ExternalAuth, "Users <optional - for non-UCLAHS users. indirect usage>")
 
 Person(User, "The user of MoPepGen")
 Rel(User, FrontendApplication, "Uses")
-Rel(User, Okta, "Uses")
-Rel(User, Cluster, "Uses")
-Rel(User, MoPepGen, "Uses")
+Rel(User, Okta, "Uses <optional - UCLAHS users only. indirect usage>")
+Rel(User, ExternalAuth, "Users <optional - for non-UCLAHS users>")
 
 @enduml
