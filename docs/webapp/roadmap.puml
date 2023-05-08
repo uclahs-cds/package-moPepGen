@@ -1,0 +1,47 @@
+@startgantt
+!theme cerulean-outline
+skinparam backgroundColor white
+
+skinparam dpi 300
+
+<style>
+ganttDiagram {
+    task {
+        BackgroundColor White
+        FontColor Black
+    }
+    closed {
+        BackgroundColor MistyRose
+    }
+    unstarted {
+        BackgroundColor Gray
+    }
+}
+</style>
+
+<style>
+ganttDiagram {
+    task {
+        BackgroundColor SeaShell
+    }
+    arrow {
+        LineColor salmon
+    }
+}
+</style>
+[Deploy infrastructure] lasts 1 day
+[Refactor CAP to BLApp] lasts 1 day
+[Create endpoints for API] lasts 1 day
+[Create UI] lasts 1 day
+[Connect MoPepGen in cluster to backend application] lasts 1 day
+[Deploy application] lasts 1 day
+[UAT] lasts 1 day
+[Go live] lasts 1 day
+
+[Create endpoints for API] starts at [Refactor CAP to BLApp]'s end
+[Create UI] starts at [Refactor CAP to BLApp]'s end
+[Connect MoPepGen in cluster to backend application] starts at [Create endpoints for API]'s end
+[Deploy application] starts at [Connect MoPepGen in cluster to backend application]'s end
+[UAT] starts at [Deploy application]'s end
+[Go live] starts at [UAT]'s end
+@endgantt

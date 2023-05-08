@@ -1,0 +1,18 @@
+@startuml template
+!startsub config
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+HIDE_STEREOTYPE()
+
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons2
+!include DEVICONS/flask_original.puml
+!include DEVICONS/postgresql.puml
+!include DEVICONS/r.puml
+!include DEVICONS/python.puml
+
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+!include FONTAWESOME/users.puml
+!include FONTAWESOME/lock.puml
+
+!endsub
+@enduml
