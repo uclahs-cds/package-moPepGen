@@ -25,5 +25,5 @@ System_Boundary(UCLAHealthIT, "UCLA Health IT") {
 
 }
 Rel_Up(UCLAHealthIT, SSLCertificate, "Provides SSL certificate for Domain Name")
-Rel_Up(UCLAHealthIT, DomainName, "Provides requests Domain Name")
+Rel_Up(UCLAHealthIT, DomainName, "Provides Domain Name")
 @enduml
