@@ -1,0 +1,29 @@
+
+@startuml
+!include C4.iuml!config
+
+System_Boundary(FrontendHosting, "Frontend Application Hosting", "The components used to host the frontend application") {
+    System_Boundary(AWS, "AWS") {
+        Container(S3, "S3", "The location of the frontend application files")
+        Container(CloudFront, "CloudFront", "The CDN 'in front of' the S3 bucket")
+        Container(CertificateManager, "Certificate Manager", "AWS certificate manager for SSL")
+        Rel_Up(CloudFront, S3, "Hosts files provided by S3 bucket")
+        Rel_Up(CertificateManager, CloudFront, "Provides certificate used to encrypt HTTPS requests")
+    }
+
+    System_Boundary(UCLAHS, "UCLA Health") {
+        Container(DomainName, "Domain Name", "The website URL provided by UCLA Health IT")
+        Container(SSLCertificate, "SSL Certificate", "The SSL certificate provided by UCLA Health IT")
+        Rel_Right(SSLCertificate, DomainName, "Certificate bound to domain name")
+    }
+
+    Rel_Up(SSLCertificate, CertificateManager, "Installed into Certificate Manager")
+    Rel_Up(DomainName, CloudFront, "Configured as Domain Name for CloudFront")
+}
+
+System_Boundary(UCLAHealthIT, "UCLA Health IT") {
+
+}
+Rel_Up(UCLAHealthIT, SSLCertificate, "Provides SSL certificate for Domain Name")
+Rel_Up(UCLAHealthIT, DomainName, "Provides requests Domain Name")
+@enduml

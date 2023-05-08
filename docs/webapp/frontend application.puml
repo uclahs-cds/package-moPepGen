@@ -1,0 +1,26 @@
+@startuml
+!include C4.iuml!config
+
+System_Boundary(FrontendApplication, "Frontend Application / UI", "The website users interact with") {
+    Container(ReactApplication, "React Application", "The React application actually running")
+    Container(ApplicationUI, "Application UI", "What the user sees and interacts with")
+    Container(APIRequestHandler, "API Request Handler", "Mechanisms for handling HTTP requests")
+    Container(UserAuth, "User Auth", "Mechanisms for authenticating and authorizing users")
+}
+
+System_Ext(React, "React", "The React JavaScript library")
+Rel_Up(ReactApplication, React, "Uses")
+
+System(BackendApplication, "Backend Application", "The API application the UI makes HTTP requests to")
+Rel(APIRequestHandler, BackendApplication, "Uses")
+Rel(ReactApplication, ApplicationUI, "Uses")
+Rel(ReactApplication, APIRequestHandler, "Uses")
+
+Rel_Right(ReactApplication, UserAuth, "Uses")
+
+System(FrontendHosting, "Frontend Hosting", "The infrastructure that hosts the frontend")
+Rel(FrontendApplication, FrontendHosting, "Uses")
+
+Person(User, "The user of the MoPepGen")
+Rel(User, FrontendApplication, "Uses")
+@enduml
