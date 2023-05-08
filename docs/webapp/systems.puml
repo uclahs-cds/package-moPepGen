@@ -5,8 +5,10 @@
 System_Boundary(AWS, "AWS") {
     Container(BackendApplication, "Backend Application", "The application coordinating MoPepGen execution")
     Container(FrontendApplication, "Website UI", "The application the user sees and interacts with")
+    SystemDb(Database, "Application Database", "The location of application data")
+    Rel(FrontendApplication, BackendApplication, "Uses")
+    Rel(BackendApplication, Database, "Uses")
 }
-Rel(FrontendApplication, BackendApplication, "Uses")
 
 System_Boundary(UCLAHS, "UCLA Health") {
     System_Ext(Cluster, "Cluster")
@@ -20,7 +22,7 @@ Rel(BackendApplication, Okta, "Uses <optional - UCLAHS users only>")
 Rel(BackendApplication, ExternalAuth, "Users <optional - for non-UCLAHS users. indirect usage>")
 
 Person(User, "The user of MoPepGen")
-Rel(User, FrontendApplication, "Uses")
+Rel_Right(User, FrontendApplication, "Uses")
 Rel(User, Okta, "Uses <optional - UCLAHS users only. indirect usage>")
 Rel(User, ExternalAuth, "Users <optional - for non-UCLAHS users>")
 
