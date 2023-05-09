@@ -23,4 +23,7 @@ Rel(FrontendApplication, FrontendHosting, "Uses")
 
 Person(User, "The user of the MoPepGen")
 Rel(User, FrontendApplication, "Uses")
+
+url of FrontendHosting is [["./frontend hosting.svg"]]
+url of BackendApplication is [["./backend application.svg"]]
 @enduml

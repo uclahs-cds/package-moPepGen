@@ -17,13 +17,8 @@ System_Boundary(AWS, "AWS") {
         System_Ext(CloudWatchAgent, "CloudWatch Agent", "Log forwarder")
         System_Ext(SplunkAgent, "Splunk Agent", "Log forwarder")
     }
-    System_Ext(SSMConfiguration, "SSM Configuration", "Simple Systems Manager configuration service")
-    SystemDb(Database, "Database", "Application storage")
     System_Ext(CloudWatch, "CloudWatch", "Logging service")
 
-    Rel(BackendApplication, Database, "Uses")
-    Rel(BackendApplication, SSMConfiguration, "Uses")
-    
     Rel(NGINX, Gunicorn, "Forwards HTTP requests")
     Rel(Gunicorn, BackendApplication, "Executes HTTP request")
 
@@ -35,4 +30,6 @@ System_Boundary(AWS, "AWS") {
 }
 Rel(BackendApplication, UCLAHS, "Uses")
 Rel(SplunkAgent, Splunk, "Reads and forwards logs")
+
+url of BackendPythonApplication is [["./backend application.svg"]]
 @enduml

@@ -6,8 +6,10 @@ System_Boundary(AWS, "AWS") {
     Container(BackendApplication, "Backend Application", "The application coordinating MoPepGen execution")
     Container(FrontendApplication, "Website UI", "The application the user sees and interacts with")
     SystemDb(Database, "Application Database", "The location of application data")
+    System(WebServer, "Web Server", "Infrastructure used to host the backend application")
     Rel(FrontendApplication, BackendApplication, "Uses")
     Rel(BackendApplication, Database, "Uses")
+    Rel_Left(BackendApplication, WebServer, "Runs on")
 }
 
 System_Boundary(UCLAHS, "UCLA Health") {
@@ -25,5 +27,9 @@ Person(User, "The user of MoPepGen")
 Rel_Right(User, FrontendApplication, "Uses")
 Rel(User, Okta, "Uses <optional - UCLAHS users only. indirect usage>")
 Rel(User, ExternalAuth, "Users <optional - for non-UCLAHS users>")
+
+url of BackendApplication is [["./backend application.svg"]]
+url of FrontendApplication is [["./frontend application.svg"]]
+url of WebServer is [["./web server.svg"]]
 
 @enduml

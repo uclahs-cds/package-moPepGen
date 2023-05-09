@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "private-moPepGen",
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"workbench.colorCustomizations": {
+			"tab.activeBackground": "#4f4f4f"
+		}
+	}
+}
