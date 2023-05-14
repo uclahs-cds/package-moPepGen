@@ -615,7 +615,7 @@ class VariantPeptideDict():
                         continue
                     for metadata in self.peptides[seq]:
                         cur_metadata = copy.copy(metadata)
-                        cur_metadata.label += '|'.join(v.id for v in comb)
+                        cur_metadata.label += '|' + '|'.join(v.id for v in comb)
 
                         aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod)
 
