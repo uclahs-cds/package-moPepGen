@@ -305,8 +305,9 @@ class PVGNode():
     def get_cleavage_gain_from_downstream(self) -> List[seqvar.VariantRecord]:
         """ Get the variants that gains the cleavage by downstream nodes """
         cleavage_gain = []
+        seq_len = len(self.seq.seq)
         upstream_cleave_alts = [v.variant for v in self.variants
-            if v.location.end == len(self.seq.seq)]
+            if v.location.end == seq_len]
         for node in self.out_nodes:
             if not node.variants:
                 return []

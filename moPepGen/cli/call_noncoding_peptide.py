@@ -200,7 +200,8 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         check_orf=True,
         denylist=canonical_peptides,
         orf_assignment=orf_assignment,
-        w2f=w2f_reassignment
+        w2f=w2f_reassignment,
+        check_external_variants=False
     )
     orfs = get_orf_sequences(pgraph, tx_id, tx_model.gene_id, tx_seq)
     return peptides, orfs
