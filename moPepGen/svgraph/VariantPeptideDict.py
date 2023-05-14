@@ -113,8 +113,7 @@ class MiscleavedNodes():
     def join_miscleaved_peptides(self, pool:T, check_variants:bool,
             additional_variants:List[VariantRecord], denylist:Set[str],
             is_start_codon:bool=False, circ_rna:circ.CircRNAModel=None,
-            truncate_sec:bool=False, w2f:bool=False,
-            check_external_variants:bool=True
+            truncate_sec:bool=False, check_external_variants:bool=True
             ) -> Iterable[Tuple[aa.AminoAcidSeqRecord, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -550,7 +549,6 @@ class VariantPeptideDict():
             is_start_codon=is_start_codon,
             circ_rna=circ_rna,
             truncate_sec=self.truncate_sec,
-            w2f=self.w2f,
             check_external_variants=self.check_external_variants
         )
         for seq, metadata in seqs:
