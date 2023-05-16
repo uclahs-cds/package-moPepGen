@@ -1476,7 +1476,7 @@ class ThreeFrameTVG():
     def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode],
             max_in_bubble_variants:int) -> bool:
         """ Check the total number of variants of given nodes """
-        if self.cleavage_params.max_variants_per_node == -1:
+        if max_in_bubble_variants == -1:
             return False
         variants = set()
         for node in nodes:
