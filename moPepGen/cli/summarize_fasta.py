@@ -84,6 +84,18 @@ def add_subparser_summarize_fasta(subparser:argparse._SubParsersAction):
         action='store_true',
         help='Ignore the sources missing from input GVF.'
     )
+    group_plot_scale = p.add_mutually_exclusive_group()
+    group_plot_scale.add_argument(
+        '--plot-normal-scale',
+        action='store_true',
+        help='Draw the summary bar plot in normal scale.'
+    )
+    group_plot_scale.add_argument(
+        '--plot-log-scale',
+        action='store_true',
+        help='Draw the summary bar plot in log scale.'
+    )
+
     common.add_args_cleavage(p, enzyme_only=True)
     common.add_args_reference(p, genome=False, proteome=True)
     common.add_args_quiet(p)
@@ -158,6 +170,12 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         summarizer.write_summary_table(handle)
 
     if args.output_image:
+        if args.plot_log_scale:
+            scale = 'log'
+        elif args.plot_normal_scale:
+            scale = 'normal'
+        else:
+            scale = None
         fig, ax = plt.subplots(figsize=(8, 8))
-        summarizer.create_barplot(ax=ax)
+        summarizer.create_barplot(ax=ax, scale=scale)
         fig.savefig(args.output_image, bbox_inches="tight")

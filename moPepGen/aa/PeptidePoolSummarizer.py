@@ -1,6 +1,7 @@
 """ module for peptide pool summarizer """
 from __future__ import annotations
 import itertools
+import statistics
 from typing import Dict, IO, List, Set, FrozenSet, Tuple, Optional
 import matplotlib.pyplot as plt
 from moPepGen import gtf, seqvar
@@ -240,9 +241,10 @@ class PeptidePoolSummarizer():
                 record = self.summary_table.get_stringified_summary_entry(key)
                 handle.write(record + '\n')
 
-    def create_barplot(self, width:float=6, height:float=8, ax:Optional[plt.Axes]=None
-            ) -> plt.Axes:
+    def create_barplot(self, width:float=6, height:float=8, ax:Optional[plt.Axes]=None,
+            scale:str=None) -> plt.Axes:
         """ Make a barplot of the summarized data. """
+        # misc -> source -> count
         data:Dict[int,List[int]] = {}
         keys:List[str] = []
         sources = [it[0] for it in sorted(self.order.items(), key=lambda x:x[1])]
@@ -265,18 +267,38 @@ class PeptidePoolSummarizer():
                         data[x] = []
                     data[x].append(n)
 
+        totals = []
+        for x in data.values():
+            if not totals:
+                totals = x
+            else:
+                totals = [i+j for i,j in zip(totals, x)]
+                mean = statistics.mean(totals)
+                median = statistics.median(totals)
+
+        # Unless specified, log scale is used if the summary distribution is skewed.
+        if scale not in ['normal', 'log']:
+            scale = 'normal' if mean / median <= 2.5 else 'log'
+
         if ax is None:
             _, ax = plt.subplots(figsize=(width, height))
-        offset = None
-        for i,n in enumerate(data.keys()):
-            vals = list(reversed(data[n]))
-            if offset:
-                vals = [x + y for x,y in zip(vals, offset)]
+
+        if scale == 'log':
             ax.barh(
-                y=list(reversed(keys)), width=vals, left=offset, label=n,
-                color=COLOR_SCHEME[i]
+                y=list(reversed(keys)), width=list(reversed(totals))
             )
-            offset = vals
+            ax.set_xscale('log')
+        else:
+            offset = None
+            for i,n in enumerate(data.keys()):
+                vals = list(reversed(data[n]))
+                if offset:
+                    vals = [x + y for x,y in zip(vals, offset)]
+                ax.barh(
+                    y=list(reversed(keys)), width=vals, left=offset, label=n,
+                    color=COLOR_SCHEME[i]
+                )
+                offset = vals
+                ax.legend(title='Miscleavages')
         ax.set_xlabel('Number of Peptides')
-        ax.legend(title='Miscleavages')
         return ax
