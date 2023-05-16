@@ -48,6 +48,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` to skip peptides earlier if they are either too long or too short to significantly improve efficiency. #736
 
+- Fixed `callVariant` to handle hypermutated region with a dynamic cutoff. #738
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed
