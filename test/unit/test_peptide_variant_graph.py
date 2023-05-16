@@ -600,6 +600,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,30]
         pool = VariantPeptideDict(graph.id)
+        pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,30), (0,10))
         orf = PVGOrf([0, None])
         cursor = PVGCursor(nodes[1], nodes[2], True, [orf])
@@ -627,6 +628,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         nodes[4].reading_frame_index = 2
         graph.known_orf = [18,60]
         pool = VariantPeptideDict(graph.id)
+        pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (18,60), (6,20))
         orf = PVGOrf([0, None], set())
         cursor = PVGCursor(nodes[1], nodes[2], False, [orf])
@@ -650,6 +652,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [24,90]
         pool = VariantPeptideDict(graph.id)
+        pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (24,90), (8,30))
         cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
@@ -673,6 +676,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.cds_start_nf = True
         graph.known_orf = [6,90]
         pool = VariantPeptideDict(graph.id)
+        pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,90), (2,30))
         cursor = PVGCursor(graph.root, nodes[2], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
@@ -696,6 +700,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         nodes[5].variants[0].is_stop_altering = True
         graph.known_orf = [0,90]
         pool = VariantPeptideDict(graph.id)
+        pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,90), (0,30))
         orf = PVGOrf([0, None])
         cursor = PVGCursor(nodes[2], nodes[4], True, [orf])
@@ -722,6 +727,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,39]
         pool = VariantPeptideDict(graph.id)
+        pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,42), (0,14))
         orf = PVGOrf([0,None])
         cursor = PVGCursor(nodes[4], nodes[5], False, [orf], [])
@@ -748,6 +754,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [18,39]
         pool = VariantPeptideDict(graph.id)
+        pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
         cursor = PVGCursor(nodes[5], nodes[6], False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
@@ -767,6 +774,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,39]
         pool = VariantPeptideDict(graph.id)
+        pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
         orf = PVGOrf([0, None])
         cursor = PVGCursor(nodes[1], nodes[3], True, [orf])

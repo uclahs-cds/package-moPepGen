@@ -305,8 +305,9 @@ class PVGNode():
     def get_cleavage_gain_from_downstream(self) -> List[seqvar.VariantRecord]:
         """ Get the variants that gains the cleavage by downstream nodes """
         cleavage_gain = []
+        seq_len = len(self.seq.seq)
         upstream_cleave_alts = [v.variant for v in self.variants
-            if v.location.end == len(self.seq.seq)]
+            if v.location.end == seq_len]
         for node in self.out_nodes:
             if not node.variants:
                 return []
@@ -744,7 +745,7 @@ class PVGNode():
         """ Get downstream stop altering variants """
         final_variants = set()
         for out_node in self.out_nodes:
-            if out_node.seq.seq == '*':
+            if len(out_node.seq.seq) == 1 and out_node.seq.seq.startswith('*'):
                 stop_alts = set()
                 stop_alts.update([x.variant for x in out_node.variants
                     if x.is_stop_altering and not x.downstream_cleavage_altering])
