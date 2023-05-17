@@ -1473,7 +1473,8 @@ class ThreeFrameTVG():
 
         return subgraph1.location < subgraph2.location
 
-    def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode],
+    @staticmethod
+    def nodes_have_too_many_variants(nodes:Iterable[TVGNode],
             max_in_bubble_variants:int) -> bool:
         """ Check the total number of variants of given nodes """
         if max_in_bubble_variants == -1:
@@ -1836,8 +1837,6 @@ class ThreeFrameTVG():
                     cur = self.merge_with_outbonds(cur)[0]
                 queue.appendleft(cur)
                 continue
-
-            cur_seq = str(cur.seq.seq)
 
             self.align_variants(cur)
 
