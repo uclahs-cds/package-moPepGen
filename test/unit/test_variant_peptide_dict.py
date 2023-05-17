@@ -75,4 +75,4 @@ class TestCaseMiscleavedNodes(unittest.TestCase):
         invalid sequence. """
         cleavage_params = params.CleavageParams(enzyme='trypsin')
         misc_nodes = MiscleavedNodes([], cleavage_params)
-        self.assertFalse(misc_nodes.is_valid_seq('AAAAXAAA', set()))
+        self.assertFalse(misc_nodes.is_valid_seq('AAAAXAAA', set(), set()))

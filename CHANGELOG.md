@@ -46,7 +46,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` issue of altSplice insertion carries an intronic indel that goes back to the original reading frame. #726
 
-- Fixed `callVairant` to handle deletion that spans over an entire intron. #732
+- Fixed `callVariant` to handle deletion that spans over an entire intron. #732
+
+- Fixed `callVariant` to skip peptides earlier if they are either too long or too short to significantly improve efficiency. #736
+
+- Fixed `callVariant` to handle hypermutated region with a dynamic cutoff. #738
 
 ## [0.11.5] - 2023-3-5
 

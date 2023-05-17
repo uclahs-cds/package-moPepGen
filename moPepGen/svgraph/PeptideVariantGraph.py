@@ -809,7 +809,8 @@ class PeptideVariantGraph():
             gene_id=self.gene_id,
             truncate_sec=truncate_sec,
             w2f=w2f,
-            check_external_variants=check_external_variants
+            check_external_variants=check_external_variants,
+            cleavage_params=self.cleavage_params
         )
         traversal = PVGTraversal(
             check_variants=check_variants, check_orf=check_orf,
@@ -854,6 +855,8 @@ class PeptideVariantGraph():
 
         if check_orf:
             self.create_orf_id_map()
+
+        peptide_pool.translational_modification(w2f, self.denylist)
 
         return peptide_pool.get_peptide_sequences(
             keep_all_occurrence=keep_all_occurrence, orf_id_map=self.orf_id_map

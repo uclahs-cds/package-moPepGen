@@ -1050,27 +1050,26 @@ class BruteForceVariantPeptideCaller():
 
         # W > F
         if self.w2f:
-            w2f_indices = []
-            i = 0
-            while i > -1:
-                i = seq.find('W', start=i)
-                if i > -1:
-                    w2f_indices.append(i)
-                    i += 1
-                    if i > len(seq):
-                        break
+            for candidate in copy.copy(candidates):
+                w2f_indices = []
+                i = 0
+                while i > -1:
+                    i = candidate.find('W', start=i)
+                    if i > -1:
+                        w2f_indices.append(i)
+                        i += 1
+                        if i > len(candidate):
+                            break
 
-            for k in range(1, len(w2f_indices) + 1):
-                for comb in combinations(w2f_indices, k):
-                    seq_mod = seq
-                    for i in comb:
-                        seq_mod_new = seq_mod[:i] + 'F'
-                        if i + 1 < len(seq):
-                            seq_mod_new += seq_mod[i+1:]
-                        seq_mod = seq_mod_new
-                    candidates.append(seq_mod)
-                    if is_start:
-                        candidates.append(seq_mod[1:])
+                for k in range(1, len(w2f_indices) + 1):
+                    for comb in combinations(w2f_indices, k):
+                        seq_mod = candidate
+                        for i in comb:
+                            seq_mod_new = seq_mod[:i] + 'F'
+                            if i + 1 < len(candidate):
+                                seq_mod_new += seq_mod[i+1:]
+                            seq_mod = seq_mod_new
+                        candidates.append(seq_mod)
 
         for candidate in candidates:
             if self.peptide_is_valid(candidate, denylist, check_canonical):
