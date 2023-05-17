@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 import sys
 from typing import IO
+import matplotlib.pyplot as plt
 from moPepGen.cli import common
 from moPepGen.aa.PeptidePoolSummarizer import PeptidePoolSummarizer
 
@@ -15,6 +16,7 @@ from moPepGen.aa.PeptidePoolSummarizer import PeptidePoolSummarizer
 GVF_FILE_FORMAT = ['.gvf']
 FASTA_FILE_FORMAT = ['.fasta', '.fa']
 OUTPUT_FILE_FORMATS = ['.txt', 'tsv']
+OUTPUT_IMAGE_FORMATS = ['.pdf', '.jpg', '.jpeg', '.png']
 
 
 # pylint: disable=W0212
@@ -71,10 +73,29 @@ def add_subparser_summarize_fasta(subparser:argparse._SubParsersAction):
         default=None
     )
     p.add_argument(
+        '--output-image',
+        type=Path,
+        help=f"File path to the output barplot. Valid formats: {OUTPUT_IMAGE_FORMATS}",
+        metavar='<file>',
+        default=None
+    )
+    p.add_argument(
         '--ignore-missing-source',
         action='store_true',
         help='Ignore the sources missing from input GVF.'
     )
+    group_plot_scale = p.add_mutually_exclusive_group()
+    group_plot_scale.add_argument(
+        '--plot-normal-scale',
+        action='store_true',
+        help='Draw the summary bar plot in normal scale.'
+    )
+    group_plot_scale.add_argument(
+        '--plot-log-scale',
+        action='store_true',
+        help='Draw the summary bar plot in log scale.'
+    )
+
     common.add_args_cleavage(p, enzyme_only=True)
     common.add_args_reference(p, genome=False, proteome=True)
     common.add_args_quiet(p)
@@ -102,9 +123,14 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         args.variant_peptides, FASTA_FILE_FORMAT, check_readable=True
     )
 
-    common.validate_file_format(
-        args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
-    )
+    if args.output_path is not None:
+        common.validate_file_format(
+            args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
+        )
+    if args.output_image is not None:
+        common.validate_file_format(
+            args.output_image, OUTPUT_IMAGE_FORMATS, check_writable=True
+        )
 
     common.print_start_message(args)
 
@@ -142,3 +168,14 @@ def summarize_fasta(args:argparse.Namespace) -> None:
 
     with output_context(args.output_path) as handle:
         summarizer.write_summary_table(handle)
+
+    if args.output_image:
+        if args.plot_log_scale:
+            scale = 'log'
+        elif args.plot_normal_scale:
+            scale = 'normal'
+        else:
+            scale = None
+        fig, ax = plt.subplots(figsize=(8, 8))
+        summarizer.create_barplot(ax=ax, scale=scale)
+        fig.savefig(args.output_image, bbox_inches="tight")
