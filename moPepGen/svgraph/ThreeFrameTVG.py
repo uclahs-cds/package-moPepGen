@@ -1473,15 +1473,38 @@ class ThreeFrameTVG():
 
         return subgraph1.location < subgraph2.location
 
-    def nodes_have_too_many_variants(self, nodes:Iterable[TVGNode]) -> bool:
+    @staticmethod
+    def nodes_have_too_many_variants(nodes:Iterable[TVGNode],
+            max_in_bubble_variants:int) -> bool:
         """ Check the total number of variants of given nodes """
-        if self.cleavage_params.max_variants_per_node == -1:
+        if max_in_bubble_variants == -1:
             return False
         variants = set()
         for node in nodes:
             for variant in node.variants:
                 variants.add(variant.variant)
-        return len(variants) > self.cleavage_params.max_variants_per_node
+        return len(variants) > max_in_bubble_variants
+
+    @staticmethod
+    def get_max_in_bubble_variants(n:int) -> int:
+        """ Get the `max_in_bubble_variants` based on the total number of variants
+        in a variant bubble. The values are set so the number of combinations to
+        consider won't be too much more than 5,000. """
+        if n <= 12:
+            return -1
+        if n <= 14:
+            return 7
+        if n <= 15:
+            return 6
+        if n <= 16:
+            return 5
+        if n <= 21:
+            return 4
+        if n <= 34:
+            return 3
+        if n <= 100:
+            return 2
+        return 1
 
     def align_variants(self, node:TVGNode) -> Tuple[TVGNode, TVGNode]:
         r""" Aligns all variants at that overlaps to the same start and end
@@ -1509,6 +1532,18 @@ class ThreeFrameTVG():
         if rf_index is None:
             raise ValueError('reading_frame_index not found')
         end_node, members = self.find_variant_bubble(node)
+
+        member_variants = set()
+        for member in members:
+            member_variants.update([v.variant.id for v in member.variants])
+
+        max_in_bubble_variants = self.get_max_in_bubble_variants(len(member_variants))
+
+        if len(member_variants) >= 13:
+            err.warning(
+                f"Hypermutated region detected with {len(member_variants)} variants."
+                f" `max_in_bubble_variants` of {max_in_bubble_variants} is used."
+            )
 
         if not end_node:
             raise err.FailedToFindVariantBubbleError()
@@ -1601,14 +1636,7 @@ class ThreeFrameTVG():
 
                 trash.add(out_node)
 
-                if self.nodes_have_too_many_variants([cur, out_node]):
-                    if not self.hypermutated_region_warned:
-                        err.HypermutatedRegionWarning(
-                            self.id,
-                            self.cleavage_params.max_variants_per_node,
-                            self.cleavage_params.additional_variants_per_misc
-                        )
-                        self.hypermutated_region_warned = True
+                if self.nodes_have_too_many_variants([cur, out_node], max_in_bubble_variants):
                     continue
 
                 # create new node with the combined sequence
