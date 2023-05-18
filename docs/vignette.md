@@ -61,7 +61,7 @@ vep \
     --custom ${ANNOTATION_GTF},${REFERENCE_VERSION},gtf
 ```
 
-We also recommend using a filter command to only keep the annotation records using the custom reference.
+We also recommend using a filter command to only keep the annotation records from the custom reference.
 
 ```shell
 filter_vep \
@@ -253,9 +253,9 @@ Because moPepGen calls for enzymatic cleaved peptides, there are chances that th
 HETLFLLTFPR
 ```
 
-To resolve cases of collapsed peptides like this, we use the `--order-source` argument that takes the priority order of sources to be considered, and it takes a comma separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to gSNP category. Noted that the values passed inito `--order-source` must match with the values used for `--source` in each parser call. If the `--order-source` is not provided, it will be inferred from the order of input GVF files.
+To resolve the issue of collapsed peptides like this, we use the `--order-source` argument that takes the priority order of sources to be considered. It takes a comma separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Noted that the values passed into `--order-source` must match with the values used for `--source` in the corresponding parser calls. If the `--order-source` is not provided, the source priority order will be inferred from the order of input GVF files.
 
-Besides variant peptides called by `callVariant`, noncoding peptides and alternative translation peptides can also be passed to `summarizeFasta` with `--noncoding-peptides` and `--alt-translation-peptiides`.
+Besides variant peptides called by `callVariant`, noncoding peptides and alternative translation peptides can also be passed to `summarizeFasta` with `--noncoding-peptides` and `--alt-translation-peptides`.
 
 ### Splitting
 
@@ -272,9 +272,9 @@ moPepGen splitFasta \
 
 Similar to `summarizeFasta`, `splitFasta` also takes a `--order-source` to specify the priority order of which category a peptide should be assigned to, and will be inferred from the input GVFs if not specified. `--group-source` is used to group sources as a super category. For example, `--group-source Germline:gSNP,gINDEL Somatic:sSNV,sINDEL` will group sources of `gSNP` and `gINDEL` together as `Germline`, and `sSNV` and `sINDEL` as `Somatic`.
 
-Noted that, when assigning a peptide to a source category, it must carry exclusively the desired type of variants. For example, a peptide of 'ENST00000622235.5|SNV-100-G-T|SNV-110-C-A|2' is assigned to `SNV`, while a peptide of 'ENST00000622235.5|SNV-100-G-T|RES-110-C-A|2' will be assigned to the category of `SNV-RNAEditing` but not `SNV`. `--max-source-groups` is used to specify the maximal number of source groups to split. The default value is 1, which means all peptides that contains two ore more types of variants will not be split into their own FASTA file, but kept in the '\<prefix\>_Remaining.fasta' file.
+Noted that, when assigning a peptide to a source category, it must carry exclusively the desired type(s) of variants. For example, a peptide of 'ENST00000622235.5|SNV-100-G-T|SNV-110-C-A|2' is assigned to `SNV`, while a peptide of 'ENST00000622235.5|SNV-100-G-T|RES-110-C-A|2' will be assigned to the category of `SNV-RNAEditing` but not `SNV`. `--max-source-groups` is used to specify the maximal number of source groups to split. The default value is 1, which means all peptides that contains two or more types of variants will not be written into their own FASTA file, but kept in the '\<prefix\>_Remaining.fasta' file.
 
-Similar to `summarizeFasta`, noncoding and alternative translatino peptides can be passed to `splitFasta` via `--noncoding-pepitdes` and `--alt-translation-peptides`.
+Similar to `summarizeFasta`, noncoding and alternative translation peptides can be passed to `splitFasta` via `--noncoding-peptides` and `--alt-translation-peptides`.
 
 See [here](./split-fasta) for a complete list of arguments.
 
@@ -294,7 +294,7 @@ moPepGen decoyFasta \
 
 ### Shortening FASTA headers
 
-Some search engines have limits on how long the database FASTA headers can be. The headers of moPepGen's variant FASTA files could be very long, because the same peptide can be called from different transcripts. We provide a shortening strategy by replacing all FASTA headers into a UUID and storing the mapping information into a `.dict` file with the same prefix.
+Some search engines have limits on how long the database FASTA headers can be. The headers of moPepGen's variant FASTA files could be very long, because the same peptide can be called from different transcripts. We provide a shortening approach by replacing all FASTA headers with UUIDs and storing the mapping information into a `.dict` file with the same prefix.
 
 ```shell
 moPepGen encodeFasta \
