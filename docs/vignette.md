@@ -39,7 +39,7 @@ moPepGen generateIndex \
 
 MoPepGen starts from parsing a variety of variant files into GVF, a TSV format derived from VCF, to be used by moPepGen to call for variant peptides.
 
-### VEP
+### SNP & INDEL
 
 Single nucleotide variants (SNVs/SNPs) and small insertions/deletions (INDELs) called by variant callers (*e.g.* GATK and Mutect2) must be annotated by the Variant Effect Predictor (VEP) first to get the genes each variant is associated. Here is a generic command we use. Noted that, the VEP cache files must be downloaded prior to running VEP (see [here](https://useast.ensembl.org/info/docs/tools/vep/script/vep_cache.html)). The cache file of the correct version number should be used, however when running VEP, we recommend also providing a custom reference genome and annotation downloaded from eiither ENCODE or ENSEMBL. The exact genome FASTA and annotation GTF files should be used later when calling for variant peptides.
 
@@ -111,7 +111,7 @@ moPepGen parseSTARFusion \
 
 Be default, `parseSTARFusion` only keeps fusion events with minimal `est_J` value of 5. This can be altered by the `--min-est-j` argument.
 
-### Alternative splicing
+### Alternative Splicing
 
 MoPepGen accepts alternative splicing (AS) events estimated by [rMATS](https://rnaseq-mats.sourceforge.net/). RMATS estimates five AS events: SE (skipped exon), A3SS (alternative 3' splicing), A5SS (alternative 5' splicing), MXE (mutually exclusive exons), and RI (retained introns), accepted by `parseRMATS` as separate input channels. Noted that only the *.JC.txt files are supported.
 
@@ -227,7 +227,7 @@ moPepGen callAltTranslation \
 
 And again, `callAltTranslation` also uses trypsin as the default enzyme, and up to 2 miscleavages by default. See [here](./call-alt-translation) for a complete list of arguments.
 
-## processing
+## Processing
 
 MoPepGen provides a series of processing commands that aims to deliver FASTA files ready for database searching. The processing tasks include summarization of a non-canonical database, splitting a detabase to separate databases, creating decoy databases, shortening fasta headers for search engines to handle, and merging multiple database files for multiplexing proteomic experiments.
 
