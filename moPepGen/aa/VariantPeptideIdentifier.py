@@ -46,7 +46,7 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
         second_variant_ids += variant_id_map.get(second_tx_id, [])
 
         label = FusionVariantPeptideIdentifier(fusion_id, first_variant_ids,
-            second_variant_ids, orf_id, index)
+            second_variant_ids, [], orf_id, index)
         return str(label)
     variant_ids = []
     for key, val in variant_id_map.items():
@@ -91,16 +91,18 @@ def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
             if x_id.startswith('FUSION-'):
                 first_variants:List[str] = []
                 second_variants:List[str] = []
+                peptide_variants:List[str] = []
                 for var_id in var_ids:
-                    which_gene, var_id = var_id.split('-', 1)
-                    if int(which_gene) == 1:
-                        first_variants.append(var_id)
-                    elif int(which_gene) == 2:
-                        second_variants.append(var_id)
+                    if var_id.startswith('1-') or var_id.startswith('2-'):
+                        which_gene, var_id = var_id.split('-', 1)
+                        if int(which_gene) == 1:
+                            first_variants.append(var_id)
+                        elif int(which_gene) == 2:
+                            second_variants.append(var_id)
                     else:
-                        raise ValueError('Variant is not valid')
+                        peptide_variants.append(var_id)
                 variant_id = FusionVariantPeptideIdentifier(x_id, first_variants,
-                    second_variants, orf_id, index)
+                    second_variants, peptide_variants, orf_id, index)
             elif x_id.startswith('CIRC-') or x_id.startswith('CI-'):
                 variant_id = CircRNAVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
             else:
@@ -170,10 +172,12 @@ class CircRNAVariantPeptideIdentifier(VariantPeptideIdentifier):
 class FusionVariantPeptideIdentifier(VariantPeptideIdentifier):
     """ Fusion variant peptide identifier """
     def __init__(self, fusion_id:str, first_variants:List[str],
-            second_variants:List[str], orf_id:str=None, index:int=None):
+            second_variants:List[str], peptide_variants:List[str],
+            orf_id:str=None, index:int=None):
         self.fusion_id = fusion_id
         self.first_variants = first_variants
         self.second_variants = second_variants
+        self.peptide_variants = peptide_variants
         self.index = index
         self.orf_id = orf_id
 
@@ -184,6 +188,7 @@ class FusionVariantPeptideIdentifier(VariantPeptideIdentifier):
             x.append(self.orf_id)
         x += [f"1-{it}" for it in self.first_variants]
         x += [f"2-{it}" for it in self.second_variants]
+        x += self.peptide_variants
         if self.index:
             x.append(str(self.index))
         return '|'.join(x)

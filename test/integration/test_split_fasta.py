@@ -63,10 +63,12 @@ class TestSplitDatabase(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'test_gINDEL.fasta','test_gSNP.fasta',
+        expected = {
+            'test_gINDEL.fasta','test_gSNP.fasta', 'test_Fusion.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
             'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta',
-            'test_CodonReassign.fasta', 'test_SECT.fasta'}
+            'test_CodonReassign.fasta', 'test_SECT.fasta'
+        }
         self.assertEqual(files, expected)
 
     def test_split_fasta_case2(self):
@@ -87,9 +89,11 @@ class TestSplitDatabase(TestCaseIntegration):
         args.group_source = ['coding:gSNP,gINDEL']
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'test_coding.fasta', 'test_RNAEditingSite.fasta',
+        expected = {
+            'test_coding.fasta', 'test_RNAEditingSite.fasta', 'test_Fusion.fasta',
             'test_circRNA.fasta', 'test_Remaining.fasta', 'test_circRNA.fasta',
-            'test_Noncoding.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'}
+            'test_Noncoding.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'
+        }
         self.assertEqual(files, expected)
 
     def test_split_fasta_case3(self):
@@ -111,9 +115,11 @@ class TestSplitDatabase(TestCaseIntegration):
         args.order_source = 'RNAEditingSite,coding,circRNA,Fusion'
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'test_coding.fasta', 'test_RNAEditingSite.fasta',
+        expected = {
+            'test_coding.fasta', 'test_RNAEditingSite.fasta', 'test_Fusion.fasta',
             'test_circRNA.fasta', 'test_Remaining.fasta', 'test_circRNA.fasta',
-            'test_Noncoding.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'}
+            'test_Noncoding.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'
+        }
         self.assertEqual(files, expected)
 
     def test_split_fasta_case4(self):
@@ -134,8 +140,10 @@ class TestSplitDatabase(TestCaseIntegration):
         args.additional_split = ['Noncoding-gSNP']
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'test_gINDEL.fasta','test_gSNP.fasta',
+        expected = {
+            'test_gINDEL.fasta','test_gSNP.fasta', 'test_Fusion.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
             'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta',
-            'test_CodonReassign.fasta', 'test_SECT.fasta'}
+            'test_CodonReassign.fasta', 'test_SECT.fasta'
+        }
         self.assertEqual(files, expected)
