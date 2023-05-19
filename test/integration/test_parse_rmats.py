@@ -56,7 +56,8 @@ class TestParseRMATS(TestCaseIntegration):
         """ rMATS skipped exon when the retained version is annotated. This
         should results an deletion. """
         args = self.create_base_args()
-        args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_1.SE.JC.txt'
+        args.skipped_exon = self.data_dir\
+            /'alternative_splicing/rmats_se_case_1.SE.JC.txt'
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.location.start, 323)
@@ -70,7 +71,8 @@ class TestParseRMATS(TestCaseIntegration):
         """ rMATS skipped exon when the skipped version is annotated. This
         should result an insertion. """
         args = self.create_base_args()
-        args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_2.SE.JC.txt'
+        args.skipped_exon = self.data_dir\
+            /'alternative_splicing/rmats_se_case_2.SE.JC.txt'
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.location.start, 870)
@@ -87,7 +89,8 @@ class TestParseRMATS(TestCaseIntegration):
         3. Downstream adjacent exons
         """
         args = self.create_base_args()
-        args.skipped_exon = self.data_dir/'alternative_splicing/rmats_se_case_3.SE.JC.txt'
+        args.skipped_exon = self.data_dir\
+            /'alternative_splicing/rmats_se_case_3.SE.JC.txt'
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(args.output_path))
         expect_values = {
@@ -121,7 +124,8 @@ class TestParseRMATS(TestCaseIntegration):
         """ rMATS A5SS when the longer version is annotated. This should
         results a deletion. """
         args = self.create_base_args()
-        args.alternative_5_splicing = self.data_dir/'alternative_splicing/rmats_a5ss_case_1.A5SS.JC.txt'
+        args.alternative_5_splicing = self.data_dir\
+            /'alternative_splicing/rmats_a5ss_case_1.A5SS.JC.txt'
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Deletion')
@@ -131,7 +135,8 @@ class TestParseRMATS(TestCaseIntegration):
         """ rMATS A5SS when the shorter version is annotated. This should
         results an insertion. """
         args = self.create_base_args()
-        args.alternative_5_splicing = self.data_dir/'alternative_splicing/rmats_a5ss_case_2.A5SS.JC.txt'
+        args.alternative_5_splicing = self.data_dir\
+            /'alternative_splicing/rmats_a5ss_case_2.A5SS.JC.txt'
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Insertion')
@@ -141,7 +146,8 @@ class TestParseRMATS(TestCaseIntegration):
         """ rMATS A3SS when the longer version is annotated. This should
         results a deletion. """
         args = self.create_base_args()
-        args.alternative_3_splicing = self.data_dir/'alternative_splicing/rmats_a3ss_case_1.A3SS.JC.txt'
+        args.alternative_3_splicing = self.data_dir\
+            /'alternative_splicing/rmats_a3ss_case_1.A3SS.JC.txt'
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Deletion')
@@ -151,7 +157,8 @@ class TestParseRMATS(TestCaseIntegration):
         """ rMATS A3SS when the shorter version is annotated. This should
         results an Insertion. """
         args = self.create_base_args()
-        args.alternative_3_splicing = self.data_dir/'alternative_splicing/rmats_a3ss_case_2.A3SS.JC.txt'
+        args.alternative_3_splicing = self.data_dir\
+            /'alternative_splicing/rmats_a3ss_case_2.A3SS.JC.txt'
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Insertion')
@@ -161,7 +168,8 @@ class TestParseRMATS(TestCaseIntegration):
         """ rMATS MXE when one exon is annotated. This should results a
         substitution. """
         args = self.create_base_args()
-        args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_1.MXE.JC.txt'
+        args.mutually_exclusive_exons = self.data_dir\
+            /'alternative_splicing/rmats_mxe_case_1.MXE.JC.txt'
         cli.parse_rmats(args)
         record = list(seqvar.io.parse(args.output_path))[0]
         self.assertTrue(record.type, 'Substitution')
@@ -170,7 +178,8 @@ class TestParseRMATS(TestCaseIntegration):
     def test_parse_rmats_mxe_case_2(self):
         """ rMATS MXE when both exons are annotated. Should be two deletions """
         args = self.create_base_args()
-        args.mutually_exclusive_exons = self.data_dir/'alternative_splicing/rmats_mxe_case_2.MXE.JC.txt'
+        args.mutually_exclusive_exons = self.data_dir\
+            /'alternative_splicing/rmats_mxe_case_2.MXE.JC.txt'
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(args.output_path))
         self.assertTrue(all(v.type == 'Deletion' for v in records))
@@ -178,7 +187,8 @@ class TestParseRMATS(TestCaseIntegration):
     def test_parse_rmats_ri(self):
         """ rMATS RI. """
         args = self.create_base_args()
-        args.retained_intron = self.data_dir/'alternative_splicing/rmats_ri_case_1.RI.JC.txt'
+        args.retained_intron = self.data_dir\
+            /'alternative_splicing/rmats_ri_case_1.RI.JC.txt'
         cli.parse_rmats(args)
         records = list(seqvar.io.parse(args.output_path))
         self.assertTrue(len(records), 2)
