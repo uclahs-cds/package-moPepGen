@@ -37,7 +37,7 @@ moPepGen generateIndex \
 
 ## Parsing
 
-moPepGen starts with parsing a variety of variant files into GVF, a TSV format derived from VCF, to be used by moPepGen to call variant peptides.
+The moPepGen workflow starts with parsing a variety of variant files into GVF, a TSV format derived from VCF, to be used by moPepGen to call variant peptides.
 
 ### SNP & INDEL
 
