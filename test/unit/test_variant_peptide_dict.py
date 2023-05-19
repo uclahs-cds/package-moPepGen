@@ -18,6 +18,7 @@ def create_variant_peptide_dict(tx_id, data) -> VariantPeptideDict:
             label = vpi.create_variant_peptide_id(tx_id, variants, None)
             is_pure_circ_ran = len(variants) == 1 and list(variants)[0].is_circ_rna()
             metadata = VariantPeptideMetadata(label, it[1], is_pure_circ_ran)
+            metadata.has_variants = bool(variants)
             metadatas.add(metadata)
         peptides[seq] = metadatas
     return VariantPeptideDict(tx_id=tx_id, peptides=peptides)

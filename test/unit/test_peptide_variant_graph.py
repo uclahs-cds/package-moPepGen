@@ -550,7 +550,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph_id = 'ENST0001'
         graph, _ = create_pgraph(data, graph_id, )
-        peptides = graph.call_variant_peptides(check_variants=False, check_orf=True)
+        peptides = graph.call_variant_peptides(
+            check_variants=False, check_orf=True,
+            check_external_variants=False
+        )
 
         received = {str(x.seq) for x in peptides}
         expected = {'MSSSK', 'MSSYK', 'SSSSR', 'SSYK', 'SSSK'}
