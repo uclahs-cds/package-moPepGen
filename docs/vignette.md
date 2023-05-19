@@ -45,6 +45,8 @@ Single nucleotide variants (SNVs/SNPs) and small insertions/deletions (INDELs) c
 
 Note that, the VEP cache files must be downloaded prior to running VEP (see [here](https://useast.ensembl.org/info/docs/tools/vep/script/vep_cache.html)). The VEP developers recommend downloading the VEP cache version which corresponds to the Ensembl VEP installation. We also strongly recommend explicitly providing the exact reference genome and GTF file used in moPepGen to VEP to ensure the consistency of transcript IDs (i.e., using `--custom ${ANNOTATION_GTF},${REFERENCE_VERSION},gtf`). The exact genome FASTA and annotation GTF files should be used later when calling for variant peptides.
 
+The example data does not work for VEP.
+
 ```shell
 vep \
     --offline \
