@@ -14,7 +14,7 @@ pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
 
 moPepGen requires a set of reference files, including the reference genome, its annotation and the translated protein sequences. We currently support reference files downloaded from two sources, ENSEMBL and GENCODE. See [here](quick-start/#downloading-reference-files) for more details.
 
-A simulated reference set is provided for demonstration. The demo reference set only contains 5 transcripts and is only about 40 KB in size so should run very easily on any computer. The demo reference set can be downloaded with the commands blew.
+A simulated reference set is provided for demonstration. The demo reference set only contains 5 transcripts and is only about 40 KB in size so should run very easily on any computer. The demo reference set can be downloaded with the commands below.
 
 ```shell
 cd ~
