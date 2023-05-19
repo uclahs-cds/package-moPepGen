@@ -267,6 +267,30 @@ To resolve the issue of collapsed peptides like the example above, we use the `-
 
 Besides variant peptides called by `callVariant`, noncoding peptides and alternative translation peptides can also be passed to `summarizeFasta` with `--noncoding-peptides` and `--alt-translation-peptides`.
 
+### Filtering
+
+The `fitlerFasta` command is provided to take a RNA abundance matrix and filter the non-canonical peptides based on the abundances of their corresponding transcripts.
+
+We provide an example RSEM table for demonstration.
+
+```shell
+wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/rsem/rsem.txt
+```
+
+```shell
+moPepGen filterFasta \
+    -i variant_peptides.fasta \
+    -o variant_peptides_filtered.fasta \
+    --exprs-table rsem.txt \
+    --skip-lines 1 \
+    --tx-id-col 1 \
+    --quant-col 6 \
+    --quant-cutoff 10 \
+    --index ./index
+```
+
+`--skip-lines` indicates the top x number of lines in the abundance matrix that should be skipped. These lines are usually headers or notes output by the quantitation software. `--tx-id-col` indicates the column number for transcript IDs. Any type of quantitation metrics can be used for filtering (*e.g.* count, TPM, FPKM) as long as a desired cutoff is given in `--quant-cutoff`. Note that the same reference GTF should be used during quantitation so the transcript IDs can be mapped correctly to variant peptides called by moPepGen.
+
 ### Splitting
 
 The `splitFasta` is provided to split a variant peptide database into several separate databases for tiered database searching.
