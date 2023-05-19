@@ -215,7 +215,7 @@ moPepGen callNoncoding \
 
 Similar to `callVariant`, trypsin is the default enzyme and the default maximal miscleavages to allow is 2. These can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-noncoding) for a complete list of arguments supported by `callNoncoding`.
 
-### Alternate Translation Peptides
+### Alternative Translation Peptides
 
 Alternative translation peptides are those that harbor special events during translation, such as selenocysteine termination and W > F substitutants, where the genetic code are not altered but a different polypeptide is produced (see [here](./call-alt-translation) for more details). Similar to noncoding peptides, `callAltTranslation` only calls peptides using reference transcripts.
 
