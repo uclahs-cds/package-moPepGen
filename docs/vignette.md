@@ -41,7 +41,7 @@ moPepGen starts with parsing a variety of variant files into GVF, a TSV format d
 
 ### SNP & INDEL
 
-Single nucleotide variants (SNVs/SNPs) and small insertions/deletions (INDELs) called by variant callers (*e.g.* GATK and Mutect2) must be annotated by the Variant Effect Predictor (VEP) first to get the genes each variant is associated with. Here is a generic command we use. Note that, the VEP cache files must be downloaded prior to running VEP (see [here](https://useast.ensembl.org/info/docs/tools/vep/script/vep_cache.html)). The cache file of the correct version number should be used, however when running VEP, we recommend also providing a custom reference genome and annotation downloaded from eiither ENCODE or ENSEMBL. The exact genome FASTA and annotation GTF files should be used later when calling for variant peptides.
+Single nucleotide variants (SNVs/SNPs) and small insertions/deletions (INDELs) called by variant callers (*e.g.* GATK and Mutect2) must be annotated by the Variant Effect Predictor (VEP) first to get the genes each variant is associated with. Here is a generic command we use. Note that, the VEP cache files must be downloaded prior to running VEP (see [here](https://useast.ensembl.org/info/docs/tools/vep/script/vep_cache.html)). The VEP developers recommend downloading the VEP cache version which corresponds to the Ensembl VEP installation. We also strongly recommend explicitly providing the exact reference genome and GTF file used in moPepGen to VEP to ensure the consistency of transcript IDs (i.e., using `--custom ${ANNOTATION_GTF},${REFERENCE_VERSION},gtf`). The exact genome FASTA and annotation GTF files should be used later when calling for variant peptides.
 
 ```shell
 vep \
