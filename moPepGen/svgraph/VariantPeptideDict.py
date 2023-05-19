@@ -22,11 +22,12 @@ if TYPE_CHECKING:
 class VariantPeptideMetadata():
     """ Variant peptide metadata """
     def __init__(self, label:str=None, orf:Tuple[int,int]=None,
-            is_pure_circ_rna:bool=False):
+            is_pure_circ_rna:bool=False, has_variants:bool=False):
         """  """
         self.label = label
         self.orf = orf
         self.is_pure_circ_rna = is_pure_circ_rna
+        self.has_variants = has_variants
 
 T = Dict[aa.AminoAcidSeqRecord, Set[VariantPeptideMetadata]]
 
@@ -262,6 +263,7 @@ class MiscleavedNodes():
                     gene_id=self.gene_id
                 )
                 cur_metadata.label = label
+                cur_metadata.has_variants = bool(variants)
 
                 if is_valid:
                     aa_seq = aa.AminoAcidSeqRecord(seq=seq)
@@ -290,6 +292,7 @@ class MiscleavedNodes():
                     gene_id=self.gene_id
                 )
                 cur_metadata.label = label
+                cur_metadata.has_variants = bool(cur_variants)
 
                 if is_valid:
                     aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod)
@@ -298,14 +301,6 @@ class MiscleavedNodes():
                 if is_valid_start:
                     aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod[1:])
                     yield aa_seq, cur_metadata
-
-        # if check_external_variants and not variants:
-        #     return
-
-        # if not self.seq_has_valid_size(seq):
-        #     return
-
-
 
     @staticmethod
     def any_overlaps_and_all_missing_variant(nodes:Iterable[PVGNode], variant:VariantRecord):
@@ -616,6 +611,7 @@ class VariantPeptideDict():
                     for metadata in self.peptides[seq]:
                         cur_metadata = copy.copy(metadata)
                         cur_metadata.label += '|' + '|'.join(v.id for v in comb)
+                        cur_metadata.has_variants = True
 
                         aa_seq = aa.AminoAcidSeqRecord(seq=seq_mod)
 
@@ -624,7 +620,7 @@ class VariantPeptideDict():
                         self.seqs.add(aa_seq.seq)
 
     def get_peptide_sequences(self, keep_all_occurrence:bool=True,
-            orf_id_map:Dict[Tuple[int,int],str]=None
+            orf_id_map:Dict[Tuple[int,int],str]=None, check_variants:bool=True
             ) -> Set[aa.AminoAcidSeqRecord]:
         """ Get the peptide sequence and check for miscleavages.
 
@@ -646,6 +642,8 @@ class VariantPeptideDict():
             unique_labels = set()
             had_pure_circ_rna = False
             for metadata in metadatas:
+                if check_variants and not metadata.has_variants:
+                    continue
                 if metadata.is_pure_circ_rna:
                     if had_pure_circ_rna:
                         continue
@@ -671,6 +669,10 @@ class VariantPeptideDict():
 
                 if not keep_all_occurrence:
                     break
+
+            if not labels:
+                continue
+
             seq.description = " ".join(labels)
             seq.id = seq.description
             seq.name = seq.description

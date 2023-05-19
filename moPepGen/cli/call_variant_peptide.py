@@ -443,7 +443,8 @@ def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
     pgraph = dgraph.translate()
     pgraph.create_cleavage_graph()
     peptides = pgraph.call_variant_peptides(
-        check_variants=False, truncate_sec=truncate_sec, w2f=w2f
+        check_variants=False, truncate_sec=truncate_sec, w2f=w2f,
+        check_external_variants=False
     )
     return {str(x.seq) for x in peptides}
 

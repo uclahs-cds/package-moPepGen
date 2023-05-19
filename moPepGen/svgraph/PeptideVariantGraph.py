@@ -813,9 +813,9 @@ class PeptideVariantGraph():
             cleavage_params=self.cleavage_params
         )
         traversal = PVGTraversal(
-            check_variants=check_variants, check_orf=check_orf,
-            queue=queue, pool=peptide_pool, circ_rna=circ_rna,
-            orf_assignment=orf_assignment
+            check_variants=check_external_variants,
+            check_orf=check_orf, queue=queue, pool=peptide_pool,
+            circ_rna=circ_rna, orf_assignment=orf_assignment
         )
 
         if self.has_known_orf():
@@ -859,7 +859,8 @@ class PeptideVariantGraph():
         peptide_pool.translational_modification(w2f, self.denylist)
 
         return peptide_pool.get_peptide_sequences(
-            keep_all_occurrence=keep_all_occurrence, orf_id_map=self.orf_id_map
+            keep_all_occurrence=keep_all_occurrence, orf_id_map=self.orf_id_map,
+            check_variants=check_variants
         )
 
     def call_and_stage_known_orf(self, cursor:PVGCursor,
