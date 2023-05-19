@@ -256,7 +256,7 @@ By default, `summarizeFasta` outputs to stdout, which can be saved to a text fil
 
 ![summarize-fasta-bar-plot](img/summarize-fasta.png)
 
-Because moPepGen calls for enzymatically cleaved peptides, there is possibility that the same peptide is called from multiple transcripts, or the same transcript with different or different combinations of variants. For example, the peptide below is called twice from two separate transcripts with different variants.
+Because moPepGen calls enzymatically cleaved peptides, there is the possibility that the same peptide is called from multiple transcripts, or the same transcript with different or different combinations of variants. For example, the peptide below is called twice from two separate transcripts with two different variants.
 
 ```
 >ENST00000622235.5|SNV-100-G-T|4 ENST00000614167.2|RES-202-G-A|2
