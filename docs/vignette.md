@@ -4,7 +4,7 @@ Welcome to the vignette for moPepGen, a powerful Python package designed for gen
 
 ## Installation
 
-MoPepGen is a command line tool designated to execute in a unix-like environment. For MacOS and Linux users, moPepGen can be installed using the command below. For Windows users, we recommend installing and running moPepGen from WSL (Windows Subsystem for Linux).
+moPepGen is a command line tool designated to execute in a unix-like environment. For MacOS and Linux users, moPepGen can be installed using the command below. For Windows users, we recommend installing and running moPepGen from WSL (Windows Subsystem for Linux).
 
 ```shell
 pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
@@ -12,14 +12,14 @@ pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
 
 ## Reference Data
 
-MoPepGen requires a set of reference files, including the reference genome，its annotation and the translated protein sequences. We currently support reference files downloaded from two sources, ENSEMBL and GENCODE. See [here](quick-start/#downloading-reference-files) for more details.
+moPepGen requires a set of reference files, including the reference genome, its annotation and the translated protein sequences. We currently support reference files downloaded from two sources, ENSEMBL and GENCODE. See [here](quick-start/#downloading-reference-files) for more details.
 
 A simulated reference set is provided for demonstration. The demo reference set only contains 5 transcripts and is only about 40 KB in size so should run very easily on any computer. The demo reference set can be downloaded with the commands blew.
 
 ```shell
 cd ~
-mkdir -p mopepgen-demo
-cd mopepgen-demo
+mkdir -p moPepGen-demo
+cd moPepGen-demo
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/genome.fasta
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/annotation.gtf
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/translate.fasta
@@ -37,11 +37,11 @@ moPepGen generateIndex \
 
 ## Parsing
 
-MoPepGen starts from parsing a variety of variant files into GVF, a TSV format derived from VCF, to be used by moPepGen to call for variant peptides.
+moPepGen starts with parsing a variety of variant files into GVF, a TSV format derived from VCF, to be used by moPepGen to call variant peptides.
 
 ### SNP & INDEL
 
-Single nucleotide variants (SNVs/SNPs) and small insertions/deletions (INDELs) called by variant callers (*e.g.* GATK and Mutect2) must be annotated by the Variant Effect Predictor (VEP) first to get the genes each variant is associated. Here is a generic command we use. Noted that, the VEP cache files must be downloaded prior to running VEP (see [here](https://useast.ensembl.org/info/docs/tools/vep/script/vep_cache.html)). The cache file of the correct version number should be used, however when running VEP, we recommend also providing a custom reference genome and annotation downloaded from eiither ENCODE or ENSEMBL. The exact genome FASTA and annotation GTF files should be used later when calling for variant peptides.
+Single nucleotide variants (SNVs/SNPs) and small insertions/deletions (INDELs) called by variant callers (*e.g.* GATK and Mutect2) must be annotated by the Variant Effect Predictor (VEP) first to get the genes each variant is associated with. Here is a generic command we use. Note that, the VEP cache files must be downloaded prior to running VEP (see [here](https://useast.ensembl.org/info/docs/tools/vep/script/vep_cache.html)). The cache file of the correct version number should be used, however when running VEP, we recommend also providing a custom reference genome and annotation downloaded from eiither ENCODE or ENSEMBL. The exact genome FASTA and annotation GTF files should be used later when calling for variant peptides.
 
 ```shell
 vep \
@@ -61,7 +61,7 @@ vep \
     --custom ${ANNOTATION_GTF},${REFERENCE_VERSION},gtf
 ```
 
-We also recommend using a filter command to only keep the annotation records from the custom reference.
+If you provided a custom GTF file to VEP, please also use a filter command to only keep the annotation records from the custom reference.
 
 ```shell
 filter_vep \
@@ -87,13 +87,13 @@ moPepGen parseVEP \
     --source SNV
 ```
 
-The `--source` argument is a user-defined value specifying the type of variants (*e.g.*, SNP, SNV, INDEL) later used during processing steps, and are required by all moPepGen parsers.
+The `--source` argument is used to specify the type of variants (*e.g.*, SNP, SNV, INDEL) parsed. The source names are used in later processing steps, and are required by all moPepGen parsers.
 
 ### Fusion
 
-MoPepGen provides parsers to three fusion callers, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion), [Arriba](https://github.com/suhrig/arriba) and [FusionCatcher](https://github.com/ndaniel/fusioncatcher).
+moPepGen provides parsers to three fusion callers, [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion), [Arriba](https://github.com/suhrig/arriba) and [FusionCatcher](https://github.com/ndaniel/fusioncatcher).
 
-Download a demo TSV file output by STAR-Fusion
+As an example, we provide a STAR-Fusion TSV output file for demonstration.
 
 ```shell
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/fusion/star_fusion.txt
@@ -113,9 +113,9 @@ Be default, `parseSTARFusion` only keeps fusion events with minimal `est_J` valu
 
 ### Alternative Splicing
 
-MoPepGen accepts alternative splicing (AS) events estimated by [rMATS](https://rnaseq-mats.sourceforge.net/). RMATS estimates five AS events: SE (skipped exon), A3SS (alternative 3' splicing), A5SS (alternative 5' splicing), MXE (mutually exclusive exons), and RI (retained introns), accepted by `parseRMATS` as separate input channels. Noted that only the *.JC.txt files are supported.
+moPepGen accepts alternative splicing (AS) events estimated by [rMATS](https://rnaseq-mats.sourceforge.net/). RMATS estimates five AS events: SE (skipped exon), A3SS (alternative 3' splicing), A5SS (alternative 5' splicing), MXE (mutually exclusive exons), and RI (retained introns), accepted by `parseRMATS` as separate input channels. Noted that only the *.JC.txt files are supported.
 
-Download example data:
+Example data:
 
 ```shell
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_se_case_1.txt
@@ -143,9 +143,9 @@ By default `parseRMATS` only accepts AS events with inclusion and exclusion junc
 
 ### RNA Editing Sites
 
-RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. MoPepGen supports RNA editing sites called by [REDItools](https://github.com/BioinfoUNIBA/REDItools). Noted that the REDItools output must be annotated by the `AnnotateTable.py` from the REDItools package prior to passing into `parseREDItools`.
+RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. moPepGen supports RNA editing sites called by [REDItools](https://github.com/BioinfoUNIBA/REDItools). Noted that the REDItools output must be annotated by the `AnnotateTable.py` from the REDItools package prior to passing into `parseREDItools`.
 
-Download demo data:
+Example data:
 
 ```shell
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/reditools/reditools_annotated.txt
@@ -161,11 +161,11 @@ moPepGen parseREDItools \
     --source RNAEditing
 ```
 
-By default `parseREDItools` looks for the transcript ID at column 17 (1-based), and can be override with `--transcript-id-column`. See [here](./parse-reditools) for a complete list of arguments.
+By default `parseREDItools` looks for the transcript ID at column in column 17. This can be changed with `--transcript-id-column`, which takes a 1-based column number. See [here](./parse-reditools) for a complete list of arguments.
 
 ### CircRNA
 
-CircRNA are commonly recognized as noncoding RNA, but evidences have showed that they are potentially translatable. MoPepGen accepts circRNA events called by [CIRCexplorer](https://circexplorer2.readthedocs.io/en/latest/).
+CircRNAs are commonly recognized as noncoding RNAs, but evidence has showed that they are potentially translatable. moPepGen accepts circRNA events called by [CIRCexplorer](https://circexplorer2.readthedocs.io/en/latest/).
 
 Download demo data:
 
@@ -183,11 +183,11 @@ moPepGen parseCIRCexplorer \
     --source CircRNA
 ```
 
-By default `parseCIRCexplorer` accepts the text file output by CIRCexplorer2, however CIRCexplorer3 is also supported with the `--circexplorer3` flag. We also provide a series of filtering parameters and can be found [here](./parse-circexplorer).
+By default `parseCIRCexplorer` accepts the text file output by CIRCexplorer2, however CIRCexplorer3 is also supported with the `--circexplorer3` flag. We also provide a series of filtering parameters that can be found [here](./parse-circexplorer).
 
-## Call Non-canonical Peptides
+## Non-canonical Peptides Calling
 
-MoPepGen provides three commands for non-canonical peptides calling. `callVariant` for calling peptides that harbor any variant events, `callNoncoding` for calling non-canonical peptide from noncoding transcripts, and `callAltTranslation` for calling peptide that harbor alternate translation events such as selenocysteine termination and W > F substants.
+moPepGen provides three commands for non-canonical peptides calling. `callVariant` for calling peptides from variant GVFs, `callNoncoding` for doing 3-frame translation from noncoding transcripts, and `callAltTranslation` for calling peptide that harbor alternative translation events such as selenocysteine termination and W > F substants.
 
 ### Variant Peptides
 
@@ -201,11 +201,11 @@ moPepGen callVariant \
     --threads 4
 ```
 
-`callVariant` supports multi-processing and can take as many threads as the machine has. The `--selenocysteine-termination` and `--w2f-reassignment` can be used to calling for variant peptides that also carry selenocysteine termination and W2F reassignment. By default, `callVariant` uses trypsin as the enzyme for *in silico* digestion and allows up to 2 miscleavages, and can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-variant) for a complete list of arguments supported by `callVariant`.
+`callVariant` supports multi-processing and the number of processors to use can be specified with `--threads` argument. The `--selenocysteine-termination` and `--w2f-reassignment` arguments can be used to calling variant peptides that also carry selenocysteine termination and W2F reassignment. By default, `callVariant` uses trypsin as the enzyme for *in silico* digestion and allows up to 2 miscleavages, and this can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-variant) for a complete list of arguments supported by `callVariant`.
 
 ### Noncoding Peptides
 
-Noncoding peptides, peptids that called from noncoding transcripts, can be called using `callNoncoding`. Noted that `callNoncoding` peptides does not take any variant as input but just the reference set, so there is no need to repeat this process unless there is a change of enzyme or update of reference set.
+Noncoding peptides, peptids that could potentially be translated from novel open reading frames in transcripts that are annotated as noncoding, can be called using `callNoncoding`. Note that `callNoncoding` does not take any variants as input but only works with the reference set of noncoding transcripts. There is no need to rerun `callNoncoding` unless you wish to use a different enzyme or reference set.
 
 ```shell
 moPepGen callNoncoding \
@@ -213,7 +213,7 @@ moPepGen callNoncoding \
     -o noncoding_peptides.fasta
 ```
 
-Similar to `callVariant`, trypsin is the default enzyme and the default maximal miscleavages to allow is 2. They can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-noncoding) for a complete list of arguments supported by `callNoncoding`.
+Similar to `callVariant`, trypsin is the default enzyme and the default maximal miscleavages to allow is 2. These can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-noncoding) for a complete list of arguments supported by `callNoncoding`.
 
 ### Alternate Translation Peptides
 
@@ -229,7 +229,7 @@ And again, `callAltTranslation` also uses trypsin as the default enzyme, and up 
 
 ## Processing
 
-MoPepGen provides a series of processing commands that aims to deliver FASTA files ready for database searching. The processing tasks include summarization of a non-canonical database, splitting a detabase to separate databases, creating decoy databases, shortening fasta headers for search engines to handle, and merging multiple database files for multiplexing proteomic experiments.
+moPepGen provides a series of processing commands that aims to deliver FASTA files ready for database searching. The processing tasks include summarization of a non-canonical database, splitting a detabase to separate databases, creating decoy databases, shortening fasta headers for search engines to handle, and merging multiple database files for multiplexing proteomic experiments.
 
 ### Summarizing
 
