@@ -336,4 +336,4 @@ moPepGen encodeFasta \
     -o split/split_gSNP_encode.fasta
 ```
 
-Note that for decoy peptides, the same UUID will be used as their corresponding target sequences, with the decoy prefix/suffix retained. The resulting `.dict` file can be used to map back to the original FASTA header.
+Note that for decoy peptides, the same UUID as in their target sequences will be used, with the decoy prefix/suffix retained. The resulting `.dict` file can be used for mapping both back to the original FASTA header.
