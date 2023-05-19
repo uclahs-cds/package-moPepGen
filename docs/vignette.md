@@ -139,7 +139,7 @@ moPepGen parseRMATS \
     --source AltSplice \
 ```
 
-By default `parseRMATS` only accepts AS events with inclusion and exclusion junction counts at least 1. These cutoffs can be set by `--min-ijc` and `--min-sjc`. See [here](./parse-rmats) for a complete list of arguments.
+By default `parseRMATS` only accepts AS events with inclusion and exclusion junction counts of at least 1. These cutoffs can be set by `--min-ijc` and `--min-sjc`. See [here](./parse-rmats) for a complete list of arguments.
 
 ### RNA Editing Sites
 
