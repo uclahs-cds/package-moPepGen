@@ -263,7 +263,7 @@ Because moPepGen calls enzymatically cleaved peptides, there is the possibility 
 HETLFLLTFPR
 ```
 
-To resolve the issue of collapsed peptides like the example above, we use the `--order-source` argument that takes the priority order of sources to be considered.It takes the source names in a comma separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Note that the values passed into `--order-source` must match the values used in `--source` in the corresponding parser calls. If th `--order-source` is not provided, the source priority order will be inferred from the order of input GVF files.
+To resolve the issue of collapsed peptides like the example above, we use the `--order-source` argument that takes the priority order of sources considered. It takes the source names in a comma separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Note that the values passed into `--order-source` must match the values used in `--source` in the corresponding parser calls. If `--order-source` is not provided, the source priority order will be inferred from the order of input GVF files.
 
 Besides variant peptides called by `callVariant`, noncoding peptides and alternative translation peptides can also be passed to `summarizeFasta` with `--noncoding-peptides` and `--alt-translation-peptides`.
 
