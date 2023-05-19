@@ -183,7 +183,7 @@ Download demo data:
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/circRNA/CIRCexplorer_circularRNA_known.txt
 ```
 
-Parse it to GVF format.
+Parse it into GVF format.
 
 ```shell
 moPepGen parseCIRCexplorer \
