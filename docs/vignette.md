@@ -293,7 +293,7 @@ moPepGen filterFasta \
 
 ### Splitting
 
-The `splitFasta` is provided to split a variant peptide database into several separate databases for tiered database searching.
+The `splitFasta` command is provided to split a variant peptide database into several separate databases for tiered database searching, particularly for the purpose of database-specific false disocvery rate control.
 
 ```shell
 mkdir -p split
