@@ -171,7 +171,7 @@ moPepGen parseREDItools \
     --source RNAEditing
 ```
 
-By default `parseREDItools` looks for the transcript ID at column in column 17. This can be changed with `--transcript-id-column`, which takes a 1-based column number. See [here](./parse-reditools) for a complete list of arguments.
+By default `parseREDItools` looks for the transcript ID in column 17. This can be changed with `--transcript-id-column`, which takes a 1-based column number. See [here](./parse-reditools) for a complete list of arguments.
 
 ### CircRNA
 
