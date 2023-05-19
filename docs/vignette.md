@@ -143,7 +143,17 @@ By default `parseRMATS` only accepts AS events with inclusion and exclusion junc
 
 ### RNA Editing Sites
 
-RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. moPepGen supports RNA editing sites called by [REDItools](https://github.com/BioinfoUNIBA/REDItools). Noted that the REDItools output must be annotated by the `AnnotateTable.py` from the REDItools package prior to passing into `parseREDItools`.
+RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. moPepGen supports RNA editing sites called by [REDItools](https://github.com/BioinfoUNIBA/REDItools). Noted that the REDItools output must be annotated by the `AnnotateTable.py` from the REDItools package prior to passing into `parseREDItools`. Below is the command that can be used to do annotation. Note that the `${ANNOTATION_GTF}` must be the same file later used in `parseREDItools` and `callVariant`. `${PREFIX}` is the prefix of column names for gene and transcript IDs.
+
+```shell
+AnnotateTable.py \
+    -i ${INPUT_TXT} \
+    -a ${ANNOTATION_GTF} \
+    -s 4 \
+    -c 1,2,3 \
+    -n ${PREFIX} \
+    -o ${OUTPUT_TXT}
+```
 
 Example data:
 
