@@ -223,7 +223,7 @@ moPepGen callNoncoding \
     -o noncoding_peptides.fasta
 ```
 
-Similar to `callVariant`, trypsin is the default enzyme and the default maximal miscleavages to allow is 2. These can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-noncoding) for a complete list of arguments supported by `callNoncoding`.
+Similar to `callVariant`, trypsin is the default enzyme and the default maximum number of miscleavages is 2. These can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-noncoding) for a complete list of arguments supported by `callNoncoding`.
 
 ### Alternative Translation Peptides
 
