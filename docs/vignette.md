@@ -197,7 +197,7 @@ By default `parseCIRCexplorer` accepts the text file output by CIRCexplorer2, ho
 
 ## Non-canonical Peptides Calling
 
-moPepGen provides three commands for non-canonical peptides calling. `callVariant` for calling peptides from variant GVFs, `callNoncoding` for doing 3-frame translation from noncoding transcripts, and `callAltTranslation` for calling peptide that harbor alternative translation events such as selenocysteine termination and W > F substitutants .
+moPepGen provides three commands for non-canonical peptide calling. `callVariant` for calling peptides from variant GVFs, `callNoncoding` for performing 3-frame translation on noncoding transcripts, and `callAltTranslation` for calling peptides that harbor alternative translation events such as selenocysteine termination and W > F substitutants .
 
 ### Variant Peptides
 
