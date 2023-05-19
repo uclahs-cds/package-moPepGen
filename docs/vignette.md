@@ -55,8 +55,8 @@ vep \
     --assembly GRCh38 \
     --no_intergenic \
     --chr 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19.20,21,22,X,Y,M \
-    -i ${INPUT_BED_FILE} \
-    -o ${OUTPUT_FILE} \
+    -i ${INPUT_GVF_FILE} \
+    -o ${OUTPUT_TSV_FILE} \
     --fasta ${GENOME_FASTA} \
     --custom ${ANNOTATION_GTF},${REFERENCE_VERSION},gtf
 ```
@@ -289,7 +289,7 @@ moPepGen filterFasta \
     --index ./index
 ```
 
-`--skip-lines` indicates the top x number of lines in the abundance matrix that should be skipped. These lines are usually headers or notes output by the quantitation software. `--tx-id-col` is used to specify the 1-based column number for transcript IDs. Any type of quantitation metrics can be used for filtering (*e.g.* count, TPM, FPKM) as long as a desired cutoff is given in `--quant-cutoff`. Note that the same reference GTF should be used during quantitation so the transcript IDs can be mapped correctly to variant peptides called by moPepGen.
+`--skip-lines` indicates the top x number of lines in the abundance matrix that should be skipped. These lines are usually headers or notes output by the quantitation software. `--tx-id-col` is used to specify the 1-based column number for transcript IDs. Any type of quantitation metrics can be used for filtering (*e.g.* count, TPM, FPKM) as long as a desired cutoff is given in `--quant-cutoff` (inclusive). Note that the same reference GTF should be used during quantitation so the transcript IDs can be mapped correctly to variant peptides called by moPepGen.
 
 ### Splitting
 
