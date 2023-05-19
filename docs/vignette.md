@@ -243,7 +243,7 @@ moPepGen provides a series of post-processing commands that aims to deliver FAST
 
 ### Summarizing
 
-The first step after having a list of variant peptides is usually inspecting what you have. `summarizeFasta` takes a variant peptide fasta file output by `callVariant` and summarize the variant peptides by categories based on the value of `--source` you input when calling the parser commands. `summarizeFasta` must take all GVFs used when calling `callVariant`.
+The typical first step after generating a variant peptide database is to inspect its contents. `summarizeFasta` takes a variant peptide fasta file output by `callVariant` and summarizes the variant peptides by categories based on the value of `--source` you input when calling the parser commands. `summarizeFasta` must take all GVFs used as input to `callVariant`.
 
 ```shell
 moPepGen summarizeFasta \
