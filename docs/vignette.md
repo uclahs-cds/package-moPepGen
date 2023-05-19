@@ -71,7 +71,7 @@ filter_vep \
     --filter "Source = ${REFERENCE_VERSION}"
 ```
 
-Download the demo VEP file TSV file.
+ For demonstration, we provide the following VEP output file in TSV format, to be used by moPepGen.
 
 ```shell
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/vep/vep_snp.txt
@@ -87,7 +87,7 @@ moPepGen parseVEP \
     --source SNV
 ```
 
-The `--source` argument is used to specify the type of variants (*e.g.*, SNP, SNV, INDEL) parsed. The source names are used in later processing steps, and are required by all moPepGen parsers.
+The `--source` argument is used to specify the type of variants (*e.g.*, SNP, SNV, INDEL) parsed. The source names are used in later post-processing steps, and are required by all moPepGen parsers.
 
 ### Fusion
 
@@ -118,22 +118,22 @@ moPepGen accepts alternative splicing (AS) events estimated by [rMATS](https://r
 Example data:
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_se_case_1.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_a3ss_case_1.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_a5ss_case_1.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_mxe_case_1.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_ri_case_1.txt
+wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_se_case_1.SE.JC.txt
+wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_a3ss_case_1.A3SS.JC.txt
+wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_a5ss_case_1.A5SS.JC.txt
+wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_mxe_case_1.MXE.JC.txt
+wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_ri_case_1.RI.JC.txt
 ```
 
-Parse AS events output by rMATS into GVF format with `parseRMATS`.
+Parse AS events output by rMATS into GVF format with `parseRMATS`. Note that you don't have to provide all 5 AS files to `parseRMATS`.
 
 ```shell
 moPepGen parseRMATS \
-    --se rmats_se_case_1.txt \
-    --a3ss rmats_a3ss_case_1 \
-    --a5ss rmats_a5ss_case_1 \
-    --mxe rmats_mxe_case_1 \
-    --ri rmats_ri_case_1 \
+    --se rmats_se_case_1.SE.JC.txt \
+    --a3ss rmats_a3ss_case_1.A3SS.JC.txt \
+    --a5ss rmats_a5ss_case_1.A5SS.JC.txt \
+    --mxe rmats_mxe_case_1.MXE.JC.txt \
+    --ri rmats_ri_case_1.RI.JC.txt \
     --index-dir index \
     -o alt_splice_rmats.gvf \
     --source AltSplice \
@@ -187,7 +187,7 @@ By default `parseCIRCexplorer` accepts the text file output by CIRCexplorer2, ho
 
 ## Non-canonical Peptides Calling
 
-moPepGen provides three commands for non-canonical peptides calling. `callVariant` for calling peptides from variant GVFs, `callNoncoding` for doing 3-frame translation from noncoding transcripts, and `callAltTranslation` for calling peptide that harbor alternative translation events such as selenocysteine termination and W > F substants.
+moPepGen provides three commands for non-canonical peptides calling. `callVariant` for calling peptides from variant GVFs, `callNoncoding` for doing 3-frame translation from noncoding transcripts, and `callAltTranslation` for calling peptide that harbor alternative translation events such as selenocysteine termination and W > F substitutants .
 
 ### Variant Peptides
 
@@ -217,7 +217,7 @@ Similar to `callVariant`, trypsin is the default enzyme and the default maximal 
 
 ### Alternate Translation Peptides
 
-Alternative translation peptides are those that harbor special events during translation, such as selenocysteine termination and W > F substants, the the genetic code are not altered (see [here](./call-alt-translation) for more details). Similiar to noncoding peptides, `callAltTranslation` only calls for peptides from the reference genome and annotation and do not take any GVF file as input.
+Alternative translation peptides are those that harbor special events during translation, such as selenocysteine termination and W > F substitutants, where the genetic code are not altered but a different polypeptide is produced (see [here](./call-alt-translation) for more details). Similar to noncoding peptides, `callAltTranslation` only calls peptides using reference transcripts.
 
 ```shell
 moPepGen callAltTranslation \
@@ -227,9 +227,9 @@ moPepGen callAltTranslation \
 
 And again, `callAltTranslation` also uses trypsin as the default enzyme, and up to 2 miscleavages by default. See [here](./call-alt-translation) for a complete list of arguments.
 
-## Processing
+## Post-processing
 
-moPepGen provides a series of processing commands that aims to deliver FASTA files ready for database searching. The processing tasks include summarization of a non-canonical database, splitting a detabase to separate databases, creating decoy databases, shortening fasta headers for search engines to handle, and merging multiple database files for multiplexing proteomic experiments.
+moPepGen provides a series of post-processing commands that aims to deliver FASTA files ready for database searching. The post-processing tasks include summarization of a non-canonical database, splitting a detabase to separate databases, creating decoy databases, shortening fasta headers for search engines to handle, and merging multiple database files for multiplexed proteomic experiments.
 
 ### Summarizing
 
@@ -246,14 +246,14 @@ By default, `summarizeFasta` outputs to stdout, which can be saved to a text fil
 
 ![summarize-fasta-bar-plot](img/summarize-fasta.png)
 
-Because moPepGen calls for enzymatic cleaved peptides, there are chances that the same peptide can be called from different transcripts, or the same transcript with different or different combinations of variants. For example, the peptide below is called twice from two separate transcripts with different variants.
+Because moPepGen calls for enzymatically cleaved peptides, there is possibility that the same peptide is called from multiple transcripts, or the same transcript with different or different combinations of variants. For example, the peptide below is called twice from two separate transcripts with different variants.
 
 ```
 >ENST00000622235.5|SNV-100-G-T|4 ENST00000614167.2|RES-202-G-A|2
 HETLFLLTFPR
 ```
 
-To resolve the issue of collapsed peptides like this, we use the `--order-source` argument that takes the priority order of sources to be considered. It takes a comma separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Noted that the values passed into `--order-source` must match with the values used for `--source` in the corresponding parser calls. If the `--order-source` is not provided, the source priority order will be inferred from the order of input GVF files.
+To resolve the issue of collapsed peptides like the example above, we use the `--order-source` argument that takes the priority order of sources to be considered.It takes the source names in a comma separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Note that the values passed into `--order-source` must match the values used in `--source` in the corresponding parser calls. If th `--order-source` is not provided, the source priority order will be inferred from the order of input GVF files.
 
 Besides variant peptides called by `callVariant`, noncoding peptides and alternative translation peptides can also be passed to `summarizeFasta` with `--noncoding-peptides` and `--alt-translation-peptides`.
 
@@ -272,7 +272,7 @@ moPepGen splitFasta \
 
 Similar to `summarizeFasta`, `splitFasta` also takes a `--order-source` to specify the priority order of which category a peptide should be assigned to, and will be inferred from the input GVFs if not specified. `--group-source` is used to group sources as a super category. For example, `--group-source Germline:gSNP,gINDEL Somatic:sSNV,sINDEL` will group sources of `gSNP` and `gINDEL` together as `Germline`, and `sSNV` and `sINDEL` as `Somatic`.
 
-Noted that, when assigning a peptide to a source category, it must carry exclusively the desired type(s) of variants. For example, a peptide of 'ENST00000622235.5|SNV-100-G-T|SNV-110-C-A|2' is assigned to `SNV`, while a peptide of 'ENST00000622235.5|SNV-100-G-T|RES-110-C-A|2' will be assigned to the category of `SNV-RNAEditing` but not `SNV`. `--max-source-groups` is used to specify the maximal number of source groups to split. The default value is 1, which means all peptides that contains two or more types of variants will not be written into their own FASTA file, but kept in the '\<prefix\>_Remaining.fasta' file.
+Note that, when assigning a peptide to a source category, it must carry exclusively the desired type(s) of variants. For example, a peptide of 'ENST00000622235.5|SNV-100-G-T|SNV-110-C-A|2' is assigned to `SNV`, while a peptide of 'ENST00000622235.5|SNV-100-G-T|RES-110-C-A|2' will be assigned to the category of `SNV-RNAEditing` but not `SNV`. `--max-source-groups` is used to specify the maximum number of source groups that should be split into individual FASTA files. The default value is 1, which means all peptides that contains two or more types of variants will not be written into their own FASTA file, but kept in the '\<prefix\>_Remaining.fasta' file.
 
 Similar to `summarizeFasta`, noncoding and alternative translation peptides can be passed to `splitFasta` via `--noncoding-peptides` and `--alt-translation-peptides`.
 
@@ -280,7 +280,7 @@ See [here](./split-fasta) for a complete list of arguments.
 
 ### Target-Decoy Database
 
-Most search engines expect a target-decoy database as input to estimate false discovery rate (FDR). We provide a `decoyFasta` command, that takes a variant peptide database and add decoy sequences with either `reverse` or `shuffle` algorithm.
+Most search engines expect a target-decoy database as input to estimate false discovery rate (FDR). We provide a `decoyFasta` command, that takes a variant peptide database and adds decoy sequences with either the `reverse` or `shuffle` algorithm.
 
 ```shell
 moPepGen decoyFasta \
@@ -294,7 +294,7 @@ moPepGen decoyFasta \
 
 ### Shortening FASTA headers
 
-Some search engines have limits on how long the database FASTA headers can be. The headers of moPepGen's variant FASTA files could be very long, because the same peptide can be called from different transcripts. We provide a shortening approach by replacing all FASTA headers with UUIDs and storing the mapping information into a `.dict` file with the same prefix.
+Some search engines have limits on how long the database FASTA headers can be. The headers of moPepGen's variant FASTA files could be very long, because the same peptide can be called from different transcripts. We provide a shortening approach by replacing all FASTA headers with UUIDs and storing the mapping information in a `.dict` file with the same prefix.
 
 ```shell
 moPepGen encodeFasta \
@@ -302,4 +302,4 @@ moPepGen encodeFasta \
     -o split/split_gSNP_encode.fasta
 ```
 
-Noted that for decoy peptides, the same UUID will be used as their corresponding target sequences, with the decoy prefix/suffix retained. The resulted `.dict` file can be used to map back to the original FASTA header.
+Note that for decoy peptides, the same UUID will be used as their corresponding target sequences, with the decoy prefix/suffix retained. The resulting `.dict` file can be used to map back to the original FASTA header.
