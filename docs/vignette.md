@@ -211,7 +211,7 @@ moPepGen callVariant \
     --threads 4
 ```
 
-`callVariant` supports multi-processing and the number of processors to use can be specified with `--threads` argument. The `--selenocysteine-termination` and `--w2f-reassignment` arguments can be used to calling variant peptides that also carry selenocysteine termination and W2F reassignment. By default, `callVariant` uses trypsin as the enzyme for *in silico* digestion and allows up to 2 miscleavages, and this can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-variant) for a complete list of arguments supported by `callVariant`.
+`callVariant` supports multi-processing and the number of processors to use can be specified with the `--threads` argument. The `--selenocysteine-termination` and `--w2f-reassignment` arguments can be used to call variant peptides that also carry selenocysteine termination and W2F reassignment. By default, `callVariant` uses trypsin as the enzyme for *in silico* digestion and allows up to 2 miscleavages, and this can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-variant) for a complete list of arguments supported by `callVariant`.
 
 ### Noncoding Peptides
 
