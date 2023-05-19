@@ -77,7 +77,7 @@ filter_vep \
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/vep/vep_snp.txt
 ```
 
-The output VEP TSV file must be parsed by parseVEP into GVF format.
+The output VEP TSV file must be parsed by `parseVEP` into GVF format.
 
 ```shell
 moPepGen parseVEP \
