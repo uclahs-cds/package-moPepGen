@@ -138,9 +138,10 @@ class NoncanonicalPeptideSummaryTable():
         """ Get all column names """
         return ('n_total', *[self.get_key_x_misc(i) for i in range(self.max_misc + 1)])
 
-    def get_stringified_summary_entry(self, key:str, sep:str='\t') -> str:
+    def get_stringified_summary_entry(self, key:str, order:Dict[str,int],
+            sep:str='\t') -> str:
         """ Get a row from the summary table for a given combination of sources. """
-        rowname = '-'.join(sorted(key))
+        rowname = '-'.join(sorted(key, key=lambda x: order[x]))
         if key not in self.data:
             entry = [rowname, '0']
             for _ in range(self.max_misc + 1):
@@ -238,7 +239,7 @@ class PeptidePoolSummarizer():
                 if self.contains_exclusive_sources(comb):
                     continue
                 key = frozenset(comb)
-                record = self.summary_table.get_stringified_summary_entry(key)
+                record = self.summary_table.get_stringified_summary_entry(key, self.order)
                 handle.write(record + '\n')
 
     def create_barplot(self, width:float=6, height:float=8, ax:Optional[plt.Axes]=None,
