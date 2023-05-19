@@ -175,7 +175,7 @@ By default `parseREDItools` looks for the transcript ID in column 17. This can b
 
 ### CircRNA
 
-CircRNAs are commonly recognized as noncoding RNAs, but evidence has showed that they are potentially translatable. moPepGen accepts circRNA events called by [CIRCexplorer](https://circexplorer2.readthedocs.io/en/latest/).
+CircRNAs are commonly recognized as noncoding RNAs, but evidence has shown that they are potentially translatable. moPepGen accepts circRNA events called by [CIRCexplorer](https://circexplorer2.readthedocs.io/en/latest/).
 
 Download demo data:
 
