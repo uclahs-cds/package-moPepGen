@@ -25,7 +25,7 @@ wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/annotati
 wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/translate.fasta
 ```
 
-Convert reference set into index files for quick access of moPepGen.
+Convert reference set into index files for quick access by moPepGen.
 
 ```shell
 moPepGen generateIndex \
