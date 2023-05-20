@@ -15,8 +15,8 @@ moPepGen takes genomic variants such as single nucleotide variants (SNP or SNV),
 
 Install directly from github
 
-```
-pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
+```shell
+pip install git+ssh://git@github.com/uclahs-cds/private-moPepGen.git
 ```
 
 ## Documentation

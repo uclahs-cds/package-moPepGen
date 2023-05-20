@@ -7,7 +7,7 @@ Welcome to the vignette for moPepGen, a powerful Python package designed for gen
 moPepGen is a command line tool designated to execute in a unix-like environment. For MacOS and Linux users, moPepGen can be installed using the command below. For Windows users, we recommend installing and running moPepGen from WSL (Windows Subsystem for Linux).
 
 ```shell
-pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
+pip install git+ssh://git@github.com/uclahs-cds/private-moPepGen.git
 ```
 
 ## Reference Data
