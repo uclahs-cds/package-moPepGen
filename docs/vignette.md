@@ -10,6 +10,20 @@ moPepGen is a command line tool designated to execute in a unix-like environment
 pip install git+ssh://git@github.com/uclahs-cds/private-moPepGen.git
 ```
 
+Install a specific version.
+
+```shell
+pip install git+ssh://git@github.com/uclahs-cds/private-moPepGen.git@v0.11.3
+```
+
+You can also clone the repo and install it directly from source code.
+
+```shell
+git clone git@github.com:uclahs-cds/private-moPepGen.git
+cd private-moPepGen
+pip install . --use-feature=in-tree-build
+```
+
 ## Reference Data
 
 moPepGen requires a set of reference files, including the reference genome, its annotation and the translated protein sequences. We currently support reference files downloaded from two sources, ENSEMBL and GENCODE. See [here](quick-start/#downloading-reference-files) for more details.
