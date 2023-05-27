@@ -19,13 +19,13 @@ def main():
         dest='command'
     )
 
-    util.add_subparser_brute_force(subparsers)
-    util.add_subparser_brute_force_noncoding(subparsers)
-    util.add_subparser_downsample_reference(subparsers)
-    util.add_subparser_validate_variant_calling(subparsers)
-    util.add_subparser_fuzz_test(subparsers)
-    util.add_subparser_extract_gvf(subparsers)
-    util.add_subparser_validate_noncoding_calling(subparsers)
+    util.brute_force.parse_args(subparsers)
+    util.brute_force_noncoding.parse_args(subparsers)
+    util.downsample_reference.parse_args(subparsers)
+    util.validate_variant_calling.parse_args(subparsers)
+    util.fuzz_test.parse_args(subparsers)
+    util.extract_gvf.parse_args(subparsers)
+    util.validate_noncoding_calling.parse_args(subparsers)
 
     args = parser.parse_args()
 

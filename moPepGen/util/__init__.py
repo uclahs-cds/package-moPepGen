@@ -1,14 +1,8 @@
 """ moPepGen util module """
-from moPepGen.util.brute_force import add_subparser_brute_force, brute_force
-from moPepGen.util.downsample_reference import \
-    add_subparser_downsample_reference, downsample_reference
-from moPepGen.util.validate_variant_calling import \
-    add_subparser_validate_variant_calling, validate_variant_calling
-from moPepGen.util.brute_force_noncoding import \
-    add_subparser_brute_force_noncoding, brute_force_noncoding
-from moPepGen.util.fuzz_test import \
-    add_subparser_fuzz_test, fuzz_test
-from moPepGen.util.extract_gvf import add_subparser_extract_gvf, extract_gvf
-from moPepGen.util.ResourcesMonitor import ResourcesMonitor
-from moPepGen.util.validate_noncoding_calling import \
-    add_subparser_validate_noncoding_calling, validate_noncoding_calling
+from moPepGen.util import brute_force
+from moPepGen.util import downsample_reference
+from moPepGen.util import validate_variant_calling
+from moPepGen.util import brute_force_noncoding
+from moPepGen.util import fuzz_test
+from moPepGen.util import extract_gvf
+from moPepGen.util import validate_noncoding_calling

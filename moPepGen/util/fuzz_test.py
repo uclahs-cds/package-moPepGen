@@ -20,12 +20,12 @@ from moPepGen.util.common import load_references
 from moPepGen.cli.common import add_args_cleavage, generate_metadata, \
     print_help_if_missing_args
 from moPepGen.cli import call_variant_peptide
-from moPepGen.util.brute_force import brute_force
+from moPepGen import util
 from moPepGen.gtf import GtfIO
 
 
 # pylint: disable=W0212
-def add_subparser_fuzz_test(subparsers:argparse._SubParsersAction
+def parse_args(subparsers:argparse._SubParsersAction
         ) -> argparse.ArgumentParser:
     """ Arguments for the fuzzTest subcommand """
     parser:argparse.ArgumentParser = subparsers.add_parser(
@@ -115,7 +115,7 @@ def add_subparser_fuzz_test(subparsers:argparse._SubParsersAction
         help='Random seed to set. If not specified, a random number will be generated.'
     )
     add_args_cleavage(parser)
-    parser.set_defaults(func=fuzz_test)
+    parser.set_defaults(func=main)
     print_help_if_missing_args(parser)
     return parser
 
@@ -490,7 +490,7 @@ class FuzzTestCase():
 
         with open(self.record.brute_force_fasta, 'wt') as handle:
             with redirect_stdout(handle):
-                brute_force(args)
+                util.brute_force.main(args)
 
     def assert_equal(self):
         """ Assert that the callVariant results and bruteForce results equal """
@@ -640,7 +640,7 @@ class Fuzzer():
             self.handle.write(case.record.to_tsv() + '\n')
             self.handle.flush()
 
-def fuzz_test(args:argparse.Namespace):
+def main(args:argparse.Namespace):
     """ Main entry point for fuzz test """
     config = FuzzTestConfig(
         tx_id=args.tx_id,

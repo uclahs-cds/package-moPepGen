@@ -10,7 +10,7 @@ from moPepGen.circ import CircRNAModel
 
 
 # pylint: disable=W0212
-def add_subparser_extract_gvf(subparsers:argparse._SubParsersAction):
+def parse_args(subparsers:argparse._SubParsersAction):
     """ add args """
     parser:argparse.ArgumentParser = subparsers.add_parser(
         name='extractGVF',
@@ -47,7 +47,7 @@ def add_subparser_extract_gvf(subparsers:argparse._SubParsersAction):
         metavar='<values>',
         default=[]
     )
-    parser.set_defaults(func=extract_gvf)
+    parser.set_defaults(func=main)
     print_help_if_missing_args(parser)
     return parser
 
@@ -62,7 +62,7 @@ def is_wanted_circ_rna(variant:CircRNAModel, tx_list:List[str],
     """ check if the circRNA record is wanted """
     return variant.gene_id in gene_list or variant.transcript_id in tx_list
 
-def extract_gvf(args:argparse.Namespace):
+def main(args:argparse.Namespace):
     """ Extract records from GVF files """
     gvf_files:List[Path] = args.input_gvf
     gene_list:List[str] = args.gene_list
