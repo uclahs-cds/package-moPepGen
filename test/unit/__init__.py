@@ -275,21 +275,27 @@ def create_transcript_model(data:dict) -> gtf.TranscriptAnnotationModel:
     chrom = data['chrom']
     strand = data['strand']
     entry = data['transcript']
-    location = FeatureLocation(start=entry[0], end=entry[1], seqname=chrom)
+    location = FeatureLocation(
+        start=entry[0], end=entry[1], seqname=chrom, strand=strand
+    )
     transcript = GTFSeqFeature(chrom=chrom, location=location,
-        attributes=entry[2], strand=strand, source='GENCODE')
+        attributes=entry[2], source='GENCODE')
     exons = []
     for entry in data['exon']:
-        location = FeatureLocation(start=entry[0], end=entry[1])
-        exons.append(GTFSeqFeature(chrom=chrom, location=location,
-            attributes=entry[2], strand=strand, source='GENCODE'))
+        location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
+        feature = GTFSeqFeature(
+            chrom=chrom, location=location, attributes=entry[2], source='GENCODE'
+        )
+        exons.append(feature)
     cds = []
     if 'cds' in data:
         for entry in data['cds']:
-            location = FeatureLocation(start=entry[0], end=entry[1])
-            cds.append(GTFSeqFeature(chrom=chrom, location=location,
-                attributes=entry[2], strand=strand, source='GENCODE',
-                frame=0))
+            location = FeatureLocation(start=entry[0], end=entry[1], strand=strand)
+            feature = GTFSeqFeature(
+                chrom=chrom, location=location,
+                attributes=entry[2], source='GENCODE', frame=0
+            )
+            cds.append(feature)
     model = gtf.TranscriptAnnotationModel(transcript, cds, exons)
     return model
 
@@ -298,9 +304,11 @@ def create_gene_model(data:dict) -> gtf.GeneAnnotationModel:
     chrom = data['chrom']
     strand = data['strand']
     entry = data['gene']
-    location = FeatureLocation(start=entry[0], end=entry[1], seqname=chrom)
-    return gtf.GeneAnnotationModel(chrom=chrom, location=location,
-        attributes=entry[2], strand=strand, transcripts=data['transcripts'])
+    location = FeatureLocation(start=entry[0], end=entry[1], seqname=chrom, strand=strand)
+    return gtf.GeneAnnotationModel(
+        chrom=chrom, location=location, attributes=entry[2],
+        transcripts=data['transcripts']
+    )
 
 def create_genomic_annotation(data:dict) -> gtf.GenomicAnnotation:
     """ Create a GenomicAnnotation obejct from data for testing """

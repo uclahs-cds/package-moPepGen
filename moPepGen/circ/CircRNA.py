@@ -40,10 +40,12 @@ class CircRNAModel():
             end = fragment.location.end
             feature = SeqFeature(
                 chrom=gene.id,
-                location=FeatureLocation(seqname=gene.id, start=start, end=end),
+                location=FeatureLocation(
+                    seqname=gene.id, start=start,
+                    end=end, strand=gene.strand
+                ),
                 attributes={},
-                type='intron' if i + 1 in self.intron else 'exon',
-                strand=gene.strand
+                type='intron' if i + 1 in self.intron else 'exon'
             )
             features.append(feature)
         self.gene_locations = features
