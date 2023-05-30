@@ -22,6 +22,7 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         args.decoy_string = 'DECOY_'
         args.decoy_string_position = 'prefix'
         args.method = 'reverse'
+        args.enzyme = 'trypsin'
         args.shuffle_max_attempts = float('inf')
         args.non_shuffle_pattern = ''
         args.keep_peptide_nterm = 'true'
@@ -36,6 +37,7 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         self.write_test_fasta(TARGET_DB)
         args = self.generate_default_args()
         args.input_path = self.work_dir/'test_input.fasta'
+        args.enzyme = None
         cli.decoy_fasta(args)
 
         received = {str(file.name) for file in self.work_dir.glob('*')}
@@ -53,6 +55,7 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         args.method = 'shuffle'
         args.input_path = self.work_dir/'test_input.fasta'
         args.seed = 123123
+        args.enzyme = None
         cli.decoy_fasta(args)
 
         received = {str(file.name) for file in self.work_dir.glob('*')}
@@ -78,7 +81,7 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         args.method = 'shuffle'
         args.input_path = self.work_dir/'test_input.fasta'
         args.seed = 123123
-        args.non_shuffle_pattern = 'K,R'
+        # args.non_shuffle_pattern = 'K,R'
         cli.decoy_fasta(args)
 
         received = {str(file.name) for file in self.work_dir.glob('*')}
@@ -86,8 +89,8 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         self.assertEqual(received, expected)
 
         seqs = {str(seq.seq) for seq in SeqIO.parse(args.output_path, 'fasta')}
-        expected = {'MELPGQWRQVGIPITPK', 'IRPSCSCCIQGVPGISR'}
-        self.assertTrue(expected.issubset(seqs))
+        expected = {'MELPGQWRQVGIPITPK', 'IRSISCCCQGGVPPISR', *[x[0] for x in TARGET_DB]}
+        self.assertEqual(seqs, expected)
 
     def test_decoy_fasta_shuffle_order(self):
         """ This test case ensures that the shuffled decoy sequences are
@@ -98,6 +101,7 @@ class TestDecoyFasta(TestCaseIntegration, TestFastaWriterMixin):
         args = self.generate_default_args()
         args.method = 'shuffle'
         args.seed = 123123
+        args.enzyme = None
         args.non_shuffle_pattern = 'K,R'
 
         args.input_path = self.work_dir/'test_input_1.fasta'
