@@ -52,6 +52,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` to handle hypermutated region with a dynamic cutoff. #738
 
+- Refactored `util` so all functions are accessible. #749
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed
