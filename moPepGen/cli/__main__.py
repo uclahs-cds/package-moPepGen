@@ -2,7 +2,7 @@
 import sys
 import argparse
 from moPepGen import cli, __version__, logger
-from moPepGen.util import ResourcesMonitor
+from moPepGen.util.ResourcesMonitor import ResourcesMonitor
 
 CLI_MAIN_USAGE = "moPopGen [-h] [-V] <command> [options]"
 CLI_MAIN_DESCRIPTION = """

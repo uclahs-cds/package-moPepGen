@@ -16,7 +16,7 @@ from moPepGen.util import brute_force_noncoding
 
 
 # pylint: disable=W0212
-def add_subparser_validate_noncoding_calling(subparsers:argparse._SubParsersAction):
+def parse_args(subparsers:argparse._SubParsersAction):
     """ parse args """
     parser:argparse.ArgumentParser = subparsers.add_parser(
         name='validateNoncodingCalling',
@@ -45,7 +45,7 @@ def add_subparser_validate_noncoding_calling(subparsers:argparse._SubParsersActi
         metavar='<file>'
     )
     common.add_args_reference(parser, proteome=True, index=False)
-    parser.set_defaults(func=validate_noncoding_calling)
+    parser.set_defaults(func=main)
     common.print_help_if_missing_args(parser)
     return parser
 
@@ -101,7 +101,7 @@ def call_brute_force_noncoding(tx_id:str, ref_dir:Path, output_path:Path):
 
     with open(output_path, 'wt') as handle:
         with redirect_stdout(handle):
-            brute_force_noncoding(args)
+            brute_force_noncoding.main(args)
 
 def get_transcript_length(tx_id:str, ref_dir:Path) -> int:
     """ Get the transcript length """
@@ -233,7 +233,7 @@ class ValidationSummary():
             for record in self.data:
                 handle.write(record.to_tsv() + '\n')
 
-def validate_noncoding_calling(args:argparse.Namespace):
+def main(args:argparse.Namespace):
     """ main entrypoint """
     if args.tx_id:
         tx_ids = args.tx_id

@@ -11,7 +11,7 @@ from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
 
 
 # pylint: disable=W0212
-def add_subparser_brute_force_noncoding(subparsers:argparse._SubParsersAction):
+def parse_args(subparsers:argparse._SubParsersAction):
     """ parse command line arguments """
     parser:argparse.ArgumentParser = subparsers.add_parser(
         name='bruteForceNoncoding',
@@ -37,11 +37,11 @@ def add_subparser_brute_force_noncoding(subparsers:argparse._SubParsersAction):
         default=None
     )
     add_args_cleavage(parser)
-    parser.set_defaults(func=brute_force_noncoding)
+    parser.set_defaults(func=main)
     print_help_if_missing_args(parser)
     return parser
 
-def brute_force_noncoding(args:argparse.Namespace):
+def main(args:argparse.Namespace):
     """ main entrance """
     anno = gtf.GenomicAnnotation()
     anno.dump_gtf(args.reference_dir/'annotation.gtf')

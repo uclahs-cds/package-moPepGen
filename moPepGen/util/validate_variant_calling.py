@@ -13,7 +13,7 @@ from moPepGen.util import downsample_reference, brute_force
 INPUT_FILE_FORMATS = ['.gvf']
 
 # pylint: disable=W0212
-def add_subparser_validate_variant_calling(subparsers:argparse._SubParsersAction):
+def parse_args(subparsers:argparse._SubParsersAction):
     """ parse args """
     parser:argparse.ArgumentParser = subparsers.add_parser(
         name='validateVariantCalling',
@@ -54,7 +54,7 @@ def add_subparser_validate_variant_calling(subparsers:argparse._SubParsersAction
         metavar='<values>'
     )
     common.add_args_reference(parser, proteome=True, index=False)
-    parser.set_defaults(func=validate_variant_calling)
+    parser.set_defaults(func=main)
     common.print_help_if_missing_args(parser)
     return parser
 
@@ -71,7 +71,7 @@ def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:List[s
     args.miscleavage = 2
     args.min_mw = 500.
     args.translate_noncoding = 'false'
-    downsample_reference(args)
+    downsample_reference.main(args)
 
 def extract_gvf(tx_id:List[str], gvf_files:List[Path], output_dir:Path) -> List[Path]:
     """ extract GVF """
@@ -140,7 +140,7 @@ def call_brute_force(gvf_files:Path, ref_dir:Path, output_path:str, force:bool,
 
     with open(output_path, 'wt') as handle:
         with redirect_stdout(handle):
-            brute_force(args)
+            brute_force.main(args)
 
 def assert_equal(variant_fasta:Path, brute_force_txt:Path, output_dir:Path):
     """ assert equal """
@@ -170,7 +170,7 @@ def assert_equal(variant_fasta:Path, brute_force_txt:Path, output_dir:Path):
         sys.exit(1)
     logger('Equal!')
 
-def validate_variant_calling(args:argparse.Namespace):
+def main(args:argparse.Namespace):
     """ main entrypoint """
     for file in args.input_path:
         common.validate_file_format(file, INPUT_FILE_FORMATS, True)
