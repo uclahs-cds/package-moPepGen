@@ -32,7 +32,7 @@ from moPepGen.cli.common import add_args_cleavage, add_args_reference, \
 
 
 # pylint: disable=W0212
-def add_subparser_downsample_reference(subparsers:argparse._SubParsersAction):
+def parse_args(subparsers:argparse._SubParsersAction):
     """ Parse args """
     parser:argparse.ArgumentParser = subparsers.add_parser(
         name='downsampleReference',
@@ -68,7 +68,7 @@ def add_subparser_downsample_reference(subparsers:argparse._SubParsersAction):
     )
     add_args_reference(parser, index=False)
     add_args_cleavage(parser)
-    parser.set_defaults(func=downsample_reference)
+    parser.set_defaults(func=main)
     print_help_if_missing_args(parser)
     return parser
 
@@ -265,7 +265,7 @@ def create_dummy_tx_model(tx_model:gtf.TranscriptAnnotationModel, tx_id:str,
     attrs['transcript_id'] = tx_id
     transcript = GTFSeqFeature(
         location=location, chrom=tx_model.transcript.chrom,
-        attributes=attrs, type='transcript', strand=tx_model.transcript.strand
+        attributes=attrs, type='transcript'
     )
     model = gtf.TranscriptAnnotationModel(transcript)
     return model
@@ -324,7 +324,8 @@ def subset_and_filter(features:List[SeqFeature], start:int, end:int,
                 if new_end == end - start:
                     new_end -= (3 - (original_end - end) % 3) % 3
         location = FeatureLocation(
-            start=new_start, end=new_end, seqname=feature.seqname
+            start=new_start, end=new_end, seqname=feature.seqname,
+            strand=feature.strand
         )
         new_feature = SeqFeature(
             chrom=feature.chrom,
@@ -335,7 +336,7 @@ def subset_and_filter(features:List[SeqFeature], start:int, end:int,
     return new_features
 
 
-def downsample_reference(args:argparse.Namespace):
+def main(args:argparse.Namespace):
     """ Downsample reference FASTA and GTF """
     genome_fasta:Path = args.genome_fasta
     annotation_gtf:Path = args.annotation_gtf

@@ -49,10 +49,11 @@ class GtfIterator(SequenceIterator):
                 else:
                     attributes[key] = val
 
-            location=FeatureLocation(
+            location = FeatureLocation(
                 seqname=fields[0],
                 start=int(fields[3])-1,
-                end=int(fields[4])
+                end=int(fields[4]),
+                strand=strand,
             )
 
             frame = None if fields[7] == '.' else int(fields[7])
@@ -62,7 +63,6 @@ class GtfIterator(SequenceIterator):
                 attributes=attributes,
                 location=location,
                 type=fields[2],
-                strand=strand,
                 frame=frame
             )
             yield record

@@ -70,7 +70,9 @@ class CIRCexplorer2KnownRecord():
                 start, end = end, start
             end += 1
 
-            location = FeatureLocation(seqname=gene_id, start=start, end=end)
+            location = FeatureLocation(
+                seqname=gene_id, start=start, end=end, strand=strand
+            )
 
             fragment = SeqFeature(
                 chrom=tx_id, location=location, attributes={},

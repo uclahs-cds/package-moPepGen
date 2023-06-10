@@ -18,7 +18,7 @@ from moPepGen.util.common import load_references
 
 
 # pylint: disable=W0212
-def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
+def parse_args(subparsers:argparse._SubParsersAction):
     """ parse command line arguments """
     parser:argparse.ArgumentParser = subparsers.add_parser(
         name='bruteForce',
@@ -70,7 +70,7 @@ def add_subparser_brute_force(subparsers:argparse._SubParsersAction):
         'reassignment.'
     )
     add_args_cleavage(parser)
-    parser.set_defaults(func=brute_force)
+    parser.set_defaults(func=main)
     print_help_if_missing_args(parser)
     return parser
 
@@ -1213,7 +1213,7 @@ def fix_indel_after_start_codon(pool:seqvar.VariantRecordPool,
                 v.to_end_inclusion(tx_seq)
     return pool
 
-def brute_force(args):
+def main(args):
     """ main """
     # Load genomic references
     anno, genome, proteome = load_references(

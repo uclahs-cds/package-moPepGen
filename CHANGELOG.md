@@ -54,6 +54,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `decoyFasta` to make it as default to keep cleavage site amino acid residues unmodified. #750
 
+- Fixed `SeqFeature` and `GTFSeqFeature` to remove the definition of strand and use `location.strand`. #616
+
+- Refactored `util` so all functions are accessible. #749
+
 ## [0.11.5] - 2023-3-5
 
 ### Fixed

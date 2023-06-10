@@ -42,7 +42,7 @@ class TestBruteForce(TestCaseIntegration):
         args.selenocysteine_termination = False
         stream = io.StringIO()
         with contextlib.redirect_stdout(stream):
-            util.brute_force(args)
+            util.brute_force.main(args)
             seqs = set(stream.getvalue().rstrip().split('\n'))
 
         with open(expect, 'rt') as handle:
