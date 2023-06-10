@@ -125,6 +125,16 @@ class SeqFeature(BioSeqFeature):
         """ hash """
         return hash((self.chrom, self.location))
 
+    @property
+    def strand(self):
+        """ strand """
+        return self.location.strand
+
+    @strand.setter
+    def strand(self, val:str):
+        """ strand setter """
+        self.location.strand = val
+
     def _shift(self, offset:int) -> SeqFeature:
         """ shift by i """
         new_feature = super()._shift(offset)

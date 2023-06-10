@@ -265,7 +265,7 @@ def create_dummy_tx_model(tx_model:gtf.TranscriptAnnotationModel, tx_id:str,
     attrs['transcript_id'] = tx_id
     transcript = GTFSeqFeature(
         location=location, chrom=tx_model.transcript.chrom,
-        attributes=attrs, type='transcript', strand=tx_model.transcript.strand
+        attributes=attrs, type='transcript'
     )
     model = gtf.TranscriptAnnotationModel(transcript)
     return model
@@ -324,7 +324,8 @@ def subset_and_filter(features:List[SeqFeature], start:int, end:int,
                 if new_end == end - start:
                     new_end -= (3 - (original_end - end) % 3) % 3
         location = FeatureLocation(
-            start=new_start, end=new_end, seqname=feature.seqname
+            start=new_start, end=new_end, seqname=feature.seqname,
+            strand=feature.strand
         )
         new_feature = SeqFeature(
             chrom=feature.chrom,
