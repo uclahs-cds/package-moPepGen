@@ -10,8 +10,9 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from Bio.SeqIO import FastaIO
-from moPepGen import logger
+from moPepGen import aa, logger
 from moPepGen.cli import common
+from moPepGen.aa.expasy_rules import EXPASY_RULES
 
 
 INPUT_FILE_FORMATS = ['.fa', '.fasta']
@@ -41,6 +42,15 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
         help='Method to be used to generate the decoy sequences from target'
         ' sequences.',
         default='reverse'
+    )
+    parser.add_argument(
+        '--enzyme',
+        type=str,
+        choices=[None, *EXPASY_RULES.keys()],
+        help='Enzymatic cleavage rule. Amino acids at cleavage sites will be'
+        ' kept unmodified. Set it to None to turn off this behavior.',
+        metavar='<value>',
+        default=None
     )
     parser.add_argument(
         '--non-shuffle-pattern',
@@ -109,7 +119,7 @@ class _Summary():
 class DecoyFasta():
     """ Decoy Fasta """
     def __init__(self, input_path:Path, output_path:Path, method:str,
-            keep_peptide_nterm:bool, keep_peptide_cterm:bool,
+            enzyme:str, keep_peptide_nterm:bool, keep_peptide_cterm:bool,
             non_shuffle_pattern:List[str], shuffle_max_attempts:int,  seed:int,
             decoy_string:str, decoy_string_position:str, order:str, quiet:bool,
             target_db:List[SeqRecord]=None, _target_pool:Set[SeqRecord]=None,
@@ -120,6 +130,7 @@ class DecoyFasta():
         self.output_path = output_path
         self.method = method
         self.seed = seed
+        self.enzyme = enzyme
         self.keep_peptide_nterm = keep_peptide_nterm
         self.keep_peptide_cterm = keep_peptide_cterm
         self.non_shuffle_pattern = non_shuffle_pattern
@@ -157,6 +168,7 @@ class DecoyFasta():
             input_path=input_path,
             output_path=output_path,
             method=args.method,
+            enzyme=args.enzyme,
             keep_peptide_nterm=keep_peptide_nterm,
             keep_peptide_cterm=keep_peptide_cterm,
             non_shuffle_pattern=non_shuffle_pattern,
@@ -168,10 +180,16 @@ class DecoyFasta():
             quiet=args.quiet
         )
 
-
     def find_fixed_indices(self, seq:Seq) -> List[int]:
         """ Find the peptide indices to be fixed """
         fixed_indices = []
+
+        if self.enzyme is not None:
+            rule = self.enzyme
+            exception = 'trypsin_expection' if self.enzyme == 'trypsin' else None
+            fixed_indices += aa.AminoAcidSeqRecord(seq) \
+                .find_all_enzymatic_cleave_sites(rule, exception)
+
         for i, it in enumerate(seq):
             if i == 0 and self.keep_peptide_nterm:
                 fixed_indices.append(i)

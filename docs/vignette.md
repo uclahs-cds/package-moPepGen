@@ -338,11 +338,10 @@ Most search engines expect a target-decoy database as input to estimate false di
 moPepGen decoyFasta \
     -i split/split_gSNP_encode.fasta \
     -o split/split_gSNP_decoy.fasta \
-    --method reverse \
-    --non-shuffle-pattern K,R
+    --method reverse
 ```
 
-`--non-shuffle-pattern` specifies the amino acid residues that should be fixed in the decoy sequence. By default, the N- and C-terminal residues are also fixed, which can be turned off by setting `--keep-peptide-nterm` or `--keep-peptide-cterm` to `false`. See [here](./decoy-fasta) for a complete list of arguments.
+By default, amino acid residues at cleavage sites are unmodified. Trypsin is the default enzyme and can be changed using `--enzyme`.  `--non-shuffle-pattern` can be used to specify additional amino acid residues to be fixed in the decoy sequence. By default, the N- and C-terminal residues are also fixed, which can be turned off by setting `--keep-peptide-nterm` or `--keep-peptide-cterm` to `false`. See [here](./decoy-fasta) for a complete list of arguments.
 
 ### Shortening FASTA headers
 
