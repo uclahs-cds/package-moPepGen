@@ -50,7 +50,7 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
         help='Enzymatic cleavage rule. Amino acids at cleavage sites will be'
         ' kept unmodified. Set it to None to turn off this behavior.',
         metavar='<value>',
-        default='trypsin'
+        default=None
     )
     parser.add_argument(
         '--non-shuffle-pattern',
