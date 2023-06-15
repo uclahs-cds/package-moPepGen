@@ -2,8 +2,11 @@
 
 <!-- badges: start -->
 
+[![Lifecycle:Maturing](https://img.shields.io/badge/Lifecycle-Maturing-007EC6)](https://img.shields.io/badge/Lifecycle-Maturing-007EC6)
 [![Tests](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/tests.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/tests.yaml)
-[![Docs](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/docs.yaml/badge.svg)](https://github.com/uclahs-cds/private-moPepGen/actions/workflows/docs.yaml)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=plastic&logo=docker&logoColor=white)](https://github.com/uclahs-cds/private-moPepGen/pkgs/container/mopepgen)
+[![Documentation](https://img.shields.io/static/v1?style=plastic&message=ReadTheDocs&color=2C4AA8&logo=ReadTheDocs&logoColor=FFFFFF&label=Documentation)](uclahs-cds.github.io/private-moPepGen/)
+[![License](https://img.shields.io/badge/License-GPLv2.0-blue)](#license "Go to license section")
 
 <!-- badges: end -->
 

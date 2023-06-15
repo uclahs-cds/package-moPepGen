@@ -59,6 +59,10 @@ Single nucleotide variants (SNVs/SNPs) and small insertions/deletions (INDELs) c
 
 Note that, the VEP cache files must be downloaded prior to running VEP (see [here](https://useast.ensembl.org/info/docs/tools/vep/script/vep_cache.html)). The VEP developers recommend downloading the VEP cache version which corresponds to the Ensembl VEP installation. We also strongly recommend explicitly providing the exact reference genome and GTF file used in moPepGen to VEP to ensure the consistency of transcript IDs (i.e., using `--custom ${ANNOTATION_GTF},${REFERENCE_VERSION},gtf`). The exact genome FASTA and annotation GTF files should be used later when calling for variant peptides.
 
+!!! warning
+
+    If you use `--chr` to limit the chromosomes to annotate, make sure the style matches with your VCF/BED file. For example, if the chromosomes have the 'chr' prefix in your VCF file (*i.e.*, chr1, chr2, ...), you must include the prefix as well (*i.e.*, `--chr chr1,chr2,chr3`).
+
 The example data does not work for VEP.
 
 ```shell
