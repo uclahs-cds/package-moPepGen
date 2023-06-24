@@ -25,47 +25,53 @@ class GtfIterator(SequenceIterator):
             if line.startswith('#'):
                 continue
             line = line.rstrip()
-            fields = line.split('\t')
+            record = line_to_seq_feature(line)
 
-            try:
-                strand={'+':1, '-':-1, '?':0}[fields[6]]
-            except KeyError:
-                strand=None
-
-            attributes = {}
-            attributes_to_keep = ['gene_id', 'transcript_id', 'protein_id',
-                'gene_name', 'gene_type', 'gene_biotype', 'tag', 'is_protein_coding']
-            attribute_list = [field.strip().split(' ', 1) for field in \
-                fields[8].rstrip(';').split(';')]
-
-            for key,val in attribute_list:
-                if key not in attributes_to_keep:
-                    continue
-                val = val.strip('"')
-                if key == 'tag':
-                    if key not in attributes:
-                        attributes[key] = []
-                    attributes[key].append(val)
-                else:
-                    attributes[key] = val
-
-            location = FeatureLocation(
-                seqname=fields[0],
-                start=int(fields[3])-1,
-                end=int(fields[4]),
-                strand=strand,
-            )
-
-            frame = None if fields[7] == '.' else int(fields[7])
-
-            record = GTFSeqFeature(
-                chrom=fields[0],
-                attributes=attributes,
-                location=location,
-                type=fields[2],
-                frame=frame
-            )
             yield record
+
+def line_to_seq_feature(line:str) -> GTFSeqFeature:
+    """ """
+    line = line.rstrip()
+    fields = line.split('\t')
+
+    try:
+        strand={'+':1, '-':-1, '?':0}[fields[6]]
+    except KeyError:
+        strand=None
+
+    attributes = {}
+    attributes_to_keep = ['gene_id', 'transcript_id', 'protein_id',
+        'gene_name', 'gene_type', 'gene_biotype', 'tag', 'is_protein_coding']
+    attribute_list = [field.strip().split(' ', 1) for field in \
+        fields[8].rstrip(';').split(';')]
+
+    for key,val in attribute_list:
+        if key not in attributes_to_keep:
+            continue
+        val = val.strip('"')
+        if key == 'tag':
+            if key not in attributes:
+                attributes[key] = []
+            attributes[key].append(val)
+        else:
+            attributes[key] = val
+
+    location = FeatureLocation(
+        seqname=fields[0],
+        start=int(fields[3])-1,
+        end=int(fields[4]),
+        strand=strand,
+    )
+
+    frame = None if fields[7] == '.' else int(fields[7])
+
+    return GTFSeqFeature(
+        chrom=fields[0],
+        attributes=attributes,
+        location=location,
+        type=fields[2],
+        frame=frame
+    )
 
 def parse(handle:Union[IO[str], str]) -> GtfIterator:
     """ Parser for GTF files.

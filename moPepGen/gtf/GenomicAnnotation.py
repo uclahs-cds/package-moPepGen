@@ -2,7 +2,7 @@
 """
 from __future__ import annotations
 import copy
-from typing import List, Dict, Tuple, TYPE_CHECKING
+from typing import List, Dict, Tuple, TYPE_CHECKING, IO, Union
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar, err
 from moPepGen.version import MetaVersion
@@ -31,12 +31,8 @@ class GenomicAnnotation():
             transcripts:Dict[str, TranscriptAnnotationModel]=None,
             source:str=None):
         """ Construct a GenomicAnnotation object """
-        if genes is None:
-            genes = {}
-        if transcripts is None:
-            transcripts = {}
-        self.genes = genes
-        self.transcripts = transcripts
+        self.genes = genes or {}
+        self.transcripts = transcripts or {}
         self.source = source
         self.gene_id_version_mapper:Dict[str, str] = None
         self.version = MetaVersion()
@@ -106,7 +102,7 @@ class GenomicAnnotation():
         for tx_id in self._cached_tx_seqs:
             self.transcripts[tx_id].remove_cached_seq()
 
-    def dump_gtf(self, path:str, biotype:List[str]=None, source:str=None)->None:
+    def dump_gtf(self, handle:Union[str, IO], biotype:List[str]=None, source:str=None)->None:
         """ Dump a GTF file into a GenomicAnnotation
 
         Args:
@@ -119,7 +115,7 @@ class GenomicAnnotation():
         if not source:
             count = 0
             inferred = {}
-        for record in GtfIO.parse(path):
+        for record in GtfIO.parse(handle):
             if biotype is not None and record.biotype not in biotype:
                 continue
 
