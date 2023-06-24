@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Dict, List, IO, Iterable, Mapping, Union, TYPE_CHECKING
 import io
-from collections import deque
+from collections import deque, Counter
 from pathlib import Path
 from moPepGen.gtf import GtfIO
 from moPepGen.version import MetaVersion
@@ -56,6 +56,16 @@ class GenePointer(GTFPointer):
         record.transcripts = self.transcripts
         return record
 
+    def to_line(self) -> str:
+        """ """
+        fields = [
+            self.key,
+            self.start,
+            self.end,
+            ','.join(self.transcripts)
+        ]
+        return '\t'.join(fields)
+
 class TranscriptPointer(GTFPointer):
     """ """
     def __init__(self, handle: IO, key: str, start: int, end: int, source: str,
@@ -83,6 +93,16 @@ class TranscriptPointer(GTFPointer):
             record.id = tx_id
             tx_model.add_record(feature, record)
         return tx_model
+
+    def to_line(self) -> str:
+        """ """
+        fields = [
+            self.key,
+            self.start,
+            self.end,
+            self.is_protein_coding
+        ]
+        return "\t".join(fields)
 
 def iterate_pointer(handle:IO, source:str=None) -> Iterable[Union[GenePointer, TranscriptPointer]]:
     """ """
@@ -245,6 +265,21 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
     def dump_gtf(self, *args, **kwargs) -> None:
         raise NotImplementedError
 
+    def infer_source(self):
+        """ """
+        i = 0
+        inferred = {}
+        for tx in self.transcripts.keys():
+            i += 1
+            if i > 100:
+                break
+            s = self.transcripts.get_pointer(tx).source
+            if s in inferred:
+                inferred[s] += 1
+            else:
+                inferred[s] = 1
+        self.source = sorted(inferred.items(), key=lambda it: it[1])[-1][0]
+
     def generate_index(self, handle:Union[IO, str], source:str=None):
         """ """
         if isinstance(handle, str):
@@ -256,15 +291,37 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
 
         self.handle = ihandle
 
-        for pointer in iterate_pointer(self.handle):
+        for pointer in iterate_pointer(self.handle, source):
             if isinstance(pointer, GenePointer):
                 self.genes[pointer.key] = pointer
             else:
                 self.transcripts[pointer.key] = pointer
 
+        if source:
+            self.source = source
+        else:
+            self.infer_source()
+
     def load_index(self, handle:IO):
         """ """
         pass
 
-def index_gtf(handle:Union[str, IO], biotype:List[str]=None, source:str=None):
+def index_gtf(file:Path, biotype:List[str]=None, source:str=None):
     """"""
+    anno = GenomicAnnotationOnDisk()
+    with open(Path, 'rb') as handle:
+        anno.generate_index(handle, source)
+
+    gene_idx_file = file.parent/f"{file.stem}_gene.idx"
+    with open(gene_idx_file, 'wt') as handle:
+        handle.write(f"# source={anno.source}\n")
+        for gene in anno.genes.keys():
+            gene_pointer:GenePointer = anno.genes.get_pointer(gene)
+            handle.write(gene_pointer.to_line() + '\n')
+
+    tx_idx_file = file.parent/f"{file.stem}_tx.idx"
+    with open(tx_idx_file, 'wt') as handle:
+        handle.write(f"# source={anno.source}\n")
+        for tx in anno.transcripts.keys():
+            tx_pointer:TranscriptPointer = anno.transcripts.get_pointer(tx)
+            handle.write(tx_pointer.to_line() + '\n')
