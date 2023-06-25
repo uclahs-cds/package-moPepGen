@@ -4,6 +4,7 @@ import subprocess as sp
 import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli
+from moPepGen.gtf import GenomicAnnotationOnDisk
 
 
 class TestGenerateIndex(TestCaseIntegration):
@@ -46,3 +47,15 @@ class TestGenerateIndex(TestCaseIntegration):
         expected = {'genome.pkl', 'proteome.pkl', 'annotation.dat',
             'canonical_peptides.pkl', 'coding_transcripts.pkl'}
         self.assertEqual(files, expected)
+
+class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
+    """ """
+    def test_generate_index(self):
+        """ """
+        anno = GenomicAnnotationOnDisk()
+        anno.index_gtf(self.data_dir/'annotation.gtf')
+
+    def test_load_index(self):
+        """ """
+        anno = GenomicAnnotationOnDisk()
+        anno.load_index(self.data_dir/'annotation.gtf')
