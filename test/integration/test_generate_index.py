@@ -3,7 +3,7 @@ import argparse
 import subprocess as sp
 import sys
 from test.integration import TestCaseIntegration
-from moPepGen import cli
+from moPepGen import cli, aa
 from moPepGen.gtf import GenomicAnnotationOnDisk
 
 
@@ -52,8 +52,10 @@ class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
     """ """
     def test_generate_index(self):
         """ """
+        proteome = aa.AminoAcidSeqDict()
+        proteome.dump_fasta(self.data_dir/'translate.fasta')
         anno = GenomicAnnotationOnDisk()
-        anno.index_gtf(self.data_dir/'annotation.gtf')
+        cli.index_gtf(self.data_dir/'annotation.gtf', proteome=proteome)
 
     def test_load_index(self):
         """ """

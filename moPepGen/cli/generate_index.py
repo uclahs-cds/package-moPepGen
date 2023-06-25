@@ -6,6 +6,7 @@ command. It is recommended to run `generateIndex` before any analysis using
 moPepGen to avoid processing the reference files repeatedly and save massive
 time. """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import argparse
 from pathlib import Path
 import pickle
@@ -14,6 +15,9 @@ from moPepGen import dna, aa, gtf, logger
 from moPepGen.gtf import GtfIO
 from moPepGen.cli import common
 
+
+if TYPE_CHECKING:
+    from moPepGen.gtf.GTFPointer import GenePointer, TranscriptPointer
 
 # pylint: disable=W0212
 def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
@@ -40,6 +44,30 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     common.print_help_if_missing_args(p)
     return p
 
+
+def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
+        invalid_protein_as_noncoding:bool=True):
+    """"""
+    anno = gtf.GenomicAnnotationOnDisk()
+    with open(file, 'rb') as handle:
+        anno.generate_index(handle, source)
+
+    if proteome:
+        anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
+
+    gene_idx_file, tx_idx_file = anno.get_index_files(file)
+
+    with open(gene_idx_file, 'wt') as handle:
+        handle.write(f"# source={anno.source}\n")
+        for gene in anno.genes.keys():
+            gene_pointer:GenePointer = anno.genes.get_pointer(gene)
+            handle.write(gene_pointer.to_line() + '\n')
+
+    with open(tx_idx_file, 'wt') as handle:
+        handle.write(f"# source={anno.source}\n")
+        for tx in anno.transcripts.keys():
+            tx_pointer:TranscriptPointer = anno.transcripts.get_pointer(tx)
+            handle.write(tx_pointer.to_line() + '\n')
 
 def generate_index(args:argparse.Namespace):
     """ Generate  """
@@ -84,8 +112,6 @@ def generate_index(args:argparse.Namespace):
 
     proteome = aa.AminoAcidSeqDict()
     proteome.dump_fasta(parth_proteome, source=args.reference_source)
-
-    anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
     with lzma.open(output_anno, 'wt') as handle:
         GtfIO.write(handle, anno)

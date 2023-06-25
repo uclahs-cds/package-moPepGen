@@ -131,24 +131,3 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
                     source=tx_source, is_protein_coding=is_protein_coding
                 )
                 self.transcripts[pointer.key] = pointer
-
-    @classmethod
-    def index_gtf(cls, file:Path, source:str=None):
-        """"""
-        anno = GenomicAnnotationOnDisk()
-        with open(file, 'rb') as handle:
-            anno.generate_index(handle, source)
-
-        gene_idx_file, tx_idx_file = cls.get_index_files(file)
-
-        with open(gene_idx_file, 'wt') as handle:
-            handle.write(f"# source={anno.source}\n")
-            for gene in anno.genes.keys():
-                gene_pointer:GenePointer = anno.genes.get_pointer(gene)
-                handle.write(gene_pointer.to_line() + '\n')
-
-        with open(tx_idx_file, 'wt') as handle:
-            handle.write(f"# source={anno.source}\n")
-            for tx in anno.transcripts.keys():
-                tx_pointer:TranscriptPointer = anno.transcripts.get_pointer(tx)
-                handle.write(tx_pointer.to_line() + '\n')
