@@ -2,6 +2,8 @@
 from __future__ import annotations
 from typing import Dict, IO, Union, Tuple
 import io
+import gzip
+import lzma
 from pathlib import Path
 from moPepGen.version import MetaVersion
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
@@ -50,8 +52,16 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
 
     def init_handle(self, handle:Union[str, IO, Path]):
         """ """
-        if isinstance(handle, str) or isinstance(handle, Path):
-            ihandle = open(handle, 'rb')
+        if isinstance(handle, str):
+            handle = Path(handle)
+
+        if isinstance(handle, Path):
+            if handle.suffix.lower() == '.gtf':
+                ihandle = open(handle, 'rb')
+            elif handle.suffix.lower() == '.lz':
+                ihandle = lzma.open(handle, 'rb')
+            elif handle.suffix.lower() == '.gz':
+                ihandle = gzip.open(handle, 'rb')
         elif isinstance(handle, io.IOBase):
             ihandle = handle
         else:
@@ -64,8 +74,9 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         """ """
         if isinstance(file, str):
             file = Path(file)
-        gene_idx_file = file.parent/f"{file.stem}_gene.idx"
-        tx_idx_file = file.parent/f"{file.stem}_tx.idx"
+        basename = str(file.name).split('.gtf')[0]
+        gene_idx_file = file.parent/f"{basename}_gene.idx"
+        tx_idx_file = file.parent/f"{basename}_tx.idx"
         return gene_idx_file, tx_idx_file
 
     def generate_index(self, handle:Union[IO, str, Path], source:str=None):

@@ -8,9 +8,11 @@ time. """
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import argparse
+import os
 from pathlib import Path
 import pickle
 import lzma
+import gzip
 from moPepGen import dna, aa, gtf, logger
 from moPepGen.gtf import GtfIO
 from moPepGen.cli import common
@@ -49,7 +51,14 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
         invalid_protein_as_noncoding:bool=True):
     """"""
     anno = gtf.GenomicAnnotationOnDisk()
-    with open(file, 'rb') as handle:
+
+    if file.suffix.lower() == '.gtf':
+        opener = open
+    elif file.suffix.lower() == '.gz':
+        opener = gzip.open
+    elif file.suffix.lower() == '.lz':
+        opener = lzma.open
+    with opener(file, 'rb') as handle:
         anno.generate_index(handle, source)
 
     if proteome:
@@ -69,6 +78,37 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
             tx_pointer:TranscriptPointer = anno.transcripts.get_pointer(tx)
             handle.write(tx_pointer.to_line() + '\n')
 
+def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True, compression:str=None) -> Path:
+    """ """
+    if symlink:
+        if file.suffix.lower() == '.gz':
+            output_file = output_dir/'annotation.gtf.gz'
+        elif file.suffix.lower() == '.gtf':
+            output_file = output_dir/'annotation.gtf'
+        else:
+            raise ValueError(f"File not supported {file}")
+        os.symlink(file, output_file)
+    else:
+        if file.suffix.lower() == '.gtf':
+            i_opener = open
+        elif file.suffix.lower() == '.gz':
+            i_opener = gzip.open
+
+        if compression == None:
+            o_opener = open
+            output_file = output_dir/'annotation.gtf'
+        elif compression == 'lzma':
+            o_opener = lzma.open
+            output_file = output_dir/'annotation.gtf.lz'
+        elif compression == 'gzip':
+            o_opener = gzip.open
+            output_file = output_dir/'annotation.gtf.gz'
+
+        with i_opener(file, 'rt') as ihandle, o_opener(output_file, 'wt') as ohandle:
+            for line in ihandle:
+                ohandle.write(line)
+    return output_file
+
 def generate_index(args:argparse.Namespace):
     """ Generate  """
     path_genome:Path = args.genome_fasta
@@ -83,6 +123,9 @@ def generate_index(args:argparse.Namespace):
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
     quiet:bool = args.quiet
+
+    symlink:bool = False
+    compression:bool = 'lzma'
 
     output_dir:Path = args.output_dir
     output_genome = output_dir/"genome.pkl"
@@ -105,25 +148,23 @@ def generate_index(args:argparse.Namespace):
         logger('Genome FASTA saved to disk.')
     del genome
 
-    anno = gtf.GenomicAnnotation()
-    anno.dump_gtf(path_gtf, source=args.reference_source)
-    if not quiet:
-        logger('Genome annotation GTF loaded.')
-
     proteome = aa.AminoAcidSeqDict()
     proteome.dump_fasta(parth_proteome, source=args.reference_source)
+    if not quiet:
+        logger('Proteome FASTA loaded.')
 
-    with lzma.open(output_anno, 'wt') as handle:
-        GtfIO.write(handle, anno)
+    output_gtf = create_gtf_copy(path_gtf, output_dir, symlink, compression)
+    index_gtf(output_gtf, args.reference_source, proteome, invalid_protein_as_noncoding)
     if not quiet:
         logger('Genome annotation GTF saved to disk.')
 
-    if not quiet:
-        logger('Proteome FASTA loaded.')
     with open(output_proteome, 'wb') as handle:
         pickle.dump(proteome, handle)
     if not quiet:
         logger('Proteome FASTA saved to disk.')
+
+    anno = gtf.GenomicAnnotationOnDisk()
+    anno.load_index(output_gtf)
 
     # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(
