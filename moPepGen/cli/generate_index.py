@@ -50,7 +50,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
 
 def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
         invalid_protein_as_noncoding:bool=True):
-    """"""
+    """ Index a GTF file. """
     anno = gtf.GenomicAnnotationOnDisk()
 
     if file.suffix.lower() == '.gtf':
@@ -81,7 +81,7 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
             handle.write(tx_pointer.to_line() + '\n')
 
 def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True, compression:str=None) -> Path:
-    """ """
+    """ Create copy of GTF """
     if symlink:
         if file.suffix.lower() == '.gz':
             output_file = output_dir/'annotation.gtf.gz'
@@ -112,7 +112,7 @@ def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True, compression:s
     return output_file
 
 def generate_index(args:argparse.Namespace):
-    """ Generate  """
+    """ Generate index  """
     path_genome:Path = args.genome_fasta
     path_gtf:Path = args.annotation_gtf
     parth_proteome:Path = args.proteome_fasta

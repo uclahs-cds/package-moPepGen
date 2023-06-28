@@ -16,11 +16,11 @@ from moPepGen.gtf.GTFIndexMetadata import GTFIndexMetadata
 
 
 class GenomicAnnotationOnDisk(GenomicAnnotation):
-    """ """
+    """ An on disk version of GenomicAnnotation that uses minimal memory. """
     def __init__(self, genes:GenePointerDict=None,
             transcripts:TranscriptPointerDict=None,
             source:str=None):
-        """ """
+        """ Constructur """
         self.genes = genes or GenePointerDict()
         self.transcripts = transcripts or TranscriptPointerDict()
         self.source = source
@@ -30,15 +30,16 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         self.handle = None
 
     def __del__(self):
-        """ """
+        """ Hook for deconstruction """
         if self.handle:
             self.handle.close()
 
     def dump_gtf(self, *args, **kwargs) -> None:
+        """ Forbidden """
         raise NotImplementedError
 
     def infer_source(self):
-        """ """
+        """ Infer GTF source (GENCODE vs ENSEMBL) from data. """
         i = 0
         inferred = {}
         for tx in self.transcripts.keys():
@@ -53,7 +54,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         self.source = sorted(inferred.items(), key=lambda it: it[1])[-1][0]
 
     def init_handle(self, handle:Union[str, IO, Path]):
-        """ """
+        """ Initiate file handle """
         if isinstance(handle, str):
             handle = Path(handle)
 
@@ -73,7 +74,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
 
     @staticmethod
     def get_index_files(file:Union[str,Path]) -> Tuple[Path,Path]:
-        """ """
+        """ Get index file paths given the GTF file path. """
         if isinstance(file, str):
             file = Path(file)
         basename = str(file.name).split('.gtf')[0]
@@ -83,7 +84,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         return gene_idx_file, tx_idx_file
 
     def generate_index(self, handle:Union[IO, str, Path], source:str=None):
-        """ """
+        """ Generate GTF index """
         self.init_handle(handle)
 
         for pointer in iterate_pointer(self.handle, source):
@@ -98,7 +99,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
             self.infer_source()
 
     def load_index(self, file:Union[str,Path]):
-        """ """
+        """ Load index from idx files """
         self.init_handle(file)
         gene_idx_file, tx_idx_file = self.get_index_files(file)
 

@@ -1,18 +1,18 @@
-""" """
+""" GTFIndexMetadata """
 from typing import IO
 from moPepGen.version import MetaVersion
 
 MOPEPGEN_GTF_INDEX_METADATA_PREFIX = '##'
 
 class GTFIndexMetadata():
-    """ """
+    """ Class for GTF index metadata. """
     def __init__(self, source:str=None, version:MetaVersion=None):
-        """ """
+        """ constructor """
         self.source = source
         self.version = version or MetaVersion()
 
     def write(self, handle:IO):
-        """ """
+        """ Write metadata to handle. """
         prefix = MOPEPGEN_GTF_INDEX_METADATA_PREFIX
         handle.write(f"{prefix}source={self.source}\n")
         handle.write(f"{prefix}python={self.version.python}\n")
@@ -21,7 +21,7 @@ class GTFIndexMetadata():
 
     @classmethod
     def parse(cls, handle:IO):
-        """ """
+        """ Read metadata from handle """
         pos = handle.tell()
         it = handle.readline()
         metadata = {}
