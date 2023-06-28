@@ -5,12 +5,14 @@ import io
 import gzip
 import lzma
 from pathlib import Path
+from moPepGen import err
 from moPepGen.version import MetaVersion
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.gtf.GTFPointer import (
     GenePointerDict, TranscriptPointerDict, iterate_pointer,
     GenePointer, TranscriptPointer
 )
+from moPepGen.gtf.GTFIndexMetadata import GTFIndexMetadata
 
 
 class GenomicAnnotationOnDisk(GenomicAnnotation):
@@ -77,6 +79,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         basename = str(file.name).split('.gtf')[0]
         gene_idx_file = file.parent/f"{basename}_gene.idx"
         tx_idx_file = file.parent/f"{basename}_tx.idx"
+
         return gene_idx_file, tx_idx_file
 
     def generate_index(self, handle:Union[IO, str, Path], source:str=None):
@@ -99,18 +102,25 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         self.init_handle(file)
         gene_idx_file, tx_idx_file = self.get_index_files(file)
 
-        gene_source = None
+        if not gene_idx_file.exists():
+            raise ValueError(f"Gene index file cannot be found in {file.parent}")
+        if not tx_idx_file.exists():
+            raise ValueError(f"Transcript index file cannot be found in {file.parent}")
+
+        version = MetaVersion()
+
         with open(gene_idx_file, 'rt') as handle:
+            metadata = GTFIndexMetadata.parse(handle)
+            if not version.is_valid(metadata.version):
+                raise err.IndexVersionNotMatchError(version, metadata.version)
+
+            gene_source = metadata.source
+            if not gene_source:
+                raise ValueError("Cannot find source from gene idx.")
+
             for line in handle:
                 if line.startswith('#'):
-                    line = line.lstrip('#').lstrip()
-                    if line.startswith('source='):
-                        gene_source = line.split('=')[1]
                     continue
-
-                if not gene_source:
-                    raise ValueError("Cannot find source from gene idx.")
-
                 fields = line.rstrip().split('\t')
                 pointer = GenePointer(
                     self.handle, key=fields[0],
@@ -119,21 +129,20 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
                 )
                 self.genes[pointer.key] = pointer
 
-        tx_source = None
         with open(tx_idx_file, 'rt') as handle:
-            for line in handle:
-                if line.startswith('#'):
-                    line = line.lstrip('#').lstrip()
-                    if line.startswith('source='):
-                        tx_source = line.split('=')[1]
-                    continue
+            metadata = GTFIndexMetadata.parse(handle)
+            if not version.is_valid(metadata.version):
+                raise err.IndexVersionNotMatchError(version, metadata.version)
 
-                if not tx_source:
-                    raise ValueError("Cannot find source from gene idx.")
-
-                if tx_source != gene_source:
+            tx_source = metadata.source
+            if not tx_source:
+                raise ValueError("Cannot find source from gene idx.")
+            if tx_source != gene_source:
                     raise ValueError('tx_source does not match with gene_source')
 
+            for line in handle:
+                if line.startswith('#'):
+                    continue
                 fields = line.rstrip().split('\t')
                 is_protein_coding = {'None': None, 'True': True, 'False': False}[fields[3]]
                 pointer = TranscriptPointer(

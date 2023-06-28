@@ -204,7 +204,7 @@ def add_args_source(parser:argparse.ArgumentParser):
 def load_references(args:argparse.Namespace, load_genome:bool=True,
         load_canonical_peptides:bool=True, load_proteome:bool=False,
         invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False
-        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, Set[str]]:
+        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotationOnDisk, Set[str]]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
     index_dir:Path = args.index_dir
@@ -225,11 +225,10 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
                 if not version.is_valid(genome.version):
                     raise err.IndexVersionNotMatchError(version, genome.version)
 
-        with lzma.open(f'{index_dir}/annotation.dat', 'rt') as handle:
-            annotation = gtf.GenomicAnnotation()
-            annotation.dump_gtf(handle)
-            if not version.is_valid(annotation.version):
-                raise err.IndexVersionNotMatchError(version, genome.version)
+        gtf_file = list(index_dir.glob('annotation.gtf*'))[0]
+        annotation = gtf.GenomicAnnotationOnDisk()
+        annotation.init_handle(gtf_file)
+        annotation.load_index(gtf_file)
 
         if load_proteome:
             with open(f'{index_dir}/proteome.pkl', 'rb') as handle:
@@ -249,8 +248,9 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if (check_protein_coding is True or load_canonical_peptides is True) and \
                 args.proteome_fasta is None:
             raise ValueError('--proteome-fasta was not specified.')
-        annotation = gtf.GenomicAnnotation()
-        annotation.dump_gtf(args.annotation_gtf, source=args.reference_source)
+        annotation = gtf.GenomicAnnotationOnDisk()
+        annotation.generate_index(args.annotation_gtf, source=args.reference_source)
+
         if not quiet:
             logger('Annotation GTF loaded.')
 

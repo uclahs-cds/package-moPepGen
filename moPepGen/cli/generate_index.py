@@ -16,6 +16,7 @@ import gzip
 from moPepGen import dna, aa, gtf, logger
 from moPepGen.gtf import GtfIO
 from moPepGen.cli import common
+from moPepGen.gtf.GTFIndexMetadata import GTFIndexMetadata
 
 
 if TYPE_CHECKING:
@@ -65,15 +66,16 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
         anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
     gene_idx_file, tx_idx_file = anno.get_index_files(file)
+    metadata = GTFIndexMetadata()
 
     with open(gene_idx_file, 'wt') as handle:
-        handle.write(f"# source={anno.source}\n")
+        metadata.write(handle)
         for gene in anno.genes.keys():
             gene_pointer:GenePointer = anno.genes.get_pointer(gene)
             handle.write(gene_pointer.to_line() + '\n')
 
     with open(tx_idx_file, 'wt') as handle:
-        handle.write(f"# source={anno.source}\n")
+        metadata.write(handle)
         for tx in anno.transcripts.keys():
             tx_pointer:TranscriptPointer = anno.transcripts.get_pointer(tx)
             handle.write(tx_pointer.to_line() + '\n')
@@ -164,7 +166,7 @@ def generate_index(args:argparse.Namespace):
         logger('Proteome FASTA saved to disk.')
 
     anno = gtf.GenomicAnnotationOnDisk()
-    anno.load_index(output_gtf)
+    anno.generate_index(output_gtf)
 
     # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(

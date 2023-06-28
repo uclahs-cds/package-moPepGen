@@ -6,15 +6,15 @@ import Bio
 from moPepGen import __version__
 
 
-MINIMAL_VERSION = '0.12.0'
+MINIMAL_VERSION = '1.0.1'
 
 class MetaVersion():
     """ Versions """
-    def __init__(self):
+    def __init__(self, python:str=None, biopython:str=None, mopepgen:str=None):
         """ constructor """
-        self.python = sys.version_info[:3]
-        self.biopython = Bio.__version__
-        self.mopepgen = __version__
+        self.python = python or '.'.join([str(x) for x in sys.version_info[:3]])
+        self.biopython = biopython or Bio.__version__
+        self.mopepgen = mopepgen or __version__
 
     def __eq__(self, other:MetaVersion):
         """ equal to """
@@ -45,5 +45,4 @@ class MetaVersion():
 
     def __repr__(self) -> str:
         """ str representation """
-        python = '.'.join([str(x) for x in self.python])
-        return f"python={python}, biopython={self.biopython}, moPepGen={self.mopepgen}"
+        return f"python={self.python}, biopython={self.biopython}, moPepGen={self.mopepgen}"

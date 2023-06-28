@@ -43,8 +43,8 @@ class GenePointer(GTFPointer):
         offset = self.start - cur
         self.handle.seek(offset, 1)
         buffer:bytes = self.handle.read(len(self))
-        lines = buffer.decode('utf-8').split('\n')
-        if len(lines) > 0:
+        lines = buffer.decode('utf-8').rstrip().split('\n')
+        if len(lines) > 1:
             raise ValueError(f"Multiple lines found for gene {self.key}")
         record = GtfIO.line_to_seq_feature(lines[0])
         record.__class__ = GeneAnnotationModel
@@ -88,6 +88,7 @@ class TranscriptPointer(GTFPointer):
                 raise ValueError("Loaded transcript do not match.")
             record.id = tx_id
             tx_model.add_record(feature, record)
+        tx_model.sort_records()
         return tx_model
 
     def to_line(self) -> str:
@@ -157,6 +158,10 @@ def iterate_pointer(handle:IO, source:str=None) -> Iterable[Union[GenePointer, T
                 cur_tx_pointer.end = line_end
             if cur_gene_pointer:
                 cur_gene_pointer.transcripts.add(cur_tx_id)
+    if cur_gene_pointer:
+        yield cur_gene_pointer
+    if cur_tx_pointer:
+        yield cur_tx_pointer
 
 class GTFPointerDict(dict, Mapping[str, GTFPointer]):
     """ """
@@ -170,6 +175,11 @@ class GTFPointerDict(dict, Mapping[str, GTFPointer]):
             for val in args[0].values():
                 self.validate(val, GTFPointer)
         super().__init__(*args, **kwargs)
+
+    def __iter__(self) -> Iterable[str]:
+        """"""
+        for k in self.keys():
+            yield k
 
     def validate(self, val, type):
         """ """
@@ -210,7 +220,9 @@ class GenePointerDict(GTFPointerDict):
             key_pop = self._cached_keys.pop()
             self._cache.pop(key_pop)
         pointer:GenePointer = self.get_pointer(__key)
-        return pointer.load()
+        val = pointer.load()
+        self._cache[__key] = val
+        return val
 
 class TranscriptPointerDict(GTFPointerDict):
     """ """
@@ -235,6 +247,8 @@ class TranscriptPointerDict(GTFPointerDict):
             key_pop = self._cached_keys.pop()
             self._cache.pop(key_pop)
         pointer:TranscriptPointer = self.get_pointer(__key)
-        tx_model = pointer.load()
-        tx_model.is_protein_coding = pointer.is_protein_coding is True
-        return tx_model
+        val = pointer.load()
+        val.is_protein_coding = pointer.is_protein_coding is True
+        val.transcript.source = pointer.source
+        self._cache[__key] = val
+        return val
