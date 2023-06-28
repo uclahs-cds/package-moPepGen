@@ -127,7 +127,7 @@ def generate_index(args:argparse.Namespace):
     quiet:bool = args.quiet
 
     symlink:bool = False
-    compression:bool = 'lzma'
+    compression:bool = None
 
     output_dir:Path = args.output_dir
     output_genome = output_dir/"genome.pkl"
