@@ -2,8 +2,6 @@
 from __future__ import annotations
 from typing import Dict, IO, Union, Tuple
 import io
-import gzip
-import lzma
 from pathlib import Path
 from moPepGen import err
 from moPepGen.version import MetaVersion
