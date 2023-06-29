@@ -56,8 +56,8 @@ class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
         """ Test generate index """
         proteome = aa.AminoAcidSeqDict()
         proteome.dump_fasta(self.data_dir/'translate.fasta')
-        anno = GenomicAnnotationOnDisk()
         cli.index_gtf(self.data_dir/'annotation.gtf', proteome=proteome)
+
 
     def test_load_index(self):
         """ test load index """

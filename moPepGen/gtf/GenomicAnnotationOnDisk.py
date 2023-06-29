@@ -61,12 +61,9 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
             handle = Path(handle)
 
         if isinstance(handle, Path):
-            if handle.suffix.lower() == '.gtf':
-                ihandle = open(handle, 'rb')
-            elif handle.suffix.lower() == '.lz':
-                ihandle = lzma.open(handle, 'rb')
-            elif handle.suffix.lower() == '.gz':
-                ihandle = gzip.open(handle, 'rb')
+            if handle.suffix.lower() != '.gtf':
+                raise ValueError(f"Unsupported file formate of {handle}")
+            ihandle = open(handle, 'rb')
         elif isinstance(handle, io.IOBase):
             ihandle = handle
         else:
