@@ -10,6 +10,7 @@ from . import GtfIO
 from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TYPES
 from .GeneAnnotationModel import GeneAnnotationModel
 from .GTFSeqFeature import GTFSeqFeature
+from .GTFSourceInferrer import GTFSourceInferrer
 
 
 if TYPE_CHECKING:
@@ -113,25 +114,14 @@ class GenomicAnnotation():
         """
         record:GTFSeqFeature
         if not source:
-            count = 0
-            inferred = {}
+            inferrer = GTFSourceInferrer()
+
         for record in GtfIO.parse(handle):
             if biotype is not None and record.biotype not in biotype:
                 continue
 
             if not source:
-                if count > 100:
-                    inferred = sorted(inferred.items(), key=lambda x: x[1])
-                    source = inferred[-1][0]
-                    record.source = source
-                else:
-                    count += 1
-                    record.infer_annotation_source()
-                    inferred_source = record.source
-                    if inferred_source not in inferred:
-                        inferred[inferred_source] = 1
-                    else:
-                        inferred[inferred_source] += 1
+                record.source = inferrer.infer(record)
             else:
                 record.source = source
 
@@ -142,11 +132,11 @@ class GenomicAnnotation():
 
             self.add_transcript_record(record)
 
-        if not source:
-            inferred = sorted(inferred.items(), key=lambda x: x[1])
-            source = inferred[-1][0]
 
-        self.source = source
+        if not source:
+            source = inferrer.source
+        else:
+            self.source = source
 
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()

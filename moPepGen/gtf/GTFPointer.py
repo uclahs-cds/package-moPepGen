@@ -8,6 +8,7 @@ from moPepGen.gtf.TranscriptAnnotationModel import (
     TranscriptAnnotationModel,
     GTF_FEATURE_TYPES
 )
+from moPepGen.gtf.GTFSourceInferrer import GTFSourceInferrer
 
 
 GENE_DICT_CACHE_SIZE = 10
@@ -104,8 +105,7 @@ class TranscriptPointer(GTFPointer):
 def iterate_pointer(handle:IO, source:str=None) -> Iterable[Union[GenePointer, TranscriptPointer]]:
     """ Iterate over a GTF file and yield pointers. """
     if not source:
-        count = 0
-        inferred = {}
+        inferrer = GTFSourceInferrer()
 
     cur_gene_id:str = None
     cur_tx_id:str = None
@@ -124,18 +124,7 @@ def iterate_pointer(handle:IO, source:str=None) -> Iterable[Union[GenePointer, T
         record = GtfIO.line_to_seq_feature(line)
 
         if not source:
-            if count > 100:
-                inferred = sorted(inferred.items(), key=lambda x: x[1])
-                source = inferred[-1][0]
-                record.source = source
-            else:
-                count += 1
-                record.infer_annotation_source()
-                inferred_source = record.source
-                if inferred_source not in inferred:
-                    inferred[inferred_source] = 1
-                else:
-                    inferred[inferred_source] += 1
+            record.source = inferrer.infer(record)
         else:
             record.source = source
 

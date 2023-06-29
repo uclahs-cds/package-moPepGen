@@ -83,6 +83,9 @@ def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True) -> Path:
     if file.suffix.lower() == '.gz':
         if symlink:
             symlink = False
+            logger(
+                "--gtf-symlink was suppressed because compressed GTF file was received. "
+            )
     elif file.suffix.lower() != '.gtf':
         raise ValueError(f"Cannot handle gtf file {file}")
 
