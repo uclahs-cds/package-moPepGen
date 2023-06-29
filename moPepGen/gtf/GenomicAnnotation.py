@@ -2,7 +2,7 @@
 """
 from __future__ import annotations
 import copy
-from typing import List, Dict, Tuple, TYPE_CHECKING
+from typing import List, Dict, Tuple, TYPE_CHECKING, IO, Union
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar, err
 from moPepGen.version import MetaVersion
@@ -10,6 +10,7 @@ from . import GtfIO
 from .TranscriptAnnotationModel import TranscriptAnnotationModel, GTF_FEATURE_TYPES
 from .GeneAnnotationModel import GeneAnnotationModel
 from .GTFSeqFeature import GTFSeqFeature
+from .GTFSourceInferrer import GTFSourceInferrer
 
 
 if TYPE_CHECKING:
@@ -31,12 +32,8 @@ class GenomicAnnotation():
             transcripts:Dict[str, TranscriptAnnotationModel]=None,
             source:str=None):
         """ Construct a GenomicAnnotation object """
-        if genes is None:
-            genes = {}
-        if transcripts is None:
-            transcripts = {}
-        self.genes = genes
-        self.transcripts = transcripts
+        self.genes = genes or {}
+        self.transcripts = transcripts or {}
         self.source = source
         self.gene_id_version_mapper:Dict[str, str] = None
         self.version = MetaVersion()
@@ -106,7 +103,7 @@ class GenomicAnnotation():
         for tx_id in self._cached_tx_seqs:
             self.transcripts[tx_id].remove_cached_seq()
 
-    def dump_gtf(self, path:str, biotype:List[str]=None, source:str=None)->None:
+    def dump_gtf(self, handle:Union[str, IO], biotype:List[str]=None, source:str=None)->None:
         """ Dump a GTF file into a GenomicAnnotation
 
         Args:
@@ -117,25 +114,14 @@ class GenomicAnnotation():
         """
         record:GTFSeqFeature
         if not source:
-            count = 0
-            inferred = {}
-        for record in GtfIO.parse(path):
+            inferrer = GTFSourceInferrer()
+
+        for record in GtfIO.parse(handle):
             if biotype is not None and record.biotype not in biotype:
                 continue
 
             if not source:
-                if count > 100:
-                    inferred = sorted(inferred.items(), key=lambda x: x[1])
-                    source = inferred[-1][0]
-                    record.source = source
-                else:
-                    count += 1
-                    record.infer_annotation_source()
-                    inferred_source = record.source
-                    if inferred_source not in inferred:
-                        inferred[inferred_source] = 1
-                    else:
-                        inferred[inferred_source] += 1
+                record.source = inferrer.infer(record)
             else:
                 record.source = source
 
@@ -146,11 +132,11 @@ class GenomicAnnotation():
 
             self.add_transcript_record(record)
 
-        if not source:
-            inferred = sorted(inferred.items(), key=lambda x: x[1])
-            source = inferred[-1][0]
 
-        self.source = source
+        if not source:
+            source = inferrer.source
+        else:
+            self.source = source
 
         for transcript_model in self.transcripts.values():
             transcript_model.sort_records()

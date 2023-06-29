@@ -81,7 +81,8 @@ def call_alt_translation(args:argparse.Namespace) -> None:
 
     peptide_pool = aa.VariantPeptidePool()
 
-    for tx_id, tx_model in anno.transcripts.items():
+    for tx_id in anno.transcripts:
+        tx_model = anno.transcripts[tx_id]
         if not tx_model.is_protein_coding:
             continue
 

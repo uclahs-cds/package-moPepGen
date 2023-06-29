@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.1.0] - 2023-06-28
+
+### Fixed
+
+- Reduced memory usage by mapping the GTF files into memory instead of reading it all at once. #371
+
 ## [1.0.0] - 2023-06-15
 
 ### Added

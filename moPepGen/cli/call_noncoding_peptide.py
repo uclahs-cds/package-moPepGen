@@ -119,7 +119,8 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
     orf_pool = []
 
     i = 0
-    for tx_id, tx_model in anno.transcripts.items():
+    for tx_id in anno.transcripts:
+        tx_model = anno.transcripts[tx_id]
         if inclusion_biotypes and \
                 tx_model.transcript.biotype not in inclusion_biotypes:
             continue
