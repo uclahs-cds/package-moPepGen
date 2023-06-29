@@ -51,15 +51,15 @@ class TestGenerateIndex(TestCaseIntegration):
         self.assertEqual(files, expected)
 
 class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
-    """ """
+    """ Test case for GenomicAnnotationOnDisk """
     def test_generate_index(self):
-        """ """
+        """ Test generate index """
         proteome = aa.AminoAcidSeqDict()
         proteome.dump_fasta(self.data_dir/'translate.fasta')
         anno = GenomicAnnotationOnDisk()
         cli.index_gtf(self.data_dir/'annotation.gtf', proteome=proteome)
 
     def test_load_index(self):
-        """ """
+        """ test load index """
         anno = GenomicAnnotationOnDisk()
         anno.load_index(self.data_dir/'annotation.gtf')
