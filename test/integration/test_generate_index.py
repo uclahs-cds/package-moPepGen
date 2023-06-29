@@ -1,10 +1,11 @@
 """ Test the command line interface """
 import argparse
 import subprocess as sp
+import os
 import sys
 from test.integration import TestCaseIntegration
 from moPepGen import cli, aa
-from moPepGen.gtf import GenomicAnnotationOnDisk
+from moPepGen.gtf import GenomicAnnotation, GenomicAnnotationOnDisk
 
 
 class TestGenerateIndex(TestCaseIntegration):
@@ -56,10 +57,24 @@ class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
         """ Test generate index """
         proteome = aa.AminoAcidSeqDict()
         proteome.dump_fasta(self.data_dir/'translate.fasta')
-        cli.index_gtf(self.data_dir/'annotation.gtf', proteome=proteome)
+        gtf_file = self.data_dir/'annotation.gtf'
+        gtf_file2 = self.work_dir/'annotation.gtf'
+        os.symlink(gtf_file, gtf_file2)
+        cli.index_gtf(gtf_file2, proteome=proteome)
+        expect = {
+            'annotation.gtf', 'annotation_gene.idx', 'annotation_tx.idx'
+        }
+        received = {str(file.name) for file in self.work_dir.glob('*')}
+        self.assertEqual(received, expect)
 
 
     def test_load_index(self):
         """ test load index """
-        anno = GenomicAnnotationOnDisk()
-        anno.load_index(self.data_dir/'annotation.gtf')
+        anno1 = GenomicAnnotation()
+        anno1.dump_gtf(self.data_dir/'annotation.gtf')
+
+        anno2 = GenomicAnnotationOnDisk()
+        anno2.load_index(self.data_dir/'annotation.gtf')
+
+        self.assertEqual(anno1.genes.keys(), anno2.genes.keys())
+        self.assertEqual(anno1.transcripts.keys(), anno2.transcripts.keys())
