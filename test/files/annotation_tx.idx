@@ -1,7 +1,7 @@
 ##source=None
-##python=3.8.11
+##python=3.8.17
 ##moPepGen=1.1.0
-##biopython=1.79
+##biopython=1.81
 ENST00000614167.2	174	7260	True
 ENST00000614168.2	7260	12491	True
 ENST00000622235.5	12694	24586	True
