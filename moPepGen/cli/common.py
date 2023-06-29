@@ -1,7 +1,6 @@
 """ Common functions for cli """
 from __future__ import annotations
 import argparse
-import lzma
 import os
 import sys
 from typing import Tuple, Set, List

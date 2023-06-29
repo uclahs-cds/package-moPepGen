@@ -1,23 +1,21 @@
-""" """
+""" GTFPointer and GTFPointerDict """
 from __future__ import annotations
-from typing import Dict, Set, Iterable, Mapping, Union, IO, TYPE_CHECKING
+from typing import Dict, Set, Iterable, Mapping, Union, IO
 from collections import deque
 from moPepGen.gtf import GtfIO
 from moPepGen.gtf.GeneAnnotationModel import GeneAnnotationModel
-from moPepGen.gtf.TranscriptAnnotationModel import TranscriptAnnotationModel
 from moPepGen.gtf.TranscriptAnnotationModel import (
     TranscriptAnnotationModel,
     GTF_FEATURE_TYPES
 )
 
-if TYPE_CHECKING:
-    from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 
 GENE_DICT_CACHE_SIZE = 10
 TX_DICT_CACHE_SIZE = 10
 
 class GTFPointer():
-    """ """
+    """ GTFPointer. Represents the range of the GTF file of a particular
+    genome annotation entity (gene or transcript). """
     def __init__(self, handle:IO, key:str, start:int, end:int, source:str):
         """ """
         self.handle = handle
@@ -31,14 +29,15 @@ class GTFPointer():
         return self.end - self.start
 
 class GenePointer(GTFPointer):
-    """ """
+    """ Pointer of a GTF file for a gene. """
     def __init__(self, handle: IO, key: str, start: int, end: int, source: str,
             transcripts:Set[str]=None):
+        """ Constructor """
         super().__init__(handle, key, start, end, source)
         self.transcripts = transcripts or set()
 
     def load(self) -> GeneAnnotationModel:
-        """ """
+        """ Load gene annotation model from handle. """
         cur = self.handle.tell()
         offset = self.start - cur
         self.handle.seek(offset, 1)
@@ -53,7 +52,7 @@ class GenePointer(GTFPointer):
         return record
 
     def to_line(self) -> str:
-        """ """
+        """ Convert to line """
         fields = [
             self.key,
             str(self.start),
@@ -63,14 +62,15 @@ class GenePointer(GTFPointer):
         return '\t'.join(fields)
 
 class TranscriptPointer(GTFPointer):
-    """ """
+    """ Pointer of a GTF file for a trnascript. """
     def __init__(self, handle: IO, key: str, start: int, end: int, source: str,
             is_protein_coding:bool=None):
+        """ TranscriptPointer """
         super().__init__(handle, key, start, end, source)
         self.is_protein_coding = is_protein_coding
 
     def load(self) -> TranscriptAnnotationModel:
-        """ """
+        """ Load pointer and return a transcript annotation model. """
         cur = self.handle.tell()
         offset = self.start - cur
         self.handle.seek(offset, 1)
@@ -92,7 +92,7 @@ class TranscriptPointer(GTFPointer):
         return tx_model
 
     def to_line(self) -> str:
-        """ """
+        """ Convert to string """
         fields = [
             self.key,
             str(self.start),
@@ -102,7 +102,7 @@ class TranscriptPointer(GTFPointer):
         return "\t".join(fields)
 
 def iterate_pointer(handle:IO, source:str=None) -> Iterable[Union[GenePointer, TranscriptPointer]]:
-    """ """
+    """ Iterate over a GTF file and yield pointers. """
     if not source:
         count = 0
         inferred = {}
@@ -145,7 +145,10 @@ def iterate_pointer(handle:IO, source:str=None) -> Iterable[Union[GenePointer, T
             if cur_tx_pointer:
                 yield cur_tx_pointer
             cur_gene_id = record.gene_id
-            cur_gene_pointer = GenePointer(handle, cur_gene_id, line_start, line_end, record.source)
+            cur_gene_pointer = GenePointer(
+                handle, cur_gene_id,
+                line_start, line_end, record.source
+            )
             cur_tx_id = None
             cur_tx_pointer = None
         else:
@@ -153,7 +156,10 @@ def iterate_pointer(handle:IO, source:str=None) -> Iterable[Union[GenePointer, T
                 if cur_tx_pointer:
                     yield cur_tx_pointer
                 cur_tx_id = record.transcript_id
-                cur_tx_pointer = TranscriptPointer(handle, cur_tx_id, line_start, line_end, record.source)
+                cur_tx_pointer = TranscriptPointer(
+                    handle, cur_tx_id,
+                    line_start, line_end, record.source
+                )
             else:
                 cur_tx_pointer.end = line_end
             if cur_gene_pointer:
@@ -164,9 +170,13 @@ def iterate_pointer(handle:IO, source:str=None) -> Iterable[Union[GenePointer, T
         yield cur_tx_pointer
 
 class GTFPointerDict(dict, Mapping[str, GTFPointer]):
-    """ """
+    """ GTFPointerDict. This defines a special dict class that keys are str
+    (gene or transcript ID) and values are corresponding GTFPointer. The getter
+    magic function is customized so it returns a loaded GeneAnnotationModel
+    or TranscriptAnnotationModel instead of the pointer.
+    """
     def __init__(self, *args:Dict[str,GTFPointer], **kwargs:Dict[str,GTFPointer]):
-        """ """
+        """ Constructor """
         for val in kwargs.values():
             self.validate(val, GTFPointer)
         if args:
@@ -177,30 +187,36 @@ class GTFPointerDict(dict, Mapping[str, GTFPointer]):
         super().__init__(*args, **kwargs)
 
     def __iter__(self) -> Iterable[str]:
-        """"""
+        """ Iterator """
         for k in self.keys():
             yield k
 
-    def validate(self, val, type):
-        """ """
-        if not type is GTFPointer or not issubclass(type, GTFPointer):
-            raise TypeError(f"type = {type} is not supported")
-        if not isinstance(val, type):
+    def validate(self, val, __type):
+        """ Ensures the values are GTFPointers """
+        if not __type is GTFPointer or not issubclass(__type, GTFPointer):
+            raise TypeError(f"type = {__type} is not supported")
+        if not isinstance(val, __type):
             raise TypeError(
-                f"{self.__class__} only accecpts {type.__class__} objects"
+                f"{self.__class__} only accecpts {__type.__class__} objects"
             )
 
     def __setitem__(self, __key: str, __value: GTFPointer) -> None:
+        """ Setter """
         self.validate(__value, GTFPointer)
         return super().__setitem__(__key, __value)
 
     def get_pointer(self, __key: str) -> GTFPointer:
-        """ """
+        """ Get pointer by key without loading the annotation entity. """
         return super().__getitem__(__key)
 
 class GenePointerDict(GTFPointerDict):
-    """ """
+    """ GenePointerDict. This defines a dict class that keys are gene IDs and
+    values are the corresponding gene models. The getter magic function is
+    customized so it returns a loaded GeneAnnotationModel object instead of the
+    pointer.
+    """
     def __init__(self, *args: Dict[str, GenePointer], **kwargs: Dict[str, GenePointer]):
+        """ Constructor """
         for val in kwargs.values():
             self.validate(val, GenePointer)
         if args:
@@ -213,6 +229,7 @@ class GenePointerDict(GTFPointerDict):
         self._cached_keys = deque()
 
     def __getitem__(self, __key: str) -> GeneAnnotationModel:
+        """ Getter """
         if __key in self._cache:
             return self._cache[__key]
         self._cached_keys.appendleft(__key)
@@ -225,8 +242,13 @@ class GenePointerDict(GTFPointerDict):
         return val
 
 class TranscriptPointerDict(GTFPointerDict):
-    """ """
+    """ TranscriptPointerDict. This defines a dict class that keys are transcript
+    IDs and values are the corresponding transcript models. The getter magic
+    function is customized so it returns a loaded TranscriptAnnotationModel
+    object instead of the pointer.
+    """
     def __init__(self, *args: Dict[str, TranscriptPointer], **kwargs: Dict[str, TranscriptPointer]):
+        """ Constructor """
         for val in kwargs.values():
             self.validate(val, TranscriptPointer)
         if args:
@@ -238,8 +260,8 @@ class TranscriptPointerDict(GTFPointerDict):
         self._cache = {}
         self._cached_keys = deque()
 
-    def __getitem__(self, __key: str
-            ) -> TranscriptAnnotationModel:
+    def __getitem__(self, __key: str) -> TranscriptAnnotationModel:
+        """ getter """
         if __key in self._cache:
             return self._cache[__key]
         self._cached_keys.appendleft(__key)

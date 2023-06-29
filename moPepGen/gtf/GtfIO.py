@@ -30,7 +30,7 @@ class GtfIterator(SequenceIterator):
             yield record
 
 def line_to_seq_feature(line:str) -> GTFSeqFeature:
-    """ """
+    """ Conver line to SeqFeature """
     line = line.rstrip()
     fields = line.split('\t')
 

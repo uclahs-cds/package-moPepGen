@@ -14,7 +14,6 @@ import gzip
 from pathlib import Path
 import pickle
 from moPepGen import dna, aa, gtf, logger
-from moPepGen.gtf import GtfIO
 from moPepGen.cli import common
 from moPepGen.gtf.GTFIndexMetadata import GTFIndexMetadata
 

@@ -20,7 +20,8 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
     def __init__(self, genes:GenePointerDict=None,
             transcripts:TranscriptPointerDict=None,
             source:str=None):
-        """ Constructur """
+        """ Constructor """
+        # pylint: disable=W0231
         self.genes = genes or GenePointerDict()
         self.transcripts = transcripts or TranscriptPointerDict()
         self.source = source
@@ -55,6 +56,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
 
     def init_handle(self, handle:Union[str, IO, Path]):
         """ Initiate file handle """
+        # pylint: disable=R1732
         if isinstance(handle, str):
             handle = Path(handle)
 
@@ -77,7 +79,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         """ Get index file paths given the GTF file path. """
         if isinstance(file, str):
             file = Path(file)
-        basename = str(file.name).split('.gtf')[0]
+        basename = str(file.name).split('.gtf', maxsplit=1)[0]
         gene_idx_file = file.parent/f"{basename}_gene.idx"
         tx_idx_file = file.parent/f"{basename}_tx.idx"
 
@@ -139,7 +141,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
             if not tx_source:
                 raise ValueError("Cannot find source from gene idx.")
             if tx_source != gene_source:
-                    raise ValueError('tx_source does not match with gene_source')
+                raise ValueError('tx_source does not match with gene_source')
 
             for line in handle:
                 if line.startswith('#'):
