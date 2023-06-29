@@ -32,6 +32,7 @@ class TestGenerateIndex(TestCaseIntegration):
         args.genome_fasta = self.data_dir / 'genome.fasta'
         args.annotation_gtf = self.data_dir / 'annotation.gtf'
         args.proteome_fasta = self.data_dir / 'translate.fasta'
+        args.gtf_symlink = False
         args.reference_source = None
         args.invalid_protein_as_noncoding = False
         args.cleavage_rule = 'trypsin'
@@ -45,7 +46,7 @@ class TestGenerateIndex(TestCaseIntegration):
         cli.generate_index(args)
         files = {str(file.name) for file in args.output_dir.glob('*')}
         expected = {'genome.pkl', 'proteome.pkl',
-            'annotation.gtf.lz', 'annotation_gene.idx', 'annotation_tx.idx',
+            'annotation.gtf', 'annotation_gene.idx', 'annotation_tx.idx',
             'canonical_peptides.pkl', 'coding_transcripts.pkl'}
         self.assertEqual(files, expected)
 

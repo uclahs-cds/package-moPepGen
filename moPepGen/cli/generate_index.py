@@ -9,10 +9,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import argparse
 import os
+import shutil
+import gzip
 from pathlib import Path
 import pickle
-import lzma
-import gzip
 from moPepGen import dna, aa, gtf, logger
 from moPepGen.gtf import GtfIO
 from moPepGen.cli import common
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 # pylint: disable=W0212
 def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen generateIndex """
-    p = subparsers.add_parser(
+    p:argparse.ArgumentParser = subparsers.add_parser(
         name='generateIndex',
         help='Generate genome and proteome index files for moPepGen',
         description='Generate genome and proteome index files for moPepGen'
@@ -40,6 +40,11 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
         dest='output_dir',
         required=True
     )
+    p.add_argument(
+        '--gtf-symlink',
+        help='Create a symlink of the GTF file instead of copying it.',
+        default=False
+    )
     common.add_args_reference(p, index=False)
     common.add_args_cleavage(p)
     common.add_args_quiet(p)
@@ -53,13 +58,7 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
     """ Index a GTF file. """
     anno = gtf.GenomicAnnotationOnDisk()
 
-    if file.suffix.lower() == '.gtf':
-        opener = open
-    elif file.suffix.lower() == '.gz':
-        opener = gzip.open
-    elif file.suffix.lower() == '.lz':
-        opener = lzma.open
-    with opener(file, 'rb') as handle:
+    with open(file, 'rb') as handle:
         anno.generate_index(handle, source)
 
     if proteome:
@@ -80,33 +79,22 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
             tx_pointer:TranscriptPointer = anno.transcripts.get_pointer(tx)
             handle.write(tx_pointer.to_line() + '\n')
 
-def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True, compression:str=None) -> Path:
+def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True) -> Path:
     """ Create copy of GTF """
+    if file.suffix.lower() == '.gz':
+        if symlink:
+            symlink = False
+    elif file.suffix.lower() != '.gtf':
+        raise ValueError(f"Cannot handle gtf file {file}")
+
+    output_file = output_dir/'annotation.gtf'
+
     if symlink:
-        if file.suffix.lower() == '.gz':
-            output_file = output_dir/'annotation.gtf.gz'
-        elif file.suffix.lower() == '.gtf':
-            output_file = output_dir/'annotation.gtf'
-        else:
-            raise ValueError(f"File not supported {file}")
         os.symlink(file, output_file)
+    elif file.suffix.lower() == '.gtf':
+        shutil.copy2(file, output_file)
     else:
-        if file.suffix.lower() == '.gtf':
-            i_opener = open
-        elif file.suffix.lower() == '.gz':
-            i_opener = gzip.open
-
-        if compression == None:
-            o_opener = open
-            output_file = output_dir/'annotation.gtf'
-        elif compression == 'lzma':
-            o_opener = lzma.open
-            output_file = output_dir/'annotation.gtf.lz'
-        elif compression == 'gzip':
-            o_opener = gzip.open
-            output_file = output_dir/'annotation.gtf.gz'
-
-        with i_opener(file, 'rt') as ihandle, o_opener(output_file, 'wt') as ohandle:
+        with gzip.open(file, 'rt') as ihandle, open(output_file, 'wt') as ohandle:
             for line in ihandle:
                 ohandle.write(line)
     return output_file
@@ -125,14 +113,11 @@ def generate_index(args:argparse.Namespace):
     exception = 'trypsin_exception' if rule == 'trypsin' else None
     invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
     quiet:bool = args.quiet
-
-    symlink:bool = False
-    compression:bool = None
+    symlink:bool = args.gtf_symlink
 
     output_dir:Path = args.output_dir
     output_genome = output_dir/"genome.pkl"
     output_proteome = output_dir/"proteome.pkl"
-    output_anno = output_dir/"annotation.dat"
     output_peptides = output_dir/"canonical_peptides.pkl"
     output_coding_tx = output_dir/"coding_transcripts.pkl"
 
@@ -155,7 +140,7 @@ def generate_index(args:argparse.Namespace):
     if not quiet:
         logger('Proteome FASTA loaded.')
 
-    output_gtf = create_gtf_copy(path_gtf, output_dir, symlink, compression)
+    output_gtf = create_gtf_copy(path_gtf, output_dir, symlink)
     index_gtf(output_gtf, args.reference_source, proteome, invalid_protein_as_noncoding)
     if not quiet:
         logger('Genome annotation GTF saved to disk.')
