@@ -64,7 +64,7 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
         anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
     gene_idx_file, tx_idx_file = anno.get_index_files(file)
-    metadata = GTFIndexMetadata()
+    metadata = GTFIndexMetadata(source=anno.source)
 
     with open(gene_idx_file, 'wt') as handle:
         metadata.write(handle)

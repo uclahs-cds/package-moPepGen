@@ -1,4 +1,4 @@
-##source=None
+##source=GENCODE
 ##python=3.8.17
 ##moPepGen=1.1.0
 ##biopython=1.81
