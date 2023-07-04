@@ -51,7 +51,7 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
     group.add_argument(
         '--reference-source',
         type=str,
-        choices=['gencode', 'ensembl'],
+        choices=['GENCODE', 'ENSEMBL'],
         help='Source of reference genome and annotation.',
         default=None
     )
