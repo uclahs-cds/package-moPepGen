@@ -46,7 +46,7 @@ Files are created by this command:
 | File Name | Description |
 |:----------|:------------|
 | `genome.pkl` | This file contains the entire reference genome. |
-| `annotation.gtf` | A copy of the input annotation GTF file. If `--gtf-symlink` is used (default = `True`), this will be a symlink pointing to the input file. |
+| `annotation.gtf` | A copy of the input annotation GTF file. If `--gtf-symlink` is used (default = `False`), this will be a symlink pointing to the input file. |
 | `annotation_gene.idx` | A text file with the location of each gene in the GTF file. |
 | `annotation_tx.idx` | A text file with the location of each transcript in the GTF file. |
 | `proteome.pkl` | Contains all protein sequences. |
