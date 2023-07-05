@@ -64,8 +64,8 @@ class AminoAcidSeqRecord(SeqRecord):
     def infer_ids(self, style:str=None) -> str:
         """
         Args:
-            source (str): The style of the fasta file header. Either 'gencode'
-                or 'ensembl'. If None, it will try both. Defaults to None.
+            source (str): The style of the fasta file header. Either 'GENCODE'
+                or 'ENSEMBL'. If None, it will try both. Defaults to None.
 
         Returns:
             The style ifered.
@@ -73,21 +73,21 @@ class AminoAcidSeqRecord(SeqRecord):
         if not style:
             try:
                 self.infer_ids_gencode()
-                return 'gencode'
+                return 'GENCODE'
             except ValueError:
                 pass
 
             try:
                 self.infer_ids_ensembl()
-                return 'ensembl'
+                return 'ENSEMBL'
             except ValueError as e:
                 raise ValueError(
                     'Failed to infer gene ID, transcript ID, and protein ID '
                     r'using both ENSEMBL and GENCODE\'s format.'
                 ) from e
-        elif style == 'gencode':
+        elif style == 'GENCODE':
             self.infer_ids_gencode()
-        elif style == 'ensembl':
+        elif style == 'ENSEMBL':
             self.infer_ids_ensembl()
         else:
             raise ValueError(f'style {style} is not supported')

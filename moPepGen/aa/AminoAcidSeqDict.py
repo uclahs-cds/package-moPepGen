@@ -35,8 +35,8 @@ class AminoAcidSeqDict(dict):
 
         Args:
             path (str): Path to the FASTA file of protein sequences.
-            source (str): The source of the FASTA file. Can be 'gencode' or
-                'ensembl'. If None is given, it will be infered by trying
+            source (str): The source of the FASTA file. Can be 'GENCODE' or
+                'ENSEMBL'. If None is given, it will be infered by trying
                 the first 100 records. Default to None.
         """
         count = 0
