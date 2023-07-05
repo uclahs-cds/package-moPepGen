@@ -29,24 +29,24 @@ Three files are required for this command:
 
 1. Reference genome FASTA file.
 2. Genome annotation GTF file.
-3. The protein sequence FASTA file.
+3. Protein sequence FASTA file.
 
-All three files must be downloaded from the same release version of either [GENCODE](https://www.gencodegenes.org/) or [ENSEMBL](https://useast.ensembl.org/index.html). moPepGen does not support reference files in any other format (*e.g.* RefSeq) at this point.
+All three files must be downloaded from the same release version of either [GENCODE](https://www.gencodegenes.org/) or [ENSEMBL](https://useast.ensembl.org/index.html). moPepGen does not support reference files from other databases (*e.g.* RefSeq) at the moment.
 
-For GENCODE, the primary assembly is recommended. The file name of the genome FASTA should look like 'GRCh38.primary_assembly.genome.fa'. For annotation, we recommend using the comprehensive gene annotation file for the primary assembly, which matches with the genome FASTA. The file name should look like 'gencode.v43.primary_assembly.annotation.gtf'. The protein sequence should be downloaded from the same source with the same version, and the file name should look like 'gencode.v43.pc_transcripts.fa'
+For GENCODE, the primary assembly is recommended (*i.e.* 'GRCh38.primary_assembly.genome.fa'). For annotation, we recommend using the comprehensive gene annotation file for the primary assembly, which matches with the genome FASTA (*e.g.* 'gencode.vXX.primary_assembly.annotation.gtf'). The version-matched protein sequence should also be downloaded from GENCODE (*e.g.* 'gencode.vXX.pc_transcripts.fa').
 
-Similarly, for ENSEMBL, we also recommend using the primary genome assembly and its annotation. The genome FASTA file should have a pattern of 'Homo_sapiens.GRCh38.dna.primary_assembly.fa', the GTF should look like 'Homo_sapiens.GRCh38.109.chr_patch_hapl_scaff.gtf', and the protein sequence file should look like 'Homo_sapiens.GRCh38.pep.all.fa'.
+Similarly, for ENSEMBL, we recommend using the primary genome assembly and its annotation. The genome FASTA file should resemble 'Homo_sapiens.GRCh38.dna.primary_assembly.fa', the GTF should look like 'Homo_sapiens.GRCh38.XX.chr_patch_hapl_scaff.gtf', and the protein sequence file should look like 'Homo_sapiens.GRCh38.pep.all.fa'.
 
 ## Output
 
-Users usually don't need to worry about the output files of this command. As long as the correct path is provided to the subsequent moPepGen commands, the correct index files will be recognized.
+Users usually don't need to worry about the output files of this command. As long as the correct path is provided to  subsequent moPepGen commands, the correct index files will be recognized.
 
 Files are created by this command:
 
 | File Name | Description |
 |:----------|:------------|
 | `genome.pkl` | This file contains the entire reference genome. |
-| `annotation.gtf` | A copy of the input annotation GTF file. If `--symlink-gtf` is used, this will be a symlink pointing to the input file. |
+| `annotation.gtf` | A copy of the input annotation GTF file. If `--symlink-gtf` is used (default = `True`), this will be a symlink pointing to the input file. |
 | `annotation_gene.idx` | A text file with the location of each gene in the GTF file. |
 | `annotation_tx.idx` | A text file with the location of each transcript in the GTF file. |
 | `proteome.pkl` | Contains all protein sequences. |
