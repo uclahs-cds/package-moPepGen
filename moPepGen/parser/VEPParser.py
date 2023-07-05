@@ -169,11 +169,15 @@ class VEPRecord():
             allele = self.allele
             if strand == -1:
                 allele = str(Seq(allele).reverse_complement())
-            if alt_end - alt_start == 1:  # SNV
-                if len(allele) > 1:
-                    raise ValueError("Don't know how to process this variant.")
-                ref = str(seq.seq[alt_start])
-                alt = allele
+            if alt_end - alt_start == 1:
+                if len(allele) > 1: # insertion
+                    alt_start -= 1
+                    alt_end = alt_start + 1
+                    ref = str(seq.seq[alt_start])
+                    alt = ref + allele
+                else: # SNV
+                    ref = str(seq.seq[alt_start])
+                    alt = allele
             elif alt_end - alt_start == 2:  # insertion
                 alt_end -= 1
                 ref = str(seq.seq[alt_start])

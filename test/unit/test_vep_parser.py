@@ -479,6 +479,31 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(record.ref, 'CTAT')
         self.assertEqual(record.alt, 'T')
 
+    def test_vep_to_variant_record_case16_insertion(self):
+        """ deletion that allele is not - """
+        genome = create_dna_record_dict(GENOME_DATA)
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+
+        vep_record = VEPParser.VEPRecord(
+            uploaded_variation='rs55971985',
+            location='chr1:18',
+            allele='TCA',
+            gene='ENSG0001',
+            feature='ENST0001.1',
+            feature_type='Transcript',
+            consequences=['missense_variant'],
+            cdna_position='11',
+            cds_position='11',
+            protein_position=3,
+            amino_acids=('S', 'T'),
+            codons=('aTa', 'aCa'),
+            existing_variation='-',
+            extra={}
+        )
+        record = vep_record.convert_to_variant_record(anno, genome)
+        self.assertEqual(record.ref, 'G')
+        self.assertEqual(record.alt, 'GTCA')
+
     def test_vep_to_variant_mnv(self):
         """ error is raised for MNV """
         genome = create_dna_record_dict(GENOME_DATA)
