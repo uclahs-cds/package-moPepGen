@@ -42,7 +42,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--gtf-symlink',
         help='Create a symlink of the GTF file instead of copying it.',
-        default=False
+        action='store_true'
     )
     common.add_args_reference(p, index=False)
     common.add_args_cleavage(p)
@@ -92,7 +92,7 @@ def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True) -> Path:
     output_file = output_dir/'annotation.gtf'
 
     if symlink:
-        os.symlink(file, output_file)
+        os.symlink(file.absolute(), output_file)
     elif file.suffix.lower() == '.gtf':
         shutil.copy2(file, output_file)
     else:
