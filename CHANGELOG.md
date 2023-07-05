@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed that reference source are not recognized. Switched to use upper case values. #758
 
+- Fixed matplotlib warning message #742
+
 ## [1.1.0] - 2023-06-28
 
 ### Fixed
