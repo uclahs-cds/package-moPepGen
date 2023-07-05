@@ -16,4 +16,8 @@ RUN cd /opt/moPepGen/ && \
 FROM ubuntu:20.04
 COPY --from=builder /usr/local /usr/local
 
+ENV MPLCONFIGDIR=/opt/matplotlib
+RUN mkdir $MPLCONFIGDIR && \
+    chmod 777 $MPLCONFIGDIR
+
 LABEL maintainer="Chenghao Zhu <ChenghaoZhu@mednet.ucla.edu>"
