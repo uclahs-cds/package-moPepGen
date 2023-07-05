@@ -20,6 +20,7 @@ nav:
       - parseCIRCexplorer: parse-circexplorer.md
       - callVariant: call-variant.md
       - callNoncoding: call-noncoding.md
+      - callAltTranslation: call-alt-translation.md
       - filterFasta: filter-fasta.md
       - splitFasta: split-fasta.md
       - mergeFasta: merge-fasta.md

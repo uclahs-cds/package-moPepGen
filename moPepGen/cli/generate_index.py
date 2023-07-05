@@ -1,6 +1,6 @@
 """ `generateIndex` takes the reference genome FASTA, annotation GTF, and the
-translated proteome FASTA file, converts them to the moPepGen objects,
-serializes them and saves into disk. The outputted index files also contain the
+translated proteome FASTA file, and processes them so they can be read by
+subsequent moPepGen commands quickly. The outputted index files also contain the
 canonical peptide pool. The index files can then be used in any moPepGen
 command. It is recommended to run `generateIndex` before any analysis using
 moPepGen to avoid processing the reference files repeatedly and save massive
