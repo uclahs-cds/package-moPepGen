@@ -1,0 +1,80 @@
+@startuml
+!theme cerulean-outline
+skinparam backgroundColor white
+skinparam database {
+    backgroundColor transparent
+}
+skinparam package {
+    backgroundColor transparent
+}
+skinparam dpi 300
+skinparam PackageStyle rectangle
+!define table($label=" ", $table_name="", $as="") entity "$label" as $as << (T,gray) $table_name >>
+!define table($label, $table_name) table($label, $table_name, $table_name)
+!define pkey($label) * $label <<pkey, int, not null>>
+!define fkey($label, $name, $null="not null") ~ $name <<fkey, int, $null, references $label>>
+!define column($label, $type, $extra) {field}+ $label <<$type, $extra>>
+!define column($label, $type) {field}+ $label <<$type>>
+
+database "Variant Peptide Annotation" as VariantPeptideAnnotation {
+    table(Run, run) {
+        pkey(run_id)
+        --
+        fkey(plex, plex_id)
+        --
+        column(plex_id, varchar)
+    }
+
+    table(Plex, plex) {
+        pkey(plex_id)
+        --
+        column(experiment_type, varchar)
+    }
+
+    table(Sample, sample) {
+        pkey(sample_id)
+        --
+        fkey(plex, plex_id)
+    }
+
+    table(Peptide, peptide) {
+        ' key
+        pkey(peptide_id)
+        --
+        fkey(run, run_id)
+        --
+        column(sequence, varchar)
+        column(uuid, varchar)
+    }
+
+    table(FastaHeader, fasta_header) {
+        pkey(header_id)
+        --
+        fkey(peptide, peptide_id)
+        --
+        column(header, varchar)
+    }
+
+    table(HeaderToInfo, header_to_info) {
+        ' key
+        pkey(header_to_info_id)
+        --
+        fkey(fasta_header, header_id)
+        fkey(info, info_id)
+    }
+
+    table(Info, info) {
+        pkey(info_id)
+        --
+        column(info, varchar)
+    }
+}
+
+run::plex_id }|-- plex::plex_id
+plex::plex_id --|{ sample::plex_id
+run::run_id --|{ peptide::run_id
+peptide::peptide_id --|{ fasta_header::peptide_id
+fasta_header::header_id --|{ header_to_info::header_id
+info::info_id --|{ header_to_info::info_id
+
+@enduml
