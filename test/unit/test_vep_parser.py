@@ -480,7 +480,7 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(record.alt, 'T')
 
     def test_vep_to_variant_record_case16_insertion(self):
-        """ deletion that allele is not - """
+        """ Insertion when the location is a single spot. """
         genome = create_dna_record_dict(GENOME_DATA)
         anno = create_genomic_annotation(ANNOTATION_DATA)
 
