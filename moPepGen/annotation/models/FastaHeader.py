@@ -1,12 +1,12 @@
 """ FastaHeader """
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from sqlalchemy import Integer, Unicode, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from moPepGen.annotation.models import Base
 
 if TYPE_CHECKING:
-    from moPepGen.annotation.models import Peptide
+    from moPepGen.annotation.models import Peptide, Info
 
 
 class FastaHeader(Base):
@@ -25,6 +25,10 @@ class FastaHeader(Base):
     )
 
     peptide: Mapped[Peptide] = relationship(back_populates='fasta_headers', uselist=False)
+
+    infos: Mapped[List[Info]] = relationship(
+        secondary='fasta_header_to_info', back_populates='fasta_headers', uselist=True
+    )
 
     def __repr__(self) -> str:
         """ repr """

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Tuple
 import pytest
 from sqlalchemy.orm.session import Session
-from moPepGen.annotation.models import Plex, Sample, Run, Peptide, FastaHeader
+from moPepGen.annotation.models import Plex, Sample, Run, Peptide, FastaHeader, Info
 
 
 @pytest.mark.parametrize(
@@ -147,3 +147,51 @@ def test__fasta_header__rows_added_successfully(session: Session,
         .filter(FastaHeader._fasta_header_id == 1)\
         .first()
     assert fasta_header.peptide
+
+@pytest.mark.parametrize(
+    'info_data, fasta_header_data, header_has_n_infos, info_has_n_headers',
+    [(
+        ['GENE_ID=ENSG0001; GENE_NAME=FAKE1; CHROM=chrF; POSITION=20'],
+        [('ENST0001|SNV-10-A-T|1', 1, [1])],
+        [1],
+        [1]
+    ),(
+        [
+            'GENE_ID=ENSG0001; GENE_NAME=FAKE1; CHROM=chrF; POSITION=20',
+            'GENE_ID=ENSG0001; GENE_NAME=FAKE1; CHROM=chrF; POSITION=25'
+        ],
+        [
+            ('ENST0001|SNV-10-A-T|1', 1, [1]),
+            ('ENST0001|SNV-10-A-T|SNV-15-T-G|1', 2, [1, 2])
+        ],
+        [1, 2],
+        [2, 1]
+    )]
+)
+def test__fasta_header_and_info__rows_added_successfully(session: Session,
+        info_data:List[str],
+        fasta_header_data:List[Tuple[str, int, List[int]]],
+        header_has_n_infos:int, info_has_n_headers:int):
+    """ Test rows are added successfully to the FastaHeader table """
+    for info in info_data:
+        info = Info(info=info)
+        session.add(info)
+    session.commit()
+
+    for header, _peptide_id, _info_ids in fasta_header_data:
+        infos = []
+        for _info_id in _info_ids:
+            info = session.query(Info).filter(Info._info_id == _info_id).first()
+            infos.append(info)
+        fasta_header = FastaHeader(header=header, _peptide_id=_peptide_id, infos=infos)
+        session.add(fasta_header)
+    session.commit()
+
+    for i, n in enumerate(info_has_n_headers):
+        info: Info = session.query(Info).filter(Info._info_id == i + 1).first()
+        assert len(info.fasta_headers) == n
+
+    for i, n in enumerate(header_has_n_infos):
+        fasta_header: FastaHeader = session\
+            .query(FastaHeader).filter(FastaHeader._fasta_header_id == i + 1).first()
+        assert len(fasta_header.infos) == n
