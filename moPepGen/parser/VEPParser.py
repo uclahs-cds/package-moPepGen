@@ -172,10 +172,6 @@ class VEPRecord():
             if alt_end - alt_start == 1:
                 if len(allele) > 1: # insertion
                     # Sometimes VEP
-                    print(f"{genome[chrom_seqname].seq[alt_start]=}")
-                    print(f"{alt_start_genomic=}")
-                    print(f"{alt_start=}")
-                    print(f"{allele=}")
                     if genome[chrom_seqname].seq[alt_start] != allele[-1]:
                         raise ValueError("Don't know how to process this variant.")
                     alt_start -= 1
