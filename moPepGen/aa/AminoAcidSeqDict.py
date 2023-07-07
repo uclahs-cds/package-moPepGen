@@ -103,6 +103,11 @@ class AminoAcidSeqDict(dict):
                 cds_start_nf = False
             if protein.seq.startswith('X'):
                 protein.seq = protein.seq.lstrip('X')
+
+            stop_site = protein.seq.find('*')
+            if stop_site > -1:
+                protein = protein[:stop_site]
+
             try:
                 peptides = protein.enzymatic_cleave(
                     rule=rule,
