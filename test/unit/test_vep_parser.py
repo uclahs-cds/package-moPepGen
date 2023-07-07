@@ -430,7 +430,7 @@ class TestVEPRecord(unittest.TestCase):
 
     def test_vep_to_variant_record_case15(self):
         """ Transcriptional start altering variant """
-        annotation_data = copy.copy(ANNOTATION_DATA)
+        annotation_data = copy.deepcopy(ANNOTATION_DATA)
         annotation_data['genes'][0]['gene'] = (5, 40, ANNOTATION_ATTRS[0])
         genome = create_dna_record_dict(GENOME_DATA)
         anno = create_genomic_annotation(annotation_data)
@@ -480,14 +480,18 @@ class TestVEPRecord(unittest.TestCase):
         self.assertEqual(record.alt, 'T')
 
     def test_vep_to_variant_record_case16_insertion(self):
-        """ Insertion when the location is a single spot. """
+        """ Insertion when the location is a single spot.
+        In this test case, the variant is represented by VEP in an end-inclusion
+        format as C -> TCAC, and is converted into start-inclusion format as
+        G -> GTCA
+        """
         genome = create_dna_record_dict(GENOME_DATA)
         anno = create_genomic_annotation(ANNOTATION_DATA)
 
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
             location='chr1:18',
-            allele='TCA',
+            allele='TCAC',
             gene='ENSG0001',
             feature='ENST0001.1',
             feature_type='Transcript',
