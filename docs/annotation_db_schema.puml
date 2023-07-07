@@ -18,63 +18,66 @@ skinparam PackageStyle rectangle
 
 database "Variant Peptide Annotation" as VariantPeptideAnnotation {
     table(Run, run) {
-        pkey(run_id)
+        pkey(_run_id)
         --
-        fkey(plex, plex_id)
+        fkey(plex, _plex_id)
         --
-        column(plex_id, varchar)
+        column(db_id, varchar)
     }
 
     table(Plex, plex) {
-        pkey(plex_id)
+        pkey(_plex_id)
         --
+        column(pled_id, varchar)
         column(experiment_type, varchar)
     }
 
     table(Sample, sample) {
-        pkey(sample_id)
+        pkey(_sample_id)
         --
-        fkey(plex, plex_id)
+        fkey(plex, _plex_id)
+        --
+        column(sample_id, varchar)
     }
 
     table(Peptide, peptide) {
         ' key
-        pkey(peptide_id)
+        pkey(_peptide_id)
         --
-        fkey(run, run_id)
+        fkey(run, _run_id)
         --
         column(sequence, varchar)
         column(uuid, varchar)
     }
 
     table(FastaHeader, fasta_header) {
-        pkey(header_id)
+        pkey(_header_id)
         --
-        fkey(peptide, peptide_id)
+        fkey(peptide, _peptide_id)
         --
         column(header, varchar)
     }
 
     table(HeaderToInfo, header_to_info) {
         ' key
-        pkey(header_to_info_id)
+        pkey(_header_to_info_id)
         --
-        fkey(fasta_header, header_id)
+        fkey(fasta_header, _header_id)
         fkey(info, info_id)
     }
 
     table(Info, info) {
-        pkey(info_id)
+        pkey(_info_id)
         --
         column(info, varchar)
     }
 }
 
-run::plex_id }|-- plex::plex_id
-plex::plex_id --|{ sample::plex_id
-run::run_id --|{ peptide::run_id
-peptide::peptide_id --|{ fasta_header::peptide_id
-fasta_header::header_id --|{ header_to_info::header_id
-info::info_id --|{ header_to_info::info_id
+run::_plex_id }|-- plex::_plex_id
+plex::_plex_id --|{ sample::_plex_id
+run::_run_id --|{ peptide::_run_id
+peptide::_peptide_id --|{ fasta_header::_peptide_id
+fasta_header::_header_id --|{ header_to_info::_header_id
+info::_info_id --|{ header_to_info::_info_id
 
 @enduml
