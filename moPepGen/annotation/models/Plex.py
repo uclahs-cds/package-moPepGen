@@ -27,5 +27,8 @@ class Plex(Base):
 
     def __repr__(self) -> str:
         """ repr """
-        return f"<Plex: _plex_id={self._plex_id}, plex_id={self.plex_id}, " +\
-            f"experiment_type={self.experiment_type}>"
+        return "<Plex" +\
+            f" _plex_id={self._plex_id} " +\
+            f"plex_id={self.plex_id} " +\
+            f"experiment_type={self.experiment_type}" +\
+            ">"

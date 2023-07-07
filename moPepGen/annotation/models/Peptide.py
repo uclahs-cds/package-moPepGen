@@ -1,12 +1,12 @@
 """ Peptide """
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from sqlalchemy import Integer, Unicode, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from moPepGen.annotation.models import Base
 
 if TYPE_CHECKING:
-    from moPepGen.annotation.models import Run
+    from moPepGen.annotation.models import Run, FastaHeader
 
 
 class Peptide(Base):
@@ -29,10 +29,15 @@ class Peptide(Base):
 
     run: Mapped[Run] = relationship(back_populates='peptides', uselist=False)
 
+    fasta_headers: Mapped[List[FastaHeader]] = relationship(
+        back_populates='peptide', uselist=True
+    )
+
     def __repr__(self) -> str:
         """ repr """
-        return f"<Peptide: " +\
-            f"_peptide_id={self._peptide_id}, " +\
-            f"_run_id={self._run_id}, " +\
-            f"sequence={self.sequence}>" +\
-            f"uuid={self.uuid}"
+        return "<Peptide " +\
+            f"_peptide_id={self._peptide_id} " +\
+            f"_run_id={self._run_id} " +\
+            f"sequence={self.sequence} " +\
+            f"uuid={self.uuid}" +\
+            ">"

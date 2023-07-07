@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Tuple
 import pytest
 from sqlalchemy.orm.session import Session
-from moPepGen.annotation.models import Plex, Sample, Run, Peptide
+from moPepGen.annotation.models import Plex, Sample, Run, Peptide, FastaHeader
 
 
 @pytest.mark.parametrize(
@@ -112,3 +112,38 @@ def test__peptide__rows_added_successfully(session: Session,
 
     peptide:Peptide = session.query(Peptide).filter(Peptide._peptide_id == 1).first()
     assert peptide.run
+
+@pytest.mark.parametrize(
+    'peptide_data,fasta_header_data,n',
+    [(
+        [('AAAAAR', 'abcde-12345', 1)],
+        [('ENST0001|SNV-10-A-T|1', 1)],
+        1
+    ), (
+        [('AAAAAR', 'abcde-12345', 1), ('THTHTHK', 'cdefg-54321', 2)],
+        [('ENST0001|SNV-10-A-T|1', 1), ('ENST0002|INDEL-50-A-AT|1', 2)],
+        2
+    )]
+)
+def test__fasta_header__rows_added_successfully(session: Session,
+        peptide_data:List[Tuple[str,str,int]],
+        fasta_header_data:List[Tuple[str, int]],
+        n:int):
+    """ Test rows are added successfully to the FastaHeader table """
+    for sequence, uuid, _run_id in peptide_data:
+        peptide = Peptide(sequence=sequence, uuid=uuid, _run_id=_run_id)
+        session.add(peptide)
+    session.commit()
+
+    for header, _peptide_id in fasta_header_data:
+        fasta_header = FastaHeader(header=header, _peptide_id=_peptide_id)
+        session.add(fasta_header)
+    session.commit()
+
+    assert session.query(FastaHeader).count() == n
+
+    fasta_header:FastaHeader = session\
+        .query(FastaHeader)\
+        .filter(FastaHeader._fasta_header_id == 1)\
+        .first()
+    assert fasta_header.peptide

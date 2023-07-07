@@ -30,5 +30,8 @@ class Run(Base):
 
     def __repr__(self) -> str:
         """ repr """
-        return f"<Run: _run_id={self._run_id}, _plex_id={self._plex_id}, " +\
-            f"db_id={self.db_id}>"
+        return "<Run " +\
+            f"_run_id={self._run_id} " +\
+            f"_plex_id={self._plex_id} " +\
+            f"db_id={self.db_id} " +\
+            ">"

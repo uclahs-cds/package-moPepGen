@@ -28,4 +28,4 @@ class Sample(Base):
 
     def __repr__(self) -> str:
         """ repr """
-        return f"<Sample: _sample_id={self._sample_id}, _plex_id={self._plex_id}>"
+        return f"<Sample _sample_id={self._sample_id} _plex_id={self._plex_id}>"
