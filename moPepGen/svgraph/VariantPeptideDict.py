@@ -151,7 +151,7 @@ class MiscleavedNodes():
                     for variant in node.variants:
                         if variant.is_silent:
                             continue
-                        if variant.upstream_cleavage_altering:
+                        if i > 0 and variant.upstream_cleavage_altering:
                             continue
                         if variant.variant.id not in variants:
                             variants[variant.variant.id] = variant.variant

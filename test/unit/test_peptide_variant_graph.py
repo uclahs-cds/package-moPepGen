@@ -1,5 +1,5 @@
 """ Module to test PeptideVariantGraph """
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Union
 import unittest
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
@@ -8,8 +8,16 @@ from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.svgraph.PeptideVariantGraph import PVGTraversal, PVGCursor
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 
+VariantData = Tuple[int, int, str, str, str, str, int, int, bool]
+PGraphData = Dict[int, Tuple[
+    str,
+    List[int],
+    List[VariantData],
+    List[Tuple[Tuple[int,int], Tuple[int,int]]],
+    int
+]]
 
-def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
+def create_pgraph(data:PGraphData, _id:str, known_orf:List[int]=None,
         ) -> Tuple[svgraph.PeptideVariantGraph,Dict[int, svgraph.PVGNode]]:
     """ Create a peptide variant graph from data """
     root = svgraph.PVGNode(None, None, subgraph_id=_id)
@@ -62,7 +70,14 @@ def create_pgraph(data:dict, _id:str, known_orf:List[int]=None,
 
             variants.append(variant)
 
-        node = svgraph.PVGNode(seq, val[4], variants=variants, subgraph_id=_id)
+        left_cleavage_pattern_end = 1
+        right_cleavage_pattern_start = len(seq) - 1
+
+        node = svgraph.PVGNode(
+            seq, val[4], variants=variants, subgraph_id=_id,
+            left_cleavage_pattern_end=1,
+            right_cleavage_pattern_start=len(seq) - 1
+        )
 
         node_list[key] = node
         for i in val[1]:
