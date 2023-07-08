@@ -169,11 +169,20 @@ class VEPRecord():
             allele = self.allele
             if strand == -1:
                 allele = str(Seq(allele).reverse_complement())
-            if alt_end - alt_start == 1:  # SNV
-                if len(allele) > 1:
-                    raise ValueError("Don't know how to process this variant.")
-                ref = str(seq.seq[alt_start])
-                alt = allele
+            if alt_end - alt_start == 1:
+                if len(allele) > 1: # insertion
+                    # Sometimes insertions are reported by VEP in the end-inclusion
+                    # way (e.g., C -> TACC), which needs to be converted into
+                    # start-inclusion (A -> ATAC)
+                    if genome[chrom_seqname].seq[alt_start] != allele[-1]:
+                        raise ValueError("Don't know how to process this variant.")
+                    alt_start -= 1
+                    alt_end = alt_start + 1
+                    ref = str(seq.seq[alt_start])
+                    alt = ref + allele[:-1]
+                else: # SNV
+                    ref = str(seq.seq[alt_start])
+                    alt = allele
             elif alt_end - alt_start == 2:  # insertion
                 alt_end -= 1
                 ref = str(seq.seq[alt_start])
