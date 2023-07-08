@@ -171,7 +171,9 @@ class VEPRecord():
                 allele = str(Seq(allele).reverse_complement())
             if alt_end - alt_start == 1:
                 if len(allele) > 1: # insertion
-                    # Sometimes VEP
+                    # Sometimes insertions are reported by VEP in the end-inclusion
+                    # way (e.g., C -> TACC), which needs to be converted into
+                    # start-inclusion (A -> ATAC)
                     if genome[chrom_seqname].seq[alt_start] != allele[-1]:
                         raise ValueError("Don't know how to process this variant.")
                     alt_start -= 1
