@@ -456,6 +456,7 @@ class FuzzTestCase():
         args.selenocysteine_termination = True
         args.w2f_reassignment = True
         args.cleavage_rule = 'trypsin'
+        args.cleavage_exception = None
         args.miscleavage = 2
         args.min_mw = 500.
         args.min_length = 7
@@ -483,6 +484,7 @@ class FuzzTestCase():
         args.selenocysteine_termination = True
         args.w2f_reassignment = True
         args.cleavage_rule = self.config.cleavage_rule
+        args.cleavage_exception = None
         args.miscleavage = self.config.miscleavage
         args.min_mw = self.config.min_mw
         args.min_length = self.config.min_length
@@ -521,7 +523,7 @@ class FuzzTestConfig():
     """ Fuzz test config """
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
             min_variants:int, exonic_only:bool, fusion:bool, circ_rna:bool,
-            ci_ratio:float, alt_splicing:bool, cleavage_rule:str,
+            ci_ratio:float, alt_splicing:bool, cleavage_rule:str, cleavage_exception:str,
             miscleavage:int, min_mw:int, min_length:int, max_length:int,
             temp_dir:Path, ref_dir:Path, fuzz_start:datetime=None,
             fuzz_end:datetime=None, seed:int=None):
@@ -537,6 +539,7 @@ class FuzzTestConfig():
         self.ci_ratio = ci_ratio
         self.alt_splicing = alt_splicing
         self.cleavage_rule = cleavage_rule
+        self.cleavage_exception = cleavage_exception
         self.miscleavage = miscleavage
         self.min_mw = min_mw
         self.min_length = min_length
@@ -654,6 +657,7 @@ def main(args:argparse.Namespace):
         circ_rna=args.circ_rna,
         ci_ratio=args.ci_ratio,
         cleavage_rule=args.cleavage_rule,
+        cleavage_exception=args.cleavage_exception,
         miscleavage=args.miscleavage,
         min_mw=args.min_mw,
         min_length=args.min_length,
