@@ -12,6 +12,7 @@ def create_base_args() -> argparse.Namespace:
     """ Create base args """
     args = argparse.Namespace()
     args.cleavage_rule = 'trypsin'
+    args.cleavage_exception = None
     args.miscleavage = '2'
     args.min_mw = '500.'
     args.min_length = 7

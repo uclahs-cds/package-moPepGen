@@ -94,6 +94,13 @@ def add_args_cleavage(parser:argparse.ArgumentParser, enzyme_only:bool=False):
         metavar='<value>',
         choices=list(EXPASY_RULES.keys())
     )
+    group.add_argument(
+        '--cleavage-exception',
+        type=str,
+        help='Enzymatic cleavage exception.',
+        default='trypsin_exception',
+        metavar='<value>'
+    )
     if enzyme_only:
         return
     group.add_argument(

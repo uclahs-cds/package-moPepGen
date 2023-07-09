@@ -153,7 +153,8 @@ class AminoAcidSeqRecord(SeqRecord):
                 [x.end() for x in re.finditer(exception, str(self.seq))]
 
         for it in re.finditer(rule, str(self.seq)):
-            if it not in exception_sites:
+            s = it.end()
+            if s not in exception_sites:
                 yield it.end()
 
     def iter_enzymatic_cleave_sites_with_range(self, rule:str, exception:str=None,
@@ -246,6 +247,12 @@ class AminoAcidSeqRecord(SeqRecord):
             ) -> List[int]:
         """ Find all enzymatic cleave sites. """
         return list(self.iter_enzymatic_cleave_sites(rule=rule,
+            exception=exception))
+
+    def find_all_enzymatic_cleave_sites_with_ranges(self, rule:str, exception:str=None,
+            ) -> List[Tuple[int, Tuple[int, int]]]:
+        """ Find all enzymatic cleave sites. """
+        return list(self.iter_enzymatic_cleave_sites_with_range(rule=rule,
             exception=exception))
 
     def find_all_start_sites(self) -> List[int]:
