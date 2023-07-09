@@ -320,7 +320,10 @@ class PVGNode():
         return cleavage_gain
 
     def get_cleavage_gain_from_downstream(self) -> List[seqvar.VariantRecord]:
-        """ Get the variants that gains the cleavage by downstream nodes """
+        """ Get the variants that gains the cleavage by downstream nodes
+        Downstream variant altering variants are those that overlaps with the
+        `left_cleavage_pattern_start` of the downstream node.
+        """
         cleavage_gain = []
 
         if self.right_cleavage_pattern_start:
@@ -335,10 +338,10 @@ class PVGNode():
                 continue
             if not node.variants:
                 return []
-            if node.variants[0].location.start > node.left_cleavage_pattern_end:
+            if node.variants[0].location.start >= node.left_cleavage_pattern_end:
                 return []
             for v in node.variants:
-                if v.location.start > node.left_cleavage_pattern_end:
+                if v.location.start >= node.left_cleavage_pattern_end:
                     break
                 if not cleavage_gain and not v.is_silent \
                         and not v.downstream_cleavage_altering:
@@ -471,10 +474,22 @@ class PVGNode():
 
         The node with GCFP is returned.
 
+        `cleavage_range` is a 2-tuple represents the range of the full cleavage
+        pattern. Examples:
+          - Peptide sequence of TTRTTT has cleavage site index of 2 and cleavage
+            range of (2,4), the position of 'RT'. The `right_cleavage_pattern_start`
+            of the left node is 2 and the `left_cleavage_pattern_end` of the right
+            node is 1.
+          - Peptide sequence of TTMRPTTT has cleavage site index of 3 and cleavage
+            range of (2,5), the position of 'MRP'. The `right_cleavage_pattern_start`
+            of the left node is 2 and the `left_cleavage_pattern_end` of the right
+            node is 1.
+
         Args:
             index (int): the position to split
             cleavage (bool): If true, the cleavage attribute of the right node
                 is update to be True.
+            cleavage_range (Tuple[int, int]): Cleavage pattern rage.
 
         Returns:
             The new created node with the right part of the original sequence.
@@ -530,7 +545,7 @@ class PVGNode():
         if cleavage:
             new_node.cleavage = True
             if cleavage_range:
-                new_node.left_cleavage_pattern_end = cleavage_range[1] - index
+                new_node.left_cleavage_pattern_end = cleavage_range[1] - index - 1
 
         if cleavage and cleavage_range:
             self.right_cleavage_pattern_start_start = cleavage_range[0]

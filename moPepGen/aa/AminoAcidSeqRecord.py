@@ -156,7 +156,7 @@ class AminoAcidSeqRecord(SeqRecord):
             if it not in exception_sites:
                 yield it.end()
 
-    def iter_enzymatic_cleave_sites_and_range(self, rule:str, exception:str=None,
+    def iter_enzymatic_cleave_sites_with_range(self, rule:str, exception:str=None,
             exception_sites:List[int]=None
             ) -> Iterable[Tuple[int, Union[Tuple[int,int], None]]]:
         """ Create a generator of the cleave sites """
@@ -212,7 +212,7 @@ class AminoAcidSeqRecord(SeqRecord):
             exception_sites:List[int]=None
             ) -> Tuple[int, Union[Tuple[int,int], None]]:
         """ Create a generator for cleave or stop sites """
-        it_cleavage = self.iter_enzymatic_cleave_sites_and_range(
+        it_cleavage = self.iter_enzymatic_cleave_sites_with_range(
             rule=rule, exception=exception, exception_sites=exception_sites
         )
         sites:List[Tuple[int, Union[Tuple[int,int], None]]] = []
@@ -270,7 +270,7 @@ class AminoAcidSeqRecord(SeqRecord):
             ) -> List[Tuple[int,Union[Tuple[int,int], None]]]:
         """ Find all enzymatic cleavage sites with ranges and stop sites """
         sites = list(
-            self.iter_enzymatic_cleave_sites_and_range(
+            self.iter_enzymatic_cleave_sites_with_range(
                 rule=rule, exception=exception,
                 exception_sites=exception_sites
             )
