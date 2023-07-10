@@ -109,6 +109,7 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path):
     args.quiet = False
     args.verbose_level = 1
     args.cleavage_rule = 'trypsin'
+    args.cleavage_exception = None
     args.miscleavage = 2
     args.min_mw = 500.
     args.min_length = 7
@@ -133,6 +134,7 @@ def call_brute_force(gvf_files:Path, ref_dir:Path, output_path:str, force:bool,
     args.selenocysteine_termination = True
     args.w2f_reassignment = True
     args.cleavage_rule = 'trypsin'
+    args.cleavage_exception = None
     args.miscleavage = 2
     args.min_mw = 500.
     args.min_length = 7
