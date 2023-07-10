@@ -175,7 +175,7 @@ class VEPRecord():
                     # way (e.g., C -> TACC), which needs to be converted into
                     # start-inclusion (A -> ATAC)
                     if genome[chrom_seqname].seq[alt_start] != allele[-1]:
-                        raise ValueError("Don't know how to process this variant.")
+                        raise ValueError(f"Don't know how to process this variant: {self}")
                     alt_start -= 1
                     alt_end = alt_start + 1
                     ref = str(seq.seq[alt_start])
