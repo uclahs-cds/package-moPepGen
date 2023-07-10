@@ -282,7 +282,7 @@ class AminoAcidSeqRecord(SeqRecord):
                 exception_sites=exception_sites
             )
         )
-        sites_mapper = {s:r for s,r in sites}
+        sites_mapper = dict(sites)
         stop_sites_start = list(self.iter_stop_sites())
         stop_sites_end = [i + 1 for i in stop_sites_start if i < len(self.seq) - 1]
         stop_sites_start = [i for i in stop_sites_start if i > 0]
@@ -292,7 +292,7 @@ class AminoAcidSeqRecord(SeqRecord):
         for s in stop_sites_end:
             sites_mapper[s] = (s-1, s)
 
-        sites = [(s,r) for s,r in sites_mapper.items()]
+        sites = list(sites_mapper.items())
         sites.sort(key=lambda x: x[0])
         return sites
 

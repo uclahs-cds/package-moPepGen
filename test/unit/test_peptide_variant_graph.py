@@ -1,5 +1,5 @@
 """ Module to test PeptideVariantGraph """
-from typing import Tuple, Dict, List, Union
+from typing import Tuple, Dict, List
 import unittest
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
@@ -69,9 +69,6 @@ def create_pgraph(data:PGraphData, _id:str, known_orf:List[int]=None,
             )
 
             variants.append(variant)
-
-        left_cleavage_pattern_end = 1
-        right_cleavage_pattern_start = len(seq) - 1
 
         node = svgraph.PVGNode(
             seq, val[4], variants=variants, subgraph_id=_id,
