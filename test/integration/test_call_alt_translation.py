@@ -21,6 +21,7 @@ def create_base_args() -> argparse.Namespace:
     args.w2f_reassignment = True
     args.selenocysteine_termination = True
     args.cleavage_rule = 'trypsin'
+    args.cleavage_exception = 'trypsin_exception'
     args.miscleavage = '2'
     args.min_mw = '500.'
     args.min_length = 7

@@ -112,7 +112,7 @@ def generate_index(args:argparse.Namespace):
     min_mw:float = float(args.min_mw)
     min_length:int = int(args.min_length)
     max_length:int = int(args.max_length)
-    exception = 'trypsin_exception' if rule == 'trypsin' else None
+    exception = args.cleavage_exception
     invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
     quiet:bool = args.quiet
     symlink:bool = args.gtf_symlink

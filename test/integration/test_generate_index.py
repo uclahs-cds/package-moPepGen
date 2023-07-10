@@ -20,6 +20,7 @@ class TestGenerateIndex(TestCaseIntegration):
         args.reference_source = None
         args.invalid_protein_as_noncoding = False
         args.cleavage_rule = 'trypsin'
+        args.cleavage_exception = 'trypsin_exception'
         args.min_mw = 500.
         args.min_length = 7
         args.max_length = 25
