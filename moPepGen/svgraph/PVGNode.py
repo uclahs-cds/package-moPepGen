@@ -548,7 +548,7 @@ class PVGNode():
                 new_node.left_cleavage_pattern_end = cleavage_range[1] - index - 1
 
         if cleavage and cleavage_range:
-            self.right_cleavage_pattern_start_start = cleavage_range[0]
+            self.right_cleavage_pattern_start = cleavage_range[0]
         else:
             self.right_cleavage_pattern_start = None
 
@@ -655,6 +655,7 @@ class PVGNode():
             sec = sec.shift(len(other.seq.seq))
             secs.append(sec)
         self.selenocysteines = secs
+        self.left_cleavage_pattern_end = other.left_cleavage_pattern_end
 
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
@@ -676,6 +677,7 @@ class PVGNode():
         self.seq = new_seq
         self.cpop_collapsed = other.cpop_collapsed
         self.truncated = other.truncated
+        self.right_cleavage_pattern_start = other.right_cleavage_pattern_start
 
     def find_start_index(self) -> int:
         """ Find the start amino acid position """
