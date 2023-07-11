@@ -2,6 +2,7 @@
 from __future__ import annotations
 import copy
 from functools import cmp_to_key
+from collections import deque
 import math
 from typing import Dict, List, Set, Tuple, Iterable
 from moPepGen import aa, circ, seqvar, err
@@ -280,6 +281,22 @@ class PVGNode():
                 if j in frag:
                     return True
         raise ValueError('Locations not found from the fragments of the circRNA.')
+
+    def has_branch_sequence_matches(self, p:str) -> bool:
+        """ """
+        queue = deque([('', self)])
+        while queue:
+            cur_seq, cur_node = queue.popleft()
+            seq = cur_seq + str(cur_node.seq.seq)
+            if len(seq) > len(p):
+                continue
+            if not p.startswith(seq):
+                continue
+            if len(seq) == len(p):
+                return True
+            for node in cur_node.get_out_nodes():
+                queue.append((seq, node))
+        return False
 
     def has_any_in_bridge(self) -> None:
         """ Check if it has any incoming node that is bridge """
