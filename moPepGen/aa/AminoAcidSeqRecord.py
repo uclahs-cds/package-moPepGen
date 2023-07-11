@@ -1,6 +1,6 @@
 """ Module for Amino Acid Record """
 from __future__ import annotations
-from typing import Iterable, List, Set, Tuple, Union
+from typing import Iterable, List, Set, Tuple, Union, Pattern
 import copy
 import re
 import regex
@@ -8,7 +8,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqUtils
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import MatchedLocation, FeatureLocation
-from moPepGen.aa.expasy_rules import EXPASY_RULES, EXPASY_RULES2
+from moPepGen.aa.expasy_rules import EXPASY_RULES, EXPASY_RULES2, EXPASY_RULES_WINGS_SIZE
 
 
 class AminoAcidSeqRecord(SeqRecord):
@@ -161,16 +161,16 @@ class AminoAcidSeqRecord(SeqRecord):
             exception_sites:List[int]=None
             ) -> Iterable[Tuple[int, Union[Tuple[int,int], None]]]:
         """ Create a generator of the cleave sites """
-        rule1 = EXPASY_RULES[rule]
-        rule2 = EXPASY_RULES2[rule]
+        site_pattern = re.compile(EXPASY_RULES[rule])
+        range_pattern = regex.compile(EXPASY_RULES2[rule])
         exception = EXPASY_RULES.get(exception, exception)
         seq = str(self.seq)
         if exception_sites is None:
             exception_sites = [] if exception is None else \
                 [x.end() for x in re.finditer(exception, seq)]
 
-        sites = [x.end() for x in re.finditer(rule1, seq)]
-        ranges = [(x.start(), x.end()) for x in regex.finditer(rule2, seq, overlapped=True)]
+        sites = [x.end() for x in site_pattern.finditer(seq)]
+        ranges = [(x.start(), x.end()) for x in range_pattern.finditer(seq, overlapped=True)]
 
         if len(sites) != len(ranges):
             raise ValueError(
@@ -180,6 +180,70 @@ class AminoAcidSeqRecord(SeqRecord):
         for s, r in zip(sites, ranges):
             if s not in exception_sites:
                 yield s, r
+
+    def iter_enzymatic_cleave_sites_with_range_local(self, rule:str, exception:str=None,
+            exception_sites:List[int]=None
+            ) -> Iterable[Tuple[int, Union[Tuple[int,int], None]]]:
+        """ Iter enzymatic cleavage sites with pattern matching ranges using the
+        local matching method. """
+        rule_pattern = re.compile(EXPASY_RULES[rule])
+        exception = EXPASY_RULES.get(exception, exception)
+        wings_size = EXPASY_RULES_WINGS_SIZE[rule]
+        seq = str(self.seq)
+        seq_len = len(seq)
+        if exception_sites is None:
+            exception_sites = [] if exception is None else \
+                [x.end() for x in re.finditer(exception, seq)]
+
+        sites = [x.end() for x in rule_pattern.finditer(seq)]
+
+        if wings_size[0] <= 0 and wings_size[1] <= 0:
+            raise ValueError(
+                "Invalid enzyme pattern with the size being 0 for both wings:" +
+                f"{rule}: {EXPASY_RULES[rule]}"
+            )
+
+        for s in sites:
+            if s in exception_sites:
+                continue
+            r = self.get_local_matched_range(
+                seq=seq, site=s, p=rule_pattern, wings_size=wings_size, seq_len=seq_len
+            )
+            yield s, r
+
+    @staticmethod
+    def get_local_matched_range(seq:str, site:int, p:Pattern[str],
+            wings_size:Tuple[int, int], seq_len:int=None):
+        """ Get the local matched pattern range from a sequence
+        with a given cleavage site. """
+        if not seq_len:
+            seq_len = len(seq)
+
+        upper = max(site - wings_size[0], 0)
+        lower = min(site + wings_size[1], len(seq))
+
+        if wings_size[0] >= wings_size[1]:
+            ucur = site - 1
+            lcur = site
+        else:
+            ucur = site
+            lcur = site + 1
+
+        pattern_found: bool = False
+        while True:
+            if not upper <= ucur < lcur <= lower:
+                break
+            local_seg = seq[ucur:lcur]
+            if p.search(local_seg):
+                pattern_found = True
+                break
+            if (site - ucur) <= (lcur - site) or lcur == lower:
+                ucur -= 1
+            else:
+                lcur += 1
+        if not pattern_found:
+            raise ValueError(f"Cannot extract matched pattern at position {site} from {seq}")
+        return (ucur, lcur)
 
     def get_enzymatic_cleave_exception_sites(self, exception:str) -> Iterable[int]:
         """ Find all enzymatic cleavage exception sites """

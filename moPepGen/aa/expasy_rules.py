@@ -1,8 +1,9 @@
 """ ExPASy's PeptideCutter rules. Adopted from pyteomics at:
 https://github.com/levitsky/pyteomics """
+from typing import Dict, Tuple
 
 
-EXPASY_RULES = {
+EXPASY_RULES: Dict[str, str] = {
     'arg-c': r'R',
     'asp-n': r'\w(?=D)',
     'bnps-skatole': r'W',
@@ -46,7 +47,7 @@ EXPASY_RULES = {
     r'((?<=R)R(?=[HR]))',
 }
 
-EXPASY_RULES2 = {
+EXPASY_RULES2: Dict[str, str] = {
     'arg-c': r'R',
     'asp-n': r'\wD',
     'bnps-skatole': r'W',
@@ -84,4 +85,43 @@ EXPASY_RULES2 = {
     'thrombin': r'(GRG)|([AFGILTVM][AFGILTVWA]PR[^DE][^DE])',
     'trypsin': r'([KR][^P])|(WKP)|(MRP)',
     'trypsin_exception': r'([CD]KD)|(CK[HY])|(CRK)|(RR[HR])',
+}
+
+EXPASY_RULES_WINGS_SIZE: Dict[str, Tuple[int, int]] = {
+    'arg-c': (1, 0),
+    'asp-n': (0, 1),
+    'bnps-skatole': (1, 0),
+    'caspase 1': (4, 1),
+    'caspase 2': (2, 1),
+    'caspase 3': (2, 1),
+    'caspase 4': (2, 1),
+    'caspase 5': (2, 0),
+    'caspase 6': (3, 1),
+    'caspase 7': (2, 1),
+    'caspase 8': (4, 1),
+    'caspase 9': (4, 0),
+    'caspase 10': (4, 0),
+    'chymotrypsin high specificity': (1, 1),
+    'chymotrypsin low specificity': (1, 1),
+    'clostripain': (1, 0),
+    'cnbr': (1, 0 ),
+    'enterokinase': (4, 0),
+    'factor xa': (4, 0),
+    'formic acid': (1, 0),
+    'glutamyl endopeptidase': (1, 0),
+    'granzyme b': (4, 0),
+    'hydroxylamine': (1, 1),
+    'iodosobenzoic acid': (1, 0),
+    'lysc': (1, 0),
+    'lysn': (1, 1),
+    'ntcb': (0, 1),
+    'pepsin ph1.3': (3, 2),
+    'pepsin ph2.0': (3, 2),
+    'proline endopeptidase': (2, 1),
+    'proteinase k': (1, 0),
+    'staphylococcal peptidase i': (2, 0),
+    'thermolysin': (1, 1),
+    'thrombin': (4, 2),
+    'trypsin': (2, 1),
+    'trypsin_exception': (2, 1),
 }
