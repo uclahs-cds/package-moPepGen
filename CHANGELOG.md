@@ -20,9 +20,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed matplotlib warning message #742
   
-- Fixed parseVEP that insertions not parsed successfully if the location is a single point. #766
+- Fixed `parseVEP` that insertions not parsed successfully if the location is a single base. #766
 
-- Fixed callVariant that peptides with upstream cleavage altering mutations were no called. #670
+- Fixed `callVariant` that peptides with upstream cleavage altering mutations were not called. #670
 
 ## [1.1.0] - 2023-06-28
 
