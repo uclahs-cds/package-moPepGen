@@ -1003,7 +1003,12 @@ class BruteForceVariantPeptideCaller():
                     if str(peptide) in denylist:
                         continue
                     tx_lrange = (cds_start + lrange[0] * 3, cds_start + lrange[1] * 3)
-                    tx_rrange = (cds_start + rrange[0] * 3, cds_start + rrange[1] * 3)
+                    if k == len(sites) - 1 \
+                            and tx_rhs + 3 <= len(seq) \
+                            and seq[tx_rhs:tx_rhs + 3].translate() == '*':
+                        tx_rrange = (tx_rhs, tx_rhs + 3)
+                    else:
+                        tx_rrange = (cds_start + rrange[0] * 3, cds_start + rrange[1] * 3)
                     if check_variants:
                         effective_variants = self.get_effective_variants(
                             lhs=tx_lhs, rhs=tx_rhs, lrange=tx_lrange, rrange=tx_rrange,
