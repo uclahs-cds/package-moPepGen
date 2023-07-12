@@ -160,7 +160,23 @@ class AminoAcidSeqRecord(SeqRecord):
     def iter_enzymatic_cleave_sites_with_range(self, rule:str, exception:str=None,
             exception_sites:List[int]=None
             ) -> Iterable[Tuple[int, Union[Tuple[int,int], None]]]:
-        """ Create a generator of the cleave sites """
+        """ Create a generator of the cleave sites and also returns the full
+        range of the pattern recognized during enzymatic cleavage.
+
+        ## Examples:
+
+        In this example, the cleavage site is 5 (after K), and the pattern range
+        is (4,6) for KT.
+        >>> seq = AminoAcidSeqRecord(Seq('TTTTKTTTT'))
+        >>> list(seq.iter_enzymatic_cleave_sites_with_range('trypsin'))
+        [(5,(4,6))]
+
+        In this example, the cleavage site is 5 (after R) and the pattern range
+        is (3,6) for MRP.
+        >>> seq = AminoAcidSeqRecord(Seq('TTTMRPTTT'))
+        >>> list(seq.iter_enzymatic_cleave_sites_with_range('trypsin'))
+        [(5,(3,6))]
+        """
         site_pattern = re.compile(EXPASY_RULES[rule])
         range_pattern = regex.compile(EXPASY_RULES2[rule])
         exception = EXPASY_RULES.get(exception, exception)
