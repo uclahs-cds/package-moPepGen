@@ -283,7 +283,8 @@ class PVGNode():
         raise ValueError('Locations not found from the fragments of the circRNA.')
 
     def has_branch_sequence_matches(self, p:str) -> bool:
-        """ """
+        """ Checks whether the node has a series of outgoing nodes that has the
+        given sequence. """
         queue = deque([('', self)])
         while queue:
             cur_seq, cur_node = queue.popleft()

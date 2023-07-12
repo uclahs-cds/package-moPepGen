@@ -22,6 +22,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   
 - Fixed parseVEP that insertions not parsed successfully if the location is a single point. #766
 
+- Fixed callVariant that peptides with upstream cleavage altering mutations were no called. #670
+
 ## [1.1.0] - 2023-06-28
 
 ### Fixed
