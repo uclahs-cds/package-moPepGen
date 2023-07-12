@@ -160,7 +160,7 @@ class AminoAcidSeqRecord(SeqRecord):
     def iter_enzymatic_cleave_sites_with_range(self, rule:str, exception:str=None,
             exception_sites:List[int]=None
             ) -> Iterable[Tuple[int, Union[Tuple[int,int], None]]]:
-        """ Create a generator of the cleave sites and also returns the full
+        """ Create a generator of the cleave sites and also yields the full
         range of the pattern recognized during enzymatic cleavage.
 
         ## Examples:
