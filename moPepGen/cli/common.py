@@ -94,6 +94,13 @@ def add_args_cleavage(parser:argparse.ArgumentParser, enzyme_only:bool=False):
         metavar='<value>',
         choices=list(EXPASY_RULES.keys())
     )
+    group.add_argument(
+        '--cleavage-exception',
+        type=str,
+        help='Enzymatic cleavage exception.',
+        default='auto',
+        metavar='<value>'
+    )
     if enzyme_only:
         return
     group.add_argument(
@@ -270,7 +277,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             rule:str = args.cleavage_rule
             miscleavage:int = int(args.miscleavage)
             min_mw:float = float(args.min_mw)
-            exception = 'trypsin_exception' if rule == 'trypsin' else None
+            exception = args.cleavage_exception
             min_length:int = args.min_length
             max_length:int = args.max_length
             canonical_peptides = proteome.create_unique_peptide_pool(

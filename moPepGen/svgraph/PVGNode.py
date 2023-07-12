@@ -2,8 +2,9 @@
 from __future__ import annotations
 import copy
 from functools import cmp_to_key
+from collections import deque
 import math
-from typing import Dict, List, Set, Iterable
+from typing import Dict, List, Set, Tuple, Iterable
 from moPepGen import aa, circ, seqvar, err
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
@@ -48,7 +49,8 @@ class PVGNode():
             was_bridge:bool=False, pre_cleaved:bool=False, level:int=0,
             npop_collapsed:bool=False, cpop_collapsed:bool=False,
             upstream_indel_map:Dict[PVGNode, List[seqvar.VariantRecord]]=None,
-            collapsed_variants:Dict[PVGNode, List[seqvar.VariantRecordWithCoordinate]]=None
+            collapsed_variants:Dict[PVGNode, List[seqvar.VariantRecordWithCoordinate]]=None,
+            left_cleavage_pattern_end:int=None, right_cleavage_pattern_start:int=None
             ):
         """ Construct a PVGNode object. """
         self.seq = seq
@@ -68,6 +70,8 @@ class PVGNode():
         self.cpop_collapsed = cpop_collapsed
         self.upstream_indel_map = upstream_indel_map or {}
         self.collapsed_variants = collapsed_variants or {}
+        self.left_cleavage_pattern_end = left_cleavage_pattern_end
+        self.right_cleavage_pattern_start = right_cleavage_pattern_start
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -104,6 +108,16 @@ class PVGNode():
             if start <= sec.location.start < stop:
                 secs.append(sec.shift(-start))
 
+        if self.left_cleavage_pattern_end and start < self.left_cleavage_pattern_end:
+            left_cleavage_pattern_end = self.left_cleavage_pattern_end - start
+        else:
+            left_cleavage_pattern_end = None
+
+        if self.right_cleavage_pattern_start and stop > self.right_cleavage_pattern_start:
+            right_cleavage_pattern_start = self.right_cleavage_pattern_start
+        else:
+            right_cleavage_pattern_start = None
+
         return PVGNode(
             seq=seq,
             variants=variants,
@@ -117,7 +131,9 @@ class PVGNode():
             npop_collapsed=npop_collapsed,
             cpop_collapsed=cpop_collapsed,
             upstream_indel_map=upstream_indel_map,
-            collapsed_variants=collapsed_variants
+            collapsed_variants=collapsed_variants,
+            left_cleavage_pattern_end=left_cleavage_pattern_end,
+            right_cleavage_pattern_start=right_cleavage_pattern_start
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -266,6 +282,23 @@ class PVGNode():
                     return True
         raise ValueError('Locations not found from the fragments of the circRNA.')
 
+    def has_branch_sequence_matches(self, p:str) -> bool:
+        """ Checks whether the node has a series of outgoing nodes that has the
+        given sequence. """
+        queue = deque([('', self)])
+        while queue:
+            cur_seq, cur_node = queue.popleft()
+            seq = cur_seq + str(cur_node.seq.seq)
+            if len(seq) > len(p):
+                continue
+            if not p.startswith(seq):
+                continue
+            if len(seq) == len(p):
+                return True
+            for node in cur_node.get_out_nodes():
+                queue.append((seq, node))
+        return False
+
     def has_any_in_bridge(self) -> None:
         """ Check if it has any incoming node that is bridge """
         return any(node.is_bridge() for node in self.in_nodes)
@@ -298,23 +331,35 @@ class PVGNode():
         """ Get cleavage gain variants """
         cleavage_gain = []
         for variant in self.variants:
-            if variant.location.end == len(self.seq) and not variant.is_silent:
+            if self.right_cleavage_pattern_start is not None \
+                    and variant.location.end >= self.right_cleavage_pattern_start \
+                    and not variant.is_silent:
                 cleavage_gain.append(variant.variant)
         return cleavage_gain
 
     def get_cleavage_gain_from_downstream(self) -> List[seqvar.VariantRecord]:
-        """ Get the variants that gains the cleavage by downstream nodes """
+        """ Get the variants that gains the cleavage by downstream nodes
+        Downstream variant altering variants are those that overlaps with the
+        `left_cleavage_pattern_start` of the downstream node.
+        """
         cleavage_gain = []
-        seq_len = len(self.seq.seq)
-        upstream_cleave_alts = [v.variant for v in self.variants
-            if v.location.end == seq_len]
+
+        if self.right_cleavage_pattern_start:
+            upstream_cleave_alts = [v.variant for v in self.variants
+                if v.location.end > self.right_cleavage_pattern_start]
+        else:
+            seq_len = len(self.seq.seq)
+            upstream_cleave_alts = [v.variant for v in self.variants
+                if v.location.end == seq_len]
         for node in self.out_nodes:
+            if not node.left_cleavage_pattern_end:
+                continue
             if not node.variants:
                 return []
-            if node.variants[0].location.start != 0:
+            if node.variants[0].location.start >= node.left_cleavage_pattern_end:
                 return []
             for v in node.variants:
-                if v.location.start != 0:
+                if v.location.start >= node.left_cleavage_pattern_end:
                     break
                 if not cleavage_gain and not v.is_silent \
                         and not v.downstream_cleavage_altering:
@@ -438,7 +483,8 @@ class PVGNode():
         return left_secs, right_secs
 
     def split_node(self, index:int, cleavage:bool=False, pre_cleave:bool=False,
-            pop_collapse:bool=False) -> PVGNode:
+            pop_collapse:bool=False, cleavage_range:Tuple[int,int]=None
+            ) -> PVGNode:
         """ Split the sequence at the given position, and create a new node
         as the outbound edge. Variants will also be adjusted. For example:
 
@@ -446,10 +492,22 @@ class PVGNode():
 
         The node with GCFP is returned.
 
+        `cleavage_range` is a 2-tuple represents the range of the full cleavage
+        pattern. Examples:
+          - Peptide sequence of TTRTTT has cleavage site index of 2 and cleavage
+            range of (2,4), the position of 'RT'. The `right_cleavage_pattern_start`
+            of the left node is 2 and the `left_cleavage_pattern_end` of the right
+            node is 1.
+          - Peptide sequence of TTMRPTTT has cleavage site index of 3 and cleavage
+            range of (2,5), the position of 'MRP'. The `right_cleavage_pattern_start`
+            of the left node is 2 and the `left_cleavage_pattern_end` of the right
+            node is 1.
+
         Args:
             index (int): the position to split
             cleavage (bool): If true, the cleavage attribute of the right node
                 is update to be True.
+            cleavage_range (Tuple[int, int]): Cleavage pattern rage.
 
         Returns:
             The new created node with the right part of the original sequence.
@@ -493,7 +551,8 @@ class PVGNode():
             subgraph_id=self.subgraph_id,
             level=self.level,
             cpop_collapsed=self.cpop_collapsed,
-            truncated=self.truncated
+            truncated=self.truncated,
+            right_cleavage_pattern_start=self.right_cleavage_pattern_start
         )
         new_node.orf = self.orf
 
@@ -503,6 +562,13 @@ class PVGNode():
 
         if cleavage:
             new_node.cleavage = True
+            if cleavage_range:
+                new_node.left_cleavage_pattern_end = cleavage_range[1] - index - 1
+
+        if cleavage and cleavage_range:
+            self.right_cleavage_pattern_start = cleavage_range[0]
+        else:
+            self.right_cleavage_pattern_start = None
 
         if pop_collapse:
             self.cpop_collapsed = True
@@ -540,11 +606,13 @@ class PVGNode():
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
             level=self.level,
-            cpop_collapsed=self.cpop_collapsed
+            cpop_collapsed=self.cpop_collapsed,
+            right_cleavage_pattern_start=self.right_cleavage_pattern_start
         )
 
         self.seq = self.seq[:i]
         self.variants = left_variants
+        self.right_cleavage_pattern_start = None
 
         left_secs, right_secs = self.split_selenocysteines(i)
         self.selenocysteines = left_secs
@@ -574,12 +642,14 @@ class PVGNode():
             subgraph_id=self.subgraph_id,
             level=self.level,
             npop_collapsed=self.npop_collapsed,
-            upstream_indel_map=self.upstream_indel_map
+            upstream_indel_map=self.upstream_indel_map,
+            left_cleavage_pattern_end=self.left_cleavage_pattern_end
         )
         self.upstream_indel_map = {}
 
         self.seq = self.seq[i:]
         self.variants = right_variants
+        self.left_cleavage_pattern_end = None
 
         left_secs, right_secs = self.split_selenocysteines(i)
         left_node.selenocysteines = left_secs
@@ -590,6 +660,7 @@ class PVGNode():
     def append_left(self, other:PVGNode) -> None:
         """ Combine the other node to the left. """
         self.seq = other.seq + self.seq
+        self.left_cleavage_pattern_end = other.left_cleavage_pattern_end
         variants = copy.copy(other.variants)
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
@@ -602,10 +673,12 @@ class PVGNode():
             sec = sec.shift(len(other.seq.seq))
             secs.append(sec)
         self.selenocysteines = secs
+        self.left_cleavage_pattern_end = other.left_cleavage_pattern_end
 
     def append_right(self, other:PVGNode) -> None:
         """ Combine the other node the the right. """
         new_seq = self.seq + other.seq
+        self.right_cleavage_pattern_start = other.right_cleavage_pattern_start
         variants = []
         for variant in self.variants:
             if not variant.downstream_cleavage_altering:
@@ -622,6 +695,7 @@ class PVGNode():
         self.seq = new_seq
         self.cpop_collapsed = other.cpop_collapsed
         self.truncated = other.truncated
+        self.right_cleavage_pattern_start = other.right_cleavage_pattern_start
 
     def find_start_index(self) -> int:
         """ Find the start amino acid position """
@@ -646,7 +720,9 @@ class PVGNode():
             level=self.level,
             npop_collapsed=self.npop_collapsed,
             cpop_collapsed=self.cpop_collapsed,
-            upstream_indel_map={k:copy.copy(v) for k,v in self.upstream_indel_map.items()}
+            upstream_indel_map={k:copy.copy(v) for k,v in self.upstream_indel_map.items()},
+            left_cleavage_pattern_end=self.left_cleavage_pattern_end,
+            right_cleavage_pattern_start=self.right_cleavage_pattern_start
         )
 
     def get_nearest_next_ref_index(self) -> int:

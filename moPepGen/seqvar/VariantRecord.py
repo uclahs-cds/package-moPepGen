@@ -107,23 +107,34 @@ def find_mnvs_from_adjacent_variants(variants:List[VariantRecord],
         if v_0.type not in compatible_type_map:
             continue
         type0 = compatible_type_map[v_0.type]
+        adjacent_combs:Dict[int, List[VariantRecord]] = {
+            0: [[i]]
+        }
         for k in range(1, max_adjacent_as_mnv):
-            adjacent_vars = [v_0]
-            for v_i in variants[i + 1:]:
-                if v_i.type not in compatible_type_map:
-                    continue
-                if v_i.location.start < v_0.location.end:
-                    continue
-                if v_i.location.start > v_0.location.end:
-                    break
-                if compatible_type_map[v_i.type] == type0:
-                    adjacent_vars.append(v_i)
-                    if len(adjacent_vars) >= k + 1:
-                        break
-            if len(adjacent_vars) < k + 1:
+            if k not in adjacent_combs:
                 break
-            mnv = create_mnv_from_adjacent(adjacent_vars)
-            mnvs.append(mnv)
+            for comb in adjacent_combs[k - 1]:
+                i_t = comb[-1]
+                if i_t >= len(variants) - 1:
+                    continue
+                for j in range(i_t + 1, len(variants)):
+                    v_j = variants[j]
+                    if v_j.type not in compatible_type_map:
+                        continue
+                    if v_j.location.start < v_0.location.end:
+                        continue
+                    if v_j.location.start > v_0.location.end:
+                        break
+                    if compatible_type_map[v_j.type] == type0:
+                        new_comb = comb + [j]
+                        adjacent_combs[k].append(new_comb)
+
+        for k, combs in adjacent_combs.items():
+            if k == 0:
+                continue
+            for comb in combs:
+                mnv = create_mnv_from_adjacent(comb)
+                mnvs.append(mnv)
     return mnvs
 
 class VariantRecord():

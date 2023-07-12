@@ -60,6 +60,16 @@ class MiscleavedNodeSeries():
             )
         )
 
+    def has_trailing_selenocysteins(self):
+        """ Checks whether the seires of nodes has any selenocystein in any of
+        the trailing non C-pop-collapsed node. """
+        for node in reversed(self.nodes):
+            if node is not self.nodes[-1] and not node.cpop_collapsed:
+                return False
+            if node.selenocysteines:
+                return True
+        return False
+
 class MiscleavedNodes():
     """ Helper class for looking for peptides with miscleavages. This class
     defines the collection of nodes in sequence that starts from the same node,
@@ -151,7 +161,7 @@ class MiscleavedNodes():
                     for variant in node.variants:
                         if variant.is_silent:
                             continue
-                        if variant.upstream_cleavage_altering:
+                        if i > 0 and variant.upstream_cleavage_altering:
                             continue
                         if variant.variant.id not in variants:
                             variants[variant.variant.id] = variant.variant
@@ -491,7 +501,7 @@ class VariantPeptideDict():
                 if not _node.cpop_collapsed:
                     series = MiscleavedNodeSeries(copy.copy(new_batch), additional_variants)
                     if series.is_too_long(self.cleavage_params) \
-                            and not _node.selenocysteines:
+                            and not series.has_trailing_selenocysteins():
                         continue
                     if not series.is_too_short(self.cleavage_params):
                         nodes.data.append(series)

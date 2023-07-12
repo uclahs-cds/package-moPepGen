@@ -1,13 +1,14 @@
 """ Module for Amino Acid Record """
 from __future__ import annotations
-from typing import Iterable, List, Set
+from typing import Iterable, List, Set, Tuple, Union, Pattern
 import copy
 import re
+import regex
 from Bio.SeqRecord import SeqRecord
 from Bio import SeqUtils
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import MatchedLocation, FeatureLocation
-from moPepGen.aa.expasy_rules import EXPASY_RULES
+from moPepGen.aa.expasy_rules import EXPASY_RULES, EXPASY_RULES2, EXPASY_RULES_WINGS_SIZE
 
 
 class AminoAcidSeqRecord(SeqRecord):
@@ -152,8 +153,113 @@ class AminoAcidSeqRecord(SeqRecord):
                 [x.end() for x in re.finditer(exception, str(self.seq))]
 
         for it in re.finditer(rule, str(self.seq)):
-            if it not in exception_sites:
+            s = it.end()
+            if s not in exception_sites:
                 yield it.end()
+
+    def iter_enzymatic_cleave_sites_with_range(self, rule:str, exception:str=None,
+            exception_sites:List[int]=None
+            ) -> Iterable[Tuple[int, Union[Tuple[int,int], None]]]:
+        """ Create a generator of the cleave sites and also yields the full
+        range of the pattern recognized during enzymatic cleavage.
+
+        ## Examples:
+
+        In this example, the cleavage site is 5 (after K), and the pattern range
+        is (4,6) for KT.
+        >>> seq = AminoAcidSeqRecord(Seq('TTTTKTTTT'))
+        >>> list(seq.iter_enzymatic_cleave_sites_with_range('trypsin'))
+        [(5,(4,6))]
+
+        In this example, the cleavage site is 5 (after R) and the pattern range
+        is (3,6) for MRP.
+        >>> seq = AminoAcidSeqRecord(Seq('TTTMRPTTT'))
+        >>> list(seq.iter_enzymatic_cleave_sites_with_range('trypsin'))
+        [(5,(3,6))]
+        """
+        site_pattern = re.compile(EXPASY_RULES[rule])
+        range_pattern = regex.compile(EXPASY_RULES2[rule])
+        exception = EXPASY_RULES.get(exception, exception)
+        seq = str(self.seq)
+        if exception_sites is None:
+            exception_sites = [] if exception is None else \
+                [x.end() for x in re.finditer(exception, seq)]
+
+        sites = [x.end() for x in site_pattern.finditer(seq)]
+        ranges = [(x.start(), x.end()) for x in range_pattern.finditer(seq, overlapped=True)]
+
+        if len(sites) != len(ranges):
+            raise ValueError(
+                f"Inconsistent cleavage sites found. seq={seq}, "
+                f"sites={sites}, ranges={ranges}"
+            )
+        for s, r in zip(sites, ranges):
+            if s not in exception_sites:
+                yield s, r
+
+    def iter_enzymatic_cleave_sites_with_range_local(self, rule:str, exception:str=None,
+            exception_sites:List[int]=None
+            ) -> Iterable[Tuple[int, Union[Tuple[int,int], None]]]:
+        """ Iter enzymatic cleavage sites with pattern matching ranges using the
+        local matching method. """
+        rule_pattern = re.compile(EXPASY_RULES[rule])
+        exception = EXPASY_RULES.get(exception, exception)
+        wings_size = EXPASY_RULES_WINGS_SIZE[rule]
+        seq = str(self.seq)
+        seq_len = len(seq)
+        if exception_sites is None:
+            exception_sites = [] if exception is None else \
+                [x.end() for x in re.finditer(exception, seq)]
+
+        sites = [x.end() for x in rule_pattern.finditer(seq)]
+
+        if wings_size[0] <= 0 and wings_size[1] <= 0:
+            raise ValueError(
+                "Invalid enzyme pattern with the size being 0 for both wings:" +
+                f"{rule}: {EXPASY_RULES[rule]}"
+            )
+
+        for s in sites:
+            if s in exception_sites:
+                continue
+            r = self.get_local_matched_range(
+                seq=seq, site=s, p=rule_pattern, wings_size=wings_size, seq_len=seq_len
+            )
+            yield s, r
+
+    @staticmethod
+    def get_local_matched_range(seq:str, site:int, p:Pattern[str],
+            wings_size:Tuple[int, int], seq_len:int=None):
+        """ Get the local matched pattern range from a sequence
+        with a given cleavage site. """
+        if not seq_len:
+            seq_len = len(seq)
+
+        upper = max(site - wings_size[0], 0)
+        lower = min(site + wings_size[1], len(seq))
+
+        if wings_size[0] >= wings_size[1]:
+            ucur = site - 1
+            lcur = site
+        else:
+            ucur = site
+            lcur = site + 1
+
+        pattern_found: bool = False
+        while True:
+            if not upper <= ucur < lcur <= lower:
+                break
+            local_seg = seq[ucur:lcur]
+            if p.search(local_seg):
+                pattern_found = True
+                break
+            if (site - ucur) <= (lcur - site) or lcur == lower:
+                ucur -= 1
+            else:
+                lcur += 1
+        if not pattern_found:
+            raise ValueError(f"Cannot extract matched pattern at position {site} from {seq}")
+        return (ucur, lcur)
 
     def get_enzymatic_cleave_exception_sites(self, exception:str) -> Iterable[int]:
         """ Find all enzymatic cleavage exception sites """
@@ -183,6 +289,30 @@ class AminoAcidSeqRecord(SeqRecord):
             return -1
         return min(sites)
 
+    def find_first_cleave_or_stop_site_with_range(self, rule:str, exception:str=None,
+            exception_sites:List[int]=None
+            ) -> Tuple[int, Union[Tuple[int,int], None]]:
+        """ Create a generator for cleave or stop sites """
+        it_cleavage = self.iter_enzymatic_cleave_sites_with_range(
+            rule=rule, exception=exception, exception_sites=exception_sites
+        )
+        sites:List[Tuple[int, Union[Tuple[int,int], None]]] = []
+        first_cleave_site, first_range = next(it_cleavage, (None, None))
+        if first_cleave_site is not None:
+            sites.append((first_cleave_site, first_range))
+        it_stop = self.iter_stop_sites()
+        first_stop_site = next(it_stop, None)
+        if first_stop_site is not None:
+            if first_stop_site == 0:
+                if len(self.seq) == 1:
+                    return -1, None
+                sites.append((first_stop_site + 1, None))
+            else:
+                sites.append((first_stop_site, None))
+        if not sites:
+            return -1, None
+        return min(sites, key=lambda x: x[0])
+
     def find_first_enzymatic_cleave_site(self, rule:str, exception:str=None,
             start:int=0) -> int:
         """ Find the first enzymatic cleave site """
@@ -197,6 +327,12 @@ class AminoAcidSeqRecord(SeqRecord):
             ) -> List[int]:
         """ Find all enzymatic cleave sites. """
         return list(self.iter_enzymatic_cleave_sites(rule=rule,
+            exception=exception))
+
+    def find_all_enzymatic_cleave_sites_with_ranges(self, rule:str, exception:str=None,
+            ) -> List[Tuple[int, Tuple[int, int]]]:
+        """ Find all enzymatic cleave sites. """
+        return list(self.iter_enzymatic_cleave_sites_with_range(rule=rule,
             exception=exception))
 
     def find_all_start_sites(self) -> List[int]:
@@ -214,6 +350,30 @@ class AminoAcidSeqRecord(SeqRecord):
         sites = cleavage_sites + stop_sites_start + stop_sites_end
         sites = list(set(sites))
         sites.sort()
+        return sites
+
+    def find_all_cleave_and_stop_sites_with_range(self, rule:str,
+            exception:str=None, exception_sites:List[int]=None
+            ) -> List[Tuple[int,Union[Tuple[int,int], None]]]:
+        """ Find all enzymatic cleavage sites with ranges and stop sites """
+        sites = list(
+            self.iter_enzymatic_cleave_sites_with_range(
+                rule=rule, exception=exception,
+                exception_sites=exception_sites
+            )
+        )
+        sites_mapper = dict(sites)
+        stop_sites_start = list(self.iter_stop_sites())
+        stop_sites_end = [i + 1 for i in stop_sites_start if i < len(self.seq) - 1]
+        stop_sites_start = [i for i in stop_sites_start if i > 0]
+
+        for s in stop_sites_start:
+            sites_mapper[s] = (s, s+1)
+        for s in stop_sites_end:
+            sites_mapper[s] = (s-1, s)
+
+        sites = list(sites_mapper.items())
+        sites.sort(key=lambda x: x[0])
         return sites
 
     def enzymatic_cleave(self, rule:str, exception:str=None,

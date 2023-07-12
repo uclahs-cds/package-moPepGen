@@ -145,7 +145,7 @@ class PeptideVariantGraph():
         exception_sites = node.seq.get_enzymatic_cleave_exception_sites(
             self.cleavage_params.exception
         )
-        sites = node.seq.find_all_cleave_and_stop_sites(
+        sites = node.seq.find_all_cleave_and_stop_sites_with_range(
             rule=self.cleavage_params.enzyme,
             exception=self.cleavage_params.exception,
             exception_sites=exception_sites
@@ -153,10 +153,12 @@ class PeptideVariantGraph():
         sites = deque(sites)
         shift = 0
         while len(sites) > 0:
-            site = sites.popleft()
-            shifted_site = site - shift
-            shift = site
-            node = node.split_node(shifted_site, cleavage=True)
+            s, r = sites.popleft()
+            shifted_site = s - shift
+            if r:
+                r = (r[0] - shift, r[1] - shift)
+            shift = s
+            node = node.split_node(shifted_site, cleavage=True, cleavage_range=r)
         return first_node if return_first else node
 
     def count_nodes(self):
@@ -227,12 +229,12 @@ class PeptideVariantGraph():
                 for y in x.in_nodes) for x in out_node.out_nodes if x is not self.stop)
             if is_sharing_downstream:
                 continue
-            site = out_node.seq.find_first_cleave_or_stop_site(
+            s, r = out_node.seq.find_first_cleave_or_stop_site_with_range(
                 rule=self.cleavage_params.enzyme,
                 exception=self.cleavage_params.exception
             )
-            if site > -1:
-                out_node.split_node(site, cleavage=True, pre_cleave=True)
+            if s > -1:
+                out_node.split_node(s, cleavage=True, pre_cleave=True, cleavage_range=r)
 
         if cleavage:
             for out_node in node.out_nodes:
@@ -595,7 +597,7 @@ class PeptideVariantGraph():
         downstreams = self.move_downstreams(new_nodes, reading_frame_index)
         return downstreams, inbridge_list
 
-    def cross_join(self, node:PVGNode, site:int) -> T:
+    def cross_join(self, node:PVGNode, site:int, cleavage_range:Tuple[int, int]=None) -> T:
         r""" For a given node, split at the given position, expand inbound and
         outbound alignments, and join them with edges.
 
@@ -609,7 +611,7 @@ class PeptideVariantGraph():
             node (PVGNode): The node in the graph of target.
         """
         reading_frame_index = node.reading_frame_index
-        head = node.split_node(site, cleavage=True)
+        head = node.split_node(site, cleavage=True, cleavage_range=cleavage_range)
 
         # there shouldn't have any bridge out in inbond nodes
         left_nodes, _ = self.expand_forward(node)
@@ -692,12 +694,12 @@ class PeptideVariantGraph():
 
         if len(cur.out_nodes) == 1:
             downstream = list(cur.out_nodes)[0]
-            site = downstream.seq.find_first_cleave_or_stop_site(
+            s, r = downstream.seq.find_first_cleave_or_stop_site_with_range(
                 rule=self.cleavage_params.enzyme,
                 exception=self.cleavage_params.exception
             )
-            if site > -1:
-                downstream.split_node(site, True)
+            if s > -1:
+                downstream.split_node(s, True, cleavage_range=r)
             # It's important that if the only downstream is bridge, we only
             # do a simple expand forward. Issue #
             if len(downstream.out_nodes) == 1 or downstream.is_bridge():
@@ -717,7 +719,7 @@ class PeptideVariantGraph():
         branches:Set[PVGNode] = set()
         inbridges:Dict[PVGNode,List[PVGNode]] = {}
 
-        sites = cur.seq.find_all_cleave_and_stop_sites(
+        sites = cur.seq.find_all_cleave_and_stop_sites_with_range(
             rule=self.cleavage_params.enzyme,
             exception=self.cleavage_params.exception
         )
@@ -736,16 +738,17 @@ class PeptideVariantGraph():
                 branches,inbridges = self.merge_join(cur)
 
         elif len(sites) == 1:
+            s, r = sites[0]
             if self.next_is_stop(cur) or cur.is_bridge() or \
                     self.node_is_subgraph_end(cur):
-                cur.split_node(sites[0], cleavage=True)
+                cur.split_node(s, cleavage=True, cleavage_range=r)
                 branches, inbridges = self.expand_forward(cur)
             elif len(cur.out_nodes) == 1:
-                right = cur.split_node(sites[0], cleavage=True)
+                right = cur.split_node(s, cleavage=True, cleavage_range=r)
                 _,inbridges = self.expand_forward(cur)
                 branches = {list(right.out_nodes)[0]}
             else:
-                branches, inbridges = self.cross_join(cur, sites[0])
+                branches, inbridges = self.cross_join(cur, s, cleavage_range=r)
 
         else:
             if self.next_is_stop(cur) or cur.is_bridge() or \
@@ -754,14 +757,15 @@ class PeptideVariantGraph():
                 if not cur.cleavage:
                     _,inbridges = self.expand_forward(cur)
             else:
-                right = cur.split_node(sites[0], cleavage=True)
+                s, r = sites[0]
+                right = cur.split_node(s, cleavage=True, cleavage_range=r)
                 if not cur.cleavage:
                     _,inbridges = self.expand_forward(cur)
-                site = right.seq.find_first_cleave_or_stop_site(
+                s, r = right.seq.find_first_cleave_or_stop_site_with_range(
                     rule=self.cleavage_params.enzyme,
                     exception=self.cleavage_params.exception
                 )
-                right = right.split_node(site, cleavage=True)
+                right = right.split_node(s, cleavage=True, cleavage_range=r)
                 branches = {right}
 
         return branches, inbridges

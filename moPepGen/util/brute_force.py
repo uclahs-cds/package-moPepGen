@@ -224,7 +224,8 @@ class BruteForceVariantPeptideCaller():
         return any(v.variant.is_circ_rna() for v in variants) \
             or self.tx_model.is_mrna_end_nf()
 
-    def get_effective_variants(self, lhs:int, rhs:int, cds_start:int,
+    def get_effective_variants(self, lhs:int, rhs:int,
+            lrange:Tuple[int,int], rrange:Tuple[int,int], cds_start:int,
             variants:List[seqvar.VariantRecordWithCoordinate],
             variants_stop_lost:List[Tuple[bool,bool,bool]],
             variants_stop_gain:List[Tuple[bool,bool,bool]],
@@ -255,8 +256,10 @@ class BruteForceVariantPeptideCaller():
                 if variant.is_frameshifting() \
                         and not (variant.is_fusion() or variant.is_circ_rna()):
                     upstream_indels.append(variant_coordinate)
-            is_cleavage_gain = (loc.overlaps(FeatureLocation(start=lhs - 3, end=lhs)) \
-                    or loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))) \
+            is_cleavage_gain = (
+                loc.overlaps(FeatureLocation(start=lrange[0], end=lrange[1]))
+                or loc.overlaps(FeatureLocation(start=rrange[0], end=rrange[1]))
+            ) \
                 if cds_start != lhs \
                 else loc.overlaps(FeatureLocation(start=rhs, end=rhs + 3))
 
@@ -962,7 +965,7 @@ class BruteForceVariantPeptideCaller():
                 aa_seq = aa_seq[:stop_index]
             aa_seq = aa.AminoAcidSeqRecord(seq=aa_seq)
 
-            sites = aa_seq.find_all_enzymatic_cleave_sites(rule, exception)
+            sites = aa_seq.find_all_enzymatic_cleave_sites_with_ranges(rule, exception)
 
             # Finding the next M, so peptides that starts from the next M should
             # be processed with the correct `cds_start`
@@ -973,9 +976,10 @@ class BruteForceVariantPeptideCaller():
             else:
                 next_m = 0
 
-            sites.insert(0, 0)
-            sites.append(len(aa_seq))
-            for j, lhs in enumerate(sites[:-1]):
+            sites.insert(0, (0, (0,1)))
+            sites.append((len(aa_seq), (len(aa_seq), len(aa_seq))))
+            for j, site in enumerate(sites[:-1]):
+                lhs, lrange = site
                 if 0 < next_m < lhs:
                     break
                 last_m = aa_seq.seq[:lhs].rfind('M')
@@ -990,7 +994,7 @@ class BruteForceVariantPeptideCaller():
                 # )
 
                 for k in range(j + 1, min([j + 3, len(sites) - 1]) + 1):
-                    rhs = sites[k]
+                    rhs, rrange = sites[k]
                     tx_lhs = cds_start + lhs * 3
                     tx_rhs = cds_start + rhs * 3
                     if is_mrna_end_nf and tx_rhs + 3 > len(seq):
@@ -998,9 +1002,16 @@ class BruteForceVariantPeptideCaller():
                     peptide = aa_seq.seq[lhs:rhs]
                     if str(peptide) in denylist:
                         continue
+                    tx_lrange = (cds_start + lrange[0] * 3, cds_start + lrange[1] * 3)
+                    if k == len(sites) - 1 \
+                            and tx_rhs + 3 <= len(seq) \
+                            and seq[tx_rhs:tx_rhs + 3].translate() == '*':
+                        tx_rrange = (tx_rhs, tx_rhs + 3)
+                    else:
+                        tx_rrange = (cds_start + rrange[0] * 3, cds_start + rrange[1] * 3)
                     if check_variants:
                         effective_variants = self.get_effective_variants(
-                            lhs=tx_lhs, rhs=tx_rhs,
+                            lhs=tx_lhs, rhs=tx_rhs, lrange=tx_lrange, rrange=tx_rrange,
                             cds_start=actual_cds_start, variants=variant_coordinates,
                             variants_stop_lost=stop_lost, variants_stop_gain=stop_gain,
                             variants_silent_mutation=silent_mutation
@@ -1255,7 +1266,7 @@ def main(args):
 
         caller.cleavage_params = params.CleavageParams(
             enzyme=args.cleavage_rule,
-            exception='trypsin_exception' if args.cleavage_rule == 'trypsin' else None,
+            exception=args.cleavage_exception,
             miscleavage=int(args.miscleavage),
             min_mw=float(args.min_mw),
             min_length=args.min_length,

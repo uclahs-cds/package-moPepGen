@@ -53,7 +53,7 @@ def main(args:argparse.Namespace):
     proteome.dump_fasta(args.reference_dir/'proteome.fasta')
 
     rule = args.cleavage_rule
-    exception = 'trypsin_exception' if rule == 'trypsin' else None
+    exception = args.cleavage_exception
 
     if args.canonical_peptides:
         with open(args.canonical_peptides, 'rb') as handle:

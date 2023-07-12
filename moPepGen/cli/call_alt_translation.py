@@ -60,7 +60,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
 
     cleavage_params = params.CleavageParams(
         enzyme=args.cleavage_rule,
-        exception='trypsin_exception' if args.cleavage_rule == 'trypsin' else None,
+        exception=args.cleavage_exception,
         miscleavage=int(args.miscleavage),
         min_mw=float(args.min_mw),
         min_length=args.min_length,
