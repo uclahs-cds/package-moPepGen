@@ -47,6 +47,11 @@ class CleavageParams():
         self.additional_variants_per_misc = additional_variants_per_misc
         self.min_nodes_to_collapse = min_nodes_to_collapse
         self.naa_to_collapse = naa_to_collapse
+        if self.exception == 'auto':
+            if enzyme == 'trypsin':
+                self.exception = 'trypsin_exception'
+            else:
+                self.exception = None
 
 class ReferenceData():
     """ Reference related parameters

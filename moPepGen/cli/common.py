@@ -98,7 +98,7 @@ def add_args_cleavage(parser:argparse.ArgumentParser, enzyme_only:bool=False):
         '--cleavage-exception',
         type=str,
         help='Enzymatic cleavage exception.',
-        default='trypsin_exception',
+        default='auto',
         metavar='<value>'
     )
     if enzyme_only:
