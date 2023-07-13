@@ -1226,7 +1226,7 @@ class ThreeFrameTVG():
                 bridge_out.add(cur)
                 continue
 
-            if not self.is_circ_rna():
+            if not self.is_circ_rna() and cur not in members:
                 if cur.subgraph_id != start.subgraph_id:
                     if not cur.is_inframe_subgraph(start, end):
                         subgraph_out.add(cur)
