@@ -76,6 +76,12 @@ def parse_args(subparsers:argparse._SubParsersAction
         help='Fraction of SNVs to simulate.'
     )
     parser.add_argument(
+        '--snv-only-frac',
+        type=float,
+        default=1,
+        help='Fraction of test cases to be SNV only.'
+    )
+    parser.add_argument(
         '--fusion-frac',
         type=float,
         help='Fraction of test cases to have fusion.',
@@ -344,13 +350,20 @@ class FuzzTestCase():
             if status == 'SUCCEEDED':
                 shutil.rmtree(self.config.temp_dir/self.record.id)
             else:
-                shutil.copy2(self.config.temp_dir/self.config.id, self.config.output_dir)
+                shutil.copytree(
+                    self.config.temp_dir/self.record.id,
+                    self.config.output_dir/self.record.id
+                )
         # pylint: disable=W0703
         except Exception as error:
             self.record.complete('FAILED')
             with self.record.path_stderr.open('wt') as handle:
                 handle.write(str(error))
                 handle.write(traceback.format_exc())
+            shutil.copytree(
+                self.config.temp_dir/self.record.id,
+                self.config.output_dir/self.record.id
+            )
 
     def fix_fusion_and_circ(self):
         """ Fix number of fusion and circRNA """
@@ -442,6 +455,10 @@ class FuzzTestCase():
             weights=[self.config.alt_splice_frac, 1-self.config.alt_splice_frac]
         )[0]:
             var_types.append('AltSplicing')
+        snv_only = random.choices(
+            [True, False],
+            weights=[self.config.snv_only_frac, 1-self.config.snv_only_frac]
+        )[0]
         for _ in range(n_variants):
             tx_id = random.choice(tx_ids)
             var_type = random.choice(var_types)
@@ -449,11 +466,18 @@ class FuzzTestCase():
                 record = fake.fake_rmats_record(anno, genome, tx_id)
                 self.record.n_alt_splice += 1
             elif var_type == 'SNV':
+                if snv_only:
+                    var_type_sub = 'SNV'
+                else:
+                    var_type_sub = random.choices(
+                        ['SNV', 'INDEL'],
+                        weights=[self.config.snv_frac, 1-self.config.snv_frac]
+                    )[0]
                 record = fake.fake_variant_record(
                     anno=anno, genome=genome, tx_id=tx_id,
+                    var_type=var_type_sub,
                     max_size=self.config.max_size,
-                    exonic_only=self.config.exonic_only,
-                    snv_frac=self.config.snv_frac
+                    exonic_only=self.config.exonic_only
                 )
                 if record.type == 'SNV':
                     self.record.n_snv += 1
@@ -585,10 +609,10 @@ class FuzzTestCase():
 class FuzzTestConfig():
     """ Fuzz test config """
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
-            min_variants:int, exonic_only:bool, snv_frac:bool, fusion_frac:bool,
-            circ_rna_frac:bool, ci_ratio:float, alt_splice_frac:bool, cleavage_rule:str,
-            cleavage_exception:str, miscleavage:int, min_mw:int, min_length:int,
-            max_length:int, temp_dir:Path, output_dir:Path, ref_dir:Path,
+            min_variants:int, exonic_only:bool, snv_frac:float, snv_only_frac:float,
+            fusion_frac:float, circ_rna_frac:float, ci_ratio:float, alt_splice_frac:bool,
+            cleavage_rule:str, cleavage_exception:str, miscleavage:int, min_mw:int,
+            min_length:int, max_length:int, temp_dir:Path, output_dir:Path, ref_dir:Path,
             fuzz_start:datetime=None, fuzz_end:datetime=None, seed:int=None,
             nthreads:int=1):
         """ constructor """
@@ -599,6 +623,7 @@ class FuzzTestConfig():
         self.min_vairants = min_variants
         self.exonic_only = exonic_only
         self.snv_frac = snv_frac
+        self.snv_only_frac = snv_only_frac
         self.fusion_frac = fusion_frac
         self.circ_rna_frac = circ_rna_frac
         self.ci_ratio = ci_ratio
@@ -732,6 +757,7 @@ def main(args:argparse.Namespace):
         min_variants=args.min_variants,
         exonic_only=args.exonic_only,
         snv_frac=args.snv_frac,
+        snv_only_frac=args.snv_only_frac,
         fusion_frac=args.fusion_frac,
         alt_splice_frac=args.alt_splice_frac,
         circ_rna_frac=args.circ_rna_frac,
