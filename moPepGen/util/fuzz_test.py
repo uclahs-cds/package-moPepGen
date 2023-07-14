@@ -109,7 +109,7 @@ def parse_args(subparsers:argparse._SubParsersAction
     parser.add_argument(
         '-o', '--output-dir',
         type=Path,
-        help='Temporary directory',
+        help='Output directory',
         metavar='<path>'
     )
     parser.add_argument(
