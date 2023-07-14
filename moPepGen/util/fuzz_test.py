@@ -72,6 +72,7 @@ def parse_args(subparsers:argparse._SubParsersAction
     parser.add_argument(
         '--snv-frac',
         type=float,
+        default=1,
         help='Fraction of SNVs to simulate.'
     )
     parser.add_argument(
