@@ -12,6 +12,7 @@ import traceback
 from typing import Iterable, List, Union, Tuple
 import sys
 import uuid
+from pathos.pools import ParallelPool
 from Bio import SeqIO
 from moPepGen import ERROR_INDEX_IN_INTRON, fake, seqvar, circ, dna, gtf, aa, logger
 from moPepGen.seqvar.VariantRecord import VariantRecord
@@ -69,14 +70,16 @@ def parse_args(subparsers:argparse._SubParsersAction
         metavar='<number>'
     )
     parser.add_argument(
-        '--fusion',
-        action='store_true',
-        help='Whether to generate a fusion variant.'
+        '--fusion-frac',
+        type=float,
+        help='Fraction of test cases to have fusion.',
+        default=0
     )
     parser.add_argument(
-        '--circ-rna',
-        action='store_true',
-        help='Whether to generate a circRNA.'
+        '--circ-rna-frac',
+        type=float,
+        help='Fraction of test cases to have circRNA.',
+        default=0
     )
     parser.add_argument(
         '--ci-ratio',
@@ -86,9 +89,10 @@ def parse_args(subparsers:argparse._SubParsersAction
         metavar='<value>'
     )
     parser.add_argument(
-        '--alt-splice',
-        action='store_true',
-        help='Whether to generate alternative splicings.'
+        '--alt-splice-frac',
+        type=float,
+        help='Fraction of test cases to have alternative splicing.',
+        default=0
     )
     parser.add_argument(
         '-i', '--n-iter',
@@ -98,6 +102,12 @@ def parse_args(subparsers:argparse._SubParsersAction
     )
     parser.add_argument(
         '-t', '--temp-dir',
+        type=Path,
+        help='Temporary directory',
+        metavar='<path>'
+    )
+    parser.add_argument(
+        '-o', '--output-dir',
         type=Path,
         help='Temporary directory',
         metavar='<path>'
@@ -114,6 +124,12 @@ def parse_args(subparsers:argparse._SubParsersAction
         default=None,
         help='Random seed to set. If not specified, a random number will be generated.'
     )
+    parser.add_argument(
+        '--nthreads',
+        type=int,
+        default=1,
+        help='Number of threads'
+    )
     add_args_cleavage(parser)
     parser.set_defaults(func=main)
     print_help_if_missing_args(parser)
@@ -127,7 +143,8 @@ class FuzzRecord():
     """ Record of the fuzz test result for a single test case """
     def __init__(self, _id:str, status:str, submitted:datetime,
             completed:datetime, work_dir:Path=None, n_var:int=None,
-            n_exonic:int=None, call_variant_start:datetime=None,
+            n_exonic:int=None, n_fusion:int=0, n_circ_rna:int=0,
+            n_alt_splice:int=0, call_variant_start:datetime=None,
             call_variant_end:datetime=None, brute_force_start:datetime=None,
             brute_force_end:datetime=None):
         """ constructor """
@@ -138,6 +155,9 @@ class FuzzRecord():
         self.work_dir = work_dir
         self.n_var = n_var
         self.n_exonic = n_exonic
+        self.n_fusion = n_fusion
+        self.n_circ_rna = n_circ_rna
+        self.n_alt_splice = n_alt_splice
         self.call_variant_start = call_variant_start
         self.call_variant_end = call_variant_end
         self.brute_force_start = brute_force_start
@@ -238,6 +258,7 @@ class FuzzRecord():
             if self.brute_force_start and self.brute_force_end else '-'
         return '\t'.join([
             self.id, self.status, str(self.n_var), str(self.n_exonic),
+            str(self.n_fusion), str(self.n_circ_rna), str(self.n_alt_splice),
             submitted, completed,
             call_variant_start, call_variant_end, call_variant_time,
             brute_force_start, brute_force_end, brute_force_time
@@ -248,6 +269,7 @@ class FuzzRecord():
         """ get TSV header """
         return '\t'.join([
             'id', 'status', 'num_var', 'num_exonic',
+            'n_fusion', 'n_circ_rna', 'n_alt_splice',
             'submitted', 'completed',
             'call_variant_start', 'call_variant_end', 'call_variant_time',
             'brute_force_start', 'brute_force_end', 'brute_force_time'
@@ -289,6 +311,7 @@ class FuzzTestCase():
             with open(self.record.path_stdout, 'w') as os_handle:
                 with redirect_stdout(os_handle):
                     logger(f"[ fuzzTest ] Random seed: {seed}")
+                    self.fix_fusion_and_circ()
                     if self.config.ref_dir is None:
                         logger('[ fuzzTest ] Creating random reference.')
                         genome, anno, proteome = self.create_fake_reference()
@@ -312,6 +335,8 @@ class FuzzTestCase():
                     self.record.complete(status)
             if status == 'SUCCEEDED':
                 shutil.rmtree(self.config.temp_dir/self.record.id)
+            else:
+                shutil.copy2(self.config.temp_dir/self.config.id, self.config.output_dir)
         # pylint: disable=W0703
         except Exception as error:
             self.record.complete('FAILED')
@@ -319,11 +344,25 @@ class FuzzTestCase():
                 handle.write(str(error))
                 handle.write(traceback.format_exc())
 
+    def fix_fusion_and_circ(self):
+        """ Fix number of fusion and circRNA """
+        if random.choices(
+            [True, False],
+            weights=[self.config.fusion_frac, 1-self.config.fusion_frac]
+        )[0]:
+            self.record.n_fusion = 1
+
+        if random.choices(
+            [True, False],
+            weights=[self.config.circ_rna_frac, 1-self.config.circ_rna_frac]
+        )[0]:
+            self.record.n_circ_rna = 1
+
     def create_fake_reference(self
             ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotation, aa.AminoAcidSeqDict]:
         """ Create a fake genomic reference, including the genome sequence and
         genomic annotation model, and the translated amino acid sequences. """
-        if self.config.fusion:
+        if self.record.n_fusion > 0:
             n_genes = 2
         else:
             n_genes = 1
@@ -373,26 +412,34 @@ class FuzzTestCase():
         n_variants = random.randint(self.config.min_vairants, self.config.max_variants)
         tx_ids = [self.config.tx_id]
 
-        if self.config.fusion:
-            record = fake.fake_fusion(anno, genome, self.config.tx_id)
-            records.append(record)
-            n_variants -= 1
-            tx_ids.append(record.attrs['ACCEPTER_TRANSCRIPT_ID'])
+        if self.record.n_fusion > 0:
+            if random.choice([True, False]):
+                self.record.n_fusion = 1
+                record = fake.fake_fusion(anno, genome, self.config.tx_id)
+                records.append(record)
+                n_variants -= 1
+                tx_ids.append(record.attrs['ACCEPTER_TRANSCRIPT_ID'])
 
-        if self.config.circ_rna:
-            record = fake.fake_circ_rna_model(anno, self.config.tx_id,
-                self.config.ci_ratio)
-            records.append(record)
-            n_variants -= 1
+        if self.record.n_circ_rna > 0:
+            if random.choice([True, False]):
+                self.record.n_circ_rna = 1
+                record = fake.fake_circ_rna_model(anno, self.config.tx_id,
+                    self.config.ci_ratio)
+                records.append(record)
+                n_variants -= 1
 
         var_types = ['SNV']
-        if self.config.alt_splicing:
+        if random.choices(
+            [True, False],
+            weights=[self.config.alt_splice_frac, 1-self.config.alt_splice_frac]
+        )[0]:
             var_types.append('AltSplicing')
         for _ in range(n_variants):
             tx_id = random.choice(tx_ids)
             var_type = random.choice(var_types)
             if var_type == 'AltSplicing':
                 record = fake.fake_rmats_record(anno, genome, tx_id)
+                self.record.n_alt_splice += 1
             elif var_type == 'SNV':
                 record = fake.fake_variant_record(anno, genome, tx_id,
                     self.config.max_size, self.config.exonic_only)
@@ -522,11 +569,11 @@ class FuzzTestCase():
 class FuzzTestConfig():
     """ Fuzz test config """
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
-            min_variants:int, exonic_only:bool, fusion:bool, circ_rna:bool,
-            ci_ratio:float, alt_splicing:bool, cleavage_rule:str, cleavage_exception:str,
+            min_variants:int, exonic_only:bool, fusion_frac:bool, circ_rna_frac:bool,
+            ci_ratio:float, alt_splice_frac:bool, cleavage_rule:str, cleavage_exception:str,
             miscleavage:int, min_mw:int, min_length:int, max_length:int,
-            temp_dir:Path, ref_dir:Path, fuzz_start:datetime=None,
-            fuzz_end:datetime=None, seed:int=None):
+            temp_dir:Path, output_dir:Path, ref_dir:Path, fuzz_start:datetime=None,
+            fuzz_end:datetime=None, seed:int=None, nthreads:int=1):
         """ constructor """
         self.tx_id = tx_id
         self.n_iter = n_iter
@@ -534,10 +581,10 @@ class FuzzTestConfig():
         self.max_variants = max_variants
         self.min_vairants = min_variants
         self.exonic_only = exonic_only
-        self.fusion = fusion
-        self.circ_rna = circ_rna
+        self.fusion_frac = fusion_frac
+        self.circ_rna_frac = circ_rna_frac
         self.ci_ratio = ci_ratio
-        self.alt_splicing = alt_splicing
+        self.alt_splice_frac = alt_splice_frac
         self.cleavage_rule = cleavage_rule
         self.cleavage_exception = cleavage_exception
         self.miscleavage = miscleavage
@@ -545,10 +592,12 @@ class FuzzTestConfig():
         self.min_length = min_length
         self.max_length = max_length
         self.temp_dir = temp_dir
+        self.output_dir = output_dir
         self.ref_dir = ref_dir
         self.fuzz_start = fuzz_start
         self.fuzz_end = fuzz_end
         self.seed = seed
+        self.nthreads = nthreads
 
     def to_dict(self):
         """ Convert to a dict """
@@ -580,7 +629,7 @@ class FuzzTestConfig():
     def path_log_file(self) -> Path:
         """ Log file path """
         start_time = self.fuzz_start.strftime('%y%m%d-%H%M%S')
-        return self.temp_dir/f"fuzz-{start_time}.log"
+        return self.output_dir/f"fuzz-{start_time}.log"
 
 class Fuzzer():
     """ Main class for fuzzing """
@@ -588,6 +637,7 @@ class Fuzzer():
         """ constructor """
         self.config = config
         self.config.temp_dir.mkdir(exist_ok=True)
+        self.config.output_dir.mkdir(exist_ok=True)
         self.records = records or []
         self.handle = None
 
@@ -635,13 +685,24 @@ class Fuzzer():
 
     def fuzz(self):
         """ fuzz """
-        for _ in range(self.config.n_iter):
+        pool = ParallelPool(ncpus=self.config.nthreads)
+        cases:List[FuzzTestCase] = []
+        for i in range(self.config.n_iter):
             config = copy.deepcopy(self.config)
             case = FuzzTestCase(config)
-            self.records.append(case.record)
-            case.run()
-            self.handle.write(case.record.to_tsv() + '\n')
-            self.handle.flush()
+            cases.append(case)
+            if len(cases) >= config.nthreads or i == self.config.n_iter - 1:
+                res:List[FuzzTestCase] = pool.map(_run_fuzz, cases)
+                for case in res:
+                    self.handle.write(case.record.to_tsv() + '\n')
+                    self.handle.flush()
+                    self.records.append(case.record)
+                cases = []
+
+def _run_fuzz(case:FuzzTestCase) -> FuzzTestCase:
+    """ Run fuzz test """
+    case.run()
+    return case
 
 def main(args:argparse.Namespace):
     """ Main entry point for fuzz test """
@@ -652,9 +713,9 @@ def main(args:argparse.Namespace):
         max_variants=args.max_variants,
         min_variants=args.min_variants,
         exonic_only=args.exonic_only,
-        fusion=args.fusion,
-        alt_splicing=args.alt_splice,
-        circ_rna=args.circ_rna,
+        fusion_frac=args.fusion_frac,
+        alt_splice_frac=args.alt_splice_frac,
+        circ_rna_frac=args.circ_rna_frac,
         ci_ratio=args.ci_ratio,
         cleavage_rule=args.cleavage_rule,
         cleavage_exception=args.cleavage_exception,
@@ -663,8 +724,10 @@ def main(args:argparse.Namespace):
         min_length=args.min_length,
         max_length=args.max_length,
         temp_dir=args.temp_dir,
+        output_dir=args.output_dir,
         ref_dir=args.reference_dir,
-        seed=args.seed
+        seed=args.seed,
+        nthreads=args.nthreads
     )
     with Fuzzer(config) as fuzzer:
         fuzzer.fuzz()
