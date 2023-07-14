@@ -70,6 +70,11 @@ def parse_args(subparsers:argparse._SubParsersAction
         metavar='<number>'
     )
     parser.add_argument(
+        '--snv-frac',
+        type=float,
+        help='Fraction of SNVs to simulate.'
+    )
+    parser.add_argument(
         '--fusion-frac',
         type=float,
         help='Fraction of test cases to have fusion.',
@@ -443,8 +448,12 @@ class FuzzTestCase():
                 record = fake.fake_rmats_record(anno, genome, tx_id)
                 self.record.n_alt_splice += 1
             elif var_type == 'SNV':
-                record = fake.fake_variant_record(anno, genome, tx_id,
-                    self.config.max_size, self.config.exonic_only)
+                record = fake.fake_variant_record(
+                    anno=anno, genome=genome, tx_id=tx_id,
+                    max_size=self.config.max_size,
+                    exonic_only=self.config.exonic_only,
+                    snv_frac=self.config.snv_frac
+                )
                 if record.type == 'SNV':
                     self.record.n_snv += 1
                 else:
@@ -575,11 +584,12 @@ class FuzzTestCase():
 class FuzzTestConfig():
     """ Fuzz test config """
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
-            min_variants:int, exonic_only:bool, fusion_frac:bool, circ_rna_frac:bool,
-            ci_ratio:float, alt_splice_frac:bool, cleavage_rule:str, cleavage_exception:str,
-            miscleavage:int, min_mw:int, min_length:int, max_length:int,
-            temp_dir:Path, output_dir:Path, ref_dir:Path, fuzz_start:datetime=None,
-            fuzz_end:datetime=None, seed:int=None, nthreads:int=1):
+            min_variants:int, exonic_only:bool, snv_frac:bool, fusion_frac:bool,
+            circ_rna_frac:bool, ci_ratio:float, alt_splice_frac:bool, cleavage_rule:str,
+            cleavage_exception:str, miscleavage:int, min_mw:int, min_length:int,
+            max_length:int, temp_dir:Path, output_dir:Path, ref_dir:Path,
+            fuzz_start:datetime=None, fuzz_end:datetime=None, seed:int=None,
+            nthreads:int=1):
         """ constructor """
         self.tx_id = tx_id
         self.n_iter = n_iter
@@ -587,6 +597,7 @@ class FuzzTestConfig():
         self.max_variants = max_variants
         self.min_vairants = min_variants
         self.exonic_only = exonic_only
+        self.snv_frac = snv_frac
         self.fusion_frac = fusion_frac
         self.circ_rna_frac = circ_rna_frac
         self.ci_ratio = ci_ratio
@@ -719,6 +730,7 @@ def main(args:argparse.Namespace):
         max_variants=args.max_variants,
         min_variants=args.min_variants,
         exonic_only=args.exonic_only,
+        snv_frac=args.snv_frac,
         fusion_frac=args.fusion_frac,
         alt_splice_frac=args.alt_splice_frac,
         circ_rna_frac=args.circ_rna_frac,
