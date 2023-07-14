@@ -143,8 +143,8 @@ class FuzzRecord():
     """ Record of the fuzz test result for a single test case """
     def __init__(self, _id:str, status:str, submitted:datetime,
             completed:datetime, work_dir:Path=None, n_var:int=None,
-            n_exonic:int=None, n_fusion:int=0, n_circ_rna:int=0,
-            n_alt_splice:int=0, call_variant_start:datetime=None,
+            n_exonic:int=None, n_snv:int=0, n_indel:int=0, n_fusion:int=0,
+            n_circ_rna:int=0, n_alt_splice:int=0, call_variant_start:datetime=None,
             call_variant_end:datetime=None, brute_force_start:datetime=None,
             brute_force_end:datetime=None):
         """ constructor """
@@ -155,9 +155,12 @@ class FuzzRecord():
         self.work_dir = work_dir
         self.n_var = n_var
         self.n_exonic = n_exonic
+        self.n_snv = n_snv
+        self.n_indel = n_indel
         self.n_fusion = n_fusion
         self.n_circ_rna = n_circ_rna
         self.n_alt_splice = n_alt_splice
+        self.n_snv = n_snv
         self.call_variant_start = call_variant_start
         self.call_variant_end = call_variant_end
         self.brute_force_start = brute_force_start
@@ -258,8 +261,8 @@ class FuzzRecord():
             if self.brute_force_start and self.brute_force_end else '-'
         return '\t'.join([
             self.id, self.status, str(self.n_var), str(self.n_exonic),
-            str(self.n_fusion), str(self.n_circ_rna), str(self.n_alt_splice),
-            submitted, completed,
+            str(self.n_snv), str(self.n_indel), str(self.n_fusion),
+            str(self.n_circ_rna), str(self.n_alt_splice), submitted, completed,
             call_variant_start, call_variant_end, call_variant_time,
             brute_force_start, brute_force_end, brute_force_time
         ])
@@ -268,9 +271,8 @@ class FuzzRecord():
     def tsv_header() -> str:
         """ get TSV header """
         return '\t'.join([
-            'id', 'status', 'num_var', 'num_exonic',
-            'n_fusion', 'n_circ_rna', 'n_alt_splice',
-            'submitted', 'completed',
+            'id', 'status', 'num_var', 'num_exonic', 'n_snv', 'n_indel',
+            'n_fusion', 'n_circ_rna', 'n_alt_splice', 'submitted', 'completed',
             'call_variant_start', 'call_variant_end', 'call_variant_time',
             'brute_force_start', 'brute_force_end', 'brute_force_time'
         ])
@@ -443,6 +445,10 @@ class FuzzTestCase():
             elif var_type == 'SNV':
                 record = fake.fake_variant_record(anno, genome, tx_id,
                     self.config.max_size, self.config.exonic_only)
+                if record.type == 'SNV':
+                    self.record.n_snv += 1
+                else:
+                    self.record.n_indel += 1
             else:
                 raise ValueError(f"var_type of {var_type} can not be recognized.")
             records.append(record)
