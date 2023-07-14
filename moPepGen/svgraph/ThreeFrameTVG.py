@@ -712,7 +712,7 @@ class ThreeFrameTVG():
         accepter_seq.orf = None
         accepter_variant_records = variant_pool.filter_variants(
             tx_ids=[accepter_tx_id], exclude_type=exclude_variant_types,
-            start=breakpoint_tx, return_coord='transcript', intron=False
+            start=breakpoint_gene, return_coord='transcript', intron=False
         )
 
         # add the variant as global variant
@@ -1226,7 +1226,7 @@ class ThreeFrameTVG():
                 bridge_out.add(cur)
                 continue
 
-            if not self.is_circ_rna():
+            if not self.is_circ_rna() and cur not in members:
                 if cur.subgraph_id != start.subgraph_id:
                     if not cur.is_inframe_subgraph(start, end):
                         subgraph_out.add(cur)
