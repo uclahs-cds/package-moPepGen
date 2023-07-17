@@ -235,7 +235,8 @@ class MiscleavedNodes():
                 continue
 
             seq = Seq(''.join(seqs_to_join))
-            if not seq in pool and seq in denylist:
+            is_in_denylist = seq in denylist and (not is_start_codon or seq[1:] in denylist)
+            if not seq in pool and is_in_denylist:
                 continue
 
             metadata.is_pure_circ_rna = self.is_circ_rna \

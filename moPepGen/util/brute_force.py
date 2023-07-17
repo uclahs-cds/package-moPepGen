@@ -1000,7 +1000,9 @@ class BruteForceVariantPeptideCaller():
                     if is_mrna_end_nf and tx_rhs + 3 > len(seq):
                         continue
                     peptide = aa_seq.seq[lhs:rhs]
-                    if str(peptide) in denylist:
+                    is_in_denylist = str(peptide) in denylist \
+                        and (not lhs == 0 or str(peptide[1:]) in denylist)
+                    if is_in_denylist:
                         continue
                     tx_lrange = (cds_start + lrange[0] * 3, cds_start + lrange[1] * 3)
                     if k == len(sites) - 1 \
