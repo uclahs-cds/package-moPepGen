@@ -735,7 +735,11 @@ class Fuzzer():
             case = FuzzTestCase(config)
             cases.append(case)
             if len(cases) >= config.nthreads or i == self.config.n_iter - 1:
-                res:List[FuzzTestCase] = pool.map(_run_fuzz, cases)
+                res:List[FuzzTestCase]
+                if self.config.nthreads == 1:
+                    res = map(_run_fuzz, cases)
+                else:
+                    res = pool.map(_run_fuzz, cases)
                 for case in res:
                     self.handle.write(case.record.to_tsv() + '\n')
                     self.handle.flush()
