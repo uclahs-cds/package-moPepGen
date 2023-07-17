@@ -1,0 +1,13 @@
+chrF	.	gene	1	1131	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	transcript	1	1131	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201; is_protein_coding true;
+chrF	.	selenocysteine	257	259	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	exon	1	58	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	CDS	17	58	.	+	0	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	CDS	242	278	.	+	2	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	exon	242	278	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	CDS	687	752	.	+	1	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	exon	687	752	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	CDS	1067	1074	.	+	1	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	exon	1067	1131	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	UTR	1	16	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
+chrF	.	UTR	1075	1131	.	+	.	 gene_id FAKEG00000201; transcript_id FAKET00000201; protein_id FAKEP00000201;
