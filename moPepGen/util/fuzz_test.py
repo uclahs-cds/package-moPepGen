@@ -73,13 +73,13 @@ def parse_args(subparsers:argparse._SubParsersAction
         '--snv-frac',
         type=float,
         default=1,
-        help='Fraction of SNVs to simulate.'
+        help='Fraction of SNVs to simulate over INDEL in any test case.'
     )
     parser.add_argument(
         '--snv-only-frac',
         type=float,
         default=1,
-        help='Fraction of test cases to be SNV only.'
+        help='Fraction of test cases to be SNV only (no INDEL).'
     )
     parser.add_argument(
         '--fusion-frac',
