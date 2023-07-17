@@ -1538,7 +1538,8 @@ class ThreeFrameTVG():
 
         for subgraph in subgraph_outs:
             for e in subgraph.out_edges:
-                end_nodes.add(e.out_node)
+                if e.out_node not in members:
+                    end_nodes.add(e.out_node)
 
         new_nodes:Set[TVGNode] = set()
         queue = deque()
