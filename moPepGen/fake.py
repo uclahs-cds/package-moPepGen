@@ -631,7 +631,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
         n_codons = int(cds_len/3)
         offset = 1
         for i in range(n_sec):
-            if offset >= n_codons - 1:
+            if offset >= n_codons - 2:
                 break
             while True:
                 sec_pos_codon = random.randint(offset, n_codons - 2)
