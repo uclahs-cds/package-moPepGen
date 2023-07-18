@@ -1264,7 +1264,7 @@ class ThreeFrameTVG():
         return bridge_in, bridge_out, subgraph_in, subgraph_out
 
     @staticmethod
-    def find_other_subgraph_end_nodes(node:TVGNode) -> Set[TVGNode]:
+    def find_other_subgraph_end_nodes(node:TVGNode, members:Set[TVGNode]) -> Set[TVGNode]:
         """ Find parallel subgraph end nodes """
         end_nodes = set()
         for out_node in node.get_out_nodes():
@@ -1275,6 +1275,22 @@ class ThreeFrameTVG():
                         end_node.subgraph_id == node.subgraph_id and\
                         end_node.reading_frame_index == node.reading_frame_index:
                     end_nodes.add(end_node)
+        for in_node in node.get_in_nodes():
+            for out_node in in_node.get_out_nodes():
+                if out_node in members \
+                        and out_node.get_first_rf_index() == node.get_first_rf_index() \
+                        and out_node.get_first_subgraph_id() == node.get_first_subgraph_id():
+                    end_nodes.add(out_node)
+        return end_nodes
+
+    @staticmethod
+    def find_other_member_end_nodes(end_node:TVGNode, members:Iterable[TVGNode]) -> Set[TVGNode]:
+        """ """
+        end_nodes = set()
+        for member in members:
+            for out_node in member.get_out_nodes():
+                if out_node not in members:
+                    end_nodes.add(member)
         return end_nodes
 
     def is_fusion_subgraph_out(self, up:TVGNode, down:TVGNode) -> bool:
@@ -1318,7 +1334,7 @@ class ThreeFrameTVG():
         if not node.get_reference_next().out_edges:
             return node.get_reference_next(), set()
 
-        def is_candidate_out_node(x, y):
+        def is_candidate_out_node(x:TVGNode, y:TVGNode):
             # Note: have to use y.subgraph_id because for deletion, subgraph_id
             # is different from get_first_subgraph_id()
             # try:
@@ -1520,7 +1536,7 @@ class ThreeFrameTVG():
 
         if not self.is_circ_rna() and end_node.is_subgraph_end():
             subgraph_ends = {end_node}
-            subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node))
+            subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node, members))
             end_nodes = set()
             if len(subgraph_ends) > 1:
                 for subgraph_end in subgraph_ends:
