@@ -131,7 +131,7 @@ class PVGOrf():
         ORF start site. """
         if node.seq.locations:
             loc = node.seq.locations[-1]
-            i = loc.ref.end * 3 - loc.query.end_offset
+            i = loc.get_ref_dna_end()
             subgraph_id = node.seq.locations[-1].ref.seqname
         else:
             for v in reversed(node.variants):

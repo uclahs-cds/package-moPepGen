@@ -32,7 +32,14 @@ class PVGCollapseNode(PVGNode):
             and {v.variant for v in self.variants if v.variant.is_indel()} \
                 == {v.variant for v in other.variants if v.variant.is_indel()} \
             and self.subgraph_id == other.subgraph_id \
-            and self.level == other.level
+            and self.level == other.level \
+            and (
+                (
+                    not any(v.variant.is_circ_rna() for v in self.variants)
+                    and not any(v.variant.is_circ_rna() for v in other.variants)
+                )
+                or {v.variant.id for v in self.variants} == {v.variant.id for v in other.variants}
+            )
 
         if result and hasattr(other, 'match'):
             other.match = self
@@ -54,10 +61,12 @@ class PVGCollapseNode(PVGNode):
 
 class PVGNodeCollapser():
     """ Collapse PVGNode """
-    def __init__(self, pool:Set[PVGNode]=None, mapper:Dict[PVGNode, PVGNode]=None):
+    def __init__(self, pool:Set[PVGNode]=None, mapper:Dict[PVGNode, PVGNode]=None,
+            is_circ_rna:bool=False):
         """ constructor """
         self.pool = pool or set()
         self.mapper = mapper or {}
+        self.is_circ_rna = is_circ_rna
 
     @staticmethod
     def first_is_stop_altering(first:PVGNode, second:PVGNode) -> bool:

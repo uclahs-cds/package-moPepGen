@@ -28,7 +28,8 @@ def create_random_dna_sequence(size:int) -> str:
     return ''.join(random.choices(DNA_ALPHABET, k=size))
 
 def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
-        tx_id:str, max_size:int, exonic_only:bool)->VariantRecord:
+        tx_id:str, var_type:str, max_size:int, exonic_only:bool
+        )->VariantRecord:
     """ Create a fake VariantRecord object """
     tx_model = anno.transcripts[tx_id]
     gene_id = tx_model.transcript.gene_id
@@ -36,8 +37,13 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
     chrom = gene_model.chrom
     gene_seq = gene_model.get_gene_sequence(genome[chrom])
 
-    frames_shifted = random.randint(-max_size + 1, max_size - 1)
-    var_type = 'SNV' if frames_shifted == 0 else 'INDEL'
+    if var_type == 'SNV':
+        frames_shifted = 0
+    else:
+        while True:
+            frames_shifted = random.randint(-max_size + 1, max_size - 1)
+            if frames_shifted != 0:
+                break
     tx_start = tx_model.transcript.location.start
     tx_end = tx_model.transcript.location.end
     if tx_model.transcript.strand == -1:

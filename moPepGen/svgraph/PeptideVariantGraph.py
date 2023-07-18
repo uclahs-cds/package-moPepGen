@@ -1147,7 +1147,7 @@ class PeptideVariantGraph():
                     orf_i_2 = orf_i.copy()
                     if orf_i_2.node_is_at_least_one_loop_downstream(
                                 out_node, self.subgraphs, circ_rna):
-                        if orf_i.is_valid_orf(out_node, self.subgraphs, circ_rna):
+                        if orf_i_2.is_valid_orf(out_node, self.subgraphs, circ_rna):
                             filtered_orfs.append(orf_i_2)
                     else:
                         orf_i_2.start_gain.update({x.variant for x in out_node.variants

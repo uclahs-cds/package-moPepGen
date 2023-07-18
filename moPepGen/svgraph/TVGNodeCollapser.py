@@ -9,7 +9,7 @@ from moPepGen.svgraph.TVGNode import TVGNode
 class TVGCollapseNode(TVGNode):
     """ Node for collapsing """
     @classmethod
-    def from_pvg_node(cls, node:TVGNode) -> TVGCollapseNode:
+    def from_tvg_node(cls, node:TVGNode) -> TVGCollapseNode:
         """ Convert from a PVGNode """
         collapse_node = node.copy()
         collapse_node.__class__ = cls
@@ -74,7 +74,7 @@ class TVGNodeCollapser():
 
     def collapse(self, node:TVGNode) -> TVGNode:
         """ Collapse the given node if it has the same in the pool """
-        collapse_node = TVGCollapseNode.from_pvg_node(node)
+        collapse_node = TVGCollapseNode.from_tvg_node(node)
         same_collapse_node = get_equivalent(self.pool, collapse_node)
         if same_collapse_node:
             same_node = self.mapper[same_collapse_node]

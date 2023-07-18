@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.2.1] - 2023-07-14
+
+- Fixed fuzzTest to take multiple CPUs and use temporary directory.
+
+- Fixed issue in callVariant of circRNA with a SNV being silent in the first loop but not in the second.
+
 ## [1.2.0] - 2023-07-04
 
 ### Fixed
