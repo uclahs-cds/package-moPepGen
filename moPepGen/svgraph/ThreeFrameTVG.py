@@ -1277,15 +1277,15 @@ class ThreeFrameTVG():
                     end_nodes.add(end_node)
         for in_node in node.get_in_nodes():
             for out_node in in_node.get_out_nodes():
-                if out_node in members \
+                if not any(x in members for x in out_node.get_out_nodes()) \
                         and out_node.get_first_rf_index() == node.get_first_rf_index() \
                         and out_node.get_first_subgraph_id() == node.get_first_subgraph_id():
                     end_nodes.add(out_node)
         return end_nodes
 
     @staticmethod
-    def find_other_member_end_nodes(end_node:TVGNode, members:Iterable[TVGNode]) -> Set[TVGNode]:
-        """ """
+    def find_other_member_end_nodes(members:Iterable[TVGNode]) -> Set[TVGNode]:
+        """ Find other member end nodes """
         end_nodes = set()
         for member in members:
             for out_node in member.get_out_nodes():
