@@ -996,3 +996,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'comb/CPCG0196_ENST00000554360.5/brute_force.txt'
         reference = self.data_dir/'comb/CPCG0196_ENST00000554360.5'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case66(self):
+        """ Caught by fuzz test. A TVGNode was treated as an end node mistakenly
+        because it is an outgoing node of a in-frame subgraph.
+        """
+        gvf = [
+            self.data_dir/'fuzz/37/fake_variants.gvf',
+        ]
+        expected = self.data_dir/'fuzz/37/brute_force.txt'
+        reference = self.data_dir/'fuzz/37'
+        self.default_test_case(gvf, reference, expected)
