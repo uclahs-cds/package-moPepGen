@@ -660,7 +660,6 @@ class PeptideVariantGraph():
                     queue.appendleft(node)
                 continue
 
-            cur_seq = str(cur.seq.seq)
             first_site = cur.seq.find_first_cleave_or_stop_site(
                 rule=self.cleavage_params.enzyme,
                 exception=self.cleavage_params.exception
