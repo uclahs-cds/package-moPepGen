@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue in callVariant of circRNA with a SNV being silent in the first loop but not in the second.
 
+- Fixed issue that circRNA peptide nodes with and without a silent mutation were collapsed. #778
+
 ## [1.2.0] - 2023-07-04
 
 ### Fixed
@@ -25,7 +27,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed `generateIndex` that symlink was not created properly for GTF with `--gtf-symlink`.
 
 - Fixed matplotlib warning message #742
-  
+
 - Fixed `parseVEP` that insertions not parsed successfully if the location is a single base. #766
 
 - Fixed `callVariant` that peptides with upstream cleavage altering mutations were not called. #670
