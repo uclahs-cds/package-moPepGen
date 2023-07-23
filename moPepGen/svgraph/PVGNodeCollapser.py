@@ -38,7 +38,13 @@ class PVGCollapseNode(PVGNode):
                     not any(v.variant.is_circ_rna() for v in self.variants)
                     and not any(v.variant.is_circ_rna() for v in other.variants)
                 )
-                or {v.variant.id for v in self.variants} == {v.variant.id for v in other.variants}
+                or {
+                    (v.variant.id, v.location.seqname)
+                    for v in self.variants if not v.variant.is_circ_rna()
+                } == {
+                    (v.variant.id, v.location.seqname)
+                    for v in other.variants if not v.variant.is_circ_rna()
+                }
             )
 
         if result and hasattr(other, 'match'):
