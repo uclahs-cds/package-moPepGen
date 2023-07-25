@@ -951,11 +951,11 @@ class PVGNode():
                 return True
         return False
 
-    def is_hybrid_node(self, tree:SubgraphTree) -> bool:
+    def is_hybrid_node(self, tree:SubgraphTree, check_hard:bool=True) -> bool:
         """ Checks if the node is hybrid. A hybrid node is when two parts of
         the node sequence are from different subgraphs, and have the different
         states. """
-        variants = {v.variant for v in self.variants}
+        variants = {v.variant for v in self.variants if not v.variant.is_circ_rna()}
 
         seq_iter = iter(self.seq.locations)
         var_iter = iter(self.variants)
@@ -970,10 +970,11 @@ class PVGNode():
         def set_hard_start_and_end(loc, start, end):
             start_hard = start
             end_hard = end
-            if loc.start_offset != 0:
-                start_hard += 1
-            if loc.end_offset != 0:
-                end_hard -= 1
+            if check_hard:
+                if loc.start_offset != 0:
+                    start_hard += 1
+                if loc.end_offset != 0:
+                    end_hard -= 1
             return start_hard, end_hard
 
         while cur_seq or cur_var:
