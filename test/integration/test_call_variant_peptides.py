@@ -1007,3 +1007,18 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/37/brute_force.txt'
         reference = self.data_dir/'fuzz/37'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case67(self):
+        """ In this test case, the variant 11-G/C is a missense mutation in the
+        first loop of a circRNA and a silent mutation in the second loop. The
+        circRNA onlye contains a very small exon, the translated peptide spans
+        over the first back splice site. The peptide sequence with and without
+        the silent mutation in the 2nd loop should not be collapsed.
+        """
+        gvf = [
+            self.data_dir/'fuzz/38/fake_variants.gvf',
+            self.data_dir/'fuzz/38/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/38/brute_force.txt'
+        reference = self.data_dir/'fuzz/38'
+        self.default_test_case(gvf, reference, expected)
