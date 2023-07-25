@@ -221,6 +221,10 @@ class PVGOrf():
         return False
 
     def is_compatible_with_variant(self, variant:seqvar.VariantRecordWithCoordinate) -> bool:
+        """ Checks if the ORF is compatible with a given variant. A variant is
+        incompatible if it overlaps with any of the locations of the ORF start
+        node but not carried by the start node or is not a start gain variant
+        already. """
         orf_variants = {v.variant.id for v in self.start_node.variants}
         orf_variants.update({v.id for v in self.start_gain})
 

@@ -964,7 +964,17 @@ class PVGNode():
         cur_var = next(var_iter, None)
 
         start, end = 0, 0
+        start_hard, end_hard = 0, 0
         cur_level = -1
+
+        def set_hard_start_and_end(loc, start, end):
+            start_hard = start
+            end_hard = end
+            if loc.start_offset != 0:
+                start_hard += 1
+            if loc.end_offset != 0:
+                end_hard -= 1
+            return start_hard, end_hard
 
         while cur_seq or cur_var:
             if cur_var and cur_var.variant.is_circ_rna():
@@ -992,18 +1002,32 @@ class PVGNode():
                 if cur_level == -1:
                     cur_level = seq_level
                     start, end = seq_start, seq_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_seq.query, start, end)
+
                 elif seq_level > cur_level:
                     seg = self[start:end]
                     if seg.is_missing_any_variant(variants):
                         return True
+                    if start_hard < end_hard:
+                        seg = self[start_hard:end_hard]
+                        if seg.is_missing_any_variant(variants):
+                            return True
                     cur_level = seq_level
                     start, end = seq_start, seq_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_seq.query, start, end)
                 else:
                     end = seq_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_seq.query, start, end)
 
                 if cur_seq is self.seq.locations[-1] and not cur_var:
-                    seg = self[start:seq_end]
-                    return seg.is_missing_any_variant(variants)
+                    end = seq_end
+                    seg = self[start:end]
+                    if seg.is_missing_any_variant(variants):
+                        return True
+                    if start_hard < end_hard:
+                        seg = self[start_hard:end_hard]
+                        if seg.is_missing_any_variant(variants):
+                            return True
 
                 cur_seq = next(seq_iter, None)
 
@@ -1011,18 +1035,31 @@ class PVGNode():
                 if cur_level == -1:
                     cur_level = var_level
                     start, end = var_start, var_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_var.location, start, end)
                 elif var_level > cur_level:
                     seg = self[start:end]
                     if seg.is_missing_any_variant(variants):
                         return True
+                    if start_hard < end_hard:
+                        seg = self[start_hard:end_hard]
+                        if seg.is_missing_any_variant(variants):
+                            return True
                     cur_level = var_level
                     start, end = var_start, var_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_var.location, start, end)
                 else:
                     end = var_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_var.location, start, end)
 
                 if cur_var is self.variants[-1] and not cur_seq:
-                    seg = self[start:var_end]
-                    return seg.is_missing_any_variant(variants)
+                    end = var_end
+                    seg = self[start:end]
+                    if seg.is_missing_any_variant(variants):
+                        return True
+                    if start_hard < end_hard:
+                        seg = self[start_hard:end_hard]
+                        if seg.is_missing_any_variant(variants):
+                            return True
 
                 cur_var = next(var_iter, None)
 

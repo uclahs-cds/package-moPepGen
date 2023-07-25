@@ -20,6 +20,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed that circRNA peptides that carry inidels incompatible with the orf start node should not be called. #780
 
+- Fixed that hybrid node not identified if the variant is in the of an exon. #782
+
 ## [1.2.0] - 2023-07-04
 
 ### Fixed

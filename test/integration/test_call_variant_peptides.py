@@ -1035,3 +1035,16 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/39/brute_force.txt'
         reference = self.data_dir/'fuzz/39'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case69(self):
+        """ In this test case, a peptide node that contains an indel, which is
+        incompatible with the the node of the orf start (meaning that the orf
+        start node locations overlap with the variant). #780
+        """
+        gvf = [
+            self.data_dir/'fuzz/40/fake_variants.gvf',
+            self.data_dir/'fuzz/40/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/40/brute_force.txt'
+        reference = self.data_dir/'fuzz/40'
+        self.default_test_case(gvf, reference, expected)
