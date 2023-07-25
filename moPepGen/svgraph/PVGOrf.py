@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Set, List
 import copy
 from moPepGen import circ, seqvar
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
@@ -18,6 +19,7 @@ class PVGOrf():
         self.start_node = start_node
         self.subgraph_id = subgraph_id
         self.node_offset = node_offset
+        self._orf_node_locs = None
 
     def copy(self) -> PVGOrf:
         """ copy """
@@ -69,6 +71,20 @@ class PVGOrf():
     def __hash__(self):
         """ hash """
         return hash((tuple(self.orf), frozenset(self.start_gain)))
+
+    def get_orf_node_locs(self) -> List[FeatureLocation]:
+        """ Get locations of the orf node. """
+        if self._orf_node_locs:
+            return self._orf_node_locs
+        locs = {
+            loc.get_ref_dna_location() for loc in self.start_node.seq.locations
+        }
+        locs.update([
+            v.variant.location for v in self.start_node.variants
+            if not v.variant.is_circ_rna()
+        ])
+        self._orf_node_locs = locs
+        return sorted(locs)
 
     def location_is_at_least_one_loop_downstream(self, i:int, subgraph_id:str,
             subgraphs:SubgraphTree, circ_rna:circ.CircRNAModel) -> bool:
@@ -152,7 +168,7 @@ class PVGOrf():
         upstream_variants = upstream_variants or set()
 
         if not self.node_is_at_least_one_loop_downstream(node, subgraphs, circ_rna):
-            return True
+            return not self.has_any_incompatible_variant(node)
 
         start_gain = {x for x in self.start_gain if not x.is_circ_rna()}
         start_gain.update(upstream_variants)
@@ -192,3 +208,26 @@ class PVGOrf():
                 downstream_valid = True
 
         return downstream_valid
+
+    def has_any_incompatible_variant(self, node:PVGNode) -> bool:
+        """ Checks if the orf is missing any frameshift variants before the
+        orf start node. """
+        for v in node.variants:
+            if v.variant.is_circ_rna():
+                continue
+
+            if not self.is_compatible_with_variant(v):
+                return True
+        return False
+
+    def is_compatible_with_variant(self, variant:seqvar.VariantRecordWithCoordinate) -> bool:
+        orf_variants = {v.variant.id for v in self.start_node.variants}
+        orf_variants.update({v.id for v in self.start_gain})
+
+        orf_node_locs = self.get_orf_node_locs()
+
+        orf_subgraph = self.start_node.get_first_subgraph_id()
+
+        return variant.location.seqname == orf_subgraph \
+            or not any(variant.variant.location.overlaps(loc) for loc in orf_node_locs) \
+            or variant.variant.id in orf_variants

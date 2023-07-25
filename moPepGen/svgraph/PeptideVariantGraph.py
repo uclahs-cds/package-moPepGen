@@ -1148,14 +1148,16 @@ class PeptideVariantGraph():
                 filtered_orfs = []
                 for orf_i in cur_orfs:
                     orf_i_2 = orf_i.copy()
-                    if orf_i_2.node_is_at_least_one_loop_downstream(
+                    if not orf_i_2.is_valid_orf(out_node, self.subgraphs, circ_rna):
+                        continue
+
+                    if not orf_i_2.node_is_at_least_one_loop_downstream(
                                 out_node, self.subgraphs, circ_rna):
-                        if orf_i_2.is_valid_orf(out_node, self.subgraphs, circ_rna):
-                            filtered_orfs.append(orf_i_2)
-                    else:
-                        orf_i_2.start_gain.update({x.variant for x in out_node.variants
-                            if x.not_cleavage_altering()})
-                        filtered_orfs.append(orf_i_2)
+                        for v in out_node.variants:
+                            if v.not_cleavage_altering() \
+                                    and orf_i_2.is_compatible_with_variant(v):
+                                orf_i_2.start_gain.add(v.variant)
+                    filtered_orfs.append(orf_i_2)
                 if not filtered_orfs:
                     cur_in_cds = False
             else:

@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that circRNA peptide nodes with and without a silent mutation were collapsed. #778
 
+- Fixed that circRNA peptides that carry inidels incompatible with the orf start node should not be called. #780
+
 ## [1.2.0] - 2023-07-04
 
 ### Fixed

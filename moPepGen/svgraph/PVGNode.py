@@ -202,6 +202,69 @@ class PVGNode():
         """ Get the last fragment's reading frame index """
         return self._get_nth_rf_index(-1)
 
+    def _get_nth_subgraph_id(self, i) -> str:
+        """ Get the nth fragment's subgraph ID """
+        if (i > 0 or i < -1) and not self.has_multiple_segments():
+            raise ValueError('Node does not have multiple segments')
+
+        locations = [(loc.query, loc.ref.seqname) for loc in self.seq.locations]
+        locations += [(v.location, v.location.seqname) for v in self.variants
+            if not v.variant.is_circ_rna()]
+
+        locations = sorted(locations, key=lambda x: x[0])
+
+        return locations[i][1]
+
+    def get_first_subgraph_id(self) -> str:
+        """ Get the first fragment's subgraph ID """
+        return self._get_nth_subgraph_id(0)
+
+    def get_last_subgraph_id(self) -> str:
+        """ Get the last fragment's subgraph ID """
+        return self._get_nth_subgraph_id(-1)
+
+    def get_first_dna_ref_position(self) -> int:
+        """ Get the first DNA reference position """
+        if self.seq.locations:
+            first_seq_loc = self.seq.locations[0]
+        else:
+            first_seq_loc = None
+
+        non_circ_variants = [v for v in self.variants if not v.variant.is_circ_rna()]
+        if non_circ_variants:
+            first_var_loc = non_circ_variants[0].location
+        else:
+            first_var_loc = None
+
+        if not first_seq_loc and not first_var_loc:
+            raise ValueError(f"The node (seq={str(self.seq.seq)}) does not have loc")
+
+        if not first_var_loc or first_seq_loc.query < first_var_loc:
+            return first_seq_loc.get_ref_dna_start()
+
+        return non_circ_variants[0].variant.location.end
+
+    def get_last_dna_ref_position(self) -> int:
+        """ Get the first DNA reference position """
+        if self.seq.locations:
+            last_seq_loc = self.seq.locations[-1]
+        else:
+            last_seq_loc = None
+
+        non_circ_variants = [v for v in self.variants if not v.variant.is_circ_rna()]
+        if non_circ_variants:
+            last_var_loc = non_circ_variants[-1].location
+        else:
+            last_var_loc = None
+
+        if not last_seq_loc and not last_var_loc:
+            raise ValueError(f"The node (seq={str(self.seq.seq)}) does not have loc")
+
+        if not last_var_loc or last_seq_loc.query > last_var_loc:
+            return last_seq_loc.get_ref_dna_end()
+
+        return non_circ_variants[-1].variant.location.end
+
     def remove_out_edges(self) -> None:
         """ remove output nodes """
         for node in copy.copy(self.out_nodes):
