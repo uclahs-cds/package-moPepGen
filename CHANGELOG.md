@@ -18,9 +18,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that circRNA peptide nodes with and without a silent mutation were collapsed. #778
 
-- Fixed that circRNA peptides that carry inidels incompatible with the orf start node should not be called. #780
+- Fixed that circRNA peptides that carry indels incompatible with the orf start node should not be called. #780
 
-- Fixed that hybrid node not identified if the variant is in the of an exon. #782
+- Fixed that hybrid node was not identified if the variant is in the end of an exon. #782
 
 - Fixed that in circRNA, cleavage gain from upstream node is added to the the wrong ORF. #783
 
