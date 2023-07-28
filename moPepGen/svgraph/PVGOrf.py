@@ -12,7 +12,8 @@ class PVGOrf():
     """ Helper class for an ORF and its corresponding start gain variants. """
     def __init__(self, orf:List[int,int]=None,
             start_gain:Set[seqvar.VariantRecord]=None, start_node:PVGNode=None,
-            subgraph_id:str=None, node_offset:int=None):
+            subgraph_id:str=None, node_offset:int=None,
+            cleavage_gain:Set[seqvar.VariantRecord]=None):
         """ constructor """
         self.orf = orf or None
         self.start_gain = start_gain or set()
@@ -20,14 +21,17 @@ class PVGOrf():
         self.subgraph_id = subgraph_id
         self.node_offset = node_offset
         self._orf_node_locs = None
+        self.cleavage_gain = cleavage_gain or set()
 
     def copy(self) -> PVGOrf:
         """ copy """
         orf = self.orf
         start_gain = copy.copy(self.start_gain)
+        cleavage_gain = copy.copy(self.cleavage_gain)
         return self.__class__(
             orf=orf, start_gain=start_gain, start_node=self.start_node,
-            subgraph_id=self.subgraph_id, node_offset=self.node_offset
+            subgraph_id=self.subgraph_id, node_offset=self.node_offset,
+            cleavage_gain=cleavage_gain
         )
 
     def __eq__(self, other:PVGOrf) -> bool:
