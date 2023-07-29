@@ -1053,8 +1053,12 @@ class PeptideVariantGraph():
 
         if in_cds and not target_node.npop_collapsed:
             cur_copy = target_node.copy(in_nodes=False)
-            additional_variants = cursor.cleavage_gain
             cur_orfs = copy.copy(orfs)
+            if self.is_circ_rna():
+                additional_variants = []
+            else:
+                additional_variants = cursor.cleavage_gain
+
             node_list.append((cur_copy, cur_orfs, False, additional_variants))
             trash.add(cur_copy)
 
@@ -1085,7 +1089,11 @@ class PeptideVariantGraph():
                     subgraph_id=orf_subgraph_id, node_offset = start_index
                 )
                 orfs.append(orf)
-                additional_variants = copy.copy(cleavage_gain_down)
+                if self.is_circ_rna():
+                    additional_variants = []
+                    orf.cleavage_gain = set(cleavage_gain_down)
+                else:
+                    additional_variants = copy.copy(cleavage_gain_down)
                 cur_orfs = [orfs[0]] if traversal.orf_assignment == 'min' else [orfs[-1]]
                 node_list.append((cur_copy, cur_orfs, True, additional_variants))
                 trash.add(cur_copy)
@@ -1141,21 +1149,27 @@ class PeptideVariantGraph():
                     for x in cur_orfs:
                         x.start_gain.add(variant.variant)
 
-            cur_cleavage_gain = copy.copy(cleavage_gain)
+            if self.is_circ_rna():
+                cur_cleavage_gain = []
+            else:
+                cur_cleavage_gain = copy.copy(cleavage_gain)
 
             if self.is_circ_rna():
                 circ_rna = traversal.circ_rna
                 filtered_orfs = []
                 for orf_i in cur_orfs:
                     orf_i_2 = orf_i.copy()
-                    if orf_i_2.node_is_at_least_one_loop_downstream(
+                    if not orf_i_2.is_valid_orf(out_node, self.subgraphs, circ_rna):
+                        continue
+
+                    if not orf_i_2.node_is_at_least_one_loop_downstream(
                                 out_node, self.subgraphs, circ_rna):
-                        if orf_i_2.is_valid_orf(out_node, self.subgraphs, circ_rna):
-                            filtered_orfs.append(orf_i_2)
-                    else:
-                        orf_i_2.start_gain.update({x.variant for x in out_node.variants
-                            if x.not_cleavage_altering()})
-                        filtered_orfs.append(orf_i_2)
+                        for v in out_node.variants:
+                            if v.not_cleavage_altering() \
+                                    and orf_i_2.is_compatible_with_variant(v):
+                                orf_i_2.start_gain.add(v.variant)
+                    orf_i_2.cleavage_gain = set(cleavage_gain)
+                    filtered_orfs.append(orf_i_2)
                 if not filtered_orfs:
                     cur_in_cds = False
             else:

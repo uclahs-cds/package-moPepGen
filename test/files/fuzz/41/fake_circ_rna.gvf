@@ -1,0 +1,25 @@
+##fileformat=VCFv4.2
+##mopepgen_version=1.2.1
+##parser=parseCIRCexplorer
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##source=
+##CHROM=<Description="Gene ID">
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=OFFSET,Number=+,Type=Integer,Description="Offsets of fragments (exons or introns)">
+##INFO=<ID=LENGTH,Number=+,Type=Integer,Description="Lengths of fragments (exons or introns)">
+##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+##INFO=<ID=ACCEPTER_GENE_ID,Number=1,Type=String,Description="3' Accepter Transcript's Gene ID">
+##INFO=<ID=ACCEPTER_TRANSCRIPT_ID,Number=1,Type=String,Description="3' Accepter Transcript's Transcript ID">
+##INFO=<ID=ACCEPTER_POSITION,Number=1,Type=Integer,Description="Position of the break point of the 3' accepter transcript">
+##POS=<Description="Gene coordinate of circRNA start">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+FAKEG00000957	583	CIRC-FAKET00000957-E2	.	.	.	.	OFFSET=0;LENGTH=60;INTRON=;TRANSCRIPT_ID=FAKET00000957;GENE_SYMBOL=;GENOMIC_POSITION=chrF:583

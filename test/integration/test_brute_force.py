@@ -401,3 +401,13 @@ class TestBruteForce(TestCaseIntegration):
         expected = self.data_dir/'fuzz/38/brute_force.txt'
         reference = self.data_dir/'fuzz/38'
         self.default_test_case(gvf, reference, expected)
+
+    def test_brute_force_fuzz_39(self):
+        """ Fuzz test 39 """
+        gvf = [
+            self.data_dir/'fuzz/39/fake_variants.gvf',
+            self.data_dir/'fuzz/39/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/39/brute_force.txt'
+        reference = self.data_dir/'fuzz/39'
+        self.default_test_case(gvf, reference, expected)

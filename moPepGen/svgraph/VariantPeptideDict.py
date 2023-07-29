@@ -207,6 +207,9 @@ class MiscleavedNodes():
                 for v in additional_variants:
                     if v.id not in variants:
                         variants[v.id] = v
+                for v in valid_orf.cleavage_gain:
+                    if v.id not in variants:
+                        variants[v.id] = v
                 for v in series.additional_variants:
                     if v.id not in variants:
                         variants[v.id] = v

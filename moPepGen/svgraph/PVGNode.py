@@ -202,6 +202,69 @@ class PVGNode():
         """ Get the last fragment's reading frame index """
         return self._get_nth_rf_index(-1)
 
+    def _get_nth_subgraph_id(self, i) -> str:
+        """ Get the nth fragment's subgraph ID """
+        if (i > 0 or i < -1) and not self.has_multiple_segments():
+            raise ValueError('Node does not have multiple segments')
+
+        locations = [(loc.query, loc.ref.seqname) for loc in self.seq.locations]
+        locations += [(v.location, v.location.seqname) for v in self.variants
+            if not v.variant.is_circ_rna()]
+
+        locations = sorted(locations, key=lambda x: x[0])
+
+        return locations[i][1]
+
+    def get_first_subgraph_id(self) -> str:
+        """ Get the first fragment's subgraph ID """
+        return self._get_nth_subgraph_id(0)
+
+    def get_last_subgraph_id(self) -> str:
+        """ Get the last fragment's subgraph ID """
+        return self._get_nth_subgraph_id(-1)
+
+    def get_first_dna_ref_position(self) -> int:
+        """ Get the first DNA reference position """
+        if self.seq.locations:
+            first_seq_loc = self.seq.locations[0]
+        else:
+            first_seq_loc = None
+
+        non_circ_variants = [v for v in self.variants if not v.variant.is_circ_rna()]
+        if non_circ_variants:
+            first_var_loc = non_circ_variants[0].location
+        else:
+            first_var_loc = None
+
+        if not first_seq_loc and not first_var_loc:
+            raise ValueError(f"The node (seq={str(self.seq.seq)}) does not have loc")
+
+        if not first_var_loc or first_seq_loc.query < first_var_loc:
+            return first_seq_loc.get_ref_dna_start()
+
+        return non_circ_variants[0].variant.location.end
+
+    def get_last_dna_ref_position(self) -> int:
+        """ Get the first DNA reference position """
+        if self.seq.locations:
+            last_seq_loc = self.seq.locations[-1]
+        else:
+            last_seq_loc = None
+
+        non_circ_variants = [v for v in self.variants if not v.variant.is_circ_rna()]
+        if non_circ_variants:
+            last_var_loc = non_circ_variants[-1].location
+        else:
+            last_var_loc = None
+
+        if not last_seq_loc and not last_var_loc:
+            raise ValueError(f"The node (seq={str(self.seq.seq)}) does not have loc")
+
+        if not last_var_loc or last_seq_loc.query > last_var_loc:
+            return last_seq_loc.get_ref_dna_end()
+
+        return non_circ_variants[-1].variant.location.end
+
     def remove_out_edges(self) -> None:
         """ remove output nodes """
         for node in copy.copy(self.out_nodes):
@@ -888,11 +951,11 @@ class PVGNode():
                 return True
         return False
 
-    def is_hybrid_node(self, tree:SubgraphTree) -> bool:
+    def is_hybrid_node(self, tree:SubgraphTree, check_hard:bool=True) -> bool:
         """ Checks if the node is hybrid. A hybrid node is when two parts of
         the node sequence are from different subgraphs, and have the different
         states. """
-        variants = {v.variant for v in self.variants}
+        variants = {v.variant for v in self.variants if not v.variant.is_circ_rna()}
 
         seq_iter = iter(self.seq.locations)
         var_iter = iter(self.variants)
@@ -901,7 +964,18 @@ class PVGNode():
         cur_var = next(var_iter, None)
 
         start, end = 0, 0
+        start_hard, end_hard = 0, 0
         cur_level = -1
+
+        def set_hard_start_and_end(loc, start, end):
+            start_hard = start
+            end_hard = end
+            if check_hard:
+                if loc.start_offset != 0:
+                    start_hard += 1
+                if loc.end_offset != 0:
+                    end_hard -= 1
+            return start_hard, end_hard
 
         while cur_seq or cur_var:
             if cur_var and cur_var.variant.is_circ_rna():
@@ -929,18 +1003,32 @@ class PVGNode():
                 if cur_level == -1:
                     cur_level = seq_level
                     start, end = seq_start, seq_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_seq.query, start, end)
+
                 elif seq_level > cur_level:
                     seg = self[start:end]
                     if seg.is_missing_any_variant(variants):
                         return True
+                    if start_hard < end_hard:
+                        seg = self[start_hard:end_hard]
+                        if seg.is_missing_any_variant(variants):
+                            return True
                     cur_level = seq_level
                     start, end = seq_start, seq_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_seq.query, start, end)
                 else:
                     end = seq_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_seq.query, start, end)
 
                 if cur_seq is self.seq.locations[-1] and not cur_var:
-                    seg = self[start:seq_end]
-                    return seg.is_missing_any_variant(variants)
+                    end = seq_end
+                    seg = self[start:end]
+                    if seg.is_missing_any_variant(variants):
+                        return True
+                    if start_hard < end_hard:
+                        seg = self[start_hard:end_hard]
+                        if seg.is_missing_any_variant(variants):
+                            return True
 
                 cur_seq = next(seq_iter, None)
 
@@ -948,18 +1036,31 @@ class PVGNode():
                 if cur_level == -1:
                     cur_level = var_level
                     start, end = var_start, var_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_var.location, start, end)
                 elif var_level > cur_level:
                     seg = self[start:end]
                     if seg.is_missing_any_variant(variants):
                         return True
+                    if start_hard < end_hard:
+                        seg = self[start_hard:end_hard]
+                        if seg.is_missing_any_variant(variants):
+                            return True
                     cur_level = var_level
                     start, end = var_start, var_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_var.location, start, end)
                 else:
                     end = var_end
+                    start_hard, end_hard = set_hard_start_and_end(cur_var.location, start, end)
 
                 if cur_var is self.variants[-1] and not cur_seq:
-                    seg = self[start:var_end]
-                    return seg.is_missing_any_variant(variants)
+                    end = var_end
+                    seg = self[start:end]
+                    if seg.is_missing_any_variant(variants):
+                        return True
+                    if start_hard < end_hard:
+                        seg = self[start_hard:end_hard]
+                        if seg.is_missing_any_variant(variants):
+                            return True
 
                 cur_var = next(var_iter, None)
 

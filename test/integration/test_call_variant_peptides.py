@@ -924,7 +924,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
 
     def test_call_variant_peptide_case60(self):
         """ Ensures that for circRNA a downstream peptide must have all
-        variants in the previous loop and not having any more.
+        variants in the previous loop and not have any additional variants.
         """
         gvf = [
             self.data_dir/'fuzz/32/fake_variants.gvf',
@@ -1021,4 +1021,43 @@ class TestCallVariantPeptides(TestCaseIntegration):
         ]
         expected = self.data_dir/'fuzz/38/brute_force.txt'
         reference = self.data_dir/'fuzz/38'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case68(self):
+        """ In this test case, a peptide node that contains an indel, which is
+        incompatible with the the node of the orf start (meaning that the orf
+        start node locations overlap with the variant). #780
+        """
+        gvf = [
+            self.data_dir/'fuzz/39/fake_variants.gvf',
+            self.data_dir/'fuzz/39/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/39/brute_force.txt'
+        reference = self.data_dir/'fuzz/39'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case69(self):
+        """ In this test case, a peptide node that contains an indel, which is
+        incompatible with the the node of the orf start (meaning that the orf
+        start node locations overlap with the variant). #780
+        """
+        gvf = [
+            self.data_dir/'fuzz/40/fake_variants.gvf',
+            self.data_dir/'fuzz/40/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/40/brute_force.txt'
+        reference = self.data_dir/'fuzz/40'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case70(self):
+        """ In peptide graph for noncoding transcripts, all possible ORFs are
+        kept for each node, but only one cursor (inbond node to outbound node)
+        is used per node. This causes a problem for circRNA because the cleavage
+        gain variant maybe added to wrong orf. """
+        gvf = [
+            self.data_dir/'fuzz/41/fake_variants.gvf',
+            self.data_dir/'fuzz/41/fake_circ_rna.gvf'
+        ]
+        expected = self.data_dir/'fuzz/41/brute_force.txt'
+        reference = self.data_dir/'fuzz/41'
         self.default_test_case(gvf, reference, expected)

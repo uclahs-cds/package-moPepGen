@@ -236,3 +236,10 @@ class MatchedLocation():
     def get_ref_dna_end(self) -> int:
         """ Get the end position of the sequence on the gene/transcript """
         return self.get_ref_codon_end() - self.query.end_offset
+
+    def get_ref_dna_location(self) -> FeatureLocation:
+        """ Get the reference location in dna coordinate """
+        return FeatureLocation(
+            start=self.get_ref_dna_start(),
+            end=self.get_ref_dna_end()
+        )

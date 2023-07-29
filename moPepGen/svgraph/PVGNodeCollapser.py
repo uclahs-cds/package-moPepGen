@@ -166,7 +166,20 @@ class PVGPopCollapseNode(PVGNode):
             and {v.variant for v in self.variants if v.variant.is_indel()} \
                 == {v.variant for v in other.variants if v.variant.is_indel()} \
             and self.subgraph_id == other.subgraph_id \
-            and self.level == other.level
+            and self.level == other.level \
+            and (
+                (
+                    not any(v.variant.is_circ_rna() for v in self.variants)
+                    and not any(v.variant.is_circ_rna() for v in other.variants)
+                )
+                or {
+                    (v.variant.id, v.location.seqname)
+                    for v in self.variants if not v.variant.is_circ_rna()
+                } == {
+                    (v.variant.id, v.location.seqname)
+                    for v in other.variants if not v.variant.is_circ_rna()
+                }
+            )
 
         if result and hasattr(other, 'match'):
             other.match = self
