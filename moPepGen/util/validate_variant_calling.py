@@ -114,7 +114,7 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path):
     args.min_mw = 500.
     args.min_length = 7
     args.max_length = 25
-    args.max_variants_per_node = 7
+    args.max_variants_per_node = 9
     args.additional_variants_per_misc = 2
     args.min_nodes_to_collapse = 30
     args.naa_to_collapse = 5
