@@ -1066,9 +1066,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ When checking whether a node in a circRNA graph is a hybride node,
         all fragments of the sequence must be checked. """
         gvf = [
-            self.data_dir/'fuzz/41/fake_variants.gvf',
-            self.data_dir/'fuzz/41/fake_circ_rna.gvf'
+            self.data_dir/'fuzz/42/fake_variants.gvf',
+            self.data_dir/'fuzz/42/fake_circ_rna.gvf'
         ]
-        expected = self.data_dir/'fuzz/41/brute_force.txt'
-        reference = self.data_dir/'fuzz/41'
+        expected = self.data_dir/'fuzz/42/brute_force.txt'
+        reference = self.data_dir/'fuzz/42'
         self.default_test_case(gvf, reference, expected)
