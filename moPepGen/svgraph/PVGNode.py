@@ -1020,7 +1020,11 @@ class PVGNode():
                     end = seq_end
                     start_hard, end_hard = set_hard_start_and_end(cur_seq.query, start, end)
 
-                if cur_seq is self.seq.locations[-1] and not cur_var:
+                if cur_seq is self.seq.locations[-1]:
+                    if cur_var:
+                        cur_var = next(var_iter, None)
+                        continue
+
                     end = seq_end
                     seg = self[start:end]
                     if seg.is_missing_any_variant(variants):
@@ -1053,6 +1057,10 @@ class PVGNode():
                     start_hard, end_hard = set_hard_start_and_end(cur_var.location, start, end)
 
                 if cur_var is self.variants[-1] and not cur_seq:
+                    if cur_seq:
+                        cur_seq = next(seq_iter, None)
+                        continue
+
                     end = var_end
                     seg = self[start:end]
                     if seg.is_missing_any_variant(variants):

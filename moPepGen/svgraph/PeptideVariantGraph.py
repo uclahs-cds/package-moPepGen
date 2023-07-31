@@ -1195,6 +1195,87 @@ class PeptideVariantGraph():
         for node in trash:
             self.remove_node(node)
 
+    def jsonfy(self):
+        """ Create node and edge list from a PVG object. """
+        queue = deque([self.root])
+        node_index:dict[int, int] = {}
+        cur_index = 0
+
+        if self.has_known_orf():
+            known_start_aa = int((self.known_orf[0] - self.known_reading_frame_index())/3)
+
+        nodes = []
+        while queue:
+            cur = queue.pop()
+            if id(cur) in node_index:
+                continue
+            if not cur.get_out_nodes():
+                continue
+
+            node = {
+                'index': cur_index
+            }
+            node_index[id(cur)] = cur_index
+
+
+            node['seq'] = str(cur.seq.seq) if cur.seq else ''
+            variants = set()
+            for v in cur.variants:
+                if v.variant.attrs.get('MERGED_MNV'):
+                    variants.update([v.variant.attrs['INDIVIDUAL_VARIANT_IDS']])
+                else:
+                    variants.add(v.variant.id)
+            node['variants'] = list(variants)
+            node['rf_index'] = cur.reading_frame_index
+
+            if self.has_known_orf():
+                if cur.seq:
+                    i = cur.seq.get_query_index(
+                        ref_index=known_start_aa,
+                        seqname=self.id,
+                        reading_frame=self.known_reading_frame_index()
+                    )
+                    node['has_start'] = i > -1
+                else:
+                    node['has_start'] = False
+            else:
+                node['has_start'] = cur.seq and 'M' in cur.seq.seq
+            node['is_stop'] = cur.seq and cur.seq.seq == '*'
+            nodes.append(node)
+
+            for out_node in cur.get_out_nodes():
+                if out_node.reading_frame_index == cur.reading_frame_index:
+                    queue.append(out_node)
+                else:
+                    queue.appendleft(out_node)
+
+            cur_index += 1
+
+        edges = []
+        queue = deque([self.root])
+        visited:set[int] = set()
+        while queue:
+            cur = queue.pop()
+            if id(cur) in visited:
+                continue
+            visited.add(id(cur))
+            for out_node in cur.get_out_nodes():
+                try:
+                    source_node = node_index[id(cur)]
+                    target_node = node_index[id(out_node)]
+                except KeyError:
+                    continue
+                edge = {'source': source_node, 'target': target_node}
+                edges.append(edge)
+            for out_node in cur.get_out_nodes():
+                queue.appendleft(out_node)
+
+        return {
+            'nodes': nodes,
+            'edges': edges
+        }
+
+
 class PVGCursor():
     """ Helper class for cursors when graph traversal to call peptides. """
     def __init__(self, in_node:PVGNode, out_node:PVGNode, in_cds:bool,
