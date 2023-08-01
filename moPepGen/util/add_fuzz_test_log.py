@@ -12,7 +12,7 @@ FUZZ_TEST_LOG_HISTORY_CSV = Path(__file__).parent.parent.parent/'docs/files/fuzz
 
 # pylint: disable=W0212
 def parse_args(subparsers:argparse._SubParsersAction):
-    """ """
+    """ parse args """
     p:argparse.ArgumentParser = subparsers.add_parser(
         name='addFuzzTestLog',
         help='Add fuzz test log.'
@@ -56,7 +56,7 @@ class FuzzTestLogSummary:
 
     @classmethod
     def get_commit(cls) -> str:
-        """ """
+        """ Get the latest commit ID """
         if cls._commit:
             return cls._commit
         out = sp.check_output(['git', 'rev-parse', '--short', 'HEAD'])
@@ -66,7 +66,7 @@ class FuzzTestLogSummary:
 
     @classmethod
     def get_version(cls) -> str:
-        """ """
+        """ Get the latest version """
         if cls._version:
             return cls._version
         out = sp.check_output(['git', 'describe', '--tags', '--abbrev=0'])
@@ -100,14 +100,14 @@ class FuzzTestLogSummaryCategorized:
     def __init__(self, snv:FuzzTestLogSummary=None, indel:FuzzTestLogSummary=None,
             comprehensive:FuzzTestLogSummary=None, submit_date:datetime.date=None,
             commit:str=None):
-        """ """
+        """ Constructor """
         self.snv = snv or FuzzTestLogSummary(commit=commit)
         self.indel = indel or FuzzTestLogSummary(commit=commit)
         self.comprehensive = comprehensive or FuzzTestLogSummary(commit=commit)
         self.submit_date = submit_date
 
     def summarize(self, handle:IO):
-        """ """
+        """ Summarize fuzz run summary from the log file. """
         for record in FuzzRecord.parse(handle):
             if record.n_alt_splice == 0 \
                     and record.n_circ_rna == 0 \

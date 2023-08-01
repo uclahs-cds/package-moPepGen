@@ -1,6 +1,5 @@
 """ Module for fuzz test """
 from __future__ import annotations
-from typing import IO
 import argparse
 import copy
 from contextlib import redirect_stdout
@@ -11,7 +10,7 @@ from pathlib import Path
 import random
 import shutil
 import traceback
-from typing import Iterable, List, Union, Tuple
+from typing import Iterable, List, Union, Tuple, IO
 import sys
 import uuid
 from pathos.pools import ParallelPool
@@ -28,6 +27,7 @@ from moPepGen.gtf import GtfIO
 
 
 class FuzzRecordStatus(str, Enum):
+    """ Enumeration for fuzz record status. """
     succeeded = 'SUCCEEDED'
     failed = 'FAILED'
 
@@ -241,7 +241,7 @@ class FuzzRecord():
         for line in handle:
             line:str
             fields = line.rstrip().split('\t')
-            values = {k:v for k,v in zip(header, fields)}
+            values = dict(zip(header, fields))
             yield FuzzRecord(
                 _id=values['id'],
                 status=values['status'],
