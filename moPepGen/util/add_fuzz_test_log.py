@@ -98,11 +98,12 @@ class FuzzTestLogSummary:
 class FuzzTestLogSummaryCategorized:
     """ Fuzz test log summary separate by categories """
     def __init__(self, snv:FuzzTestLogSummary=None, indel:FuzzTestLogSummary=None,
-            comprehensive:FuzzTestLogSummary=None, submit_date:datetime.date=None):
+            comprehensive:FuzzTestLogSummary=None, submit_date:datetime.date=None,
+            commit:str=None):
         """ """
-        self.snv = snv or FuzzTestLogSummary()
-        self.indel = indel or FuzzTestLogSummary()
-        self.comprehensive = comprehensive or FuzzTestLogSummary()
+        self.snv = snv or FuzzTestLogSummary(commit=commit)
+        self.indel = indel or FuzzTestLogSummary(commit=commit)
+        self.comprehensive = comprehensive or FuzzTestLogSummary(commit=commit)
         self.submit_date = submit_date
 
     def summarize(self, handle:IO):
@@ -157,7 +158,7 @@ class FuzzTestLogSummaryCategorized:
 
 def main(args:argparse.Namespace):
     """ Add fuzz test log """
-    summary = FuzzTestLogSummaryCategorized()
+    summary = FuzzTestLogSummaryCategorized(commit=args.commit_id)
 
     for file in args.log_files:
         with open(file, 'rt') as handle:
