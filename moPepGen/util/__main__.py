@@ -26,6 +26,7 @@ def main():
     util.fuzz_test.parse_args(subparsers)
     util.extract_gvf.parse_args(subparsers)
     util.validate_noncoding_calling.parse_args(subparsers)
+    util.add_fuzz_test_log.parse_args(subparsers)
 
     args = parser.parse_args()
 

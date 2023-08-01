@@ -4,12 +4,13 @@ import argparse
 import copy
 from contextlib import redirect_stdout
 from datetime import datetime, timedelta
+from enum import Enum
 import json
 from pathlib import Path
 import random
 import shutil
 import traceback
-from typing import Iterable, List, Union, Tuple
+from typing import Iterable, List, Union, Tuple, IO
 import sys
 import uuid
 from pathos.pools import ParallelPool
@@ -24,6 +25,15 @@ from moPepGen.cli import call_variant_peptide
 from moPepGen import util
 from moPepGen.gtf import GtfIO
 
+
+class FuzzRecordStatus(str, Enum):
+    """ Enumeration for fuzz record status. """
+    succeeded = 'SUCCEEDED'
+    failed = 'FAILED'
+
+    def __str__(self) -> str:
+        """ str """
+        return self.value
 
 # pylint: disable=W0212
 def parse_args(subparsers:argparse._SubParsersAction
@@ -222,6 +232,34 @@ class FuzzRecord():
         record.submit()
         return record
 
+    @classmethod
+    def parse(cls, handle:IO) -> Iterable[FuzzRecord]:
+        """ parse """
+        handle.seek(0)
+        header = handle.readline().rstrip().split('\t')
+        time_fmt = '%Y-%m-%d %H:%M:%S'
+        for line in handle:
+            line:str
+            fields = line.rstrip().split('\t')
+            values = dict(zip(header, fields))
+            yield FuzzRecord(
+                _id=values['id'],
+                status=values['status'],
+                submitted=datetime.strptime(values['submitted'], time_fmt),
+                completed=datetime.strptime(values['completed'], time_fmt),
+                n_var=int(values['num_var']),
+                n_exonic=int(values['num_exonic']),
+                n_snv=int(values['n_snv']),
+                n_indel=int(values['n_indel']),
+                n_fusion=int(values['n_fusion']),
+                n_circ_rna=int(values['n_circ_rna']),
+                n_alt_splice=int(values['n_alt_splice']),
+                call_variant_start=datetime.strptime(values['call_variant_start'], time_fmt),
+                call_variant_end=datetime.strptime(values['call_variant_end'], time_fmt),
+                brute_force_start=datetime.strptime(values['brute_force_start'], time_fmt),
+                brute_force_end=datetime.strptime(values['brute_force_end'], time_fmt)
+            )
+
     @property
     def var_gvf_file(self) -> Path:
         """ File path to the GVF file that contains the faked variants """
@@ -305,7 +343,7 @@ class FuzzRecord():
 
     def is_succeeded(self) -> bool:
         """ check if the test case was successful """
-        return self.status == 'SUCCEEDED'
+        return self.status == FuzzRecordStatus.succeeded
 
 class FuzzTestCase():
     """ This models a single fuzz test case. It creates faked variants, save into
@@ -351,7 +389,7 @@ class FuzzTestCase():
                     self.record.brute_force_ends()
                     status = self.assert_equal()
                     self.record.complete(status)
-            if status == 'SUCCEEDED':
+            if status == FuzzRecordStatus.succeeded:
                 shutil.rmtree(self.config.temp_dir/self.record.id)
             else:
                 shutil.copytree(
@@ -360,7 +398,7 @@ class FuzzTestCase():
                 )
         # pylint: disable=W0703
         except Exception as error:
-            self.record.complete('FAILED')
+            self.record.complete(str(FuzzRecordStatus.failed))
             with self.record.path_stderr.open('wt') as handle:
                 handle.write(str(error))
                 handle.write(traceback.format_exc())
@@ -585,7 +623,7 @@ class FuzzTestCase():
             with redirect_stdout(handle):
                 util.brute_force.main(args)
 
-    def assert_equal(self):
+    def assert_equal(self) -> str:
         """ Assert that the callVariant results and bruteForce results equal """
         with open(self.record.call_variant_fasta, 'rt') as handle:
             variant_seqs = set()
@@ -607,8 +645,8 @@ class FuzzTestCase():
                 with open(self.record.brute_force_only, 'wt') as handle:
                     for seq in brute_force_only:
                         handle.write(seq + '\n')
-            return 'FAILED'
-        return'SUCCEEDED'
+            return str(FuzzRecordStatus.failed)
+        return str(FuzzRecordStatus.succeeded)
 
 class FuzzTestConfig():
     """ Fuzz test config """
