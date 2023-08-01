@@ -10,6 +10,16 @@ from moPepGen.util.fuzz_test import FuzzRecord, FuzzRecordStatus
 
 FUZZ_TEST_LOG_HISTORY_CSV = Path(__file__).parent.parent.parent/'docs/files/fuzz_test_history.tsv'
 
+def get_std(m:float, ss:float, n:int):
+    """ Calculate standard deviation.
+
+    Args:
+        - m (float): mean
+        - ss (float): sum of square
+        - n (int): size
+    """
+    return (ss/n - m**2) ** (1/2)
+
 # pylint: disable=W0212
 def parse_args(subparsers:argparse._SubParsersAction):
     """ parse args """
@@ -44,7 +54,9 @@ class FuzzTestLogSummary:
     def __init__(self, commit:str=None, version:str=None,
             n_match:int=0, n_mismatch:int=0, n_fail:int=0,
             avg_time_call_variant:datetime.timedelta=None,
-            avg_time_brute_force:datetime.timedelta=None):
+            ss_time_call_variant:int=0,
+            avg_time_brute_force:datetime.timedelta=None,
+            ss_time_brute_force:int=0):
         """ constructor """
         self.commit = commit or self.get_commit()
         self.version = version or self.get_version()
@@ -52,7 +64,9 @@ class FuzzTestLogSummary:
         self.n_mismatch = n_mismatch
         self.n_fail = n_fail
         self.avg_time_call_variant = avg_time_call_variant or datetime.timedelta()
+        self.ss_time_call_variant = ss_time_call_variant
         self.avg_time_brute_force = avg_time_brute_force or datetime.timedelta()
+        self.ss_time_brute_force = ss_time_brute_force
 
     @classmethod
     def get_commit(cls) -> str:
@@ -85,14 +99,17 @@ class FuzzTestLogSummary:
             self.n_fail += 1
             return
 
+        dt_call_variant = (record.call_variant_end - record.call_variant_start)
         self.avg_time_call_variant = (
-            self.avg_time_call_variant * n_before
-            + (record.call_variant_end - record.call_variant_start)
+            self.avg_time_call_variant * n_before + dt_call_variant
         ) / (n_before + 1)
+        self.ss_time_call_variant += dt_call_variant.total_seconds() ** 2
+
+        dt_brute_force = (record.brute_force_end - record.brute_force_start)
         self.avg_time_brute_force = (
-            self.avg_time_brute_force * n_before
-            + (record.brute_force_end - record.brute_force_start)
+            self.avg_time_brute_force * n_before + dt_brute_force
         ) / (n_before + 1)
+        self.ss_time_brute_force += dt_brute_force.total_seconds() ** 2
 
 
 class FuzzTestLogSummaryCategorized:
@@ -129,7 +146,8 @@ class FuzzTestLogSummaryCategorized:
         return '\t'.join([
             'version', 'commit', 'submit_date', 'variant_type',
             'n_match', 'n_mismatch', 'n_fail',
-            'avg_time_call_variant', 'avg_time_brute_force'
+            'avg_time_call_variant', 'std_sec_call_variant',
+            'avg_time_brute_force', 'std_sec_brute_force'
         ])
 
     def append_to_history(self, handle:IO):
@@ -142,6 +160,16 @@ class FuzzTestLogSummaryCategorized:
             'comprehensive': self.comprehensive
         }
         for key, summary in summaries.items():
+            std_call_variant = get_std(
+                m=summary.avg_time_call_variant.total_seconds(),
+                ss=summary.ss_time_call_variant,
+                n=summary.n_match
+            )
+            std_brute_force = get_std(
+                m=summary.avg_time_brute_force.total_seconds(),
+                ss=summary.ss_time_brute_force,
+                n=summary.n_match
+            )
             fields = [
                 summary.version,
                 summary.commit,
@@ -151,7 +179,9 @@ class FuzzTestLogSummaryCategorized:
                 str(summary.n_mismatch),
                 str(summary.n_fail),
                 str(summary.avg_time_call_variant),
-                str(summary.avg_time_brute_force)
+                str(std_call_variant),
+                str(summary.avg_time_brute_force),
+                str(std_brute_force)
             ]
             handle.write('\t'.join(fields) + '\n')
 
