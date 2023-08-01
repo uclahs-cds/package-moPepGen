@@ -1,0 +1,4 @@
+version	commit	submit_date	variant_type	n_match	n_mismatch	n_fail	avg_time_call_variant	avg_time_brute_force
+v1.1.0	47e603d	2023-07-30	snv	8436	0	0	0:00:00.134778	0:00:59.034971
+v1.1.0	47e603d	2023-07-30	indel	8422	0	0	0:00:00.179062	0:00:43.043562
+v1.1.0	47e603d	2023-07-30	comprehensive	15776	0	0	0:00:00.308174	0:00:38.946996

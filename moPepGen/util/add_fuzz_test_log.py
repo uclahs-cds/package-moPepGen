@@ -8,7 +8,7 @@ from moPepGen.cli.common import print_help_if_missing_args
 from moPepGen.util.fuzz_test import FuzzRecord, FuzzRecordStatus
 
 
-FUZZ_TEST_LOG_HISTORY_CSV = Path(__file__).parent.parent.parent/'docs/files/fuzz_test_history.txt'
+FUZZ_TEST_LOG_HISTORY_CSV = Path(__file__).parent.parent.parent/'docs/files/fuzz_test_history.tsv'
 
 # pylint: disable=W0212
 def parse_args(subparsers:argparse._SubParsersAction):
