@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed that in circRNA, cleavage gain from upstream node is added to the the wrong ORF. #783
 
+- Fixed callVariant that `fit_into_codon` terminated early in fusion transcripts when there donor has a frameshift and accepter has a variant right after the breakpoint. #786
+
 ## [1.2.0] - 2023-07-04
 
 ### Fixed

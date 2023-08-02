@@ -1757,6 +1757,10 @@ class ThreeFrameTVG():
                 # This is when the left or right intronic insertion of a fusion
                 # is smaller than 3. The `end` should contain an unique out node
                 end = self.merge_with_outbonds(end)[0]
+            elif end.global_variant and end.global_variant.is_fusion() \
+                    and ref_node.has_exclusive_outbond_node():
+                end = self.merge_with_outbonds(ref_node)[0]
+                return [end]
             else:
                 # Similar to above but here for AltSplice.
                 self.merge_into_inbonds(end)
