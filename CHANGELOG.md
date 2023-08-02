@@ -10,7 +10,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [1.2.1] - 2023-07-14
+## [1.2.0] - 2023-08-03
+
+### Fixed
+
+- Fixed that reference source are not recognized. Switched to use upper case values. #758
+
+- Fixed `generateIndex` that symlink was not created properly for GTF with `--gtf-symlink`.
+
+- Fixed matplotlib warning message #742
+
+- Fixed `parseVEP` that insertions not parsed successfully if the location is a single base. #766
+
+- Fixed `callVariant` that peptides with upstream cleavage altering mutations were not called. #670
 
 - Fixed fuzzTest to take multiple CPUs and use temporary directory.
 
@@ -25,20 +37,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed that in circRNA, cleavage gain from upstream node is added to the the wrong ORF. #783
 
 - Fixed callVariant that `fit_into_codon` terminated early in fusion transcripts when there donor has a frameshift and accepter has a variant right after the breakpoint. #786
-
-## [1.2.0] - 2023-07-04
-
-### Fixed
-
-- Fixed that reference source are not recognized. Switched to use upper case values. #758
-
-- Fixed `generateIndex` that symlink was not created properly for GTF with `--gtf-symlink`.
-
-- Fixed matplotlib warning message #742
-
-- Fixed `parseVEP` that insertions not parsed successfully if the location is a single base. #766
-
-- Fixed `callVariant` that peptides with upstream cleavage altering mutations were not called. #670
 
 ## [1.1.0] - 2023-06-28
 
