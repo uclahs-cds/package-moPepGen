@@ -1072,3 +1072,15 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/42/brute_force.txt'
         reference = self.data_dir/'fuzz/42'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case72(self):
+        """ In this test case, the fusion accepter transcript has a variant
+        right after  the accepter breakpoint, and the donor transcript has a
+        indel, causing the first node in the fusion subgraph has only 1 nucleotide.
+        """
+        gvf = [
+            self.data_dir/'fuzz/43/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/43/brute_force.txt'
+        reference = self.data_dir/'fuzz/43'
+        self.default_test_case(gvf, reference, expected)
