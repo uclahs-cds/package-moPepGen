@@ -345,9 +345,11 @@ def parse_range(x:str) -> Tuple[int,int]:
         raise ValueError('Range invalid')
     return tuple(int(i) for i in y)
 
-def validate_file_format(file:Path, types:List[str]=[], check_readable:bool=False,
+def validate_file_format(file:Path, types:List[str]=None, check_readable:bool=False,
             check_writable:bool=False, is_directory:bool=False):
     """ Validate the file type """
+    if types is None:
+        types = []
     if not is_directory:
         suffixes = file.suffixes
         actual_suffixes = [suffixes[-1]]

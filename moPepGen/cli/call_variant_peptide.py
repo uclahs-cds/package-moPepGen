@@ -222,7 +222,6 @@ class VariantPeptideCaller():
 
     def write_dgraphs(self, dgraphs:TypeDGraphs):
         """ Write ThreeFrameTVG data """
-        pass
 
     def write_pgraphs(self, pgraphs:TypePGraphs):
         """ Write PeptideVariantGraph data """
