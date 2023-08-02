@@ -580,6 +580,7 @@ class FuzzTestCase():
         args.proteome_fasta = self.config.path_proteome_fasta
         args.reference_source = None
         args.output_path = self.record.call_variant_fasta
+        args.graph_output_dir = None
         args.quiet = True
         args.max_adjacent_as_mnv = 2
         args.selenocysteine_termination = True

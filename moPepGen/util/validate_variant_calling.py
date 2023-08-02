@@ -91,7 +91,7 @@ def extract_gvf(tx_id:List[str], gvf_files:List[Path], output_dir:Path) -> List[
         logger(f"{i} variants found. The brute force caller is going to take a while.")
     return temp_gvfs
 
-def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path):
+def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path, graph_output_dir:Path):
     """ call variant """
     args = argparse.Namespace()
     args.index_dir = None
@@ -106,6 +106,7 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path):
     args.w2f_reassignment = True
     args.invalid_protein_as_noncoding = False
     args.output_path = output_fasta
+    args.graph_output_dir = graph_output_dir
     args.quiet = False
     args.verbose_level = 1
     args.cleavage_rule = 'trypsin'
@@ -199,10 +200,13 @@ def main(args:argparse.Namespace):
     logger('Transcript variants extracted from GVF.')
 
     variant_fasta = output_dir/'call_variant.fasta'
+    graph_dir = output_dir/'graph'
+    graph_dir.mkdir(exist_ok=True)
     call_variant(
         gvf_files=temp_gvfs,
         ref_dir=ref_dir,
-        output_fasta=variant_fasta
+        output_fasta=variant_fasta,
+        graph_output_dir=graph_dir
     )
 
     logger('Variant peptide calling completed.')
