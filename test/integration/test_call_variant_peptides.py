@@ -21,6 +21,7 @@ def create_base_args() -> argparse.Namespace:
     args.proteome_fasta = None
     args.reference_source = None
     args.output_path = None
+    args.graph_output_dir = None
     args.max_adjacent_as_mnv = 0
     args.selenocysteine_termination = False
     args.w2f_reassignment = False

@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.2.1] - 2023-08-03
+
+### Add
+
+- Added `--graph-output-dir` to save graph data in json.
+
 ## [1.2.0] - 2023-08-03
 
 ### Fixed

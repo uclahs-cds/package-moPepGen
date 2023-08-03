@@ -11,7 +11,8 @@ at least one variant, and do not present in the canonical peptide pool.
 from __future__ import annotations
 import argparse
 import copy
-from typing import List, Set, TYPE_CHECKING, Dict
+import json
+from typing import List, Set, TYPE_CHECKING, Dict, Tuple
 from pathlib import Path
 from pathos.pools import ParallelPool
 from moPepGen import svgraph, aa, seqvar, logger, gtf, params
@@ -21,6 +22,7 @@ from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 
 if TYPE_CHECKING:
     from moPepGen import dna, circ
+    from moPepGen.svgraph import ThreeFrameCVG, ThreeFrameTVG, PeptideVariantGraph
 
 
 INPUT_FILE_FORMATS = ['.gvf']
@@ -45,6 +47,15 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         ' moPepGen parsers.'
     )
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
+    p.add_argument(
+        '--graph-output-dir',
+        type=Path,
+        required=False,
+        default=None,
+        help='Directory path that graph data are saved to. Graph data are not'
+        ' saved if this is not given.',
+        metavar='<file>'
+    )
     p.add_argument(
         '--max-adjacent-as-mnv',
         type=int,
@@ -142,6 +153,11 @@ class VariantPeptideCaller():
         common.validate_file_format(
             self.output_path, OUTPUT_FILE_FORMATS, check_writable=True
         )
+        self.graph_output_dir:Path = args.graph_output_dir
+        if self.graph_output_dir is not None:
+            common.validate_file_format(
+                self.graph_output_dir, check_writable=True, is_directory=True
+            )
 
         self.quiet:bool = args.quiet
         self.cleavage_params = params.CleavageParams(
@@ -204,6 +220,37 @@ class VariantPeptideCaller():
         if self.verbose >= 1:
             logger('Variant peptide FASTA file written to disk.')
 
+    def write_dgraphs(self, dgraphs:TypeDGraphs):
+        """ Write ThreeFrameTVG data """
+
+    def write_pgraphs(self, pgraphs:TypePGraphs):
+        """ Write PeptideVariantGraph data """
+        tx_id = pgraphs[0].id
+
+        data = pgraphs[0].jsonfy()
+        with open(self.graph_output_dir/f"{tx_id}_main_PVG.json", 'wt') as handle:
+            json.dump(data, handle)
+
+        for var_id, pgraph in pgraphs[1].items():
+            data = pgraph.jsonfy()
+            with open(self.graph_output_dir/f"{tx_id}_Fusion_{var_id}_PVG.json", 'wt') as handle:
+                json.dump(data, handle)
+
+        for var_id, pgraph in pgraphs[2].items():
+            data = pgraph.jsonfy()
+            with open(self.graph_output_dir/f"{tx_id}_circRNA_{var_id}_PVG.json", 'wt') as handle:
+                json.dump(data, handle)
+
+TypeDGraphs = Tuple[
+    svgraph.ThreeFrameTVG,
+    Dict[str, svgraph.ThreeFrameTVG],
+    Dict[str, svgraph.ThreeFrameCVG]
+]
+TypePGraphs = Tuple[
+    svgraph.PeptideVariantGraph,
+    Dict[str, svgraph.PeptideVariantGraph],
+    Dict[str, svgraph.PeptideVariantGraph]
+]
 def call_variant_peptides_wrapper(tx_id:str,
         variant_series:seqvar.TranscriptionalVariantSeries,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
@@ -214,8 +261,9 @@ def call_variant_peptides_wrapper(tx_id:str,
         noncanonical_transcripts:bool,
         max_adjacent_as_mnv:bool,
         truncate_sec:bool,
-        w2f_reassignment:bool
-        ) -> List[Set[aa.AminoAcidSeqRecord]]:
+        w2f_reassignment:bool,
+        save_graph:bool
+        ) -> Tuple[Set[aa.AminoAcidSeqRecord], TypeDGraphs, TypePGraphs]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
     main_peptides = None
@@ -224,11 +272,13 @@ def call_variant_peptides_wrapper(tx_id:str,
         cleavage_params=cleavage_params, truncate_sec=truncate_sec,
         w2f=w2f_reassignment
     )
+    dgraphs:TypeDGraphs = (None, {}, {})
+    pgraphs:TypePGraphs = (None, {}, {})
     if variant_series.transcriptional:
         try:
             if not noncanonical_transcripts or \
                     variant_series.has_any_alternative_splicing():
-                main_peptides = call_peptide_main(
+                main_peptides, dgraph, pgraph = call_peptide_main(
                     tx_id=tx_id, tx_variants=variant_series.transcriptional,
                     variant_pool=pool, ref=reference_data,
                     tx_seqs=tx_seqs, gene_seqs=gene_seqs,
@@ -236,9 +286,12 @@ def call_variant_peptides_wrapper(tx_id:str,
                     max_adjacent_as_mnv=max_adjacent_as_mnv,
                     truncate_sec=truncate_sec,
                     w2f=w2f_reassignment,
-                    denylist=denylist
+                    denylist=denylist,
+                    save_graph=save_graph
                 )
                 peptide_pool.append(main_peptides)
+                dgraphs = (dgraph, dgraphs[1], dgraphs[2])
+                pgraphs = (pgraph, pgraphs[1], pgraphs[2])
         except:
             logger(f'Exception raised from {tx_id}')
             raise
@@ -261,12 +314,14 @@ def call_variant_peptides_wrapper(tx_id:str,
             variant_pool = copy.copy(pool)
             variant_pool[tx_id] = copy.copy(pool[tx_id])
             variant_pool[tx_id].transcriptional = filtered_variants
-            _peptides = call_peptide_fusion(
+            _peptides, dgraph, pgraph = call_peptide_fusion(
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
                 tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params,
                 max_adjacent_as_mnv=max_adjacent_as_mnv, w2f_reassignment=w2f_reassignment,
-                denylist=denylist
+                denylist=denylist, save_graph=save_graph
             )
+            dgraphs[1][variant.id] = dgraph
+            pgraphs[1][variant.id] = pgraph
         except:
             logger(
                 f"Exception raised from fusion {variant.id}, "
@@ -281,19 +336,23 @@ def call_variant_peptides_wrapper(tx_id:str,
         denylist.update([str(x.seq) for x in main_peptides])
     for circ_model in variant_series.circ_rna:
         try:
-            _peptides = call_peptide_circ_rna(
+            _peptides, cgraph, pgraph = call_peptide_circ_rna(
                 record=circ_model, variant_pool=pool, gene_seqs=gene_seqs,
                 cleavage_params=cleavage_params,
                 max_adjacent_as_mnv=max_adjacent_as_mnv,
-                w2f_reassignment=w2f_reassignment, denylist=denylist
+                w2f_reassignment=w2f_reassignment, denylist=denylist,
+                save_graph=save_graph
             )
+
         except:
             logger(f"Exception raised from {circ_model.id}")
             raise
         peptides.update(_peptides)
+        dgraphs[2][circ_model.id] = cgraph
+        pgraphs[2][circ_model.id] = pgraph
     peptide_pool.append(peptides)
 
-    return peptide_pool
+    return peptide_pool, dgraphs, pgraphs
 
 def wrapper(dispatch):
     """ wrapper for ParallelPool """
@@ -394,7 +453,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 'noncanonical_transcripts': noncanonical_transcripts,
                 'max_adjacent_as_mnv': caller.max_adjacent_as_mnv,
                 'truncate_sec': caller.truncate_sec,
-                'w2f_reassignment': caller.w2f_reassignment
+                'w2f_reassignment': caller.w2f_reassignment,
+                'save_graph': caller.graph_output_dir is not None
             }
             dispatches.append(dispatch)
 
@@ -408,7 +468,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 else:
                     results = [wrapper(dispatches[0])]
 
-                for peptide_series in results:
+                for peptide_series, _, pgraphs in results:
                     for peptides in peptide_series:
                         for peptide in peptides:
                             caller.variant_peptides.add_peptide(
@@ -416,6 +476,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                                 canonical_peptides=ref.canonical_peptides,
                                 cleavage_params=caller.cleavage_params
                             )
+                    if caller.graph_output_dir is not None:
+                        caller.write_pgraphs(pgraphs)
                 dispatches = []
 
             if caller.verbose >= 1:
@@ -455,8 +517,8 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
         max_adjacent_as_mnv:bool, truncate_sec:bool, w2f:bool,
-        denylist:Set[str]
-        ) -> Set[aa.AminoAcidSeqRecord]:
+        denylist:Set[str], save_graph:bool
+        ) -> Tuple[Set[aa.AminoAcidSeqRecord], ThreeFrameTVG, PeptideVariantGraph]:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
     tx_seq = tx_seqs[tx_id]
@@ -480,12 +542,15 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
     pgraph = dgraph.translate()
 
     pgraph.create_cleavage_graph()
-    return pgraph.call_variant_peptides(
+    peptides = pgraph.call_variant_peptides(
         denylist=denylist,
         truncate_sec=truncate_sec,
         w2f=w2f,
         check_external_variants=True
     )
+    if not save_graph:
+        dgraph, pgraph = None, None
+    return peptides, dgraph, pgraph
 
 def call_peptide_fusion(variant:seqvar.VariantRecord,
         variant_pool:seqvar.VariantRecordPoolOnDisk,
@@ -493,8 +558,8 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
-        w2f_reassignment:bool, denylist:Set[str]
-        ) -> Set[aa.AminoAcidSeqRecord]:
+        w2f_reassignment:bool, denylist:Set[str], save_graph:bool
+        ) -> Tuple[Set[aa.AminoAcidSeqRecord], ThreeFrameTVG, PeptideVariantGraph]:
     """ Call variant peptides for fusion """
     tx_id = variant.location.seqname
     tx_model = ref.anno.transcripts[tx_id]
@@ -534,18 +599,21 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
     pgraph.create_cleavage_graph()
-    return pgraph.call_variant_peptides(
+    peptides = pgraph.call_variant_peptides(
         denylist=denylist,
         w2f=w2f_reassignment,
         check_external_variants=True
     )
+    if not save_graph:
+        dgraph, pgraph = None, None
+    return peptides, dgraph, pgraph
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
-        w2f_reassignment:bool, denylist:Set[str]
-        )-> Set[aa.AminoAcidSeqRecord]:
+        w2f_reassignment:bool, denylist:Set[str], save_graph:bool
+        )-> Tuple[Set[aa.AminoAcidSeqRecord], ThreeFrameCVG, PeptideVariantGraph]:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
     gene_seq = gene_seqs[gene_id]
@@ -588,7 +656,10 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph.fit_into_codons()
     pgraph = cgraph.translate()
     pgraph.create_cleavage_graph()
-    return pgraph.call_variant_peptides(
+    peptides = pgraph.call_variant_peptides(
         denylist=denylist, circ_rna=record,
         w2f=w2f_reassignment, check_external_variants=True
     )
+    if not save_graph:
+        cgraph, pgraph = None, None
+    return peptides, cgraph, pgraph
