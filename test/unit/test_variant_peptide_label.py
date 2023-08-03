@@ -2,6 +2,9 @@
 import copy
 import unittest
 from test.unit import create_genomic_annotation
+from test.unit.test_peptide_pool_splitter import (
+    ANNOTATION_DATA, LABEL_MAP1, SOURCE_ORDER
+)
 from Bio.Seq import Seq
 from moPepGen import aa
 from moPepGen.aa.VariantPeptideLabel import (
@@ -9,9 +12,6 @@ from moPepGen.aa.VariantPeptideLabel import (
 )
 from moPepGen.aa.VariantPeptideLabel import (
     SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT
-)
-from test.unit.test_peptide_pool_splitter import (
-    ANNOTATION_DATA, LABEL_MAP1, SOURCE_ORDER
 )
 
 
