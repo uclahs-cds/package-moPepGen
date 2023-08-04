@@ -15,10 +15,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Add
 
 - Added `--graph-output-dir` to save graph data in json.
-  
+
 ## Fixed
 
 - Fixed `summarizeFasta` that SEC and W2F on fusion peptides are ignored. #789
+
+- Fixed `callVariant` that `variant_coordinates_to_gene` failed when the deletion is end inclusion and it overlaps with the last nucleotide of an exon. #793
 
 ## [1.2.0] - 2023-08-03
 

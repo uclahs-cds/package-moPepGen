@@ -232,11 +232,15 @@ class VariantPeptideCaller():
             json.dump(data, handle)
 
         for var_id, pgraph in pgraphs[1].items():
+            if pgraph is None:
+                continue
             data = pgraph.jsonfy()
             with open(self.graph_output_dir/f"{tx_id}_Fusion_{var_id}_PVG.json", 'wt') as handle:
                 json.dump(data, handle)
 
         for var_id, pgraph in pgraphs[2].items():
+            if pgraph is None:
+                continue
             data = pgraph.jsonfy()
             with open(self.graph_output_dir/f"{tx_id}_circRNA_{var_id}_PVG.json", 'wt') as handle:
                 json.dump(data, handle)
@@ -569,7 +573,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
 
     orf_start = tx_seq.orf.start + 3 if tx_seq.orf else 3
     if variant.location.start < orf_start:
-        return []
+        return [], None, None
 
     if tx_id in variant_pool:
         tx_variants = [x for x in variant_pool[tx_id].transcriptional
@@ -637,7 +641,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
         fragments.append(frag)
 
     if not fragments:
-        return set()
+        return set(), None, None
 
     variant_records = variant_pool.filter_variants(
         tx_ids=[record.transcript_id], exclude_type=exclusion_variant_types,

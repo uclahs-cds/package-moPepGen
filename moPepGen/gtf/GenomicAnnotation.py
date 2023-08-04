@@ -217,7 +217,15 @@ class GenomicAnnotation():
 
     def variant_coordinates_to_gene(self, variant:seqvar.VariantRecord,
             gene_id:str) -> seqvar.VariantRecord:
-        """ Convert the coordinates of variant from transcript to gene """
+        """ Convert the coordinates of variant from transcript to gene.
+
+        Note: if `variant.is_end_inclusion()` is true, which means the variant
+        is a deletion and the first nucleotide of the deleted sequence is the
+        first nucleotide after start codon, the variant is converted that the
+        reference nucleotide becomes the next nucleotide of the deleted sequence
+        from the gene sequence. This is to handle the case that the last
+        nucleotide happens to be the end of an exon.
+        """
         transcript_id = variant.location.seqname
         start = variant.location.start
         end = variant.location.end
@@ -227,7 +235,14 @@ class GenomicAnnotation():
 
         transcript_model = self.transcripts[transcript_id]
         start_genomic = self.coordinate_transcript_to_genomic(start, transcript_id)
-        end_genomic = self.coordinate_transcript_to_genomic(end - 1, transcript_id)
+        if variant.is_end_inclusion():
+            end_genomic = self.coordinate_transcript_to_genomic(end - 2, transcript_id)
+            if transcript_model.transcript.strand == 1:
+                end_genomic += 1
+            else:
+                end_genomic -= 1
+        else:
+            end_genomic = self.coordinate_transcript_to_genomic(end - 1, transcript_id)
         if transcript_model.transcript.strand == -1:
             start_genomic, end_genomic = end_genomic, start_genomic
         end_genomic += 1
