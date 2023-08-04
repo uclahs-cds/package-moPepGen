@@ -239,7 +239,7 @@ class VariantPeptideCaller():
                 json.dump(data, handle)
 
         for var_id, pgraph in pgraphs[2].items():
-            if graph is None:
+            if pgraph is None:
                 continue
             data = pgraph.jsonfy()
             with open(self.graph_output_dir/f"{tx_id}_circRNA_{var_id}_PVG.json", 'wt') as handle:
