@@ -220,16 +220,15 @@ class VariantPeptideCaller():
         if self.verbose >= 1:
             logger('Variant peptide FASTA file written to disk.')
 
-    def write_dgraphs(self, dgraphs:TypeDGraphs):
+    def write_dgraphs(self, tx_id:str, dgraphs:TypeDGraphs):
         """ Write ThreeFrameTVG data """
 
-    def write_pgraphs(self, pgraphs:TypePGraphs):
+    def write_pgraphs(self, tx_id:str, pgraphs:TypePGraphs):
         """ Write PeptideVariantGraph data """
-        tx_id = pgraphs[0].id
-
-        data = pgraphs[0].jsonfy()
-        with open(self.graph_output_dir/f"{tx_id}_main_PVG.json", 'wt') as handle:
-            json.dump(data, handle)
+        if pgraphs[0]:
+            data = pgraphs[0].jsonfy()
+            with open(self.graph_output_dir/f"{tx_id}_main_PVG.json", 'wt') as handle:
+                json.dump(data, handle)
 
         for var_id, pgraph in pgraphs[1].items():
             if pgraph is None:
@@ -267,7 +266,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         truncate_sec:bool,
         w2f_reassignment:bool,
         save_graph:bool
-        ) -> Tuple[Set[aa.AminoAcidSeqRecord], TypeDGraphs, TypePGraphs]:
+        ) -> Tuple[Set[aa.AminoAcidSeqRecord], str, TypeDGraphs, TypePGraphs]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
     main_peptides = None
@@ -356,7 +355,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         pgraphs[2][circ_model.id] = pgraph
     peptide_pool.append(peptides)
 
-    return peptide_pool, dgraphs, pgraphs
+    return peptide_pool, tx_id, dgraphs, pgraphs
 
 def wrapper(dispatch):
     """ wrapper for ParallelPool """
@@ -472,7 +471,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 else:
                     results = [wrapper(dispatches[0])]
 
-                for peptide_series, _, pgraphs in results:
+                # pylint: disable=W0621
+                for peptide_series, tx_id, _, pgraphs in results:
                     for peptides in peptide_series:
                         for peptide in peptides:
                             caller.variant_peptides.add_peptide(
@@ -481,7 +481,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                                 cleavage_params=caller.cleavage_params
                             )
                     if caller.graph_output_dir is not None:
-                        caller.write_pgraphs(pgraphs)
+                        caller.write_pgraphs(tx_id, pgraphs)
                 dispatches = []
 
             if caller.verbose >= 1:
