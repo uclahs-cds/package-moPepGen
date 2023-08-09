@@ -145,6 +145,16 @@ def parse_args(subparsers:argparse._SubParsersAction
         default=False
     )
     parser.add_argument(
+        '--keep-succeeded',
+        action='store_true',
+        help='Keep fuzz test files of the succeeded cases.'
+    )
+    parser.add_argument(
+        '--save-graph',
+        action='store_true',
+        help='Save graph data.'
+    )
+    parser.add_argument(
         '--seed',
         type=int,
         default=None,
@@ -389,7 +399,7 @@ class FuzzTestCase():
                     self.record.brute_force_ends()
                     status = self.assert_equal()
                     self.record.complete(status)
-            if status == FuzzRecordStatus.succeeded:
+            if status == FuzzRecordStatus.succeeded and not self.config.keep_succeeded:
                 shutil.rmtree(self.config.temp_dir/self.record.id)
             else:
                 shutil.copytree(
@@ -580,7 +590,11 @@ class FuzzTestCase():
         args.proteome_fasta = self.config.path_proteome_fasta
         args.reference_source = None
         args.output_path = self.record.call_variant_fasta
-        args.graph_output_dir = None
+        if self.config.save_graph:
+            args.graph_output_dir = self.record.work_dir/'graph'
+            args.graph_output_dir.mkdir(exist_ok=True)
+        else:
+            args.graph_output_dir = None
         args.quiet = True
         args.max_adjacent_as_mnv = 2
         args.selenocysteine_termination = True
@@ -654,10 +668,10 @@ class FuzzTestConfig():
     def __init__(self, tx_id:str, n_iter:int, max_size:int, max_variants:int,
             min_variants:int, exonic_only:bool, snv_frac:float, snv_only_frac:float,
             fusion_frac:float, circ_rna_frac:float, ci_ratio:float, alt_splice_frac:bool,
-            cleavage_rule:str, cleavage_exception:str, miscleavage:int, min_mw:int,
-            min_length:int, max_length:int, temp_dir:Path, output_dir:Path, ref_dir:Path,
-            fuzz_start:datetime=None, fuzz_end:datetime=None, seed:int=None,
-            nthreads:int=1):
+            keep_succeeded:bool, save_graph:bool, cleavage_rule:str, cleavage_exception:str,
+            miscleavage:int, min_mw:int, min_length:int, max_length:int, temp_dir:Path,
+            output_dir:Path, ref_dir:Path, fuzz_start:datetime=None, fuzz_end:datetime=None,
+            seed:int=None, nthreads:int=1):
         """ constructor """
         self.tx_id = tx_id
         self.n_iter = n_iter
@@ -671,6 +685,8 @@ class FuzzTestConfig():
         self.circ_rna_frac = circ_rna_frac
         self.ci_ratio = ci_ratio
         self.alt_splice_frac = alt_splice_frac
+        self.keep_succeeded = keep_succeeded
+        self.save_graph = save_graph
         self.cleavage_rule = cleavage_rule
         self.cleavage_exception = cleavage_exception
         self.miscleavage = miscleavage
@@ -818,6 +834,8 @@ def main(args:argparse.Namespace):
         temp_dir=args.temp_dir,
         output_dir=args.output_dir,
         ref_dir=args.reference_dir,
+        keep_succeeded=args.keep_succeeded,
+        save_graph=args.save_graph,
         seed=args.seed,
         nthreads=args.nthreads
     )
