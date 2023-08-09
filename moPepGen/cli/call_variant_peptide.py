@@ -467,6 +467,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 else:
                     results = [wrapper(dispatches[0])]
 
+                # pylint: disable=W0621
                 for peptide_series, tx_id, _, pgraphs in results:
                     for peptides in peptide_series:
                         for peptide in peptides:
