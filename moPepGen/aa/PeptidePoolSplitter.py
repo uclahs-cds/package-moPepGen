@@ -47,6 +47,8 @@ class PeptidePoolSplitter():
         noncoding, sec termination, and codon reassignment. """
         sources = [SOURCE_NONCODING, SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT]
         for source in sources:
+            if source in self.group_map:
+                source = self.group_map[source]
             if source in self.sources:
                 continue
             self.sources.add(source)
@@ -57,6 +59,8 @@ class PeptidePoolSplitter():
         """ Add a group to the end of the order. """
         if source in self.order:
             raise ValueError(f'The source {source} already has an order.')
+        if source in self.group_map:
+            source = self.group_map[source]
         self.order[source] = max(self.order.values()) + 1 if self.order else 0
 
     def load_database(self, handle:IO) -> None:
@@ -72,9 +76,6 @@ class PeptidePoolSplitter():
         """ Load variant lables from GVF file. """
         metadata = GVFMetadata.parse(handle)
         source = metadata.source
-
-        if source in self.group_map:
-            source = self.group_map[source]
 
         self.sources.add(source)
 
@@ -114,7 +115,11 @@ class PeptidePoolSplitter():
         additional_split = [VariantSourceSet(x) for x in additional_split]
         for peptide in self.peptides.peptides:
             peptide_infos = VariantPeptideInfo.from_variant_peptide(
-                peptide, anno, self.label_map)
+                peptide=peptide,
+                anno=anno,
+                label_map=self.label_map,
+                group_map=self.group_map
+            )
             peptide_infos.sort()
 
             peptide.description = delimiter.join([str(x) for x in peptide_infos])

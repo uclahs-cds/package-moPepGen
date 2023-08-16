@@ -38,8 +38,12 @@ class VariantSourceSet(set):
         if it not in self.levels_map:
             raise ValueError(f'No defined level found for {it}')
 
-    def add(self, element):
+    def add(self, element, group_map:Dict[str,str]=None):
         """ override the add method """
+        if group_map is None:
+            group_map = {}
+        if element in group_map:
+            element = group_map[element]
         self.validate(element)
         super().add(element)
 
@@ -157,9 +161,11 @@ class VariantPeptideInfo():
     @staticmethod
     def from_variant_peptide(peptide:AminoAcidSeqRecord,
             anno:GenomicAnnotation, label_map:LabelSourceMapping=None,
-            check_source:bool=True
+            check_source:bool=True, group_map:Dict[str,str]=None
             ) -> List[VariantPeptideInfo]:
         """ Parse from a variant peptide record """
+        if group_map is None:
+            group_map = {}
         info_list = []
         variant_ids = pi.parse_variant_peptide_id(peptide.description)
         for variant_id in variant_ids:
@@ -198,17 +204,17 @@ class VariantPeptideInfo():
 
             if check_source:
                 if anno.transcripts[tx_id].is_protein_coding is False:
-                    info.sources.add(SOURCE_NONCODING)
+                    info.sources.add(SOURCE_NONCODING, group_map=group_map)
 
                 for gene_id, _ids in var_ids.items():
                     for var_id in _ids:
                         if var_id.split('-')[0] == SEC_TERMINATION_TYPE:
-                            info.sources.add(SOURCE_SEC_TERMINATION)
+                            info.sources.add(SOURCE_SEC_TERMINATION, group_map=group_map)
                         elif var_id.split('-')[0] in CODON_REASSIGNMENTS_TYPES:
-                            info.sources.add(SOURCE_CODON_REASSIGNMENT)
+                            info.sources.add(SOURCE_CODON_REASSIGNMENT, group_map=group_map)
                         else:
                             source = label_map.get_source(gene_id, var_id)
-                            info.sources.add(source)
+                            info.sources.add(source, group_map=group_map)
 
             info_list.append(info)
         return info_list
@@ -338,7 +344,7 @@ class LabelSourceMapping():
         if record.id not in self.data[gene_id]:
             self.data[gene_id][record.id] = source
 
-    def get_source(self, gene_id:str, var_id:str) -> bool:
+    def get_source(self, gene_id:str, var_id:str) -> str:
         """ Get source """
         try:
             return self.data[gene_id][var_id]

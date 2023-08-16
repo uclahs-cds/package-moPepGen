@@ -22,6 +22,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that `variant_coordinates_to_gene` failed when the deletion is end inclusion and it overlaps with the last nucleotide of an exon. #793
 
+- Fixed `splitFasta` that CodonReassign and SECT were not able to be grouped. #796
+
 ## [1.2.0] - 2023-08-03
 
 ### Fixed
