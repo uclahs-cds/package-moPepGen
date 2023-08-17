@@ -606,7 +606,7 @@ class FuzzTestCase():
         args.min_length = 7
         args.max_length = 25
         args.threads = 1
-        args.max_variants_per_node = 7
+        args.max_variants_per_node = 9
         args.additional_variants_per_misc = 2
         args.min_nodes_to_collapse = 30
         args.naa_to_collapse = 5
