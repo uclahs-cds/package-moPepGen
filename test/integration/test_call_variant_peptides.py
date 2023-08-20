@@ -1085,3 +1085,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = self.data_dir/'fuzz/43/brute_force.txt'
         reference = self.data_dir/'fuzz/43'
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case73(self):
+        """ In-frame subgraph not recognized when it is not in variant bubble
+        members.
+        """
+        gvf = [
+            self.data_dir/'fuzz/44/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/44/brute_force.txt'
+        reference = self.data_dir/'fuzz/44'
+        self.default_test_case(gvf, reference, expected)
