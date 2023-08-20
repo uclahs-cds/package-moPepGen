@@ -1970,12 +1970,12 @@ class ThreeFrameTVG():
             node['rf_index'] = cur.reading_frame_index
 
             if self.has_known_orf \
-                        and cur.seq \
-                        and self.get_known_reading_frame_index() \
-                            == cur.reading_frame_index:
-                    node['start_codon'] = cur.seq.get_query_index(
-                        ref_index=self.seq.orf.start
-                    )
+                    and cur.seq \
+                    and self.get_known_reading_frame_index() \
+                        == cur.reading_frame_index:
+                node['start_codon'] = cur.seq.get_query_index(
+                    ref_index=self.seq.orf.start
+                )
             else:
                 node['start_codon'] = -1
 
