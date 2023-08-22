@@ -169,6 +169,8 @@ class PVGOrf():
             circ_rna:circ.CircRNAModel,
             upstream_variants:Set[seqvar.VariantRecord]=None) -> bool:
         """ Checks if it is a valid orf of a downstream node. """
+        if node.is_hybrid_node(subgraphs):
+            return False
         upstream_variants = upstream_variants or set()
 
         if not self.node_is_at_least_one_loop_downstream(node, subgraphs, circ_rna):
