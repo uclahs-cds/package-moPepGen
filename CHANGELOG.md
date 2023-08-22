@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `splitFasta` that CodonReassign and SECT were not able to be grouped. #796
 
+- Fixed `callVariant` that in-frame subgraphs not recognized when they are not in variant bubble.
+
 ## [1.2.0] - 2023-08-03
 
 ### Fixed

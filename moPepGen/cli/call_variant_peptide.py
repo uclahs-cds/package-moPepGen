@@ -222,6 +222,24 @@ class VariantPeptideCaller():
 
     def write_dgraphs(self, tx_id:str, dgraphs:TypeDGraphs):
         """ Write ThreeFrameTVG data """
+        if dgraphs[0]:
+            data = dgraphs[0].jsonfy()
+            with open(self.graph_output_dir/f"{tx_id}_main_TVG.json", 'wt') as handle:
+                json.dump(data, handle)
+
+        for var_id, pgraph in dgraphs[1].items():
+            if pgraph is None:
+                continue
+            data = pgraph.jsonfy()
+            with open(self.graph_output_dir/f"{tx_id}_Fusion_{var_id}_TVG.json", 'wt') as handle:
+                json.dump(data, handle)
+
+        for var_id, pgraph in dgraphs[2].items():
+            if pgraph is None:
+                continue
+            data = pgraph.jsonfy()
+            with open(self.graph_output_dir/f"{tx_id}_circRNA_{var_id}_TVG.json", 'wt') as handle:
+                json.dump(data, handle)
 
     def write_pgraphs(self, tx_id:str, pgraphs:TypePGraphs):
         """ Write PeptideVariantGraph data """
@@ -472,7 +490,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     results = [wrapper(dispatches[0])]
 
                 # pylint: disable=W0621
-                for peptide_series, tx_id, _, pgraphs in results:
+                for peptide_series, tx_id, dgraphs, pgraphs in results:
                     for peptides in peptide_series:
                         for peptide in peptides:
                             caller.variant_peptides.add_peptide(
@@ -481,6 +499,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                                 cleavage_params=caller.cleavage_params
                             )
                     if caller.graph_output_dir is not None:
+                        caller.write_dgraphs(tx_id, dgraphs)
                         caller.write_pgraphs(tx_id, pgraphs)
                 dispatches = []
 
