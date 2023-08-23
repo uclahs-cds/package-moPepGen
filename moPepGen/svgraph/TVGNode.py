@@ -203,6 +203,7 @@ class TVGNode():
             subgraph_id = loc.ref.seqname
             level = subgraphs[subgraph_id].level
             if comp(level, max_level):
+                max_level = level
                 max_subgraph_id = subgraph_id
         for v in self.variants:
             subgraph_id = v.location.seqname

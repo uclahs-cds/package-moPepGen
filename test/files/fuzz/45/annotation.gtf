@@ -1,0 +1,11 @@
+chrF	.	gene	1	818	.	+	.	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	transcript	1	818	.	+	.	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF; is_protein_coding true;
+chrF	.	selenocysteine	112	114	.	+	.	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	selenocysteine	136	138	.	+	.	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	exon	1	189	.	+	.	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	CDS	57	189	.	+	1	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	CDS	284	325	.	+	1	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	exon	284	325	.	+	.	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	CDS	681	818	.	+	1	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	exon	681	818	.	+	.	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;
+chrF	.	UTR	1	56	.	+	.	 gene_id FAKEG00000254; transcript_id FAKET00000254; protein_id FAKEP00000254; tag mrna_end_NF;

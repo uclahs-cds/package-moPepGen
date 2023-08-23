@@ -1,0 +1,4 @@
+chr1	.	gene	1	5234	.	+	.	 gene_id ENSG00000229043.3; gene_type lncRNA; gene_name AC091729.3;
+chr1	.	transcript	121	4202	.	+	.	 gene_id ENSG00000229043.3; transcript_id ENST00000422230.1; gene_type lncRNA; gene_name AC091729.3;
+chr1	.	exon	121	250	.	+	.	 gene_id ENSG00000229043.3; transcript_id ENST00000422230.1; gene_type lncRNA; gene_name AC091729.3;
+chr1	.	exon	3788	4202	.	+	.	 gene_id ENSG00000229043.3; transcript_id ENST00000422230.1; gene_type lncRNA; gene_name AC091729.3;

@@ -1098,12 +1098,28 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case74(self):
-        """
+        """ Peptides are falsely called if the last miscleaved node is missing
+        a downstream cleavage altering variant #800
         """
         test_dir = self.data_dir/'fuzz/45'
         gvf = [
             test_dir/'fake_variants.gvf',
             test_dir/'fake_circ_rna.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case75(self):
+        """ This test case has a larg insertion, a SNV on the inserted sequence,
+        and also a SNV right after the insertion. The second variant is first
+        merged with the insertion subgraph during variant alignment. So this
+        test case ensures that the variant alignment of a subgraph is limited
+        in the subgraph itself. #802 """
+        test_dir = self.data_dir/'comb/CPCG0236_ENST00000422230.1'
+        gvf = [
+            test_dir/'gSNP.gvf',
+            test_dir/'altSplice.gvf'
         ]
         expected = test_dir/'brute_force.txt'
         reference = test_dir
