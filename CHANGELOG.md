@@ -26,6 +26,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that in-frame subgraphs not recognized when they are not in variant bubble.
 
+- Fixed `callVariant` that peptides are falsely called if the last miscleaved node is missing a downstream cleavage altering variant. #800
+
+- Fixed `TVGNode` that `get_max_subgraph_id` always returns the last subgraph ID. #802
+
 ## [1.2.0] - 2023-08-03
 
 ### Fixed
