@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##mopepgen_version=1.2.0
+##parser=parseRMATS
+##reference_index=/hot/project/method/AlgorithmDevelopment/ALGO-000074-moPepGen/ref/GRCh38-EBI-GENCODE34/index
+##genome_fasta=
+##annotation_gtf=
+##source=altSplice
+##CHROM=<Description="Gene ID">
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000104413.18	5209	A5SS_5262-5209-21198	T	<INS>	.	.	TRANSCRIPT_ID=ENST00000519505.5;DONOR_GENE_ID=ENSG00000104413.18;DONOR_START=5210;DONOR_END=5262;GENE_SYMBOL=ESRP1;GENOMIC_POSITION=chr8:94646282:94646283
+ENSG00000104413.18	30598	SE_30597-33191-33433-37130	G	<INS>	.	.	TRANSCRIPT_ID=ENST00000519505.5;DONOR_GENE_ID=ENSG00000104413.18;DONOR_START=33192;DONOR_END=33234;GENE_SYMBOL=ESRP1;GENOMIC_POSITION=chr8:94671671:94671672

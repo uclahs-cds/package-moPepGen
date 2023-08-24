@@ -1124,3 +1124,18 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case76(self):
+        """ This is when the altSplice inserted sequence contains an intronic
+        frameshift variant which is very close to the end of the subgraph. The
+        subgraph node that contains the frameshift variant that is connected
+        to the main graph should be treated as end of the subgraph. #803 """
+        test_dir = self.data_dir/'comb/CPCG0246_ENST00000519505.5'
+        gvf = [
+            test_dir/'gSNP.gvf',
+            test_dir/'gIndel.gvf',
+            test_dir/'altSplice.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
