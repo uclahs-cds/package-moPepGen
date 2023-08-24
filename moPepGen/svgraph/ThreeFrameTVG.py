@@ -1244,7 +1244,8 @@ class ThreeFrameTVG():
                     # the subgraph, there will be additional subgraph end nodes
                     # that go back to the main graph.
                     max_level = self.subgraphs[cur.get_max_subgraph_id(self.subgraphs)].level
-                    if all(max_level > self.subgraphs[n.subgraph_id].level for n in cur.get_out_nodes()):
+                    if all(max_level > self.subgraphs[n.subgraph_id].level
+                            for n in cur.get_out_nodes()):
                         subgraph_out.add(cur)
 
             for e in cur.in_edges:
