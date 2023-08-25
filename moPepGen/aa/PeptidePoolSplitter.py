@@ -42,6 +42,16 @@ class PeptidePoolSplitter():
         self.order = order or {}
         self.sources = sources or set()
 
+    def get_reversed_group_map(self) -> Dict[str, List[str]]:
+        """ """
+        group_map:Dict[str, List[str]] = {}
+        for k,v in self.group_map.items():
+            if v in group_map:
+                group_map[v].append(k)
+            else:
+                group_map[v] = [k]
+        return group_map
+
     def append_order_internal_sources(self):
         """ Add internal sources that are not present in any GTFs, including
         noncoding, sec termination, and codon reassignment. """
@@ -79,7 +89,11 @@ class PeptidePoolSplitter():
 
         self.sources.add(source)
 
-        if source not in self.order:
+        if source in self.group_map:
+            source_group = self.group_map[source]
+            if source_group not in self.order:
+                self.append_order(source_group)
+        elif source not in self.order:
             self.append_order(source)
 
         if metadata.parser == 'parseCIRCexplorer':

@@ -30,6 +30,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `TVGNode` that `get_max_subgraph_id` always returns the last subgraph ID. #802
 
+- Fixed `splitFasta` that source group (specified with `--group-source`) can not be recognized as source group in `--order-source`. #805
+
 ## [1.2.0] - 2023-08-03
 
 ### Fixed

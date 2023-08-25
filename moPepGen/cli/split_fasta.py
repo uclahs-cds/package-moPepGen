@@ -145,21 +145,32 @@ def split_fasta(args:argparse.Namespace) -> None:
     with open(args.variant_peptides, 'rt') as handle:
         splitter.load_database(handle)
 
+    logger(f"Variant FASTA loaded: {args.variant_peptides}.")
+
     if args.noncoding_peptides:
         with open(args.noncoding_peptides, 'rt') as handle:
             splitter.load_database(handle)
+        logger(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
 
     if args.alt_translation_peptides:
         with open(args.alt_translation_peptides, 'rt') as handle:
             splitter.load_database(handle)
+        logger(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
 
     for file in args.gvf:
         with open(file, 'rt') as handle:
             splitter.load_gvf(handle)
+        logger(f"GVF file used: {file}")
 
     additional_split = args.additional_split or []
     sep = SPLIT_DATABASE_KEY_SEPARATER
     additional_split = [set(x.split(sep)) for x in additional_split]
+
+    logger(f"Using source order: {splitter.order}")
+    logger(f"Using source group: {splitter.get_reversed_group_map()}")
+
+    logger(f"Start splitting...")
+
     splitter.split(args.max_source_groups, additional_split, anno)
 
     if not args.quiet:
