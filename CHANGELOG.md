@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `summarizeFasta` and `splitFasta` being too slow. #795
 
+- Fixed `splitFasta` to use top priority header for additional split
+
 ## Added
 
 - Added support for `--group-source` for `summarizeFasta`. #798

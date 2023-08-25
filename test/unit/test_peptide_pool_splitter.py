@@ -454,18 +454,20 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             order=copy.copy(SOURCE_ORDER),
             label_map=label_map
         )
-        splitter.split(1, [{'sINDEL'}], tx2gene, coding_tx)
+        splitter.split(1, [{'gSNP'}], tx2gene, coding_tx)
 
-        self.assertEqual({'gSNP', 'sINDEL-additional'}, set(splitter.databases.keys()))
+        self.assertEqual({'gSNP', 'gSNP-additional'}, set(splitter.databases.keys()))
 
         received = {str(x.seq) for x in splitter.databases['gSNP'].peptides}
         expected = {'SSSSSSSR'}
         self.assertEqual(expected, received)
 
-        peptide = list(splitter.databases['sINDEL-additional'].peptides)[0]
+        peptide = list(splitter.databases['gSNP-additional'].peptides)[0]
         self.assertEqual('SSSSSSSK', str(peptide.seq))
-        expected = 'ENST0002|INDEL-2101-TTTT-T|INDEL-2104-TTTT-T|1' +\
-            ' ENST0001|SNV-1002-T-A|SNV-1003-T-A|1'
+        expected = (
+            'ENST0001|SNV-1002-T-A|SNV-1003-T-A|1'
+            + ' ENST0002|INDEL-2101-TTTT-T|INDEL-2104-TTTT-T|1'
+        )
         self.assertEqual(peptide.description, expected)
 
     def test_split_database_circ_rna(self):
