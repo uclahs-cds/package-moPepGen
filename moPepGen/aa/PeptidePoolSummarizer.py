@@ -267,6 +267,10 @@ class PeptidePoolSummarizer():
             else:
                 ungrouped_sources.add(source)
 
+        # Two source groups are exclusive only when every source in a group A
+        # has at least one mutually exclusive group in group B, and also the
+        # other way around.
+
         for source in sources:
             parsers = self.get_parsers_from_source(source)
             if not parsers:
@@ -276,7 +280,6 @@ class PeptidePoolSummarizer():
                 other_parsers = self.get_parsers_from_source(other)
                 if not other_parsers:
                     continue
-
                 is_exclusive = True
                 for x in parsers:
                     if x not in MUTUALLY_EXCLUSIVE_PARSERS:
@@ -293,16 +296,6 @@ class PeptidePoolSummarizer():
                 if is_exclusive:
                     return True
 
-            # Checks if any of parsers of the rest sources are mutually
-            # exclusive to the current one.
-            # rest_parsers = set()
-            # for other in sources:
-            #     if other is source:
-            #         continue
-            #     rest_parsers.update(self.get_parsers_from_source(other))
-
-            # if any(x in rest_parsers for x in MUTUALLY_EXCLUSIVE_PARSERS[parser]):
-            #     return True
         return False
 
     def write_summary_table(self, handle:IO):
