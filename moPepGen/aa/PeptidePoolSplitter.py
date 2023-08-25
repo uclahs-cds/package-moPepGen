@@ -40,7 +40,17 @@ class PeptidePoolSplitter():
         self.label_map = label_map or LabelSourceMapping()
         self.group_map = group_map or {}
         self.order = order or {}
-        self.sources = sources or set()
+
+
+    def get_reversed_group_map(self) -> Dict[str, List[str]]:
+        """ Reverse group map """
+        group_map: Dict[str, List[str]] = {}
+        for k,v in self.group_map.items():
+            if v in group_map:
+                group_map[v].append(k)
+            else:
+                group_map[v] = [k]
+        return group_map
 
     def append_order_internal_sources(self):
         """ Add internal sources that are not present in any GTFs, including
@@ -49,18 +59,19 @@ class PeptidePoolSplitter():
         for source in sources:
             if source in self.group_map:
                 source = self.group_map[source]
-            if source in self.sources:
-                continue
-            self.sources.add(source)
             if source not in self.order:
                 self.append_order(source)
 
     def append_order(self, source:str):
         """ Add a group to the end of the order. """
         if source in self.order:
-            raise ValueError(f'The source {source} already has an order.')
+            return
+
         if source in self.group_map:
             source = self.group_map[source]
+        if source in self.order:
+            return
+
         self.order[source] = max(self.order.values()) + 1 if self.order else 0
 
     def load_database(self, handle:IO) -> None:
@@ -76,8 +87,6 @@ class PeptidePoolSplitter():
         """ Load variant lables from GVF file. """
         metadata = GVFMetadata.parse(handle)
         source = metadata.source
-
-        self.sources.add(source)
 
         if source not in self.order:
             self.append_order(source)
