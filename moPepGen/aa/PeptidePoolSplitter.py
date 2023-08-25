@@ -136,21 +136,15 @@ class PeptidePoolSplitter():
             peptide.id = peptide.description
             peptide.name = peptide.description
 
-            if len(peptide_infos[0].sources) <= max_groups:
-                database_key = str(peptide_infos[0].sources)
+            sources = peptide_infos[0].sources
+
+            if len(sources) <= max_groups:
+                database_key = str(sources)
                 self.add_peptide_to_database(database_key, peptide)
             else:
                 has_additional_splitting = False
                 for additional_set in additional_split:
-                    ind = get_index_contains_source_set(peptide_infos, additional_set)
-                    if ind is not None:
-                        info = peptide_infos.pop(ind)
-                        peptide_infos.insert(0, info)
-                        label = delimiter.join([str(x) for x in peptide_infos])
-                        peptide.description = label
-                        peptide.id = peptide.description
-                        peptide.name = peptide.description
-
+                    if additional_set.issubset(sources):
                         database_key = self.get_additional_database_key(additional_set)
                         self.add_peptide_to_database(database_key, peptide)
                         has_additional_splitting = True
