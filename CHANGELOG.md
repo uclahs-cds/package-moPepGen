@@ -30,7 +30,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `TVGNode` that `get_max_subgraph_id` always returns the last subgraph ID. #802
 
-- Fixed `splitFasta` that source and source group order gets override by GVF order. #805
+- Fixed `splitFasta` that source and source group order gets overriden by GVF order. #805
 
 - Fixed `summarizeFasta` and `splitFasta` being too slow. #795
 
