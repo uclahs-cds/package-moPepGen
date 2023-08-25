@@ -1,5 +1,6 @@
 """ Test module for moPepGen """
-from typing import Dict, List, Tuple, Union
+from __future__ import annotations
+from typing import Dict, List, Tuple, Union, Set
 import copy
 from pathlib import Path
 import pickle
@@ -369,3 +370,14 @@ def create_aa_record(seq:str, description:str):
     seq = Seq(seq)
     return aa.AminoAcidSeqRecord(seq, _id=description, name=description,
         description=description)
+
+def get_tx2gene_and_coding_tx(anno:gtf.GenomicAnnotation) -> Tuple[Dict[str,str], Set[str]]:
+    """ """
+    tx2gene = {}
+    coding_tx = set()
+    for tx_id in anno.transcripts:
+        tx_model = anno.transcripts[tx_id]
+        tx2gene[tx_id] = tx_model.transcript.gene_id
+        if tx_model.is_protein_coding:
+            coding_tx.add(tx_id)
+    return tx2gene, coding_tx

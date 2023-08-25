@@ -2,7 +2,7 @@
 import copy
 import io
 import unittest
-from test.unit import create_aa_record, create_genomic_annotation
+from test.unit import create_aa_record, create_genomic_annotation, get_tx2gene_and_coding_tx
 from moPepGen.err import VariantSourceNotFoundError
 from moPepGen.aa import PeptidePoolSplitter, VariantSourceSet, \
     VariantPeptideInfo, VariantPeptidePool
@@ -207,12 +207,13 @@ class TestVariantPeptideInfo(unittest.TestCase):
     def test_from_variant_peptide(self):
         """ Test forming from variant peptide """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         levels = copy.copy(SOURCE_ORDER)
         VariantSourceSet.set_levels(levels)
         label_map_data = {'ENSG0001': {'SNV-1157-G-A': 'sSNV'}}
         label_map = LabelSourceMapping(label_map_data)
         peptide = create_aa_record('KHIRJ','ENST0001|SNV-1157-G-A|1')
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
         self.assertEqual([x.sources for x in infos], [{'sSNV'}])
 
         label_map_data = {
@@ -221,7 +222,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         label_map = LabelSourceMapping(label_map_data)
         label = 'ENST0001|SNV-1157-G-A|INDEL-100-GGGGG-G|1'
         peptide = create_aa_record('KHIRJ', label)
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
         self.assertEqual([x.sources for x in infos], [{'gSNP', 'gINDEL'}])
 
         label_map_data = {
@@ -231,12 +232,13 @@ class TestVariantPeptideInfo(unittest.TestCase):
         label_map = LabelSourceMapping(label_map_data)
         label = 'ENST0001|SNV-1157-G-A|INDEL-100-GGGGG-G|1 ENST0002|SNV-254-T-A|1'
         peptide = create_aa_record('KHIRJ', label)
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
         self.assertEqual([x.sources for x in infos], [{'gSNP', 'gINDEL'}, {'sSNV'}])
 
     def test_from_variant_peptide_case2(self):
         """ Test forming from variant peptide """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         levels = copy.copy(SOURCE_ORDER)
         VariantSourceSet.set_levels(levels)
         label_map_data = {'ENSG0001': {'SNV-1157-G-A': 'sSNV'}}
@@ -244,26 +246,27 @@ class TestVariantPeptideInfo(unittest.TestCase):
 
         peptide = create_aa_record('KHIRJ','ENST0002|SNV-1157-G-A|1')
         with self.assertRaises(VariantSourceNotFoundError):
-            VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
+            VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
 
         peptide = create_aa_record('KHIRJ','ENST0001|INDEL-1120-GAAA-A|1')
         with self.assertRaises(VariantSourceNotFoundError):
-            VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
+            VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
 
     def test_from_variant_peptide_noncoding(self):
         """ Test forming from noncidng peptide """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         levels = copy.copy(SOURCE_ORDER)
         VariantSourceSet.set_levels(levels)
         label_map_data = {'ENSG0001': {'SNV-1157-G-A': 'sSNV'}}
         label_map = LabelSourceMapping(label_map_data)
 
         peptide = create_aa_record('KHIRJ','ENST0004|ENSG0004|ORF1|1')
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
         self.assertIn('Noncoding', infos[0].sources)
 
         peptide = create_aa_record('KHIRJ','ENST0004|1')
-        infos = VariantPeptideInfo.from_variant_peptide(peptide, anno, label_map)
+        infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
         self.assertIn('Noncoding', infos[0].sources)
 
 class TestPeptidePoolSplitter(unittest.TestCase):
@@ -337,16 +340,16 @@ class TestPeptidePoolSplitter(unittest.TestCase):
     def test_split_database_case1(self):
         """ Test split database case 1. Single peptide, single source """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [[ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ]]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
         splitter = PeptidePoolSplitter(
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
-            label_map=label_map,
-            sources=copy.copy(set(SOURCE_ORDER.keys()))
+            label_map=label_map
         )
-        splitter.split(1, [], anno)
+        splitter.split(1, [], tx2gene, coding_tx)
         self.assertIn('gSNP', splitter.databases.keys())
         received = {str(x.seq) for x in splitter.databases['gSNP'].peptides}
         expected = {'SSSSSSSR'}
@@ -355,6 +358,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
     def test_split_database_case2(self):
         """ Test split database case 2 """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
             [ 'SSSSSSSK', 'ENST0001|SNV-1002-T-A|SNV-1003-T-A|1' ]
@@ -364,10 +368,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         splitter = PeptidePoolSplitter(
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
-            label_map=label_map,
-            sources=copy.copy(set(SOURCE_ORDER.keys()))
+            label_map=label_map
         )
-        splitter.split(1, [], anno)
+        splitter.split(1, [], tx2gene, coding_tx)
 
         remaining = PeptidePoolSplitter.get_remaining_database_key()
         self.assertEqual({'gSNP', remaining}, set(splitter.databases.keys()))
@@ -383,6 +386,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
     def test_split_database_case3(self):
         """ Test split database case 3. Two sources. """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
             [ 'SSSSSSSK', 'ENST0001|SNV-1002-T-A|SNV-1003-T-A|1' ]
@@ -392,10 +396,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         splitter = PeptidePoolSplitter(
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
-            label_map=label_map,
-            sources=copy.copy(set(SOURCE_ORDER.keys()))
+            label_map=label_map
         )
-        splitter.split(2, [], anno)
+        splitter.split(2, [], tx2gene, coding_tx)
 
         self.assertEqual({'gSNP', 'gSNP-sSNV'}, set(splitter.databases.keys()))
 
@@ -410,6 +413,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
     def test_split_database_case4(self):
         """ Test split database case 4. Two transcripts. """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
             [ 'SSSSSSSK', 'ENST0001|SNV-1002-T-A|SNV-1003-T-A|1 ENST0002|INDEL-2101-TTTT-T|1' ]
@@ -419,10 +423,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         splitter = PeptidePoolSplitter(
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
-            label_map=label_map,
-            sources=copy.copy(set(SOURCE_ORDER.keys()))
+            label_map=label_map
         )
-        splitter.split(1, [], anno)
+        splitter.split(1, [], tx2gene, coding_tx)
 
         self.assertEqual({'gSNP', 'gINDEL'}, set(splitter.databases.keys()))
 
@@ -438,6 +441,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
     def test_split_database_case5(self):
         """ Test split database case 5. Two transcripts with additional splitter. """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
             ['SSSSSSSK', 'ENST0001|SNV-1002-T-A|SNV-1003-T-A|1'
@@ -448,10 +452,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         splitter = PeptidePoolSplitter(
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
-            label_map=label_map,
-            sources=copy.copy(set(SOURCE_ORDER.keys()))
+            label_map=label_map
         )
-        splitter.split(1, [{'sINDEL'}], anno)
+        splitter.split(1, [{'sINDEL'}], tx2gene, coding_tx)
 
         self.assertEqual({'gSNP', 'sINDEL-additional'}, set(splitter.databases.keys()))
 
@@ -468,6 +471,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
     def test_split_database_circ_rna(self):
         """ Test split database with circRNA. """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
             [ 'SSSSSSSK', 'CIRC-ENST0002-E1-E2|1' ]
@@ -477,10 +481,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         splitter = PeptidePoolSplitter(
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
-            label_map=label_map,
-            sources=copy.copy(set(SOURCE_ORDER.keys()))
+            label_map=label_map
         )
-        splitter.split(1, [{'circRNA'}], anno)
+        splitter.split(1, [{'circRNA'}], tx2gene, coding_tx)
 
         self.assertEqual({'gSNP', 'circRNA'}, set(splitter.databases.keys()))
 
@@ -491,6 +494,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
     def test_split_database_fusion(self):
         """ Test split database with fusion. """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [
             [ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ],
             [ 'SSSSSSSK', 'FUSION-ENST0001:1050-ENST0003:3090|1' ]
@@ -500,10 +504,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         splitter = PeptidePoolSplitter(
             peptides=peptides,
             order=copy.copy(SOURCE_ORDER),
-            label_map=label_map,
-            sources=copy.copy(set(SOURCE_ORDER.keys()))
+            label_map=label_map
         )
-        splitter.split(1, [{'Fusion'}], anno)
+        splitter.split(1, [{'Fusion'}], tx2gene, coding_tx)
 
         self.assertEqual({'gSNP', 'Fusion'}, set(splitter.databases.keys()))
 

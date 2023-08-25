@@ -4,12 +4,11 @@ import itertools
 import statistics
 from typing import Dict, IO, List, Set, FrozenSet, Tuple, Optional
 import matplotlib.pyplot as plt
-from moPepGen import gtf, seqvar
+from moPepGen import seqvar
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from moPepGen.aa.VariantPeptideLabel import VariantPeptideInfo, \
     VariantSourceSet, LabelSourceMapping
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
-from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.aa.VariantPeptideLabel import SOURCE_NONCODING, \
     SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT
@@ -195,6 +194,7 @@ class PeptidePoolSummarizer():
         """ Get parsers from source """
         group_map = self.get_reversed_group_map()
         parsers = set()
+        # pylint: disable=R1715
         if source in group_map:
             sources = group_map[source]
         else:

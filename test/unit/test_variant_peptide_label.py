@@ -1,7 +1,7 @@
 """ Test module for VariantPeptideLabel """
 import copy
 import unittest
-from test.unit import create_genomic_annotation
+from test.unit import create_genomic_annotation, get_tx2gene_and_coding_tx
 from test.unit.test_peptide_pool_splitter import (
     ANNOTATION_DATA, LABEL_MAP1, SOURCE_ORDER
 )
@@ -21,6 +21,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         """ Fusion only """
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno = create_genomic_annotation(anno_data)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
         fusion_id = 'FUSION-ENST0001:1050-ENST0003:3090'
         peptide = aa.AminoAcidSeqRecord(
@@ -30,8 +31,8 @@ class TestVariantPeptideInfo(unittest.TestCase):
         levels = copy.copy(SOURCE_ORDER)
         VariantSourceSet.set_levels(levels)
         labels = VariantPeptideInfo.from_variant_peptide(
-            peptide=peptide, anno=anno, label_map=label_map,
-            check_source=True
+            peptide=peptide, tx2gene=tx2gene, coding_tx=coding_tx,
+            label_map=label_map, check_source=True
         )
         self.assertEqual(labels[0].sources, {'Fusion'})
 
@@ -39,6 +40,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         """ Fusion + W2F """
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno = create_genomic_annotation(anno_data)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
         fusion_id = 'FUSION-ENST0001:1050-ENST0003:3090'
         peptide = aa.AminoAcidSeqRecord(
@@ -50,8 +52,8 @@ class TestVariantPeptideInfo(unittest.TestCase):
         levels[SOURCE_CODON_REASSIGNMENT] = max(levels.values()) + 1
         VariantSourceSet.set_levels(levels)
         labels = VariantPeptideInfo.from_variant_peptide(
-            peptide=peptide, anno=anno, label_map=label_map,
-            check_source=True
+            peptide=peptide, tx2gene=tx2gene, coding_tx=coding_tx,
+            label_map=label_map, check_source=True
         )
         self.assertEqual(labels[0].sources, {'Fusion', SOURCE_CODON_REASSIGNMENT})
 
@@ -59,6 +61,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         """ Fusion + SECT """
         anno_data = copy.deepcopy(ANNOTATION_DATA)
         anno = create_genomic_annotation(anno_data)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
         fusion_id = 'FUSION-ENST0001:1050-ENST0003:3090'
         peptide = aa.AminoAcidSeqRecord(
@@ -70,7 +73,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         levels[SOURCE_CODON_REASSIGNMENT] = max(levels.values()) + 1
         VariantSourceSet.set_levels(levels)
         labels = VariantPeptideInfo.from_variant_peptide(
-            peptide=peptide, anno=anno, label_map=label_map,
-            check_source=True
+            peptide=peptide, tx2gene=tx2gene, coding_tx=coding_tx,
+            label_map=label_map, check_source=True
         )
         self.assertEqual(labels[0].sources, {'Fusion', SOURCE_SEC_TERMINATION})
