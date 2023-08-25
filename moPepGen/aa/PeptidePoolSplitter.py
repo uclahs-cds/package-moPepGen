@@ -34,13 +34,23 @@ class PeptidePoolSplitter():
     """
     def __init__(self, peptides:VariantPeptidePool=None, order:Dict[str,int]=None,
             label_map:LabelSourceMapping=None, group_map:Dict[str,str]=None,
-            databases:Databases=None, sources:Set[str]=None):
+            databases:Databases=None):
         self.peptides = peptides
         self.databases = databases or {}
         self.label_map = label_map or LabelSourceMapping()
         self.group_map = group_map or {}
         self.order = order or {}
-        self.sources = sources or set()
+
+
+    def get_reversed_group_map(self) -> Dict[str, List[str]]:
+        """ Reverse group map """
+        group_map: Dict[str, List[str]] = {}
+        for k,v in self.group_map.items():
+            if v in group_map:
+                group_map[v].append(k)
+            else:
+                group_map[v] = [k]
+        return group_map
 
     def append_order_internal_sources(self):
         """ Add internal sources that are not present in any GTFs, including
@@ -49,18 +59,17 @@ class PeptidePoolSplitter():
         for source in sources:
             if source in self.group_map:
                 source = self.group_map[source]
-            if source in self.sources:
-                continue
-            self.sources.add(source)
             if source not in self.order:
                 self.append_order(source)
 
     def append_order(self, source:str):
         """ Add a group to the end of the order. """
         if source in self.order:
-            raise ValueError(f'The source {source} already has an order.')
+            return
         if source in self.group_map:
             source = self.group_map[source]
+        if source in self.order:
+            return
         self.order[source] = max(self.order.values()) + 1 if self.order else 0
 
     def load_database(self, handle:IO) -> None:
@@ -76,8 +85,6 @@ class PeptidePoolSplitter():
         """ Load variant lables from GVF file. """
         metadata = GVFMetadata.parse(handle)
         source = metadata.source
-
-        self.sources.add(source)
 
         if source not in self.order:
             self.append_order(source)
@@ -96,18 +103,20 @@ class PeptidePoolSplitter():
             self.databases[database_key] = VariantPeptidePool()
         self.databases[database_key].peptides.add(peptide)
 
-    def get_all_peptide_sources(self, anno):
+    def get_all_peptide_sources(self, tx2gene:Dict[str,str], coding_tx:Set[str]):
         """ Get sources of all peptides """
         peptide_sources = []
         for peptide in self.peptides.peptides:
             peptide_infos = VariantPeptideInfo.from_variant_peptide(
-                peptide, anno, self.label_map)
+                peptide=peptide, tx2gene=tx2gene, coding_tx=coding_tx,
+                label_map=self.label_map
+            )
             peptide_infos.sort()
             peptide_sources.append([x.sources for x in peptide_infos])
         return peptide_sources
 
     def split(self, max_groups:int, additional_split:List[Set],
-            anno:GenomicAnnotation):
+            tx2gene:Dict[str,str], coding_tx:Set[str]):
         """ Split peptide pool into separate databases """
         self.append_order_internal_sources()
         VariantSourceSet.set_levels(self.order)
@@ -116,7 +125,8 @@ class PeptidePoolSplitter():
         for peptide in self.peptides.peptides:
             peptide_infos = VariantPeptideInfo.from_variant_peptide(
                 peptide=peptide,
-                anno=anno,
+                tx2gene=tx2gene,
+                coding_tx=coding_tx,
                 label_map=self.label_map,
                 group_map=self.group_map
             )

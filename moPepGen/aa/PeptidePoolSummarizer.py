@@ -4,12 +4,11 @@ import itertools
 import statistics
 from typing import Dict, IO, List, Set, FrozenSet, Tuple, Optional
 import matplotlib.pyplot as plt
-from moPepGen import gtf, seqvar
+from moPepGen import seqvar
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from moPepGen.aa.VariantPeptideLabel import VariantPeptideInfo, \
     VariantSourceSet, LabelSourceMapping
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
-from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.aa.VariantPeptideLabel import SOURCE_NONCODING, \
     SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT
@@ -92,11 +91,17 @@ class NoncanonicalPeptideSummaryTable():
         key = self.get_key_x_misc(misc)
         return entry.get(key, 0)
 
-    def add_entry(self, seq:AminoAcidSeqRecord, label_map:LabelSourceMapping,
-            anno:GenomicAnnotation, enzyme:str) -> None:
+    def add_entry(self,
+            seq:AminoAcidSeqRecord,
+            label_map:LabelSourceMapping,
+            group_map:Dict[str,str],
+            tx2gene:Dict[str,str],
+            coding_tx:Set[str],
+            enzyme:str) -> None:
         """ Add peptide entry to the summary table """
         peptide_labels = VariantPeptideInfo.from_variant_peptide(
-            peptide=seq, anno=anno, label_map=label_map,
+            peptide=seq, tx2gene=tx2gene, coding_tx=coding_tx,
+            label_map=label_map, group_map=group_map,
             check_source=True
         )
         peptide_labels.sort()
@@ -158,9 +163,12 @@ class NoncanonicalPeptideSummaryTable():
 
 class PeptidePoolSummarizer():
     """ Summarize the variant peptide pool called by moPepGen callVariant. """
-    def __init__(self, peptides:VariantPeptidePool=None,
+    def __init__(self,
+            peptides:VariantPeptidePool=None,
             summary_table:NoncanonicalPeptideSummaryTable=None,
-            label_map:LabelSourceMapping=None, order:Dict[str,int]=None,
+            label_map:LabelSourceMapping=None,
+            order:Dict[str,int]=None,
+            group_map:Dict[str,str]=None,
             source_parser_map:Dict[str,str]=None,
             ignore_missing_source:bool=False):
         """ """
@@ -168,18 +176,52 @@ class PeptidePoolSummarizer():
         self.summary_table = summary_table or NoncanonicalPeptideSummaryTable()
         self.label_map = label_map or LabelSourceMapping()
         self.order = order or {}
+        self.group_map = group_map or {}
         self.source_parser_map = source_parser_map or {}
         self.ignore_missing_source = ignore_missing_source
+
+    def get_reversed_group_map(self) -> Dict[str, List[str]]:
+        """ Reverse group map """
+        group_map:Dict[str, List[str]] = {}
+        for k,v in self.group_map.items():
+            if v in group_map:
+                group_map[v].append(k)
+            else:
+                group_map[v] = [k]
+        return group_map
+
+    def get_parsers_from_source(self, source:str) -> Set[str]:
+        """ Get parsers from source """
+        group_map = self.get_reversed_group_map()
+        parsers = set()
+        # pylint: disable=R1715
+        if source in group_map:
+            sources = group_map[source]
+        else:
+            sources = [source]
+
+        for s in sources:
+            if s in SOURCES_INTERNAL:
+                continue
+            parser = self.source_parser_map[s]
+            parsers.add(parser)
+        return parsers
 
     def append_order_internal_sources(self):
         """ Add internal sources that are not present in any GTFs, including
         noncoding, sec termination, and codon reassignment. """
         for source in SOURCES_INTERNAL:
+            if source in self.group_map:
+                source = self.group_map[source]
             if source not in self.order:
                 self.append_order(source)
 
     def append_order(self, source:str):
         """ Add a group to the end of the order. """
+        if source in self.order:
+            return
+        if source in self.group_map:
+            source = self.group_map[source]
         if source in self.order:
             return
         self.order[source] = max(self.order.values()) + 1 if self.order else 0
@@ -201,27 +243,59 @@ class PeptidePoolSummarizer():
         for gene_id, _, label in seqvar.io.parse_label(handle):
             self.label_map.add_record(gene_id, label, metadata.source)
 
-    def count_peptide_source(self, anno:gtf.GenomicAnnotation, enzyme:str):
+    def count_peptide_source(self, tx2gene:Dict[str,str], coding_tx:Set[str], enzyme:str):
         """ Count number of peptides in each source or combinations of sources. """
         VariantSourceSet.set_levels(self.order)
         for seq in self.peptides.peptides:
-            self.summary_table.add_entry(seq, self.label_map, anno, enzyme)
+            self.summary_table.add_entry(
+                seq=seq,
+                label_map=self.label_map,
+                group_map=self.group_map,
+                tx2gene=tx2gene,
+                coding_tx=coding_tx,
+                enzyme=enzyme
+            )
 
     def contains_exclusive_sources(self, sources:Set[str]) -> bool:
         """ Checks whether the given sources contains any mutually exclusive
         parsers. """
+        group_map = self.get_reversed_group_map()
+        ungrouped_sources = set()
         for source in sources:
-            if source in SOURCES_INTERNAL:
+            if source in group_map:
+                ungrouped_sources.update(group_map[source])
+            else:
+                ungrouped_sources.add(source)
+
+        # Two source groups are exclusive only when every source in a group A
+        # has at least one mutually exclusive group in group B, and also the
+        # other way around.
+
+        for source in sources:
+            parsers = self.get_parsers_from_source(source)
+            if not parsers:
                 continue
-            parser = self.source_parser_map[source]
-            if parser not in MUTUALLY_EXCLUSIVE_PARSERS:
-                continue
-            # Checks if any of parsers of the rest sources are mutually
-            # exclusive to the current one.
-            rest_parsers = {self.source_parser_map[x] for x in sources
-                if x not in {source, *SOURCES_INTERNAL}}
-            if any(x in rest_parsers for x in MUTUALLY_EXCLUSIVE_PARSERS[parser]):
-                return True
+
+            for other in sources:
+                other_parsers = self.get_parsers_from_source(other)
+                if not other_parsers:
+                    continue
+                is_exclusive = True
+                for x in parsers:
+                    if x not in MUTUALLY_EXCLUSIVE_PARSERS:
+                        is_exclusive = False
+                        break
+                    for y in other_parsers:
+                        if y not in MUTUALLY_EXCLUSIVE_PARSERS:
+                            is_exclusive = False
+                            break
+                        if x not in MUTUALLY_EXCLUSIVE_PARSERS[y]:
+                            is_exclusive = False
+                            break
+
+                if is_exclusive:
+                    return True
+
         return False
 
     def write_summary_table(self, handle:IO):

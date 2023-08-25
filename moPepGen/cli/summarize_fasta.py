@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 from typing import IO
 import matplotlib.pyplot as plt
+from moPepGen import logger
 from moPepGen.cli import common
 from moPepGen.aa.PeptidePoolSummarizer import PeptidePoolSummarizer
 
@@ -71,6 +72,15 @@ def add_subparser_summarize_fasta(subparser:argparse._SubParsersAction):
         f" is printed to stdout. Valid formats: {OUTPUT_FILE_FORMATS}",
         metavar='<file>',
         default=None
+    )
+    p.add_argument(
+        '--group-source',
+        type=str,
+        help='Group sources. The peptides with sources grouped will be written'
+        ' to the same FASTA file. E.g., "PointMutation:gSNP,sSNV'
+        ' INDEL:gINDEL,sINDEL".',
+        metavar='<value>',
+        nargs='*'
     )
     p.add_argument(
         '--output-image',
@@ -139,32 +149,61 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         load_canonical_peptides=False, check_protein_coding=True
     )
 
-    source_order = {val:i for i,val in  enumerate(args.order_source.split(','))}\
+    tx2gene = {}
+    coding_tx = set()
+    for tx_id in anno.transcripts:
+        tx_model = anno.transcripts[tx_id]
+        tx2gene[tx_id] = tx_model.transcript.gene_id
+        if tx_model.is_protein_coding:
+            coding_tx.add(tx_id)
+    del anno
+
+    source_order = {val:i for i,val in enumerate(args.order_source.split(','))}\
         if args.order_source else None
+
+    group_map = None
+    if args.group_source:
+        group_map = {}
+        for it in args.group_source:
+            key, val = it.split(':')
+            for v in val.split(','):
+                group_map[v] = key
 
     summarizer = PeptidePoolSummarizer(
         order=source_order,
+        group_map=group_map,
         ignore_missing_source=args.ignore_missing_source
     )
 
     for gvf in args.gvf:
         with open(gvf, 'rt') as handle:
             summarizer.update_label_map(handle)
+        logger(f"GVF file used: {gvf}")
 
     summarizer.append_order_internal_sources()
 
     with open(args.variant_peptides, 'rt') as handle:
         summarizer.load_database(handle)
 
+    logger(f"Variant FASTA loaded: {args.variant_peptides}")
+
     if args.noncoding_peptides:
         with open(args.noncoding_peptides, 'rt') as handle:
             summarizer.load_database(handle)
+        logger(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
 
     if args.alt_translation_peptides:
         with open(args.alt_translation_peptides, 'rt') as handle:
             summarizer.load_database(handle)
+        logger(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
 
-    summarizer.count_peptide_source(anno, args.cleavage_rule)
+    logger("Start summarizing..")
+
+    summarizer.count_peptide_source(
+        tx2gene=tx2gene,
+        coding_tx=coding_tx,
+        enzyme=args.cleavage_rule
+    )
 
     with output_context(args.output_path) as handle:
         summarizer.write_summary_table(handle)
