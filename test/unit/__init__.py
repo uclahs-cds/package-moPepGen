@@ -372,7 +372,7 @@ def create_aa_record(seq:str, description:str):
         description=description)
 
 def get_tx2gene_and_coding_tx(anno:gtf.GenomicAnnotation) -> Tuple[Dict[str,str], Set[str]]:
-    """ """
+    """ extract tx to gene map and all coding transcripts """
     tx2gene = {}
     coding_tx = set()
     for tx_id in anno.transcripts:
