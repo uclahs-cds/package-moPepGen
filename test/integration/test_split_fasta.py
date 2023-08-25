@@ -111,7 +111,11 @@ class TestSplitDatabase(TestCaseIntegration):
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.group_source = ['DNA:gSNP,gINDEL', 'RNA:RNAEditingSite,Fusion,circRNA', 'ALT:SECT,CodonReassign']
+        args.group_source = [
+            'DNA:gSNP,gINDEL',
+            'RNA:RNAEditingSite,Fusion,circRNA',
+            'ALT:SECT,CodonReassign'
+        ]
         args.order_source = 'ALT,DNA,RNA,Noncoding'
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}

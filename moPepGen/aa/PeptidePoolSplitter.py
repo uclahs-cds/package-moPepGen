@@ -34,7 +34,7 @@ class PeptidePoolSplitter():
     """
     def __init__(self, peptides:VariantPeptidePool=None, order:Dict[str,int]=None,
             label_map:LabelSourceMapping=None, group_map:Dict[str,str]=None,
-            databases:Databases=None, sources:Set[str]=None):
+            databases:Databases=None):
         self.peptides = peptides
         self.databases = databases or {}
         self.label_map = label_map or LabelSourceMapping()

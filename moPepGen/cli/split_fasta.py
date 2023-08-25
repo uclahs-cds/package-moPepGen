@@ -169,7 +169,7 @@ def split_fasta(args:argparse.Namespace) -> None:
     logger(f"Using source order: {splitter.order}")
     logger(f"Using source group: {splitter.get_reversed_group_map()}")
 
-    logger(f"Start splitting...")
+    logger("Start splitting...")
 
     splitter.split(args.max_source_groups, additional_split, anno)
 
