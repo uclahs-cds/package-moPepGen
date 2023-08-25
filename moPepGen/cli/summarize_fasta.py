@@ -149,6 +149,15 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         load_canonical_peptides=False, check_protein_coding=True
     )
 
+    tx2gene = {}
+    coding_tx = set()
+    for tx_id in anno.transcripts:
+        tx_model = anno.transcripts[tx_id]
+        tx2gene[tx_id] = tx_model.transcript.gene_id
+        if tx_model.is_protein_coding:
+            coding_tx.add(tx_id)
+    del anno
+
     source_order = {val:i for i,val in enumerate(args.order_source.split(','))}\
         if args.order_source else None
 
@@ -190,7 +199,11 @@ def summarize_fasta(args:argparse.Namespace) -> None:
 
     logger("Start summarizing..")
 
-    summarizer.count_peptide_source(anno, args.cleavage_rule)
+    summarizer.count_peptide_source(
+        tx2gene=tx2gene,
+        coding_tx=coding_tx,
+        enzyme=args.cleavage_rule
+    )
 
     with output_context(args.output_path) as handle:
         summarizer.write_summary_table(handle)

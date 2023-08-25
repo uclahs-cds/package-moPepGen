@@ -121,6 +121,15 @@ def split_fasta(args:argparse.Namespace) -> None:
         load_proteome=True, load_canonical_peptides=False,
         check_protein_coding=True)
 
+    tx2gene = {}
+    coding_tx = set()
+    for tx_id in anno.transcripts:
+        tx_model = anno.transcripts[tx_id]
+        tx2gene[tx_id] = tx_model.transcript.gene_id
+        if tx_model.is_protein_coding:
+            coding_tx.add(tx_id)
+    del anno
+
     if args.order_source:
         source_order = {}
         for i,val in enumerate(args.order_source.split(',')):
@@ -171,7 +180,12 @@ def split_fasta(args:argparse.Namespace) -> None:
 
     logger("Start splitting...")
 
-    splitter.split(args.max_source_groups, additional_split, anno)
+    splitter.split(
+        max_groups=args.max_source_groups,
+        additional_split=additional_split,
+        tx2gene=tx2gene,
+        coding_tx=coding_tx
+    )
 
     if not args.quiet:
         logger('Database split finished')

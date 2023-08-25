@@ -103,18 +103,20 @@ class PeptidePoolSplitter():
             self.databases[database_key] = VariantPeptidePool()
         self.databases[database_key].peptides.add(peptide)
 
-    def get_all_peptide_sources(self, anno):
+    def get_all_peptide_sources(self, tx2gene:Dict[str,str], coding_tx:Set[str]):
         """ Get sources of all peptides """
         peptide_sources = []
         for peptide in self.peptides.peptides:
             peptide_infos = VariantPeptideInfo.from_variant_peptide(
-                peptide, anno, self.label_map)
+                peptide=peptide, tx2gene=tx2gene, coding_tx=coding_tx,
+                label_map=self.label_map
+            )
             peptide_infos.sort()
             peptide_sources.append([x.sources for x in peptide_infos])
         return peptide_sources
 
     def split(self, max_groups:int, additional_split:List[Set],
-            anno:GenomicAnnotation):
+            tx2gene:Dict[str,str], coding_tx:Set[str]):
         """ Split peptide pool into separate databases """
         self.append_order_internal_sources()
         VariantSourceSet.set_levels(self.order)
@@ -123,7 +125,8 @@ class PeptidePoolSplitter():
         for peptide in self.peptides.peptides:
             peptide_infos = VariantPeptideInfo.from_variant_peptide(
                 peptide=peptide,
-                anno=anno,
+                tx2gene=tx2gene,
+                coding_tx=coding_tx,
                 label_map=self.label_map,
                 group_map=self.group_map
             )

@@ -96,11 +96,12 @@ class NoncanonicalPeptideSummaryTable():
             seq:AminoAcidSeqRecord,
             label_map:LabelSourceMapping,
             group_map:Dict[str,str],
-            anno:GenomicAnnotation,
+            tx2gene:Dict[str,str],
+            coding_tx:Set[str],
             enzyme:str) -> None:
         """ Add peptide entry to the summary table """
         peptide_labels = VariantPeptideInfo.from_variant_peptide(
-            peptide=seq, anno=anno,
+            peptide=seq, tx2gene=tx2gene, coding_tx=coding_tx,
             label_map=label_map, group_map=group_map,
             check_source=True
         )
@@ -242,7 +243,7 @@ class PeptidePoolSummarizer():
         for gene_id, _, label in seqvar.io.parse_label(handle):
             self.label_map.add_record(gene_id, label, metadata.source)
 
-    def count_peptide_source(self, anno:gtf.GenomicAnnotation, enzyme:str):
+    def count_peptide_source(self, tx2gene:Dict[str,str], coding_tx:Set[str], enzyme:str):
         """ Count number of peptides in each source or combinations of sources. """
         VariantSourceSet.set_levels(self.order)
         for seq in self.peptides.peptides:
@@ -250,7 +251,8 @@ class PeptidePoolSummarizer():
                 seq=seq,
                 label_map=self.label_map,
                 group_map=self.group_map,
-                anno=anno,
+                tx2gene=tx2gene,
+                coding_tx=coding_tx,
                 enzyme=enzyme
             )
 

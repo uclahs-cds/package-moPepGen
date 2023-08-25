@@ -2,7 +2,7 @@
 """
 from __future__ import annotations
 import copy
-from typing import List, Dict, Tuple, TYPE_CHECKING, IO, Union
+from typing import List, Dict, Tuple, TYPE_CHECKING, IO, Union, Set
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen import seqvar, err
 from moPepGen.version import MetaVersion
