@@ -66,12 +66,10 @@ class PeptidePoolSplitter():
         """ Add a group to the end of the order. """
         if source in self.order:
             return
-
         if source in self.group_map:
             source = self.group_map[source]
         if source in self.order:
             return
-
         self.order[source] = max(self.order.values()) + 1 if self.order else 0
 
     def load_database(self, handle:IO) -> None:

@@ -32,6 +32,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `splitFasta` that source and source group order gets override by GVF order. #805
 
+## Added
+
+- Added support for `--group-source` for `summarizeFasta`. #798
+
 ## [1.2.0] - 2023-08-03
 
 ### Fixed
