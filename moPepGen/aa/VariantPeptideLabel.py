@@ -1,6 +1,6 @@
 """ module for peptide peptide labels """
 from __future__ import annotations
-from typing import Dict, Iterable, List, TYPE_CHECKING
+from typing import Dict, Iterable, List, TYPE_CHECKING, Set
 from moPepGen import err, seqvar, circ,SPLIT_DATABASE_KEY_SEPARATER
 from moPepGen.seqvar import SEC_TERMINATION_TYPE, CODON_REASSIGNMENTS_TYPES
 from . import VariantPeptideIdentifier as pi
@@ -160,7 +160,8 @@ class VariantPeptideInfo():
 
     @staticmethod
     def from_variant_peptide(peptide:AminoAcidSeqRecord,
-            anno:GenomicAnnotation, label_map:LabelSourceMapping=None,
+            tx2gene:Dict[str,str], coding_tx:Set[str],
+            label_map:LabelSourceMapping=None,
             check_source:bool=True, group_map:Dict[str,str]=None
             ) -> List[VariantPeptideInfo]:
         """ Parse from a variant peptide record """
@@ -172,19 +173,19 @@ class VariantPeptideInfo():
             if isinstance(variant_id, pi.NoncodingPeptideIdentifier):
                 tx_id = variant_id.transcript_id
                 gene_ids = [variant_id.gene_id]
-                var_ids = {}
+                var_ids = {variant_id.gene_id: variant_id.codon_reassigns}
 
             elif isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
                 circ_rna_id = variant_id.circ_rna_id
                 tx_id = circ_rna_id.split('-', 2)[1]
-                gene_ids = [anno.transcripts[tx_id].transcript.gene_id]
+                gene_ids = [tx2gene[tx_id]]
                 var_ids = {gene_ids[0]: [circ_rna_id, *variant_id.variant_ids]}
 
             elif isinstance(variant_id, pi.FusionVariantPeptideIdentifier):
                 first_tx_id = variant_id.first_tx_id
-                first_gene_id = anno.transcripts[first_tx_id].transcript.gene_id
+                first_gene_id = tx2gene[first_tx_id]
                 second_tx_id = variant_id.second_tx_id
-                second_gene_id = anno.transcripts[second_tx_id].transcript.gene_id
+                second_gene_id = tx2gene[second_tx_id]
                 gene_ids = [first_gene_id, second_gene_id]
                 var_ids = {
                     first_gene_id: variant_id.first_variants
@@ -195,7 +196,7 @@ class VariantPeptideInfo():
                 tx_id = first_tx_id
 
             elif isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
-                gene_id = anno.transcripts[variant_id.transcript_id].transcript.gene_id
+                gene_id = tx2gene[variant_id.transcript_id]
                 gene_ids = [gene_id]
                 var_ids = {gene_id: variant_id.variant_ids}
                 tx_id = variant_id.transcript_id
@@ -203,7 +204,7 @@ class VariantPeptideInfo():
             info = VariantPeptideInfo(str(variant_id), gene_ids, var_ids, variant_id.index)
 
             if check_source:
-                if anno.transcripts[tx_id].is_protein_coding is False:
+                if tx_id not in coding_tx:
                     info.sources.add(SOURCE_NONCODING, group_map=group_map)
 
                 for gene_id, _ids in var_ids.items():

@@ -34,6 +34,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `bruteForce` that accepter variants are skipped if the donor transcript has variants with the same coordinate. #810
 
+- Fixed `splitFasta` that source and source group order gets overriden by GVF order. #805
+
+- Fixed `summarizeFasta` and `splitFasta` being too slow. #795
+
+- Fixed `splitFasta` to use top priority header for additional split
+
+## Added
+
+- Added support for `--group-source` for `summarizeFasta`. #798
+
 ## [1.2.0] - 2023-08-03
 
 ### Fixed

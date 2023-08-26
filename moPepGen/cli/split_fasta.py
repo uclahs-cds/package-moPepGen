@@ -121,6 +121,15 @@ def split_fasta(args:argparse.Namespace) -> None:
         load_proteome=True, load_canonical_peptides=False,
         check_protein_coding=True)
 
+    tx2gene = {}
+    coding_tx = set()
+    for tx_id in anno.transcripts:
+        tx_model = anno.transcripts[tx_id]
+        tx2gene[tx_id] = tx_model.transcript.gene_id
+        if tx_model.is_protein_coding:
+            coding_tx.add(tx_id)
+    del anno
+
     if args.order_source:
         source_order = {}
         for i,val in enumerate(args.order_source.split(',')):
@@ -145,22 +154,38 @@ def split_fasta(args:argparse.Namespace) -> None:
     with open(args.variant_peptides, 'rt') as handle:
         splitter.load_database(handle)
 
+    logger(f"Variant FASTA loaded: {args.variant_peptides}.")
+
     if args.noncoding_peptides:
         with open(args.noncoding_peptides, 'rt') as handle:
             splitter.load_database(handle)
+        logger(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
 
     if args.alt_translation_peptides:
         with open(args.alt_translation_peptides, 'rt') as handle:
             splitter.load_database(handle)
+        logger(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
 
     for file in args.gvf:
         with open(file, 'rt') as handle:
             splitter.load_gvf(handle)
+        logger(f"GVF file used: {file}")
 
     additional_split = args.additional_split or []
     sep = SPLIT_DATABASE_KEY_SEPARATER
     additional_split = [set(x.split(sep)) for x in additional_split]
-    splitter.split(args.max_source_groups, additional_split, anno)
+
+    logger(f"Using source order: {splitter.order}")
+    logger(f"Using source group: {splitter.get_reversed_group_map()}")
+
+    logger("Start splitting...")
+
+    splitter.split(
+        max_groups=args.max_source_groups,
+        additional_split=additional_split,
+        tx2gene=tx2gene,
+        coding_tx=coding_tx
+    )
 
     if not args.quiet:
         logger('Database split finished')
