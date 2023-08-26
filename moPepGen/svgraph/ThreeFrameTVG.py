@@ -1226,17 +1226,27 @@ class ThreeFrameTVG():
                 bridge_out.add(cur)
                 continue
 
-            if not self.is_circ_rna() and cur not in members:
-                if cur.subgraph_id != start.subgraph_id:
-                    if not cur.is_inframe_subgraph(start, end):
+            if not self.is_circ_rna():
+                if cur not in members:
+                    if cur.subgraph_id != start.subgraph_id:
+                        if not cur.is_inframe_subgraph(start, end):
+                            subgraph_out.add(cur)
+                            continue
+
+                    if cur.has_multiple_segments() \
+                            and cur.get_first_subgraph_id() == start.subgraph_id \
+                            and cur.get_first_subgraph_id() != cur.get_last_subgraph_id():
                         subgraph_out.add(cur)
                         continue
-
-                if cur.has_multiple_segments() \
-                        and cur.get_first_subgraph_id() == start.subgraph_id \
-                        and cur.get_first_subgraph_id() != cur.get_last_subgraph_id():
-                    subgraph_out.add(cur)
-                    continue
+                elif cur is not end:
+                    # This is when a altSplice indel/sub carries additional frameshift
+                    # variant, and the indel frameshift is very closed to the end of
+                    # the subgraph, there will be additional subgraph end nodes
+                    # that go back to the main graph.
+                    max_level = self.subgraphs[cur.get_max_subgraph_id(self.subgraphs)].level
+                    if all(max_level > self.subgraphs[n.subgraph_id].level
+                            for n in cur.get_out_nodes()):
+                        subgraph_out.add(cur)
 
             for e in cur.in_edges:
                 if e.in_node.get_first_rf_index() != this_id or e.in_node.was_bridge \

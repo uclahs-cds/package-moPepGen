@@ -30,6 +30,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `TVGNode` that `get_max_subgraph_id` always returns the last subgraph ID. #802
 
+- Fixed `callVariant` with altSplice insertion with intronic frameshift variant which is very closed to the end of the subgraph. #803
+
+- Fixed `bruteForce` that accepter variants are skipped if the donor transcript has variants with the same coordinate. #810
+
 - Fixed `splitFasta` that source and source group order gets overriden by GVF order. #805
 
 - Fixed `summarizeFasta` and `splitFasta` being too slow. #795

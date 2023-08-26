@@ -1,0 +1,14 @@
+##fileformat=VCFv4.2
+##mopepgen_version=1.2.0
+##parser=parseVEP
+##reference_index=/hot/project/method/AlgorithmDevelopment/ALGO-000074-moPepGen/ref/GRCh38-EBI-GENCODE34/index
+##genome_fasta=
+##annotation_gtf=
+##source=gSNP
+##CHROM=<Description="Gene ID">
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000104413.18	66026	SNV-66026-A-C	A	C	.	.	TRANSCRIPT_ID=ENST00000519505.5;GENOMIC_POSITION=chr8:94707099;GENE_SYMBOL=ESRP1
+ENSG00000104413.18	66086	SNV-66086-A-T	A	T	.	.	TRANSCRIPT_ID=ENST00000519505.5;GENOMIC_POSITION=chr8:94707159;GENE_SYMBOL=ESRP1

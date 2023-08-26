@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##mopepgen_version=1.2.0
+##parser=parseVEP
+##reference_index=/hot/project/method/AlgorithmDevelopment/ALGO-000074-moPepGen/ref/GRCh38-EBI-GENCODE34/index
+##genome_fasta=
+##annotation_gtf=
+##source=gIndel
+##CHROM=<Description="Gene ID">
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000104413.18	5261	INDEL-5261-A-AAAAT	A	AAAAT	.	.	TRANSCRIPT_ID=ENST00000519505.5;GENOMIC_POSITION=chr8:94646334-94646335;GENE_SYMBOL=ESRP1
