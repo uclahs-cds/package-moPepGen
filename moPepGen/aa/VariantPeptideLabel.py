@@ -173,7 +173,7 @@ class VariantPeptideInfo():
             if isinstance(variant_id, pi.NoncodingPeptideIdentifier):
                 tx_id = variant_id.transcript_id
                 gene_ids = [variant_id.gene_id]
-                var_ids = {}
+                var_ids = {variant_id.gene_id: variant_id.codon_reassigns}
 
             elif isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
                 circ_rna_id = variant_id.circ_rna_id
