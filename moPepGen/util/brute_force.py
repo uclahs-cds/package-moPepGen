@@ -1124,9 +1124,13 @@ class BruteForceVariantPeptideCaller():
         for i in range(len(all_variants)):
             for inds in combinations(range(len(all_variants)), i + 1):
                 variants = [all_variants[i] for i in inds]
-                if fusion and not any(variant_type_mapper[v.id][1] == 'fusion' for v in variants):
+                if fusion \
+                        and not any(variant_type_mapper[v.id][1] == 'fusion'
+                                    for v in variants):
                     continue
-                if circ_rna and not any(variant_type_mapper[v.id][1] == 'circ_rna' for v in variants):
+                if circ_rna \
+                        and not any(variant_type_mapper[v.id][1] == 'circ_rna'
+                                    for v in variants):
                     continue
                 pool = seqvar.VariantRecordPool()
                 pool.anno = self.variant_pool.anno
