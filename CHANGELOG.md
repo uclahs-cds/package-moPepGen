@@ -32,6 +32,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` with altSplice insertion with intronic frameshift variant which is very closed to the end of the subgraph. #803
 
+- Fixed `bruteForce` that accepter variants are skipped if the donor transcript has variants with the same coordinate. #810
+
 ## [1.2.0] - 2023-08-03
 
 ### Fixed
