@@ -40,6 +40,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `splitFasta` to use top priority header for additional split
 
+- Fixed `callVariant` with an issue about novel ORFs finding for noncoding fusion transcript that some accepter only ORFs maybe included.
+
 ## Added
 
 - Added support for `--group-source` for `summarizeFasta`. #798

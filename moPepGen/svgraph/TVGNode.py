@@ -657,7 +657,8 @@ class TVGNode():
                     break
                 if v_l.location.end != len(self.seq.seq):
                     continue
-                if v_l.variant == v_r.variant:
+                if v_l.variant == v_r.variant \
+                        and v_l.variant.is_real_fusion == v_r.variant.is_real_fusion:
                     should_combine_variants = True
                     break
 
