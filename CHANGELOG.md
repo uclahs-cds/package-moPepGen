@@ -44,6 +44,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that when filtering variants for a given transcript/fusion/circRNA, coordinate of end inclusion insertions were not interpreted correctly.
 
+- Fixed `bruteForce` that selenocysteine not fixed for deletion alt sequence.
+
 ## Added
 
 - Added support for `--group-source` for `summarizeFasta`. #798
