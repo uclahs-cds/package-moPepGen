@@ -48,6 +48,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that nodes with fusion being treated as subgraph out or end node incorrectly.
 
+- Fixed `callVariant` with circRNA that when checking whether a node is hybrid, upstream cleavage altering variants are affecting.
+
 ## Added
 
 - Added support for `--group-source` for `summarizeFasta`. #798
