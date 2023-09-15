@@ -224,6 +224,7 @@ class VariantRecord():
         """ equal to """
         return self.location == other.location and \
             self.ref == other.ref and \
+            self.alt == other.alt and \
             self.type == other.type
 
     def __ne__(self, other:VariantRecord) -> bool:

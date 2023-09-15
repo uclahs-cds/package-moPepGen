@@ -1150,3 +1150,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case78(self):
+        """ circRNA with two SNV at the same location """
+        test_dir = self.data_dir/'fuzz/47'
+        gvf = [
+            test_dir/'fake_variants.gvf',
+            test_dir/'fake_circ_rna.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)

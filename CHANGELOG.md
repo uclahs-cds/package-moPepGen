@@ -50,6 +50,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` with circRNA that when checking whether a node is hybrid, upstream cleavage altering variants are affecting.
 
+- Fixed `callVariant` with two SNV at the same location.
+
 ## Added
 
 - Added support for `--group-source` for `summarizeFasta`. #798
