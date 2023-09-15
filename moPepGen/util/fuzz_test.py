@@ -252,6 +252,27 @@ class FuzzRecord():
             line:str
             fields = line.rstrip().split('\t')
             values = dict(zip(header, fields))
+
+            if values['call_variant_start'] == '-':
+                call_variant_start = None
+            else:
+                call_variant_start = datetime.strptime(values['call_variant_start'], time_fmt)
+
+            if values['call_variant_end'] == '-':
+                call_variant_end = None
+            else:
+                call_variant_end = datetime.strptime(values['call_variant_end'], time_fmt)
+
+            if values['brute_force_start'] == '-':
+                brute_force_start = None
+            else:
+                brute_force_start = datetime.strptime(values['brute_force_start'], time_fmt)
+
+            if values['brute_force_end'] == '-':
+                brute_force_end = None
+            else:
+                brute_force_end = datetime.strptime(values['brute_force_end'], time_fmt)
+
             yield FuzzRecord(
                 _id=values['id'],
                 status=values['status'],
@@ -264,10 +285,10 @@ class FuzzRecord():
                 n_fusion=int(values['n_fusion']),
                 n_circ_rna=int(values['n_circ_rna']),
                 n_alt_splice=int(values['n_alt_splice']),
-                call_variant_start=datetime.strptime(values['call_variant_start'], time_fmt),
-                call_variant_end=datetime.strptime(values['call_variant_end'], time_fmt),
-                brute_force_start=datetime.strptime(values['brute_force_start'], time_fmt),
-                brute_force_end=datetime.strptime(values['brute_force_end'], time_fmt)
+                call_variant_start=call_variant_start,
+                call_variant_end=call_variant_end,
+                brute_force_start=brute_force_start,
+                brute_force_end=brute_force_end
             )
 
     @property
