@@ -1139,3 +1139,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case77(self):
+        """ Avoid nodes with fusion being treated as subgraph out or end node
+        incorrectly. """
+        test_dir = self.data_dir/'fuzz/46'
+        gvf = [
+            test_dir/'fake_variants.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)

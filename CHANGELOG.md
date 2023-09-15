@@ -46,6 +46,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `bruteForce` that selenocysteine not fixed for deletion alt sequence.
 
+- Fixed `callVariant` that nodes with fusion being treated as subgraph out or end node incorrectly.
+
 ## Added
 
 - Added support for `--group-source` for `summarizeFasta`. #798
