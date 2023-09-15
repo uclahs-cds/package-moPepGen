@@ -1050,7 +1050,7 @@ class PVGNode():
                         return True
                     if start_hard < end_hard:
                         seg = self[start_hard:end_hard]
-                        [v for v in seg.variants
+                        seg.variants = [v for v in seg.variants
                             if not v.variant.is_circ_rna()
                             and tree[v.location.seqname].level == cur_level]
                         if seg.is_missing_any_variant(variants):
