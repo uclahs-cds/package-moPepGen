@@ -42,6 +42,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` with an issue about novel ORFs finding for noncoding fusion transcript that some accepter only ORFs maybe included.
 
+- Fixed `callVariant` that when filtering variants for a given transcript/fusion/circRNA, coordinate of end inclusion insertions were not interpreted correctly.
+
 ## Added
 
 - Added support for `--group-source` for `summarizeFasta`. #798
