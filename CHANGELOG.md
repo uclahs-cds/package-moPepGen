@@ -40,17 +40,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `splitFasta` to use top priority header for additional split
 
-- Fixed `callVariant` with an issue about novel ORFs finding for noncoding fusion transcript that some accepter only ORFs maybe included.
+- Fixed `callVariant` that some accepter only ORFs maybe included for noncoding fusion transcripts.
 
-- Fixed `callVariant` that when filtering variants for a given transcript/fusion/circRNA, coordinate of end inclusion insertions were not interpreted correctly.
+- Fixed `callVariant` that when filtering variants for a given transcript/fusion/circRNA, coordinates of end inclusion insertions were not interpreted correctly.
 
 - Fixed `bruteForce` that selenocysteine not fixed for deletion alt sequence.
 
 - Fixed `callVariant` that nodes with fusion being treated as subgraph out or end node incorrectly.
 
-- Fixed `callVariant` with circRNA that when checking whether a node is hybrid, upstream cleavage altering variants are affecting.
+- Fixed `callVariant` that upstream cleavage altering variants were affecting checks for whether a node is hybrid in circRNA.
 
-- Fixed `callVariant` with two SNV at the same location.
+- Fixed `callVariant` that two SNV at the same location in circRNA was affecting hybrid node identification.
 
 ## Added
 
