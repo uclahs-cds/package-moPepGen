@@ -235,7 +235,7 @@ class GenomicAnnotation():
 
         transcript_model = self.transcripts[transcript_id]
         start_genomic = self.coordinate_transcript_to_genomic(start, transcript_id)
-        if variant.is_end_inclusion():
+        if variant.is_end_inclusion() and variant.type == 'INDEL' and variant.is_deletion():
             end_genomic = self.coordinate_transcript_to_genomic(end - 2, transcript_id)
             if transcript_model.transcript.strand == 1:
                 end_genomic += 1

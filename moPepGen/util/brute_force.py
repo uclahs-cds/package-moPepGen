@@ -801,11 +801,11 @@ class BruteForceVariantPeptideCaller():
 
             for i in range(3):
                 lhs_offset = (variant.location.start - i) % 3
-                lhs = variant.location.start - lhs_offset
-                var_seq = seq[lhs:variant.location.end]
+                alt_lhs = variant.location.start - lhs_offset
+                var_seq = seq[alt_lhs:variant.location.end]
                 n_carry_over = (3 - (len(var_seq) % 3)) % 3
-                rhs = min(len(seq), variant.location.end + n_carry_over)
-                var_seq += seq[variant.location.end:rhs]
+                alt_rhs = min(len(seq), variant.location.end + n_carry_over)
+                var_seq += seq[variant.location.end:alt_rhs]
 
                 loc = variant.variant.location
                 lhs = loc.start - lhs_offset
@@ -821,6 +821,18 @@ class BruteForceVariantPeptideCaller():
                             and (sec.start - lhs) % 3 == 0:
                         sec_aa = int((sec.start - lhs) / 3)
                         ref_aa = ref_aa[:sec_aa] + 'U' + ref_aa[sec_aa+1:]
+
+                    # this is when the variant is a deletion, the position is
+                    # after the 3rd nt of selenocysteine codon, the codon sequence
+                    # is unchanged and the amino acid sequence should be replaced
+                    # to U from *.
+                    if variant.variant.is_deletion():
+                        if not variant.variant.is_end_inclusion() \
+                                and lhs_offset == 2 \
+                                and alt_lhs == sec.start and sec.end == alt_rhs \
+                                and (sec.start - alt_lhs) % 3 == 0:
+                            sec_aa = int((sec.start - alt_lhs) / 3)
+                            var_aa = var_aa[:sec_aa] + 'U' + var_aa[sec_aa+1:]
 
                 if not skip_stop_lost:
                     is_stop_lost = '*' not in var_aa and '*' in ref_aa \

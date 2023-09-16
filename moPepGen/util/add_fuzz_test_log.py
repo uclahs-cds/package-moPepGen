@@ -95,6 +95,7 @@ class FuzzTestLogSummary:
             self.n_match += 1
         elif record.status == FuzzRecordStatus.failed:
             self.n_mismatch += 1
+            return
         else:
             self.n_fail += 1
             return

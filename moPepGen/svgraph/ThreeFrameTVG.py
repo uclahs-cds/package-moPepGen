@@ -1239,12 +1239,12 @@ class ThreeFrameTVG():
                         subgraph_out.add(cur)
                         continue
                 elif cur is not end:
-                    # This is when a altSplice indel/sub carries additional frameshift
+                    # This is when an altSplice indel/sub carries additional frameshift
                     # variant, and the indel frameshift is very closed to the end of
                     # the subgraph, there will be additional subgraph end nodes
                     # that go back to the main graph.
                     max_level = self.subgraphs[cur.get_max_subgraph_id(self.subgraphs)].level
-                    if all(max_level > self.subgraphs[n.subgraph_id].level
+                    if all(max_level > self.subgraphs[n.subgraph_id].level and n not in members
                             for n in cur.get_out_nodes()):
                         subgraph_out.add(cur)
 
@@ -1748,7 +1748,8 @@ class ThreeFrameTVG():
                     not any(x.out_node.subgraph_id == start.subgraph_id \
                         for x in out_node.out_edges) \
                     and not out_node is ref_node \
-                    and not out_node.is_bridge():
+                    and not out_node.is_bridge() \
+                    and not set(out_node.get_out_nodes()) == set(ref_node.get_out_nodes()):
                 end_nodes.append(out_node)
 
         if not ref_node.out_edges:

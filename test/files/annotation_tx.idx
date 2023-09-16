@@ -1,6 +1,6 @@
 ##source=GENCODE
 ##python=3.8.17
-##moPepGen=1.1.0
+##moPepGen=1.2.0
 ##biopython=1.81
 ENST00000614167.2	174	7260	True
 ENST00000614168.2	7260	12491	True

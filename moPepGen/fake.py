@@ -280,7 +280,7 @@ def fake_exon_deletion(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str,
         ref=ref,
         alt='<DEL>',
         _type='Deletion',
-        _id=f"{rmats_type}_{start_gene}",
+        _id=f"{rmats_type}_{start_gene}-{end_gene}",
         attrs=attrs
     )
 
@@ -358,7 +358,7 @@ def fake_intron_insertion(anno:GenomicAnnotation, genome:DNASeqDict,
         ref=ref,
         alt='<INS>',
         _type='Insertion',
-        _id=f"{rmats_type}_{start_gene}",
+        _id=f"{rmats_type}_{insert_position}-{start_gene}-{end_gene}",
         attrs=attrs
     )
 
