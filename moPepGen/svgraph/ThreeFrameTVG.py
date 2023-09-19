@@ -1914,10 +1914,12 @@ class ThreeFrameTVG():
 
                 if orf[1] and out_node.level == 0:
                     orf_end_query = out_node.seq.get_query_index(orf[1])
-                    if -1 < orf_end_query <= len(out_node.seq.seq) - 3 \
+                    if 0 < orf_end_query <= len(out_node.seq.seq) - 3 \
                             and orf_end_query % 3 == 0:
                         pnode_orf_end = int(orf_end_query / 3)
-                        if new_pnode.seq.seq[pnode_orf_end] != '*':
+                        is_stop_lost = any(orf_end_query in v.location for v in new_pnode.variants)
+                        if new_pnode.seq.seq[pnode_orf_end] != '*' \
+                                and not is_stop_lost:
                             terminal_nodes.append((new_pnode, pnode_orf_end))
 
                 new_pnode.orf = orf
