@@ -549,7 +549,8 @@ class ThreeFrameTVG():
             genome=None,
             anno=None,
             active_frames=[True, True, True],
-            known_orf_index=known_orf_index
+            known_orf_index=known_orf_index,
+            unmutated_start_size=0
         )
 
         for i in range(3):
@@ -955,7 +956,8 @@ class ThreeFrameTVG():
             genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
             tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
             gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
-            active_frames:List[bool]=None, known_orf_index:int=None) -> None:
+            active_frames:List[bool]=None, known_orf_index:int=None,
+            unmutated_start_size:int=3) -> None:
         """ Create a variant graph.
 
         With a list of genomic variants, incorprate each variant into the
@@ -967,10 +969,13 @@ class ThreeFrameTVG():
 
         Args:
             variant [seqvar.VariantRecord]: The variant record.
+            unmutated_start_size [int]: Number of nucleotides after the cds start
+                site (or 0 for noncoding) that should not contain any variant.
         """
         ## Fitler variants
         # skipping start lost mutations
-        start_index = self.seq.orf.start + 3 if self.has_known_orf else 3
+        start_index = self.seq.orf.start if self.has_known_orf else 0
+        start_index += unmutated_start_size
         is_fusion = any(v.is_fusion() for v in variants)
 
         filtered_variants = []

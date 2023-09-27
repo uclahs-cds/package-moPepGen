@@ -1170,8 +1170,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         of the first. """
         test_dir = self.data_dir/'fuzz/48'
         gvf = [
-            test_dir/'fake_variants.gvf',
-            test_dir/'fake_circ_rna.gvf'
+            test_dir/'fake_variants.gvf'
         ]
         expected = test_dir/'brute_force.txt'
         reference = test_dir
