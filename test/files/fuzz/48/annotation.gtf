@@ -1,0 +1,13 @@
+chr1	.	gene	1	1443	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	transcript	1	1443	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF; is_protein_coding true;
+chr1	.	selenocysteine	1101	1103	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	selenocysteine	1417	1419	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	selenocysteine	1423	1425	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	CDS	1	143	.	+	0	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	exon	1	143	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	CDS	488	576	.	+	1	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	exon	488	576	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	CDS	1060	1144	.	+	2	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	exon	1060	1144	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	CDS	1290	1443	.	+	1	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
+chr1	.	exon	1290	1443	.	+	.	 gene_id FAKEG00000724; transcript_id FAKET00000724; protein_id FAKEP00000724; tag cds_start_NF; tag mrna_end_NF;
