@@ -1161,3 +1161,17 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case79(self):
+        """ When creating the cleavage graph, when a variant bubble is processed,
+        the downstream node(s) needs to be identified for the next iteration,
+        and only in-frame node should be used. However some nodes can span over
+        two reading frames, so we should check the last reading frame index instead
+        of the first. """
+        test_dir = self.data_dir/'fuzz/48'
+        gvf = [
+            test_dir/'fake_variants.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)

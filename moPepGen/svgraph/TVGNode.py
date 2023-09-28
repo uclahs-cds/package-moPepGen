@@ -788,7 +788,7 @@ class TVGNode():
 
         if cds_end:
             stop_codon = FeatureLocation(start=cds_end, end=cds_end + 3)
-            if not self.get_node_start_reference_index() < cds_end < \
+            if not self.get_node_start_reference_index() <= cds_end < \
                     self.get_node_end_reference_index():
                 return
             for variant in self.variants:

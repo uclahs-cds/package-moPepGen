@@ -52,6 +52,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that two SNV at the same location in circRNA was affecting hybrid node identification.
 
+- Fixed `callVariant`. When creating the cleavage graph, when a variant bubble is processed, the downstream node(s) needs to be identified for the next iteration, and only in-frame node should be used. However some nodes can span over two reading frames, so we should check the last reading frame index instead of the first.
+
+- Fixed `callVariant` that accepter transcript variants very closed to the breakpoint were skipped.
+
 ## Added
 
 - Added support for `--group-source` for `summarizeFasta`. #798
