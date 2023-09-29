@@ -163,6 +163,11 @@ class PVGNode():
         """ Get incoming nodes as a list """
         return list(self.in_nodes)
 
+    def has_exclusive_outbond_node(self) -> bool:
+        """ The given node has exclusive outbond node """
+        return len(self.out_nodes) == 1 and \
+            len(self.get_out_nodes()[0].in_nodes) == 1
+
     def has_multiple_segments(self) -> bool:
         """ Whether the node has multiple segments, which is when the node
         is merged from several individual nodes. """
