@@ -1177,8 +1177,20 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case80(self):
-        """  """
+        """ Ensures that downstream node will not be skipped if it has an
+        exclusive outbond node. """
         test_dir = self.data_dir/'fuzz/49'
+        gvf = [
+            test_dir/'fake_variants.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case81(self):
+        """ Ensures that doenstream node will not be skipped if its downstream
+        node is in the end of the graph but has multiple inbond variant nodes """
+        test_dir = self.data_dir/'fuzz/50'
         gvf = [
             test_dir/'fake_variants.gvf'
         ]
