@@ -1100,14 +1100,26 @@ class PVGNode():
         # stop and downstream cleavage gain
         if len(self.get_out_nodes()) == 1:
             downstream = self.get_out_nodes()[0]
+            boundary_node = downstream[:1]
+            b_vars = []
+            for v in boundary_node.variants:
+                if not v.upstream_cleavage_altering and not v.variant.is_circ_rna():
+                    b_vars.append(v)
+            boundary_node.variants = b_vars
             if not (downstream.seq.seq == '*' and not downstream.get_out_nodes()):
-                boundary_nodes.append(downstream[:1])
+                boundary_nodes.append(boundary_node)
 
         # upstream cleavage gain cleavage gain
         if len(self.get_in_nodes()) == 1:
             upstream = self.get_in_nodes()[0]
+            boundary_node = upstream[-1:]
+            b_vars = []
+            for v in boundary_node.variants:
+                if not v.downstream_cleavage_altering and not v.variant.is_circ_rna():
+                    b_vars.append(v)
+            boundary_node.variants = b_vars
             if upstream.seq is not None:
-                boundary_nodes.append(upstream[-1:])
+                boundary_nodes.append(boundary_node)
 
         for node in boundary_nodes:
             if node.is_missing_any_variant(variants, self):

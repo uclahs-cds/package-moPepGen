@@ -1197,3 +1197,16 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case82(self):
+        """ This ensures the downstream cleavage altering variants from upstream
+        node and upstream cleavage altering variants from downstream nodes wont't
+        make miscleaved nodes being invalid with a given ORF. """
+        test_dir = self.data_dir/'fuzz/51'
+        gvf = [
+            test_dir/'fake_variants.gvf',
+            test_dir/'fake_circ_rna.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
