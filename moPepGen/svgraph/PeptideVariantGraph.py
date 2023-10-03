@@ -672,8 +672,6 @@ class PeptideVariantGraph():
             if cur.is_already_cleaved() and first_site == -1:
                 continue
 
-            cur_seq = str(cur.seq.seq)
-
             if len(cur.in_nodes) == 1:
                 downstreams, inbridges = self.fit_into_cleavages_single_upstream(cur)
             else:
