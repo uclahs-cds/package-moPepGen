@@ -6,7 +6,7 @@ import Bio
 from moPepGen import __version__
 
 
-MINIMAL_VERSION = '1.2.1'
+MINIMAL_VERSION = '1.1.0'
 
 class MetaVersion():
     """ Versions """
