@@ -361,7 +361,11 @@ class PeptideVariantGraph():
         for node in nodes:
             if node.seq.seq == '*' and not node.out_nodes:
                 continue
-            if node.get_last_rf_index() != reading_frame_index:
+            if node.get_last_rf_index() != reading_frame_index \
+                    and len(node.get_out_nodes()) == 1 \
+                    and not node.has_exclusive_outbond_node() \
+                    and not len(node.get_out_nodes()[0].get_out_nodes()) == 0 \
+                    and not node.get_out_nodes()[0].get_out_nodes()[0].seq.seq == '*':
                 continue
             is_deletion_only_end = any(x.variant.type == 'Deletion' for x in node.variants) \
                 and len(node.out_nodes) == 1 \
@@ -746,7 +750,7 @@ class PeptideVariantGraph():
             elif len(cur.out_nodes) == 1:
                 right = cur.split_node(s, cleavage=True, cleavage_range=r)
                 _,inbridges = self.expand_forward(cur)
-                branches = {list(right.out_nodes)[0]}
+                branches = {right}
             else:
                 branches, inbridges = self.cross_join(cur, s, cleavage_range=r)
 
