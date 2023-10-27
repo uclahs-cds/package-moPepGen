@@ -255,10 +255,10 @@ class GenomicAnnotation():
         ref = variant.ref
         if end_gene - start_gene != end - start:
             if not (variant.type == 'INDEL' and variant.is_deletion()):
-                raise ValueError(f'''
-                    The variant is spanning over at least one entire intron with
-                    the type of '{variant.type}'. Don't know how to handle it.
-                ''')
+                raise ValueError(
+                    'The variant is spanning over at least one entire intron with'
+                    f"the type of '{variant.type}'. Don't know how to handle it."
+                )
             ref = variant.id.split('-')[2]
 
         attrs = copy.copy(variant.attrs)
