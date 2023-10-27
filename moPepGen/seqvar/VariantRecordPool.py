@@ -206,10 +206,10 @@ class VariantRecordPool():
                         continue
                     try:
                         record_gene = self.anno.variant_coordinates_to_gene(record, gene_id)
-                    except ValueError:
+                    except ValueError as e:
                         if record.is_merged_mnv():
                             continue
-                        raise e
+                        raise ValueError from e
                     if _filter(record_gene):
                         if return_coord == 'gene':
                             records.add(record_gene)
