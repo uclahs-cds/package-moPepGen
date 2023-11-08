@@ -10,6 +10,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.2.2] - 2023-10-23
+
+### Fixed:
+
+- Adjacent variants were not merged as MNVs successfully. The function always exited with nothing.
+
+- Because of the updating to on-disk GTF, the coding transcripts were not generated and saved successfully. `filterFasta` is the only command affected.
+
 ## [1.2.1] - 2023-10-05
 
 ### Add

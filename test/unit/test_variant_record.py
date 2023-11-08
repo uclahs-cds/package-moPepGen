@@ -194,3 +194,65 @@ class TestTranscriptionalVariantSeries(unittest.TestCase):
         series.sort()
         x = series.get_highest_hypermutated_region_complexity()
         self.assertEqual(x, 3)
+
+class TestFindMNVsFromAdjacentVariants(unittest.TestCase):
+    """ Test cases for finding MNVs from adjacent variants """
+    def test_find_mvs_from_adjacent_variants(self):
+        """ Find MNVs from adjacent variants. """
+        test_cases = [
+            (
+                (
+                    [
+                        (
+                            3, 4, 'T', 'A', 'SNV', 'SNV-3-T-A',
+                            {'GENE_ID': 'ENSG0001.1'}, 'ENST0001.1'
+                        ),
+                        (
+                            4, 5, 'G', 'A', 'SNV', 'SNV-4-G-A',
+                            {'GENE_ID': 'ENSG0001.1'}, 'ENST0001.1'
+                        )
+                    ],
+                    2
+                ),
+                ['MNV-3-TG-AA']
+            ), (
+                (
+                    [
+                        (
+                            3, 4, 'T', 'A', 'SNV', 'SNV-3-T-A',
+                            {'GENE_ID': 'ENSG0001.1'}, 'ENST0001.1'
+                        ),
+                        (
+                            5, 6, 'G', 'A', 'SNV', 'SNV-5-G-A',
+                            {'GENE_ID': 'ENSG0001.1'}, 'ENST0001.1'
+                        )
+                    ],
+                    2
+                ),
+                []
+            ), (
+                (
+                    [
+                        (
+                            3, 4, 'T', 'A', 'SNV', 'SNV-3-T-A',
+                            {'GENE_ID': 'ENSG0001.1'}, 'ENST0001.1'
+                        ),
+                        (
+                            4, 5, 'G', 'A', 'SNV', 'SNV-4-G-A',
+                            {'GENE_ID': 'ENSG0001.1'}, 'ENST0001.1'
+                        ),
+                        (
+                            5, 6, 'G', 'C', 'SNV', 'SNV-5-G-C',
+                            {'GENE_ID': 'ENSG0001.1'}, 'ENST0001.1'
+                        )
+                    ],
+                    2
+                ),
+                ['MNV-3-TG-AA', 'MNV-4-GG-AC']
+            )
+        ]
+        for test_data, mnv_ids in test_cases:
+            variant_data, max_adjacent_as_mnv = test_data
+            variants = create_variants(variant_data)
+            mnvs = seqvar.find_mnvs_from_adjacent_variants(variants, max_adjacent_as_mnv)
+            self.assertEqual({v.id for v in mnvs}, set(mnv_ids))

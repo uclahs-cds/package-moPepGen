@@ -90,7 +90,7 @@ def create_mnv_from_adjacent(variants:Iterable[VariantRecord]) -> VariantRecord:
         ref=ref,
         alt=alt,
         _type='MNV',
-        _id=f"MNV-{start}-{ref}-{end}",
+        _id=f"MNV-{start}-{ref}-{alt}",
         attrs=attrs
     )
 
@@ -107,12 +107,12 @@ def find_mnvs_from_adjacent_variants(variants:List[VariantRecord],
         if v_0.type not in compatible_type_map:
             continue
         type0 = compatible_type_map[v_0.type]
-        adjacent_combs:Dict[int, List[VariantRecord]] = {
+        adjacent_combs:Dict[int, List[int]] = {
             0: [[i]]
         }
         for k in range(1, max_adjacent_as_mnv):
-            if k not in adjacent_combs:
-                break
+            # if k not in adjacent_combs:
+            #     break
             for comb in adjacent_combs[k - 1]:
                 i_t = comb[-1]
                 if i_t >= len(variants) - 1:
@@ -127,13 +127,16 @@ def find_mnvs_from_adjacent_variants(variants:List[VariantRecord],
                         break
                     if compatible_type_map[v_j.type] == type0:
                         new_comb = comb + [j]
-                        adjacent_combs[k].append(new_comb)
+                        if k in adjacent_combs:
+                            adjacent_combs[k].append(new_comb)
+                        else:
+                            adjacent_combs[k] = [new_comb]
 
         for k, combs in adjacent_combs.items():
             if k == 0:
                 continue
             for comb in combs:
-                mnv = create_mnv_from_adjacent(comb)
+                mnv = create_mnv_from_adjacent([variants[x] for x in comb])
                 mnvs.append(mnv)
     return mnvs
 

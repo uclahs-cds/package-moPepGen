@@ -1981,7 +1981,7 @@ class ThreeFrameTVG():
             variants = set()
             for v in cur.variants:
                 if v.variant.attrs.get('MERGED_MNV'):
-                    variants.update([v.variant.attrs['INDIVIDUAL_VARIANT_IDS']])
+                    variants.update(v.variant.attrs['INDIVIDUAL_VARIANT_IDS'])
                 else:
                     variants.add(v.variant.id)
             node['variants'] = list(variants)
