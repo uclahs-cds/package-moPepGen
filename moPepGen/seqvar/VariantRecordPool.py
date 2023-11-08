@@ -209,7 +209,7 @@ class VariantRecordPool():
                     except ValueError as e:
                         if record.is_merged_mnv():
                             continue
-                        raise ValueError from e
+                        raise e
                     if _filter(record_gene):
                         if return_coord == 'gene':
                             records.add(record_gene)
