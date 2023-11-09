@@ -176,3 +176,37 @@ class TestSplitDatabase(TestCaseIntegration):
             'test_Noncoding.fasta', 'test_ALT.fasta'
         }
         self.assertEqual(files, expected)
+
+    def test_split_fasta_source_order_comb(self):
+        """ test splitFasta with source order of combinations """
+        args = self.create_base_args()
+        args.gvf = [
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'reditools/reditools.gvf',
+            self.data_dir/'fusion/star_fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf'
+        ]
+        args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.group_source = [
+            'ALT:SECT,CodonReassign',
+            'NotCirc:gSNP,gINDEL,sSNV,sINDEL,Fusion,altSplice,RNAEditingSite'
+        ]
+        args.order_source = ','.join([
+            'NotCir',
+            'ALT',
+            'NotCirc-ALT',
+            'Noncoding',
+            'Noncoding-NotCirc',
+            'Noncoding-ALT',
+            'circRNA',
+            'circRNA-ALT',
+            'circRNA-NotCirc',
+            'Noncoding-circRNA'
+        ])
+        args.max_source_groups = 2
+        cli.split_fasta(args)

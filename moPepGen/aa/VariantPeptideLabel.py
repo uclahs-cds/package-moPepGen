@@ -75,6 +75,10 @@ class VariantSourceSet(set):
             return False
         this = self.to_int()
         that = other.to_int()
+        if len(this) > len(that):
+            return True
+        if len(this) < len(that):
+            return False
         for i, j in zip(this, that):
             if i > j:
                 return True
@@ -96,7 +100,10 @@ class VariantSourceSet(set):
 
     def to_int(self, sort=True) -> Iterable[int]:
         """ to int """
-        source_int = {self.levels_map[x] for x in self}
+        try:
+            source_int = {self.levels_map[frozenset(self)]}
+        except KeyError:
+            source_int = {self.levels_map[x] for x in self}
         if sort:
             source_int = list(source_int)
             source_int.sort()
