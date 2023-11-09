@@ -87,3 +87,41 @@ class TestSummarizeFasta(TestCaseIntegration):
             print(cmd)
             print(res.stderr.decode('utf-8'))
             raise
+
+    def test_summarize_fasta_order_source_comb(self):
+        """ summarize fasta case2 with order source of combinations """
+        args = self.create_base_args()
+        args.gvf = [
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'alternative_splicing/alternative_splicing.gvf',
+            self.data_dir/'reditools/reditools.gvf',
+            self.data_dir/'fusion/star_fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf'
+        ]
+        args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.alt_translation_peptides = None
+        args.annotation_gtf = self.data_dir/"annotation.gtf"
+        args.proteome_fasta = self.data_dir/"translate.fasta"
+        args.group_source = [
+            'ALT:SECT,CodonReassign',
+            'NotCirc:gSNP,gINDEL,Fusion,AlternativeSplicing,RNAEditingSite'
+        ]
+        args.order_source = ','.join([
+            'NotCir',
+            'ALT',
+            'NotCirc-ALT',
+            'Noncoding',
+            'Noncoding-NotCirc',
+            'Noncoding-ALT',
+            'circRNA',
+            'circRNA-ALT',
+            'circRNA-NotCirc',
+            'Noncoding-circRNA'
+        ])
+        args.ignore_missing_source = True
+        cli.summarize_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {args.output_path.name}
+        self.assertEqual(files, expected)

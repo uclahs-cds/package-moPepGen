@@ -202,6 +202,12 @@ class TestVariantSourceSet(unittest.TestCase):
         set2 = VariantSourceSet(['gINDEL', 'sINDEL'])
         self.assertTrue(set1 < set2)
 
+        levels[frozenset({'sINDEL', 'circRNA'})] = 7
+        VariantSourceSet.set_levels(levels)
+        set1 = VariantSourceSet(['gSNP', 'circRNA'])
+        set2 = VariantSourceSet(['sINDEL', 'circRNA'])
+        self.assertTrue(set1 > set2)
+
 class TestVariantPeptideInfo(unittest.TestCase):
     """ Test VariantPeptideInfo """
     def test_from_variant_peptide(self):
@@ -514,4 +520,32 @@ class TestPeptidePoolSplitter(unittest.TestCase):
 
         received = {str(x.seq) for x in splitter.databases['Fusion'].peptides}
         expected = {'SSSSSSSK'}
+        self.assertEqual(expected, received)
+
+    def test_split_database_source_comb_order(self):
+        """ Test split database with source order of combinations. """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
+        peptides_data = [
+            [
+                'SSSSSSSR',
+                'ENST0001|SNV-1001-T-A|INDEL-1101-TTTT-T|1' +
+                ' ENST0001|SNV-1003-T-A|INDEL-1104-TTTT-T|1'
+            ]
+        ]
+        peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
+        label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
+        order = copy.copy(SOURCE_ORDER)
+        order[frozenset(['sSNV', 'sINDEL'])] = max(order.values()) + 1
+        splitter = PeptidePoolSplitter(
+            peptides=peptides,
+            order=order,
+            label_map=label_map
+        )
+        splitter.split(2, [], tx2gene, coding_tx)
+
+        self.assertEqual({'sSNV-sINDEL'}, set(splitter.databases.keys()))
+
+        received = {str(x.seq) for x in splitter.databases['sSNV-sINDEL'].peptides}
+        expected = {'SSSSSSSR'}
         self.assertEqual(expected, received)

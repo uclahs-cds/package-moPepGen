@@ -158,8 +158,20 @@ def summarize_fasta(args:argparse.Namespace) -> None:
             coding_tx.add(tx_id)
     del anno
 
-    source_order = {val:i for i,val in enumerate(args.order_source.split(','))}\
-        if args.order_source else None
+    if args.order_source:
+        source_order = {}
+        for i,val in enumerate(args.order_source.split(',')):
+            if '-' in val:
+                source = frozenset(val.split('-'))
+            else:
+                source = val
+            if source in source_order:
+                raise ValueError(
+                    f"Non-unique value found from `--group-source`: {source}"
+                )
+            source_order[source] = i
+    else:
+        source_order = None
 
     group_map = None
     if args.group_source:
