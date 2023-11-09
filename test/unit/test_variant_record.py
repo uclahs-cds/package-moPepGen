@@ -1,6 +1,5 @@
 """ Test module for VariantRecord """
 import unittest
-from dataclasses import dataclass
 from test.unit import create_variant, create_genomic_annotation, \
     create_dna_record_dict, create_variants
 from moPepGen import seqvar

@@ -56,9 +56,7 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
         invalid_protein_as_noncoding:bool=True):
     """ Index a GTF file. """
     anno = gtf.GenomicAnnotationOnDisk()
-
-    with open(file, 'rb') as handle:
-        anno.generate_index(handle, source)
+    anno.generate_index(file, source)
 
     if proteome:
         anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
@@ -77,6 +75,8 @@ def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
         for tx in anno.transcripts.keys():
             tx_pointer:TranscriptPointer = anno.transcripts.get_pointer(tx)
             handle.write(tx_pointer.to_line() + '\n')
+
+    return anno
 
 def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True) -> Path:
     """ Create copy of GTF """
@@ -143,7 +143,12 @@ def generate_index(args:argparse.Namespace):
         logger('Proteome FASTA loaded.')
 
     output_gtf = create_gtf_copy(path_gtf, output_dir, symlink)
-    index_gtf(output_gtf, args.reference_source, proteome, invalid_protein_as_noncoding)
+    anno = index_gtf(
+        file=output_gtf,
+        source=args.reference_source,
+        proteome=proteome,
+        invalid_protein_as_noncoding=invalid_protein_as_noncoding
+    )
     if not quiet:
         logger('Genome annotation GTF saved to disk.')
 
@@ -151,9 +156,6 @@ def generate_index(args:argparse.Namespace):
         pickle.dump(proteome, handle)
     if not quiet:
         logger('Proteome FASTA saved to disk.')
-
-    anno = gtf.GenomicAnnotationOnDisk()
-    anno.generate_index(output_gtf)
 
     # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(

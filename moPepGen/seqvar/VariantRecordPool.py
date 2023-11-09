@@ -204,7 +204,12 @@ class VariantRecordPool():
                 for record in self[tx_id].transcriptional:
                     if record.type in exclude_type:
                         continue
-                    record_gene = self.anno.variant_coordinates_to_gene(record, gene_id)
+                    try:
+                        record_gene = self.anno.variant_coordinates_to_gene(record, gene_id)
+                    except ValueError as e:
+                        if record.is_merged_mnv():
+                            continue
+                        raise e
                     if _filter(record_gene):
                         if return_coord == 'gene':
                             records.add(record_gene)
