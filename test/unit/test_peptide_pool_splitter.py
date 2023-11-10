@@ -46,7 +46,8 @@ LABEL_MAP1 = {
         'INDEL-2102-TTTT-T': 'gINDEL',
         'INDEL-2103-TTTT-T': 'sINDEL',
         'INDEL-2104-TTTT-T': 'sINDEL',
-        'CIRC-ENST0002-E1-E2': 'circRNA'
+        'CIRC-ENST0002-E1-E2': 'circRNA',
+        'SE-2100': 'altSplice'
     },
     'ENSG0003': {
         'SNV-3001-T-A': 'gSNP',
@@ -61,7 +62,7 @@ LABEL_MAP1 = {
 }
 
 SOURCE_ORDER = {'gSNP': 0, 'gINDEL': 1, 'sSNV': 2, 'sINDEL': 3, 'Fusion':4,
-    'circRNA': 5, 'Noncoding': 6}
+    'altSplice':5, 'circRNA': 6, 'Noncoding': 7}
 
 ANNOTATION_ATTRS = [
     [
@@ -208,6 +209,17 @@ class TestVariantSourceSet(unittest.TestCase):
         set2 = VariantSourceSet(['sINDEL', 'circRNA'])
         self.assertTrue(set1 > set2)
 
+        levels = copy.copy(SOURCE_ORDER)
+        levels.update({
+            'Noncoding': 5,
+            frozenset({'Noncoding', 'circRNA'}): 6,
+            'circRNA': 7
+        })
+        VariantSourceSet.set_levels(levels)
+        set1 = VariantSourceSet(['Noncoding', 'circRNA'])
+        set2 = VariantSourceSet(['circRNA'])
+        self.assertTrue(set1 < set2)
+
 class TestVariantPeptideInfo(unittest.TestCase):
     """ Test VariantPeptideInfo """
     def test_from_variant_peptide(self):
@@ -282,7 +294,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         levels = copy.copy(SOURCE_ORDER)
         splitter = PeptidePoolSplitter(order=levels)
         splitter.append_order_internal_sources()
-        self.assertEqual(splitter.order['Noncoding'], 6)
+        self.assertEqual(splitter.order['Noncoding'], 7)
 
     def test_load_gvf(self):
         """ test loading gvf """
@@ -525,18 +537,23 @@ class TestPeptidePoolSplitter(unittest.TestCase):
     def test_split_database_source_comb_order(self):
         """ Test split database with source order of combinations. """
         anno = create_genomic_annotation(ANNOTATION_DATA)
+        anno.transcripts['ENST0005'] = copy.deepcopy(anno.transcripts['ENST0002'])
+        anno.transcripts['ENST0005'].is_protein_coding = False
         tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [
             [
                 'SSSSSSSR',
-                'ENST0001|SNV-1001-T-A|INDEL-1101-TTTT-T|1' +
-                ' ENST0001|SNV-1003-T-A|INDEL-1104-TTTT-T|1'
+                'CIRC-ENST0002-E1-E2|1 ENST0005|SE-2100|1'
             ]
         ]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
         order = copy.copy(SOURCE_ORDER)
-        order[frozenset(['sSNV', 'sINDEL'])] = max(order.values()) + 1
+        order.update({
+            'Noncoding': 6,
+            frozenset(['altSplice', 'Noncoding']): 7,
+            'circRNA': 8
+        })
         splitter = PeptidePoolSplitter(
             peptides=peptides,
             order=order,
@@ -544,8 +561,8 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         )
         splitter.split(2, [], tx2gene, coding_tx)
 
-        self.assertEqual({'sSNV-sINDEL'}, set(splitter.databases.keys()))
+        self.assertEqual({'altSplice-Noncoding'}, set(splitter.databases.keys()))
 
-        received = {str(x.seq) for x in splitter.databases['sSNV-sINDEL'].peptides}
+        received = {str(x.seq) for x in splitter.databases['altSplice-Noncoding'].peptides}
         expected = {'SSSSSSSR'}
         self.assertEqual(expected, received)

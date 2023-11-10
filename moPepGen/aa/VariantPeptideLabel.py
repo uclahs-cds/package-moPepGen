@@ -69,10 +69,6 @@ class VariantSourceSet(set):
         """ greater than """
         if self == other:
             return False
-        if len(self) > len(other):
-            return True
-        if len(self) < len(other):
-            return False
         this = self.to_int()
         that = other.to_int()
         if len(this) > len(that):
