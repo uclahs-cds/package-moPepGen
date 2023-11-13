@@ -564,5 +564,41 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         self.assertEqual({'altSplice-Noncoding'}, set(splitter.databases.keys()))
 
         received = {str(x.seq) for x in splitter.databases['altSplice-Noncoding'].peptides}
-        expected = {'SSSSSSSR'}
+        expected = {x[0] for x in peptides_data}
         self.assertEqual(expected, received)
+
+    def test_split_database_source_comb_order_case2(self):
+        """ Test split database with source order of combinations of more than 2. """
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        anno.transcripts['ENST0005'] = copy.deepcopy(anno.transcripts['ENST0002'])
+        anno.transcripts['ENST0005'].is_protein_coding = False
+        tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
+        peptides_data = [
+            [
+                'SSSSFSSR',
+                'CIRC-ENST0002-E1-E2|1 ENST0005|SE-2100|W2F-5|1'
+            ]
+        ]
+        peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
+        label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
+        order = copy.copy(SOURCE_ORDER)
+        order.update({
+            'Noncoding': 6,
+            frozenset(['altSplice', 'Noncoding']): 7,
+            frozenset(['altSplice', 'Noncoding', 'CodonReassign']): 8,
+            'circRNA': 9
+        })
+        splitter = PeptidePoolSplitter(
+            peptides=peptides,
+            order=order,
+            label_map=label_map,
+        )
+        splitter.split(2, [{'altSplice', 'Noncoding'}], tx2gene, coding_tx)
+
+        self.assertEqual({'altSplice-Noncoding-additional'}, set(splitter.databases.keys()))
+
+        received = {str(x.seq) for x in splitter.databases['altSplice-Noncoding-additional'].peptides}
+        expected = {x[0] for x in peptides_data}
+        self.assertEqual(expected, received)
+
+
