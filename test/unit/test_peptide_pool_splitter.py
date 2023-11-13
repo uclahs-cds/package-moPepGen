@@ -595,9 +595,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         )
         splitter.split(2, [{'altSplice', 'Noncoding'}], tx2gene, coding_tx)
 
-        self.assertEqual({'altSplice-Noncoding-additional'}, set(splitter.databases.keys()))
-
-        received = {str(x.seq) for x in splitter.databases['altSplice-Noncoding-additional'].peptides}
+        key = 'altSplice-Noncoding-additional'
+        self.assertEqual({key}, set(splitter.databases.keys()))
+        received = {str(x.seq) for x in splitter.databases[key].peptides}
         expected = {x[0] for x in peptides_data}
         self.assertEqual(expected, received)
 
