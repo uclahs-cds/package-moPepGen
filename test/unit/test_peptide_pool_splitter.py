@@ -600,5 +600,3 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         received = {str(x.seq) for x in splitter.databases[key].peptides}
         expected = {x[0] for x in peptides_data}
         self.assertEqual(expected, received)
-
-
