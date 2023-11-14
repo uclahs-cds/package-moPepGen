@@ -1212,14 +1212,14 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case83(self):
-        """ Issue in graph digestion. When determining the downstream nodes
-        for next iteration after cleaving a bubble, the outbond node of a new
-        created node (by merging or cleaving) is usually skipped if the new
-        node contains frameshifting variants. However, if the outbond node
-        contains multiple inbond nodes, and all of them are created in the
-        current bubble, it should still be processed and identified as a
-        downstream node, otherwise it will remain as uncleaved and resulting
-        potential invalid characters (e.g., *). """
+        """ Issue in graph digestion. When determining the downstream nodes for
+        the next iteration after cleaving a bubble, the outbound node of a newly
+        created node (by merging or cleaving) is usually skipped if the new node
+        contains frameshifting variants. However, if the outbound node contains
+        multiple inbound nodes, and all of them are created in the current bubble,
+        it should still be processed and identified as a downstream node, otherwise,
+        it will remain as uncleaved and result in potential invalid characters
+        (e.g., *). """
         test_dir = self.data_dir/'fuzz/52'
         gvf = [
             test_dir/'fake_variants.gvf'
