@@ -364,6 +364,7 @@ class PeptideVariantGraph():
             if node.get_last_rf_index() != reading_frame_index \
                     and len(node.get_out_nodes()) == 1 \
                     and not node.has_exclusive_outbond_node() \
+                    and not all(x in nodes for x in node.get_out_nodes()[0].get_in_nodes()) \
                     and not len(node.get_out_nodes()[0].get_out_nodes()) == 0 \
                     and not node.get_out_nodes()[0].get_out_nodes()[0].seq.seq == '*':
                 continue
