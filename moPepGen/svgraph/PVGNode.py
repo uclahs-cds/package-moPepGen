@@ -188,7 +188,9 @@ class PVGNode():
         for v in self.variants:
             if not (v.variant.is_fusion() \
                     or v.variant.is_circ_rna() \
-                    or (v.variant.is_alternative_splicing() and not v.variant.is_deletion())):
+                    or (v.variant.is_alternative_splicing() and not v.variant.is_deletion()) \
+                    or v.downstream_cleavage_altering \
+                    or v.upstream_cleavage_altering):
                 locations.append(v.location)
 
         locations.sort()
