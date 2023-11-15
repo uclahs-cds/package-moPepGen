@@ -212,13 +212,14 @@ class TestVariantSourceSet(unittest.TestCase):
         levels = copy.copy(SOURCE_ORDER)
         levels.update({
             'Noncoding': 5,
-            frozenset({'Noncoding', 'circRNA'}): 6,
+            frozenset({'circRNA', 'Noncoding'}): 6,
             'circRNA': 7
         })
         VariantSourceSet.set_levels(levels)
         set1 = VariantSourceSet(['Noncoding', 'circRNA'])
         set2 = VariantSourceSet(['circRNA'])
         self.assertTrue(set1 < set2)
+        self.assertEqual(str(set1), 'circRNA-Noncoding')
 
 class TestVariantPeptideInfo(unittest.TestCase):
     """ Test VariantPeptideInfo """

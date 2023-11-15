@@ -62,7 +62,16 @@ class VariantSourceSet(set):
 
     def __str__(self) -> str:
         """ str """
-        sorted_list = [x for x in self.levels if x in self]
+        sorted_list = []
+        source_comb = None
+        for level in self.levels:
+            if level == self:
+                source_comb = level
+                break
+            if level in self:
+                sorted_list.append(level)
+        if source_comb:
+            return SPLIT_DATABASE_KEY_SEPARATER.join(source_comb)
         return SPLIT_DATABASE_KEY_SEPARATER.join(sorted_list)
 
     def __gt__(self, other:VariantSourceSet) -> bool:
