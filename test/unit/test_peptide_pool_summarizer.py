@@ -4,13 +4,13 @@ import io
 from contextlib import redirect_stdout
 import unittest
 from test.unit import create_aa_record, create_genomic_annotation, get_tx2gene_and_coding_tx
+from test.unit.test_peptide_pool_splitter import (
+    LABEL_MAP1, SOURCE_ORDER, ANNOTATION_DATA,
+)
 from moPepGen.aa.PeptidePoolSummarizer import PeptidePoolSummarizer
 from moPepGen.aa.PeptidePoolSplitter import LabelSourceMapping
 from moPepGen.aa import VariantPeptidePool
-from test.unit.test_peptide_pool_splitter import (
-    GVF_CASE1, PEPTIDE_DB_CASE1, LABEL_MAP1, SOURCE_ORDER,
-    ANNOTATION_ATTRS, ANNOTATION_DATA,
-)
+
 
 SOURCE_PARSER_MAP = {
     'gSNP': 'parseVEP',
@@ -25,7 +25,7 @@ SOURCE_PARSER_MAP = {
 class TestPeptidePoolSummarizer(unittest.TestCase):
     """ Test cases for PeptidePoolSummarizer """
     def test_summarize_fasta_case1(self):
-        """ """
+        """ basic test """
         anno = create_genomic_annotation(ANNOTATION_DATA)
         tx2gene, coding_tx = get_tx2gene_and_coding_tx(anno)
         peptides_data = [[ 'SSSSSSSR', 'ENST0001|SNV-1001-T-A|1' ]]
@@ -42,7 +42,7 @@ class TestPeptidePoolSummarizer(unittest.TestCase):
         self.assertEqual(set(summarizer.summary_table.data.keys()), {frozenset(['gSNP'])})
 
     def test_summarize_fasta_source_comb_order(self):
-        """ """
+        """ When source combination is present in --order-source """
         anno = create_genomic_annotation(ANNOTATION_DATA)
         anno.transcripts['ENST0005'] = copy.deepcopy(anno.transcripts['ENST0002'])
         anno.transcripts['ENST0005'].is_protein_coding = False
@@ -71,7 +71,10 @@ class TestPeptidePoolSummarizer(unittest.TestCase):
             coding_tx=coding_tx,
             enzyme='trypsin'
         )
-        self.assertEqual(set(summarizer.summary_table.data.keys()), {frozenset(['altSplice', 'Noncoding'])})
+        self.assertEqual(
+            set(summarizer.summary_table.data.keys()),
+            {frozenset(['altSplice', 'Noncoding'])}
+        )
 
         handle = io.StringIO()
         with redirect_stdout(handle):
