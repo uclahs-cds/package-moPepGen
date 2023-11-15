@@ -303,7 +303,8 @@ class PeptidePoolSummarizer():
         summary_keys = self.summary_table.get_keys()
         header = '\t'.join(['sources', *summary_keys])
         handle.write(header + '\n')
-        sources = [it[0] for it in sorted(self.order.items(), key=lambda x:x[1])]
+        sources = [it[0] for it in sorted(self.order.items(), key=lambda x:x[1])
+                    if not isinstance(it[0], frozenset)]
         for i in range(len(sources)):
             for comb in itertools.combinations(sources, i + 1):
                 if self.ignore_missing_source:
