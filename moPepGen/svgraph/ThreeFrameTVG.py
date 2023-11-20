@@ -1257,9 +1257,14 @@ class ThreeFrameTVG():
                 if e.in_node.get_first_rf_index() != this_id or e.in_node.was_bridge \
                         and e.in_node not in visited and e.in_node is not start:
                     bridge_in.add(e.in_node)
-                elif not self.is_circ_rna() and e.in_node.subgraph_id != cur.subgraph_id:
-                    if not (e.in_node.is_inframe_subgraph(start, end) and e.in_node in members):
+                elif not self.is_circ_rna() \
+                        and e.in_node.subgraph_id != cur.subgraph_id:
+                    if e.in_node.subgraph_id != start.subgraph_id:
                         subgraph_in.add(e.in_node)
+                    elif e.in_node.is_inframe_subgraph(start, end):
+                        if not e.in_node in members:
+                            subgraph_in.add(e.in_node)
+
             if cur is not end:
                 for e in cur.out_edges:
                     queue.appendleft(e.out_node)
