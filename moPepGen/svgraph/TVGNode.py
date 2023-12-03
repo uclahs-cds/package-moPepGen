@@ -298,7 +298,7 @@ class TVGNode():
 
     def is_subgraph_end(self) -> bool:
         """ check if is the end of a subgraph """
-        return self.get_out_nodes() \
+        return len(self.get_out_nodes()) > 0 \
             and all(x.level < self.level for x in self.get_out_nodes())
 
     def is_orf_bridge(self, out_node:TVGNode) -> bool:
