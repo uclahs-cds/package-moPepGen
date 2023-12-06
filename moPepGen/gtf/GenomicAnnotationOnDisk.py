@@ -95,7 +95,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         else:
             self.infer_source()
 
-    def load_index(self, file:Union[str,Path]):
+    def load_index(self, file:Union[str,Path], check_version:bool=True):
         """ Load index from idx files """
         self.init_handle(file)
         gene_idx_file, tx_idx_file = self.get_index_files(file)
@@ -109,7 +109,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
 
         with open(gene_idx_file, 'rt') as handle:
             metadata = GTFIndexMetadata.parse(handle)
-            if not version.is_valid(metadata.version):
+            if check_version and not version.is_valid(metadata.version):
                 raise err.IndexVersionNotMatchError(version, metadata.version)
 
             gene_source = metadata.source
@@ -129,7 +129,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
 
         with open(tx_idx_file, 'rt') as handle:
             metadata = GTFIndexMetadata.parse(handle)
-            if not version.is_valid(metadata.version):
+            if check_version and not version.is_valid(metadata.version):
                 raise err.IndexVersionNotMatchError(version, metadata.version)
 
             tx_source = metadata.source
