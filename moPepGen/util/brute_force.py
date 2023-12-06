@@ -1230,10 +1230,10 @@ def fix_indel_after_start_codon(pool:seqvar.VariantRecordPool,
         chrom = tx_model.transcript.chrom
         tx_seq = tx_model.get_transcript_sequence(ref.genome[chrom])
 
-        if not tx_model.cds:
-            continue
-
-        start = tx_seq.orf.start
+        if tx_seq.orf:
+            start = tx_seq.orf.start
+        else:
+            start = 0
         for v in pool[tx_id].transcriptional:
             if v.location.start == start + 2 \
                     and (v.is_insertion() or v.is_deletion()) \
