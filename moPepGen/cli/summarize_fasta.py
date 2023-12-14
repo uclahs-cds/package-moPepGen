@@ -145,7 +145,7 @@ def validate_files(args) -> bool:
             and not args.noncoding_peptides \
             and not args.alt_translation_peptides:
         raise ValueError(
-            f"Nothing to summarize. Please provide at least one of --variant-peptides" +
+            "Nothing to summarize. Please provide at least one of --variant-peptides" +
             " --noncoding-peptides, or --alt-translation-peptides"
         )
 
