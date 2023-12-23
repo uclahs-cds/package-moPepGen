@@ -27,7 +27,7 @@ class TestCVG(unittest.TestCase):
         circ_record = create_circ_model('ENST0001', [(0,8),(10,18)], 'CIRCXXX')
         seq = Seq('AATTGGCCCCGGTTAA')
         locations = []
-        seq = dna.DNASeqRecordWithCoordinates(seq, locations)
+        seq = dna.DNASeqRecordWithCoordinates(seq, locations=locations)
         graph = svgraph.ThreeFrameCVG(seq, 'ENST0001', circ_record=circ_record)
         graph.init_three_frames()
         for root in graph.reading_frames:
@@ -40,7 +40,7 @@ class TestCVG(unittest.TestCase):
         circ_record = create_circ_model('ENST0001', [(0,8),(10,18)], 'CIRCXXX')
         seq = Seq('AATTGGCCCCGGTTAA')
         locations = []
-        seq = dna.DNASeqRecordWithCoordinates(seq, locations)
+        seq = dna.DNASeqRecordWithCoordinates(seq, locations=locations)
         graph = svgraph.ThreeFrameCVG(seq, 'ENST0001', circ_record=circ_record)
         graph.init_three_frames()
         graph.extend_loop()

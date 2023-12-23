@@ -551,10 +551,9 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
         attributes['tag'].append('mrna_end_NF')
     for i in range(n_exons):
         exon_len = random.randint(min_exon_size, max_exon_size)
-        loc = FeatureLocation(start=offset, end=offset + exon_len, seqname=chrom)
+        loc = FeatureLocation(start=offset, end=offset + exon_len, seqname=chrom, strand=strand)
         exon = GTFSeqFeature(
-            location=loc, strand=strand, type='exon', id=tx_id,
-            attributes=attributes, chrom=chrom
+            location=loc, type='exon', id=tx_id, attributes=attributes, chrom=chrom
         )
         exon_set.append(exon)
         if is_coding:
@@ -586,10 +585,9 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
             else:
                 cds_end = offset + exon_len
 
-            loc = FeatureLocation(start=cds_start, end=cds_end, seqname=chrom)
+            loc = FeatureLocation(start=cds_start, end=cds_end, seqname=chrom, strand=strand)
             cds = GTFSeqFeature(
-                location=loc, strand=strand, type='CDS', id=tx_id,
-                attributes=attributes, chrom=chrom
+                location=loc, type='CDS', id=tx_id, attributes=attributes, chrom=chrom
             )
             cds_set.append(cds)
 
@@ -661,12 +659,12 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
 
             if strand == 1:
                 sec_pos = sec_pos_cds - k + cds.location.start
-                loc = FeatureLocation(sec_pos, sec_pos + 3)
+                loc = FeatureLocation(sec_pos, sec_pos + 3, strand=strand)
             else:
                 sec_pos = cds.location.end - (sec_pos_cds - k)
-                loc = FeatureLocation(sec_pos - 3, sec_pos)
+                loc = FeatureLocation(sec_pos - 3, sec_pos, strand=strand)
             sec = GTFSeqFeature(
-                location=loc, strand=strand, type='selenocysteine', id=tx_id,
+                location=loc, type='selenocysteine', id=tx_id,
                 attributes=attributes, chrom=chrom
             )
             sec_set.append(sec)
@@ -677,11 +675,10 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
         if cds_set[0].location.start != exon_set[0].location.start:
             loc = FeatureLocation(
                 start=exon_set[0].location.start, end=cds_set[0].location.start,
-                seqname=chrom
+                seqname=chrom, strand=strand
             )
             utr = GTFSeqFeature(
-                location=loc, strand=strand, type='UTR', id=tx_id,
-                attributes=attributes, chrom=chrom
+                location=loc, type='UTR', id=tx_id, attributes=attributes, chrom=chrom
             )
             utr_set.append(utr)
             if strand == 1:
@@ -692,11 +689,10 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
         if cds_set[-1].location.end != exon_set[-1].location.end:
             loc = FeatureLocation(
                 start=cds_set[-1].location.end, end=exon_set[-1].location.end,
-                seqname=chrom
+                seqname=chrom, strand=strand
             )
             utr = GTFSeqFeature(
-                location=loc, strand=strand, type='UTR', id=tx_id,
-                attributes=attributes, chrom=chrom
+                location=loc, type='UTR', id=tx_id, attributes=attributes, chrom=chrom
             )
             utr_set.append(utr)
             if strand == 1:
@@ -705,12 +701,11 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
                 five_utr_set.append(utr)
 
     loc = FeatureLocation(
-        start=exon_set[0].location.start,
-        end=exon_set[-1].location.end,
-        seqname=chrom
+        start=exon_set[0].location.start, end=exon_set[-1].location.end,
+        seqname=chrom, strand=strand
     )
     transcript = GTFSeqFeature(
-        location=loc, strand=strand, type='transcript', id=tx_id,
+        location=loc, type='transcript', id=tx_id,
         attributes=attributes, chrom=chrom
     )
 
@@ -761,7 +756,6 @@ def fake_genomic_annotation(n_genes:int, chrom:str, min_exons:int, max_exons:int
         loc = FeatureLocation(start=gene_start, end=gene_end, seqname=chrom)
         gene_model = GeneAnnotationModel(
             location=loc, chrom=chrom, transcripts=[tx_id], type='gene',
-            strand=strand,
             attributes=copy.deepcopy(tx_model.transcript.attributes)
         )
         anno.genes[gene_id] = gene_model

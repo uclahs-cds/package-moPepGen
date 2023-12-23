@@ -115,7 +115,7 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
     """
     node_list:Dict[int,svgraph.TVGNode] = {}
     raw_seq = Seq(seq)
-    seq = dna.DNASeqRecordWithCoordinates(raw_seq, [])
+    seq = dna.DNASeqRecordWithCoordinates(raw_seq, locations=[])
     graph = svgraph.ThreeFrameTVG(seq, _id=graph_id)
     graph.cleavage_params = params.CleavageParams()
     for edge in copy.copy(graph.root.out_edges):
@@ -220,7 +220,7 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
             )
             seq_locations.append(seq_location)
 
-        seq = dna.DNASeqRecordWithCoordinates(_seq, seq_locations)
+        seq = dna.DNASeqRecordWithCoordinates(_seq, locations=seq_locations)
         node = svgraph.TVGNode(seq, variants,
             reading_frame_index=orf_idx, subgraph_id=graph.id)
         node_list[key] = node
