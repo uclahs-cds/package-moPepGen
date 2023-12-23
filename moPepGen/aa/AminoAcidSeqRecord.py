@@ -412,8 +412,8 @@ class AminoAcidSeqRecord(SeqRecord):
 
 class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
     """ Amino acid sequence record with coordinates """
-    def __init__(self, seq:Seq, locations:List[MatchedLocation],
-            *args, orf:FeatureLocation=None, **kwargs ):
+    def __init__(self, seq:Seq, *args,
+            locations:List[MatchedLocation]=None, orf:FeatureLocation=None, **kwargs ):
         """ Constract a DNASeqRecordWithCoordinates object.
 
         Args:
@@ -423,7 +423,7 @@ class AminoAcidSeqRecordWithCoordinates(AminoAcidSeqRecord):
             orf (FeatureLocation): The open reading frame start and end.
         """
         super().__init__(seq=seq, *args, **kwargs)
-        self.locations = locations
+        self.locations = locations or []
         # query index
         self.orf = orf
 
