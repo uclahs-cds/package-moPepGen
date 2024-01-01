@@ -210,3 +210,21 @@ class TestSplitDatabase(TestCaseIntegration):
         ])
         args.max_source_groups = 2
         cli.split_fasta(args)
+
+    def test_split_fasta_noncoding_and_alttrans(self):
+        """ test splitFasta with only noncoding and alt trans peptides """
+        args = self.create_base_args()
+        args.gvf = [
+        ]
+        args.variant_peptides = None
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        cli.split_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {
+            'test_Noncoding.fasta', 'test_SECT.fasta',
+            'test_Remaining.fasta', 'test_CodonReassign.fasta'
+        }
+        self.assertEqual(files, expected)

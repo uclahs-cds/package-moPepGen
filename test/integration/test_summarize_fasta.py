@@ -21,6 +21,8 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.output_image = None
         args.ignore_missing_source = False
         args.reference_source = None
+        args.annotation_gtf = self.data_dir/"annotation.gtf"
+        args.proteome_fasta = self.data_dir/"translate.fasta"
         return args
 
     def test_summarize_fasta_case1(self):
@@ -36,8 +38,6 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
         args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
-        args.annotation_gtf = self.data_dir/"annotation.gtf"
-        args.proteome_fasta = self.data_dir/"translate.fasta"
         cli.summarize_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.output_path.name}
@@ -56,8 +56,6 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
         args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
         args.alt_translation_peptides = None
-        args.annotation_gtf = self.data_dir/"annotation.gtf"
-        args.proteome_fasta = self.data_dir/"translate.fasta"
         args.order_source = 'gSNP,gINDEL,RNAEditingSite,Fusion,circRNA,rMATS,Noncoding'
         args.ignore_missing_source = True
         cli.summarize_fasta(args)
@@ -102,8 +100,6 @@ class TestSummarizeFasta(TestCaseIntegration):
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
         args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
         args.alt_translation_peptides = None
-        args.annotation_gtf = self.data_dir/"annotation.gtf"
-        args.proteome_fasta = self.data_dir/"translate.fasta"
         args.group_source = [
             'ALT:SECT,CodonReassign',
             'NotCirc:gSNP,gINDEL,Fusion,AlternativeSplicing,RNAEditingSite'
@@ -125,3 +121,37 @@ class TestSummarizeFasta(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.output_path.name}
         self.assertEqual(files, expected)
+
+    def test_summarize_fasta_noncoding_only(self):
+        """ summarize fasta noncoding only """
+        args = self.create_base_args()
+        args.gvf = []
+        args.variant_peptides = None
+        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.alt_translation_peptides = None
+        cli.summarize_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {args.output_path.name}
+        self.assertEqual(files, expected)
+
+    def test_summarize_fasta_alttranslate_only(self):
+        """ summarize fasta alt trans only """
+        args = self.create_base_args()
+        args.gvf = []
+        args.variant_peptides = None
+        args.noncoding_peptides = None
+        args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
+        cli.summarize_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {args.output_path.name}
+        self.assertEqual(files, expected)
+
+    def test_summarize_fasta_blank(self):
+        """ summarize fasta with no input """
+        args = self.create_base_args()
+        args.gvf = []
+        args.variant_peptides = None
+        args.noncoding_peptides = None
+        args.alt_translation_peptides = None
+        with self.assertRaises(ValueError):
+            cli.summarize_fasta(args)
