@@ -57,7 +57,7 @@ class CIRCexplorer2KnownRecord():
         else:
             raise ValueError(f'circRNA type unsupported: {self.circ_type}')
 
-        fragment_ids = []
+        fragment_ids:List[Tuple(fragment, str, int)] = []
 
         for i, exon_size in enumerate(self.exon_sizes):
             exon_offset = self.exon_offsets[i]
@@ -81,7 +81,7 @@ class CIRCexplorer2KnownRecord():
 
             if fragment_type == 'exon':
                 exon_index = anno.find_exon_index(tx_id, fragment)
-                fragment_ids.append( f"E{exon_index + 1}")
+                fragment_ids.append((fragment, 'E', exon_index))
 
             elif fragment_type == 'intron':
                 intron_index = anno.find_intron_index(
@@ -89,13 +89,13 @@ class CIRCexplorer2KnownRecord():
                     intron_start_range=intron_start_range,
                     intron_end_range=intron_end_range
                 )
-                fragment_ids.append(f"I{intron_index + 1}")
+                fragment_ids.append((fragment, 'I', intron_index))
                 intron.append(i)
 
             fragments.append(fragment)
 
-        fragment_ids.sort()
-        circ_id += f'-{tx_id}-' + '-'.join(fragment_ids)
+        fragment_ids.sort(key=lambda x: x[0])
+        circ_id += f'-{tx_id}-' + '-'.join([f"{t}{i+1}" for _,t,i in fragment_ids])
 
         genomic_location = f"{self.chrom}:{self.start}"
 
