@@ -39,7 +39,7 @@ Similarly, for ENSEMBL, we recommend using the primary genome assembly and its a
 
 ## Output
 
-Users usually don't need to worry about the output files of this command. As long as the correct path is provided to  subsequent moPepGen commands, the correct index files will be recognized.
+Users usually don't need to worry about the output files of this command. As long as the correct path is provided to subsequent moPepGen commands, the correct index files will be recognized.
 
 Files are created by this command:
 

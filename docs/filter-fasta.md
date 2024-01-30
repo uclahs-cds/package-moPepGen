@@ -40,7 +40,7 @@ moPepGen fitlerFasta \
 
 ### Filter by Expression and Miscleavages
 
-This example is the same as above with the addition of a filter by miscleavages. Any peptides with the miscleavages larger than 3 will be dropped.
+This example is the same as above with the addition of a filter by miscleavages. Any peptides with miscleavages larger than 3 will be dropped.
 
 ```bash
 moPepGen fitlerFasta \
@@ -57,7 +57,7 @@ moPepGen fitlerFasta \
 
 ### Filter Variant and Noncoding Peptides
 
-This example takes both a variant peptide and noncoding peptide FASTA file and filter the sequences based on the expression level of the transcripts that they are associated with.
+This example takes both a variant peptide and noncoding peptide FASTA file and filters the sequences based on the expression level of the transcripts that they are associated with.
 
 ```bash
 moPepGen fitlerFasta \
@@ -77,7 +77,7 @@ moPepGen fitlerFasta \
 This example here removes any peptide sequences if they appear in the given denylist.
 
 !!! warning:
-When using noncoding peptides as denylist, do not also pass it as a input FASTA, because all peptides will be removed.
+When using noncoding peptides in a denylist, do not also pass it as an input FASTA, because all peptides will be removed.
 
 ```bash
 moPepGen fitlerFasta \
@@ -98,7 +98,7 @@ moPepGen filterFasta \
 
 ### Complex Filtering
 
-Sometimes we want more complex filtering strategy. In the example below, we want to first remove any variant peptides that overlap with any noncoding peptide, and next we filter again based on the expression level.
+Sometimes we want a more complex filtering strategy. In the example below, we want to first remove any variant peptides that overlap with any noncoding peptide, and next we filter again based on the expression level.
 
 Remove variant peptides if they overlap with any noncoding peptide.
 
