@@ -12,7 +12,7 @@
 
 moPepGen (multi-omics peptide generator) uses data from one or more omics experiments and calls variant peptides as custom databases for proteogenomic library search.
 
-moPepGen takes genomic variants such as single nucleotide variants (SNP or SNV), insertion/deletion (INDEL), gene fusion, and post-transcriptional modifications such as RNA editing and alternative splicing, and detects variated peptides affected.
+moPepGen takes genomic and transcriptomic variants such as single nucleotide variants (SNPs or SNVs), small insertions/deletions (indels), gene fusion, alternative splicing, RNA circularization and RNA editing events, and generates noncanonical peptides affected by the variants.
 
 ## Installation
 
