@@ -29,7 +29,7 @@ Alternative translation is when a different peptide is generated from the same t
 
 ### Selenocysteine Termination
 
-In eukaryotes, the UGA on some mRNAs can be decoded into selenocysteine instead of being recognized as a stop codon, and those proteins are called selenoproteins. However, the decoding of UGA is regulated by complex signals including mRNA and sec-tRNA abundance, which could result in two isoforms: one with UGA read through and one being truncated. Selenocysteine termination is used to represent the later situation. Selenocysteine terminations are not written into any GVF file but they are represented in the format of `SECT-<pos>` where `pos` is the position of the selenocysteine UGA being recognized as a stop codon in the **gene**.
+In eukaryotes, the UGA on some mRNAs can be decoded into selenocysteine instead of being recognized as a stop codon, and these proteins are called selenoproteins. However, the decoding of UGA is regulated by complex signals including mRNA and sec-tRNA abundance, which could result in two proteoforms: one with UGA read through and one with termination at the stop codon. Selenocysteine termination is used to represent the later situation. Selenocysteine terminations are not written into any GVF files but are represented in the format of `SECT-<pos>` where `pos` is the position of the selenocysteine UGA being recognized as a stop codon in the **gene**.
 
 ### Tryptophan > Phenylalanine Codon Reassignment
 
