@@ -25,7 +25,7 @@
 
 ## Alternative translation
 
-Alternative translation is when a different peptide is generated from the same transcript without any change in the genetic code from the genome.
+Alternative translation is when a different peptide is generated from the same transcript without any changes in the nucleotide sequence of the transcript.
 
 ### Selenocysteine Termination
 
