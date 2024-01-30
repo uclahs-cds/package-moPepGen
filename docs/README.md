@@ -8,7 +8,7 @@ To add a new documentation page, first create a '.md' file under this directory.
 
 ## Render locally
 
-The online documentation is rendered automatically by GitHub actions, it is still useful to see the changes in real time. This can be done by running `mkdocs` locally. moPepGen, mkdocs and several dependencies need to be installed first.
+While the online documentation is rendered automatically by GitHub actions, it may be still useful to see the changes in real time. This can be done by running `mkdocs` locally. `moPepGen`, `mkdocs` and several dependencies need to be installed first.
 
 ```bash
 conda env create --name moPepGen python=3.8.11
