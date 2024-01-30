@@ -14,7 +14,7 @@
 
 In moPepGen we are interested in finding variant peptides caused by combinations of different types of variants, including single nucleotide substitution, INDEL, RNA editing site, gene fusion and alternative splicing. We are also interested in non-coding RNA and circRNA with unreported ORF or start codon gained from mutation.
 
-The different mutation events are called by different programs, and those files have different formats. In moPepGen, for each type of data, we use data type and tool-specific parsers to convert variant data from different sources to a standardized VCF-like format that moPepGen can use to create the transcript variant graph. They are then collected by `moPepGen callPeptide` command to call variant peptides.
+The different mutation events are called by different algorithms with varying output formats. In moPepGen, data type and tool-specific parsers convert variant data from different sources to a standardized VCF-like format. They are used in the `moPepGen callVariant` command to create the transcript variant graph and call variant peptides.
 
 In moPepGen, we define the GVF (Gene Variant Format) file format, extended and modified from the [VCF](https://samtools.github.io/hts-specs/VCFv4.2.pdf) file format, to represent the variant records. In a GVF file, each entry represents a variant associated with a transcript. The `CHROM` column is used to hold the gene ID, and the `POS` column indicates the variant position in reference to the transcript.
 
