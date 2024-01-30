@@ -69,7 +69,7 @@ def parse_vep(args:argparse.Namespace) -> None:
             for record in VEPParser.parse(handle):
                 transcript_id = record.feature
 
-                if transcript_id not in vep_records.keys():
+                if transcript_id not in vep_records:
                     vep_records[transcript_id] = []
 
                 try:

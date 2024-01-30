@@ -43,7 +43,7 @@ class MiscleavedNodeSeries():
     def __len__(self) -> int:
         """ Get length of node sequences """
         if self._len is None:
-            self._len = sum([len(x.seq.seq) for x in self.nodes])
+            self._len = sum(len(x.seq.seq) for x in self.nodes)
         return self._len
 
     def is_too_short(self, param:params.CleavageParams) -> bool:
