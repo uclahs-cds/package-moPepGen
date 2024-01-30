@@ -72,7 +72,7 @@ moPepGen splitFasta \
   --output-prefix path/to/split
 ```
 
-As a result, `split_gSNP.fasta` and `split_gINDLE.fasta` will be written. `split_gSNP-gINDEL.fasta` and `split_gSNP-RNAEditign.fasta` will also be written although the number of variant sources (2) is larger than the value specified through `--max-source-groups`.
+As a result, `split_gSNP.fasta` and `split_gINDEL.fasta` will be written. `split_gSNP-gINDEL.fasta` and `split_gSNP-RNAEditing.fasta` will also be written although the number of variant sources (2) is larger than the value specified through `--max-source-groups`.
 
 ## Arguments
 
