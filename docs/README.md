@@ -1,7 +1,7 @@
 ## MKDocs
 
-Documentations are written in markdown and converted to HTML by [MKDocs](https://www.mkdocs.org/)](https://www.mkdocs.org/).
-ß
+Documentations are written in markdown and converted to HTML by [MKDocs](https://www.mkdocs.org/).
+
 ## Adding Pages
 
 To add a new documentation page, first create a '.md' file under this directory. Next, go to the 'mkdocs.yml' file under the root directory of the repo, and add a key-value pair under `nav`, and after rendering, a link to the newly added page will show up in the navbar.
@@ -17,7 +17,7 @@ pip install mkdocs==1.2.3 jinja2==3.0.0 mkdocstrings==0.16.2 mkdocs-macros-plugi
 pip install .
 ```
 
-Use the command below to start a development server and open http://127.0.0.1:8000/ to see the change in real time.
+Use the command below to start a development server and open http://127.0.0.1:8000/ to see the changes in real time.
 
 ```bash
 mkdocs serve
