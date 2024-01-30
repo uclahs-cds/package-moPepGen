@@ -57,7 +57,7 @@ This example outputs three split FASTA files, `split_Coding`.fasta`, `split_RNAE
 
 ### Additional split
 
-Additional split allows you to split the records with the source group specified that would otherwise be placed into the remaining FASTA. See the example below.
+Additional split allows you to split the records with the source group specified that would otherwise be placed along with all other records exceeding `--max-source-groups` into `remaining.fasta`. See the example below.
 
 ```bash
 moPepGen splitFasta \
