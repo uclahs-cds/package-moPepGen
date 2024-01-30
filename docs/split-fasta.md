@@ -53,7 +53,7 @@ moPepGen splitFasta \
   --output-prefix path/to/split
 ```
 
-This example outputs three split FASTA files, `split_Coding`.fasta`, `split_RNAEditing.fasta`, and `split_Remaining.fasta`.
+This example outputs three split FASTA files, `split_Coding.fasta`, `split_RNAEditing.fasta`, and `split_Remaining.fasta`.
 
 ### Additional split
 
