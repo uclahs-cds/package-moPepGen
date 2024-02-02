@@ -108,7 +108,7 @@ The `Info` column must contain the following fields:
 + `ACCEPTER_GENE_ID`: the accepter (downstream) transcript gene ID.
 + `ACCEPTER_TRANSCRIPT_ID`: the accepter (downstream) transcript transcript ID.
 + `ACCEPTER_POSITION`: the position of the breakpoint of the ACCEPTER (downstream) transcript.
-+ `GENOMIC_POSITION`: the genomic position of the donor (upstream) transcript, in the format of `<chrom name>:<breakpoint>:<breakpoint>`.
++ `GENOMIC_POSITION`: the genomic position of the donor (upstream) transcript, in the format of `<chrom name>:<breakpoint>-<breakpoint>`.
 + `ACCEPTER_GENOMIC_POSITION`: the genomic position of the accepter (downstream) transcript, in the format of `<chrom name>:<breakpoint>-<breakpoint>`.
 
 

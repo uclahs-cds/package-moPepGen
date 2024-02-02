@@ -7,20 +7,20 @@ Welcome to the vignette for moPepGen, a powerful Python package designed for gen
 moPepGen is a command line tool designated to execute in a Unix-like environment. For MacOS and Linux users, moPepGen can be installed using the command below. For Windows users, we recommend installing and running moPepGen from WSL (Windows Subsystem for Linux).
 
 ```shell
-pip install git+ssh://git@github.com/uclahs-cds/private-moPepGen.git
+pip install git+ssh://git@github.com/uclahs-cds/package-moPepGen.git
 ```
 
 Install a specific version.
 
 ```shell
-pip install git+ssh://git@github.com/uclahs-cds/private-moPepGen.git@v0.11.3
+pip install git+ssh://git@github.com/uclahs-cds/package-moPepGen.git@v0.11.3
 ```
 
 You can also clone the repo and install it directly from the source code.
 
 ```shell
-git clone git@github.com:uclahs-cds/private-moPepGen.git
-cd private-moPepGen
+git clone git@github.com:uclahs-cds/package-moPepGen.git
+cd package-moPepGen
 pip install . --use-feature=in-tree-build
 ```
 
@@ -34,9 +34,9 @@ A simulated reference set is provided for demonstration. The demo reference set 
 cd ~
 mkdir -p moPepGen-demo
 cd moPepGen-demo
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/genome.fasta
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/annotation.gtf
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/translate.fasta
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/genome.fasta
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/annotation.gtf
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/translate.fasta
 ```
 
 Convert reference set into index files for quick access by moPepGen.
@@ -96,7 +96,7 @@ filter_vep \
  For demonstration, we provide the following VEP output file in TSV format, to be used by moPepGen.
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/vep/vep_snp.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/vep/vep_snp.txt
 ```
 
 The output VEP TSV file must be parsed by `parseVEP` into GVF format.
@@ -118,7 +118,7 @@ moPepGen provides parsers to three fusion callers, [STAR-Fusion](https://github.
 As an example, we provide a STAR-Fusion TSV output file for demonstration.
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/fusion/star_fusion.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/fusion/star_fusion.txt
 ```
 
 Parse it into GVF format.
@@ -131,7 +131,7 @@ moPepGen parseSTARFusion \
     -o star_fusion.gvf
 ```
 
-Be default, `parseSTARFusion` only keeps fusion events with minimal `est_J` value of 5. This can be altered by the `--min-est-j` argument.
+By default, `parseSTARFusion` only keeps fusion events with minimal `est_J` value of 5. This can be altered by the `--min-est-j` argument.
 
 ### Alternative Splicing
 
@@ -140,11 +140,11 @@ moPepGen accepts alternative splicing (AS) events estimated by [rMATS](https://r
 Example data:
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_se_case_1.SE.JC.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_a3ss_case_1.A3SS.JC.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_a5ss_case_1.A5SS.JC.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_mxe_case_1.MXE.JC.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_ri_case_1.RI.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_se_case_1.SE.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_a3ss_case_1.A3SS.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_a5ss_case_1.A5SS.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_mxe_case_1.MXE.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_ri_case_1.RI.JC.txt
 ```
 
 Parse AS events output by rMATS into GVF format with `parseRMATS`. Note that you don't have to provide all 5 AS files to `parseRMATS`.
@@ -152,7 +152,7 @@ By default, `parseRMATS` only accepts AS events with inclusion and exclusion jun
 
 ### RNA Editing Sites
 
-RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. moPepGen supports RNA editing sites called by [REDItools](https://github.com/BioinfoUNIBA/REDItools). Noted that the REDItools output must be annotated by the `AnnotateTable.py` from the REDItools package prior to being passed to `parseREDItools`. Below is the command that can be used to perform the annotation. Note that the `${ANNOTATION_GTF}` must be the same file later used in `parseREDItools` and `callVariant`. `${PREFIX}` is the prefix of column names for gene and transcript IDs.
+RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. moPepGen supports RNA editing sites called by [REDItools](https://github.com/BioinfoUNIBA/REDItools). Note that the REDItools output must be annotated by the `AnnotateTable.py` from the REDItools package prior to being passed to `parseREDItools`. Below is the command that can be used to perform the annotation. Note that the `${ANNOTATION_GTF}` must be the same file later used in `parseREDItools` and `callVariant`. `${PREFIX}` is the prefix of column names for gene and transcript IDs.
 
 ```shell
 AnnotateTable.py \
@@ -167,7 +167,7 @@ AnnotateTable.py \
 Example data:
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/reditools/reditools_annotated.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/reditools/reditools_annotated.txt
 ```
 
 Parse REDItools output to GVF:
@@ -180,7 +180,7 @@ CircRNAs are commonly recognized as noncoding RNAs, but evidence has shown that 
 Download demo data:
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/circRNA/CIRCexplorer_circularRNA_known.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/circRNA/CIRCexplorer_circularRNA_known.txt
 ```
 
 Parse it into GVF format.
@@ -274,7 +274,7 @@ The `fitlerFasta` module is designed to take an RNA abundance matrix and filter 
 We provide an example RSEM table for demonstration.
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/rsem/rsem.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/rsem/rsem.txt
 ```
 
 ```shell

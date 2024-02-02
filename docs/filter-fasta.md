@@ -25,7 +25,7 @@
 
 ### Filter by Expression
 
-The example below filters the variant peptide sequences based on their expression level. The expression table is given as TSV file, with the first column being the transcript ID, and the forth column being the expression level. Peptides are removed if the transcript it is associated has the expression level smaller than 2. Any transcript quantitation value can be used, including read count, TPM, and FPKM.
+The example below filters the variant peptide sequences based on their expression level. The expression table is given as TSV file, with the first column being the transcript ID, and the fourth column being the expression level. Peptides are removed if the transcript it is associated has the expression level smaller than 2. Any transcript quantitation value can be used, including read count, TPM, and FPKM.
 
 ```bash
 moPepGen fitlerFasta \
@@ -40,7 +40,7 @@ moPepGen fitlerFasta \
 
 ### Filter by Expression and Miscleavages
 
-This example is the same as above with the addition of a filter by miscleavages. Any peptides with miscleavages larger than 3 will be dropped.
+This example is the same as above with the addition of a filter by miscleavages. Any peptides with more than 3 miscleavages will be dropped.
 
 ```bash
 moPepGen fitlerFasta \
@@ -57,7 +57,7 @@ moPepGen fitlerFasta \
 
 ### Filter Variant and Noncoding Peptides
 
-This example takes both a variant peptide and noncoding peptide FASTA file and filters the sequences based on the expression level of the transcripts that they are associated with.
+This example takes both the variant peptide FASTA and the noncoding peptide FASTA and filters the peptides based on the expression level of the transcripts they are associated with.
 
 ```bash
 moPepGen fitlerFasta \
@@ -74,10 +74,10 @@ moPepGen fitlerFasta \
 
 ### Filter by Denylist
 
-This example here removes any peptide sequences if they appear in the given denylist.
+This example here removes any peptide sequences that appear in the given denylist.
 
 !!! warning:
-When using noncoding peptides in a denylist, do not also pass it as an input FASTA, because all peptides will be removed.
+When using noncoding peptides in a denylist, do not also pass the noncoding peptide FASTA as an input FASTA, because all peptides will be removed.
 
 ```bash
 moPepGen fitlerFasta \
@@ -98,7 +98,7 @@ moPepGen filterFasta \
 
 ### Complex Filtering
 
-Sometimes we want a more complex filtering strategy. In the example below, we want to first remove any variant peptides that overlap with any noncoding peptide, and next we filter again based on the expression level.
+Sometimes we want a more complex filtering strategy. In the example below, we want to first remove any variant peptides that overlap with any noncoding peptides, and then filter again based on the expression level.
 
 Remove variant peptides if they overlap with any noncoding peptide.
 

@@ -9,7 +9,7 @@ moPepGen takes genomic and transcriptomic variants such as single nucleotide var
 Install directly from GitHub
 
 ```
-pip install git+ssh://git@github.com:uclahs-cds/private-moPepGen.git
+pip install git+ssh://git@github.com:uclahs-cds/package-moPepGen.git
 ```
 
 ## Overview
