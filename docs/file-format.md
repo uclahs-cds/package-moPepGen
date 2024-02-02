@@ -16,7 +16,7 @@ In moPepGen we are interested in finding variant peptides caused by combinations
 
 The different mutation events are called by different algorithms with varying output formats. In moPepGen, data type and tool-specific parsers convert variant data from different sources to a standardized VCF-like format. They are used in the `moPepGen callVariant` command to create the transcript variant graph and call variant peptides.
 
-In moPepGen, we define the GVF (Gene Variant Format) file format, extended and modified from the [VCF](https://samtools.github.io/hts-specs/VCFv4.2.pdf) file format, to represent the variant records. In a GVF file, each entry represents a variant associated with a transcript. The `CHROM` column is used to hold the gene ID, and the `POS` column indicates the variant position in reference to the transcript.
+In moPepGen, we define the GVF (Gene Variant Format) file format, extended and modified from the [VCF](https://samtools.github.io/hts-specs/VCFv4.2.pdf) file format, to represent the variant records. In a GVF file, each entry represents a variant associated with a transcript. The `CHROM` column is used to hold the gene ID, and the `POS` column indicates the variant position in reference to the transcript gene.
 
 ### 1.1 File Metadata
 
@@ -114,7 +114,7 @@ The `Info` column must contain the following fields:
 
 ### 1.4 Alternative Splicing Site
 
-Alternative splicing site called by [rMATS](http://rnaseq-mats.sourceforge.net/) has five types, *i.e.* skipped exon (SE), alternative 5' splice site (A5SS), alternative 3' splice site (A3SS), mutually exclusive exons (MXE), and retained intron (RI). Each alternative splicing event can be represented as a deletion, insertion or substitution.
+Alternative splicing sites called by [rMATS](http://rnaseq-mats.sourceforge.net/) have five types, *i.e.* skipped exon (SE), alternative 5' splice site (A5SS), alternative 3' splice site (A3SS), mutually exclusive exons (MXE), and retained intron (RI). Each alternative splicing event can be represented as a deletion, insertion or substitution.
 
 SE is called when an exon is skipped given its upstream and downstream exons. It is represented as an **insertion** when the target transcript from the GTF file contains the exon, or is represented as a **deletion** when the target transcript is annotated without the exon.
 
@@ -153,19 +153,19 @@ ENSG0004  277  MXE-477-1103  T    <SUB>  .     .       TRANSCRIPT_ID=ENST00041;D
 ENSG0001	110	SE-300	C	<INS>	.	.	TRANSCRIPT_ID=ENST0001;DONOR_START=300;DONOR_END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
 ```
 
-The line above represents an SE (skipped exon), that the sequence of 300-400 of the gene ENSG0001 is inserted to the t ranscript of ENST0001 at position 110. In this case, all transcripts of the gene in the annotation GTF don't contain this exon.
+The line above represents an SE (skipped exon), that the sequence of 300-400 of the gene ENSG0001 is inserted into the transcript of ENST0001 at position 110. In this case, all transcripts of the gene in the annotation GTF don't contain this exon.
 
 ```
 ENSG0002	210	A5SS-210	T	<DEL>	.	.	TRANSCRIPT_ID=ENST0002;START=210;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
-The line above represents an A5SS (alternative 5' splicing site), where the nucleotides from positions 210 to 400 of the transcript ENST0002 is deleted. This A5SS is represented as a **deletion** because all transcripts of the gene in the annotation GTF have the longer version of the exon.
+The line above represents an A5SS (alternative 5' splicing site), where the nucleotides from positions 210 to 400 of the transcript ENST0002 are deleted. This A5SS is represented as a **deletion** because all transcripts of the gene in the annotation GTF have the longer version of the exon.
 
 ```
 ENSG0003	115	MXE-320	T	<INS>	.	.	TRANSCRIPT_ID=ENST0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
-The line above represents an MXE (mutually exclusive exon), where the exon at position 320-380 of the gene ENSG0003 is retained in the transcript ENST0003 and resulted as an insertion at position 115 of the transcript. This MXE is representated as an **insertion** because none of the transcripts of this gene has the first exon retained and the second spliced in the GTF, but this transcript has both exons retained.
+The line above represents an MXE (mutually exclusive exon), where the exon at position 320-380 of the gene ENSG0003 is retained in the transcript ENST0003 and resulted as an insertion at position 115 of the transcript. This MXE is represented as an **insertion** because none of the transcripts of this gene has the first exon retained and the second spliced in the GTF, but this transcript has both exons retained.
 
 ```
 ENSG0004	277	MXE-477-1103	T	<SUB>	.	.	TRANSCRIPT_ID=ENST0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
@@ -175,7 +175,7 @@ This line above represents an MXE where the exon at position 447-582 in the gene
 
 ### 1.5 CircRNA
 
-Circular RNAs are derived from back-spliced exons and introns. They exist as indepedent RNA molecules and have the potential to be translated into proteins. We are then interested in finding the possible peptide sequences that could be the result of circRNA translation, with and without additional variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts backbones than variants. Here we define a TSV file format to represent the circRNA molecules. In this TSV format, each row represents a circRNA, with the gene ID it is associated with, the start position at the gene, the offset and length of each segment, and their IDs. Normally each segment is an exon, but with intron-retained alternative splicing they could be introns.
+Circular RNAs are derived from back-spliced exons and introns. They exist as independent RNA molecules and have the potential to be translated into proteins. We are interested in finding the possible peptide sequences that could be the result of circRNA translation, with and without additional variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts backbones than variants and are also recorded in GVF files in moPepGen. In such a GVF file, each row represents a circRNA, with the gene ID it is associated with, the start position at the gene coordinate, the offset and length of each segment, and their exon or intron indices. Normally each segment is an exon, but with intron-retained alternative splicing, they could be introns.
 
 ```
 ##fileformat=VCFv4.2
@@ -200,21 +200,21 @@ ENSG0003  77   CIRC-ENST0003-E2-I2-E3-I3-E4  .    .    .     .       OFFSET=0,10
 ENSG0004  789  CI-ENST0004-I3                .    .    .     .       OFFSET=0;LENGTH=112;INTRON=1;TRNASCRIPT=ENST0004;GENE_SYMBOL=SYMB4
 ```
 
-Technically, circRNAs are not variants that alters the gene/transcript sequence. We here still use the GVF file format to tr The `Info` column must contain the following fields:
+circRNAs are not variants that are added to the transcript variant graph, thus the `REF` and `ALT` columns should be kept empty as ".". The `INFO` column must contain the following fields.
 
 + **`OFFSET`**: The offset of each fragment after the `start` position of the gene. Each segment can be either an exon or an intron.
 + **`LENGTH`**: The length of each fragment.
 + **`INTRON`**: The indices of fragments that are introns.
-+ **`TRANSCRIPT`** The transcript ID that is able to generate this circRNA (e.g. contains all exons and introns of the circRNA.)
++ **`TRANSCRIPT`** The transcript ID of a transcript that is able to generate this circRNA (e.g. contains all exons and introns of the circRNA).
 + **`GENE_SYMBOL`** The name of the gene.
 
-The ID of circRNAs consists of two components. They all start with \<transcript_id>-circRNA or \<transcript_id>-ciRNA where `transcript_id` is the value from the `CHROM` column. Following that is the information for each fragment including E (exon) or I (intron) and the index of the fragment. For example,ENSG0001-circRNA-E2-I2-E3 is made up of the second exon, the second intron, and the third exon of the gene ENSG0001.
+The ID of circRNAs consists of two components. They all start with \<transcript_id>-circRNA or \<transcript_id>-ciRNA where `transcript_id` is the value from the `CHROM` column. Following that is the information for each fragment, indicating whether it is an exon (E) or intron (I) and the index of the fragment. For example, `ENSG0001-circRNA-E2-I2-E3` is made up of the second exon, the second intron, and the third exon of the gene ENSG0001.
 
 ## 2 Variant Peptide FASTA
 
-In moPepGen, the headers of the final output variant peptide FASTA contain the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript ID, followed by the gene ID and gene symbol, and the variant IDs that it is associated with, separated by '|'. The Variant IDs are defined in the GVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. An integer index is thus always added to the end to resolve redundancies.
+In moPepGen, the headers of the final output variant peptide FASTA contain the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript backbone ID and is followed by the variant IDs that it is associated with, separated by '|'. The variant IDs are defined in the GVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. An integer index is thus always added to the end of each header entry to resolve redundancies.
 
-If the same peptide is found in multiple transcripts, the annotation is separated by space.
+If the same peptide is found in multiple transcripts, all are documented as separate entries in the fasta header, separated by space.
 
 ```
 >ENST0001|SNV-110-C-A|1
