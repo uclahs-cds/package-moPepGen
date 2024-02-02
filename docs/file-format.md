@@ -26,7 +26,7 @@ Each variant GVF file contains a metadata section, where each line starts with a
 ##fileformat=VCFv4.2
 ```
 
-Starting from the second line should be moPepGen's metadata. Each line should be a key-value pair separated by an equal sign ('='). Keys should follow the `snake_case`. See the example below.
+moPepGen-specific GVF metadata starts on the second line. Each line is a key-value pair separated by an equal sign (`=`). Keys follow the `snake_case`. See examples below.
 
 ```
 ##moPepGen_version=0.0.1
