@@ -20,7 +20,7 @@ In moPepGen, we define the GVF (Gene Variant Format) file format, extended and m
 
 ### 1.1 File Metadata
 
-Each variant file should contain a metadata section that each line starts with a double hashtag. The first line of the metadata must be the 'fileformat' field for VCF, to be consistent with VCF's standards. The link should read:
+Each variant GVF file contains a metadata section, where each line starts with a double hashtag. The first line of the metadata must be the `fileformat` field in consistency with VCF standards. The line should read:
 
 ```
 ##fileformat=VCFv4.2
