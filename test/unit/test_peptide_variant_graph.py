@@ -359,7 +359,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph.rule = 'trypsin'
         branches,_ = graph.merge_join(nodes[4])
         seqs = {str(node.seq.seq) for node in nodes[1].out_nodes}
-        seqs_expect = {'NCWHSTQV', 'NCWR', 'NCWHSTQQ', 'NCWR'}
+        seqs_expect = {'NCWHSTQV', 'NCWR', 'NCWHSTQQ'}
         self.assertEqual(seqs, seqs_expect)
         self.assertEqual(len(nodes[4].in_nodes), 0)
         self.assertEqual(len(nodes[4].out_nodes), 0)

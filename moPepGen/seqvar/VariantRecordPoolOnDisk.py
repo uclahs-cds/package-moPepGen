@@ -3,8 +3,7 @@ from __future__ import annotations
 import copy
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from pathlib import Path
-from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512
-from moPepGen.circ.CircRNA import CircRNAModel
+from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512, circ
 from moPepGen.seqvar.GVFIndex import GVFPointer, iterate_pointer
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
@@ -21,7 +20,7 @@ class TranscriptionalVariantSeries():
     """ Variants associated with a particular transcript """
     def __init__(self, transcriptional:List[VariantRecord]=None,
             intronic:List[VariantRecord]=None, fusion:List[VariantRecord]=None,
-            circ_rna:List[CircRNAModel]=None
+            circ_rna:List[circ.CircRNAModel]=None
             ) -> None:
         """ constructor """
         self.transcriptional = transcriptional or []
@@ -113,14 +112,14 @@ class VariantRecordPoolOnDisk():
 
     def __getitem__(self, key:str) -> TranscriptionalVariantSeries:
         """ Load variants and return as a TranscriptVariants object """
-        records:List[Union[VariantRecord, CircRNAModel]] = []
+        records:List[Union[VariantRecord, circ.CircRNAModel]] = []
         for pointer in self.pointers[key]:
             records += pointer.load()
         records = set(records)
         series = TranscriptionalVariantSeries()
         cached_seqs:Dict[str, DNASeqRecordWithCoordinates] = {}
         for record in records:
-            if isinstance(record, CircRNAModel):
+            if isinstance(record, circ.CircRNAModel):
                 series.circ_rna.append(record)
                 continue
 

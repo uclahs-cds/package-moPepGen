@@ -450,7 +450,7 @@ class PVGNode():
 
     def frames_shifted(self) -> int:
         """ Get total frames shifted of all variants """
-        return sum([v.variant.frames_shifted() for v in self.variants]) % 3
+        return sum(v.variant.frames_shifted() for v in self.variants) % 3
 
     def find_reference_next(self) -> PVGNode:
         """ Find and return the next reference node. The next reference node

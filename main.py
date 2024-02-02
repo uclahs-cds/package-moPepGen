@@ -42,7 +42,7 @@ def define_env(env):
     def get_arg_usage(command:str):
         stream = io.StringIO()
         with redirect_stdout(stream):
-            parser = argparse.ArgumentParser()
+            parser = argparse.ArgumentParser(prog='moPepGen')
             subparsers = parser.add_subparsers()
             add_parser = COMMAND_MAPPER[command]
             p = add_parser(subparsers)

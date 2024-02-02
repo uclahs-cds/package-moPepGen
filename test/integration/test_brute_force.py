@@ -7,6 +7,7 @@ from pathlib import Path
 from test.integration import TestCaseIntegration
 from moPepGen import util
 
+# pylint: disable=duplicate-code
 
 def create_base_args() -> argparse.Namespace:
     """ Create base args """

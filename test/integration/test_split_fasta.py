@@ -66,7 +66,7 @@ class TestSplitDatabase(TestCaseIntegration):
         expected = {
             'test_gINDEL.fasta','test_gSNP.fasta', 'test_Fusion.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
-            'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta',
+            'test_Remaining.fasta', 'test_Noncoding.fasta',
             'test_CodonReassign.fasta', 'test_SECT.fasta'
         }
         self.assertEqual(files, expected)
@@ -91,7 +91,7 @@ class TestSplitDatabase(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {
             'test_coding.fasta', 'test_RNAEditingSite.fasta', 'test_Fusion.fasta',
-            'test_circRNA.fasta', 'test_Remaining.fasta', 'test_circRNA.fasta',
+            'test_circRNA.fasta', 'test_Remaining.fasta',
             'test_Noncoding.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'
         }
         self.assertEqual(files, expected)
@@ -147,7 +147,7 @@ class TestSplitDatabase(TestCaseIntegration):
         expected = {
             'test_gINDEL.fasta','test_gSNP.fasta', 'test_Fusion.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
-            'test_Remaining.fasta', 'test_circRNA.fasta', 'test_Noncoding.fasta',
+            'test_Remaining.fasta', 'test_Noncoding.fasta',
             'test_CodonReassign.fasta', 'test_SECT.fasta'
         }
         self.assertEqual(files, expected)
@@ -172,7 +172,7 @@ class TestSplitDatabase(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {
             'test_coding.fasta', 'test_RNAEditingSite.fasta', 'test_Fusion.fasta',
-            'test_circRNA.fasta', 'test_Remaining.fasta', 'test_circRNA.fasta',
+            'test_circRNA.fasta', 'test_Remaining.fasta',
             'test_Noncoding.fasta', 'test_ALT.fasta'
         }
         self.assertEqual(files, expected)

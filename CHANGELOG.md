@@ -512,9 +512,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Enable `filterFasta` to filter by number of miscleavages per peptide. #382
 
-- Added CLI command `mergeFasta` to merge multiple variant peptide database Fasta files into one. This could be useful when working with multiplexed proteomic experiments such as TMT. [#380](https://github.com/uclahs-cds/private-moPepGen/issues/380)
+- Added CLI command `mergeFasta` to merge multiple variant peptide database Fasta files into one. This could be useful when working with multiplexed proteomic experiments such as TMT. [#380](https://github.com/uclahs-cds/package-moPepGen/issues/380)
 
-- Added CLI command `decoyFasta` to generate decoy database by shuffling or reversing each sequence. [#386](https://github.com/uclahs-cds/private-moPepGen/issues/386)
+- Added CLI command `decoyFasta` to generate decoy database by shuffling or reversing each sequence. [#386](https://github.com/uclahs-cds/package-moPepGen/issues/386)
 
 - Added parameter `--min-coverage-rna` to `parseREDItools` to filter by total RNA reads at a given position. #392
 
@@ -554,7 +554,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - The command line arguments are standardized across all commands, for example '-i/--input-path' for inputs and '-o/--output-path' for outputs.
 
-- `generateIndex` is changed to use compressed text format to store genomic annotation, because for some reason that we are not sure, when loading the pickled genomic annotation, the memory usage is almost doubled. [#394](https://github.com/uclahs-cds/private-moPepGen/issues/394)
+- `generateIndex` is changed to use compressed text format to store genomic annotation, because for some reason that we are not sure, when loading the pickled genomic annotation, the memory usage is almost doubled. [#394](https://github.com/uclahs-cds/package-moPepGen/issues/394)
 
 ---
 

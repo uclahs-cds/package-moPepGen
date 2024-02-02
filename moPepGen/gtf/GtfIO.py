@@ -1,10 +1,13 @@
 """ Module for GTF IO """
-from typing import IO, Union, Iterable
+from __future__ import annotations
+from typing import IO, Union, Iterable, TYPE_CHECKING
 from Bio.SeqIO.Interfaces import SequenceIterator
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen.gtf import GenomicAnnotation
 from .GTFSeqFeature import GTFSeqFeature
 
+
+if TYPE_CHECKING:
+    from moPepGen.gtf import GenomicAnnotation
 
 class GtfIterator(SequenceIterator):
     """ GTF Iterator """

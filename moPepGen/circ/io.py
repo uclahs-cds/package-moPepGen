@@ -1,10 +1,13 @@
 """ IO """
-from typing import Iterable, List, IO
+from __future__ import annotations
+from typing import Iterable, List, IO, TYPE_CHECKING
 from moPepGen import GVF_HEADER
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
-from moPepGen.seqvar import GVFMetadata
 from .CircRNA import CircRNAModel
 
+
+if TYPE_CHECKING:
+    from moPepGen.seqvar import GVFMetadata
 
 def parse(handle:IO) -> Iterable[CircRNAModel]:
     """ Parse a circRNA TSV file and returns an iterable of CircRNAModel

@@ -4,23 +4,23 @@ Welcome to the vignette for moPepGen, a powerful Python package designed for gen
 
 ## Installation
 
-moPepGen is a command line tool designated to execute in a unix-like environment. For MacOS and Linux users, moPepGen can be installed using the command below. For Windows users, we recommend installing and running moPepGen from WSL (Windows Subsystem for Linux).
+moPepGen is a command line tool designated to execute in a Unix-like environment. For MacOS and Linux users, moPepGen can be installed using the command below. For Windows users, we recommend installing and running moPepGen from WSL (Windows Subsystem for Linux).
 
 ```shell
-pip install git+ssh://git@github.com/uclahs-cds/private-moPepGen.git
+pip install git+ssh://git@github.com/uclahs-cds/package-moPepGen.git
 ```
 
 Install a specific version.
 
 ```shell
-pip install git+ssh://git@github.com/uclahs-cds/private-moPepGen.git@v0.11.3
+pip install git+ssh://git@github.com/uclahs-cds/package-moPepGen.git@v0.11.3
 ```
 
-You can also clone the repo and install it directly from source code.
+You can also clone the repo and install it directly from the source code.
 
 ```shell
-git clone git@github.com:uclahs-cds/private-moPepGen.git
-cd private-moPepGen
+git clone git@github.com:uclahs-cds/package-moPepGen.git
+cd package-moPepGen
 pip install . --use-feature=in-tree-build
 ```
 
@@ -34,9 +34,9 @@ A simulated reference set is provided for demonstration. The demo reference set 
 cd ~
 mkdir -p moPepGen-demo
 cd moPepGen-demo
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/genome.fasta
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/annotation.gtf
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/translate.fasta
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/genome.fasta
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/annotation.gtf
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/translate.fasta
 ```
 
 Convert reference set into index files for quick access by moPepGen.
@@ -61,7 +61,7 @@ Note that, the VEP cache files must be downloaded prior to running VEP (see [her
 
 !!! warning
 
-    If you use `--chr` to limit the chromosomes to annotate, make sure the style matches with your VCF/BED file. For example, if the chromosomes have the 'chr' prefix in your VCF file (*i.e.*, chr1, chr2, ...), you must include the prefix as well (*i.e.*, `--chr chr1,chr2,chr3`).
+    If you use `--chr` to limit the chromosomes to annotate, make sure the style matches your VCF/BED file. For example, if the chromosomes have the 'chr' prefix in your VCF file (*i.e.*, chr1, chr2, ...), you must include the prefix as well (*i.e.*, `--chr chr1,chr2,chr3`).
 
 The example data does not work for VEP.
 
@@ -96,7 +96,7 @@ filter_vep \
  For demonstration, we provide the following VEP output file in TSV format, to be used by moPepGen.
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/vep/vep_snp.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/vep/vep_snp.txt
 ```
 
 The output VEP TSV file must be parsed by `parseVEP` into GVF format.
@@ -118,7 +118,7 @@ moPepGen provides parsers to three fusion callers, [STAR-Fusion](https://github.
 As an example, we provide a STAR-Fusion TSV output file for demonstration.
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/fusion/star_fusion.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/fusion/star_fusion.txt
 ```
 
 Parse it into GVF format.
@@ -131,7 +131,7 @@ moPepGen parseSTARFusion \
     -o star_fusion.gvf
 ```
 
-Be default, `parseSTARFusion` only keeps fusion events with minimal `est_J` value of 5. This can be altered by the `--min-est-j` argument.
+By default, `parseSTARFusion` only keeps fusion events with minimal `est_J` value of 5. This can be altered by the `--min-est-j` argument.
 
 ### Alternative Splicing
 
@@ -140,32 +140,19 @@ moPepGen accepts alternative splicing (AS) events estimated by [rMATS](https://r
 Example data:
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_se_case_1.SE.JC.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_a3ss_case_1.A3SS.JC.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_a5ss_case_1.A5SS.JC.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_mxe_case_1.MXE.JC.txt
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/alternative_splicing/rmats_ri_case_1.RI.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_se_case_1.SE.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_a3ss_case_1.A3SS.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_a5ss_case_1.A5SS.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_mxe_case_1.MXE.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_ri_case_1.RI.JC.txt
 ```
 
 Parse AS events output by rMATS into GVF format with `parseRMATS`. Note that you don't have to provide all 5 AS files to `parseRMATS`.
-
-```shell
-moPepGen parseRMATS \
-    --se rmats_se_case_1.SE.JC.txt \
-    --a3ss rmats_a3ss_case_1.A3SS.JC.txt \
-    --a5ss rmats_a5ss_case_1.A5SS.JC.txt \
-    --mxe rmats_mxe_case_1.MXE.JC.txt \
-    --ri rmats_ri_case_1.RI.JC.txt \
-    --index-dir index \
-    -o alt_splice_rmats.gvf \
-    --source AltSplice \
-```
-
-By default `parseRMATS` only accepts AS events with inclusion and exclusion junction counts of at least 1. These cutoffs can be set by `--min-ijc` and `--min-sjc`. See [here](./parse-rmats) for a complete list of arguments.
+By default, `parseRMATS` only accepts AS events with inclusion and exclusion junction counts of at least 1. These cutoffs can be set by `--min-ijc` and `--min-sjc`. See [here](./parse-rmats) for a complete list of arguments.
 
 ### RNA Editing Sites
 
-RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. moPepGen supports RNA editing sites called by [REDItools](https://github.com/BioinfoUNIBA/REDItools). Noted that the REDItools output must be annotated by the `AnnotateTable.py` from the REDItools package prior to being passed to `parseREDItools`. Below is the command that can be used to perform the annotation. Note that the `${ANNOTATION_GTF}` must be the same file later used in `parseREDItools` and `callVariant`. `${PREFIX}` is the prefix of column names for gene and transcript IDs.
+RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. moPepGen supports RNA editing sites called by [REDItools](https://github.com/BioinfoUNIBA/REDItools). Note that the REDItools output must be annotated by the `AnnotateTable.py` from the REDItools package prior to being passed to `parseREDItools`. Below is the command that can be used to perform the annotation. Note that the `${ANNOTATION_GTF}` must be the same file later used in `parseREDItools` and `callVariant`. `${PREFIX}` is the prefix of column names for gene and transcript IDs.
 
 ```shell
 AnnotateTable.py \
@@ -180,20 +167,11 @@ AnnotateTable.py \
 Example data:
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/reditools/reditools_annotated.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/reditools/reditools_annotated.txt
 ```
 
 Parse REDItools output to GVF:
-
-```shell
-moPepGen parseREDItools \
-    -i reditools_annotated.txt \
-    -o rna_editing_reditools.gvf \
-    --index-dir index \
-    --source RNAEditing
-```
-
-By default `parseREDItools` looks for the transcript ID in column 17. This can be changed with `--transcript-id-column`, which takes a 1-based column number. See [here](./parse-reditools) for a complete list of arguments.
+By default, `parseREDItools` looks for the transcript ID in column 17. This can be changed with `--transcript-id-column`, which takes a 1-based column number. See [here](./parse-reditools) for a complete list of arguments.
 
 ### CircRNA
 
@@ -202,7 +180,7 @@ CircRNAs are commonly recognized as noncoding RNAs, but evidence has shown that 
 Download demo data:
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/circRNA/CIRCexplorer_circularRNA_known.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/circRNA/CIRCexplorer_circularRNA_known.txt
 ```
 
 Parse it into GVF format.
@@ -215,7 +193,7 @@ moPepGen parseCIRCexplorer \
     --source CircRNA
 ```
 
-By default `parseCIRCexplorer` accepts the text file output by CIRCexplorer2, however CIRCexplorer3 is also supported with the `--circexplorer3` flag. We also provide a series of filtering parameters that can be found [here](./parse-circexplorer).
+By default `parseCIRCexplorer` accepts the text file output by CIRCexplorer2, however, CIRCexplorer3 is also supported with the `--circexplorer3` flag. We also provide a series of filtering parameters that can be found [here](./parse-circexplorer).
 
 ## Non-canonical Peptides Calling
 
@@ -249,7 +227,7 @@ Similar to `callVariant`, trypsin is the default enzyme and the default maximum 
 
 ### Alternative Translation Peptides
 
-Alternative translation peptides are those that harbor special events during translation, such as selenocysteine termination and W > F substitutants, where the genetic code are not altered but a different polypeptide is produced (see [here](./call-alt-translation) for more details). Similar to noncoding peptides, `callAltTranslation` only calls peptides using reference transcripts.
+Alternative translation peptides are those that harbor special events during translation, such as selenocysteine termination and W > F substitutants, where the genetic code is not altered but a different polypeptide is produced (see [here](./call-alt-translation) for more details). Similar to noncoding peptides, `callAltTranslation` only calls peptides using reference transcripts.
 
 ```shell
 moPepGen callAltTranslation \
@@ -261,7 +239,7 @@ And again, `callAltTranslation` also uses trypsin as the default enzyme, and up 
 
 ## Post-processing
 
-moPepGen provides a series of post-processing commands that aims to deliver FASTA files ready for database searching. The post-processing tasks include summarization of a non-canonical database, filtering a database by transcript abundance, splitting a detabase to separate databases, creating decoy databases, shortening fasta headers for search engines to handle, and merging multiple database files for multiplexed proteomic experiments.
+moPepGen provides a series of post-processing commands that aim to deliver FASTA files ready for database searching. The post-processing tasks include generating summary statistics of a non-canonical database, filtering a database by transcript abundance, splitting a database to separate tiered databases, creating decoy databases, shortening fasta headers for easy handling by search engines, and merging multiple database files for multiplexed proteomic experiments.
 
 ### Summarizing
 
@@ -285,18 +263,18 @@ Because moPepGen calls enzymatically cleaved peptides, there is the possibility 
 HETLFLLTFPR
 ```
 
-To resolve the issue of collapsed peptides like the example above, we use the `--order-source` argument that takes the priority order of sources considered. It takes the source names in a comma separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Note that the values passed into `--order-source` must match the values used in `--source` in the corresponding parser calls. If `--order-source` is not provided, the source priority order will be inferred from the order of input GVF files.
+To resolve the issue of collapsed peptides like the example above, we use the `--order-source` argument that takes the priority order of sources considered. It takes the source names in a comma-separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Note that the values passed into `--order-source` must match the values used in `--source` in the corresponding parser calls. If `--order-source` is not provided, the source priority order will be inferred from the order of input GVF files.
 
 Besides variant peptides called by `callVariant`, noncoding peptides and alternative translation peptides can also be passed to `summarizeFasta` with `--noncoding-peptides` and `--alt-translation-peptides`.
 
 ### Filtering
 
-The `fitlerFasta` command is provided to take a RNA abundance matrix and filter the non-canonical peptides based on the abundances of their corresponding transcripts.
+The `fitlerFasta` module is designed to take an RNA abundance matrix and filter the non-canonical peptides based on the abundances of their corresponding transcripts.
 
 We provide an example RSEM table for demonstration.
 
 ```shell
-wget https://github.com/uclahs-cds/private-moPepGen/raw/main/test/files/rsem/rsem.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/rsem/rsem.txt
 ```
 
 ```shell
@@ -315,7 +293,7 @@ moPepGen filterFasta \
 
 ### Splitting
 
-The `splitFasta` command is provided to split a variant peptide database into several separate databases for tiered database searching, particularly for the purpose of database-specific false disocvery rate control.
+The `splitFasta` command is provided to split a variant peptide database into several separate databases for tiered database searching, particularly for the purpose of database-specific false discovery rate control.
 
 ```shell
 mkdir -p split
@@ -326,9 +304,9 @@ moPepGen splitFasta \
     --index-dir index
 ```
 
-Similar to `summarizeFasta`, `splitFasta` also takes a `--order-source` to specify the priority order of which category a peptide should be assigned to, and will be inferred from the input GVFs if not specified. `--group-source` is used to group sources as a super category. For example, `--group-source Germline:gSNP,gINDEL Somatic:sSNV,sINDEL` will group sources of `gSNP` and `gINDEL` together as `Germline`, and `sSNV` and `sINDEL` as `Somatic`.
+Similar to `summarizeFasta`, `splitFasta` also takes a `--order-source` to specify the priority order of which category a peptide should be assigned to, which will be inferred from the input GVFs if not specified. `--group-source` is used to group sources as a super category. For example, `--group-source Germline:gSNP,gINDEL Somatic:sSNV,sINDEL` will group sources of `gSNP` and `gINDEL` together as `Germline`, and `sSNV` and `sINDEL` as `Somatic`.
 
-Note that, when assigning a peptide to a source category, it must carry exclusively the desired type(s) of variants. For example, a peptide of 'ENST00000622235.5|SNV-100-G-T|SNV-110-C-A|2' is assigned to `SNV`, while a peptide of 'ENST00000622235.5|SNV-100-G-T|RES-110-C-A|2' will be assigned to the category of `SNV-RNAEditing` but not `SNV`. `--max-source-groups` is used to specify the maximum number of source groups that should be split into individual FASTA files. The default value is 1, which means all peptides that contains two or more types of variants will not be written into their own FASTA file, but kept in the '\<prefix\>_Remaining.fasta' file.
+Note that, when assigning a peptide to a source category, it must carry exclusively the desired type(s) of variants. For example, a peptide of 'ENST00000622235.5|SNV-100-G-T|SNV-110-C-A|2' is assigned to `SNV`, while a peptide of 'ENST00000622235.5|SNV-100-G-T|RES-110-C-A|2' will be assigned to the category of `SNV-RNAEditing` but not `SNV`. `--max-source-groups` is used to specify the maximum number of source groups that should be split into individual FASTA files. The default value is 1, which means all peptides that contain two or more types of variants will not be written into their own FASTA file, but kept in the '\<prefix\>_Remaining.fasta' file.
 
 Similar to `summarizeFasta`, noncoding and alternative translation peptides can be passed to `splitFasta` via `--noncoding-peptides` and `--alt-translation-peptides`.
 
@@ -336,7 +314,7 @@ See [here](./split-fasta) for a complete list of arguments.
 
 ### Target-Decoy Database
 
-Most search engines expect a target-decoy database as input to estimate false discovery rate (FDR). We provide a `decoyFasta` command, that takes a variant peptide database and adds decoy sequences with either the `reverse` or `shuffle` algorithm.
+Most search engines expect a target-decoy database as input to estimate the false discovery rate (FDR). We provide a `decoyFasta` command, that takes a variant peptide database and adds decoy sequences with either the `reverse` or `shuffle` algorithm.
 
 ```shell
 moPepGen decoyFasta \

@@ -21,6 +21,6 @@ jobs:
 
       # Run CICD-base
       - name: CICD-base
-        uses: docker://blcdsdockerregistry/cicd-base:latest
+        uses: docker://ghcr.io/uclahs-cds/cicd-base:latest
         env:
           PYTHON_PYLINT_CONFIG_FILE: true
