@@ -122,7 +122,7 @@ A5SS and A3SS are called when an exon has two splicing sites that can generate e
 
 MXE is represented as the substitution of one exon with another exon.
 
-RI is represented as an insertion or the intron sequence.
+RI is represented as an insertion of the intron sequence.
 
 ```
 ##fileformat=VCFv4.2
