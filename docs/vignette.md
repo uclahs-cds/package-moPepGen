@@ -239,7 +239,7 @@ And again, `callAltTranslation` also uses trypsin as the default enzyme, and up 
 
 ## Post-processing
 
-moPepGen provides a series of post-processing commands that aim to deliver FASTA files ready for database searching. The post-processing tasks include summarization of a non-canonical database, filtering a database by transcript abundance, splitting a database to separate databases, creating decoy databases, shortening fasta headers for search engines to handle, and merging multiple database files for multiplexed proteomic experiments.
+moPepGen provides a series of post-processing commands that aim to deliver FASTA files ready for database searching. The post-processing tasks include generating summary statistics of a non-canonical database, filtering a database by transcript abundance, splitting a database to separate tiered databases, creating decoy databases, shortening fasta headers for easy handling by search engines, and merging multiple database files for multiplexed proteomic experiments.
 
 ### Summarizing
 
