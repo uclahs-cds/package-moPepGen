@@ -159,7 +159,7 @@ The line above represents an SE (skipped exon), that the sequence of 300-400 of 
 ENSG0002	210	A5SS-210	T	<DEL>	.	.	TRANSCRIPT_ID=ENST0002;START=210;END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
-The line above represents an A5SS (alternative 5' splicing site), that the sequence from 210 to 400 of the transcript ENST0002 is deleted. In this case, all transcripts of the gene in the annotation GTF have a longer version of the exon.
+The line above represents an A5SS (alternative 5' splicing site), where the nucleotides from positions 210 to 400 of the transcript ENST0002 is deleted. This A5SS is represented as a **deletion** because all transcripts of the gene in the annotation GTF have the longer version of the exon.
 
 ```
 ENSG0003	115	MXE-320	T	<INS>	.	.	TRANSCRIPT_ID=ENST0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
