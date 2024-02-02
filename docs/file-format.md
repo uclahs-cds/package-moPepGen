@@ -171,7 +171,7 @@ The line above represents an MXE (mutually exclusive exon), where the exon at po
 ENSG0004	277	MXE-477-1103	T	<SUB>	.	.	TRANSCRIPT_ID=ENST0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
-This line above represents an MXE that the exon 447-582 (transcript ENST0004 position 277) is replaced with exon 1103-1228 of the gene.
+This line above represents an MXE where the exon at position 447-582 in the gene (transcript ENST0004 position 277) is replaced with the exon at position 1103-1228 of the gene.
 
 ### 1.5 CircRNA
 
