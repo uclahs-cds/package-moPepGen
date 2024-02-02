@@ -175,7 +175,7 @@ This line above represents an MXE where the exon at position 447-582 in the gene
 
 ### 1.5 CircRNA
 
-Circular RNAs are derived from back-spliced exons. They exist as individual RNA molecules and have the potential to be translated into proteins. We are then interested in finding the possible peptide sequences translated from circRNAs with and without variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts than variants. Here we define a TSV file format to represent the circRNA molecules. In this TSV format, each row represents a circRNA, with the gene ID it is associated with, the start position at the gene, the offset and length of each segment, and IDs. Normally each segment is an exon, but with intron-retained alternative splicing, there could be introns.
+Circular RNAs are derived from back-spliced exons and introns. They exist as indepedent RNA molecules and have the potential to be translated into proteins. We are then interested in finding the possible peptide sequences that could be the result of circRNA translation, with and without additional variants (SNP, INDEL, etc). In this case, circRNAs per se are rather new transcripts backbones than variants. Here we define a TSV file format to represent the circRNA molecules. In this TSV format, each row represents a circRNA, with the gene ID it is associated with, the start position at the gene, the offset and length of each segment, and their IDs. Normally each segment is an exon, but with intron-retained alternative splicing they could be introns.
 
 ```
 ##fileformat=VCFv4.2
