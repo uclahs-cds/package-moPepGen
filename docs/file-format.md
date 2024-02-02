@@ -116,7 +116,7 @@ The `Info` column must contain the following fields:
 
 Alternative splicing site called by [rMATS](http://rnaseq-mats.sourceforge.net/) has five types, e.g. skipped exon (SE), alternative 5' splice site (A5SS), alternative 3' splice site (A3SS), mutually exclusive exons (MXE), and retained intron (RI). Each alternative splicing event can be represented as a deletion, insertion or a substitution.
 
-SE is when an exon is skipped given its upstream and downstream exon. It is represented as an **insertion** when the target transcript from the GTF file contains the exon. And it is represented as a **deletion** when the target transcript is annotated without the exon.
+SE is called when an exon is skipped given its upstream and downstream exons. It is represented as an **insertion** when the target transcript from the GTF file contains the exon, or is represented as a **deletion** when the target transcript is annotated without the exon.
 
 A5SS and A3SS are when an exon has two splicing sites that can generate a longer and a short version. When the longer version is annotated in the given transcript, the variant is represented as a deletion, and an insertion when the shorter version is annotated.
 
