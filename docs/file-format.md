@@ -165,7 +165,7 @@ The line above represents an A5SS (alternative 5' splicing site), where the nucl
 ENSG0003	115	MXE-320	T	<INS>	.	.	TRANSCRIPT_ID=ENST0003;START=320;END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
 ```
 
-The line above represents an MXE (mutually exclusive exon), that the exon of 320-380 of the gene ENSG0003 is retained in the transcript ENST0003 and resulted as an insertion at position 115 of the transcript. In this case, none of the transcripts of this gene has the first exon retained and the second spliced at the same time. And this transcript has both exons retained.
+The line above represents an MXE (mutually exclusive exon), where the exon at position 320-380 of the gene ENSG0003 is retained in the transcript ENST0003 and resulted as an insertion at position 115 of the transcript. This MXE is representated as an **insertion** because none of the transcripts of this gene has the first exon retained and the second spliced in the GTF, but this transcript has both exons retained.
 
 ```
 ENSG0004	277	MXE-477-1103	T	<SUB>	.	.	TRANSCRIPT_ID=ENST0004;START=477;END=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
