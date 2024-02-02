@@ -269,7 +269,7 @@ Besides variant peptides called by `callVariant`, noncoding peptides and alterna
 
 ### Filtering
 
-The `fitlerFasta` command is provided to take an RNA abundance matrix and filter the non-canonical peptides based on the abundances of their corresponding transcripts.
+The `fitlerFasta` module is designed to take an RNA abundance matrix and filter the non-canonical peptides based on the abundances of their corresponding transcripts.
 
 We provide an example RSEM table for demonstration.
 
