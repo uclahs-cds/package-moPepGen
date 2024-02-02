@@ -105,7 +105,7 @@ ENSG0021  500  FUSION-ENSG0021:500-ENSG0031:1000  C    <FUSION>  .     .       T
 
 The `Info` column must contain the following fields:
 + `TRANSCRIPT_ID`: the transcript ID of the donor (upstream) transcript.
-+ `ACCEPTER_GENE_ID`: the accepter (downstream) transcript's gene ID.
++ `ACCEPTER_GENE_ID`: the accepter (downstream) transcript gene ID.
 + `ACCEPTER_TRANSCRIPT_ID`: the accepter (downstream) transcript's transcript ID.
 + `ACCEPTER_POSITION`: the position of the breakpoint of the ACCEPTER (downstream) transcript.
 + `GENOMIC_POSITION`: the genomic position of the donor (upstream) transcript, in the format of `<chrom name>:<breakpoint>:<breakpoint>`.
