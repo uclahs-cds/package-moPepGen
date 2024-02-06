@@ -20,7 +20,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Updated `splitFasta` and `summarizeFasta` to accept source combinations in `--order-source`.
 
-- Fixed parseCIRCexplorer so the exon/intron indices in variant IDs are sorted correctly.
+- Fixed `parseCIRCexplorer` so the exon/intron indices in variant IDs are sorted correctly.
+
+- Fixed `parseVEP` to handle insertions in start-inclusion. #840
 
 ## [1.2.1] - 2023-10-05
 
