@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `parseVEP` to handle insertions in start-inclusion. #840
 
+- Fixed `callVariant` of 'no reference out node found'. #842
+
 ## [1.2.1] - 2023-10-05
 
 ### Add
