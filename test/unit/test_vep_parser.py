@@ -507,7 +507,7 @@ class TestVEPRecord(unittest.TestCase):
         record = vep_record.convert_to_variant_record(anno, genome)
         self.assertEqual(record.ref, 'G')
         self.assertEqual(record.alt, 'GTCA')
-    
+
     def test_vep_to_variant_record_case17_insertion_start_inclusion(self):
         """ Insertion when the location is a single spot.
         In this test case, the variant is represented by VEP in a start-inclusion
