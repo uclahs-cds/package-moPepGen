@@ -201,7 +201,7 @@ class ThreeFrameTVG():
     @staticmethod
     def is_reference_edge(in_node:TVGNode, out_node:TVGNode):
         """ checks if this is a reference edge """
-        if out_node.is_reference() and out_node.subgraph_id == in_node.subgraph_id:
+        if out_node.is_reference() and out_node.subgraph_id == in_node.get_last_subgraph_id():
             return True
         in_vars = {x.variant for x in in_node.variants}
         out_vars = {x.variant for x in out_node.variants}

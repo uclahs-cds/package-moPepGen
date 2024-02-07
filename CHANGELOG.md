@@ -22,6 +22,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed parseCIRCexplorer so the exon/intron indices in variant IDs are sorted correctly.
 
+- Fixed `callVariant` of 'no reference out node found'. #842
+
 ## [1.2.1] - 2023-10-05
 
 ### Add
