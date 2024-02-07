@@ -105,7 +105,7 @@ class VEPRecord():
     def __repr__(self)->str:
         """Return representation of the VEP record."""
         consequences = '|'.join(self.consequences)
-        return f"< {self.feature}, {consequences}, {self.location} >"
+        return f"< {self.feature}, {consequences}, {self.location}, {self.allele} >"
 
     def convert_to_variant_record(self, anno:gtf.GenomicAnnotation,
             genome:dna.DNASeqDict) -> seqvar.VariantRecord:
@@ -174,18 +174,17 @@ class VEPRecord():
                     # Sometimes insertions are reported by VEP in the end-inclusion
                     # way (e.g., C -> TACC), which needs to be converted into
                     # start-inclusion (A -> ATAC) for variants on + strand genes.
-                    if strand == 1:
-                        if seq.seq[alt_start] != allele[-1]:
-                            raise ValueError(f"Don't know how to process this variant: {self}")
+                    ref = str(seq.seq[alt_start])
+                    if ref == allele[-1]:
                         alt_start -= 1
                         alt_end = alt_start + 1
                         ref = str(seq.seq[alt_start])
                         alt = ref + allele[:-1]
-                    else:
-                        if seq.seq[alt_start] != allele[0]:
-                            raise ValueError(f"Don't know how to process this variant: {self}")
-                        ref = str(seq.seq[alt_start])
+                    elif ref == allele[0]:
+                        ref = str(ref)
                         alt = allele
+                    else:
+                        raise ValueError(f"Don't know how to process this variant: {self}")
                 else: # SNV
                     ref = str(seq.seq[alt_start])
                     alt = allele
