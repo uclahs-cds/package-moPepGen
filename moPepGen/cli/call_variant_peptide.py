@@ -280,6 +280,7 @@ TypePGraphs = Tuple[
     Dict[str, svgraph.PeptideVariantGraph],
     Dict[str, svgraph.PeptideVariantGraph]
 ]
+# pylint: disable=unused-argument
 @common.timeout()
 def call_variant_peptides_wrapper(tx_id:str,
         variant_series:seqvar.TranscriptionalVariantSeries,
@@ -293,7 +294,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         truncate_sec:bool,
         w2f_reassignment:bool,
         save_graph:bool,
-        timeout:int=None
+        **kwargs
         ) -> Tuple[Set[aa.AminoAcidSeqRecord], str, TypeDGraphs, TypePGraphs]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
@@ -385,8 +386,10 @@ def call_variant_peptides_wrapper(tx_id:str,
 
     return peptide_pool, tx_id, dgraphs, pgraphs
 
-def wrapper(dispatch, max_variants_per_node, additional_variants_per_misc):
-    """ wrapper for ParallelPool """
+def caller_reducer(dispatch):
+    """ wrapper for ParallelPool. Also reduces the complexity if the run is timed out. """
+    max_variants_per_node = dispatch['max_variants_per_node']
+    additional_variants_per_misc = dispatch['additional_variants_per_misc']
     tx_id = dispatch['tx_id']
     while True:
         try:
@@ -509,7 +512,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 'truncate_sec': caller.truncate_sec,
                 'w2f_reassignment': caller.w2f_reassignment,
                 'save_graph': caller.graph_output_dir is not None,
-                'timeout': args.timeout_seconds
+                'timeout': args.timeout_seconds,
+                'max_variants_per_node': tuple(args.max_variants_per_node),
+                'additional_variants_per_misc': tuple(args.additional_variants_per_misc)
             }
             dispatches.append(dispatch)
 
@@ -520,19 +525,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     logger([x['tx_id'] for x in dispatches])
                 if caller.threads > 1:
                     results = process_pool.map(
-                        wrapper,
-                        dispatches,
-                        tuple(args.max_variants_per_node),
-                        tuple(args.additional_variants_per_misc)
+                        caller_reducer,
+                        dispatches
                     )
                 else:
-                    results = [
-                        wrapper(
-                            dispatches[0],
-                            tuple(args.max_variants_per_node),
-                            tuple(args.additional_variants_per_misc)
-                        )
-                    ]
+                    results = [ caller_reducer(dispatches[0]) ]
 
                 # pylint: disable=W0621
                 for peptide_series, tx_id, dgraphs, pgraphs in results:

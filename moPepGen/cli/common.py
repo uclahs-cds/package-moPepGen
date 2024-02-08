@@ -377,6 +377,7 @@ def validate_file_format(file:Path, types:List[str]=None, check_readable:bool=Fa
 
 
 def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
+    """ Decorator to raise a TimeoutError if the process runs over time. """
     def decorator(func):
         def _handle_timeout(signum, frame):
             raise TimeoutError(error_message)
