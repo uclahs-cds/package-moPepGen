@@ -394,14 +394,14 @@ def caller_reducer(dispatch):
     while True:
         try:
             return call_variant_peptides_wrapper(**dispatch)
-        except TimeoutError:
+        except TimeoutError as e:
             new_dispatch = copy.copy(dispatch)
             p = copy.copy(new_dispatch['cleavage_params'])
             max_variants_per_node = max_variants_per_node[1:]
             if len(max_variants_per_node) == 0:
                 max_variants_per_node = (p.max_variants_per_node - 1, )
                 if max_variants_per_node[0] <= 0:
-                    raise ValueError(f"Failed to finish transcript: {tx_id}")
+                    raise ValueError(f"Failed to finish transcript: {tx_id}") from e
             additional_variants_per_misc = additional_variants_per_misc[1:]
             if len(additional_variants_per_misc) == 0:
                 additional_variants_per_misc = (0,)

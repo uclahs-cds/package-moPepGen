@@ -375,7 +375,7 @@ def validate_file_format(file:Path, types:List[str]=None, check_readable:bool=Fa
             if not os.access(file.parent, os.W_OK):
                 raise PermissionError(f"Permission denied: '{file}'")
 
-
+# pylint: disable=unused-argument
 def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
     """ Decorator to raise a TimeoutError if the process runs over time. """
     def decorator(func):
