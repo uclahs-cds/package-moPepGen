@@ -81,7 +81,8 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         ' when there are local regions that are heavily mutated. When creating'
         ' the cleavage graph, nodes containing variants larger than this value'
         ' are skipped. Setting to -1 will avoid checking for this.',
-        default=7,
+        default=(7,),
+        nargs='+',
         metavar='<number>'
     )
     p.add_argument(
@@ -90,7 +91,8 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         help='Additional variants allowed for every miscleavage. This argument'
         ' is used together with --max-variants-per-node to handle hypermutated'
         ' regions. Setting to -1 will avoid checking for this.',
-        default=2,
+        default=(2,),
+        nargs='+',
         metavar='<number>'
     )
     p.add_argument(
@@ -113,6 +115,12 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         action='store_true',
         help='Process only noncanonical transcripts of fusion transcripts and'
         ' circRNA. Canonical transcripts are skipped.'
+    )
+    p.add_argument(
+        '--timeout-seconds',
+        type=int,
+        default=1800,
+        help='Time out in seconds for each transcript.'
     )
     p.add_argument(
         '--verbose-level',
@@ -167,8 +175,8 @@ class VariantPeptideCaller():
             min_mw=float(args.min_mw),
             min_length=args.min_length,
             max_length=args.max_length,
-            max_variants_per_node = args.max_variants_per_node,
-            additional_variants_per_misc = args.additional_variants_per_misc,
+            max_variants_per_node = args.max_variants_per_node[0],
+            additional_variants_per_misc = args.additional_variants_per_misc[0],
             min_nodes_to_collapse = args.min_nodes_to_collapse,
             naa_to_collapse = args.naa_to_collapse
         )
@@ -272,6 +280,8 @@ TypePGraphs = Tuple[
     Dict[str, svgraph.PeptideVariantGraph],
     Dict[str, svgraph.PeptideVariantGraph]
 ]
+# pylint: disable=unused-argument
+@common.timeout()
 def call_variant_peptides_wrapper(tx_id:str,
         variant_series:seqvar.TranscriptionalVariantSeries,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
@@ -283,7 +293,8 @@ def call_variant_peptides_wrapper(tx_id:str,
         max_adjacent_as_mnv:bool,
         truncate_sec:bool,
         w2f_reassignment:bool,
-        save_graph:bool
+        save_graph:bool,
+        **kwargs
         ) -> Tuple[Set[aa.AminoAcidSeqRecord], str, TypeDGraphs, TypePGraphs]:
     """ wrapper function to call variant peptides """
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
@@ -375,9 +386,34 @@ def call_variant_peptides_wrapper(tx_id:str,
 
     return peptide_pool, tx_id, dgraphs, pgraphs
 
-def wrapper(dispatch):
-    """ wrapper for ParallelPool """
-    return call_variant_peptides_wrapper(**dispatch)
+def caller_reducer(dispatch):
+    """ wrapper for ParallelPool. Also reduces the complexity if the run is timed out. """
+    max_variants_per_node = dispatch['max_variants_per_node']
+    additional_variants_per_misc = dispatch['additional_variants_per_misc']
+    tx_id = dispatch['tx_id']
+    while True:
+        try:
+            return call_variant_peptides_wrapper(**dispatch)
+        except TimeoutError as e:
+            new_dispatch = copy.copy(dispatch)
+            p = copy.copy(new_dispatch['cleavage_params'])
+            max_variants_per_node = max_variants_per_node[1:]
+            if len(max_variants_per_node) == 0:
+                max_variants_per_node = (p.max_variants_per_node - 1, )
+                if max_variants_per_node[0] <= 0:
+                    raise ValueError(f"Failed to finish transcript: {tx_id}") from e
+            additional_variants_per_misc = additional_variants_per_misc[1:]
+            if len(additional_variants_per_misc) == 0:
+                additional_variants_per_misc = (0,)
+            p.max_variants_per_node = max_variants_per_node[0]
+            p.additional_variants_per_misc = additional_variants_per_misc[0]
+            new_dispatch['cleavage_params'] = p
+            dispatch = new_dispatch
+            logger(
+                f"Transcript {tx_id} timed out. Retry with "
+                f"--max-variants-per-node {p.max_variants_per_node} "
+                f"--additional-variants-per-misc {p.additional_variants_per_misc}"
+            )
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
     """ Main entry point for calling variant peptide """
@@ -475,7 +511,10 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 'max_adjacent_as_mnv': caller.max_adjacent_as_mnv,
                 'truncate_sec': caller.truncate_sec,
                 'w2f_reassignment': caller.w2f_reassignment,
-                'save_graph': caller.graph_output_dir is not None
+                'save_graph': caller.graph_output_dir is not None,
+                'timeout': args.timeout_seconds,
+                'max_variants_per_node': tuple(args.max_variants_per_node),
+                'additional_variants_per_misc': tuple(args.additional_variants_per_misc)
             }
             dispatches.append(dispatch)
 
@@ -485,9 +524,12 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 if caller.verbose >= 2:
                     logger([x['tx_id'] for x in dispatches])
                 if caller.threads > 1:
-                    results = process_pool.map(wrapper, dispatches)
+                    results = process_pool.map(
+                        caller_reducer,
+                        dispatches
+                    )
                 else:
-                    results = [wrapper(dispatches[0])]
+                    results = [ caller_reducer(dispatches[0]) ]
 
                 # pylint: disable=W0621
                 for peptide_series, tx_id, dgraphs, pgraphs in results:
