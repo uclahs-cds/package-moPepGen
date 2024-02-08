@@ -25,8 +25,8 @@ def create_base_args() -> argparse.Namespace:
     args.max_adjacent_as_mnv = 0
     args.selenocysteine_termination = False
     args.w2f_reassignment = False
-    args.max_variants_per_node = 7
-    args.additional_variants_per_misc = 2
+    args.max_variants_per_node = [7]
+    args.additional_variants_per_misc = [2]
     args.min_nodes_to_collapse = 30
     args.naa_to_collapse = 5
     args.inclusion_biotypes = None
@@ -42,6 +42,7 @@ def create_base_args() -> argparse.Namespace:
     args.noncanonical_transcripts = False
     args.invalid_protein_as_noncoding = False
     args.threads = 1
+    args.timeout_seconds = 1800
     return args
 
 class TestCallVariantPeptides(TestCaseIntegration):

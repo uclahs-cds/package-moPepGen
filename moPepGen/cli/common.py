@@ -5,6 +5,9 @@ import os
 import sys
 from typing import Tuple, Set, List
 from pathlib import Path
+import errno
+import signal
+import functools
 import pickle
 import pkg_resources
 from moPepGen import aa, dna, gtf, logger, seqvar, err
@@ -371,3 +374,25 @@ def validate_file_format(file:Path, types:List[str]=None, check_readable:bool=Fa
         else:
             if not os.access(file.parent, os.W_OK):
                 raise PermissionError(f"Permission denied: '{file}'")
+
+
+def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
+    def decorator(func):
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if 'timeout' in kwargs and kwargs['timeout']:
+                seconds = kwargs['timeout']
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.alarm(seconds)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+
+        return wrapper
+
+    return decorator

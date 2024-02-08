@@ -32,6 +32,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added `--graph-output-dir` to save graph data in json.
 
+- Added `--timeout-seconds` to callVariant.
+
 ## Fixed
 
 - Fixed `summarizeFasta` that SEC and W2F on fusion peptides are ignored. #789
