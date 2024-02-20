@@ -85,7 +85,7 @@ class REDItoolsRecord():
         self.region = region
         self.position = position
         self.reference = reference
-        self.starnd = strand
+        self.strand = strand
         self.all_subs = all_subs
         self.coverage_q = coverage_q
         self.mean_quality = mean_quality
