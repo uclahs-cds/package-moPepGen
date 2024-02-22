@@ -26,6 +26,11 @@ def add_subparser_merge_fasta(subparsers:argparse._SubParsersAction):
     common.add_args_output_path(
         parser=parser, formats=OUTPUT_FILE_FORMATS
     )
+    parser.add_argument(
+        '--dedup-header',
+        action='store_true',
+        help='Remove duplicate FASTA header entries after merging.'
+    )
     common.add_args_quiet(parser)
     parser.set_defaults(func=merge_fasta)
     common.print_help_if_missing_args(parser)
@@ -60,7 +65,8 @@ def merge_fasta(args:argparse.Namespace):
             if not args.quiet:
                 logger(f"Database FASTA file loaded: {file}")
 
-    pool.remove_redundant_headers()
+    if args.dedup_header:
+        pool.remove_redundant_headers()
     pool.write(output_file)
 
     if not args.quiet:

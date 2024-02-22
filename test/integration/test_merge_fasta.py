@@ -25,6 +25,7 @@ class TestMergeFasta(TestCaseIntegration):
         """ Create base args """
         args = argparse.Namespace()
         args.output_path = self.work_dir/"output.fasta"
+        args.dedup_header = False
         args.quiet = False
         return args
 
@@ -108,6 +109,7 @@ class TestMergeFasta(TestCaseIntegration):
             self.work_dir/filename1,
             self.work_dir/filename2
         ]
+        args.dedup_header = True
 
         cli.merge_fasta(args)
 
