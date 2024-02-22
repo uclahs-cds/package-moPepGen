@@ -51,7 +51,7 @@ class VariantPeptidePool():
             same_peptide.name = same_peptide.description
         else:
             self.peptides.add(peptide)
-    
+
     def remove_redundant_headers(self):
         """ remove redundant fasta header entries """
         for peptide in self.peptides:
