@@ -116,3 +116,8 @@ class TestMergeFasta(TestCaseIntegration):
         with open(args.output_path, 'rt') as handle:
             pool = VariantPeptidePool.load(handle)
         self.assertEqual(len(pool.peptides), 2)
+        # redundant fasta header entries are removed
+        self.assertEqual(
+            {x.description for x in pool.peptides},
+            {'ENST0001|SNV-1-A-T|1', 'ENST0002|SNV-2-A-T|1'}
+        )

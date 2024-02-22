@@ -51,6 +51,20 @@ class VariantPeptidePool():
             same_peptide.name = same_peptide.description
         else:
             self.peptides.add(peptide)
+    
+    def remove_redundant_headers(self):
+        """ remove redundant fasta header entries """
+        for peptide in self.peptides:
+            entries = {}
+            for entry in peptide.description.split(self.peptide_delimeter):
+                unversioned = entry.rsplit('|', 1)[0]
+                if unversioned in entries:
+                    continue
+                entries[unversioned] = entry
+            header = self.peptide_delimeter.join(entries.values())
+            peptide.description = header
+            peptide.id = header
+            peptide.name = header
 
     def write(self, path:Path):
         """ Write the variant peptide pool to FASTA file.

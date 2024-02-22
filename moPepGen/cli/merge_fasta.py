@@ -60,6 +60,7 @@ def merge_fasta(args:argparse.Namespace):
             if not args.quiet:
                 logger(f"Database FASTA file loaded: {file}")
 
+    pool.remove_redundant_headers()
     pool.write(output_file)
 
     if not args.quiet:
