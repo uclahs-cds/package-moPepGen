@@ -1,6 +1,6 @@
 # Vignette
 
-Welcome to the vignette for moPepGen, a powerful Python package designed for generating custom proteomic databases for library search. This vignette aims to provide you with a comprehensive overview and step-by-step guide on utilizing moPepGen to create custom databases for non-canonical peptide detection in mass spectrometry-based proteomics experiments. A small demo dataset has been provided, and each step should take no more than one minute to run on any computer.
+Welcome to the vignette for moPepGen, a powerful Python package designed for generating custom proteogenomic peptide databases for proteomics library search. This vignette aims to provide you with a comprehensive overview and step-by-step guide on utilizing moPepGen to create custom databases for non-canonical peptide detection in mass spectrometry-based proteomics experiments. A small demo dataset has been provided, and each step should take no more than one minute to run on any computer.
 
 ## Installation
 
