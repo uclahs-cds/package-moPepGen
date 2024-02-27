@@ -8,7 +8,6 @@ from .VariantRecord import VariantRecord
 if TYPE_CHECKING:
     from moPepGen.gtf import TranscriptAnnotationModel, GenomicAnnotation
     from moPepGen.dna import DNASeqRecord
-    # from moPepGen.seqvar import VariantRecord
 
 class SpliceJunction():
     """ Represents a splice junction between two genomic positions. """
