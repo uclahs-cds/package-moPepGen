@@ -1,8 +1,7 @@
 """ Module for GVF metadata """
 from __future__ import annotations
 from typing import List, IO
-from moPepGen import __version__
-from moPepGen.seqvar import SINGLE_NUCLEOTIDE_SUBSTITUTION
+from moPepGen import __version__, constant
 from .GVFMetadataInfo import GVF_METADATA_INFO, GVF_METADATA_ADDITIONAL
 
 
@@ -51,7 +50,7 @@ class GVFMetadata():
         self.add_alt(variant_type)
         if variant_type in self.added_types:
             return
-        if variant_type in SINGLE_NUCLEOTIDE_SUBSTITUTION:
+        if variant_type in constant.SINGLE_NUCLEOTIDE_SUBSTITUTION:
             return
         if variant_type == 'Fusion':
             self.info.update(GVF_METADATA_INFO['Fusion'])

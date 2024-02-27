@@ -1,17 +1,13 @@
 """ module for peptide peptide labels """
 from __future__ import annotations
 from typing import Dict, Iterable, List, TYPE_CHECKING, Set
-from moPepGen import err, seqvar, circ,SPLIT_DATABASE_KEY_SEPARATER
-from moPepGen.seqvar import SEC_TERMINATION_TYPE, CODON_REASSIGNMENTS_TYPES
+from moPepGen import err, seqvar, circ, constant, SPLIT_DATABASE_KEY_SEPARATER
 from . import VariantPeptideIdentifier as pi
 
 if TYPE_CHECKING:
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
     from moPepGen.gtf import GenomicAnnotation
 
-SOURCE_NONCODING = 'Noncoding'
-SOURCE_CODON_REASSIGNMENT = 'CodonReassign'
-SOURCE_SEC_TERMINATION = 'SECT'
 
 class VariantSourceSet(set):
     """ Variant source set. This is a class of ordered set.
@@ -208,14 +204,20 @@ class VariantPeptideInfo():
 
             if check_source:
                 if tx_id not in coding_tx:
-                    info.sources.add(SOURCE_NONCODING, group_map=group_map)
+                    info.sources.add(constant.SOURCE_NONCODING, group_map=group_map)
 
                 for gene_id, _ids in var_ids.items():
                     for var_id in _ids:
-                        if var_id.split('-')[0] == SEC_TERMINATION_TYPE:
-                            info.sources.add(SOURCE_SEC_TERMINATION, group_map=group_map)
-                        elif var_id.split('-')[0] in CODON_REASSIGNMENTS_TYPES:
-                            info.sources.add(SOURCE_CODON_REASSIGNMENT, group_map=group_map)
+                        if var_id.split('-')[0] == constant.SEC_TERMINATION_TYPE:
+                            info.sources.add(
+                                constant.SOURCE_SEC_TERMINATION,
+                                group_map=group_map
+                            )
+                        elif var_id.split('-')[0] in constant.CODON_REASSIGNMENTS_TYPES:
+                            info.sources.add(
+                                constant.SOURCE_CODON_REASSIGNMENT,
+                                group_map=group_map
+                            )
                         else:
                             source = label_map.get_source(gene_id, var_id)
                             info.sources.add(source, group_map=group_map)

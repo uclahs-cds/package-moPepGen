@@ -6,9 +6,10 @@ from collections import deque
 import math
 from Bio.Seq import Seq
 from moPepGen.dna import DNASeqRecordWithCoordinates
-from moPepGen import seqvar, svgraph, aa
+from moPepGen import seqvar, aa
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-
+from .PVGNode import PVGNode
+from .TVGEdge import TVGEdge
 
 if TYPE_CHECKING:
     from moPepGen.svgraph import SubgraphTree
@@ -37,8 +38,8 @@ class TVGNode():
                 reference.
         """
         self.seq = seq
-        self.in_edges:Set[svgraph.TVGEdge] = set()
-        self.out_edges:Set[svgraph.TVGEdge] = set()
+        self.in_edges:Set[TVGEdge] = set()
+        self.out_edges:Set[TVGEdge] = set()
         self.variants:List[seqvar.VariantRecordWithCoordinate] = variants if variants else []
         self.branch = branch
         self.orf = orf or [None, None]
@@ -131,14 +132,14 @@ class TVGNode():
             return True
         return False
 
-    def get_edge_to(self, other:TVGNode) -> svgraph.TVGEdge:
+    def get_edge_to(self, other:TVGNode) -> TVGEdge:
         """ Find the edge from this to the other node """
         for edge in self.out_edges:
             if edge.out_node is other:
                 return edge
         raise ValueError('TVGEdge not found')
 
-    def get_edge_from(self, other:TVGNode) -> svgraph.TVGEdge:
+    def get_edge_from(self, other:TVGNode) -> TVGEdge:
         """ Find the edge from the other to this node. """
         for edge in self.in_edges:
             if edge.in_node is other:
@@ -252,7 +253,7 @@ class TVGNode():
             and v.variant != self.global_variant])
         return n > 1
 
-    def is_inbond_of(self, node:svgraph.TVGEdge) -> bool:
+    def is_inbond_of(self, node:TVGEdge) -> bool:
         """ Checks if this node is a inbound node of the other node. """
         for edge in self.out_edges:
             if node is edge.out_node:
@@ -328,7 +329,7 @@ class TVGNode():
                 in_bridges.append(in_node)
         return in_bridges
 
-    def is_exclusively_outbond_of(self, other:svgraph.TVGNode) -> bool:
+    def is_exclusively_outbond_of(self, other:TVGNode) -> bool:
         """ Checks if the node is exclusively outbond with the other.
         Exclusive binding means the upstream node has only 1 outbond edge,
         and the downstream node has only inbond edge."""
@@ -449,7 +450,7 @@ class TVGNode():
                     if level_increment is not None:
                         new_out_node.level += level_increment
                     visited[source_out_node] = new_out_node
-                new_edge = svgraph.TVGEdge(target, new_out_node,
+                new_edge = TVGEdge(target, new_out_node,
                     _type=edge.type)
                 target.out_edges.add(new_edge)
                 new_out_node.in_edges.add(new_edge)
@@ -676,7 +677,7 @@ class TVGNode():
 
         self.seq = new_seq
 
-    def translate(self) -> svgraph.PVGNode:
+    def translate(self) -> PVGNode:
         """ translate to a PVGNode """
         if not self.out_edges:
             seq = self.seq[:len(self.seq) - len(self.seq) % 3].translate()
@@ -716,7 +717,7 @@ class TVGNode():
         # translate the dna variant location to peptide coordinates.
         variants = [v.to_protein_coordinates() for v in self.variants]
 
-        return svgraph.PVGNode(
+        return PVGNode(
             seq=seq,
             variants=variants,
             orf=[None, None],

@@ -1,16 +1,19 @@
 """ Module for variant record with coordinate. """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import math
-from moPepGen import seqvar
 from moPepGen.SeqFeature import FeatureLocation
 
+
+if TYPE_CHECKING:
+    from moPepGen.seqvar import VariantRecord
 
 class VariantRecordWithCoordinate():
     """ This class models the variant record with its coordinate location at
     a gene or protein. This is used mainly in the graph to keep track on the
     location of variants of a node when the variable bubble expands forward
     or backward. """
-    def __init__(self, variant:seqvar.VariantRecord, location:FeatureLocation,
+    def __init__(self, variant:VariantRecord, location:FeatureLocation,
             is_stop_altering:bool=False, is_silent:bool=False,
             downstream_cleavage_altering:bool=False,
             upstream_cleavage_altering:bool=False):
@@ -51,7 +54,7 @@ class VariantRecordWithCoordinate():
         end = math.ceil(self.location.end / 3)
         start_offset = self.location.start - start * 3
         end_offset = end * 3 - self.location.end
-        return seqvar.VariantRecordWithCoordinate(
+        return VariantRecordWithCoordinate(
             variant=self.variant,
             location=FeatureLocation(
                 start=start, end=end, seqname=self.location.seqname,

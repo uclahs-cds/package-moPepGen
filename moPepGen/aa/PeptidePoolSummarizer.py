@@ -4,17 +4,19 @@ import itertools
 import statistics
 from typing import Dict, IO, List, Set, FrozenSet, Tuple, Optional
 import matplotlib.pyplot as plt
-from moPepGen import seqvar
+from moPepGen import seqvar, constant
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
 from moPepGen.aa.VariantPeptideLabel import VariantPeptideInfo, \
     VariantSourceSet, LabelSourceMapping
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
-from moPepGen.aa.VariantPeptideLabel import SOURCE_NONCODING, \
-    SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT
 
 
-SOURCES_INTERNAL = [SOURCE_NONCODING, SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT]
+SOURCES_INTERNAL = [
+    constant.SOURCE_NONCODING,
+    constant.SOURCE_SEC_TERMINATION,
+    constant.SOURCE_CODON_REASSIGNMENT
+]
 
 MUTUALLY_EXCLUSIVE_PARSERS:Dict[str,List[str]] = {
     'parseSTARFusion': [

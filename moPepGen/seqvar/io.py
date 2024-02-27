@@ -2,9 +2,9 @@
 from typing import Dict, Iterable, Tuple, Union, IO
 from pathlib import Path
 import tempfile
-from moPepGen import GVF_HEADER
+from moPepGen import GVF_HEADER, constant
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
-from moPepGen.seqvar.VariantRecord import VariantRecord, ATTRS_POSITION
+from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.SeqFeature import FeatureLocation
 
 
@@ -55,7 +55,7 @@ def parse_attrs(info:str) -> Dict[str, Union[str,int]]:
     for field in info.split(';'):
         key, val = field.split('=')
         val = val.strip('"')
-        if key in ATTRS_POSITION:
+        if key in constant.ATTRS_POSITION:
             val = str(int(val) - 1)
         attrs[key] = val
     return attrs

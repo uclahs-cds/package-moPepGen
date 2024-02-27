@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import Dict, IO, List, Set, TYPE_CHECKING
 from pathlib import Path
 from moPepGen.seqvar import GVFMetadata
-from moPepGen import seqvar, circ, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
+from moPepGen import seqvar, circ, constant, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
     SPLIT_DATABASE_KEY_SEPARATER
 from .VariantPeptidePool import VariantPeptidePool
 from .VariantPeptideLabel import VariantPeptideInfo, VariantSourceSet, \
-    LabelSourceMapping, SOURCE_NONCODING, SOURCE_CODON_REASSIGNMENT, \
-    SOURCE_SEC_TERMINATION
+    LabelSourceMapping
 
 if TYPE_CHECKING:
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
@@ -55,7 +54,11 @@ class PeptidePoolSplitter():
     def append_order_internal_sources(self):
         """ Add internal sources that are not present in any GTFs, including
         noncoding, sec termination, and codon reassignment. """
-        sources = [SOURCE_NONCODING, SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT]
+        sources = [
+            constant.SOURCE_NONCODING,
+            constant.SOURCE_SEC_TERMINATION,
+            constant.SOURCE_CODON_REASSIGNMENT
+        ]
         for source in sources:
             if source in self.group_map:
                 source = self.group_map[source]

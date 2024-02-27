@@ -3,8 +3,8 @@ from __future__ import annotations
 import copy
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from moPepGen import ERROR_INDEX_IN_INTRON, circ
-from moPepGen.seqvar.VariantRecordPoolOnDisk import TranscriptionalVariantSeries
 from . import VariantRecord, io, GVFMetadata
+from .VariantRecordPoolOnDisk import TranscriptionalVariantSeries
 
 
 # To avoid circular import

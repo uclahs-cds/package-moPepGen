@@ -2,25 +2,19 @@
 from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING, Dict, Iterable, List
-from moPepGen import ERROR_NO_TX_AVAILABLE, \
+from moPepGen import constant, ERROR_NO_TX_AVAILABLE, \
     ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
         ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
 from moPepGen.SeqFeature import FeatureLocation
 
 
+_VARIANT_TYPES = ['SNV', 'INDEL', 'MNV', 'Fusion', 'RNAEditingSite',
+    'Insertion', 'Deletion', 'Substitution', 'circRNA', 'SECT', 'W2F']
+
 # To avoid circular import
 if TYPE_CHECKING:
     from moPepGen.gtf import GenomicAnnotation
     from moPepGen.dna import DNASeqDict, DNASeqRecord, DNASeqRecordWithCoordinates
-
-_VARIANT_TYPES = ['SNV', 'INDEL', 'MNV', 'Fusion', 'RNAEditingSite',
-    'Insertion', 'Deletion', 'Substitution', 'circRNA', 'SECT', 'W2F']
-SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'MNV', 'RNAEditingSite']
-ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
-ALTERNATIVE_SPLICING_TYPES = ['Insertion', 'Deletion', 'Substitution']
-RMATS_TYPES = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
-CODON_REASSIGNMENTS_TYPES = ['W2F']
-SEC_TERMINATION_TYPE = 'SECT'
 
 
 def create_variant_sect(anno:GenomicAnnotation, tx_id:str, pos:int) -> VariantRecord:
@@ -325,7 +319,7 @@ class VariantRecord():
         qual = '.'
         _filter = '.'
 
-        if self.type in SINGLE_NUCLEOTIDE_SUBSTITUTION:
+        if self.type in constant.SINGLE_NUCLEOTIDE_SUBSTITUTION:
             ref = str(self.ref)
             alt = str(self.alt)
         elif self.type == 'Fusion':
@@ -347,7 +341,7 @@ class VariantRecord():
         out = ''
         for key,val in self.attrs.items():
             # using 1-base position
-            if key in ATTRS_POSITION:
+            if key in constant.ATTRS_POSITION:
                 val = str(int(val) + 1)
             elif isinstance(val, list):
                 val = ','.join([str(x) for x in val])
@@ -380,11 +374,11 @@ class VariantRecord():
 
     def is_alternative_splicing(self) -> bool:
         """ Check if this is an alternative splicing event """
-        return any(self.id.startswith(x) for x in RMATS_TYPES)
+        return any(self.id.startswith(x) for x in constant.RMATS_TYPES)
 
     def is_codon_reassignment(self) -> bool:
         """ Check if the variant is a codon reassignment """
-        return self.type in CODON_REASSIGNMENTS_TYPES
+        return self.type in constant.CODON_REASSIGNMENTS_TYPES
 
     def is_merged_mnv(self) -> bool:
         """ Check if the variant is a MNV merged from individual adjacent variants. """

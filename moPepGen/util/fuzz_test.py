@@ -22,8 +22,8 @@ from moPepGen.util.common import load_references
 from moPepGen.cli.common import add_args_cleavage, generate_metadata, \
     print_help_if_missing_args
 from moPepGen.cli import call_variant_peptide
-from moPepGen import util
 from moPepGen.gtf import GtfIO
+from . import brute_force
 
 
 class FuzzRecordStatus(str, Enum):
@@ -657,7 +657,7 @@ class FuzzTestCase():
 
         with open(self.record.brute_force_fasta, 'wt') as handle:
             with redirect_stdout(handle):
-                util.brute_force.main(args)
+                brute_force.main(args)
 
     def assert_equal(self) -> str:
         """ Assert that the callVariant results and bruteForce results equal """

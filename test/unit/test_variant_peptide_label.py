@@ -6,12 +6,9 @@ from test.unit.test_peptide_pool_splitter import (
     ANNOTATION_DATA, LABEL_MAP1, SOURCE_ORDER
 )
 from Bio.Seq import Seq
-from moPepGen import aa
+from moPepGen import aa, constant
 from moPepGen.aa.VariantPeptideLabel import (
     VariantPeptideInfo, LabelSourceMapping, VariantSourceSet
-)
-from moPepGen.aa.VariantPeptideLabel import (
-    SOURCE_SEC_TERMINATION, SOURCE_CODON_REASSIGNMENT
 )
 
 
@@ -48,14 +45,14 @@ class TestVariantPeptideInfo(unittest.TestCase):
             description=f"{fusion_id}|W2F-2|1"
         )
         levels = copy.copy(SOURCE_ORDER)
-        levels[SOURCE_SEC_TERMINATION] = max(levels.values()) + 1
-        levels[SOURCE_CODON_REASSIGNMENT] = max(levels.values()) + 1
+        levels[constant.SOURCE_SEC_TERMINATION] = max(levels.values()) + 1
+        levels[constant.SOURCE_CODON_REASSIGNMENT] = max(levels.values()) + 1
         VariantSourceSet.set_levels(levels)
         labels = VariantPeptideInfo.from_variant_peptide(
             peptide=peptide, tx2gene=tx2gene, coding_tx=coding_tx,
             label_map=label_map, check_source=True
         )
-        self.assertEqual(labels[0].sources, {'Fusion', SOURCE_CODON_REASSIGNMENT})
+        self.assertEqual(labels[0].sources, {'Fusion', constant.SOURCE_CODON_REASSIGNMENT})
 
     def test_from_variant_peptide_fusion_sect(self):
         """ Fusion + SECT """
@@ -69,11 +66,11 @@ class TestVariantPeptideInfo(unittest.TestCase):
             description=f"{fusion_id}|SECT|1"
         )
         levels = copy.copy(SOURCE_ORDER)
-        levels[SOURCE_SEC_TERMINATION] = max(levels.values()) + 1
-        levels[SOURCE_CODON_REASSIGNMENT] = max(levels.values()) + 1
+        levels[constant.SOURCE_SEC_TERMINATION] = max(levels.values()) + 1
+        levels[constant.SOURCE_CODON_REASSIGNMENT] = max(levels.values()) + 1
         VariantSourceSet.set_levels(levels)
         labels = VariantPeptideInfo.from_variant_peptide(
             peptide=peptide, tx2gene=tx2gene, coding_tx=coding_tx,
             label_map=label_map, check_source=True
         )
-        self.assertEqual(labels[0].sources, {'Fusion', SOURCE_SEC_TERMINATION})
+        self.assertEqual(labels[0].sources, {'Fusion', constant.SOURCE_SEC_TERMINATION})

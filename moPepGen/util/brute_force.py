@@ -8,10 +8,10 @@ from pathlib import Path
 from itertools import combinations
 from Bio import SeqUtils
 from Bio.Seq import Seq
-from moPepGen import gtf, seqvar, aa, dna, params
+from moPepGen import gtf, seqvar, aa, dna, params, constant
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
-from moPepGen.seqvar.VariantRecord import VariantRecord, ALTERNATIVE_SPLICING_TYPES
+from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
 from moPepGen.seqvar.VariantRecordWithCoordinate import VariantRecordWithCoordinate
 from moPepGen.util.common import load_references
@@ -427,7 +427,7 @@ class BruteForceVariantPeptideCaller():
         n_fusion = len(pool[self.tx_id].fusion)
         n_circ = len(pool[self.tx_id].circ_rna)
         n_alt_splice = len([x for x in pool[self.tx_id].transcriptional
-            if x.type in ALTERNATIVE_SPLICING_TYPES])
+            if x.type in constant.ALTERNATIVE_SPLICING_TYPES])
 
         orf = self.tx_seq.orf
         is_mrna_end_nf = self.tx_model.is_mrna_end_nf()
@@ -449,7 +449,7 @@ class BruteForceVariantPeptideCaller():
             if accepter_tx_id not in pool:
                 continue
             n_alt_splice += len([x for x in pool[accepter_tx_id].transcriptional
-                if x.type in ALTERNATIVE_SPLICING_TYPES])
+                if x.type in constant.ALTERNATIVE_SPLICING_TYPES])
         if n_fusion + n_circ > 1:
             return True
 
@@ -605,7 +605,7 @@ class BruteForceVariantPeptideCaller():
                 attributes=fragment.attributes)
             new_seq = seq[loc.start:loc.end]
             frag_vars = variants.filter_variants(
-                tx_ids=[circ.transcript_id], exclude_type=ALTERNATIVE_SPLICING_TYPES,
+                tx_ids=[circ.transcript_id], exclude_type=constant.ALTERNATIVE_SPLICING_TYPES,
                 intron=False, segments=[fragment]
             )
             frag_seq, frag_vars_coord = self.get_variant_sequence(
