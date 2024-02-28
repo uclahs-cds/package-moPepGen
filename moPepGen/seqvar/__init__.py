@@ -1,7 +1,5 @@
 """ Module for sequence variant """
-from moPepGen.seqvar.VariantRecord import VariantRecord, \
-    SINGLE_NUCLEOTIDE_SUBSTITUTION, ALTERNATIVE_SPLICING_TYPES, \
-    CODON_REASSIGNMENTS_TYPES, SEC_TERMINATION_TYPE
+from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.seqvar.VariantRecordWithCoordinate import \
     VariantRecordWithCoordinate
 from moPepGen.seqvar import io

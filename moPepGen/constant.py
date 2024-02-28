@@ -1,0 +1,13 @@
+""" moPepGen constants """
+# Variant related constants
+SINGLE_NUCLEOTIDE_SUBSTITUTION = ['SNV', 'SNP', 'INDEL', 'MNV', 'RNAEditingSite']
+ATTRS_POSITION = ['START', 'DONOR_START', 'ACCEPTER_START', 'ACCEPTER_POSITION']
+ALTERNATIVE_SPLICING_TYPES = ['Insertion', 'Deletion', 'Substitution']
+RMATS_TYPES = ['SE', 'RI', 'A3SS', 'A5SS', 'MXE']
+CODON_REASSIGNMENTS_TYPES = ['W2F']
+SEC_TERMINATION_TYPE = 'SECT'
+
+# Variant sources
+SOURCE_NONCODING = 'Noncoding'
+SOURCE_CODON_REASSIGNMENT = 'CodonReassign'
+SOURCE_SEC_TERMINATION = 'SECT'

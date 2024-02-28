@@ -9,8 +9,8 @@ from moPepGen.dna.DNASeqDict import DNASeqDict
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation, GeneAnnotationModel, \
     TranscriptAnnotationModel, GTFSeqFeature
 from moPepGen.seqvar import VariantRecord
-from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 from moPepGen.circ import CircRNAModel
+from moPepGen import constant
 
 
 # pylint: disable=R0912, R0915
@@ -185,7 +185,7 @@ def fake_rmats_record(anno:GenomicAnnotation, genome:DNASeqDict, tx_id:str
         ) -> VariantRecord:
     """ Create an alternative splicing variant """
     while True:
-        var_type = random.choice(ALTERNATIVE_SPLICING_TYPES)
+        var_type = random.choice(constant.ALTERNATIVE_SPLICING_TYPES)
         if var_type != 'Substitution' or len(anno.transcripts[tx_id].exon) > 3:
             break
     rmats_type = random.choice(ALT_SPLICE_TYPE_TO_RMATS[var_type])

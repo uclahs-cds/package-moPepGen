@@ -1,6 +1,10 @@
 """ Module for ENAEdge class """
-from moPepGen import svgraph
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
+
+if TYPE_CHECKING:
+    from .TVGNode import TVGNode
 
 class TVGEdge():
     """ Defines the edges in the TranscriptVariantGraph
@@ -11,7 +15,7 @@ class TVGEdge():
         type (str): The edge type. Must be either of orf_start, orf_end,
             variant_start, variant_end, cleave, or reference
     """
-    def __init__(self, in_node:svgraph.TVGNode, out_node:svgraph.TVGNode,
+    def __init__(self, in_node:TVGNode, out_node:TVGNode,
             _type:str):
         """ Constructor for Edge
 

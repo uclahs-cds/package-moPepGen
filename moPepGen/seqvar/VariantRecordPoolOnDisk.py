@@ -3,10 +3,9 @@ from __future__ import annotations
 import copy
 from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
 from pathlib import Path
-from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512, circ
+from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512, circ, constant
 from moPepGen.seqvar.GVFIndex import GVFPointer, iterate_pointer
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
-from moPepGen.seqvar.VariantRecord import ALTERNATIVE_SPLICING_TYPES
 from . import VariantRecord
 
 
@@ -66,11 +65,11 @@ class TranscriptionalVariantSeries():
     def has_any_noncanonical_transcripts(self) -> bool:
         """ check if the series has any noncanonical transcripts """
         return len(self.fusion) > 0 or len(self.circ_rna) > 0 or \
-            any(x.type in ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
+            any(x.type in constant.ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
 
     def has_any_alternative_splicing(self) -> bool:
         """ Check if there is any alternative splicing """
-        return any(x.type in ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
+        return any(x.type in constant.ALTERNATIVE_SPLICING_TYPES for x in self.transcriptional)
 
     def get_highest_hypermutated_region_complexity(self, distance:int=6):
         """ Calculate the number of variants in the most hypermutated region """
@@ -78,7 +77,7 @@ class TranscriptionalVariantSeries():
         max_n = 0
         cur_n = 0
         for variant in self.transcriptional:
-            if variant.type in ALTERNATIVE_SPLICING_TYPES:
+            if variant.type in constant.ALTERNATIVE_SPLICING_TYPES:
                 continue
             if variant.location.start - end >= distance:
                 end = variant.location.end

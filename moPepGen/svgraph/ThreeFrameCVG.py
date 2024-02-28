@@ -4,16 +4,17 @@ from __future__ import annotations
 import copy
 from typing import Dict, Union, List, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import svgraph, seqvar, params
-from moPepGen.svgraph.TVGNode import TVGNode
-from moPepGen.svgraph.SubgraphTree import SubgraphTree
+from moPepGen import seqvar, params
+from .ThreeFrameTVG import ThreeFrameTVG
+from .TVGNode import TVGNode
 
 
 if TYPE_CHECKING:
     from moPepGen import circ
     from moPepGen.dna import DNASeqRecordWithCoordinates
+    from .SubgraphTree import SubgraphTree
 
-class ThreeFrameCVG(svgraph.ThreeFrameTVG):
+class ThreeFrameCVG(ThreeFrameTVG):
     """ Defines a directed cyclic graph for circular nucleotide molecules such
     ass circRNA and the variants associated with it.
 

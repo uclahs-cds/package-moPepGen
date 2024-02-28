@@ -1,14 +1,13 @@
 """ Splicing junction site """
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
-from moPepGen import seqvar
 from moPepGen.SeqFeature import FeatureLocation
+from .VariantRecord import VariantRecord
 
 
 if TYPE_CHECKING:
     from moPepGen.gtf import TranscriptAnnotationModel, GenomicAnnotation
     from moPepGen.dna import DNASeqRecord
-    from moPepGen.seqvar import VariantRecord
 
 class SpliceJunction():
     """ Represents a splice junction between two genomic positions. """
@@ -190,7 +189,7 @@ class SpliceJunctionTranscriptAlignment():
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Deletion'
-        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
+        return VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_downstream_deletion(self, spanning:int, interjacent:List[int],
             anno:GenomicAnnotation, gene_seq:DNASeqRecord, var_id:str
@@ -233,7 +232,7 @@ class SpliceJunctionTranscriptAlignment():
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Deletion'
-        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
+        return VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_upstream_substitution(self, interjacent:List[int],
             anno:GenomicAnnotation, gene_seq:DNASeqRecord, var_id:str
@@ -286,7 +285,7 @@ class SpliceJunctionTranscriptAlignment():
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Substitution'
-        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
+        return VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_downstream_substitution(self, interjacent:List[int],
             anno:GenomicAnnotation, gene_seq:DNASeqRecord, var_id:str
@@ -340,7 +339,7 @@ class SpliceJunctionTranscriptAlignment():
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Substitution'
-        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
+        return VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_upstream_insertion(self, anno:GenomicAnnotation,
             gene_seq:DNASeqRecord, var_id:str) -> VariantRecord:
@@ -391,7 +390,7 @@ class SpliceJunctionTranscriptAlignment():
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Insertion'
-        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
+        return VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def create_downstream_insertion(self, anno:GenomicAnnotation,
             gene_seq:DNASeqRecord, var_id:str) -> VariantRecord:
@@ -444,7 +443,7 @@ class SpliceJunctionTranscriptAlignment():
             'GENOMIC_POSITION': genomic_position
         }
         _type = 'Insertion'
-        return seqvar.VariantRecord(location, ref, alt, _type, var_id, attrs)
+        return VariantRecord(location, ref, alt, _type, var_id, attrs)
 
     def convert_to_variant_records(self, anno:GenomicAnnotation,
             gene_seq:DNASeqRecord, var_id:str):
