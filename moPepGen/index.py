@@ -175,4 +175,4 @@ class IndexDir:
         """ Save metadata to index directory """
         data = metadata.jsonfy()
         with open(self.metadata_file, 'wt') as handle:
-            json.dump(data, handle)
+            json.dump(data, handle, indent=2)
