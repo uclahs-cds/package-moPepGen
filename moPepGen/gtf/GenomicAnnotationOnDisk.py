@@ -3,14 +3,12 @@ from __future__ import annotations
 from typing import Dict, IO, Union, Tuple
 import io
 from pathlib import Path
-from moPepGen import err
 from moPepGen.version import MetaVersion
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.gtf.GTFPointer import (
     GenePointerDict, TranscriptPointerDict, iterate_pointer,
     GenePointer, TranscriptPointer
 )
-from moPepGen.gtf.GTFIndexMetadata import GTFIndexMetadata
 
 
 class GenomicAnnotationOnDisk(GenomicAnnotation):
@@ -104,8 +102,6 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
             raise ValueError(f"Gene index file cannot be found in {file.parent}")
         if not tx_idx_file.exists():
             raise ValueError(f"Transcript index file cannot be found in {file.parent}")
-
-        version = MetaVersion()
 
         with open(gene_idx_file, 'rt') as handle:
             for line in handle:
