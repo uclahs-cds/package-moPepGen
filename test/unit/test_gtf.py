@@ -210,6 +210,25 @@ class TestGTF(unittest.TestCase):
             for exon in val.exon:
                 self.assertEqual(exon.transcript_id, key)
 
+    def test_dump_gtf_ensembl_utr(self):
+        """ Test  """
+        gtf_data = (
+            '1\thavana\tgene\t100\t110\t.\t+\t.\t'
+            + 'gene_id "ENSG0001.1"; gene_name "DDX11L1";\n'
+            + '1\thavana\tfive_prime_utr\t100\t110\t.\t+\t.\t'
+            + 'gene_id "ENSG0001.1"; transcript_id "ENST0001.1"; gene_name "DDX11L1";\n'
+            + '1\thavana\tthree_prime_utr\t200\t210\t.\t+\t.\t'
+            + 'gene_id "ENSG0001.1"; transcript_id "ENST0001.1"; gene_name "DDX11L1";\n'
+        )
+        anno = gtf.GenomicAnnotation()
+        with io.BytesIO(gtf_data.encode('utf8')) as binary_file:
+            with io.TextIOWrapper(binary_file, encoding='utf8') as handle:
+                anno.dump_gtf(handle)
+        self.assertEqual(len(anno.transcripts['ENST0001.1'].five_utr), 1)
+        self.assertEqual(anno.transcripts['ENST0001.1'].five_utr[0].location.start, 99)
+        self.assertEqual(len(anno.transcripts['ENST0001.1'].three_utr), 1)
+        self.assertEqual(anno.transcripts['ENST0001.1'].three_utr[0].location.start, 199)
+
     def test_variant_coordinates_convert_case1(self):
         """ Test the converting the coordinates of variants to gene """
         attributes = {

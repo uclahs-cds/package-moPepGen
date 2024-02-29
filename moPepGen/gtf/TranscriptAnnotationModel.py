@@ -9,8 +9,17 @@ from moPepGen import dna, ERROR_INDEX_IN_INTRON
 if TYPE_CHECKING:
     from Bio.Seq import Seq
 
-GTF_FEATURE_TYPES = ['transcript', 'cds', 'exon', 'start_codon', 'stop_codon',
-    'utr', 'selenocysteine']
+GTF_FEATURE_TYPES = {
+    'transcript': 'transcript',
+    'cds': 'cds',
+    'exon': 'exon',
+    'start_codon': 'start_codon',
+    'stop_codon': 'stop_codon',
+    'utr': 'utr',
+    'selenocysteine': 'selenocysteine',
+    'five_prime_utr': 'five_utr',
+    'three_prime_utr': 'three_utr'
+}
 
 class TranscriptAnnotationModel():
     """ A TranscriptAnnotationModel holds all the annotations associated with
@@ -70,7 +79,8 @@ class TranscriptAnnotationModel():
             record (GTFRecord): The GTF record to be added.
         """
         if _type not in GTF_FEATURE_TYPES:
-            raise ValueError(f'Type must be from {GTF_FEATURE_TYPES}')
+            raise ValueError(f'Type must be from {list(GTF_FEATURE_TYPES.keys())}')
+        attr = GTF_FEATURE_TYPES[_type]
 
         for key in ['transcript_id', 'gene_id', 'protein_id', 'gene_name', 'gene_type']:
             if hasattr(record, key):
@@ -87,9 +97,9 @@ class TranscriptAnnotationModel():
                 is_protein_coding = record.attributes.pop('is_protein_coding')
                 self.is_protein_coding = is_protein_coding == 'true'
         else:
-            if self.__getattribute__(_type) is None:
-                self.__setattr__(_type, [])
-            self.__getattribute__(_type).append(record)
+            if self.__getattribute__(attr) is None:
+                self.__setattr__(attr, [])
+            self.__getattribute__(attr).append(record)
 
     def split_utr(self) -> None:
         """ Infer 3'UTR or 5'UTR. CDS must be already sorted. """
