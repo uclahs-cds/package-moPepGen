@@ -2,11 +2,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from moPepGen import logger
-from moPepGen.version import MetaVersion
 
 
 if TYPE_CHECKING:
     from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
+    from moPepGen.version import MetaVersion
+    from moPepGen.params import CleavageParams
 
 class VariantSourceNotFoundError(Exception):
     """ Error to be raised when the variant source of a peptide is not found """
@@ -79,13 +80,18 @@ class IntronNotFoundError(Exception):
             f"from gene {gene_id}"
         super().__init__(msg)
 
-class IndexVersionNotMatchError(Exception):
+class InvalidIndexError(Exception):
     """ Error to be raised when the index version does not match with the
     current environment """
-    def __init__(self, this:MetaVersion, other:MetaVersion):
+    def __init__(self, this_index:MetaVersion, other_index:MetaVersion,
+            this_cleavage:CleavageParams=None, other_cleavage:CleavageParams=None):
         """ constructor """
-        msg = "Current runtime environment does not match with the index." +\
-            f"Current: {this}; Index: {other}"
+        msg = "Current runtime environment or cleavage params do not match with the index." +\
+            f"Version: current: {this_index}; index: {other_index}"
+        if this_cleavage and other_cleavage:
+            this_params = ', '.join([f"{k}={v}" for k,v in this_cleavage.jsonfy(False).items()])
+            other_params = ', '.join([f"{k}={v}" for k,v in other_cleavage.jsonfy(False).items()])
+            msg += f"Cleavage: current: {this_params}, index: {other_params}"
         super().__init__(msg)
 
 class GeneNotFoundError(Exception):

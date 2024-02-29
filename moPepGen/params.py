@@ -53,6 +53,25 @@ class CleavageParams():
             else:
                 self.exception = None
 
+    def jsonfy(self, graph_params:bool=False):
+        """ jsonfy """
+        data = {
+            'enzyme': self.enzyme,
+            'exception': self.exception,
+            'miscleavage': self.miscleavage,
+            'min_mw': self.min_mw,
+            'min_length': self.min_length,
+            'max_length': self.max_length
+        }
+        if graph_params:
+            data.update({
+                'max_variants_per_node': self.max_variants_per_node,
+                'additional_variants_per_misc': self.additional_variants_per_misc,
+                'min_nodes_to_collapse': self.min_nodes_to_collapse,
+                'naa_to_collapse': self.naa_to_collapse
+            })
+        return data
+
 class ReferenceData():
     """ Reference related parameters
 

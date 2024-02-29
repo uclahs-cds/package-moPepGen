@@ -6,7 +6,7 @@ import Bio
 from moPepGen import __version__
 
 
-MINIMAL_VERSION = '1.1.0'
+MINIMAL_VERSION = '1.3.0'
 
 class MetaVersion():
     """ Versions """
@@ -46,3 +46,11 @@ class MetaVersion():
     def __repr__(self) -> str:
         """ str representation """
         return f"python={self.python}, biopython={self.biopython}, moPepGen={self.mopepgen}"
+
+    def jsonfy(self):
+        """ jsonfy """
+        return {
+            'python': self.python,
+            'biopython': self.biopython,
+            'mopepgen': self.mopepgen
+        }

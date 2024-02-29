@@ -76,7 +76,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
     common.print_start_message(args)
 
     genome, anno, _, canonical_peptides = common.load_references(
-        args=args, load_proteome=True
+        args=args, load_proteome=True, cleavage_params=cleavage_params
     )
 
     peptide_pool = aa.VariantPeptidePool()

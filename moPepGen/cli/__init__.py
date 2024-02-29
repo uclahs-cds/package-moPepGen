@@ -1,5 +1,5 @@
 """ Module for command line interface """
-from .generate_index import add_subparser_generate_index, generate_index, index_gtf
+from .generate_index import add_subparser_generate_index, generate_index
 from .call_variant_peptide import add_subparser_call_variant, call_variant_peptide
 from .call_noncoding_peptide import add_subparser_call_noncoding, call_noncoding_peptide
 from .call_alt_translation import add_subparser_call_alt_translation, call_alt_translation

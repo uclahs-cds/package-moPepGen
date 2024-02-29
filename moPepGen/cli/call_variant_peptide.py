@@ -206,7 +206,8 @@ class VariantPeptideCaller():
         """ load reference genome, annotation, and canonical peptides """
         genome, anno, _, canonical_peptides = common.load_references(
                 args=self.args,
-                invalid_protein_as_noncoding=self.invalid_protein_as_noncoding
+                invalid_protein_as_noncoding=self.invalid_protein_as_noncoding,
+                cleavage_params=self.cleavage_params
             )
         self.reference_data = params.ReferenceData(
             genome=genome,
