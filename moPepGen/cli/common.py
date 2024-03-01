@@ -8,8 +8,10 @@ from pathlib import Path
 import errno
 import signal
 import functools
+import time
+import logging
 import pkg_resources
-from moPepGen import aa, dna, gtf, logger, seqvar
+from moPepGen import aa, dna, gtf, seqvar, get_logger, constant
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen.index import IndexDir
 
@@ -25,8 +27,7 @@ def print_help_if_missing_args(parser:argparse.ArgumentParser):
 
 def print_start_message(args:argparse.Namespace):
     """ Print the program start message """
-    if not args.quiet:
-        logger(f'moPepGen {args.command} started')
+    get_logger().info('moPepGen %s started', args.command)
 
 def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         proteome:bool=True, index:bool=True):
@@ -157,8 +158,15 @@ def add_args_decoy(parser:argparse.ArgumentParser):
         metavar='<value>'
     )
 
-def add_args_quiet(parser:argparse.ArgumentParser):
-    """ Add quiet """
+def add_args_debug_level(parser:argparse.ArgumentParser):
+    """ add debug level """
+    parser.add_argument(
+        '--debug-level',
+        type=str,
+        help='Debug level.',
+        default='INFO',
+        metavar='<value|number>'
+    )
     parser.add_argument(
         '-q', '--quiet',
         action='store_true',
@@ -218,8 +226,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotationOnDisk, Set[str]]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
-    quiet:bool = args.quiet
-
+    logger = get_logger()
     genome = None
     anno = None
     canonical_peptides = None
@@ -243,8 +250,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if load_canonical_peptides:
             canonical_peptides = index_dir.load_canonical_peptides()
 
-        if not quiet:
-            logger('Reference indices loaded.')
+        logger.info('Reference indices loaded.')
     else:
         if (check_protein_coding is True or load_canonical_peptides is True) and \
                 args.proteome_fasta is None:
@@ -252,21 +258,18 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         anno = gtf.GenomicAnnotationOnDisk()
         anno.generate_index(args.annotation_gtf, source=args.reference_source)
 
-        if not quiet:
-            logger('Annotation GTF loaded.')
+        logger.info('Annotation GTF loaded.')
 
         if load_proteome or load_canonical_peptides or check_protein_coding:
             proteome = aa.AminoAcidSeqDict()
             proteome.dump_fasta(args.proteome_fasta, source=args.reference_source)
-            if not quiet:
-                logger('Proteome FASTA loaded.')
+            logger.info('Proteome FASTA loaded.')
             anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
         if load_genome:
             genome = dna.DNASeqDict()
             genome.dump_fasta(args.genome_fasta)
-            if not quiet:
-                logger('Genome assembly FASTA loaded.')
+            logger.info('Genome assembly FASTA loaded.')
 
         if load_canonical_peptides:
             rule:str = args.cleavage_rule
@@ -280,8 +283,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
                 miscleavage=miscleavage, min_mw=min_mw, min_length=min_length,
                 max_length=max_length
             )
-            if not quiet:
-                logger('canonical peptide pool generated.')
+            logger.info('canonical peptide pool generated.')
 
     if not load_proteome:
         proteome = None
@@ -389,3 +391,32 @@ def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
         return wrapper
 
     return decorator
+
+def setup_loggers(level:str):
+    """ Initialize loggers for both init and run """
+    # pylint: disable=protected-access
+    try:
+        level = int(level)
+    except ValueError:
+        pass
+    try:
+        log_level = logging._checkLevel(level)
+    except ValueError:
+        log_level = logging._checkLevel('INFO')
+
+    logger = logging.getLogger(constant.PROG_NAME)
+    logger.setLevel(log_level)
+
+    formatter = logging.Formatter(
+        '[ %(asctime)s ] [ %(name)s - %(levelname)s ] %(message)s',
+        "%Y-%m-%d %H:%M:%S"
+    )
+    logging.Formatter.converter = time.localtime
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(log_level)
+
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    return logger

@@ -12,7 +12,7 @@ from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen.err import MNVParsingError, TranscriptionStopSiteMutationError, \
     TranscriptionStartSiteMutationError, warning
-from moPepGen import seqvar, logger
+from moPepGen import seqvar, get_logger
 from moPepGen.cli import common
 
 
@@ -39,13 +39,14 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     common.add_args_source(p)
     common.add_args_reference(p, proteome=False)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     p.set_defaults(func=parse_vep)
     common.print_help_if_missing_args(p)
     return p
 
 def parse_vep(args:argparse.Namespace) -> None:
     """ Main entry point for the VEP parser. """
+    logger = get_logger()
     # unpack args
     vep_files:List[Path] = args.input_path
     for file in vep_files:
@@ -86,19 +87,16 @@ def parse_vep(args:argparse.Namespace) -> None:
 
                 vep_records[transcript_id].append(record)
 
-        if not args.quiet:
-            logger(f'VEP file {vep_file} loaded.')
+        logger.info('VEP file %s loaded.', vep_file)
 
     if not vep_records:
-        if not args.quiet:
-            warning('No variant record is saved.')
+        logger.warning('No variant record is saved.')
         return
 
     for records in vep_records.values():
         records.sort()
 
-    if not args.quiet:
-        logger('VEP sorting done.')
+    logger.info('VEP sorting done.')
 
     metadata = common.generate_metadata(args)
 
@@ -111,5 +109,4 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     seqvar.io.write(all_records, output_path, metadata)
 
-    if not args.quiet:
-        logger('Variant info written to disk.')
+    logger.info('Variant info written to disk.')

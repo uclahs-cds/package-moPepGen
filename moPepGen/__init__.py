@@ -1,8 +1,11 @@
 """ moPepGen """
+from __future__ import annotations
 from datetime import datetime
 import hashlib
 import itertools
 from typing import Iterable, IO
+import logging
+from . import constant
 
 
 __version__ = '1.3.0'
@@ -79,6 +82,10 @@ def logger(message:str) -> None:
         f'[ {datetime.now().strftime(format="%Y-%m-%d %H:%M:%S")} ] {message}',
         flush=True
     )
+
+def get_logger() -> logging.Logger:
+    """ get logger """
+    return logging.getLogger(constant.PROG_NAME)
 
 def all_equal(iterable:Iterable) -> bool:
     """ Check if all elements are equal """

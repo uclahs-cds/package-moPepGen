@@ -8,7 +8,7 @@ from pathlib import Path
 import pickle
 from typing import IO, Dict, List
 from Bio import SeqIO
-from moPepGen import logger
+from moPepGen import get_logger
 from moPepGen.aa import VariantPeptidePool
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
@@ -121,13 +121,14 @@ def add_subparser_filter_fasta(subparser:argparse._SubParsersAction):
     )
 
     common.add_args_reference(p, genome=False, proteome=False)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     common.print_help_if_missing_args(p)
     p.set_defaults(func=filter_fasta)
     return p
 
 def filter_fasta(args:argparse.Namespace) -> None:
     """ Filter noncanonical peptide FASTA """
+    logger = get_logger()
     common.validate_file_format(
         args.input_path, INPUT_FILE_FORMATS, check_readable=True
     )
@@ -150,8 +151,7 @@ def filter_fasta(args:argparse.Namespace) -> None:
     with open(args.input_path, 'rt') as handle:
         pool = VariantPeptidePool.load(handle)
 
-    if not args.quiet:
-        logger('Peptide FASTA file loaded.')
+    logger.info('Peptide FASTA file loaded.')
 
     if args.exprs_table is not None:
         with open(args.exprs_table, 'rt') as handle:
@@ -180,17 +180,14 @@ def filter_fasta(args:argparse.Namespace) -> None:
                 quant_col=quant_col,
                 delim=args.delimiter
             )
-
-        if not args.quiet:
-            logger('Gene expression table loaded.')
+        logger.info('Gene expression table loaded.')
     else:
         exprs = None
 
     if args.denylist is not None:
         with open(args.denylist, 'rt') as handle:
             denylist = {seq.seq for seq in SeqIO.parse(handle, 'fasta')}
-        if not args.quiet:
-            logger('Peptide denylist loaded.')
+        logger.info('Peptide denylist loaded.')
     else:
         denylist = None
 
@@ -203,9 +200,7 @@ def filter_fasta(args:argparse.Namespace) -> None:
     )
 
     filtered_pool.write(args.output_path)
-
-    if not args.quiet:
-        logger('Filtered FASTA file saved.')
+    logger.info('Filtered FASTA file saved.')
 
 def load_expression_table(handle:IO, tx_col:int,quant_col:int,
         delim:str='\t') -> Dict[str,float]:

@@ -7,3 +7,5 @@ from moPepGen.util import fuzz_test
 from moPepGen.util import extract_gvf
 from moPepGen.util import validate_noncoding_calling
 from moPepGen.util import add_fuzz_test_log
+
+PROG_NAME = 'moPepGen-util'

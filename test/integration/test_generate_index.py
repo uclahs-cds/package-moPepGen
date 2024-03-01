@@ -16,6 +16,7 @@ class TestGenerateIndex(TestCaseIntegration):
     def create_base_args(self) -> argparse.Namespace:
         """ create base args """
         args = argparse.Namespace()
+        args.command = 'generateIndex'
         args.genome_fasta = self.data_dir / 'genome.fasta'
         args.annotation_gtf = self.data_dir / 'annotation.gtf'
         args.proteome_fasta = self.data_dir / 'translate.fasta'

@@ -76,7 +76,6 @@ class IndexDir:
         elif file.suffix.lower() != '.gtf':
             raise ValueError(f"Cannot handle gtf file {file}")
 
-
         if symlink:
             os.symlink(file.absolute(), self.annotation_file)
         elif file.suffix.lower() == '.gtf':

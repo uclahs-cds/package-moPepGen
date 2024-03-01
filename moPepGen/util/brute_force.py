@@ -10,7 +10,7 @@ from Bio import SeqUtils
 from Bio.Seq import Seq
 from moPepGen import gtf, seqvar, aa, dna, params, constant
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
-from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
+from moPepGen.cli import common as cli_common
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
 from moPepGen.seqvar.VariantRecordWithCoordinate import VariantRecordWithCoordinate
@@ -69,9 +69,11 @@ def parse_args(subparsers:argparse._SubParsersAction):
         help='Include peptides with W > F (Tryptophan to Phenylalanine) '
         'reassignment.'
     )
-    add_args_cleavage(parser)
+    cli_common.add_args_cleavage(parser)
+    cli_common.add_args_debug_level(parser)
+
     parser.set_defaults(func=main)
-    print_help_if_missing_args(parser)
+    cli_common.print_help_if_missing_args(parser)
     return parser
 
 def _parse_exclusion(exclusion) -> Tuple:

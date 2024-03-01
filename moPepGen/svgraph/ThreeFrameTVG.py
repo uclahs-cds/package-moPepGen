@@ -5,8 +5,8 @@ from typing import Dict, List, Tuple, Set, Deque, Union, TYPE_CHECKING, Iterable
 from collections import deque
 import copy
 from Bio.Seq import Seq
+from moPepGen import dna, seqvar, err, params, get_logger
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
-from moPepGen import dna, seqvar, err, params
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecordWithCoordinates
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.seqvar import VariantRecordWithCoordinate
@@ -1546,9 +1546,10 @@ class ThreeFrameTVG():
         max_in_bubble_variants = self.get_max_in_bubble_variants(len(member_variants))
 
         if len(member_variants) >= 13:
-            err.warning(
-                f"Hypermutated region detected with {len(member_variants)} variants."
-                f" `max_in_bubble_variants` of {max_in_bubble_variants} is used."
+            get_logger().warning(
+                "Hypermutated region detected with %i variants."
+                " `max_in_bubble_variants` of %i is used.",
+                len(member_variants), max_in_bubble_variants
             )
 
         if not end_node:

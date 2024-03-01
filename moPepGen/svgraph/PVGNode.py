@@ -5,7 +5,7 @@ from functools import cmp_to_key
 from collections import deque
 import math
 from typing import Dict, List, Set, Tuple, Iterable
-from moPepGen import aa, circ, seqvar, err
+from moPepGen import aa, circ, seqvar, get_logger
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
@@ -1180,9 +1180,8 @@ class PVGNode():
                     variant=sect.variant
                 )
                 if self.seq.seq[k] != '*':
-                    err.warning(
-                        'The codon at the given Selenocysteine position is not' +
-                        ' a stop codon.'
+                    get_logger().warning(
+                        'The codon at the given Selenocysteine position is not a stop codon.'
                     )
                 sects.append(sect_local)
 

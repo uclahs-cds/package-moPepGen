@@ -1,10 +1,11 @@
 """Main entry point"""
 import sys
 import argparse
-from moPepGen import cli, __version__, logger
+from moPepGen import cli, __version__, constant, get_logger
 from moPepGen.util.ResourcesMonitor import ResourcesMonitor
+from moPepGen.cli.common import setup_loggers
 
-CLI_MAIN_USAGE = "moPopGen [-h] [-V] <command> [options]"
+CLI_MAIN_USAGE = f"{constant.PROG_NAME} [-h] [-V] <command> [options]"
 CLI_MAIN_DESCRIPTION = """
 -- Indexing
    generateIndex       Generate genome and proteome index files for moPepGen.
@@ -39,7 +40,7 @@ def main():
     process_monitor = ResourcesMonitor()
 
     parser = argparse.ArgumentParser(
-        prog='moPopGen',
+        prog=constant.PROG_NAME,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         usage=CLI_MAIN_USAGE
     )
@@ -85,6 +86,10 @@ def main():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
+    debug_level = 0 if args.quiet else args.debug_level
+    setup_loggers(debug_level)
+    logger = get_logger()
+
     if args.version:
         print(f'moPepGen {__version__}', file=sys.stdout, flush=True)
         sys.exit()
@@ -92,7 +97,7 @@ def main():
     args.func(args)
 
     resources_usage = process_monitor.get_resource_usage()
-    logger(resources_usage)
+    logger.info(resources_usage)
 
 if __name__ == '__main__':
     main()

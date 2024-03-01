@@ -5,10 +5,9 @@ GVF file. The GVF file can be later used to call variant peptides using
 \*_circular_known.txt) """
 from __future__ import annotations
 import argparse
-from logging import warning
 from typing import List, Dict
 from pathlib import Path
-from moPepGen import logger, circ, err
+from moPepGen import get_logger, circ, err
 from moPepGen.parser import CIRCexplorerParser
 from moPepGen.cli import common
 
@@ -77,13 +76,15 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     )
     common.add_args_source(p)
     common.add_args_reference(p, genome=False, proteome=False)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     p.set_defaults(func=parse_circexplorer)
     common.print_help_if_missing_args(p)
     return p
 
 def parse_circexplorer(args:argparse.Namespace):
     """ Parse circexplorer known circRNA results. """
+    logger = get_logger()
+
     input_path:Path = args.input_path
     output_path:Path = args.output_path
     common.validate_file_format(
@@ -113,17 +114,21 @@ def parse_circexplorer(args:argparse.Namespace):
             circ_record = record.convert_to_circ_rna(anno, intron_start_range,
                 intron_end_range)
         except err.ExonNotFoundError:
-            err.warning(f"The CIRCexplorer record {record.name} from"
-                f" transcript {record.isoform_name} contains an unknown exon."
-                " Skipping it from parsing.")
+            logger.warning(
+                "The CIRCexplorer record % from transcript %s contains an unknown exon."
+                " Skipping it from parsing.",
+                record.name, record.isoform_name
+            )
             continue
         except err.IntronNotFoundError:
-            err.warning(f"The CIRCexplorer record {record.name} from"
-                f" transcript {record.isoform_name} contains an unknown intron."
-                " Skipping it from parsing.")
+            logger.warning(
+                "The CIRCexplorer record %s from transcript %s contains an unknown"
+                " intron. Skipping it from parsing.",
+                record.name, record.isoform_name
+            )
             continue
         except:
-            logger(f'Exception raised from record: {record.name}')
+            logger.error('Exception raised from record: %s', record.name)
             raise
         gene_id = circ_record.gene_id
         if gene_id not in circ_records:
@@ -131,8 +136,7 @@ def parse_circexplorer(args:argparse.Namespace):
         circ_records[gene_id].append(circ_record)
 
     if not circ_records:
-        if not args.quiet:
-            warning('No variant record is saved.')
+        logger.warning('No variant record is saved.')
         return
 
     genes_rank = anno.get_genes_rank()
@@ -148,5 +152,4 @@ def parse_circexplorer(args:argparse.Namespace):
     with open(output_path, 'w') as handle:
         circ.io.write(records, metadata, handle)
 
-    if not args.quiet:
-        logger("CircRNA records written to disk.")
+    logger.info("CircRNA records written to disk.")

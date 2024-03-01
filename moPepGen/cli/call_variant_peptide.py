@@ -15,12 +15,13 @@ import json
 from typing import List, Set, TYPE_CHECKING, Dict, Tuple
 from pathlib import Path
 from pathos.pools import ParallelPool
-from moPepGen import svgraph, aa, seqvar, logger, gtf, params
+from moPepGen import svgraph, aa, seqvar, gtf, params, get_logger
 from moPepGen.cli import common
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 
 
 if TYPE_CHECKING:
+    from logging import Logger
     from moPepGen import dna, circ
     from moPepGen.svgraph import ThreeFrameCVG, ThreeFrameTVG, PeptideVariantGraph
 
@@ -123,13 +124,6 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         help='Time out in seconds for each transcript.'
     )
     p.add_argument(
-        '--verbose-level',
-        type=int,
-        help='Level of verbose for logging.',
-        default=1,
-        metavar='<number>'
-    )
-    p.add_argument(
         '--threads',
         type=int,
         help='Set number of threads to be used.',
@@ -138,7 +132,7 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     )
     common.add_args_reference(p)
     common.add_args_cleavage(p)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
 
     p.set_defaults(func=call_variant_peptide)
     common.print_help_if_missing_args(p)
@@ -167,7 +161,6 @@ class VariantPeptideCaller():
                 self.graph_output_dir, check_writable=True, is_directory=True
             )
 
-        self.quiet:bool = args.quiet
         self.cleavage_params = params.CleavageParams(
             enzyme=args.cleavage_rule,
             exception=args.cleavage_exception,
@@ -185,10 +178,7 @@ class VariantPeptideCaller():
         self.w2f_reassignment = args.w2f_reassignment
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
-        self.verbose = args.verbose_level
         self.threads = args.threads
-        if self.quiet is True:
-            self.verbose = 0
         self.reference_data = None
         self.variant_peptides = aa.VariantPeptidePool()
         self.variant_record_pool:seqvar.VariantRecordPoolOnDisk = None
@@ -201,6 +191,8 @@ class VariantPeptideCaller():
         else:
             self.process_all_transcripts = False
             self.check_external_variants = True
+
+        self.logger:Logger = None
 
     def load_reference(self):
         """ load reference genome, annotation, and canonical peptides """
@@ -226,8 +218,7 @@ class VariantPeptideCaller():
     def write_fasta(self):
         """ write variant peptides to fasta. """
         self.variant_peptides.write(self.output_path)
-        if self.verbose >= 1:
-            logger('Variant peptide FASTA file written to disk.')
+        self.logger.info('Variant peptide FASTA file written to disk.')
 
     def write_dgraphs(self, tx_id:str, dgraphs:TypeDGraphs):
         """ Write ThreeFrameTVG data """
@@ -298,6 +289,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         **kwargs
         ) -> Tuple[Set[aa.AminoAcidSeqRecord], str, TypeDGraphs, TypePGraphs]:
     """ wrapper function to call variant peptides """
+    logger = get_logger()
     peptide_pool:List[Set[aa.AminoAcidSeqRecord]] = []
     main_peptides = None
     denylist = call_canonical_peptides(
@@ -326,7 +318,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                 dgraphs = (dgraph, dgraphs[1], dgraphs[2])
                 pgraphs = (pgraph, pgraphs[1], pgraphs[2])
         except:
-            logger(f'Exception raised from {tx_id}')
+            logger.error('Exception raised from %s', tx_id)
             raise
 
     peptides = set()
@@ -356,9 +348,9 @@ def call_variant_peptides_wrapper(tx_id:str,
             dgraphs[1][variant.id] = dgraph
             pgraphs[1][variant.id] = pgraph
         except:
-            logger(
-                f"Exception raised from fusion {variant.id}, "
-                f"donor:{tx_id}, accepter: {variant.attrs['ACCEPTER_TRANSCRIPT_ID']}"
+            logger.error(
+                "Exception raised from fusion %s, donor: %s, accepter: %s",
+                variant.id, tx_id, variant.attrs['ACCEPTER_TRANSCRIPT_ID']
             )
             raise
 
@@ -378,7 +370,7 @@ def call_variant_peptides_wrapper(tx_id:str,
             )
 
         except:
-            logger(f"Exception raised from {circ_model.id}")
+            logger.error("Exception raised from %s", circ_model.id)
             raise
         peptides.update(_peptides)
         dgraphs[2][circ_model.id] = cgraph
@@ -410,10 +402,10 @@ def caller_reducer(dispatch):
             p.additional_variants_per_misc = additional_variants_per_misc[0]
             new_dispatch['cleavage_params'] = p
             dispatch = new_dispatch
-            logger(
-                f"Transcript {tx_id} timed out. Retry with "
-                f"--max-variants-per-node {p.max_variants_per_node} "
-                f"--additional-variants-per-misc {p.additional_variants_per_misc}"
+            get_logger().warning(
+                "Transcript %s timed out. Retry with "
+                "--max-variants-per-node %i --additional-variants-per-misc %i",
+                tx_id, p.max_variants_per_node, p.additional_variants_per_misc
             )
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
@@ -424,15 +416,15 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     caller.create_in_disk_variant_pool()
     noncanonical_transcripts = caller.noncanonical_transcripts
     ref = caller.reference_data
+    logger = get_logger()
+    caller.logger = logger
 
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
-        if caller.verbose >= 1:
-            for file in pool.gvf_files:
-                logger(f"Using GVF file: {file}")
+        for file in pool.gvf_files:
+            logger.info("Using GVF file: %s", file)
         tx_rank = ref.anno.get_transcript_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
-        if caller.verbose >= 1:
-            logger('Variants sorted')
+        logger.info('Variants sorted')
 
         # Not providing canonical peptide pool to each task for now.
         canonical_peptides = set()
@@ -522,8 +514,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             reloaded = ((i + 1) % caller.threads == 0 or i + 1 == len(tx_sorted)) \
                 and len(dispatches) > 0
             if reloaded:
-                if caller.verbose >= 2:
-                    logger([x['tx_id'] for x in dispatches])
+                logger.debug([x['tx_id'] for x in dispatches])
                 if caller.threads > 1:
                     results = process_pool.map(
                         caller_reducer,
@@ -546,10 +537,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                         caller.write_pgraphs(tx_id, pgraphs)
                 dispatches = []
 
-            if caller.verbose >= 1:
-                i += 1
-                if i % 1000 == 0:
-                    logger(f'{i} transcripts processed.')
+            i += 1
+            if i % 1000 == 0:
+                logger.info('%i transcripts processed.', i)
 
     caller.write_fasta()
 

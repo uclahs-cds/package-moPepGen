@@ -2,7 +2,7 @@
 useful when working with multiplexed proteomic experiments such as TMT """
 from __future__ import annotations
 import argparse
-from moPepGen import logger
+from moPepGen import get_logger
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
 from moPepGen.cli import common
 
@@ -31,13 +31,14 @@ def add_subparser_merge_fasta(subparsers:argparse._SubParsersAction):
         action='store_true',
         help='Remove duplicate FASTA header entries after merging.'
     )
-    common.add_args_quiet(parser)
+    common.add_args_debug_level(parser)
     parser.set_defaults(func=merge_fasta)
     common.print_help_if_missing_args(parser)
     return parser
 
 def merge_fasta(args:argparse.Namespace):
     """ Merge mulitple variant peptide FASTA files into one. """
+    logger = get_logger()
     input_files = args.input_path
     for file in input_files:
         common.validate_file_format(
@@ -62,12 +63,10 @@ def merge_fasta(args:argparse.Namespace):
                         canonical_peptides=set(),
                         skip_checking=True
                     )
-            if not args.quiet:
-                logger(f"Database FASTA file loaded: {file}")
+            logger.info("Database FASTA file loaded: %s", file)
 
     if args.dedup_header:
         pool.remove_redundant_headers()
     pool.write(output_file)
 
-    if not args.quiet:
-        logger(f"Merged FASTA file saved to {output_file}")
+    logger.info("Merged FASTA file saved to %s", output_file)

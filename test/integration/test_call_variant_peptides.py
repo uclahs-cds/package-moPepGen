@@ -15,6 +15,7 @@ from moPepGen.aa import VariantPeptideIdentifier as vpi
 def create_base_args() -> argparse.Namespace:
     """ Create base args """
     args = argparse.Namespace()
+    args.command = 'callVariant'
     args.index_dir = None
     args.genome_fasta = None
     args.annotation_gtf = None

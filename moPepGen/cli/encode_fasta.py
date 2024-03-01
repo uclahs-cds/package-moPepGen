@@ -36,7 +36,7 @@ def add_subparser_encode_fasta(subparser:argparse._SubParsersAction):
         parser=parser, formats=OUTPUT_FILE_FORMATS
     )
     common.add_args_decoy(parser)
-    common.add_args_quiet(parser)
+    common.add_args_debug_level(parser)
     common.print_help_if_missing_args(parser)
     parser.set_defaults(func=encode_fasta)
     return parser

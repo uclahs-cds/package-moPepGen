@@ -1,8 +1,7 @@
 """ Module for errors """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from moPepGen import logger
-
+from moPepGen import get_logger
 
 if TYPE_CHECKING:
     from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
@@ -110,7 +109,7 @@ class MNVParsingError(Exception):
 
 def warning(msg:str) -> None:
     """ print a warning message """
-    logger(f"[ !!! moPepGen WARNING !!! ] {msg}")
+    get_logger().warning("[ !!! moPepGen WARNING !!! ] %s", msg)
 
 class MoPepGenWarning():
     """ Base warning class """

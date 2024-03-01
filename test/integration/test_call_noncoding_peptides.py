@@ -11,6 +11,7 @@ from moPepGen import cli
 def create_base_args() -> argparse.Namespace:
     """ Create a base args """
     args = argparse.Namespace()
+    args.command = 'callNoncodingPeptide'
     args.index_dir = None
     args.genome_fasta = None
     args.annotation_gtf = None

@@ -24,6 +24,7 @@ class TestMergeFasta(TestCaseIntegration):
     def create_base_arg(self):
         """ Create base args """
         args = argparse.Namespace()
+        args.command = 'mergeFasta'
         args.output_path = self.work_dir/"output.fasta"
         args.dedup_header = False
         args.quiet = False

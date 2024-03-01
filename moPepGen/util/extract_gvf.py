@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 from moPepGen import seqvar
 from moPepGen import circ
-from moPepGen.cli.common import print_help_if_missing_args
+from moPepGen.cli.common import print_help_if_missing_args, add_args_debug_level
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen.circ import CircRNAModel
 
@@ -48,6 +48,7 @@ def parse_args(subparsers:argparse._SubParsersAction):
         default=[]
     )
     parser.set_defaults(func=main)
+    add_args_debug_level(parser)
     print_help_if_missing_args(parser)
     return parser
 

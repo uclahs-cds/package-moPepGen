@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 from typing import TYPE_CHECKING
 from pathlib import Path
-from moPepGen import params, svgraph, logger, aa
+from moPepGen import params, svgraph, aa, get_logger
 from moPepGen.cli import common
 
 
@@ -45,7 +45,7 @@ def add_subparser_call_alt_translation(subparsers:argparse._SubParsersAction):
 
     common.add_args_reference(p)
     common.add_args_cleavage(p)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
 
     p.set_defaults(func=call_alt_translation)
     common.print_help_if_missing_args(p)
@@ -54,6 +54,8 @@ def add_subparser_call_alt_translation(subparsers:argparse._SubParsersAction):
 
 def call_alt_translation(args:argparse.Namespace) -> None:
     """ Main entrypoint for calling alternative translation peptides """
+    logger = get_logger()
+
     common.validate_file_format(
         args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
     )
@@ -95,7 +97,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
                 sec_truncation=args.selenocysteine_termination
             )
         except:
-            logger(f'Exception raised from {tx_id}')
+            logger.error('Exception raised from %s', tx_id)
             raise
 
         for peptide in peptides:
@@ -107,8 +109,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
 
     peptide_pool.write(args.output_path)
 
-    if not args.quiet:
-        logger('Alternative translation peptide FASTA file written to disk.')
+    logger.info('Alternative translation peptide FASTA file written to disk.')
 
 def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         genome:DNASeqDict, anno:GenomicAnnotation,

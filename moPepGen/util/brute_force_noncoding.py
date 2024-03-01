@@ -7,7 +7,7 @@ import pickle
 import sys
 from moPepGen import aa, gtf, dna
 from moPepGen.aa.AminoAcidSeqRecord import AminoAcidSeqRecord
-from moPepGen.cli.common import add_args_cleavage, print_help_if_missing_args
+from moPepGen.cli import common
 
 
 # pylint: disable=W0212
@@ -36,9 +36,10 @@ def parse_args(subparsers:argparse._SubParsersAction):
         help='Path to the pickled canonical peptide sequence.',
         default=None
     )
-    add_args_cleavage(parser)
+    common.add_args_cleavage(parser)
+    common.add_args_debug_level(parser)
     parser.set_defaults(func=main)
-    print_help_if_missing_args(parser)
+    common.print_help_if_missing_args(parser)
     return parser
 
 def main(args:argparse.Namespace):

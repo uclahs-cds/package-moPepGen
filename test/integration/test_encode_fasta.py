@@ -13,6 +13,7 @@ class TestEncodeFasta(TestCaseIntegration, TestFastaWriterMixin):
     def generate_default_args(self):
         """ Generate default args """
         args = argparse.Namespace()
+        args.command = 'encodeFasta'
         args.input_path = self.work_dir/'test_input.fasta'
         args.output_path = self.work_dir/'variant_encode.fasta'
         args.decoy_string = 'DECOY_'

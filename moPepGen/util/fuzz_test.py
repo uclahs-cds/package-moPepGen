@@ -15,12 +15,12 @@ import sys
 import uuid
 from pathos.pools import ParallelPool
 from Bio import SeqIO
-from moPepGen import ERROR_INDEX_IN_INTRON, fake, seqvar, circ, dna, gtf, aa, logger
+from moPepGen import ERROR_INDEX_IN_INTRON, fake, seqvar, circ, dna, gtf, aa, get_logger
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.circ import CircRNAModel
 from moPepGen.util.common import load_references
 from moPepGen.cli.common import add_args_cleavage, generate_metadata, \
-    print_help_if_missing_args
+    print_help_if_missing_args, add_args_debug_level
 from moPepGen.cli import call_variant_peptide
 from moPepGen.gtf import GtfIO
 from . import brute_force
@@ -167,6 +167,7 @@ def parse_args(subparsers:argparse._SubParsersAction
         help='Number of threads'
     )
     add_args_cleavage(parser)
+    add_args_debug_level(parser)
     parser.set_defaults(func=main)
     print_help_if_missing_args(parser)
     return parser
@@ -389,6 +390,7 @@ class FuzzTestCase():
 
     def run(self):
         """ run the current test case """
+        logger = get_logger()
         if self.config.seed is None:
             seed = random.randint(1, 1_000_000_000_000)
         else:
@@ -397,25 +399,25 @@ class FuzzTestCase():
         try:
             with open(self.record.path_stdout, 'w') as os_handle:
                 with redirect_stdout(os_handle):
-                    logger(f"[ fuzzTest ] Random seed: {seed}")
+                    logger.info("[ fuzzTest ] Random seed: %i", seed)
                     self.fix_fusion_and_circ()
                     if self.config.ref_dir is None:
-                        logger('[ fuzzTest ] Creating random reference.')
+                        logger.info('[ fuzzTest ] Creating random reference.')
                         genome, anno, proteome = self.create_fake_reference()
                         self.write_fake_reference(genome, anno, proteome)
                         self.config.ref_dir = self.config.temp_dir/self.record.id
                         self.config.tx_id = list(anno.transcripts.keys())[0]
                     with open(self.record.work_dir/'config.json', 'w') as param_handle:
                         json.dump(self.config.to_dict(), param_handle, indent=4)
-                    logger('Creating random variants.')
+                    logger.info('Creating random variants.')
                     variants = self.create_variants()
                     self.write_variants(variants)
                     self.record.call_variant_starts()
-                    logger('Starting callVariant.')
+                    logger.info('Starting callVariant.')
                     self.call_variants()
                     self.record.call_variant_ends()
                     self.record.brute_force_starts()
-                    logger('Starting bruteForce.')
+                    logger.info('Starting bruteForce.')
                     self.brute_force()
                     self.record.brute_force_ends()
                     status = self.assert_equal()
