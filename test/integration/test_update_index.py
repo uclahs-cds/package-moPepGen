@@ -1,13 +1,7 @@
 """ Test the command line interface """
 import argparse
-import subprocess as sp
-import sys
-import copy
 from test.integration import TestCaseIntegration
-from moPepGen import cli, aa, params, err
-from moPepGen.gtf import GenomicAnnotation, GenomicAnnotationOnDisk
-from moPepGen.index import IndexDir, IndexMetadata, CanonicalPoolMetadata
-from moPepGen.version import MetaVersion
+from moPepGen import cli
 
 
 class TestGenerateIndex(TestCaseIntegration):
