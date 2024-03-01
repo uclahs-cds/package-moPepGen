@@ -158,18 +158,16 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             logger.error('Exception raised from %s', tx_id)
             raise
 
-        if not args.quiet:
-            i += 1
-            if i % 5000 == 0:
-                logger.info('%i transcripts processed.', i)
+        i += 1
+        if i % 5000 == 0:
+            logger.info('%i transcripts processed.', i)
 
     noncanonical_pool.write(args.output_path)
     if args.output_orf:
         with open(args.output_orf, 'w') as handle:
             write_orf(orf_pool, handle)
 
-    if not args.quiet:
-        logger.info('Noncanonical peptide FASTA file written to disk.')
+    logger.info('Noncanonical peptide FASTA file written to disk.')
 
 
 def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,

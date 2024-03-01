@@ -109,8 +109,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
 
     peptide_pool.write(args.output_path)
 
-    if not args.quiet:
-        logger.info('Alternative translation peptide FASTA file written to disk.')
+    logger.info('Alternative translation peptide FASTA file written to disk.')
 
 def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         genome:DNASeqDict, anno:GenomicAnnotation,

@@ -124,13 +124,6 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         help='Time out in seconds for each transcript.'
     )
     p.add_argument(
-        '--verbose-level',
-        type=int,
-        help='Level of verbose for logging.',
-        default=1,
-        metavar='<number>'
-    )
-    p.add_argument(
         '--threads',
         type=int,
         help='Set number of threads to be used.',
@@ -168,7 +161,6 @@ class VariantPeptideCaller():
                 self.graph_output_dir, check_writable=True, is_directory=True
             )
 
-        self.quiet:bool = args.quiet
         self.cleavage_params = params.CleavageParams(
             enzyme=args.cleavage_rule,
             exception=args.cleavage_exception,
@@ -186,10 +178,7 @@ class VariantPeptideCaller():
         self.w2f_reassignment = args.w2f_reassignment
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
-        self.verbose = args.verbose_level
         self.threads = args.threads
-        if self.quiet is True:
-            self.verbose = 0
         self.reference_data = None
         self.variant_peptides = aa.VariantPeptidePool()
         self.variant_record_pool:seqvar.VariantRecordPoolOnDisk = None
@@ -431,13 +420,11 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     caller.logger = logger
 
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
-        if caller.verbose >= 1:
-            for file in pool.gvf_files:
-                logger.info("Using GVF file: %s", file)
+        for file in pool.gvf_files:
+            logger.info("Using GVF file: %s", file)
         tx_rank = ref.anno.get_transcript_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
-        if caller.verbose >= 1:
-            logger.info('Variants sorted')
+        logger.info('Variants sorted')
 
         # Not providing canonical peptide pool to each task for now.
         canonical_peptides = set()
@@ -550,10 +537,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                         caller.write_pgraphs(tx_id, pgraphs)
                 dispatches = []
 
-            if caller.verbose >= 1:
-                i += 1
-                if i % 1000 == 0:
-                    logger.info('%i transcripts processed.', i)
+            i += 1
+            if i % 1000 == 0:
+                logger.info('%i transcripts processed.', i)
 
     caller.write_fasta()
 

@@ -124,7 +124,7 @@ class DecoyFasta():
     def __init__(self, input_path:Path, output_path:Path, method:str,
             enzyme:str, keep_peptide_nterm:bool, keep_peptide_cterm:bool,
             non_shuffle_pattern:List[str], shuffle_max_attempts:int,  seed:int,
-            decoy_string:str, decoy_string_position:str, order:str, quiet:bool,
+            decoy_string:str, decoy_string_position:str, order:str,
             target_db:List[SeqRecord]=None, _target_pool:Set[SeqRecord]=None,
             decoy_db:List[SeqRecord]=None, _decoy_pool:Set[SeqRecord]=None,
             _summary:_Summary=None):
@@ -141,7 +141,6 @@ class DecoyFasta():
         self.decoy_string = decoy_string
         self.decoy_string_position = decoy_string_position
         self.order = order
-        self.quiet = quiet
         self.target_db = target_db or []
         self._target_pool = _target_pool or set()
         self.decoy_db = decoy_db or []
@@ -179,8 +178,7 @@ class DecoyFasta():
             seed=args.seed,
             decoy_string=args.decoy_string,
             decoy_string_position=args.decoy_string_position,
-            order=args.order,
-            quiet=args.quiet
+            order=args.order
         )
 
     def find_fixed_indices(self, seq:Seq) -> List[int]:

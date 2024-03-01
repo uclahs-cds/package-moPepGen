@@ -136,8 +136,7 @@ def parse_circexplorer(args:argparse.Namespace):
         circ_records[gene_id].append(circ_record)
 
     if not circ_records:
-        if not args.quiet:
-            logger.warning('No variant record is saved.')
+        logger.warning('No variant record is saved.')
         return
 
     genes_rank = anno.get_genes_rank()
