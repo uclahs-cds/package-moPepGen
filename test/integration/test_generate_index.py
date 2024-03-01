@@ -1,11 +1,14 @@
 """ Test the command line interface """
 import argparse
 import subprocess as sp
-import os
 import sys
+import copy
+from unittest.mock import MagicMock
 from test.integration import TestCaseIntegration
-from moPepGen import cli, aa
+from moPepGen import cli, aa, params, err
 from moPepGen.gtf import GenomicAnnotation, GenomicAnnotationOnDisk
+from moPepGen.index import IndexDir, IndexMetadata
+from moPepGen.version import MetaVersion
 
 
 class TestGenerateIndex(TestCaseIntegration):
@@ -51,10 +54,32 @@ class TestGenerateIndex(TestCaseIntegration):
         args = self.create_base_args()
         cli.generate_index(args)
         files = {str(file.name) for file in args.output_dir.glob('*')}
-        expected = {'genome.pkl', 'proteome.pkl',
+        expected = {
+            'genome.pkl', 'proteome.pkl',
             'annotation.gtf', 'annotation_gene.idx', 'annotation_tx.idx',
-            'canonical_peptides.pkl', 'coding_transcripts.pkl'}
+            'canonical_peptides.pkl', 'coding_transcripts.pkl',
+            'metadata.json'
+        }
         self.assertEqual(files, expected)
+
+        index_dir = IndexDir(self.work_dir/'index')
+
+        genome = index_dir.load_genome()
+        self.assertTrue(len(genome) > 0)
+
+        anno = index_dir.load_annotation()
+        self.assertTrue(len(anno.genes) > 0)
+        self.assertTrue(len(anno.transcripts) > 0)
+
+        proteome = index_dir.load_proteome()
+        self.assertTrue(len(proteome) > 0)
+
+        canonical_peptides = index_dir.load_canonical_peptides()
+        self.assertTrue(len(canonical_peptides) > 0)
+
+        coding_tx = index_dir.load_coding_tx()
+        self.assertTrue(len(coding_tx) > 0)
+
 
     def test_generate_index_case2(self):
         """ Test genreate index """
@@ -62,9 +87,12 @@ class TestGenerateIndex(TestCaseIntegration):
         args.gtf_symlink = True
         cli.generate_index(args)
         files = {str(file.name) for file in args.output_dir.glob('*')}
-        expected = {'genome.pkl', 'proteome.pkl',
+        expected = {
+            'genome.pkl', 'proteome.pkl',
             'annotation.gtf', 'annotation_gene.idx', 'annotation_tx.idx',
-            'canonical_peptides.pkl', 'coding_transcripts.pkl'}
+            'canonical_peptides.pkl', 'coding_transcripts.pkl',
+            'metadata.json'
+        }
         self.assertEqual(files, expected)
 
 class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
@@ -74,15 +102,13 @@ class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
         proteome = aa.AminoAcidSeqDict()
         proteome.dump_fasta(self.data_dir/'translate.fasta')
         gtf_file = self.data_dir/'annotation.gtf'
-        gtf_file2 = self.work_dir/'annotation.gtf'
-        os.symlink(gtf_file, gtf_file2)
-        cli.index_gtf(gtf_file2, proteome=proteome)
+        index_dir = IndexDir(self.work_dir)
+        index_dir.save_annotation(gtf_file, proteome=proteome)
         expect = {
             'annotation.gtf', 'annotation_gene.idx', 'annotation_tx.idx'
         }
         received = {str(file.name) for file in self.work_dir.glob('*')}
         self.assertEqual(received, expect)
-
 
     def test_load_index(self):
         """ test load index """
@@ -90,7 +116,36 @@ class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
         anno1.dump_gtf(self.data_dir/'annotation.gtf')
 
         anno2 = GenomicAnnotationOnDisk()
-        anno2.load_index(self.data_dir/'annotation.gtf')
+        anno2.load_index(self.data_dir/'annotation.gtf', 'gencode')
 
         self.assertEqual(anno1.genes.keys(), anno2.genes.keys())
         self.assertEqual(anno1.transcripts.keys(), anno2.transcripts.keys())
+
+class TestIndexDir(TestCaseIntegration):
+    """ Test cases for IndexDir """
+    def test_validate_metadata(self):
+        """ Test validate metadata """
+        index_dir = IndexDir(self.work_dir)
+        index_version = MetaVersion()
+        index_cleavage_params = params.CleavageParams(
+            enzyme='Trypsin',
+            exception='trypsin_exception',
+            miscleavage=2,
+            min_mw=500,
+            min_length=7,
+            max_length=25
+        )
+        metadata = IndexMetadata(
+            version=index_version,
+            cleavage_params=index_cleavage_params,
+            source='test'
+        )
+        index_dir.load_metadata = MagicMock(return_value=metadata)
+        index_dir.validate_metadata()
+        self.assertTrue(index_dir.validate_metadata())
+
+        cur_cleavage_params = copy.copy(index_cleavage_params)
+        cur_cleavage_params.enzyme = 'LysC'
+        cur_cleavage_params.exception = None
+        with self.assertRaises(err.InvalidIndexError):
+            index_dir.validate_metadata(cur_cleavage_params)

@@ -3,14 +3,12 @@ from __future__ import annotations
 from typing import Dict, IO, Union, Tuple
 import io
 from pathlib import Path
-from moPepGen import err
 from moPepGen.version import MetaVersion
 from moPepGen.gtf.GenomicAnnotation import GenomicAnnotation
 from moPepGen.gtf.GTFPointer import (
     GenePointerDict, TranscriptPointerDict, iterate_pointer,
     GenePointer, TranscriptPointer
 )
-from moPepGen.gtf.GTFIndexMetadata import GTFIndexMetadata
 
 
 class GenomicAnnotationOnDisk(GenomicAnnotation):
@@ -95,7 +93,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         else:
             self.infer_source()
 
-    def load_index(self, file:Union[str,Path], check_version:bool=True):
+    def load_index(self, file:Union[str,Path], source:str):
         """ Load index from idx files """
         self.init_handle(file)
         gene_idx_file, tx_idx_file = self.get_index_files(file)
@@ -105,17 +103,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
         if not tx_idx_file.exists():
             raise ValueError(f"Transcript index file cannot be found in {file.parent}")
 
-        version = MetaVersion()
-
         with open(gene_idx_file, 'rt') as handle:
-            metadata = GTFIndexMetadata.parse(handle)
-            if check_version and not version.is_valid(metadata.version):
-                raise err.IndexVersionNotMatchError(version, metadata.version)
-
-            gene_source = metadata.source
-            if not gene_source:
-                raise ValueError("Cannot find source from gene idx.")
-
             for line in handle:
                 if line.startswith('#'):
                     continue
@@ -123,21 +111,11 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
                 pointer = GenePointer(
                     self.handle, key=fields[0],
                     start=int(fields[1]), end=int(fields[2]),
-                    source=gene_source, transcripts=fields[3].split(',')
+                    source=source, transcripts=fields[3].split(',')
                 )
                 self.genes[pointer.key] = pointer
 
         with open(tx_idx_file, 'rt') as handle:
-            metadata = GTFIndexMetadata.parse(handle)
-            if check_version and not version.is_valid(metadata.version):
-                raise err.IndexVersionNotMatchError(version, metadata.version)
-
-            tx_source = metadata.source
-            if not tx_source:
-                raise ValueError("Cannot find source from gene idx.")
-            if tx_source != gene_source:
-                raise ValueError('tx_source does not match with gene_source')
-
             for line in handle:
                 if line.startswith('#'):
                     continue
@@ -146,6 +124,6 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
                 pointer = TranscriptPointer(
                     handle=self.handle, key=fields[0],
                     start=int(fields[1]), end=int(fields[2]),
-                    source=tx_source, is_protein_coding=is_protein_coding
+                    source=source, is_protein_coding=is_protein_coding
                 )
                 self.transcripts[pointer.key] = pointer

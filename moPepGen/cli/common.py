@@ -3,18 +3,19 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from typing import Tuple, Set, List
+from typing import Tuple, Set, List, TYPE_CHECKING
 from pathlib import Path
 import errno
 import signal
 import functools
-import pickle
 import pkg_resources
-from moPepGen import aa, dna, gtf, logger, seqvar, err
+from moPepGen import aa, dna, gtf, logger, seqvar
 from moPepGen.aa.expasy_rules import EXPASY_RULES
-from moPepGen.dna.DNASeqDict import DNASeqDict
-from moPepGen.version import MetaVersion
+from moPepGen.index import IndexDir
 
+
+if TYPE_CHECKING:
+    from moPepGen.params import CleavageParams
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
     """ If no args are provided, print help and exit """
@@ -212,53 +213,44 @@ def add_args_source(parser:argparse.ArgumentParser):
 
 def load_references(args:argparse.Namespace, load_genome:bool=True,
         load_canonical_peptides:bool=True, load_proteome:bool=False,
-        invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False
+        invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False,
+        cleavage_params:CleavageParams=None
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotationOnDisk, Set[str]]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
-    index_dir:Path = args.index_dir
     quiet:bool = args.quiet
 
     genome = None
-    annotation = None
+    anno = None
     canonical_peptides = None
     if invalid_protein_as_noncoding:
         load_proteome = True
 
-    version = MetaVersion()
-
-    if index_dir:
+    if args.index_dir:
+        index_dir = IndexDir(args.index_dir)
+        index_dir.validate_metadata(cleavage_params)
         if load_genome:
-            with open(f'{index_dir}/genome.pkl', 'rb') as handle:
-                genome:DNASeqDict = pickle.load(handle)
-                if not version.is_valid(genome.version):
-                    raise err.IndexVersionNotMatchError(version, genome.version)
+            genome = index_dir.load_genome()
 
-        gtf_file = list(index_dir.glob('annotation.gtf*'))[0]
-        annotation = gtf.GenomicAnnotationOnDisk()
-        annotation.init_handle(gtf_file)
-        annotation.load_index(gtf_file)
+        anno = index_dir.load_annotation()
 
         if load_proteome:
-            with open(f'{index_dir}/proteome.pkl', 'rb') as handle:
-                proteome:aa.AminoAcidSeqDict = pickle.load(handle)
-                if not version.is_valid(proteome.version):
-                    raise err.IndexVersionNotMatchError(version, genome.version)
+            proteome = index_dir.load_proteome()
 
         if invalid_protein_as_noncoding:
-            annotation.check_protein_coding(proteome, True)
+            anno.check_protein_coding(proteome, True)
 
         if load_canonical_peptides:
-            with open(f"{index_dir}/canonical_peptides.pkl", 'rb') as handle:
-                canonical_peptides = pickle.load(handle)
+            canonical_peptides = index_dir.load_canonical_peptides()
+
         if not quiet:
             logger('Reference indices loaded.')
     else:
         if (check_protein_coding is True or load_canonical_peptides is True) and \
                 args.proteome_fasta is None:
             raise ValueError('--proteome-fasta was not specified.')
-        annotation = gtf.GenomicAnnotationOnDisk()
-        annotation.generate_index(args.annotation_gtf, source=args.reference_source)
+        anno = gtf.GenomicAnnotationOnDisk()
+        anno.generate_index(args.annotation_gtf, source=args.reference_source)
 
         if not quiet:
             logger('Annotation GTF loaded.')
@@ -268,7 +260,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             proteome.dump_fasta(args.proteome_fasta, source=args.reference_source)
             if not quiet:
                 logger('Proteome FASTA loaded.')
-            annotation.check_protein_coding(proteome, invalid_protein_as_noncoding)
+            anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
         if load_genome:
             genome = dna.DNASeqDict()
@@ -284,7 +276,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             min_length:int = args.min_length
             max_length:int = args.max_length
             canonical_peptides = proteome.create_unique_peptide_pool(
-                anno=annotation, rule=rule, exception=exception,
+                anno=anno, rule=rule, exception=exception,
                 miscleavage=miscleavage, min_mw=min_mw, min_length=min_length,
                 max_length=max_length
             )
@@ -294,7 +286,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
     if not load_proteome:
         proteome = None
 
-    return genome, annotation, proteome, canonical_peptides
+    return genome, anno, proteome, canonical_peptides
 
 def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
     """ Generate metadata """

@@ -110,7 +110,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
     common.print_start_message(args)
 
     genome, anno, proteome, canonical_peptides = common.load_references(
-        args=args, load_proteome=True
+        args=args, load_proteome=True, cleavage_params=cleavage_params
     )
 
     inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)

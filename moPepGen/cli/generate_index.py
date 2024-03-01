@@ -6,20 +6,13 @@ command. It is recommended to run `generateIndex` before any analysis using
 moPepGen to avoid processing the reference files repeatedly and save massive
 time. """
 from __future__ import annotations
-from typing import TYPE_CHECKING
 import argparse
-import os
-import shutil
-import gzip
 from pathlib import Path
-import pickle
-from moPepGen import dna, aa, gtf, logger
+from moPepGen import dna, aa, logger, params
+from moPepGen.index import IndexDir, IndexMetadata
 from moPepGen.cli import common
-from moPepGen.gtf.GTFIndexMetadata import GTFIndexMetadata
+from moPepGen.version import MetaVersion
 
-
-if TYPE_CHECKING:
-    from moPepGen.gtf.GTFPointer import GenePointer, TranscriptPointer
 
 # pylint: disable=W0212
 def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
@@ -51,56 +44,6 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     common.print_help_if_missing_args(p)
     return p
 
-
-def index_gtf(file:Path, source:str=None, proteome:aa.AminoAcidSeqDict=None,
-        invalid_protein_as_noncoding:bool=True):
-    """ Index a GTF file. """
-    anno = gtf.GenomicAnnotationOnDisk()
-    anno.generate_index(file, source)
-
-    if proteome:
-        anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
-
-    gene_idx_file, tx_idx_file = anno.get_index_files(file)
-    metadata = GTFIndexMetadata(source=anno.source.upper())
-
-    with open(gene_idx_file, 'wt') as handle:
-        metadata.write(handle)
-        for gene in anno.genes.keys():
-            gene_pointer:GenePointer = anno.genes.get_pointer(gene)
-            handle.write(gene_pointer.to_line() + '\n')
-
-    with open(tx_idx_file, 'wt') as handle:
-        metadata.write(handle)
-        for tx in anno.transcripts.keys():
-            tx_pointer:TranscriptPointer = anno.transcripts.get_pointer(tx)
-            handle.write(tx_pointer.to_line() + '\n')
-
-    return anno
-
-def create_gtf_copy(file:Path, output_dir:Path, symlink:bool=True) -> Path:
-    """ Create copy of GTF """
-    if file.suffix.lower() == '.gz':
-        if symlink:
-            symlink = False
-            logger(
-                "--gtf-symlink was suppressed because compressed GTF file was received. "
-            )
-    elif file.suffix.lower() != '.gtf':
-        raise ValueError(f"Cannot handle gtf file {file}")
-
-    output_file = output_dir/'annotation.gtf'
-
-    if symlink:
-        os.symlink(file.absolute(), output_file)
-    elif file.suffix.lower() == '.gtf':
-        shutil.copy2(file, output_file)
-    else:
-        with gzip.open(file, 'rt') as ihandle, open(output_file, 'wt') as ohandle:
-            for line in ihandle:
-                ohandle.write(line)
-    return output_file
-
 def generate_index(args:argparse.Namespace):
     """ Generate index  """
     path_genome:Path = args.genome_fasta
@@ -115,47 +58,42 @@ def generate_index(args:argparse.Namespace):
     exception = args.cleavage_exception
     invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
     quiet:bool = args.quiet
-    symlink:bool = args.gtf_symlink
 
     output_dir:Path = args.output_dir
-    output_genome = output_dir/"genome.pkl"
-    output_proteome = output_dir/"proteome.pkl"
-    output_peptides = output_dir/"canonical_peptides.pkl"
-    output_coding_tx = output_dir/"coding_transcripts.pkl"
 
     common.print_start_message(args)
 
     output_dir.mkdir(exist_ok=True)
+    index_dir = IndexDir(output_dir)
 
+    # genome fasta
     genome = dna.DNASeqDict()
     genome.dump_fasta(path_genome)
     if not quiet:
         logger('Genome FASTA loaded')
-    with open(output_genome, 'wb') as handle:
-        pickle.dump(genome, handle)
+    index_dir.save_genome(genome)
     if not quiet:
         logger('Genome FASTA saved to disk.')
-    del genome
 
+    # proteome
     proteome = aa.AminoAcidSeqDict()
     proteome.dump_fasta(parth_proteome, source=args.reference_source)
     if not quiet:
         logger('Proteome FASTA loaded.')
+    index_dir.save_proteome(proteome)
+    if not quiet:
+        logger('Proteome FASTA saved to disk.')
 
-    output_gtf = create_gtf_copy(path_gtf, output_dir, symlink)
-    anno = index_gtf(
-        file=output_gtf,
+    # annotation GTF
+    anno = index_dir.save_annotation(
+        file=path_gtf,
         source=args.reference_source,
         proteome=proteome,
-        invalid_protein_as_noncoding=invalid_protein_as_noncoding
+        invalid_protein_as_noncoding=invalid_protein_as_noncoding,
+        symlink=args.gtf_symlink
     )
     if not quiet:
         logger('Genome annotation GTF saved to disk.')
-
-    with open(output_proteome, 'wb') as handle:
-        pickle.dump(proteome, handle)
-    if not quiet:
-        logger('Proteome FASTA saved to disk.')
 
     # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(
@@ -164,13 +102,26 @@ def generate_index(args:argparse.Namespace):
     )
     if not quiet:
         logger('canonical peptide pool generated.')
-    with open(output_peptides, 'wb') as handle:
-        pickle.dump(canonical_peptides, handle)
+    index_dir.save_canonical_peptides(canonical_peptides)
     if not quiet:
         logger('canonical peptide pool saved to disk.')
 
     # create list of coding transcripts
     coding_tx = {tx_id for tx_id, tx_model in anno.transcripts.items()
         if tx_model.is_protein_coding}
-    with open(output_coding_tx, 'wb') as handle:
-        pickle.dump(coding_tx, handle)
+    index_dir.save_coding_tx(coding_tx)
+
+    # save metadata
+    version = MetaVersion()
+    cleavage_params = params.CleavageParams(
+        enzyme=rule, exception=exception, miscleavage=miscleavage,
+        min_mw=min_mw, min_length=min_length, max_length=max_length
+    )
+    metadata = IndexMetadata(
+        version=version,
+        cleavage_params=cleavage_params,
+        source=anno.source
+    )
+    index_dir.save_metadata(metadata)
+    if not quiet:
+        logger('metadata saved.')
