@@ -1181,8 +1181,7 @@ class PVGNode():
                 )
                 if self.seq.seq[k] != '*':
                     get_logger().warning(
-                        'The codon at the given Selenocysteine position is not' +
-                        ' a stop codon.'
+                        'The codon at the given Selenocysteine position is not a stop codon.'
                     )
                 sects.append(sect_local)
 
