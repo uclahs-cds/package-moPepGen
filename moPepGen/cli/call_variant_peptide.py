@@ -456,6 +456,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         if caller.threads > 1:
             process_pool = ParallelPool(ncpus=caller.threads)
 
+        logger.info('Start calling variant peptides..')
+
         dispatches = []
         i = 0
         for tx_id in tx_sorted:
