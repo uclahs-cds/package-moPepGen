@@ -1,6 +1,6 @@
 """ moPepGen index """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING, Set, List
 import os
 import shutil
 from pathlib import Path
@@ -18,22 +18,63 @@ if TYPE_CHECKING:
     from moPepGen.aa import AminoAcidSeqDict
     from moPepGen.gtf.GTFPointer import TranscriptPointer, GenePointer
 
+class CanonicalPoolMetadata:
+    """ Canonical peptide pool metadata """
+    def __init__(self, filename:str, index:int, cleavage_params:CleavageParams):
+        """ constructor """
+        self.filename = filename
+        self.index = index
+        self.cleavage_params = cleavage_params
+
+    def jsonfy(self):
+        """ jsonfy """
+        return {
+            'filename': self.filename,
+            'index': self.index,
+            'cleavage_params': self.cleavage_params.jsonfy()
+        }
+
 class IndexMetadata:
     """ Index metadata """
-    def __init__(self, version:MetaVersion, cleavage_params:CleavageParams,
+    def __init__(self, version:MetaVersion, canonical_pools:List[CanonicalPoolMetadata],
             source:str):
         """ constructor """
         self.version = version
-        self.cleavage_params = cleavage_params
+        self.canonical_pools = canonical_pools
         self.source = source
 
     def jsonfy(self):
         """ jsonfy """
         return {
             'version': self.version.jsonfy(),
-            'cleavage_params': self.cleavage_params.jsonfy(graph_params=False),
+            'canonical_pools': [it.jsonfy() for it in self.canonical_pools],
             'source': self.source
         }
+
+    def register_canonical_pool(self, cleavage_params:CleavageParams):
+        """ Register for new canonical pool """
+        if self.get_canonical_pool(cleavage_params):
+            raise ValueError(
+                f"Canonical peptide pool already exists with the parameters."
+            )
+        index = max(it.index for it in self.canonical_pools) + 1 if self.canonical_pools else 1
+        pool = CanonicalPoolMetadata(
+            filename = f"canonical_peptides_{index:03}.pkl",
+            index=index,
+            cleavage_params=cleavage_params
+        )
+        self.canonical_pools.append(pool)
+        return pool
+
+    def get_canonical_pool(self, cleavage_params:CleavageParams) -> CanonicalPoolMetadata:
+        """ Get canonical peptide pool metadata that match with the given
+        cleavage parameters. """
+        this = cleavage_params.jsonfy(graph_params=False)
+        for pool in self.canonical_pools:
+            that = pool.cleavage_params.jsonfy(graph_params=False)
+            if this == that:
+                return pool
+        return None
 
 class IndexDir:
     """ moPepGen index directory """
@@ -44,8 +85,53 @@ class IndexDir:
         self.annotation_file = self.path/'annotation.gtf'
         self.proteome_file = self.path/'proteome.pkl'
         self.coding_tx_file = self.path/'coding_transcripts.pkl'
-        self.canonical_peptides_file = self.path/'canonical_peptides.pkl'
         self.metadata_file = self.path/'metadata.json'
+        if self.metadata_file.exists():
+            self.metadata = self.load_metadata()
+        else:
+            self.init_metadata()
+
+    def init_metadata(self):
+        """ Initialize metadata """
+        self.metadata = IndexMetadata(
+            version=MetaVersion(),
+            canonical_pools=[],
+            source=None
+        )
+
+    def load_metadata(self) -> IndexMetadata:
+        """ Get metadata of the moPepGen index """
+        with open(self.metadata_file, 'rt') as handle:
+            data = json.load(handle)
+            version = MetaVersion(**data['version'])
+            canonical_pools = []
+            for it in data['canonical_pools']:
+                cleavage_params = CleavageParams(**it['cleavage_params'])
+                pool = CanonicalPoolMetadata(
+                    filename=it['filename'],
+                    index=it['index'],
+                    cleavage_params=cleavage_params
+                )
+                canonical_pools.append(pool)
+            source = data['source']
+        return IndexMetadata(
+            version=version,
+            canonical_pools=canonical_pools,
+            source=source
+        )
+
+    def validate_metadata(self) -> bool:
+        """ Valid the index metadata """
+        cur_version = MetaVersion()
+        if not cur_version.is_valid(self.metadata.version):
+            raise err.InvalidIndexError(cur_version, self.metadata.version)
+        return True
+
+    def save_metadata(self):
+        """ Save metadata to index directory """
+        data = self.metadata.jsonfy()
+        with open(self.metadata_file, 'wt') as handle:
+            json.dump(data, handle, indent=2)
 
     def load_genome(self) -> DNASeqDict:
         """ Load genome from index directory """
@@ -59,10 +145,9 @@ class IndexDir:
 
     def load_annotation(self) -> GenomicAnnotationOnDisk:
         """ Load genomic annotation from index directory """
-        metadata = self.load_metadata()
         anno = gtf.GenomicAnnotationOnDisk()
         anno.init_handle(self.annotation_file)
-        anno.load_index(self.annotation_file, source=metadata.source)
+        anno.load_index(self.annotation_file, source=self.metadata.source)
         return anno
 
     def create_gtf_copy(self, file:Path, symlink:bool=True):
@@ -118,15 +203,30 @@ class IndexDir:
         with open(self.proteome_file, 'wb') as handle:
             pickle.dump(proteome, handle)
 
-    def load_canonical_peptides(self) -> Set[str]:
+    def load_canonical_peptides(self, cleavage_params:CleavageParams) -> Set[str]:
         """ Load canonical peptides from index directory """
-        with open(self.canonical_peptides_file, 'rb') as handle:
+        pool_data = self.metadata.get_canonical_pool(cleavage_params)
+        if not pool_data:
+            raise ValueError(
+                'No canonical peptide pool match with the cleavage parameters'
+            )
+        with open(self.path/pool_data.filename, 'rb') as handle:
             return pickle.load(handle)
 
-    def save_canonical_peptides(self, seqs:Set[str]):
+    def save_canonical_peptides(self, seqs:Set[str], cleavage_params:CleavageParams,
+            override:bool=False):
         """ Save canonical peptides to index directory """
-        with open(self.canonical_peptides_file, 'wb') as handle:
+        pool_metadata = self.metadata.get_canonical_pool(cleavage_params)
+        if not pool_metadata or not override:
+            pool_metadata = self.metadata.register_canonical_pool(cleavage_params)
+        with open(self.path/pool_metadata.filename, 'wb') as handle:
             pickle.dump(seqs, handle)
+
+    def wipe_canonical_peptides(self):
+        """ Remove all canonical peptide pools """
+        for pool in self.metadata.canonical_pools:
+            os.remove(self.path/pool.filename)
+        self.metadata.canonical_pools = []
 
     def load_coding_tx(self) -> Set[str]:
         """ Load coding transcripts from index directory """
@@ -137,41 +237,3 @@ class IndexDir:
         """ Save coding transcripts to index directory """
         with open(self.coding_tx_file, 'wb') as handle:
             pickle.dump(coding_tx, handle)
-
-    def load_metadata(self) -> IndexMetadata:
-        """ Get metadata of the moPepGen index """
-        with open(self.metadata_file, 'rt') as handle:
-            data = json.load(handle)
-            version = MetaVersion(**data['version'])
-            cleavage_params = CleavageParams(**data['cleavage_params'])
-            source = data['source']
-        return IndexMetadata(
-            version=version,
-            cleavage_params=cleavage_params,
-            source=source
-        )
-
-    def validate_metadata(self, cleavage_params:CleavageParams=None) -> bool:
-        """ Valid the index metadata """
-        metadata = self.load_metadata()
-        cur_version = MetaVersion()
-        if not cur_version.is_valid(metadata.version):
-            raise err.InvalidIndexError(
-                cur_version, metadata.version, cleavage_params, metadata.cleavage_params
-            )
-
-        if cleavage_params:
-            cur_cleavage_json = cleavage_params.jsonfy(graph_params=False)
-            index_cleavage_json = metadata.cleavage_params.jsonfy(graph_params=False)
-            for k,v in cur_cleavage_json.items():
-                if v != index_cleavage_json[k]:
-                    raise err.InvalidIndexError(
-                        cur_version, metadata.version, cleavage_params, metadata.cleavage_params
-                    )
-        return True
-
-    def save_metadata(self, metadata:IndexMetadata):
-        """ Save metadata to index directory """
-        data = metadata.jsonfy()
-        with open(self.metadata_file, 'wt') as handle:
-            json.dump(data, handle, indent=2)

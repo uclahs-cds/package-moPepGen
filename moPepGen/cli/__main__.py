@@ -56,6 +56,7 @@ def main():
     )
 
     cli.add_subparser_generate_index(subparsers)
+    cli.add_subparser_update_index(subparsers)
     cli.add_subparser_parse_vep(subparsers)
     cli.add_subparser_parse_reditools(subparsers)
     cli.add_subparser_parse_star_fusion(subparsers)

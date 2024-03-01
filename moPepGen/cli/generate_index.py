@@ -8,10 +8,11 @@ time. """
 from __future__ import annotations
 import argparse
 from pathlib import Path
+import sys
+import shutil
 from moPepGen import dna, aa, params, get_logger
-from moPepGen.index import IndexDir, IndexMetadata
+from moPepGen.index import IndexDir
 from moPepGen.cli import common
-from moPepGen.version import MetaVersion
 
 
 # pylint: disable=W0212
@@ -36,6 +37,11 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
         '--gtf-symlink',
         help='Create a symlink of the GTF file instead of copying it.',
         action='store_true'
+    )
+    p.add_argument(
+        '-f', '--force',
+        action='store_true',
+        help='Force write data to index dir.'
     )
     common.add_args_reference(p, index=False)
     common.add_args_cleavage(p)
@@ -65,6 +71,13 @@ def generate_index(args:argparse.Namespace):
 
     output_dir.mkdir(exist_ok=True)
     index_dir = IndexDir(output_dir)
+    if any(index_dir.path.iterdir()):
+        if args.force:
+            index_dir.wipe_canonical_peptides()
+            index_dir.init_metadata()
+        else:
+            logger.error("Index directory already exists.")
+            sys.exit(1)
 
     # genome fasta
     genome = dna.DNASeqDict()
@@ -95,8 +108,12 @@ def generate_index(args:argparse.Namespace):
         anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
         min_mw=min_mw, min_length = min_length, max_length = max_length
     )
+    cleavage_params = params.CleavageParams(
+        enzyme=rule, exception=exception, miscleavage=miscleavage,
+        min_mw=min_mw, min_length = min_length, max_length = max_length
+    )
     logger.info('canonical peptide pool generated.')
-    index_dir.save_canonical_peptides(canonical_peptides)
+    index_dir.save_canonical_peptides(canonical_peptides, cleavage_params)
     logger.info('canonical peptide pool saved to disk.')
 
     # create list of coding transcripts
@@ -105,15 +122,6 @@ def generate_index(args:argparse.Namespace):
     index_dir.save_coding_tx(coding_tx)
 
     # save metadata
-    version = MetaVersion()
-    cleavage_params = params.CleavageParams(
-        enzyme=rule, exception=exception, miscleavage=miscleavage,
-        min_mw=min_mw, min_length=min_length, max_length=max_length
-    )
-    metadata = IndexMetadata(
-        version=version,
-        cleavage_params=cleavage_params,
-        source=anno.source
-    )
-    index_dir.save_metadata(metadata)
+    index_dir.metadata.source = anno.source
+    index_dir.save_metadata()
     logger.info('metadata saved.')
