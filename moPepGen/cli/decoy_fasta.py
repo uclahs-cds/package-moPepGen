@@ -10,7 +10,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from Bio.SeqIO import FastaIO
-from moPepGen import aa, logger
+from moPepGen import aa, get_logger
 from moPepGen.cli import common
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 
@@ -99,7 +99,7 @@ def add_subparser_decoy_fasta(subparser:argparse._SubParsersAction):
         metavar='<choice>',
         default='juxtaposed'
     )
-    common.add_args_quiet(parser)
+    common.add_args_debug_level(parser)
     common.print_help_if_missing_args(parser)
     parser.set_defaults(func=decoy_fasta)
     return parser
@@ -113,8 +113,10 @@ class _Summary():
 
     def log_summary(self):
         """ Print summary to stdout """
-        logger(f"Number of decoy sequences created: {self.n_decoy}")
-        logger(f"Number of decoy sequences overlap with either target or decoy: {self.n_overlap}")
+        get_logger().info(f"Number of decoy sequences created: {self.n_decoy}")
+        get_logger().info(
+            f"Number of decoy sequences overlap with either target or decoy: {self.n_overlap}"
+        )
 
 class DecoyFasta():
     """ Decoy Fasta """
@@ -302,14 +304,14 @@ class DecoyFasta():
 
     def main(self):
         """ Create decoy database """
+        logger = get_logger()
         with open(self.input_path, 'rt') as handle:
             self.target_db = list(SeqIO.parse(handle, format='fasta'))
             self.target_db.sort(key=lambda x: x.seq)
 
         self._target_pool = {x.seq for x in self.target_db}
 
-        if not self.quiet:
-            logger('Input database FASTA file loaded.')
+        logger.info('Input database FASTA file loaded.')
 
         if self.seed is not None:
             random.seed(self.seed)
@@ -317,16 +319,12 @@ class DecoyFasta():
         for seq in self.target_db:
             self.generate_decoy_sequence(seq)
 
-        if not self.quiet:
-            logger('Decoy sequences created.')
+        logger.info('Decoy sequences created.')
 
-        if not self.quiet:
-            self._summary.log_summary()
+        self._summary.log_summary()
 
         self.write()
-
-        if not self.quiet:
-            logger('Decoy database written.')
+        logger.info('Decoy database written.')
 
 def decoy_fasta(args:argparse.ArgumentParser):
     """ Generate decoy database fasta file for library searching. """

@@ -30,15 +30,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `GenomicAnnotation` to parse ENSEMBL style UTR correctly. #687
 
+- Switch to use python's `logging` package for logging.
+
+## Add
+
+- Added `--timeout-seconds` to callVariant.
+
+- Added `metadata.json` to the index directory for all essential parameters of how a moPepGen index directory is created, including cleavage parameters. #850
+
 ## [1.2.1] - 2023-10-05
 
 ### Add
 
 - Added `--graph-output-dir` to save graph data in json.
-
-- Added `--timeout-seconds` to callVariant.
-
-- Added `metadata.json` to the index directory for all essential parameters of how a moPepGen index directory is created, including cleavage parameters. #850
 
 ## Fixed
 

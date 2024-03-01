@@ -5,10 +5,9 @@ file. The GVF file can then be used to call variant peptides using
 """
 from __future__ import annotations
 import argparse
-from logging import warning
 from pathlib import Path
 from typing import Dict, List
-from moPepGen import logger, seqvar, parser
+from moPepGen import get_logger, seqvar, parser
 from moPepGen.cli import common
 
 
@@ -72,13 +71,14 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
     )
     common.add_args_source(p)
     common.add_args_reference(p, genome=False, proteome=False)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     p.set_defaults(func=parse_reditools)
     common.print_help_if_missing_args(p)
     return p
 
 def parse_reditools(args:argparse.Namespace) -> None:
     """ Parse REDItools output and save it in the GVF format. """
+    logger = get_logger()
     # unpack args
     table_file:Path = args.input_path
     output_path:Path = args.output_path
@@ -115,19 +115,16 @@ def parse_reditools(args:argparse.Namespace) -> None:
                 variants[gene_id] = []
             variants[gene_id].append(variant)
 
-    if not args.quiet:
-        logger(f'REDItools table {table_file} loaded.')
+    logger.info(f'REDItools table {table_file} loaded.')
 
     if not variants:
-        if not args.quiet:
-            warning('No variant record is saved.')
+        logger.warn('No variant record is saved.')
         return
 
     for records in variants.values():
         records.sort()
 
-    if not args.quiet:
-        logger('Variants sorted.')
+    logger.info('Variants sorted.')
 
     metadata = common.generate_metadata(args)
 
@@ -141,5 +138,4 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     seqvar.io.write(all_records, output_path, metadata)
 
-    if not args.quiet:
-        logger('Variants written to disk.')
+    logger.info('Variants written to disk.')

@@ -4,9 +4,8 @@ GVF file. The GVF file can be later used to call variant peptides using
 [callVariant](call-variant.md)."""
 from __future__ import annotations
 import argparse
-from logging import warning
 from typing import List
-from moPepGen import logger, seqvar, parser, err
+from moPepGen import get_logger, seqvar, parser, err
 from moPepGen.cli import common
 
 
@@ -40,13 +39,14 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     )
     common.add_args_source(p)
     common.add_args_reference(p, proteome=False)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     p.set_defaults(func=parse_star_fusion)
     common.print_help_if_missing_args(p)
     return p
 
 def parse_star_fusion(args:argparse.Namespace) -> None:
     """ Parse the STAR-Fusion's output and save it in GVF format. """
+    logger = get_logger()
     # unpack args
     fusion = args.input_path
     common.validate_file_format(
@@ -72,23 +72,19 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
             continue
         variants.extend(var_records)
 
-    if not args.quiet:
-        logger(f'STAR-Fusion output {fusion} loaded.')
+    logger.info(f'STAR-Fusion output {fusion} loaded.')
 
     if not variants:
-        if not args.quiet:
-            warning('No variant record is saved.')
+        logger.warn('No variant record is saved.')
         return
 
     genes_rank = anno.get_genes_rank()
     variants = sorted(variants, key=lambda x: genes_rank[x.location.seqname])
 
-    if not args.quiet:
-        logger('Variants sorted.')
+    logger.info('Variants sorted.')
 
     metadata = common.generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 
-    if not args.quiet:
-        logger('Variant info written to disk.')
+    logger.info('Variant info written to disk.')

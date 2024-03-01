@@ -2,11 +2,10 @@
 [FusionCatcher](https://github.com/ndaniel/fusioncatcher) and save as a
 GVF file. The GVF file can be later used to call variant peptides using
 [callVariant](call-variant.md)."""
-from logging import warning
 from typing import List
 from pathlib import Path
 import argparse
-from moPepGen import logger, seqvar, parser, err
+from moPepGen import get_logger, seqvar, parser, err
 from moPepGen.cli import common
 
 
@@ -45,13 +44,14 @@ def add_subparser_parse_fusion_catcher(subparsers:argparse._SubParsersAction):
     )
     common.add_args_source(p)
     common.add_args_reference(p, proteome=False)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     p.set_defaults(func=parse_fusion_catcher)
     common.print_help_if_missing_args(p)
     return p
 
 def parse_fusion_catcher(args:argparse.Namespace) -> None:
     """ Parse FusionCatcher output and save it in GVF format. """
+    logger = get_logger()
     # unpack args
     fusion = args.input_path
     output_path:Path = args.output_path
@@ -79,23 +79,19 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
             continue
         variants.extend(var_records)
 
-    if not args.quiet:
-        logger(f'FusionCatcher output {fusion} loaded.')
+    logger.info(f'FusionCatcher output {fusion} loaded.')
 
     if not variants:
-        if not args.quiet:
-            warning('No variant record is saved.')
+        logger.warn('No variant record is saved.')
         return
 
     genes_rank = anno.get_genes_rank()
     variants = sorted(variants, key=lambda x: genes_rank[x.location.seqname])
 
-    if not args.quiet:
-        logger('Variants sorted.')
+    logger.info('Variants sorted.')
 
     metadata = common.generate_metadata(args)
 
     seqvar.io.write(variants, output_path, metadata)
 
-    if not args.quiet:
-        logger("Variants written to disk.")
+    logger.info("Variants written to disk.")

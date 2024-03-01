@@ -28,7 +28,7 @@ from moPepGen.gtf import GtfIO
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen.cli.common import add_args_cleavage, add_args_reference, \
-    print_help_if_missing_args
+    print_help_if_missing_args, add_args_debug_level
 
 
 # pylint: disable=W0212
@@ -68,6 +68,7 @@ def parse_args(subparsers:argparse._SubParsersAction):
     )
     add_args_reference(parser, index=False)
     add_args_cleavage(parser)
+    add_args_debug_level(parser)
     parser.set_defaults(func=main)
     print_help_if_missing_args(parser)
     return parser

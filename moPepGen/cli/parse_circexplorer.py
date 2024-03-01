@@ -8,7 +8,7 @@ import argparse
 from logging import warning
 from typing import List, Dict
 from pathlib import Path
-from moPepGen import logger, circ, err
+from moPepGen import get_logger, circ, err
 from moPepGen.parser import CIRCexplorerParser
 from moPepGen.cli import common
 
@@ -77,13 +77,15 @@ def add_subparser_parse_circexplorer(subparsers:argparse._SubParsersAction):
     )
     common.add_args_source(p)
     common.add_args_reference(p, genome=False, proteome=False)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     p.set_defaults(func=parse_circexplorer)
     common.print_help_if_missing_args(p)
     return p
 
 def parse_circexplorer(args:argparse.Namespace):
     """ Parse circexplorer known circRNA results. """
+    logger = get_logger()
+
     input_path:Path = args.input_path
     output_path:Path = args.output_path
     common.validate_file_format(
@@ -123,7 +125,7 @@ def parse_circexplorer(args:argparse.Namespace):
                 " Skipping it from parsing.")
             continue
         except:
-            logger(f'Exception raised from record: {record.name}')
+            logger.error(f'Exception raised from record: {record.name}')
             raise
         gene_id = circ_record.gene_id
         if gene_id not in circ_records:
@@ -148,5 +150,4 @@ def parse_circexplorer(args:argparse.Namespace):
     with open(output_path, 'w') as handle:
         circ.io.write(records, metadata, handle)
 
-    if not args.quiet:
-        logger("CircRNA records written to disk.")
+    logger.info("CircRNA records written to disk.")

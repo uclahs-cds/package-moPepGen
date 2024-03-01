@@ -4,7 +4,7 @@ import datetime
 import subprocess as sp
 from typing import IO
 from pathlib import Path
-from moPepGen.cli.common import print_help_if_missing_args
+from moPepGen.cli.common import print_help_if_missing_args, add_args_debug_level
 from moPepGen.util.fuzz_test import FuzzRecord, FuzzRecordStatus
 
 
@@ -43,6 +43,7 @@ def parse_args(subparsers:argparse._SubParsersAction):
         default=None
     )
     p.set_defaults(func=main)
+    add_args_debug_level(p)
     print_help_if_missing_args(p)
     return p
 

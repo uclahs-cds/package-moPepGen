@@ -5,7 +5,7 @@ import argparse
 from typing import TYPE_CHECKING, Set, List, Tuple, IO
 from pathlib import Path
 from Bio.SeqIO import FastaIO
-from moPepGen import params, svgraph, aa, logger
+from moPepGen import params, svgraph, aa, get_logger
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
 from moPepGen.cli import common
@@ -82,7 +82,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
 
     common.add_args_reference(p)
     common.add_args_cleavage(p)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
 
     p.set_defaults(func=call_noncoding_peptide)
     common.print_help_if_missing_args(p)
@@ -90,6 +90,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
 
 def call_noncoding_peptide(args:argparse.Namespace) -> None:
     """ Main entrypoint for calling noncoding peptide """
+    logger = get_logger()
     common.validate_file_format(
         args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
     )
@@ -154,13 +155,13 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
                 warning(e.args[0] + ' Make sure your GTF and FASTA files match.')
                 ReferenceSeqnameNotFoundError.mute()
         except:
-            logger(f'Exception raised from {tx_id}')
+            logger.error(f'Exception raised from {tx_id}')
             raise
 
         if not args.quiet:
             i += 1
             if i % 5000 == 0:
-                logger(f'{i} transcripts processed.')
+                logger.info(f'{i} transcripts processed.')
 
     noncanonical_pool.write(args.output_path)
     if args.output_orf:
@@ -168,7 +169,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             write_orf(orf_pool, handle)
 
     if not args.quiet:
-        logger('Noncanonical peptide FASTA file written to disk.')
+        logger.info('Noncanonical peptide FASTA file written to disk.')
 
 
 def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,

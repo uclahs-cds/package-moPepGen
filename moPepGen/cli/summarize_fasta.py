@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 from typing import IO
 import matplotlib.pyplot as plt
-from moPepGen import logger
+from moPepGen import get_logger
 from moPepGen.cli import common
 from moPepGen.aa.PeptidePoolSummarizer import PeptidePoolSummarizer
 
@@ -110,7 +110,7 @@ def add_subparser_summarize_fasta(subparser:argparse._SubParsersAction):
 
     common.add_args_cleavage(p, enzyme_only=True)
     common.add_args_reference(p, genome=False, proteome=True)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     common.print_help_if_missing_args(p)
     p.set_defaults(func=summarize_fasta)
     return p
@@ -167,6 +167,8 @@ def validate_files(args) -> bool:
 
 def summarize_fasta(args:argparse.Namespace) -> None:
     """ Summarize varaint peptide FASTA """
+    logger = get_logger()
+
     validate_files(args)
 
     common.print_start_message(args)
@@ -217,7 +219,7 @@ def summarize_fasta(args:argparse.Namespace) -> None:
     for gvf in args.gvf:
         with open(gvf, 'rt') as handle:
             summarizer.update_label_map(handle)
-        logger(f"GVF file used: {gvf}")
+        logger.info(f"GVF file used: {gvf}")
 
     summarizer.append_order_internal_sources()
 
@@ -225,19 +227,19 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         with open(args.variant_peptides, 'rt') as handle:
             summarizer.load_database(handle)
 
-    logger(f"Variant FASTA loaded: {args.variant_peptides}")
+    logger.info(f"Variant FASTA loaded: {args.variant_peptides}")
 
     if args.noncoding_peptides:
         with open(args.noncoding_peptides, 'rt') as handle:
             summarizer.load_database(handle)
-        logger(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
+        logger.info(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
 
     if args.alt_translation_peptides:
         with open(args.alt_translation_peptides, 'rt') as handle:
             summarizer.load_database(handle)
-        logger(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
+        logger.info(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
 
-    logger("Start summarizing..")
+    logger.info("Start summarizing..")
 
     summarizer.count_peptide_source(
         tx2gene=tx2gene,

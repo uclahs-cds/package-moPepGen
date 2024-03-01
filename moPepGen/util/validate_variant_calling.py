@@ -6,7 +6,7 @@ from typing import List
 import sys
 from Bio import SeqIO
 from moPepGen.cli import call_variant_peptide, common
-from moPepGen import logger
+from moPepGen import get_logger
 from moPepGen.util import downsample_reference, brute_force
 
 
@@ -88,7 +88,9 @@ def extract_gvf(tx_id:List[str], gvf_files:List[Path], output_dir:Path) -> List[
                     out_handle.write(line)
                     i += 0
     if i > 10:
-        logger(f"{i} variants found. The brute force caller is going to take a while.")
+        get_logger().info(
+            f"{i} variants found. The brute force caller is going to take a while."
+        )
     return temp_gvfs
 
 def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path, graph_output_dir:Path):

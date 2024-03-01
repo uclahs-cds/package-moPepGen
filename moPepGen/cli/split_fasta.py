@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from moPepGen.aa import PeptidePoolSplitter
-from moPepGen import SPLIT_DATABASE_KEY_SEPARATER, logger
+from moPepGen import SPLIT_DATABASE_KEY_SEPARATER, get_logger
 from moPepGen.cli import common
 
 
@@ -100,13 +100,14 @@ def add_subparser_split_fasta(subparser:argparse._SubParsersAction):
     )
 
     common.add_args_reference(p, genome=False, proteome=True)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     common.print_help_if_missing_args(p)
     p.set_defaults(func=split_fasta)
     return p
 
 def split_fasta(args:argparse.Namespace) -> None:
     """ Split peptide database """
+    logger = get_logger()
     for file in args.gvf:
         common.validate_file_format(
             file, GVF_FILE_FORMAT, check_readable=True
@@ -166,31 +167,31 @@ def split_fasta(args:argparse.Namespace) -> None:
     if args.variant_peptides:
         with open(args.variant_peptides, 'rt') as handle:
             splitter.load_database(handle)
-        logger(f"Variant FASTA loaded: {args.variant_peptides}.")
+        logger.info(f"Variant FASTA loaded: {args.variant_peptides}.")
 
     if args.noncoding_peptides:
         with open(args.noncoding_peptides, 'rt') as handle:
             splitter.load_database(handle)
-        logger(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
+        logger.info(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
 
     if args.alt_translation_peptides:
         with open(args.alt_translation_peptides, 'rt') as handle:
             splitter.load_database(handle)
-        logger(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
+        logger.info(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
 
     for file in args.gvf:
         with open(file, 'rt') as handle:
             splitter.load_gvf(handle)
-        logger(f"GVF file used: {file}")
+        logger.info(f"GVF file used: {file}")
 
     additional_split = args.additional_split or []
     sep = SPLIT_DATABASE_KEY_SEPARATER
     additional_split = [set(x.split(sep)) for x in additional_split]
 
-    logger(f"Using source order: {splitter.order}")
-    logger(f"Using source group: {splitter.get_reversed_group_map()}")
+    logger.info(f"Using source order: {splitter.order}")
+    logger.info(f"Using source group: {splitter.get_reversed_group_map()}")
 
-    logger("Start splitting...")
+    logger.info("Start splitting...")
 
     splitter.split(
         max_groups=args.max_source_groups,
@@ -199,10 +200,8 @@ def split_fasta(args:argparse.Namespace) -> None:
         coding_tx=coding_tx
     )
 
-    if not args.quiet:
-        logger('Database split finished')
+    logger.info('Database split finished')
 
     splitter.write(args.output_prefix)
 
-    if not args.quiet:
-        logger('Split databases saved to disk.')
+    logger.info('Split databases saved to disk.')

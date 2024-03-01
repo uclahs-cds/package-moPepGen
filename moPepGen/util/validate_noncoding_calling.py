@@ -6,7 +6,7 @@ from pathlib import Path
 import random
 from typing import IO, List, Set
 from Bio import SeqIO
-from moPepGen import logger
+from moPepGen import get_logger
 from moPepGen.cli import call_noncoding_peptide, common
 from moPepGen.gtf import GtfIO
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
@@ -235,6 +235,7 @@ class ValidationSummary():
 
 def main(args:argparse.Namespace):
     """ main entrypoint """
+    logger = get_logger()
     if args.tx_id:
         tx_ids = args.tx_id
     else:
@@ -291,6 +292,6 @@ def main(args:argparse.Namespace):
         )
         record.complete('SUCCEEDED' if res else 'FAILED')
 
-        logger(f"Transcript ID: {tx_id}, {'Equal' if res else 'Not equal'}!")
+        logger.info(f"Transcript ID: {tx_id}, {'Equal' if res else 'Not equal'}!")
 
     summary.write(args.output_dir/'validate_noncoding_summary.tsv')

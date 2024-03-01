@@ -2,6 +2,7 @@
 import sys
 import argparse
 from moPepGen import __version__, util
+from moPepGen.cli.common import setup_loggers
 
 
 def main():
@@ -33,6 +34,8 @@ def main():
     if len(sys.argv)==1:
         parser.print_help(sys.stderr)
         sys.exit(1)
+
+    setup_loggers(args.debug_level)
 
     if args.version:
         print(f'moPepGen {__version__}', file=sys.stdout, flush=True)

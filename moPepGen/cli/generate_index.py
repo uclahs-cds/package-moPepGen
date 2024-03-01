@@ -8,7 +8,7 @@ time. """
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from moPepGen import dna, aa, logger, params
+from moPepGen import dna, aa, params, get_logger
 from moPepGen.index import IndexDir, IndexMetadata
 from moPepGen.cli import common
 from moPepGen.version import MetaVersion
@@ -39,7 +39,7 @@ def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
     )
     common.add_args_reference(p, index=False)
     common.add_args_cleavage(p)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     p.set_defaults(func=generate_index)
     common.print_help_if_missing_args(p)
     return p
@@ -62,6 +62,7 @@ def generate_index(args:argparse.Namespace):
     output_dir:Path = args.output_dir
 
     common.print_start_message(args)
+    logger = get_logger()
 
     output_dir.mkdir(exist_ok=True)
     index_dir = IndexDir(output_dir)
@@ -69,20 +70,16 @@ def generate_index(args:argparse.Namespace):
     # genome fasta
     genome = dna.DNASeqDict()
     genome.dump_fasta(path_genome)
-    if not quiet:
-        logger('Genome FASTA loaded')
+    logger.info('Genome FASTA loaded')
     index_dir.save_genome(genome)
-    if not quiet:
-        logger('Genome FASTA saved to disk.')
+    logger.info('Genome FASTA saved to disk.')
 
     # proteome
     proteome = aa.AminoAcidSeqDict()
     proteome.dump_fasta(parth_proteome, source=args.reference_source)
-    if not quiet:
-        logger('Proteome FASTA loaded.')
+    logger.info('Proteome FASTA loaded.')
     index_dir.save_proteome(proteome)
-    if not quiet:
-        logger('Proteome FASTA saved to disk.')
+    logger.info('Proteome FASTA saved to disk.')
 
     # annotation GTF
     anno = index_dir.save_annotation(
@@ -92,19 +89,16 @@ def generate_index(args:argparse.Namespace):
         invalid_protein_as_noncoding=invalid_protein_as_noncoding,
         symlink=args.gtf_symlink
     )
-    if not quiet:
-        logger('Genome annotation GTF saved to disk.')
+    logger.info('Genome annotation GTF saved to disk.')
 
     # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(
         anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
         min_mw=min_mw, min_length = min_length, max_length = max_length
     )
-    if not quiet:
-        logger('canonical peptide pool generated.')
+    logger.info('canonical peptide pool generated.')
     index_dir.save_canonical_peptides(canonical_peptides)
-    if not quiet:
-        logger('canonical peptide pool saved to disk.')
+    logger.info('canonical peptide pool saved to disk.')
 
     # create list of coding transcripts
     coding_tx = {tx_id for tx_id, tx_model in anno.transcripts.items()
@@ -123,5 +117,4 @@ def generate_index(args:argparse.Namespace):
         source=anno.source
     )
     index_dir.save_metadata(metadata)
-    if not quiet:
-        logger('metadata saved.')
+    logger.info('metadata saved.')

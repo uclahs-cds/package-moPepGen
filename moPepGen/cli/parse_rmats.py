@@ -11,7 +11,7 @@ import argparse
 from logging import warning
 from typing import Dict, Set
 from pathlib import Path
-from moPepGen import logger, seqvar
+from moPepGen import get_logger, seqvar
 from moPepGen.parser import RMATSParser
 from moPepGen.cli import common
 
@@ -98,13 +98,15 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     common.add_args_source(p)
     common.add_args_reference(p, proteome=False)
-    common.add_args_quiet(p)
+    common.add_args_debug_level(p)
     p.set_defaults(func=parse_rmats)
     common.print_help_if_missing_args(p)
     return p
 
 def parse_rmats(args:argparse.Namespace) -> None:
     """ Parse rMATS results into TSV """
+    logger = get_logger()
+
     skipped_exon = args.skipped_exon
     alternative_5 = args.alternative_5_splicing
     alternative_3 = args.alternative_3_splicing
@@ -133,7 +135,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
     ]
     for event_type, path in rmats_outputs:
         if path:
-            logger(f"Start parsing {event_type} file {path}")
+            logger.info(f"Start parsing {event_type} file {path}")
             for record in RMATSParser.parse(path, event_type):
                 try:
                     var_records = record.convert_to_variant_records(
@@ -141,7 +143,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
                         min_ijc=args.min_ijc, min_sjc=args.min_sjc
                     )
                 except:
-                    logger(record.gene_id)
+                    logger.error(record.gene_id)
                     raise
                 for var_record in var_records:
                     tx_id = var_record.transcript_id
@@ -150,8 +152,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
                     variants[tx_id].add(var_record)
 
     if not variants:
-        if not args.quiet:
-            warning('No variant record is saved.')
+        logger.warn('No variant record is saved.')
         return
 
     tx_rank = anno.get_transcript_rank()
@@ -162,11 +163,9 @@ def parse_rmats(args:argparse.Namespace) -> None:
         val.sort()
         variants_sorted.extend(val)
 
-    if not args.quiet:
-        logger('Variants sorted.')
+    logger.info('Variants sorted.')
 
     metadata = common.generate_metadata(args)
     seqvar.io.write(variants_sorted, output_path, metadata)
 
-    if not args.quiet:
-        logger('Variants written to disk.')
+    logger.info('Variants written to disk.')
