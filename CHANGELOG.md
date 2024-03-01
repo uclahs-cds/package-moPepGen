@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [1.3.0] - 2024-2-29
+## [1.3.0] - 2024-3-1
 
 ### Fixed:
 
@@ -31,6 +31,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Fixed `GenomicAnnotation` to parse ENSEMBL style UTR correctly. #687
 
 - Switch to use python's `logging` package for logging.
+
+- Print basic summary to `callVariant` output. #412
 
 ## Add
 

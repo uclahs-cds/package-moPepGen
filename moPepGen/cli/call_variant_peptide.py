@@ -139,6 +139,27 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     return p
 
 
+class TallyTable:
+    """ Tally table for callVariant """
+    def __init__(self, logger:Logger):
+        """ constructor """
+        self.n_transcripts_total = 0
+        self.n_transcripts_processed = 0
+        self.n_total_peptides = 0
+        self.n_valid_peptides = 0
+        self.logger = logger
+
+    def log(self):
+        """ log """
+        self.logger.info("callVariant summary:")
+        self.logger.info("Total transcripts with variants: %i", self.n_transcripts_total)
+        self.logger.info("Total transcripts processed: %i", self.n_transcripts_processed)
+        self.logger.info(
+            "Total variant peptides generated (including redundant): %i",
+            self.n_total_peptides
+        )
+        self.logger.info("Total variant peptides saved: %i", self.n_valid_peptides)
+
 class VariantPeptideCaller():
     """ Helper class to call variant peptides """
     def __init__(self, args:argparse.Namespace):
@@ -193,6 +214,7 @@ class VariantPeptideCaller():
             self.check_external_variants = True
 
         self.logger:Logger = None
+        self.tally:TallyTable = None
 
     def load_reference(self):
         """ load reference genome, annotation, and canonical peptides """
@@ -418,6 +440,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     ref = caller.reference_data
     logger = get_logger()
     caller.logger = logger
+    caller.tally = TallyTable(logger)
 
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
         for file in pool.gvf_files:
@@ -425,12 +448,15 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         tx_rank = ref.anno.get_transcript_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
         logger.info('Variants sorted')
+        caller.tally.n_transcripts_total = len(tx_sorted)
 
         # Not providing canonical peptide pool to each task for now.
         canonical_peptides = set()
 
         if caller.threads > 1:
             process_pool = ParallelPool(ncpus=caller.threads)
+
+        logger.info('Start calling variant peptides..')
 
         dispatches = []
         i = 0
@@ -511,6 +537,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             }
             dispatches.append(dispatch)
 
+            caller.tally.n_transcripts_processed += 1
+
             reloaded = ((i + 1) % caller.threads == 0 or i + 1 == len(tx_sorted)) \
                 and len(dispatches) > 0
             if reloaded:
@@ -526,6 +554,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 # pylint: disable=W0621
                 for peptide_series, tx_id, dgraphs, pgraphs in results:
                     for peptides in peptide_series:
+                        caller.tally.n_total_peptides += len(peptides)
                         for peptide in peptides:
                             caller.variant_peptides.add_peptide(
                                 peptide=peptide,
@@ -539,10 +568,13 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
             i += 1
             if i % 1000 == 0:
-                logger.info('%i transcripts processed.', i)
-
+                logger.info(
+                    '%.2f %% ( %i / %i ) transcripts processed.',
+                    i/len(tx_sorted) * 100, i, len(tx_sorted)
+                )
+    caller.tally.n_valid_peptides = len(caller.variant_peptides.peptides)
+    caller.tally.log()
     caller.write_fasta()
-
 
 def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
         tx_seq:dna.DNASeqRecordWithCoordinates,
