@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `mergeFasta` to remove redundant FASTA header entries. #846
 
+- Fixed `GenomicAnnotation` to parse ENSEMBL style UTR correctly. #687
+
 ## [1.2.1] - 2023-10-05
 
 ### Add
