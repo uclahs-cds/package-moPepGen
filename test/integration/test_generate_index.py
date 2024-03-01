@@ -3,11 +3,10 @@ import argparse
 import subprocess as sp
 import sys
 import copy
-from unittest.mock import MagicMock
 from test.integration import TestCaseIntegration
-from moPepGen import cli, aa, params, err
+from moPepGen import cli, aa, params
 from moPepGen.gtf import GenomicAnnotation, GenomicAnnotationOnDisk
-from moPepGen.index import IndexDir, IndexMetadata
+from moPepGen.index import IndexDir, IndexMetadata, CanonicalPoolMetadata
 from moPepGen.version import MetaVersion
 
 
@@ -30,6 +29,7 @@ class TestGenerateIndex(TestCaseIntegration):
         args.max_length = 25
         args.miscleavage = 2
         args.quiet = True
+        args.force = False
         args.output_dir = self.work_dir / 'index'
         return args
 
@@ -58,7 +58,7 @@ class TestGenerateIndex(TestCaseIntegration):
         expected = {
             'genome.pkl', 'proteome.pkl',
             'annotation.gtf', 'annotation_gene.idx', 'annotation_tx.idx',
-            'canonical_peptides.pkl', 'coding_transcripts.pkl',
+            'canonical_peptides_001.pkl', 'coding_transcripts.pkl',
             'metadata.json'
         }
         self.assertEqual(files, expected)
@@ -75,7 +75,12 @@ class TestGenerateIndex(TestCaseIntegration):
         proteome = index_dir.load_proteome()
         self.assertTrue(len(proteome) > 0)
 
-        canonical_peptides = index_dir.load_canonical_peptides()
+        cleavage_params = params.CleavageParams(
+            enzyme=args.cleavage_rule, exception=args.cleavage_exception,
+            miscleavage=args.miscleavage, min_mw=args.min_mw,
+            min_length=args.min_length, max_length=args.max_length
+        )
+        canonical_peptides = index_dir.load_canonical_peptides(cleavage_params)
         self.assertTrue(len(canonical_peptides) > 0)
 
         coding_tx = index_dir.load_coding_tx()
@@ -91,7 +96,7 @@ class TestGenerateIndex(TestCaseIntegration):
         expected = {
             'genome.pkl', 'proteome.pkl',
             'annotation.gtf', 'annotation_gene.idx', 'annotation_tx.idx',
-            'canonical_peptides.pkl', 'coding_transcripts.pkl',
+            'canonical_peptides_001.pkl', 'coding_transcripts.pkl',
             'metadata.json'
         }
         self.assertEqual(files, expected)
@@ -138,15 +143,21 @@ class TestIndexDir(TestCaseIntegration):
         )
         metadata = IndexMetadata(
             version=index_version,
-            cleavage_params=index_cleavage_params,
+            canonical_pools=[
+                CanonicalPoolMetadata(
+                    filename='canonical_peptides_001.pkl',
+                    index=1,
+                    cleavage_params=index_cleavage_params
+                )
+            ],
             source='test'
         )
-        index_dir.load_metadata = MagicMock(return_value=metadata)
+        index_dir.metadata = metadata
         index_dir.validate_metadata()
         self.assertTrue(index_dir.validate_metadata())
 
         cur_cleavage_params = copy.copy(index_cleavage_params)
         cur_cleavage_params.enzyme = 'LysC'
         cur_cleavage_params.exception = None
-        with self.assertRaises(err.InvalidIndexError):
-            index_dir.validate_metadata(cur_cleavage_params)
+        with self.assertRaises(ValueError):
+            index_dir.load_canonical_peptides(cur_cleavage_params)

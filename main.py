@@ -7,6 +7,7 @@ from moPepGen import cli
 
 COMMAND_MAPPER = {
     'generateIndex': cli.add_subparser_generate_index,
+    'updateIndex': cli.add_subparser_update_index,
     'parseVEP': cli.add_subparser_parse_vep,
     'parseREDItools': cli.add_subparser_parse_reditools,
     'parseSTARFusion': cli.add_subparser_parse_star_fusion,

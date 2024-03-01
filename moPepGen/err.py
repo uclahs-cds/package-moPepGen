@@ -82,15 +82,10 @@ class IntronNotFoundError(Exception):
 class InvalidIndexError(Exception):
     """ Error to be raised when the index version does not match with the
     current environment """
-    def __init__(self, this_index:MetaVersion, other_index:MetaVersion,
-            this_cleavage:CleavageParams=None, other_cleavage:CleavageParams=None):
+    def __init__(self, this_index:MetaVersion, other_index:MetaVersion):
         """ constructor """
         msg = "Current runtime environment or cleavage params do not match with the index." +\
             f"Version: current: {this_index}; index: {other_index}"
-        if this_cleavage and other_cleavage:
-            this_params = ', '.join([f"{k}={v}" for k,v in this_cleavage.jsonfy(False).items()])
-            other_params = ', '.join([f"{k}={v}" for k,v in other_cleavage.jsonfy(False).items()])
-            msg += f"Cleavage: current: {this_params}, index: {other_params}"
         super().__init__(msg)
 
 class GeneNotFoundError(Exception):

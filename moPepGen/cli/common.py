@@ -235,7 +235,11 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
 
     if args.index_dir:
         index_dir = IndexDir(args.index_dir)
-        index_dir.validate_metadata(cleavage_params)
+        index_dir.validate_metadata()
+
+        if load_canonical_peptides:
+            canonical_peptides = index_dir.load_canonical_peptides(cleavage_params)
+
         if load_genome:
             genome = index_dir.load_genome()
 
@@ -246,9 +250,6 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
 
         if invalid_protein_as_noncoding:
             anno.check_protein_coding(proteome, True)
-
-        if load_canonical_peptides:
-            canonical_peptides = index_dir.load_canonical_peptides()
 
         logger.info('Reference indices loaded.')
     else:
@@ -408,7 +409,7 @@ def setup_loggers(level:str):
     logger.setLevel(log_level)
 
     formatter = logging.Formatter(
-        '[ %(asctime)s ] [ %(name)s - %(levelname)s ] %(message)s',
+        '[ %(asctime)s ] [ %(name)s - %(levelname)5s ] %(message)s',
         "%Y-%m-%d %H:%M:%S"
     )
     logging.Formatter.converter = time.localtime

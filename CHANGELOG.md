@@ -38,6 +38,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added `metadata.json` to the index directory for all essential parameters of how a moPepGen index directory is created, including cleavage parameters. #850
 
+- Added `updateIndex` #853
+
 ## [1.2.1] - 2023-10-05
 
 ### Add
