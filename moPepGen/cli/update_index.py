@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from moPepGen import dna, aa, params, get_logger
+from moPepGen import params, get_logger
 from moPepGen.index import IndexDir
 from moPepGen.cli import common
 

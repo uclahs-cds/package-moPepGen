@@ -55,7 +55,7 @@ class IndexMetadata:
         """ Register for new canonical pool """
         if self.get_canonical_pool(cleavage_params):
             raise ValueError(
-                f"Canonical peptide pool already exists with the parameters."
+                "Canonical peptide pool already exists with the parameters."
             )
         index = max(it.index for it in self.canonical_pools) + 1 if self.canonical_pools else 1
         pool = CanonicalPoolMetadata(
