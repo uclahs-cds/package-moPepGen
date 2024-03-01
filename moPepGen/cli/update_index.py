@@ -16,9 +16,8 @@ def add_subparser_update_index(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen generateIndex """
     p:argparse.ArgumentParser = subparsers.add_parser(
         name='updateIndex',
-        help='Generate genome and proteome index files for moPepGen',
-        description='Generate genome and proteome index files for moPepGen'
-        ' parsers and peptide caller.',
+        help='Update moPepGen index',
+        description='Update moPepGen index',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(

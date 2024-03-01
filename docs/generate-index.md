@@ -50,5 +50,6 @@ Files are created by this command:
 | `annotation_gene.idx` | A text file with the location of each gene in the GTF file. |
 | `annotation_tx.idx` | A text file with the location of each transcript in the GTF file. |
 | `proteome.pkl` | Contains all protein sequences. |
-| `canonical_peptides.pkl` | Contains nonredundant canonical peptides from the input proteome. |
+| `canonical_peptides_001.pkl` | Contains nonredundant canonical peptides from the input proteome. |
 | `coding_transcripts.pkl` | Contains all coding transcripts. |
+| `metadata.json` | Metadata including software versions as well as enzymes and cleavage parameters used to generate the canoincal peptide pool. |

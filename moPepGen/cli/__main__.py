@@ -9,6 +9,7 @@ CLI_MAIN_USAGE = f"{constant.PROG_NAME} [-h] [-V] <command> [options]"
 CLI_MAIN_DESCRIPTION = """
 -- Indexing
    generateIndex       Generate genome and proteome index files for moPepGen.
+   updateIndex         Update moPepGen index.
    indexGVF            Generate index for GVF files.
 
 -- Parsing
