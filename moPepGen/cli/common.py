@@ -8,9 +8,9 @@ from pathlib import Path
 import errno
 import signal
 import functools
-import pkg_resources
-import logging
 import time
+import logging
+import pkg_resources
 from moPepGen import aa, dna, gtf, seqvar, get_logger, constant
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen.index import IndexDir
@@ -27,7 +27,7 @@ def print_help_if_missing_args(parser:argparse.ArgumentParser):
 
 def print_start_message(args:argparse.Namespace):
     """ Print the program start message """
-    get_logger().info(f'moPepGen {args.command} started')
+    get_logger().info('moPepGen %s started', args.command)
 
 def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         proteome:bool=True, index:bool=True):
@@ -394,6 +394,7 @@ def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
 
 def setup_loggers(level:str):
     """ Initialize loggers for both init and run """
+    # pylint: disable=protected-access
     try:
         level = int(level)
     except ValueError:

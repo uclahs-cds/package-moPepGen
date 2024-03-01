@@ -219,7 +219,7 @@ def summarize_fasta(args:argparse.Namespace) -> None:
     for gvf in args.gvf:
         with open(gvf, 'rt') as handle:
             summarizer.update_label_map(handle)
-        logger.info(f"GVF file used: {gvf}")
+        logger.info("GVF file used: %s", gvf)
 
     summarizer.append_order_internal_sources()
 
@@ -227,17 +227,17 @@ def summarize_fasta(args:argparse.Namespace) -> None:
         with open(args.variant_peptides, 'rt') as handle:
             summarizer.load_database(handle)
 
-    logger.info(f"Variant FASTA loaded: {args.variant_peptides}")
+    logger.info("Variant FASTA loaded: %s", args.variant_peptides)
 
     if args.noncoding_peptides:
         with open(args.noncoding_peptides, 'rt') as handle:
             summarizer.load_database(handle)
-        logger.info(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
+        logger.info("Noncoding FASTA loaded: %s", args.noncoding_peptides)
 
     if args.alt_translation_peptides:
         with open(args.alt_translation_peptides, 'rt') as handle:
             summarizer.load_database(handle)
-        logger.info(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
+        logger.info("Alternative Translation FASTA loaded: %s", args.alt_translation_peptides)
 
     logger.info("Start summarizing..")
 

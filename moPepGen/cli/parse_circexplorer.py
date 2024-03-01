@@ -5,7 +5,6 @@ GVF file. The GVF file can be later used to call variant peptides using
 \*_circular_known.txt) """
 from __future__ import annotations
 import argparse
-from logging import warning
 from typing import List, Dict
 from pathlib import Path
 from moPepGen import get_logger, circ, err
@@ -115,17 +114,21 @@ def parse_circexplorer(args:argparse.Namespace):
             circ_record = record.convert_to_circ_rna(anno, intron_start_range,
                 intron_end_range)
         except err.ExonNotFoundError:
-            err.warning(f"The CIRCexplorer record {record.name} from"
-                f" transcript {record.isoform_name} contains an unknown exon."
-                " Skipping it from parsing.")
+            logger.warning(
+                "The CIRCexplorer record % from transcript %s contains an unknown exon."
+                " Skipping it from parsing.",
+                record.name, record.isoform_name
+            )
             continue
         except err.IntronNotFoundError:
-            err.warning(f"The CIRCexplorer record {record.name} from"
-                f" transcript {record.isoform_name} contains an unknown intron."
-                " Skipping it from parsing.")
+            logger.warning(
+                "The CIRCexplorer record %s from transcript %s contains an unknown"
+                " intron. Skipping it from parsing.",
+                record.name, record.isoform_name
+            )
             continue
         except:
-            logger.error(f'Exception raised from record: {record.name}')
+            logger.error('Exception raised from record: %s', record.name)
             raise
         gene_id = circ_record.gene_id
         if gene_id not in circ_records:
@@ -134,7 +137,7 @@ def parse_circexplorer(args:argparse.Namespace):
 
     if not circ_records:
         if not args.quiet:
-            warning('No variant record is saved.')
+            logger.warning('No variant record is saved.')
         return
 
     genes_rank = anno.get_genes_rank()

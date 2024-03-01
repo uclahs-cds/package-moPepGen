@@ -109,7 +109,7 @@ class MNVParsingError(Exception):
 
 def warning(msg:str) -> None:
     """ print a warning message """
-    get_logger().warn(f"[ !!! moPepGen WARNING !!! ] {msg}")
+    get_logger().warning("[ !!! moPepGen WARNING !!! ] %s", msg)
 
 class MoPepGenWarning():
     """ Base warning class """

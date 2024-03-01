@@ -87,10 +87,10 @@ def parse_vep(args:argparse.Namespace) -> None:
 
                 vep_records[transcript_id].append(record)
 
-        logger.info(f'VEP file {vep_file} loaded.')
+        logger.info('VEP file %s loaded.', vep_file)
 
     if not vep_records:
-        logger.warn('No variant record is saved.')
+        logger.warning('No variant record is saved.')
         return
 
     for records in vep_records.values():

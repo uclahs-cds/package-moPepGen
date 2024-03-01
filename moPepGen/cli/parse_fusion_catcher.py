@@ -79,10 +79,10 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
             continue
         variants.extend(var_records)
 
-    logger.info(f'FusionCatcher output {fusion} loaded.')
+    logger.info('FusionCatcher output %s loaded.', fusion)
 
     if not variants:
-        logger.warn('No variant record is saved.')
+        logger.warning('No variant record is saved.')
         return
 
     genes_rank = anno.get_genes_rank()

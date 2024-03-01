@@ -115,10 +115,10 @@ def parse_reditools(args:argparse.Namespace) -> None:
                 variants[gene_id] = []
             variants[gene_id].append(variant)
 
-    logger.info(f'REDItools table {table_file} loaded.')
+    logger.info('REDItools table %s loaded.', table_file)
 
     if not variants:
-        logger.warn('No variant record is saved.')
+        logger.warning('No variant record is saved.')
         return
 
     for records in variants.values():

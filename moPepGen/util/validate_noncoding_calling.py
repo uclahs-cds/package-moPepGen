@@ -292,6 +292,10 @@ def main(args:argparse.Namespace):
         )
         record.complete('SUCCEEDED' if res else 'FAILED')
 
-        logger.info(f"Transcript ID: {tx_id}, {'Equal' if res else 'Not equal'}!")
+        logger.info(
+            "Transcript ID: %s, %s!",
+            tx_id,
+            'Equal' if res else 'Not equal'
+        )
 
     summary.write(args.output_dir/'validate_noncoding_summary.tsv')

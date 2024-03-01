@@ -89,7 +89,8 @@ def extract_gvf(tx_id:List[str], gvf_files:List[Path], output_dir:Path) -> List[
                     i += 0
     if i > 10:
         get_logger().info(
-            f"{i} variants found. The brute force caller is going to take a while."
+            "%i variants found. The brute force caller is going to take a while.",
+            i
         )
     return temp_gvfs
 
@@ -149,6 +150,7 @@ def call_brute_force(gvf_files:Path, ref_dir:Path, output_path:str, force:bool,
 
 def assert_equal(variant_fasta:Path, brute_force_txt:Path, output_dir:Path):
     """ assert equal """
+    logger = get_logger()
     with open(variant_fasta, 'rt') as handle:
         variant_seqs = set()
         for seq in SeqIO.parse(handle, 'fasta'):
@@ -159,7 +161,7 @@ def assert_equal(variant_fasta:Path, brute_force_txt:Path, output_dir:Path):
             brute_force_seqs.add(line.rstrip())
 
     if variant_seqs != brute_force_seqs:
-        logger('Not equal!')
+        logger.info('Not equal!')
         variant_only = variant_seqs - brute_force_seqs
         brute_force_only = brute_force_seqs - variant_seqs
         if variant_only:
@@ -173,10 +175,11 @@ def assert_equal(variant_fasta:Path, brute_force_txt:Path, output_dir:Path):
                 for seq in brute_force_only:
                     handle.write(seq + '\n')
         sys.exit(1)
-    logger('Equal!')
+    logger.info('Equal!')
 
 def main(args:argparse.Namespace):
     """ main entrypoint """
+    logger = get_logger()
     for file in args.input_path:
         common.validate_file_format(file, INPUT_FILE_FORMATS, True)
     output_dir:Path = args.output_dir
@@ -191,7 +194,7 @@ def main(args:argparse.Namespace):
         output_dir=ref_dir
     )
 
-    logger('Reference files downsampling completed.')
+    logger.info('Reference files downsampling completed.')
 
     temp_gvfs = extract_gvf(
         tx_id=args.tx_id,
@@ -199,7 +202,7 @@ def main(args:argparse.Namespace):
         output_dir=output_dir
     )
 
-    logger('Transcript variants extracted from GVF.')
+    logger.info('Transcript variants extracted from GVF.')
 
     variant_fasta = output_dir/'call_variant.fasta'
     graph_dir = output_dir/'graph'
@@ -211,7 +214,7 @@ def main(args:argparse.Namespace):
         graph_output_dir=graph_dir
     )
 
-    logger('Variant peptide calling completed.')
+    logger.info('Variant peptide calling completed.')
 
     brute_force_txt = output_dir/'brute_force.txt'
     call_brute_force(
@@ -222,6 +225,6 @@ def main(args:argparse.Namespace):
         variant_ids=args.variant_ids
     )
 
-    logger('Brute force completed.')
+    logger.info('Brute force completed.')
 
     assert_equal(variant_fasta, brute_force_txt, output_dir)

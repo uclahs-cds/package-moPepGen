@@ -399,7 +399,7 @@ class FuzzTestCase():
         try:
             with open(self.record.path_stdout, 'w') as os_handle:
                 with redirect_stdout(os_handle):
-                    logger.info(f"[ fuzzTest ] Random seed: {seed}")
+                    logger.info("[ fuzzTest ] Random seed: %i", seed)
                     self.fix_fusion_and_circ()
                     if self.config.ref_dir is None:
                         logger.info('[ fuzzTest ] Creating random reference.')

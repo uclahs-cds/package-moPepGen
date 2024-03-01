@@ -167,29 +167,29 @@ def split_fasta(args:argparse.Namespace) -> None:
     if args.variant_peptides:
         with open(args.variant_peptides, 'rt') as handle:
             splitter.load_database(handle)
-        logger.info(f"Variant FASTA loaded: {args.variant_peptides}.")
+        logger.info("Variant FASTA loaded: %s.", args.variant_peptides)
 
     if args.noncoding_peptides:
         with open(args.noncoding_peptides, 'rt') as handle:
             splitter.load_database(handle)
-        logger.info(f"Noncoding FASTA loaded: {args.noncoding_peptides}")
+        logger.info("Noncoding FASTA loaded: %s", args.noncoding_peptides)
 
     if args.alt_translation_peptides:
         with open(args.alt_translation_peptides, 'rt') as handle:
             splitter.load_database(handle)
-        logger.info(f"Alternative Translation FASTA loaded: {args.alt_translation_peptides}")
+        logger.info("Alternative Translation FASTA loaded: %s", args.alt_translation_peptides)
 
     for file in args.gvf:
         with open(file, 'rt') as handle:
             splitter.load_gvf(handle)
-        logger.info(f"GVF file used: {file}")
+        logger.info("GVF file used: %s", file)
 
     additional_split = args.additional_split or []
     sep = SPLIT_DATABASE_KEY_SEPARATER
     additional_split = [set(x.split(sep)) for x in additional_split]
 
-    logger.info(f"Using source order: {splitter.order}")
-    logger.info(f"Using source group: {splitter.get_reversed_group_map()}")
+    logger.info("Using source order: %s", splitter.order)
+    logger.info("Using source group: %s", splitter.get_reversed_group_map())
 
     logger.info("Start splitting...")
 

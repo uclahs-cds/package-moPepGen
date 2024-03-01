@@ -97,7 +97,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
                 sec_truncation=args.selenocysteine_termination
             )
         except:
-            logger.error(f'Exception raised from {tx_id}')
+            logger.error('Exception raised from %s', tx_id)
             raise
 
         for peptide in peptides:

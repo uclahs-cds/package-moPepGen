@@ -72,10 +72,10 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
             continue
         variants.extend(var_records)
 
-    logger.info(f'STAR-Fusion output {fusion} loaded.')
+    logger.info('STAR-Fusion output %s loaded.', fusion)
 
     if not variants:
-        logger.warn('No variant record is saved.')
+        logger.warning('No variant record is saved.')
         return
 
     genes_rank = anno.get_genes_rank()

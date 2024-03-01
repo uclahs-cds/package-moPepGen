@@ -63,10 +63,10 @@ def merge_fasta(args:argparse.Namespace):
                         canonical_peptides=set(),
                         skip_checking=True
                     )
-            logger.info(f"Database FASTA file loaded: {file}")
+            logger.info("Database FASTA file loaded: %s", file)
 
     if args.dedup_header:
         pool.remove_redundant_headers()
     pool.write(output_file)
 
-    logger.info(f"Merged FASTA file saved to {output_file}")
+    logger.info("Merged FASTA file saved to %s", output_file)

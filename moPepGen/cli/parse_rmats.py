@@ -8,7 +8,6 @@ The created GVF file can be then used to call for variant peptides using
 """
 from __future__ import annotations
 import argparse
-from logging import warning
 from typing import Dict, Set
 from pathlib import Path
 from moPepGen import get_logger, seqvar
@@ -135,7 +134,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
     ]
     for event_type, path in rmats_outputs:
         if path:
-            logger.info(f"Start parsing {event_type} file {path}")
+            logger.info("Start parsing %s file %s", event_type, path)
             for record in RMATSParser.parse(path, event_type):
                 try:
                     var_records = record.convert_to_variant_records(
@@ -152,7 +151,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
                     variants[tx_id].add(var_record)
 
     if not variants:
-        logger.warn('No variant record is saved.')
+        logger.warning('No variant record is saved.')
         return
 
     tx_rank = anno.get_transcript_rank()

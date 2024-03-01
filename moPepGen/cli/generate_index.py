@@ -57,7 +57,6 @@ def generate_index(args:argparse.Namespace):
     max_length:int = int(args.max_length)
     exception = args.cleavage_exception
     invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
-    quiet:bool = args.quiet
 
     output_dir:Path = args.output_dir
 

@@ -329,7 +329,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                 dgraphs = (dgraph, dgraphs[1], dgraphs[2])
                 pgraphs = (pgraph, pgraphs[1], pgraphs[2])
         except:
-            logger.error(f'Exception raised from {tx_id}')
+            logger.error('Exception raised from %s', tx_id)
             raise
 
     peptides = set()
@@ -360,8 +360,8 @@ def call_variant_peptides_wrapper(tx_id:str,
             pgraphs[1][variant.id] = pgraph
         except:
             logger.error(
-                f"Exception raised from fusion {variant.id}, "
-                f"donor:{tx_id}, accepter: {variant.attrs['ACCEPTER_TRANSCRIPT_ID']}"
+                "Exception raised from fusion %s, donor: %s, accepter: %s",
+                variant.id, tx_id, variant.attrs['ACCEPTER_TRANSCRIPT_ID']
             )
             raise
 
@@ -381,7 +381,7 @@ def call_variant_peptides_wrapper(tx_id:str,
             )
 
         except:
-            logger.error(f"Exception raised from {circ_model.id}")
+            logger.error("Exception raised from %s", circ_model.id)
             raise
         peptides.update(_peptides)
         dgraphs[2][circ_model.id] = cgraph
@@ -413,10 +413,10 @@ def caller_reducer(dispatch):
             p.additional_variants_per_misc = additional_variants_per_misc[0]
             new_dispatch['cleavage_params'] = p
             dispatch = new_dispatch
-            get_logger().warn(
-                f"Transcript {tx_id} timed out. Retry with "
-                f"--max-variants-per-node {p.max_variants_per_node} "
-                f"--additional-variants-per-misc {p.additional_variants_per_misc}"
+            get_logger().warning(
+                "Transcript %s timed out. Retry with "
+                "--max-variants-per-node %i --additional-variants-per-misc %i",
+                tx_id, p.max_variants_per_node, p.additional_variants_per_misc
             )
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
@@ -433,7 +433,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     with seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool) as pool:
         if caller.verbose >= 1:
             for file in pool.gvf_files:
-                logger.info(f"Using GVF file: {file}")
+                logger.info("Using GVF file: %s", file)
         tx_rank = ref.anno.get_transcript_rank()
         tx_sorted = sorted(pool.pointers.keys(), key=lambda x:tx_rank[x])
         if caller.verbose >= 1:
@@ -553,7 +553,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             if caller.verbose >= 1:
                 i += 1
                 if i % 1000 == 0:
-                    logger.info(f'{i} transcripts processed.')
+                    logger.info('%i transcripts processed.', i)
 
     caller.write_fasta()
 

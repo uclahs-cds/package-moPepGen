@@ -113,9 +113,10 @@ class _Summary():
 
     def log_summary(self):
         """ Print summary to stdout """
-        get_logger().info(f"Number of decoy sequences created: {self.n_decoy}")
+        get_logger().info("Number of decoy sequences created: %s", self.n_decoy)
         get_logger().info(
-            f"Number of decoy sequences overlap with either target or decoy: {self.n_overlap}"
+            "Number of decoy sequences overlap with either target or decoy: %i",
+            self.n_overlap
         )
 
 class DecoyFasta():

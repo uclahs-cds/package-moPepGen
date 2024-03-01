@@ -155,13 +155,13 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
                 warning(e.args[0] + ' Make sure your GTF and FASTA files match.')
                 ReferenceSeqnameNotFoundError.mute()
         except:
-            logger.error(f'Exception raised from {tx_id}')
+            logger.error('Exception raised from %s', tx_id)
             raise
 
         if not args.quiet:
             i += 1
             if i % 5000 == 0:
-                logger.info(f'{i} transcripts processed.')
+                logger.info('%i transcripts processed.', i)
 
     noncanonical_pool.write(args.output_path)
     if args.output_orf:
