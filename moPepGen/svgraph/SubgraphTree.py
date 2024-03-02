@@ -1,53 +1,58 @@
 """ SubgraphMapper """
 from __future__ import annotations
-from typing import Dict, Tuple
+from typing import Dict, Tuple, TYPE_CHECKING
 import uuid
 from moPepGen.SeqFeature import FeatureLocation
 
 
-class SubgraphLocation():
+if TYPE_CHECKING:
+    from moPepGen.seqvar import VariantRecord
+
+class SubgraphBranch():
     """ ParentGraphLocation """
-    def __init__(self, _id:str, level:int, parent_id:str,  location:FeatureLocation):
+    def __init__(self, _id:str, level:int, parent_id:str,  location:FeatureLocation,
+            variant:VariantRecord):
         """ constructur """
         self.id = _id
         self.level = level
         self.parent_id = parent_id
         self.location = location
+        self.variant = variant
 
-    def is_parent(self, other:SubgraphLocation) -> bool:
+    def is_parent(self, other:SubgraphBranch) -> bool:
         """ Checks if it is the parent of a given subgraph """
         return self.id == other.parent_id
 
 class SubgraphTree():
     """ This SubgraphTree class defines the relationship of subgraphes and
     parents/children in a tree-like data structure. """
-    def __init__(self, data:Dict[str, SubgraphLocation]=None,
-            root:SubgraphLocation=None):
+    def __init__(self, data:Dict[str, SubgraphBranch]=None,
+            root:SubgraphBranch=None):
         """ Constructor """
         self.data = data or {}
         self.root = root
 
-    def __getitem__(self, key:str) -> SubgraphLocation:
+    def __getitem__(self, key:str) -> SubgraphBranch:
         """ Get item """
         return self.data[key]
 
     def add_root(self, _id:str):
         """ Add the main graph """
-        subgraph = SubgraphLocation(
-            _id=_id, level=0, parent_id=None, location=None
+        subgraph = SubgraphBranch(
+            _id=_id, level=0, parent_id=None, location=None, variant=None
         )
         self.data[_id] = subgraph
         self.root = subgraph
 
     def add_subgraph(self, child_id:str, parent_id:str, level:int,
-            start:int, end:int):
+            start:int, end:int, variant:VariantRecord):
         """ Add subgraph """
         location = FeatureLocation(
             seqname=parent_id, start=start, end=end
         )
-        subgraph = SubgraphLocation(
+        subgraph = SubgraphBranch(
             _id=child_id, level=level, parent_id=parent_id,
-            location=location
+            location=location, variant=variant
         )
         self.data[child_id] = subgraph
 
@@ -57,7 +62,7 @@ class SubgraphTree():
         return str(uuid.uuid4())
 
     def find_compatible_parents(self, first:str, second:str
-            ) -> Tuple[SubgraphLocation, SubgraphLocation]:
+            ) -> Tuple[SubgraphBranch, SubgraphBranch]:
         """ For two given subgraphs, find their parent graphs that are
         compatible. Compatible means either they share the same parent subgraph,
         or one is the parent of the other subgraph. """

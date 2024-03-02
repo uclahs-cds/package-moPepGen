@@ -148,7 +148,8 @@ class ThreeFrameCVG(ThreeFrameTVG):
             sub_tail_nodes = sub.get_tail_nodes()
             self.subgraphs.add_subgraph(
                 child_id=sub.id, parent_id=cur.id, level=sub.root.level,
-                start=self.seq.locations[-1].ref.end, end=self.seq.locations[-1].ref.end
+                start=self.seq.locations[-1].ref.end, end=self.seq.locations[-1].ref.end,
+                variant=self.global_variant
             )
             for edge in sub.root.out_edges:
                 root = edge.out_node

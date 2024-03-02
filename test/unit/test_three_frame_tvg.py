@@ -893,7 +893,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         graph2.add_edge(nodes[1], nodes2[11], 'variant_start')
         graph.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=tx_id, level=1,
-            start=5, end=6
+            start=5, end=6, variant=nodes2[13].variants[0].variant
         )
         graph.align_variants(nodes[1])
         out_node_seqs = {x.out_node.seq.seq for x in nodes[1].out_edges}

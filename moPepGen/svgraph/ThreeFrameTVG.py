@@ -433,7 +433,8 @@ class ThreeFrameTVG():
             var_node.level = level
             self.subgraphs.add_subgraph(
                 child_id=subgraph_id, parent_id=self.id, level=level,
-                start=variant.location.start, end=variant.location.end
+                start=variant.location.start, end=variant.location.end,
+                variant=variant
             )
 
         returns = [None, None]
@@ -534,7 +535,8 @@ class ThreeFrameTVG():
             subgraph_end = var.variant.location.end
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
-            start=subgraph_start, end=subgraph_end
+            start=subgraph_start, end=subgraph_end,
+            variant=var.variant
         )
         branch.init_three_frames(truncate_head=False)
         for rf_index, root in enumerate(branch.reading_frames):
@@ -776,7 +778,8 @@ class ThreeFrameTVG():
         parent_id = cursors[0].subgraph_id
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
-            start=var.location.start, end=var.location.end
+            start=var.location.start, end=var.location.end,
+            variant=var.variant
         )
         branch.init_three_frames(truncate_head=False)
         for rf_index, root in enumerate(branch.reading_frames):
