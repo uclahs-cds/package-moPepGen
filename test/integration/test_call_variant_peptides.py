@@ -84,7 +84,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.reference_source = None
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
         if not expect:
             return
@@ -127,7 +127,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide_case1_sect_and_w2f(self):
@@ -143,7 +143,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.w2f_reassignment = True
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide_case2(self):
@@ -159,7 +159,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide_case3(self):
@@ -176,7 +176,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide_circ_no_canoincal(self):
@@ -193,7 +193,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
 
         seqs = list(SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'))
@@ -216,7 +216,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide_fusion_only(self):
@@ -231,7 +231,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
         seqs = list(SeqIO.parse(args.output_path, 'fasta'))
         self.assertTrue(len(seqs) > 0)
@@ -278,7 +278,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep_moPepGen.fasta'}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
 
     def test_call_varaint_peptide_case5(self):

@@ -42,6 +42,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added `updateIndex` #853
 
+- Output a peptide table for additional information. #833
+
 ## [1.2.1] - 2023-10-05
 
 ### Add

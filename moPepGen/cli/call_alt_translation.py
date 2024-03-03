@@ -2,13 +2,14 @@
 harbor any alternative translation event. """
 from __future__ import annotations
 import argparse
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Set
 from pathlib import Path
-from moPepGen import params, svgraph, aa, get_logger
+from moPepGen import params, svgraph, aa, get_logger, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from moPepGen.cli import common
 
 
 if TYPE_CHECKING:
+    from Bio.Seq import Seq
     from moPepGen.gtf import TranscriptAnnotationModel, GenomicAnnotation
     from moPepGen.dna import DNASeqDict
 
@@ -125,15 +126,35 @@ def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         cds_start_nf=tx_model.is_cds_start_nf(),
         has_known_orf=True,
         mrna_end_nf=tx_model.is_mrna_end_nf(),
-        cleavage_params=cleavage_params
+        cleavage_params=cleavage_params,
+        coordinate_feature_type='transcript',
+        coordinate_feature_id=tx_id
     )
     dgraph.gather_sect_variants(anno)
     dgraph.init_three_frames()
     pgraph = dgraph.translate()
     pgraph.create_cleavage_graph()
-    return pgraph.call_variant_peptides(
+    peptide_anno = pgraph.call_variant_peptides(
         check_variants=True,
         truncate_sec=sec_truncation,
         w2f=w2f_reassignment,
         check_external_variants=False
     )
+    peptide_map:Dict[Seq, Set[str]] = {}
+    for seq, annotated_labels in peptide_anno.items():
+        for label in annotated_labels:
+            if seq in peptide_map:
+                peptide_map[seq].add(label.label)
+            else:
+                peptide_map[seq] = {label.label}
+    peptides = set()
+    for seq, labels in peptide_map.items():
+        label = VARIANT_PEPTIDE_SOURCE_DELIMITER.join(labels)
+        peptides.add(
+            aa.AminoAcidSeqRecord(
+                seq=seq,
+                description=label,
+                name=label
+            )
+        )
+    return peptides

@@ -879,6 +879,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
             3:  ['GTT', [2], []]
         }
         tx_id = 'ENST01'
+        gene_id = 'ENSG01'
         graph, nodes = create_three_frame_tvg(data, 'AAAAATAGTT', tx_id)
         data = {
             11: ['TGCTGC', ['RF0'], []],
@@ -893,7 +894,8 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         graph2.add_edge(nodes[1], nodes2[11], 'variant_start')
         graph.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=tx_id, level=1,
-            start=5, end=6, variant=nodes2[13].variants[0].variant
+            start=5, end=6, variant=nodes2[13].variants[0].variant,
+            feature_id=gene_id, feature_type='gene'
         )
         graph.align_variants(nodes[1])
         out_node_seqs = {x.out_node.seq.seq for x in nodes[1].out_edges}

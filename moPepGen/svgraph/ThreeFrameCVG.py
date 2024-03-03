@@ -149,7 +149,7 @@ class ThreeFrameCVG(ThreeFrameTVG):
             self.subgraphs.add_subgraph(
                 child_id=sub.id, parent_id=cur.id, level=sub.root.level,
                 start=self.seq.locations[-1].ref.end, end=self.seq.locations[-1].ref.end,
-                variant=self.global_variant
+                variant=self.global_variant, feature_type='gene', feature_id=self.gene_id
             )
             for edge in sub.root.out_edges:
                 root = edge.out_node

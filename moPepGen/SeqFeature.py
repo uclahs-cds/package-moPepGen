@@ -76,6 +76,18 @@ class FeatureLocation(BioFeatureLocation):
         """ Find whether the location is a superset of the other """
         return self.start <= other.start and self.end >= other.end
 
+    def shift(self, i:int) -> FeatureLocation:
+        """ shift """
+        return FeatureLocation(
+            seqname=self.seqname,
+            start=self.start + i,
+            end=self.end + i,
+            reading_frame_index=self.reading_frame_index,
+            start_offset=self.start_offset,
+            end_offset=self.end_offset,
+            strand=self.strand
+        )
+
 
 class SeqFeature(BioSeqFeature):
     """ Models the annotation of a given range of the sequence. This extends

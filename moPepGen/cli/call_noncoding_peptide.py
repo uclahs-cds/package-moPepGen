@@ -2,16 +2,17 @@
 It finds all start codons of any noncoding gene. """
 from __future__ import annotations
 import argparse
-from typing import TYPE_CHECKING, Set, List, Tuple, IO
+from typing import TYPE_CHECKING, Set, List, Tuple, IO, Dict
 from pathlib import Path
 from Bio.SeqIO import FastaIO
-from moPepGen import params, svgraph, aa, get_logger
+from moPepGen import params, svgraph, aa, get_logger, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError, warning
 from moPepGen.cli import common
 
 
 if TYPE_CHECKING:
+    from Bio.Seq import Seq
     from moPepGen.gtf import TranscriptAnnotationModel
     from moPepGen.dna import DNASeqDict
 
@@ -190,12 +191,14 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         cds_start_nf=True,
         has_known_orf=False,
         cleavage_params=cleavage_params,
-        gene_id=tx_model.gene_id
+        gene_id=tx_model.gene_id,
+        coordinate_feature_type='transcript',
+        coordinate_feature_id=tx_id
     )
     dgraph.init_three_frames()
     pgraph = dgraph.translate()
     pgraph.create_cleavage_graph()
-    peptides = pgraph.call_variant_peptides(
+    peptide_anno = pgraph.call_variant_peptides(
         check_variants=False,
         check_orf=True,
         denylist=canonical_peptides,
@@ -203,6 +206,23 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         w2f=w2f_reassignment,
         check_external_variants=False
     )
+    peptide_map:Dict[Seq, Set[str]] = {}
+    for seq, annotated_labels in peptide_anno.items():
+        for label in annotated_labels:
+            if seq in peptide_map:
+                peptide_map[seq].add(label.label)
+            else:
+                peptide_map[seq] = {label.label}
+    peptides = set()
+    for seq, labels in peptide_map.items():
+        label = VARIANT_PEPTIDE_SOURCE_DELIMITER.join(labels)
+        peptides.add(
+            aa.AminoAcidSeqRecord(
+                seq=seq,
+                description=label,
+                name=label
+            )
+        )
     orfs = get_orf_sequences(pgraph, tx_id, tx_model.gene_id, tx_seq)
     return peptides, orfs
 

@@ -1,7 +1,7 @@
 """ Module for peptide variation graph """
 from __future__ import annotations
 import copy
-from typing import Callable, FrozenSet, Iterable, Set, Deque, Dict, List, Tuple
+from typing import Callable, FrozenSet, Iterable, Set, Deque, Dict, List, Tuple, TYPE_CHECKING
 from collections import deque
 from functools import cmp_to_key
 from Bio.Seq import Seq
@@ -13,6 +13,9 @@ from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.svgraph.PVGNodeCollapser import PVGNodeCollapser, PVGNodePopCollapser
 
+
+if TYPE_CHECKING:
+    from .VariantPeptideDict import AnnotatedPeptideLabel
 
 T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
 
@@ -790,7 +793,7 @@ class PeptideVariantGraph():
             check_orf:bool=False, keep_all_occurrence:bool=True, denylist:Set[str]=None,
             circ_rna:circ.CircRNAModel=None, orf_assignment:str='max',
             truncate_sec:bool=False, w2f:bool=False, check_external_variants:bool=True
-            ) -> Set[aa.AminoAcidSeqRecord]:
+            ) -> Dict[Seq, List[AnnotatedPeptideLabel]]:
         """ Walk through the graph and find all variated peptides.
 
         Args:
