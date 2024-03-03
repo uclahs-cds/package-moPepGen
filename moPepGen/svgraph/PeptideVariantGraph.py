@@ -822,7 +822,8 @@ class PeptideVariantGraph():
             truncate_sec=truncate_sec,
             w2f=w2f,
             check_external_variants=check_external_variants,
-            cleavage_params=self.cleavage_params
+            cleavage_params=self.cleavage_params,
+            check_orf=check_orf
         )
         traversal = PVGTraversal(
             check_variants=check_external_variants,

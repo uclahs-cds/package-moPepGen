@@ -1,6 +1,6 @@
 """ Test Module for VariantPeptideDict """
 import unittest
-from test.unit import create_aa_record, create_variants
+from test.unit import create_variants
 from Bio.Seq import Seq
 from moPepGen import params
 from moPepGen.svgraph.VariantPeptideDict import MiscleavedNodes, VariantPeptideDict, \
@@ -13,14 +13,14 @@ def create_variant_peptide_dict(tx_id, data) -> VariantPeptideDict:
     peptides = {}
     for x,y in data:
         seq = Seq(x)
-        metadatas = set()
+        metadatas = {}
         for it in y:
             variants = set(create_variants(it[0]))
             label = vpi.create_variant_peptide_id(tx_id, variants, None)
             is_pure_circ_ran = len(variants) == 1 and list(variants)[0].is_circ_rna()
             metadata = VariantPeptideMetadata(label, it[1], is_pure_circ_ran)
             metadata.has_variants = bool(variants)
-            metadatas.add(metadata)
+            metadatas[metadata.label] = metadata
         peptides[seq] = metadatas
     return VariantPeptideDict(tx_id=tx_id, peptides=peptides)
 

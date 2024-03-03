@@ -317,14 +317,14 @@ def call_variant_peptides_wrapper(tx_id:str,
         ) -> Tuple[Dict[Seq, List[AnnotatedPeptideLabel]], str, TypeDGraphs, TypePGraphs]:
     """ wrapper function to call variant peptides """
     logger = get_logger()
-    peptide_anno:Dict[Seq, List[AnnotatedPeptideLabel]] = {}
+    peptide_anno:Dict[Seq, Dict[str, AnnotatedPeptideLabel]] = {}
 
     def add_peptide_anno(x:Dict[Seq, List[AnnotatedPeptideLabel]]):
-        for k,v in x.items():
-            if k in peptide_anno:
-                peptide_anno[k] += v
-            else:
-                peptide_anno[k] = v
+        for seq, seq_data in x.items():
+            val = peptide_anno.setdefault(seq, {})
+            for metadata in seq_data:
+                if metadata.label not in val:
+                    val[metadata.label] = metadata
 
     main_peptides = None
     denylist = call_canonical_peptides(
@@ -408,6 +408,8 @@ def call_variant_peptides_wrapper(tx_id:str,
         dgraphs[2][circ_model.id] = cgraph
         pgraphs[2][circ_model.id] = pgraph
         add_peptide_anno(peptide_map)
+
+    peptide_anno = {k:list(v.values()) for k,v in peptide_anno.items()}
 
     return peptide_anno, tx_id, dgraphs, pgraphs
 

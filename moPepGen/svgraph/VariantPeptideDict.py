@@ -23,13 +23,18 @@ class VariantPeptideMetadata():
     """ Variant peptide metadata """
     def __init__(self, label:str=None, orf:Tuple[int,int]=None,
             is_pure_circ_rna:bool=False, has_variants:bool=False,
-            segments:List[PeptideSegment]=None):
+            segments:List[PeptideSegment]=None, check_orf:bool=False):
         """  """
         self.label = label
         self.orf = orf
         self.is_pure_circ_rna = is_pure_circ_rna
         self.has_variants = has_variants
         self.segments = segments or []
+        self.check_orf = check_orf
+
+    def get_key(self) -> str:
+        """ get key """
+        return f"{self.label}|{self.orf}" if self.check_orf else self.label
 
 class PeptideSegment:
     """ Peptide segment """
@@ -120,7 +125,7 @@ class MiscleavedNodeSeries():
                 return True
         return False
 
-TypeVariantPeptideMetadataMap = Dict[Seq, Set[VariantPeptideMetadata]]
+TypeVariantPeptideMetadataMap = Dict[Seq, Dict[str, VariantPeptideMetadata]]
 
 class MiscleavedNodes():
     """ Helper class for looking for peptides with miscleavages. This class
@@ -211,7 +216,7 @@ class MiscleavedNodes():
             check_variants:bool, additional_variants:List[VariantRecord],
             denylist:Set[str], is_start_codon:bool=False,
             circ_rna:circ.CircRNAModel=None, truncate_sec:bool=False,
-            check_external_variants:bool=True
+            check_external_variants:bool=True, check_orf:bool=False
             ) -> Iterable[Tuple[Seq, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -226,7 +231,7 @@ class MiscleavedNodes():
         """
         for series in self.data:
             queue = series.nodes
-            metadata = VariantPeptideMetadata()
+            metadata = VariantPeptideMetadata(check_orf=check_orf)
             seqs_to_join:List[Seq] = []
             size:int = 0
             variants:Dict[str,VariantRecord] = {}
@@ -506,7 +511,7 @@ class VariantPeptideDict():
             seqs:Set[Seq]=None, labels:Dict[str,int]=None,
             global_variant:VariantRecord=None, gene_id:str=None,
             truncate_sec:bool=False, w2f:bool=False, check_external_variants:bool=True,
-            cleavage_params:params.CleavageParams=None):
+            cleavage_params:params.CleavageParams=None, check_orf:bool=False):
         """ constructor """
         self.tx_id = tx_id
         self.peptides = peptides or {}
@@ -518,6 +523,7 @@ class VariantPeptideDict():
         self.w2f = w2f
         self.check_external_variants = check_external_variants
         self.cleavage_params = cleavage_params
+        self.check_orf = check_orf
 
     def find_miscleaved_nodes(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:params.CleavageParams, tx_id:str, gene_id:str,
@@ -662,22 +668,25 @@ class VariantPeptideDict():
             additional_variants.append(self.global_variant)
 
         it = miscleaved_nodes.join_miscleaved_peptides(
-            pool=self.seqs,
+            pool=self.peptides,
             check_variants=check_variants,
             additional_variants=additional_variants,
             denylist=denylist,
             is_start_codon=is_start_codon,
             circ_rna=circ_rna,
             truncate_sec=self.truncate_sec,
-            check_external_variants=self.check_external_variants
+            check_external_variants=self.check_external_variants,
+            check_orf=self.check_orf
         )
         for seq, metadata in it:
             if 'X' in seq:
                 continue
             if '*' in seq:
                 raise ValueError('Invalid amino acid symbol found in the sequence.')
-            val = self.peptides.setdefault(seq, set())
-            val.add(metadata)
+            val = self.peptides.setdefault(seq, {})
+            key = metadata.get_key()
+            if key not in val:
+                val[key] = metadata
             self.seqs.add(seq)
 
     def find_codon_reassignments(self, seq:Seq, w2f:bool=False) -> List[VariantRecord]:
@@ -732,13 +741,15 @@ class VariantPeptideDict():
 
                     if not self.is_valid_seq(seq_mod, denylist):
                         continue
-                    for metadata in self.peptides[seq]:
+                    for metadata in self.peptides[seq].values():
                         cur_metadata = copy.copy(metadata)
                         cur_metadata.label += '|' + '|'.join(v.id for v in comb)
                         cur_metadata.has_variants = True
 
-                        val = self.peptides.setdefault(seq_mod, set())
-                        val.add(cur_metadata)
+                        val = self.peptides.setdefault(seq_mod, {})
+                        key = cur_metadata.get_key()
+                        if key not in val:
+                            val[key] = cur_metadata
                         self.seqs.add(seq_mod)
 
     def get_peptide_sequences(self, keep_all_occurrence:bool=True,
@@ -754,12 +765,11 @@ class VariantPeptideDict():
         """
         peptide_segments: Dict[Seq, List[AnnotatedPeptideLabel]] = {}
 
-        while self.peptides:
-            seq, metadatas = self.peptides.popitem()
+        for seq in self.peptides:
             if '*' in seq:
                 raise ValueError('Invalid amino acid symbol found in the sequence.')
             labels = []
-            metadatas = list(metadatas)
+            metadatas = list(self.peptides[seq].values())
             metadatas.sort(key=lambda x: x.orf[0])
             unique_labels = set()
             had_pure_circ_rna = False

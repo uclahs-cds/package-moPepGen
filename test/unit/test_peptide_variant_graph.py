@@ -799,7 +799,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         orf = PVGOrf([0, None])
         cursor = PVGCursor(nodes[1], nodes[3], True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
-        label = list(list(traversal.pool.peptides.values())[0])[0].label
+        label = list(list(traversal.pool.peptides.values())[0].values())[0].label
         self.assertEqual(label.count('|'), 1)
 
     def test_fit_into_cleavage_bridge_node_needs_merge(self):
