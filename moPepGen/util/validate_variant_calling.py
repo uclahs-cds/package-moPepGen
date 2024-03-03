@@ -111,7 +111,7 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path, graph_output_d
     args.output_path = output_fasta
     args.graph_output_dir = graph_output_dir
     args.quiet = False
-    args.verbose_level = 1
+    args.debug_level = 1
     args.cleavage_rule = 'trypsin'
     args.cleavage_exception = None
     args.miscleavage = 2

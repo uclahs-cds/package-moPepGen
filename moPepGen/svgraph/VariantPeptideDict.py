@@ -7,7 +7,7 @@ from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from Bio.Seq import Seq
 from Bio import SeqUtils
 from moPepGen import aa, circ, get_equivalent, seqvar
-from moPepGen.SeqFeature import FeatureLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.aa import VariantPeptideIdentifier as vpi
@@ -47,6 +47,47 @@ class PeptideSegment:
         self.feature_id = feature_id
         self.variant = variant
 
+    def merge(self, other:PeptideSegment) -> PeptideSegment:
+        """ merge """
+        query = FeatureLocation(
+            start=self.query.start,
+            end=other.query.end,
+            start_offset=self.query.start_offset,
+            end_offset=other.query.end_offset
+        )
+        if self.ref:
+            ref = FeatureLocation(
+                start=self.ref.start,
+                end=other.ref.end,
+                start_offset=self.ref.start_offset,
+                end_offset=other.ref.end_offset
+            )
+        else:
+            ref = None
+        return PeptideSegment(
+            query=query,
+            ref=ref,
+            feature_type=self.feature_type,
+            feature_id=self.feature_type,
+            variant=self.variant
+        )
+
+    def is_adjacent(self, other:PeptideSegment) -> bool:
+        """ is adjacent """
+        if (self.variant is None) != (other.variant is None) \
+                or (self.variant is not None \
+                    and self.variant.id != other.variant.id) \
+                or self.query.end != other.query.start \
+                or self.feature_type != other.feature_type \
+                or self.feature_id != other.feature_id:
+            return False
+        if self.ref:
+            this = MatchedLocation(self.query, self.ref)
+            that = MatchedLocation(other.query, other.ref)
+            if this.get_ref_dna_end() != that.get_ref_dna_start():
+                return False
+        return True
+
     def to_line(self):
         """ to line """
         fields = [
@@ -56,19 +97,18 @@ class PeptideSegment:
             self.feature_id or '.'
         ]
         if self.ref:
+            ref_start = self.ref.start * 3 + self.ref.start_offset
+            ref_end = self.ref.end * 3 + self.ref.end_offset
             fields += [
-                str(self.ref.start),
-                str(self.ref.end),
-                str(self.ref.start_offset),
-                str(-self.ref.end_offset)
+                str(ref_start),
+                str(ref_end)
             ]
         else:
-            fields += [
-                '.',
-                '.',
-                str(self.query.start_offset),
-                str(-self.query.end_offset)
-            ]
+            fields += ['.', '.']
+        fields += [
+            str(self.query.start_offset),
+            str(self.query.end_offset)
+        ]
         if self.variant:
             fields.append(self.variant.id)
         else:
@@ -180,11 +220,15 @@ class MiscleavedNodes():
 
     def create_peptide_segments(self, nodes:List[PVGNode]) -> List[PeptideSegment]:
         """ create petpdie segments """
-        segments = []
+        ref_segments:List[PeptideSegment] = []
+        var_segments:List[PeptideSegment] = []
         offset = 0
+        branch_variants = set()
         for node in nodes:
             for loc in node.seq.locations:
                 branch = self.subgraphs[loc.ref.seqname]
+                if branch.variant:
+                    branch_variants.add(branch.variant.id)
                 seg = PeptideSegment(
                     query=loc.query.shift(offset),
                     ref=loc.ref,
@@ -192,8 +236,13 @@ class MiscleavedNodes():
                     feature_id=branch.feature_id,
                     variant=branch.variant
                 )
-                segments.append(seg)
+                if ref_segments and ref_segments[-1].is_adjacent(seg):
+                    ref_segments[-1] = ref_segments[-1].merge(seg)
+                    continue
+                ref_segments.append(seg)
             for variant in node.variants:
+                if variant.variant.id in branch_variants:
+                    continue
                 if variant.upstream_cleavage_altering:
                     continue
                 if variant.downstream_cleavage_altering:
@@ -207,8 +256,12 @@ class MiscleavedNodes():
                     feature_id=None,
                     variant=variant.variant
                 )
-                segments.append(seg)
+                if var_segments and var_segments[-1].is_adjacent(seg):
+                    var_segments[-1] = var_segments[-1].merge(seg)
+                    continue
+                var_segments.append(seg)
             offset += len(node.seq.seq)
+        segments = ref_segments + var_segments
         segments.sort(key=lambda x:x.query)
         return segments
 

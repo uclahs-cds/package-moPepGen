@@ -39,7 +39,7 @@ def create_base_args() -> argparse.Namespace:
     args.min_length = 7
     args.max_length = 25
     args.quiet = True
-    args.verbose_level = 1
+    args.debug_level = 1
     args.noncanonical_transcripts = False
     args.invalid_protein_as_noncoding = False
     args.threads = 1
