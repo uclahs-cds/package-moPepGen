@@ -7,7 +7,7 @@ from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from Bio.Seq import Seq
 from Bio import SeqUtils
 from moPepGen import aa, circ, get_equivalent, seqvar
-from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
+from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.aa import VariantPeptideIdentifier as vpi

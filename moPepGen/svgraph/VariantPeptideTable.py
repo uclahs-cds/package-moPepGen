@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from moPepGen.params import CleavageParams
 
 VARIANT_PEPTIDE_TABLE_HEADERS = [
-    '#sequence', 'header', 'start', 'end', 'feature_type', 'feature_id',
+    '#sequence', 'header', 'subsequence', 'start', 'end', 'feature_type', 'feature_id',
     'ref_start', 'ref_end', 'start_offset', 'end_offset', 'variant'
 ]
 
@@ -45,8 +45,10 @@ class VariantPeptideTable:
     def add_peptide(self, seq:Seq, peptide_anno:AnnotatedPeptideLabel):
         """ Write """
         start = self.handle.tell()
-        for line in peptide_anno.to_lines():
-            self.handle.write(f"{str(seq)}\t{line}\n")
+        for seg in peptide_anno.segments:
+            subseq = str(seq[seg.query.start:seg.query.end])
+            line = f"{str(seq)}\t{peptide_anno.label}\t{subseq}\t{seg.to_line()}\n"
+            self.handle.write(line)
         end = self.handle.tell()
         cur = (start, end)
         if seq in self.index:
