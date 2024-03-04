@@ -68,7 +68,7 @@ class PeptideSegment:
             query=query,
             ref=ref,
             feature_type=self.feature_type,
-            feature_id=self.feature_type,
+            feature_id=self.feature_id,
             variant=self.variant
         )
 
