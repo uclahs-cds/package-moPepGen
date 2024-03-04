@@ -82,9 +82,9 @@ class PeptideSegment:
                 or self.feature_id != other.feature_id:
             return False
         if self.ref:
-            this = MatchedLocation(self.query, self.ref)
-            that = MatchedLocation(other.query, other.ref)
-            if this.get_ref_dna_end() != that.get_ref_dna_start():
+            this_end = self.ref.end * 3 + self.ref.end_offset - self.query.end_offset
+            that_start = other.ref.start * 3 + other.ref.start_offset + other.query.start_offset
+            if this_end != that_start:
                 return False
         return True
 
