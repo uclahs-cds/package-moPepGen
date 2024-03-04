@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from moPepGen.params import CleavageParams
 
 VARIANT_PEPTIDE_TABLE_HEADERS = [
-    '#seq', 'label', 'start', 'end', 'feature_type', 'feature_id',
+    '#sequence', 'header', 'start', 'end', 'feature_type', 'feature_id',
     'ref_start', 'ref_end', 'start_offset', 'end_offset', 'variant'
 ]
 
