@@ -688,7 +688,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
 
     orf_start = tx_seq.orf.start + 3 if tx_seq.orf else 3
     if variant.location.start < orf_start:
-        return [], None, None
+        return {}, None, None
 
     if tx_id in variant_pool:
         tx_variants = [x for x in variant_pool[tx_id].transcriptional
@@ -758,7 +758,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
         fragments.append(frag)
 
     if not fragments:
-        return set(), None, None
+        return {}, None, None
 
     variant_records = variant_pool.filter_variants(
         tx_ids=[record.transcript_id], exclude_type=exclusion_variant_types,
