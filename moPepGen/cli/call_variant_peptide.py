@@ -592,9 +592,12 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     '%.2f %% ( %i / %i ) transcripts processed.',
                     i/len(tx_sorted) * 100, i, len(tx_sorted)
                 )
+        logger.info('All transcripts processed. Preparing FASTA file..')
+        peptide_table.write_fasta(caller.output_path)
+        logger.info('Variant peptide FASTA written.')
+
         caller.tally.n_valid_peptides = len(peptide_table.index)
         caller.tally.log()
-        peptide_table.write_fasta(caller.output_path)
 
 def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
         tx_seq:dna.DNASeqRecordWithCoordinates,
