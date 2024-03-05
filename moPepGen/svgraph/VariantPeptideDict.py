@@ -39,13 +39,13 @@ class VariantPeptideMetadata():
 class PeptideSegment:
     """ Peptide segment """
     def __init__(self, query:FeatureLocation, ref:FeatureLocation, feature_type:str,
-            feature_id:str, variant:VariantRecord):
+            feature_id:str, variant_id:str):
         """ constructor """
         self.query = query
         self.ref = ref
         self.feature_type = feature_type
         self.feature_id = feature_id
-        self.variant = variant
+        self.variant_id = variant_id
 
     def merge(self, other:PeptideSegment) -> PeptideSegment:
         """ merge """
@@ -69,14 +69,14 @@ class PeptideSegment:
             ref=ref,
             feature_type=self.feature_type,
             feature_id=self.feature_id,
-            variant=self.variant
+            variant_id=self.variant_id
         )
 
     def is_adjacent(self, other:PeptideSegment) -> bool:
         """ is adjacent """
-        if (self.variant is None) != (other.variant is None) \
-                or (self.variant is not None \
-                    and self.variant.id != other.variant.id) \
+        if (self.variant_id is None) != (other.variant_id is None) \
+                or (self.variant_id is not None \
+                    and self.variant_id != other.variant_id) \
                 or self.query.end != other.query.start \
                 or self.feature_type != other.feature_type \
                 or self.feature_id != other.feature_id:
@@ -109,8 +109,8 @@ class PeptideSegment:
             str(self.query.start_offset),
             str(self.query.end_offset)
         ]
-        if self.variant:
-            fields.append(self.variant.id)
+        if self.variant_id:
+            fields.append(self.variant_id)
         else:
             fields.append('.')
         return '\t'.join(fields)
@@ -234,7 +234,7 @@ class MiscleavedNodes():
                     ref=loc.ref,
                     feature_type=branch.feature_type,
                     feature_id=branch.feature_id,
-                    variant=branch.variant
+                    variant_id=branch.variant.id if branch.variant else None
                 )
                 if ref_segments and ref_segments[-1].is_adjacent(seg):
                     ref_segments[-1] = ref_segments[-1].merge(seg)
@@ -254,7 +254,7 @@ class MiscleavedNodes():
                     ref=None,
                     feature_type=None,
                     feature_id=None,
-                    variant=variant.variant
+                    variant_id=variant.variant.id
                 )
                 if var_segments and var_segments[-1].is_adjacent(seg):
                     var_segments[-1] = var_segments[-1].merge(seg)
