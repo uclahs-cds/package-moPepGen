@@ -22,7 +22,7 @@ class VariantPeptidePool():
 
     def add_peptide(self, peptide:AminoAcidSeqRecord,
             canonical_peptides:Set[str], cleavage_params:params.CleavageParams=None,
-            skip_checking:bool=False):
+            skip_checking:bool=False) -> bool:
         """ Add a peptide to the pool if it does not already exist. Otherwise,
         the label is appended to the existing same peptide.
 
@@ -36,12 +36,12 @@ class VariantPeptidePool():
             min_mw = cleavage_params.min_mw
             min_length = cleavage_params.min_length
             max_length = cleavage_params.max_length
-            if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
-                return
-            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
-                return
+            if SeqUtils.molecular_weight(peptide, 'protein') < min_mw:
+                return False
+            if len(peptide.seq) < min_length or len(peptide) > max_length:
+                return False
             if str(peptide.seq) in canonical_peptides:
-                return
+                return False
         same_peptide = get_equivalent(self.peptides, peptide)
         if same_peptide:
             same_peptide:Seq
@@ -51,6 +51,7 @@ class VariantPeptidePool():
             same_peptide.name = same_peptide.description
         else:
             self.peptides.add(peptide)
+        return True
 
     def remove_redundant_headers(self):
         """ remove redundant fasta header entries """

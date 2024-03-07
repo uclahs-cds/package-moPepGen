@@ -635,7 +635,7 @@ class FuzzTestCase():
         args.naa_to_collapse = 5
         args.noncanonical_transcripts = False
         args.invalid_protein_as_noncoding = False
-        args.verbose_level = 1
+        args.debug_level = 1
         call_variant_peptide(args=args)
 
     def brute_force(self):

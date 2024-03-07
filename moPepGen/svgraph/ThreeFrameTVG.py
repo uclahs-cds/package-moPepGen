@@ -42,6 +42,7 @@ class ThreeFrameTVG():
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
             mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
+            coordinate_feature_type:str=None, coordinate_feature_id:str=None,
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
             cleavage_params:params.CleavageParams=None, gene_id:str=None,
             sect_variants:List[seqvar.VariantRecordWithCoordinate]=None,
@@ -63,7 +64,11 @@ class ThreeFrameTVG():
         self.mrna_end_nf = mrna_end_nf
         self.global_variant = global_variant
         self.subgraphs = subgraphs or SubgraphTree()
-        self.subgraphs.add_root(_id)
+        self.subgraphs.add_root(
+            _id, variant=self.global_variant,
+            feature_type=coordinate_feature_type,
+            feature_id=coordinate_feature_id
+        )
         self.hypermutated_region_warned = hypermutated_region_warned
         self.cleavage_params = cleavage_params or params.CleavageParams('trypsin')
         self.gene_id = gene_id
@@ -433,7 +438,8 @@ class ThreeFrameTVG():
             var_node.level = level
             self.subgraphs.add_subgraph(
                 child_id=subgraph_id, parent_id=self.id, level=level,
-                start=variant.location.start, end=variant.location.end
+                start=variant.location.start, end=variant.location.end,
+                variant=variant, feature_type='transcript', feature_id=self.id
             )
 
         returns = [None, None]
@@ -490,7 +496,8 @@ class ThreeFrameTVG():
             var:seqvar.VariantRecordWithCoordinate,
             seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecord], position:int,
-            attach_directly:bool=False, known_orf_index:int=None
+            attach_directly:bool=False, known_orf_index:int=None,
+            coordinate_feature_type:str=None, coordinate_feature_id:str=None
             ) -> List[TVGNode]:
         """ Insert flanking variant node into the graph. This function is used
         in apply_fusion to insert the intronic sequences.
@@ -521,7 +528,9 @@ class ThreeFrameTVG():
             seq, subgraph_id,
             global_variant=var.variant,
             cleavage_params=self.cleavage_params,
-            max_adjacent_as_mnv=self.max_adjacent_as_mnv
+            max_adjacent_as_mnv=self.max_adjacent_as_mnv,
+            coordinate_feature_type=coordinate_feature_type,
+            coordinate_feature_id=coordinate_feature_id
         )
         level = cursors[0].level + 1
         branch.update_node_level(level)
@@ -534,7 +543,10 @@ class ThreeFrameTVG():
             subgraph_end = var.variant.location.end
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
-            start=subgraph_start, end=subgraph_end
+            start=subgraph_start, end=subgraph_end,
+            variant=var.variant,
+            feature_type=coordinate_feature_type,
+            feature_id=coordinate_feature_id
         )
         branch.init_three_frames(truncate_head=False)
         for rf_index, root in enumerate(branch.reading_frames):
@@ -663,7 +675,9 @@ class ThreeFrameTVG():
                 variants=insertion_variants,
                 position=variant.location.start,
                 attach_directly=False,
-                known_orf_index=known_orf_index
+                known_orf_index=known_orf_index,
+                coordinate_feature_type='gene',
+                coordinate_feature_id=gene_id
             )
 
         # create subgraph for the right insertion
@@ -703,7 +717,9 @@ class ThreeFrameTVG():
                 variants=insertion_variants,
                 position=position,
                 attach_directly=attach_directly,
-                known_orf_index=known_orf_index
+                known_orf_index=known_orf_index,
+                coordinate_feature_type='gene',
+                coordinate_feature_id=gene_id
             )
 
         breakpoint_gene = variant.get_accepter_position()
@@ -739,15 +755,17 @@ class ThreeFrameTVG():
             variants=accepter_variant_records,
             position=position,
             attach_directly=attach_directly,
-            known_orf_index=known_orf_index
+            known_orf_index=known_orf_index,
+            coordinate_feature_type='transcript',
+            coordinate_feature_id=accepter_tx_id
         )
         return original_cursors
 
     def _apply_insertion(self, cursors:List[TVGNode],
             var:seqvar.VariantRecordWithCoordinate,
             seq:dna.DNASeqRecordWithCoordinates,
-            variants:List[seqvar.VariantRecord],
-            active_frames:List[bool]
+            variants:List[seqvar.VariantRecord], active_frames:List[bool],
+            coordinate_feature_type:str, coordinate_feature_id:str
         ) -> List[TVGNode]:
         """ This is a wrapper function to apply insertions to the graph. It can
         be used for actual Insertion, and also Substitution. It is also used
@@ -769,14 +787,19 @@ class ThreeFrameTVG():
             loc.ref.seqname = subgraph_id
         branch = ThreeFrameTVG(
             seq, subgraph_id, global_variant=var.variant,
-            max_adjacent_as_mnv=self.max_adjacent_as_mnv
+            max_adjacent_as_mnv=self.max_adjacent_as_mnv,
+            coordinate_feature_type=coordinate_feature_type,
+            coordinate_feature_id=coordinate_feature_id
         )
         level = cursors[0].level + 1
         branch.update_node_level(level)
         parent_id = cursors[0].subgraph_id
         self.subgraphs.add_subgraph(
             child_id=subgraph_id, parent_id=parent_id, level=level,
-            start=var.location.start, end=var.location.end
+            start=var.location.start, end=var.location.end,
+            variant=var.variant,
+            feature_type=coordinate_feature_type,
+            feature_id=coordinate_feature_id
         )
         branch.init_three_frames(truncate_head=False)
         for rf_index, root in enumerate(branch.reading_frames):
@@ -912,7 +935,9 @@ class ThreeFrameTVG():
             var=var,
             seq=insert_seq,
             variants=insert_variants,
-            active_frames=active_frames
+            active_frames=active_frames,
+            coordinate_feature_type='gene',
+            coordinate_feature_id=gene_id
         )
 
     def apply_substitution(self, cursors:List[TVGNode],
@@ -947,7 +972,9 @@ class ThreeFrameTVG():
             var=var,
             seq=sub_seq,
             variants=sub_variants,
-            active_frames=active_frames
+            active_frames=active_frames,
+            coordinate_feature_type='gene',
+            coordinate_feature_id=gene_id
         )
 
 
