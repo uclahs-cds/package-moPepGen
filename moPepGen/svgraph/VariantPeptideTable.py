@@ -85,7 +85,7 @@ class VariantPeptideTable:
             self.handle.seek(start)
             buffer:str = self.handle.read(end - start)
             for line in buffer.rstrip().split('\n'):
-                fields = {k:v for k,v in zip(VARIANT_PEPTIDE_TABLE_HEADERS, line.split('\t'))}
+                fields = dict(zip(VARIANT_PEPTIDE_TABLE_HEADERS, line.split('\t')))
                 if seq != fields['sequence']:
                     raise ValueError(
                         f"Peptide ({seq}) do not match with table record ({fields[0]})."

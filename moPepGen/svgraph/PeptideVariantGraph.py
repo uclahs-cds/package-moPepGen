@@ -5,7 +5,7 @@ from typing import Callable, FrozenSet, Iterable, Set, Deque, Dict, List, Tuple,
 from collections import deque
 from functools import cmp_to_key
 from Bio.Seq import Seq
-from moPepGen import aa, circ, seqvar, params
+from moPepGen import aa, params
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
 from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
@@ -17,7 +17,7 @@ from moPepGen.svgraph.PVGNodeCollapser import PVGNodeCollapser, PVGNodePopCollap
 if TYPE_CHECKING:
     from .VariantPeptideDict import AnnotatedPeptideLabel
     from moPepGen.circ import CircRNAModel
-    from moPepGen.seqvar.VariantRecord import VariantRecord
+    from moPepGen.params import CleavageParams
 
 T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
 
@@ -43,7 +43,7 @@ class PeptideVariantGraph():
             position.
     """
     def __init__(self, root:PVGNode, _id:str,
-            known_orf:List[int,int], cleavage_params:params.CleavageParams=None,
+            known_orf:List[int,int], cleavage_params:CleavageParams=None,
             orfs:Set[Tuple[int,int]]=None, reading_frames:List[PVGNode]=None,
             orf_id_map:Dict[int,str]=None, cds_start_nf:bool=False,
             hypermutated_region_warned:bool=False, denylist:Set[str]=None,

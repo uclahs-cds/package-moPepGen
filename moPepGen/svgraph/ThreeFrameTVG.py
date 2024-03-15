@@ -20,7 +20,10 @@ from moPepGen.svgraph.TVGNodeCollapser import TVGNodeCollapser
 
 
 if TYPE_CHECKING:
-    from moPepGen import gtf
+    from moPepGen.gtf import GenomicAnnotation
+    from moPepGen.params import CleavageParams
+    from moPepGen.dna import DNASeqDict
+    from moPepGen.seqvar import VariantRecord
 
 class ThreeFrameTVG():
     """ Defines the DAG data structure for the transcript and its variants.
@@ -38,14 +41,14 @@ class ThreeFrameTVG():
         global_variant (VariantRecord)
         id (str)
     """
-    def __init__(self, seq:Union[dna.DNASeqRecordWithCoordinates,None],
+    def __init__(self, seq:Union[DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
-            mrna_end_nf:bool=False, global_variant:seqvar.VariantRecord=None,
+            mrna_end_nf:bool=False, global_variant:VariantRecord=None,
             coordinate_feature_type:str=None, coordinate_feature_id:str=None,
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
-            cleavage_params:params.CleavageParams=None, gene_id:str=None,
-            sect_variants:List[seqvar.VariantRecordWithCoordinate]=None,
+            cleavage_params:CleavageParams=None, gene_id:str=None,
+            sect_variants:List[VariantRecordWithCoordinate]=None,
             max_adjacent_as_mnv:int=2):
         """ Constructor to create a TranscriptVariantGraph object. """
         self.seq = seq
@@ -299,9 +302,9 @@ class ThreeFrameTVG():
                         queue.append(out_node)
         return targets
 
-    def gather_sect_variants(self, anno:gtf.GenomicAnnotation):
+    def gather_sect_variants(self, anno:GenomicAnnotation):
         """ Create selenocysteine trunction map """
-        sect_variants:List[seqvar.VariantRecordWithCoordinate] = []
+        sect_variants:List[VariantRecordWithCoordinate] = []
         for sec in self.seq.selenocysteine:
             sect_var = seqvar.create_variant_sect(anno, self.id, sec.start)
             sect_loc = FeatureLocation(sec.start, sec.end)
@@ -316,10 +319,10 @@ class ThreeFrameTVG():
         sequence """
         return node.get_orf_start(i) % 3
 
-    def create_node(self, seq:dna.DNASeqRecordWithCoordinates,
-            variants:List[seqvar.VariantRecordWithCoordinate]=None,
+    def create_node(self, seq:DNASeqRecordWithCoordinates,
+            variants:List[VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
-            subgraph_id:str=None, level:int=0, global_variant:seqvar.VariantRecord=None
+            subgraph_id:str=None, level:int=0, global_variant:VariantRecord=None
             ) -> TVGNode:
         """ create a node """
         return TVGNode(
@@ -373,7 +376,7 @@ class ThreeFrameTVG():
         return left_node, right_node
 
     def apply_variant(self, source:TVGNode, target:TVGNode,
-            variant:seqvar.VariantRecord) -> TVGNode:
+            variant:VariantRecord) -> TVGNode:
         """ Apply a given variant to the graph.
 
         For a given genomic variant with the coordinates of the transcript,
@@ -385,7 +388,7 @@ class ThreeFrameTVG():
 
         Args:
             node [node]: The node where the variant to be add.
-            variant [seqvar.VariantRecord]: The variant record.
+            variant [VariantRecord]: The variant record.
 
         Returns:
             The reference node (unmutated) with the same location as the
@@ -493,9 +496,9 @@ class ThreeFrameTVG():
         return returns
 
     def insert_flanking_variant(self, cursors:List[TVGNode],
-            var:seqvar.VariantRecordWithCoordinate,
+            var:VariantRecordWithCoordinate,
             seq:DNASeqRecordWithCoordinates,
-            variants:List[seqvar.VariantRecord], position:int,
+            variants:List[VariantRecord], position:int,
             attach_directly:bool=False, known_orf_index:int=None,
             coordinate_feature_type:str=None, coordinate_feature_id:str=None
             ) -> List[TVGNode]:
@@ -607,11 +610,11 @@ class ThreeFrameTVG():
 
         return var_tails
 
-    def apply_fusion(self, cursors:List[TVGNode], variant:seqvar.VariantRecord,
-            variant_pool:VariantRecordPoolOnDisk, genome:dna.DNASeqDict,
-            anno:gtf.GenomicAnnotation,
-            tx_seqs:Dict[str,dna.DNASeqRecordWithCoordinates]=None,
-            gene_seqs:Dict[str,dna.DNASeqRecordWithCoordinates]=None,
+    def apply_fusion(self, cursors:List[TVGNode], variant:VariantRecord,
+            variant_pool:VariantRecordPoolOnDisk, genome:DNASeqDict,
+            anno:GenomicAnnotation,
+            tx_seqs:Dict[str,DNASeqRecordWithCoordinates]=None,
+            gene_seqs:Dict[str,DNASeqRecordWithCoordinates]=None,
             known_orf_index:int=None
             ) -> List[TVGNode]:
         """ Apply a fusion variant, by creating a subgraph of the donor
@@ -763,8 +766,8 @@ class ThreeFrameTVG():
 
     def _apply_insertion(self, cursors:List[TVGNode],
             var:seqvar.VariantRecordWithCoordinate,
-            seq:dna.DNASeqRecordWithCoordinates,
-            variants:List[seqvar.VariantRecord], active_frames:List[bool],
+            seq:DNASeqRecordWithCoordinates,
+            variants:List[VariantRecord], active_frames:List[bool],
             coordinate_feature_type:str, coordinate_feature_id:str
         ) -> List[TVGNode]:
         """ This is a wrapper function to apply insertions to the graph. It can
@@ -887,10 +890,10 @@ class ThreeFrameTVG():
         return cursors
 
     def apply_insertion(self, cursors:List[TVGNode],
-            variant:seqvar.VariantRecord,
+            variant:VariantRecord,
             variant_pool:VariantRecordPoolOnDisk,
-            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
-            gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            genome:DNASeqDict, anno:GenomicAnnotation,
+            gene_seqs:Dict[str, DNASeqRecordWithCoordinates]=None,
             active_frames:List[bool]=None
             ) -> List[TVGNode]:
         """ Apply an insertion into the the TVG graph. """
@@ -941,10 +944,10 @@ class ThreeFrameTVG():
         )
 
     def apply_substitution(self, cursors:List[TVGNode],
-            variant:seqvar.VariantRecord,
+            variant:VariantRecord,
             variant_pool:VariantRecordPoolOnDisk,
-            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
-            gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            genome:DNASeqDict, anno:GenomicAnnotation,
+            gene_seqs:Dict[str, DNASeqRecordWithCoordinates]=None,
             active_frames:List[bool]=None
             ) -> List[TVGNode]:
         """ Apply a substitution variant into the graph """
@@ -978,11 +981,11 @@ class ThreeFrameTVG():
         )
 
 
-    def create_variant_graph(self, variants:List[seqvar.VariantRecord],
+    def create_variant_graph(self, variants:List[VariantRecord],
             variant_pool:Union[VariantRecordWithCoordinate, VariantRecordPoolOnDisk],
-            genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
-            tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
-            gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates]=None,
+            genome:DNASeqDict, anno:GenomicAnnotation,
+            tx_seqs:Dict[str, DNASeqRecordWithCoordinates]=None,
+            gene_seqs:Dict[str, DNASeqRecordWithCoordinates]=None,
             active_frames:List[bool]=None, known_orf_index:int=None,
             unmutated_start_size:int=3) -> None:
         """ Create a variant graph.
