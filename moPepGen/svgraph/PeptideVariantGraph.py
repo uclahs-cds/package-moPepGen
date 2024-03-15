@@ -16,6 +16,8 @@ from moPepGen.svgraph.PVGNodeCollapser import PVGNodeCollapser, PVGNodePopCollap
 
 if TYPE_CHECKING:
     from .VariantPeptideDict import AnnotatedPeptideLabel
+    from moPepGen.circ import CircRNAModel
+    from moPepGen.seqvar.VariantRecord import VariantRecord
 
 T = Tuple[Set[PVGNode],Dict[PVGNode,List[PVGNode]]]
 
@@ -641,8 +643,8 @@ class PeptideVariantGraph():
 
     def create_cleavage_graph(self) -> None:
         """ Form a cleavage graph from a variant graph. After calling this
-        method, every each in the graph should represent a cleavage in the
-        sequence of the pull peptide of reference and variated.
+        method, each in the graph should represent a cleavage in the
+        sequence of the pull peptide of reference and variant.
 
         Args:
             rule (str): The rule for enzymatic cleavage, e.g., trypsin.
@@ -784,30 +786,43 @@ class PeptideVariantGraph():
         self.orfs.add(tuple(orf))
 
     def create_orf_id_map(self) -> None:
-        """ Creates and map for ORF start site and its ID (ORF1, ORF2, etc) """
+        """ Creates a map for ORF start site and its ID (ORF1, ORF2, etc) """
         orfs = list(self.orfs)
         orfs.sort()
         self.orf_id_map = {v:f"ORF{i+1}" for i,v in enumerate(orfs)}
 
     def call_variant_peptides(self, check_variants:bool=True,
             check_orf:bool=False, keep_all_occurrence:bool=True, denylist:Set[str]=None,
-            circ_rna:circ.CircRNAModel=None, orf_assignment:str='max',
-            truncate_sec:bool=False, w2f:bool=False, check_external_variants:bool=True
+            circ_rna:CircRNAModel=None, orf_assignment:str='max',
+            backsplicing_only:bool=False, truncate_sec:bool=False, w2f:bool=False,
+            check_external_variants:bool=True
             ) -> Dict[Seq, List[AnnotatedPeptideLabel]]:
-        """ Walk through the graph and find all variated peptides.
+        """ Walk through the graph and find all noncanonical peptides.
 
         Args:
-            miscleavage (int): Number of miscleavages allowed.
-            check_variants (bool): When true, only peptides that carries at
-                least 1 variant are kept. And when false, all unique peptides
-                are reported.
-            check_orf (bool): When true, the ORF ID will be added to the
-                variant peptide label.
-            keep_all_occurrence: Whether to keep all occurance of the peptide
-                within the graph/transcript.
-
-        Return:
-            A set of aa.AminoAcidSeqRecord.
+        - miscleavage (int): Number of miscleavages allowed.
+        - check_variants (bool): When true, only peptides that carry at
+            least 1 variant are kept. When false, all unique peptides
+            are reported.
+        - check_orf (bool): When true, the ORF ID will be added to the
+            variant peptide label.
+        - keep_all_occurrence (bool): Whether to keep all occurences of the
+            peptide within the graph/transcript.
+        - denylist (Set[str]): Denylist of peptides to be called as variant
+            peptides.
+        - circ_rna (CircRNAModel): The circRNA from which variant peptides are
+            called.
+        - orf_assignment (str): ORF assignment strategy. Options: ['max', 'min']
+        - backsplicing_only (bool): Whether to only output variant peptides
+            spanning the backsplicing site.
+        - truncate_sec (bool): Whether to consider selenocysteine termination
+            events.
+        - w2f (bool): Whether to consider W>F (tryptophan to phenylalanine)
+            substituants.
+        - check_external_variants (bool): When set to `False`, peptides not
+            harbourin any external variants will also be output. This can
+            be used when calling noncanonical peptides from noncoding
+            transcripts.
         """
         if self.is_circ_rna() and not circ_rna:
             raise ValueError('`circ_rna` must be given.')
@@ -828,7 +843,8 @@ class PeptideVariantGraph():
         traversal = PVGTraversal(
             check_variants=check_external_variants,
             check_orf=check_orf, queue=queue, pool=peptide_pool,
-            circ_rna=circ_rna, orf_assignment=orf_assignment
+            circ_rna=circ_rna, orf_assignment=orf_assignment,
+            backsplicing_only=backsplicing_only
         )
 
         if self.has_known_orf():
@@ -919,7 +935,8 @@ class PeptideVariantGraph():
                 additional_variants=additional_variants,
                 denylist=self.denylist,
                 leading_node=target_node,
-                subgraphs=self.subgraphs
+                subgraphs=self.subgraphs,
+                backsplicing_only=traversal.backsplicing_only
             )
             self.remove_node(node_copy)
 
@@ -1002,7 +1019,8 @@ class PeptideVariantGraph():
                 additional_variants=additional_variants,
                 denylist=self.denylist,
                 leading_node=target_node,
-                subgraphs=self.subgraphs
+                subgraphs=self.subgraphs,
+                backsplicing_only=traversal.backsplicing_only
             )
             cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
@@ -1199,7 +1217,8 @@ class PeptideVariantGraph():
                 denylist=self.denylist,
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
-                circ_rna=traversal.circ_rna
+                circ_rna=traversal.circ_rna,
+                backsplicing_only=traversal.backsplicing_only
             )
         for node in trash:
             self.remove_node(node)
@@ -1288,7 +1307,7 @@ class PeptideVariantGraph():
 class PVGCursor():
     """ Helper class for cursors when graph traversal to call peptides. """
     def __init__(self, in_node:PVGNode, out_node:PVGNode, in_cds:bool,
-            orfs:List[PVGOrf]=None, cleavage_gain:List[seqvar.VariantRecord]=None,
+            orfs:List[PVGOrf]=None, cleavage_gain:List[VariantRecord]=None,
             finding_start_site:bool=True):
         """ constructor """
         self.in_node = in_node
@@ -1306,10 +1325,10 @@ class PVGTraversal():
     """
     def __init__(self, check_variants:bool, check_orf:bool,
             pool:VariantPeptideDict, known_orf_tx:Tuple[int,int]=None,
-            known_orf_aa:Tuple[int,int]=None, circ_rna:circ.CircRNAModel=None,
+            known_orf_aa:Tuple[int,int]=None, circ_rna:CircRNAModel=None,
             queue:Deque[PVGCursor]=None,
             stack:Dict[PVGNode, Dict[PVGNode, PVGCursor]]=None,
-            orf_assignment:str='max'):
+            orf_assignment:str='max', backsplicing_only:bool=False):
         """ constructor """
         self.check_variants = check_variants
         self.check_orf = check_orf
@@ -1320,6 +1339,7 @@ class PVGTraversal():
         self.pool = pool
         self.stack = stack or {}
         self.orf_assignment = orf_assignment
+        self.backsplicing_only = backsplicing_only
 
     def is_done(self) -> bool:
         """ Check if the traversal is done """

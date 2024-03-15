@@ -29,7 +29,9 @@ class ThreeFrameCVG(ThreeFrameTVG):
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=False,
             circ_record:circ.CircRNAModel=None, attrs:dict=None,
-            subgraphs:SubgraphTree=None, cleavage_params:params.CleavageParams=None,
+            coordinate_feature_type:str=None, coordinate_feature_id:str=None,
+            subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
+            cleavage_params:params.CleavageParams=None,
             max_adjacent_as_mnv:int=2):
         """ Construct a CircularVariantGraph
 
@@ -64,7 +66,10 @@ class ThreeFrameCVG(ThreeFrameTVG):
             seq=seq, _id=_id, root=root, reading_frames=reading_frames,
             cds_start_nf=cds_start_nf, has_known_orf=has_known_orf,
             global_variant=circ_variant, subgraphs=subgraphs,
-            cleavage_params=cleavage_params, max_adjacent_as_mnv=max_adjacent_as_mnv
+            cleavage_params=cleavage_params, max_adjacent_as_mnv=max_adjacent_as_mnv,
+            coordinate_feature_type=coordinate_feature_type,
+            coordinate_feature_id=coordinate_feature_id,
+            hypermutated_region_warned=hypermutated_region_warned
         )
 
     def get_circ_variant_with_coordinate(self) -> seqvar.VariantRecordWithCoordinate:
@@ -149,7 +154,7 @@ class ThreeFrameCVG(ThreeFrameTVG):
             self.subgraphs.add_subgraph(
                 child_id=sub.id, parent_id=cur.id, level=sub.root.level,
                 start=self.seq.locations[-1].ref.end, end=self.seq.locations[-1].ref.end,
-                variant=self.global_variant, feature_type='gene', feature_id=self.gene_id
+                variant=self.global_variant, feature_type='gene', feature_id=self.circ.gene_id
             )
             for edge in sub.root.out_edges:
                 root = edge.out_node

@@ -10,6 +10,7 @@ from Bio import SeqIO
 from moPepGen.seqvar.GVFMetadata import GVFMetadata
 from moPepGen import cli, seqvar
 from moPepGen.aa import VariantPeptideIdentifier as vpi
+from moPepGen.svgraph.VariantPeptideTable import VariantPeptideTable
 
 
 def create_base_args() -> argparse.Namespace:
@@ -24,6 +25,7 @@ def create_base_args() -> argparse.Namespace:
     args.output_path = None
     args.graph_output_dir = None
     args.max_adjacent_as_mnv = 0
+    args.backsplicing_only = False
     args.selenocysteine_termination = False
     args.w2f_reassignment = False
     args.max_variants_per_node = [7]
@@ -178,6 +180,31 @@ class TestCallVariantPeptides(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_backsplicing_only(self):
+        """ Variant peptides called from circRNA with --backsplicing-only should
+        only have those spanning backsplicing site. """
+        args = create_base_args()
+        args.input_path = [
+            self.data_dir/'vep'/'vep_gSNP.gvf',
+            self.data_dir/'circRNA'/'circ_rna.gvf'
+        ]
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.backsplicing_only = True
+        cli.call_variant_peptide(args)
+        with open(self.work_dir/'vep_moPepGen_peptide_table.txt', 'rt') as handle:
+            table = VariantPeptideTable(handle)
+            table.generate_index()
+            for seq in table.index:
+                peptide_anno = table.load_peptide_annotation(seq)
+                for header, anno in peptide_anno.items():
+                    if header.startswith('CIRC'):
+                        self.assertGreater(len(anno.segments), 1)
+                        for seg1, seg2 in zip(anno.segments, anno.segments[1:]):
+                            self.assertGreater(seg1.ref, seg2.ref)
 
     def test_call_variant_peptide_circ_no_canoincal(self):
         """ Variant peptides called from circRNA should not contain those that

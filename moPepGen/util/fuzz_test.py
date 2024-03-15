@@ -619,6 +619,7 @@ class FuzzTestCase():
         else:
             args.graph_output_dir = None
         args.quiet = True
+        args.backsplicing_only = False
         args.max_adjacent_as_mnv = 2
         args.selenocysteine_termination = True
         args.w2f_reassignment = True

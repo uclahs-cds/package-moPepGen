@@ -825,6 +825,19 @@ class PVGNode():
         # raise ValueError('Can not find ORF')
         return -1
 
+    def get_subgraph_id_set(self) -> Set[str]:
+        """ Get all subgraph ID as set """
+        ids = set()
+        for loc in self.seq.locations:
+            if len(loc) == 0:
+                continue
+            ids.add(loc.ref.seqname)
+        for v in self.variants:
+            if v.variant.is_circ_rna():
+                continue
+            ids.add(v.location.seqname)
+        return ids
+
     def get_subgraph_id_at(self, i:int) -> str:
         """ Get the subgraph ID at the given position """
         for loc in self.seq.locations:

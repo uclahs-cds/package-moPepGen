@@ -6,7 +6,7 @@ import copy
 from typing import Deque, Dict, Iterable, List, Set, Tuple, TYPE_CHECKING
 from Bio.Seq import Seq
 from Bio import SeqUtils
-from moPepGen import aa, circ, get_equivalent, seqvar
+from moPepGen import aa, get_equivalent, seqvar
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
@@ -17,7 +17,8 @@ from moPepGen.seqvar import create_variant_w2f
 
 if TYPE_CHECKING:
     from moPepGen.seqvar.VariantRecord import VariantRecord
-    from moPepGen import params
+    from moPepGen.params import CleavageParams
+    from moPepGen.circ import CircRNAModel
 
 class VariantPeptideMetadata():
     """ Variant peptide metadata """
@@ -141,11 +142,11 @@ class MiscleavedNodeSeries():
             self._len = sum(len(x.seq.seq) for x in self.nodes)
         return self._len
 
-    def is_too_short(self, param:params.CleavageParams) -> bool:
+    def is_too_short(self, param:CleavageParams) -> bool:
         """ Checks whether the sequence is too short """
         return len(self) < param.min_length
 
-    def is_too_long(self, param:params.CleavageParams) -> bool:
+    def is_too_long(self, param:CleavageParams) -> bool:
         """ Checks whether the sequence is too long """
         return not(
             len(self) <= param.max_length
@@ -183,9 +184,8 @@ class MiscleavedNodes():
           are called from. This node must present in the PVG graph.
     """
     def __init__(self, data:Deque[MiscleavedNodeSeries],
-            cleavage_params:params.CleavageParams,
-            orfs:List[PVGOrf]=None, tx_id:str=None, gene_id:str=None,
-            leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
+            cleavage_params:CleavageParams, orfs:List[PVGOrf]=None, tx_id:str=None,
+            gene_id:str=None, leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
             is_circ_rna:bool=False):
         """ constructor """
         self.data = data
@@ -219,7 +219,7 @@ class MiscleavedNodes():
         return min_length <= size <= max_length
 
     def create_peptide_segments(self, nodes:List[PVGNode]) -> List[PeptideSegment]:
-        """ create petpdie segments """
+        """ create peptide segments """
         ref_segments:List[PeptideSegment] = []
         var_segments:List[PeptideSegment] = []
         offset = 0
@@ -268,7 +268,7 @@ class MiscleavedNodes():
     def join_miscleaved_peptides(self, pool:TypeVariantPeptideMetadataMap,
             check_variants:bool, additional_variants:List[VariantRecord],
             denylist:Set[str], is_start_codon:bool=False,
-            circ_rna:circ.CircRNAModel=None, truncate_sec:bool=False,
+            circ_rna:CircRNAModel=None, truncate_sec:bool=False,
             check_external_variants:bool=True, check_orf:bool=False
             ) -> Iterable[Tuple[Seq, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
@@ -564,7 +564,7 @@ class VariantPeptideDict():
             seqs:Set[Seq]=None, labels:Dict[str,int]=None,
             global_variant:VariantRecord=None, gene_id:str=None,
             truncate_sec:bool=False, w2f:bool=False, check_external_variants:bool=True,
-            cleavage_params:params.CleavageParams=None, check_orf:bool=False):
+            cleavage_params:CleavageParams=None, check_orf:bool=False):
         """ constructor """
         self.tx_id = tx_id
         self.peptides = peptides or {}
@@ -579,8 +579,9 @@ class VariantPeptideDict():
         self.check_orf = check_orf
 
     def find_miscleaved_nodes(self, node:PVGNode, orfs:List[PVGOrf],
-            cleavage_params:params.CleavageParams, tx_id:str, gene_id:str,
-            leading_node:PVGNode, subgraphs:SubgraphTree, is_circ_rna:bool
+            cleavage_params:CleavageParams, tx_id:str, gene_id:str,
+            leading_node:PVGNode, subgraphs:SubgraphTree, is_circ_rna:bool,
+            backsplicing_only:bool
             ) -> MiscleavedNodes:
         """ Find all miscleaved nodes.
 
@@ -618,7 +619,8 @@ class VariantPeptideDict():
             is_circ_rna=is_circ_rna
         )
 
-        if not (node.cpop_collapsed or node.truncated):
+        if not (node.cpop_collapsed or node.truncated) and \
+                (not backsplicing_only or len(node.get_subgraph_id_set()) > 1):
             additional_variants = leading_node.get_downstream_stop_altering_variants()
             series = MiscleavedNodeSeries([node], additional_variants)
             if series.is_too_long(self.cleavage_params) and not node.selenocysteines:
@@ -663,6 +665,12 @@ class VariantPeptideDict():
 
                 new_batch.append(_node)
 
+                if backsplicing_only:
+                    # Skip peptides not spaning the backsplicing the site.
+                    subgraph_ids = set().union(*[n.get_subgraph_id_set() for n in cur_batch])
+                    if len(subgraph_ids) == 1:
+                        continue
+
                 additional_variants = _node.get_downstream_stop_altering_variants()
 
                 cur_vars = set(batch_vars.keys())
@@ -687,35 +695,42 @@ class VariantPeptideDict():
         return nodes
 
     def add_miscleaved_sequences(self, node:PVGNode, orfs:List[PVGOrf],
-            cleavage_params:params.CleavageParams,
+            cleavage_params:CleavageParams,
             check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord], denylist:Set[str],
             leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
-            circ_rna:circ.CircRNAModel=None):
+            circ_rna:CircRNAModel=None, backsplicing_only:bool=False):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
         with n ranges from 1 to miscleavages.
 
         Args:
-            - `node` (PVGNode): The start node.
-            - `orf` (List[int, int]): The start and end position of ORF.
-            - `cleavage_params` (CleavageParams): Cleavage related parameters.
-            - `check_variants` (bool): Whether to check variants.
-            - `is_start_codon` (bool): Whether the peptide starts with the start
-              codon (M).
-            - `additional_variants` (List[VariantRecord]): Additional variants,
-              e.g., start gain, cleavage gain, stop lost.
-            - `denylist` (Set[str]): Peptide sequences that should be excluded.
-            - `leading_node` (PVGNode): The start node that the miscleaved
-              peptides are called from. This node must present in the PVG graph.
+        - `node` (PVGNode): The start node.
+        - `orfs` (List[int, int]): The start and end position of ORF.
+        - `cleavage_params` (CleavageParams): Cleavage related parameters.
+        - `check_variants` (bool): Whether to check variants.
+        - `is_start_codon` (bool): Whether the peptide starts with the start
+            codon (M).
+        - `additional_variants` (List[VariantRecord]): Additional variants,
+            e.g., start gain, cleavage gain, stop lost.
+        - `denylist` (Set[str]): Peptide sequences that should be excluded.
+        - `leading_node` (PVGNode): The start node that the miscleaved
+            peptides are called from. This node must be present in the PVG graph.
+        - `subgraphs` (SubgraphTree): The subgraph tree that holds how subgraphs
+            are incorporated into the main graph.
+        - `circ_rna` (CircRNAModel): The circRNA molecular model from which variant
+            peptides are being called.
+        - `backsplicing_only` (bool): Whether to only output variant peptides
+            spanning the backsplicing site.
         """
         if leading_node is None:
             leading_node = node
         miscleaved_nodes = self.find_miscleaved_nodes(
             node=node, orfs=orfs, cleavage_params=cleavage_params,
             tx_id=self.tx_id, gene_id=self.gene_id, leading_node=leading_node,
-            subgraphs=subgraphs, is_circ_rna=circ_rna is not None
+            subgraphs=subgraphs, is_circ_rna=circ_rna is not None,
+            backsplicing_only=backsplicing_only
         )
         if self.global_variant and self.global_variant not in additional_variants:
             additional_variants.append(self.global_variant)

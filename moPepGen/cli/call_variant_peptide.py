@@ -79,6 +79,11 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         'reassignment.'
     )
     p.add_argument(
+        '--backsplicing-only',
+        action='store_true',
+        help='For circRNA, only keep noncanonical peptides spaning the backsplicing site.'
+    )
+    p.add_argument(
         '--max-variants-per-node',
         type=int,
         help='Maximal number of variants per node. This argument can be useful'
@@ -201,6 +206,7 @@ class VariantPeptideCaller():
         )
         self.max_adjacent_as_mnv = args.max_adjacent_as_mnv
         self.truncate_sec:bool = args.selenocysteine_termination
+        self.backsplicing_only:bool = args.backsplicing_only
         self.w2f_reassignment = args.w2f_reassignment
         self.noncanonical_transcripts = args.noncanonical_transcripts
         self.invalid_protein_as_noncoding:bool = args.invalid_protein_as_noncoding
@@ -312,6 +318,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         max_adjacent_as_mnv:bool,
         truncate_sec:bool,
         w2f_reassignment:bool,
+        backsplicing_only:bool,
         save_graph:bool,
         **kwargs
         ) -> Tuple[Dict[Seq, List[AnnotatedPeptideLabel]], str, TypeDGraphs, TypePGraphs]:
@@ -399,7 +406,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                 cleavage_params=cleavage_params,
                 max_adjacent_as_mnv=max_adjacent_as_mnv,
                 w2f_reassignment=w2f_reassignment, denylist=denylist,
-                save_graph=save_graph
+                save_graph=save_graph, backsplicing_only=backsplicing_only
             )
 
         except:
@@ -551,7 +558,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 'save_graph': caller.graph_output_dir is not None,
                 'timeout': args.timeout_seconds,
                 'max_variants_per_node': tuple(args.max_variants_per_node),
-                'additional_variants_per_misc': tuple(args.additional_variants_per_misc)
+                'additional_variants_per_misc': tuple(args.additional_variants_per_misc),
+                'backsplicing_only': args.backsplicing_only
             }
             dispatches.append(dispatch)
 
@@ -735,7 +743,8 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
-        w2f_reassignment:bool, denylist:Set[str], save_graph:bool
+        backsplicing_only:bool, w2f_reassignment:bool, denylist:Set[str],
+        save_graph:bool
         )-> TypeCallPeptideReturnData:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
@@ -770,7 +779,9 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph = svgraph.ThreeFrameCVG(
         circ_seq, _id=record.id, circ_record=record,
         cleavage_params=cleavage_params,
-        max_adjacent_as_mnv=max_adjacent_as_mnv
+        max_adjacent_as_mnv=max_adjacent_as_mnv,
+        coordinate_feature_type='gene',
+        coordinate_feature_id=gene_id
     )
     cgraph.init_three_frames()
     cgraph.create_variant_circ_graph(variant_records)
@@ -780,7 +791,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     pgraph = cgraph.translate()
     pgraph.create_cleavage_graph()
     peptide_map = pgraph.call_variant_peptides(
-        denylist=denylist, circ_rna=record,
+        denylist=denylist, circ_rna=record, backsplicing_only=backsplicing_only,
         w2f=w2f_reassignment, check_external_variants=True
     )
     if not save_graph:
