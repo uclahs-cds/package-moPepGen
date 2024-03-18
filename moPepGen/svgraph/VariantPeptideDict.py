@@ -666,7 +666,7 @@ class VariantPeptideDict():
                 new_batch.append(_node)
 
                 if backsplicing_only:
-                    # Skip peptides not spaning the backsplicing the site.
+                    # Skip peptides not spaning the backsplicing site
                     subgraph_ids = set().union(*[n.get_subgraph_id_set() for n in cur_batch])
                     if len(subgraph_ids) == 1:
                         continue
