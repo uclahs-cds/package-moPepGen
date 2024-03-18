@@ -10,13 +10,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [1.3.1]
+## [1.3.1] - 2024-03-18
 
 ### Added:
 
 - Flag `--backsplicing-only` added to `callVariant` to allow only calling noncanonical peptides spanning backsplicing site from circRNA events. #858
 
-## [1.3.0] - 2024-3-11
+## [1.3.0] - 2024-03-11
 
 ### Fixed:
 
