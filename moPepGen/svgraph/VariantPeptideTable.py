@@ -88,7 +88,7 @@ class VariantPeptideTable:
                 fields = dict(zip(VARIANT_PEPTIDE_TABLE_HEADERS, line.split('\t')))
                 if seq != fields['sequence']:
                     raise ValueError(
-                        f"Peptide ({seq}) do not match with table record ({fields[0]})."
+                        f"Peptide ({seq}) does not match with table record ({fields[0]})."
                     )
                 header = fields['header']
                 label = anno.setdefault(header, AnnotatedPeptideLabel(label=header, segments=[]))
