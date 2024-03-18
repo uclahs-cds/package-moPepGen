@@ -4,15 +4,17 @@ from __future__ import annotations
 import copy
 from typing import Dict, Union, List, TYPE_CHECKING
 from moPepGen.SeqFeature import FeatureLocation
-from moPepGen import seqvar, params
+from moPepGen import seqvar
 from .ThreeFrameTVG import ThreeFrameTVG
 from .TVGNode import TVGNode
 
 
 if TYPE_CHECKING:
-    from moPepGen import circ
+    from moPepGen.circ import CircRNAModel
     from moPepGen.dna import DNASeqRecordWithCoordinates
     from .SubgraphTree import SubgraphTree
+    from moPepGen.params import CleavageParams
+    from moPepGen.seqvar import VariantRecordWithCoordinate, VariantRecord
 
 class ThreeFrameCVG(ThreeFrameTVG):
     """ Defines a directed cyclic graph for circular nucleotide molecules such
@@ -28,8 +30,10 @@ class ThreeFrameCVG(ThreeFrameTVG):
     def __init__(self, seq:Union[DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=False,
-            circ_record:circ.CircRNAModel=None, attrs:dict=None,
-            subgraphs:SubgraphTree=None, cleavage_params:params.CleavageParams=None,
+            circ_record:CircRNAModel=None, attrs:dict=None,
+            coordinate_feature_type:str=None, coordinate_feature_id:str=None,
+            subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
+            cleavage_params:CleavageParams=None,
             max_adjacent_as_mnv:int=2):
         """ Construct a CircularVariantGraph
 
@@ -64,10 +68,13 @@ class ThreeFrameCVG(ThreeFrameTVG):
             seq=seq, _id=_id, root=root, reading_frames=reading_frames,
             cds_start_nf=cds_start_nf, has_known_orf=has_known_orf,
             global_variant=circ_variant, subgraphs=subgraphs,
-            cleavage_params=cleavage_params, max_adjacent_as_mnv=max_adjacent_as_mnv
+            cleavage_params=cleavage_params, max_adjacent_as_mnv=max_adjacent_as_mnv,
+            coordinate_feature_type=coordinate_feature_type,
+            coordinate_feature_id=coordinate_feature_id,
+            hypermutated_region_warned=hypermutated_region_warned
         )
 
-    def get_circ_variant_with_coordinate(self) -> seqvar.VariantRecordWithCoordinate:
+    def get_circ_variant_with_coordinate(self) -> VariantRecordWithCoordinate:
         """ Add a variant record to the frameshifting of the root node. This
         will treat all peptides as variant peptide in the later steps. """
         location = FeatureLocation(
@@ -90,7 +97,7 @@ class ThreeFrameCVG(ThreeFrameTVG):
             node.variants.append(var_i)
             self.add_edge(node, root, 'reference')
 
-    def create_variant_circ_graph(self, variants:List[seqvar.VariantRecord]):
+    def create_variant_circ_graph(self, variants:List[VariantRecord]):
         """ Apply a list of variants to the graph. Variants not in the
         range are ignored. Variants at the first nucleotide of each fragment
         of the sequence are also ignored, because it causes the exon splice
@@ -149,7 +156,7 @@ class ThreeFrameCVG(ThreeFrameTVG):
             self.subgraphs.add_subgraph(
                 child_id=sub.id, parent_id=cur.id, level=sub.root.level,
                 start=self.seq.locations[-1].ref.end, end=self.seq.locations[-1].ref.end,
-                variant=self.global_variant, feature_type='gene', feature_id=self.gene_id
+                variant=self.global_variant, feature_type='gene', feature_id=self.circ.gene_id
             )
             for edge in sub.root.out_edges:
                 root = edge.out_node
