@@ -707,7 +707,7 @@ class VariantPeptideDict():
 
         Args:
         - `node` (PVGNode): The start node.
-        - `orfs` (List[int, int]): The start and end position of ORF.
+        - `orfs` (List[int, int]): The start and end position of the ORF.
         - `cleavage_params` (CleavageParams): Cleavage related parameters.
         - `check_variants` (bool): Whether to check variants.
         - `is_start_codon` (bool): Whether the peptide starts with the start
