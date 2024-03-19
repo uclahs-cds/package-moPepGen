@@ -795,7 +795,7 @@ class PeptideVariantGraph():
             check_orf:bool=False, keep_all_occurrence:bool=True, denylist:Set[str]=None,
             circ_rna:CircRNAModel=None, orf_assignment:str='max',
             backsplicing_only:bool=False, truncate_sec:bool=False, w2f:bool=False,
-            check_external_variants:bool=True
+            check_external_variants:bool=True, find_ass:bool=False
             ) -> Dict[Seq, List[AnnotatedPeptideLabel]]:
         """ Walk through the graph and find all noncanonical peptides.
 
@@ -823,6 +823,7 @@ class PeptideVariantGraph():
             harbourin any external variants will also be output. This can
             be used when calling noncanonical peptides from noncoding
             transcripts.
+        - find_ass (bool): Whether to find alternative start sites.
         """
         if self.is_circ_rna() and not circ_rna:
             raise ValueError('`circ_rna` must be given.')
@@ -844,7 +845,8 @@ class PeptideVariantGraph():
             check_variants=check_external_variants,
             check_orf=check_orf, queue=queue, pool=peptide_pool,
             circ_rna=circ_rna, orf_assignment=orf_assignment,
-            backsplicing_only=backsplicing_only
+            backsplicing_only=backsplicing_only,
+            find_ass=find_ass
         )
 
         if self.has_known_orf():
@@ -870,7 +872,7 @@ class PeptideVariantGraph():
                 self.call_and_stage_silently(
                     cursor=cur, traversal=traversal
                 )
-            elif self.has_known_orf():
+            elif self.has_known_orf() and not traversal.find_ass:
                 # add out nodes to the queue
                 self.call_and_stage_known_orf(
                     cursor=cur,
@@ -888,7 +890,8 @@ class PeptideVariantGraph():
         peptide_pool.translational_modification(w2f, self.denylist)
 
         return peptide_pool.get_peptide_sequences(
-            keep_all_occurrence=keep_all_occurrence, orf_id_map=self.orf_id_map,
+            keep_all_occurrence=keep_all_occurrence,
+            orf_id_map=self.orf_id_map,
             check_variants=check_variants
         )
 
@@ -1207,6 +1210,8 @@ class PeptideVariantGraph():
             traversal.stage(target_node, out_node, cursor)
 
         for node, orfs, is_start_codon, additional_variants in node_list:
+            if traversal.find_ass and any(o == traversal.known_orf_tx[0] for o in orfs):
+                continue
             traversal.pool.add_miscleaved_sequences(
                 node=node,
                 orfs=orfs,
@@ -1318,7 +1323,6 @@ class PVGCursor():
         self.finding_start_site = finding_start_site
 
 
-
 class PVGTraversal():
     """ PVG Traversal. The purpose of this class is to facilitate the graph
     traversal to call variant peptides.
@@ -1328,7 +1332,8 @@ class PVGTraversal():
             known_orf_aa:Tuple[int,int]=None, circ_rna:CircRNAModel=None,
             queue:Deque[PVGCursor]=None,
             stack:Dict[PVGNode, Dict[PVGNode, PVGCursor]]=None,
-            orf_assignment:str='max', backsplicing_only:bool=False):
+            orf_assignment:str='max', backsplicing_only:bool=False,
+            find_ass:bool=False):
         """ constructor """
         self.check_variants = check_variants
         self.check_orf = check_orf
@@ -1340,6 +1345,7 @@ class PVGTraversal():
         self.stack = stack or {}
         self.orf_assignment = orf_assignment
         self.backsplicing_only = backsplicing_only
+        self.find_ass = find_ass
 
     def is_done(self) -> bool:
         """ Check if the traversal is done """
@@ -1424,6 +1430,12 @@ class PVGTraversal():
     def cmp_unknown_orf_check_orf(self, x:PVGCursor, y:PVGCursor) -> bool:
         """ comparison for unknown ORF and check ORFs. """
         # pylint: disable=R0911
+        if self.find_ass:
+            if any(o.orf[0] == self.known_orf_tx[0] for o in x.orfs):
+                return -1
+            if any(o.orf[0] == self.known_orf_tx[0] for o in y.orfs):
+                return 1
+
         if x.in_cds and not y.in_cds:
             return -1
         if not x.in_cds and y.in_cds:
@@ -1431,8 +1443,8 @@ class PVGTraversal():
         if not x.in_cds and not y.in_cds:
             return -1
 
-        x_orf = x.orfs[0]
-        y_orf = y.orfs[0]
+        x_orf = x.orfs[0].orf
+        y_orf = y.orfs[0].orf
         if x_orf[0] is not None and (y_orf[0] is None or y_orf[0] == -1):
             return -1
         if (x_orf[0] is None or x_orf[0] == -1) and y_orf[0] is not None:
@@ -1454,9 +1466,14 @@ class PVGTraversal():
             return -1 if sorted(x_start_gain)[0] > sorted(y_start_gain)[0] else 1
         return -1
 
-    @staticmethod
-    def comp_unknown_orf_keep_all_orfs(x:PVGCursor, y:PVGCursor) -> bool:
+    def comp_unknown_orf_keep_all_orfs(self, x:PVGCursor, y:PVGCursor) -> bool:
         """ comparison when all ORFs want to be kept (for circRNA) """
+        if self.find_ass:
+            if any(o.orf[0] == self.known_orf_tx[0] for o in x.orfs):
+                return -1
+            if any(o.orf[0] == self.known_orf_tx[0] for o in y.orfs):
+                return 1
+
         if x.in_cds and not y.in_cds:
             return -1
         if not x.in_cds and y.in_cds:

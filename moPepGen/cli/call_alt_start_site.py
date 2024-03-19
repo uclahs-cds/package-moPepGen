@@ -1,35 +1,35 @@
-""" `callNoncoding` calls novel peptide sequences from noncoding gene sequences.
-It finds all start codons of any noncoding gene. """
+""" `callAltStart` calls peptide sequences from coding transcript with alternative
+start site. """
 from __future__ import annotations
 import argparse
-from typing import TYPE_CHECKING, Set, List, Tuple, IO, Dict
+from typing import TYPE_CHECKING
 from pathlib import Path
-from Bio.SeqIO import FastaIO
 from moPepGen import params, svgraph, aa, get_logger, VARIANT_PEPTIDE_SOURCE_DELIMITER
-from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
 from moPepGen.err import ReferenceSeqnameNotFoundError
 from moPepGen.cli import common
+from moPepGen.cli.call_noncoding_peptide import get_orf_sequences, write_orf
 
 
 if TYPE_CHECKING:
+    from typing import Set, Tuple, List, Dict
     from Bio.Seq import Seq
-    from moPepGen.gtf import TranscriptAnnotationModel
     from moPepGen.dna import DNASeqDict
+    from moPepGen.gtf import TranscriptAnnotationModel
 
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
 # pylint: disable=W0212
-def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
-    """ CLI for moPepGen callNoncoding """
+def add_subparser_call_alt_start(subparsers:argparse._SubParsersAction):
+    """ CLI for moPepGen callAltStart """
     p:argparse.ArgumentParser = subparsers.add_parser(
-        name='callNoncoding',
-        help='Call non-canonical peptides from noncoding transcripts.',
+        name='callAltStart',
+        help='Call peptides from coding transcript with alternative start site.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-o', '--output-path',
         type=Path,
-        help='Output path to the noncanonical noncoding peptide FASTA.'
+        help='Output path to alternative start peptide FASTA.'
         f" Valid formats: {OUTPUT_FILE_FORMATS}",
         metavar='<file>',
         required=True
@@ -37,7 +37,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--output-orf',
         type=Path,
-        help='Output path to the FASTA file with noncanonical ORF sequences.'
+        help='Output path to the FASTA file with alternative start site ORF sequences.'
         f" Valid formats: {OUTPUT_FILE_FORMATS}",
         metavar='<file>',
         required=False,
@@ -85,12 +85,12 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     common.add_args_cleavage(p)
     common.add_args_debug_level(p)
 
-    p.set_defaults(func=call_noncoding_peptide)
+    p.set_defaults(func=call_alt_start)
     common.print_help_if_missing_args(p)
     return p
 
-def call_noncoding_peptide(args:argparse.Namespace) -> None:
-    """ Main entrypoint for calling noncoding peptide """
+def call_alt_start(args:argparse.Namespace) -> None:
+    """ Main entryponit for calling alternative start peptides. """
     logger = get_logger()
     common.validate_file_format(
         args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
@@ -117,7 +117,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
     inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)
 
-    noncanonical_pool = aa.VariantPeptidePool()
+    alt_start_pool = aa.VariantPeptidePool()
     orf_pool = []
 
     i = 0
@@ -129,13 +129,13 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
         if exclusion_biotypes and \
                 tx_model.transcript.biotype in exclusion_biotypes:
             continue
-        if tx_id in proteome:
+        if tx_id not in proteome:
             continue
         if tx_model.transcript_len() < args.min_tx_length:
             continue
 
         try:
-            peptides, orfs = call_noncoding_peptide_main(
+            peptides, orfs = call_alt_start_peptide_main(
                 tx_id=tx_id, tx_model=tx_model, genome=genome,
                 canonical_peptides=canonical_peptides,
                 cleavage_params=cleavage_params,
@@ -149,7 +149,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             orf_pool.extend(orfs)
 
             for peptide in peptides:
-                noncanonical_pool.add_peptide(peptide, canonical_peptides,
+                alt_start_pool.add_peptide(peptide, canonical_peptides,
                     cleavage_params)
         except ReferenceSeqnameNotFoundError as e:
             if not ReferenceSeqnameNotFoundError.raised:
@@ -163,20 +163,19 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
         if i % 5000 == 0:
             logger.info('%i transcripts processed.', i)
 
-    noncanonical_pool.write(args.output_path)
+    alt_start_pool.write(args.output_path)
     if args.output_orf:
         with open(args.output_orf, 'w') as handle:
             write_orf(orf_pool, handle)
 
     logger.info('Noncanonical peptide FASTA file written to disk.')
 
-
-def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
+def call_alt_start_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         genome:DNASeqDict, canonical_peptides:Set[str],
         cleavage_params:params.CleavageParams, orf_assignment:str,
         w2f_reassignment:bool
         ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
-    """ Call noncoding peptides """
+    """ call peptides from alternative start site """
     chrom = tx_model.transcript.location.seqname
     try:
         contig_seq = genome[chrom]
@@ -225,34 +224,3 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         )
     orfs = get_orf_sequences(pgraph, tx_id, tx_model.gene_id, tx_seq)
     return peptides, orfs
-
-def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str,
-        tx_seq:DNASeqRecordWithCoordinates) -> List[aa.AminoAcidSeqRecord]:
-    """ Get the full ORF sequences """
-    seqs = []
-    translate_seqs = [tx_seq[i:].translate() for i in range(3)]
-    for orf, orf_id in pgraph.orf_id_map.items():
-        orf_start = orf[0]
-        seq_start = int(orf_start / 3)
-        reading_frame_index = orf_start % 3
-        #seq_start = int((orf_start - node.orf[0]) / 3)
-        translate_seq = translate_seqs[reading_frame_index]
-        seq_len = translate_seq.seq[seq_start:].find('*')
-        if seq_len == -1:
-            seq_len = len(translate_seq.seq) - seq_start
-        orf_end = orf_start + seq_len * 3
-        seq_end = seq_start + seq_len
-        seqname = f"{tx_id}|{gene_id}|{orf_id}|{orf_start}-{orf_end}"
-        seq = translate_seq[seq_start:seq_end]
-        seq.id = seqname
-        seq.name = seqname
-        seq.description = seqname
-        seqs.append(seq)
-    return seqs
-
-def write_orf(orfs:List[aa.AminoAcidSeqRecord], handle:IO):
-    """ Write ORF sequences """
-    record2title = lambda x: x.description
-    writer = FastaIO.FastaWriter(handle, record2title=record2title)
-    for record in orfs:
-        writer.write_record(record)
