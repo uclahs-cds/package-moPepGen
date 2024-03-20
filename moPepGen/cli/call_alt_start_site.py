@@ -44,13 +44,6 @@ def add_subparser_call_alt_start(subparsers:argparse._SubParsersAction):
         default=None
     )
     p.add_argument(
-        '--min-tx-length',
-        type=int,
-        help='Minimal transcript length.',
-        metavar='<number>',
-        default=21
-    )
-    p.add_argument(
         '--orf-assignment',
         type=str,
         help='Defines how ORF assignment should be done. The last ORF upstream'
@@ -65,20 +58,6 @@ def add_subparser_call_alt_start(subparsers:argparse._SubParsersAction):
         action='store_true',
         help='Include peptides with W > F (Tryptophan to Phenylalanine) '
         'reassignment.'
-    )
-    p.add_argument(
-        '--inclusion-biotypes',
-        type=Path,
-        help='Inclusion biotype list.',
-        metavar='<file>',
-        default=None
-    )
-    p.add_argument(
-        '--exclusion-biotypes',
-        type=Path,
-        help='Exclusion biotype list.',
-        metavar='<file>',
-        default=None
     )
 
     common.add_args_reference(p)
@@ -115,23 +94,13 @@ def call_alt_start(args:argparse.Namespace) -> None:
         args=args, load_proteome=True, cleavage_params=cleavage_params
     )
 
-    inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)
-
     alt_start_pool = aa.VariantPeptidePool()
     orf_pool = []
 
     i = 0
     for tx_id in anno.transcripts:
         tx_model = anno.transcripts[tx_id]
-        if inclusion_biotypes and \
-                tx_model.transcript.biotype not in inclusion_biotypes:
-            continue
-        if exclusion_biotypes and \
-                tx_model.transcript.biotype in exclusion_biotypes:
-            continue
         if tx_id not in proteome:
-            continue
-        if tx_model.transcript_len() < args.min_tx_length:
             continue
 
         try:
@@ -222,5 +191,11 @@ def call_alt_start_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
                 name=label
             )
         )
-    orfs = get_orf_sequences(pgraph, tx_id, tx_model.gene_id, tx_seq)
+    orfs = get_orf_sequences(
+        pgraph=pgraph,
+        tx_id=tx_id,
+        gene_id=tx_model.gene_id,
+        tx_seq=tx_seq,
+        exclude_canonical_orf=True
+    )
     return peptides, orfs
