@@ -18,4 +18,3 @@ from .encode_fasta import add_subparser_encode_fasta, encode_fasta
 from .decoy_fasta import add_subparser_decoy_fasta, decoy_fasta
 from .summarize_fasta import add_subparser_summarize_fasta, summarize_fasta
 from .update_index import add_subparser_update_index, update_index
-from .call_alt_start_site import add_subparser_call_alt_start, call_alt_start

@@ -24,7 +24,6 @@ CLI_MAIN_DESCRIPTION = """
 -- Calling
    callVariant         Call non-canonical peptides from genomic variants.
    callNoncoding       Call non-canonical peptides from noncoding transcripts.
-   callAltStart        Call non-canonical peptides from alternative start sites.
    callAltTranslation  Call non-canonital peptides with alternative translation
                        from coding transcripts.
 
@@ -68,7 +67,6 @@ def main():
     cli.add_subparser_parse_circexplorer(subparsers)
     cli.add_subparser_call_variant(subparsers)
     cli.add_subparser_call_noncoding(subparsers)
-    cli.add_subparser_call_alt_start(subparsers)
     cli.add_subparser_call_alt_translation(subparsers)
     cli.add_subparser_split_fasta(subparsers)
     cli.add_subparser_filter_fasta(subparsers)

@@ -7,7 +7,6 @@ from moPepGen.constant import VariantPrefix
 
 if TYPE_CHECKING:
     from moPepGen.seqvar import VariantRecord
-    from moPepGen.gtf import GenomicAnnotation
 
 def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
         orf_id:str=None, index:int=None, gene_id:str=None) -> str:

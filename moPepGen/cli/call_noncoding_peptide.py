@@ -61,6 +61,11 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         metavar='<choice>'
     )
     p.add_argument(
+        '--include-coding',
+        action='store_true',
+        help='Include coding transcripts to find alternative ORFs.'
+    )
+    p.add_argument(
         '--w2f-reassignment',
         action='store_true',
         help='Include peptides with W > F (Tryptophan to Phenylalanine) '
@@ -117,22 +122,26 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
     inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)
 
-    noncanonical_pool = aa.VariantPeptidePool()
+    noval_orf_peptide_pool = aa.VariantPeptidePool()
     orf_pool = []
 
     i = 0
     for tx_id in anno.transcripts:
         tx_model = anno.transcripts[tx_id]
-        if inclusion_biotypes and \
-                tx_model.transcript.biotype not in inclusion_biotypes:
-            continue
-        if exclusion_biotypes and \
-                tx_model.transcript.biotype in exclusion_biotypes:
-            continue
-        if tx_id in proteome:
-            continue
-        if tx_model.transcript_len() < args.min_tx_length:
-            continue
+        if tx_model.is_protein_coding:
+            if not args.include_coding:
+                pass
+        else:
+            if inclusion_biotypes and \
+                    tx_model.transcript.biotype not in inclusion_biotypes:
+                continue
+            if exclusion_biotypes and \
+                    tx_model.transcript.biotype in exclusion_biotypes:
+                continue
+            if tx_id in proteome:
+                continue
+            if tx_model.transcript_len() < args.min_tx_length:
+                continue
 
         try:
             peptides, orfs = call_noncoding_peptide_main(
@@ -149,7 +158,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             orf_pool.extend(orfs)
 
             for peptide in peptides:
-                noncanonical_pool.add_peptide(peptide, canonical_peptides,
+                noval_orf_peptide_pool.add_peptide(peptide, canonical_peptides,
                     cleavage_params)
         except ReferenceSeqnameNotFoundError as e:
             if not ReferenceSeqnameNotFoundError.raised:
@@ -163,7 +172,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
         if i % 5000 == 0:
             logger.info('%i transcripts processed.', i)
 
-    noncanonical_pool.write(args.output_path)
+    noval_orf_peptide_pool.write(args.output_path)
     if args.output_orf:
         with open(args.output_orf, 'w') as handle:
             write_orf(orf_pool, handle)
