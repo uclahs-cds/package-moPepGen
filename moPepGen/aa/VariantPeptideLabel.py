@@ -129,9 +129,9 @@ class VariantPeptideInfo():
             ) -> List[VariantPeptideInfo]:
         """ Create list of VariantPeptideInfo with minimal information. """
         info_list:List[VariantPeptideInfo] = []
-        variant_ids = pi.parse_variant_peptide_id(peptide.description)
+        variant_ids = pi.parse_variant_peptide_id(peptide.description, set())
         for variant_id in variant_ids:
-            if isinstance(variant_id, pi.NoncodingPeptideIdentifier):
+            if isinstance(variant_id, pi.NovelORFPeptideIdentifier):
                 gene_ids = [variant_id.gene_id]
                 var_ids = {}
 
@@ -167,9 +167,9 @@ class VariantPeptideInfo():
         if group_map is None:
             group_map = {}
         info_list = []
-        variant_ids = pi.parse_variant_peptide_id(peptide.description)
+        variant_ids = pi.parse_variant_peptide_id(peptide.description, coding_tx)
         for variant_id in variant_ids:
-            if isinstance(variant_id, pi.NoncodingPeptideIdentifier):
+            if isinstance(variant_id, pi.NovelORFPeptideIdentifier):
                 tx_id = variant_id.transcript_id
                 gene_ids = [variant_id.gene_id]
                 var_ids = {variant_id.gene_id: variant_id.codon_reassigns}
@@ -227,17 +227,17 @@ class VariantPeptideInfo():
 
     def is_fusion(self) -> bool:
         """ Check if this is a fusion """
-        _id = pi.parse_variant_peptide_id(self.original_label)[0]
+        _id = pi.parse_variant_peptide_id(self.original_label, set())[0]
         return isinstance(_id, pi.FusionVariantPeptideIdentifier)
 
     def is_circ_rna(self) -> bool:
         """ Check if this is a circRNA """
-        _id = pi.parse_variant_peptide_id(self.original_label)[0]
+        _id = pi.parse_variant_peptide_id(self.original_label, set())[0]
         return isinstance(_id, pi.CircRNAVariantPeptideIdentifier)
 
     def is_splice_altering(self) -> bool:
         """ Check if the variant paptide label is alternative splicing """
-        _id = pi.parse_variant_peptide_id(self.original_label)[0]
+        _id = pi.parse_variant_peptide_id(self.original_label, set())[0]
         return isinstance(_id, pi.BaseVariantPeptideIdentifier) and \
             _id.is_alternative_splicing()
 
@@ -273,14 +273,14 @@ class VariantPeptideInfo():
 
     def get_transcript_ids(self) -> List[str]:
         """ get transcript IDs """
-        variant_id = pi.parse_variant_peptide_id(self.original_label)[0]
+        variant_id = pi.parse_variant_peptide_id(self.original_label, set())[0]
         if isinstance(variant_id, pi.CircRNAVariantPeptideIdentifier):
             return [variant_id.circ_rna_id.split('-', 2)[1]]
         if isinstance(variant_id, pi.FusionVariantPeptideIdentifier):
             return [variant_id.first_tx_id, variant_id.second_tx_id]
         if isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
             return [variant_id.transcript_id]
-        if isinstance(variant_id, pi.NoncodingPeptideIdentifier):
+        if isinstance(variant_id, pi.NovelORFPeptideIdentifier):
             return [variant_id.transcript_id]
         raise ValueError('Variant ID unrecognized')
 

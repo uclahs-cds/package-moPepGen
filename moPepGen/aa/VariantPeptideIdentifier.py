@@ -3,9 +3,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Dict, List, TYPE_CHECKING
 from moPepGen import VARIANT_PEPTIDE_SOURCE_DELIMITER
+from moPepGen.constant import VariantPrefix
 
 if TYPE_CHECKING:
     from moPepGen.seqvar import VariantRecord
+    from moPepGen.gtf import GenomicAnnotation
 
 def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
         orf_id:str=None, index:int=None, gene_id:str=None) -> str:
@@ -60,7 +62,13 @@ def create_variant_peptide_id(transcript_id:str, variants:List[VariantRecord],
         label = BaseVariantPeptideIdentifier(transcript_id, variant_ids, orf_id, index, gene_id)
     return str(label)
 
-def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
+def _set_identifier_type(t, v):
+    """ Set identifier type """
+    if t is not None:
+        raise ValueError(f"VariantType is not None: {t}")
+    return v
+
+def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPeptideIdentifier]:
     """ Parse variant peptide identifier from peptide name.
 
     Examples:
@@ -72,41 +80,110 @@ def parse_variant_peptide_id(label:str) -> List[VariantPeptideIdentifier]:
     variant_ids = []
     for it in label.split(VARIANT_PEPTIDE_SOURCE_DELIMITER):
         fields = it.split('|')
-        if fields[-2].startswith('ORF'):
-            # Noncoding peptide
-            tx_id, gene_id, *codon_reassigns, orf_id, index = fields
-            variant_id = NoncodingPeptideIdentifier(
-                transcript_id=tx_id, gene_id=gene_id,
-                codon_reassigns=codon_reassigns,
-                orf_id=orf_id, index=int(index)
-            )
+        gene_id = None
+        x_id = None
+        var_ids:Dict[int, List[str]] = {}
+        alt_ids = []
+        orf_id = None
 
-        else:
-            x_id, *var_ids, index = fields
+        try:
+            index = int(fields[-1])
+            fields.pop()
+        except ValueError:
+            index = None
 
-            orf_id = None
-            if len(var_ids) > 0 and var_ids[0].startswith('ORF'):
-                orf_id = var_ids.pop(0)
+        IdentifierType:VariantPeptideIdentifier = None
 
-            if x_id.startswith('FUSION-'):
-                first_variants:List[str] = []
-                second_variants:List[str] = []
-                peptide_variants:List[str] = []
-                for var_id in var_ids:
-                    if var_id.startswith('1-') or var_id.startswith('2-'):
-                        which_gene, var_id = var_id.split('-', 1)
-                        if int(which_gene) == 1:
-                            first_variants.append(var_id)
-                        elif int(which_gene) == 2:
-                            second_variants.append(var_id)
-                    else:
-                        peptide_variants.append(var_id)
-                variant_id = FusionVariantPeptideIdentifier(x_id, first_variants,
-                    second_variants, peptide_variants, orf_id, index)
-            elif x_id.startswith('CIRC-') or x_id.startswith('CI-'):
-                variant_id = CircRNAVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
+        for field in fields:
+            if field.startswith(str(VariantPrefix.FUSION)):
+                x_id = field
+                IdentifierType = _set_identifier_type(
+                    IdentifierType,
+                    FusionVariantPeptideIdentifier
+                )
+
+            elif field.startswith(str(VariantPrefix.CI)) \
+                    or field.startswith(str(VariantPrefix.CIRC)):
+                x_id = field
+                IdentifierType = _set_identifier_type(
+                    IdentifierType,
+                    CircRNAVariantPeptideIdentifier
+                )
+
+            elif field.startswith('ORF'):
+                orf_id = field
+
+            elif IdentifierType is FusionVariantPeptideIdentifier:
+                if field.startswith('1-') or field.startswith('2-'):
+                    which_gene, var_id = field.split('-', 1)
+                    which_gene = int(which_gene)
+                else:
+                    # SECT or W2F
+                    var_id = field
+                    which_gene = 0
+                if which_gene in var_ids:
+                    var_ids[which_gene].append(var_id)
+                else:
+                    var_ids[which_gene] = [var_id]
+
+            elif any(field.startswith(str(t)) for t in VariantPrefix.alt_translation()):
+                alt_ids.append(field)
+
+            elif any(field.startswith(str(t)) for t in VariantPrefix.ctbv()):
+                if 1 in var_ids:
+                    var_ids[1].append(field)
+                else:
+                    var_ids[1] = [field]
+
+        if IdentifierType is None:
+            if not var_ids and orf_id is not None:
+                x_id = fields[0]
+                if len(fields) > 1:
+                    gene_id = fields[1]
+                IdentifierType = _set_identifier_type(
+                    IdentifierType,
+                    NovelORFPeptideIdentifier
+                )
             else:
-                variant_id = BaseVariantPeptideIdentifier(x_id, var_ids, orf_id, index)
+                x_id = fields[0]
+                IdentifierType = _set_identifier_type(
+                    IdentifierType,
+                    BaseVariantPeptideIdentifier
+                )
+
+        if IdentifierType is NovelORFPeptideIdentifier:
+            variant_id = NovelORFPeptideIdentifier(
+                transcript_id=x_id,
+                gene_id=gene_id,
+                codon_reassigns=alt_ids,
+                orf_id=orf_id,
+                index=index,
+                is_protein_coding=(x_id in coding_txs)
+            )
+        elif IdentifierType is FusionVariantPeptideIdentifier:
+            variant_id = FusionVariantPeptideIdentifier(
+                fusion_id=x_id,
+                first_variants=var_ids.get(1, []),
+                second_variants=var_ids.get(2, []),
+                peptide_variants=var_ids.get(0, []),
+                orf_id=orf_id,
+                index=index
+            )
+        elif IdentifierType is CircRNAVariantPeptideIdentifier:
+            variant_id = CircRNAVariantPeptideIdentifier(
+                circ_rna_id=x_id,
+                variant_ids=sum(var_ids.values(), []) + alt_ids,
+                orf_id=orf_id,
+                index=index
+            )
+        elif IdentifierType is BaseVariantPeptideIdentifier:
+            variant_id = BaseVariantPeptideIdentifier(
+                transcript_id=x_id,
+                variant_ids=sum(var_ids.values(), []) + alt_ids,
+                orf_id=orf_id,
+                index=index,
+                gene_id=gene_id
+            )
 
         variant_ids.append(variant_id)
     return variant_ids
@@ -205,16 +282,17 @@ class FusionVariantPeptideIdentifier(VariantPeptideIdentifier):
         _,_,second = self.fusion_id.split('-')
         return second.split(':')[0]
 
-class NoncodingPeptideIdentifier(VariantPeptideIdentifier):
+class NovelORFPeptideIdentifier(VariantPeptideIdentifier):
     """ Noncoding peptide identifier """
     def __init__(self, transcript_id:str, gene_id:str, codon_reassigns:List[str],
-             orf_id:str=None, index:int=None):
+            is_protein_coding:bool, orf_id:str=None, index:int=None):
         """ constructor """
         self.transcript_id = transcript_id
         self.gene_id = gene_id
         self.codon_reassigns = codon_reassigns
         self.orf_id = orf_id
         self.index = index
+        self.is_protein_coding = is_protein_coding
 
     def __str__(self) -> str:
         """ str """

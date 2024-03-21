@@ -68,7 +68,7 @@ class TestCallAltTranslation(TestCaseIntegration):
 
             var_labels = functools.reduce(
                 lambda x,y: x + y,
-                [vpi.parse_variant_peptide_id(x) for x in headers]
+                [vpi.parse_variant_peptide_id(x, set()) for x in headers]
             )
             self.assertTrue(all(isinstance(x, vpi.BaseVariantPeptideIdentifier)
                 for x in var_labels))

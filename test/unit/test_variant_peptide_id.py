@@ -1,9 +1,11 @@
 """ Test module for VariantPeptideIdentifier """
 from typing import List
 import unittest
+from unittest.mock import MagicMock
 from test.unit import create_variants
 from moPepGen import aa
 from moPepGen.aa import VariantPeptideIdentifier as pi
+from moPepGen.gtf import GenomicAnnotation, TranscriptAnnotationModel
 
 
 class TestVaraintPeptideIdentifier(unittest.TestCase):
@@ -115,9 +117,10 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_single_snv(self):
         """ parse variant from single snv """
+        coding_txs = {}
         label = 'ENST0001|SNV-101-A-T|1'
         peptide_ids:List[pi.BaseVariantPeptideIdentifier]
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.BaseVariantPeptideIdentifier)
         self.assertEqual(peptide_ids[0].transcript_id, 'ENST0001')
@@ -126,9 +129,10 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_multiple_snv(self):
         """ parse variant from multiple snv """
+        coding_txs = {}
         label = 'ENST0001|SNV-101-A-T|SNV-111-A-T|1'
         peptide_ids:List[pi.BaseVariantPeptideIdentifier]
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.BaseVariantPeptideIdentifier)
         self.assertEqual(peptide_ids[0].transcript_id, 'ENST0001')
@@ -137,9 +141,10 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_single_fusion(self):
         """ parse variant from single fusion """
+        coding_txs = {}
         label = 'FUSION-ENSG0001:101-ENSG0002:201|1'
         peptide_ids:List[pi.FusionVariantPeptideIdentifier]
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.FusionVariantPeptideIdentifier)
         self.assertEqual(peptide_ids[0].fusion_id, 'FUSION-ENSG0001:101-ENSG0002:201')
@@ -149,9 +154,10 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_fusion_and_first_variant(self):
         """ parse variant from single fusion """
+        coding_txs = {}
         label = 'FUSION-ENSG0001:101-ENSG0002:201|1-SNV-98-A-T|1'
         peptide_ids:List[pi.FusionVariantPeptideIdentifier]
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.FusionVariantPeptideIdentifier)
         self.assertEqual(peptide_ids[0].fusion_id, 'FUSION-ENSG0001:101-ENSG0002:201')
@@ -161,9 +167,10 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_fusion_and_second_variant(self):
         """ parse variant from single fusion """
+        coding_txs = {}
         label = 'FUSION-ENSG0001:101-ENSG0002:201|2-SNV-210-A-T|1'
         peptide_ids:List[pi.FusionVariantPeptideIdentifier]
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.FusionVariantPeptideIdentifier)
         self.assertEqual(peptide_ids[0].fusion_id, 'FUSION-ENSG0001:101-ENSG0002:201')
@@ -173,10 +180,11 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_fusion_and_first_and_second_variant(self):
         """ parse variant from single fusion """
+        coding_txs = {}
         label = 'FUSION-ENSG0001:101-ENSG0002:201|1-SNV-98-A-T|' +\
             '2-SNV-210-A-T|2-SNV-215-A-T|1'
         peptide_ids:List[pi.FusionVariantPeptideIdentifier]
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.FusionVariantPeptideIdentifier)
         self.assertEqual(peptide_ids[0].fusion_id, 'FUSION-ENSG0001:101-ENSG0002:201')
@@ -186,8 +194,9 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_single_circ_rna(self):
         """ parse variant from single fusion """
+        coding_txs = {}
         label = 'CIRC-ENSG0001-E2-E3|1'
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.CircRNAVariantPeptideIdentifier)
         peptide_ids:List[pi.CircRNAVariantPeptideIdentifier]
@@ -197,8 +206,9 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_circ_rna_and_snv(self):
         """ parse variant from single fusion """
+        coding_txs = {}
         label = 'CIRC-ENSG0001-E2-E3|SNV-111-A-T|2'
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
         self.assertIsInstance(peptide_ids[0], pi.CircRNAVariantPeptideIdentifier)
         peptide_ids:List[pi.CircRNAVariantPeptideIdentifier]
@@ -208,11 +218,12 @@ class TestVaraintPeptideIdentifier(unittest.TestCase):
 
     def test_parse_variant_id_orf(self):
         """ parse variant with orf """
+        coding_txs = {}
         label = 'ENST0001|ENSG0001|ORF1|1'
-        peptide_ids = aa.parse_variant_peptide_id(label)
+        peptide_ids = aa.parse_variant_peptide_id(label, coding_txs)
         self.assertEqual(len(peptide_ids), 1)
-        self.assertIsInstance(peptide_ids[0], pi.NoncodingPeptideIdentifier)
-        peptide_ids:List[pi.NoncodingPeptideIdentifier]
+        self.assertIsInstance(peptide_ids[0], pi.NovelORFPeptideIdentifier)
+        peptide_ids:List[pi.NovelORFPeptideIdentifier]
         self.assertEqual(peptide_ids[0].transcript_id, 'ENST0001')
         self.assertEqual(peptide_ids[0].orf_id, 'ORF1')
         self.assertEqual(str(peptide_ids[0]), label)

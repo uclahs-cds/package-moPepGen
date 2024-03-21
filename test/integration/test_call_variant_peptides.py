@@ -56,7 +56,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Assert that no canonical peptide with circRNA """
         no_canonical_peptides_with_circ = False
         for seq in seqs:
-            labels = vpi.parse_variant_peptide_id(seq.description)
+            labels = vpi.parse_variant_peptide_id(seq.description, set())
             for label in labels:
                 if isinstance(label, vpi.CircRNAVariantPeptideIdentifier):
                     for other_label in labels:
@@ -642,7 +642,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, None)
         has_incorrect_fasta_header = False
         for peptide in SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'):
-            labels = vpi.parse_variant_peptide_id(peptide.description)
+            labels = vpi.parse_variant_peptide_id(peptide.description, set())
             for label in labels:
                 if not isinstance(label, vpi.CircRNAVariantPeptideIdentifier):
                     continue
