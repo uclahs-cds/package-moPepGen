@@ -820,7 +820,7 @@ class PeptideVariantGraph():
         - w2f (bool): Whether to consider W>F (tryptophan to phenylalanine)
             substituants.
         - check_external_variants (bool): When set to `False`, peptides not
-            harbourin any external variants will also be output. This can
+            harbouring any external variants will also be outputted. This can
             be used when calling noncanonical peptides from noncoding
             transcripts.
         - find_ass (bool): Whether to find alternative start sites.

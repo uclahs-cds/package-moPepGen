@@ -672,7 +672,7 @@ class VariantPeptideDict():
                 new_batch.append(_node)
 
                 if backsplicing_only:
-                    # Skip peptides not spaning the backsplicing the site.
+                    # Skip peptides not spaning the backsplicing site
                     subgraph_ids = set().union(*[n.get_subgraph_id_set() for n in cur_batch])
                     if len(subgraph_ids) == 1:
                         continue
@@ -713,9 +713,9 @@ class VariantPeptideDict():
 
         Args:
         - `node` (PVGNode): The start node.
-        - `orfs` (List[int, int]): The start and end position of ORF.
+        - `orfs` (List[int, int]): The start and end position of the ORF.
         - `cleavage_params` (CleavageParams): Cleavage related parameters.
-        - `check_variants` (bool): Whether to check variants.
+        - `check_variants` (bool): Whether to check for variants.
         - `is_start_codon` (bool): Whether the peptide starts with the start
             codon (M).
         - `additional_variants` (List[VariantRecord]): Additional variants,
