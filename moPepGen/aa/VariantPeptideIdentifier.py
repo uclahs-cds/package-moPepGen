@@ -1,7 +1,7 @@
 """ Module for VariantPeptideIdentifier """
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING, Set
 from moPepGen import VARIANT_PEPTIDE_SOURCE_DELIMITER
 from moPepGen.constant import VariantPrefix
 
