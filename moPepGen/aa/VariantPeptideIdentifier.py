@@ -76,11 +76,21 @@ def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPept
         [<BaseVariantPeptideIdentifier>: 'ENST0001|SNV-100-A-T|1']
 
     """
+    # FASTA header examples:
+    # ENST0001|SNV-50-A-T|1
+    # ENST0001|SNV-50-A-T|INDEL-55-CC-C|2
+    # ENST0001|SNV-50-A-T|ORF2|1
+    # FASTA headers have 5 fields below separate by | :
+    # - (Required) Transcript backbone ID (tx ID, fusion ID, or circRNA ID)
+    # - (Optioanl) Gene ID, required for novel ORF peptides without additional variants.
+    # - (Optional) Variant IDs separated by |
+    # - (Optional) ORF ID, required for novel ORF peptides.
+    # - (Required) peptide index.
     variant_ids = []
     for it in label.split(VARIANT_PEPTIDE_SOURCE_DELIMITER):
         fields = it.split('|')
         gene_id = None
-        x_id = None
+        backbone_id = None
         var_ids:Dict[int, List[str]] = {}
         alt_ids = []
         orf_id = None
@@ -93,9 +103,15 @@ def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPept
 
         IdentifierType:VariantPeptideIdentifier = None
 
-        for field in fields:
+        # Step 1. Iterate over the fields in a FASTA header separated by | and
+        # assign them into the 5 variables.
+        for i, field in enumerate(fields):
+            # The first field is always the backbone ID, and if its prefix is
+            # FUSION-, CIRC-, or CI-, this must be a Fusion or circRNA entry.
             if field.startswith(str(VariantPrefix.FUSION)):
-                x_id = field
+                if i != 0:
+                    raise ValueError(f"FASTA header isn't valid: {it}")
+                backbone_id = field
                 IdentifierType = _set_identifier_type(
                     IdentifierType,
                     FusionVariantPeptideIdentifier
@@ -103,7 +119,9 @@ def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPept
 
             elif field.startswith(str(VariantPrefix.CI)) \
                     or field.startswith(str(VariantPrefix.CIRC)):
-                x_id = field
+                if i != 0:
+                    raise ValueError(f"FASTA header isn't valid: {it}")
+                backbone_id = field
                 IdentifierType = _set_identifier_type(
                     IdentifierType,
                     CircRNAVariantPeptideIdentifier
@@ -134,9 +152,15 @@ def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPept
                 else:
                     var_ids[1] = [field]
 
+        # Step 2. Infer the FASTA header type. If it's not already interpreted in
+        # step 1 (either Fusion or circRNA), it must be either a base variant or
+        # novel ORF peptide.
         if IdentifierType is None:
+            # `NovelORFPeptideIdentifier` is for novel ORF peptides without any
+            # additional variants. While `BaseVariantPeptideIdentifer` always
+            # have at least variant.
             if not var_ids and orf_id is not None:
-                x_id = fields[0]
+                backbone_id = fields[0]
                 if len(fields) > 1:
                     gene_id = fields[1]
                 IdentifierType = _set_identifier_type(
@@ -144,24 +168,25 @@ def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPept
                     NovelORFPeptideIdentifier
                 )
             else:
-                x_id = fields[0]
+                backbone_id = fields[0]
                 IdentifierType = _set_identifier_type(
                     IdentifierType,
                     BaseVariantPeptideIdentifier
                 )
 
+        # Step 3. Construct the object based on the FASTA header type.
         if IdentifierType is NovelORFPeptideIdentifier:
             variant_id = NovelORFPeptideIdentifier(
-                transcript_id=x_id,
+                transcript_id=backbone_id,
                 gene_id=gene_id,
                 codon_reassigns=alt_ids,
                 orf_id=orf_id,
                 index=index,
-                is_protein_coding=(x_id in coding_txs)
+                is_protein_coding=(backbone_id in coding_txs)
             )
         elif IdentifierType is FusionVariantPeptideIdentifier:
             variant_id = FusionVariantPeptideIdentifier(
-                fusion_id=x_id,
+                fusion_id=backbone_id,
                 first_variants=var_ids.get(1, []),
                 second_variants=var_ids.get(2, []),
                 peptide_variants=var_ids.get(0, []),
@@ -170,14 +195,14 @@ def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPept
             )
         elif IdentifierType is CircRNAVariantPeptideIdentifier:
             variant_id = CircRNAVariantPeptideIdentifier(
-                circ_rna_id=x_id,
+                circ_rna_id=backbone_id,
                 variant_ids=sum(var_ids.values(), []) + alt_ids,
                 orf_id=orf_id,
                 index=index
             )
         elif IdentifierType is BaseVariantPeptideIdentifier:
             variant_id = BaseVariantPeptideIdentifier(
-                transcript_id=x_id,
+                transcript_id=backbone_id,
                 variant_ids=sum(var_ids.values(), []) + alt_ids,
                 orf_id=orf_id,
                 index=index,
@@ -189,7 +214,7 @@ def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPept
 
 
 class VariantPeptideIdentifier(ABC):
-    """ variant peptide identifer virtual class """
+    """ variant peptide identifier virtual class """
     @abstractmethod
     def __str__(self) -> str:
         """ str """
