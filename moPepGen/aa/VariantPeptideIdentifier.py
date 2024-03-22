@@ -158,7 +158,7 @@ def parse_variant_peptide_id(label:str, coding_txs:Set[str]) -> List[VariantPept
         if IdentifierType is None:
             # `NovelORFPeptideIdentifier` is for novel ORF peptides without any
             # additional variants. While `BaseVariantPeptideIdentifer` always
-            # have at least variant.
+            # have at least one variant.
             if not var_ids and orf_id is not None:
                 backbone_id = fields[0]
                 if len(fields) > 1:
