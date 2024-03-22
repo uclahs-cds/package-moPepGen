@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Chenghao Zhu">
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>summarizeFasta - moPepGen</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "summarizeFasta";
+    var mkdocs_page_input_path = "summarize-fasta.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> moPepGen</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../basics/">moPepGen Basics</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../quick-start/">Quick Start</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../vignette/">Vignette</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../file-format/">File Format</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Commands</span></p>
+                <ul class="current">
+                    <li class="toctree-l1"><a class="reference internal" href="../generate-index/">generateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../update-index/">updateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-vep/">parseVEP</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-reditools/">parseREDItools</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-star-fusion/">parseSTARFuion</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-fusion-catcher/">parseFusionCatcher</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-arriba/">parseArriba</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-rmats/">parseRMATS</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-circexplorer/">parseCIRCexplorer</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-variant/">callVariant</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-noncoding/">callNoncoding</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-alt-translation/">callAltTranslation</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../filter-fasta/">filterFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../split-fasta/">splitFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../merge-fasta/">mergeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../encode-fasta/">encodeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../decoy-fasta/">decoyFasta</a>
+                    </li>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">summarizeFasta</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#moPepGen.cli.summarize_fasta">moPepGen.cli.summarize_fasta</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#arguments">Arguments</a>
+    </li>
+    </ul>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">moPepGen</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Commands &raquo;</li>
+        
+      
+    
+    <li>summarizeFasta</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/uclahs-cds/package-moPepGen/edit/master/docs/summarize-fasta.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="summarizefasta">summarizeFasta</h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="moPepGen.cli.summarize_fasta"></a>
+    <div class="doc doc-contents first">
+
+      <p><code>summarizeFasta</code> takes a variant peptide FASTA file output by callVariant
+and summarize the count of variant peptides of each source groups. This
+summary can then guide the database splitting for tiered custom database
+searching. </p>
+
+
+    </div>
+
+  </div>
+
+<h2 id="usage">Usage</h2>
+<pre><code>usage: moPepGen summarizeFasta [-h] [--gvf &lt;files&gt; [&lt;files&gt; ...]]
+                               [--variant-peptides &lt;file&gt;]
+                               [--noncoding-peptides &lt;file&gt;]
+                               [--alt-translation-peptides ALT_TRANSLATION_PEPTIDES]
+                               [--order-source &lt;value&gt;] [-o &lt;file&gt;]
+                               [--group-source [&lt;value&gt; [&lt;value&gt; ...]]]
+                               [--output-image &lt;file&gt;]
+                               [--ignore-missing-source]
+                               [--plot-normal-scale | --plot-log-scale]
+                               [-c &lt;value&gt;] [--cleavage-exception &lt;value&gt;]
+                               [-a &lt;file&gt;]
+                               [--reference-source {GENCODE,ENSEMBL}]
+                               [-p &lt;file&gt;] [--invalid-protein-as-noncoding]
+                               [--index-dir [&lt;file&gt;]]
+                               [--debug-level &lt;value|number&gt;] [-q]
+
+Summarize the variant peptide calling results
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --gvf &lt;files&gt; [&lt;files&gt; ...]
+                        File path to GVF files. All GVF files must be
+                        generated by moPepGen parsers. Valid formats: ['.gvf']
+                        (default: None)
+  --variant-peptides &lt;file&gt;
+                        File path to the variant peptide FASTA database file.
+                        Must be generated by moPepGen callVariant. Valid
+                        formats: ['.fasta', '.fa'] (default: None)
+  --noncoding-peptides &lt;file&gt;
+                        File path to the noncoding peptide FASTA database
+                        file. Must be generated by moPepGen callNoncoding.
+                        Valid formats: ['.fasta', '.fa'] (default: None)
+  --alt-translation-peptides ALT_TRANSLATION_PEPTIDES
+                        File path to the alt translation peptide FASTA file.
+                        Must begenerated by moPepGen callAltTranslation. Valid
+                        formats: ['.fasta', '.fa'] (default: None)
+  --order-source &lt;value&gt;
+                        Order of sources, separate by comma. E.g.,
+                        SNP,SNV,Fusion (default: None)
+  -o &lt;file&gt;, --output-path &lt;file&gt;
+                        File path to the output file. If not given, the
+                        summary table is printed to stdout. Valid formats:
+                        ['.txt', 'tsv'] (default: None)
+  --group-source [&lt;value&gt; [&lt;value&gt; ...]]
+                        Group sources. The peptides with sources grouped will
+                        be written to the same FASTA file. E.g.,
+                        &quot;PointMutation:gSNP,sSNV INDEL:gINDEL,sINDEL&quot;.
+                        (default: None)
+  --output-image &lt;file&gt;
+                        File path to the output barplot. Valid formats:
+                        ['.pdf', '.jpg', '.jpeg', '.png'] (default: None)
+  --ignore-missing-source
+                        Ignore the sources missing from input GVF. (default:
+                        False)
+  --plot-normal-scale   Draw the summary bar plot in normal scale. (default:
+                        False)
+  --plot-log-scale      Draw the summary bar plot in log scale. (default:
+                        False)
+  --debug-level &lt;value|number&gt;
+                        Debug level. (default: INFO)
+  -q, --quiet           Quiet (default: False)
+
+Cleavage Parameters:
+  -c &lt;value&gt;, --cleavage-rule &lt;value&gt;
+                        Enzymatic cleavage rule. (default: trypsin)
+  --cleavage-exception &lt;value&gt;
+                        Enzymatic cleavage exception. (default: auto)
+
+Reference Files:
+  -a &lt;file&gt;, --annotation-gtf &lt;file&gt;
+                        Path to the annotation GTF file. Only ENSEMBL and
+                        GENCODE are supported. Its version must be the same as
+                        the genome and proteome FASTA. (default: None)
+  --reference-source {GENCODE,ENSEMBL}
+                        Source of reference genome and annotation. (default:
+                        None)
+  -p &lt;file&gt;, --proteome-fasta &lt;file&gt;
+                        Path to the translated protein sequence FASTA file.
+                        Only ENSEMBL and GENCODE are supported. Its version
+                        must be the same as genome FASTA and annotation GTF.
+                        (default: None)
+  --invalid-protein-as-noncoding
+                        Treat any transcript that the protein sequence is
+                        invalid ( contains the * symbol) as noncoding.
+                        (default: False)
+  --index-dir [&lt;file&gt;]  Path to the directory of index files generated by
+                        moPepGen generateIndex. If given, --genome-fasta,
+                        --proteome-fasta and --anntotation-gtf will be
+                        ignored. (default: None)
+
+</code></pre>
+<h2 id="arguments">Arguments</h2>
+<p><strong>-h, --help</strong><br/></p>
+<p style="margin-left: 15px;">
+show this help message and exit
+
+
+</p>
+
+<p><strong>--gvf</strong> <strong><em>&lt;files&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to GVF files. All GVF files must be generated by moPepGen parsers. Valid formats: ['.gvf']
+
+
+</p>
+
+<p><strong>--variant-peptides</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the variant peptide FASTA database file. Must be generated by moPepGen callVariant. Valid formats: ['.fasta', '.fa']
+
+
+</p>
+
+<p><strong>--noncoding-peptides</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the noncoding peptide FASTA database file. Must be generated by moPepGen callNoncoding. Valid formats: ['.fasta', '.fa']
+
+
+</p>
+
+<p><strong>--alt-translation-peptides</strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the alt translation peptide FASTA file. Must begenerated by moPepGen callAltTranslation. Valid formats: ['.fasta', '.fa']
+
+
+</p>
+
+<p><strong>--order-source</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Order of sources, separate by comma. E.g., SNP,SNV,Fusion
+
+
+</p>
+
+<p><strong>-o, --output-path</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the output file. If not given, the summary table is printed to stdout. Valid formats: ['.txt', 'tsv']
+
+
+</p>
+
+<p><strong>--group-source</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Group sources. The peptides with sources grouped will be written to the same FASTA file. E.g., "PointMutation:gSNP,sSNV INDEL:gINDEL,sINDEL".
+
+
+</p>
+
+<p><strong>--output-image</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the output barplot. Valid formats: ['.pdf', '.jpg', '.jpeg', '.png']
+
+
+</p>
+
+<p><strong>--ignore-missing-source</strong><br/></p>
+<p style="margin-left: 15px;">
+Ignore the sources missing from input GVF.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>--plot-normal-scale</strong><br/></p>
+<p style="margin-left: 15px;">
+Draw the summary bar plot in normal scale.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>--plot-log-scale</strong><br/></p>
+<p style="margin-left: 15px;">
+Draw the summary bar plot in log scale.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>-c, --cleavage-rule</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Enzymatic cleavage rule.
+ str <br/>Default: trypsin 
+ <br/>Choices: ['arg-c', 'asp-n', 'bnps-skatole', 'caspase 1', 'caspase 2', 'caspase 3', 'caspase 4', 'caspase 5', 'caspase 6', 'caspase 7', 'caspase 8', 'caspase 9', 'caspase 10', 'chymotrypsin high specificity', 'chymotrypsin low specificity', 'clostripain', 'cnbr', 'enterokinase', 'factor xa', 'formic acid', 'glutamyl endopeptidase', 'granzyme b', 'hydroxylamine', 'iodosobenzoic acid', 'lysc', 'lysn', 'ntcb', 'pepsin ph1.3', 'pepsin ph2.0', 'proline endopeptidase', 'proteinase k', 'staphylococcal peptidase i', 'thermolysin', 'thrombin', 'trypsin', 'trypsin_exception'] 
+</p>
+
+<p><strong>--cleavage-exception</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Enzymatic cleavage exception.
+ str <br/>Default: auto 
+
+</p>
+
+<p><strong>-a, --annotation-gtf</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the annotation GTF file. Only ENSEMBL and GENCODE are supported. Its version must be the same as the genome and proteome FASTA.
+
+
+</p>
+
+<p><strong>--reference-source</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Source of reference genome and annotation.
+
+ <br/>Choices: ['GENCODE', 'ENSEMBL'] 
+</p>
+
+<p><strong>-p, --proteome-fasta</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the translated protein sequence FASTA file. Only ENSEMBL and GENCODE are supported. Its version must be the same as genome FASTA and annotation GTF.
+
+
+</p>
+
+<p><strong>--invalid-protein-as-noncoding</strong><br/></p>
+<p style="margin-left: 15px;">
+Treat any transcript that the protein sequence is invalid ( contains the * symbol) as noncoding.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>--index-dir</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the directory of index files generated by moPepGen generateIndex. If given, --genome-fasta, --proteome-fasta and --anntotation-gtf will be ignored.
+
+
+</p>
+
+<p><strong>--debug-level</strong> <strong><em>&lt;value|number&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Debug level.
+ str <br/>Default: INFO 
+
+</p>
+
+<p><strong>-q, --quiet</strong><br/></p>
+<p style="margin-left: 15px;">
+Quiet
+  <br/>Default: False 
+
+</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="../decoy-fasta/" class="btn btn-neutral" title="decoyFasta"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/uclahs-cds/package-moPepGen/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../decoy-fasta/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

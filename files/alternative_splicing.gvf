@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseRMATS
+##reference_index=/path/to/reference/index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotaion.gtf
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG0001	110	SE-300	C	<INS>	.	.	TRANSCRIPT_ID=ENST00011;DONOR_GENE_ID=ENSG0005;DONOR_START=300;DONOR_END=400;GENE_SYMBOL=TP53;GENOMIC_POSITION=chr1:1000-1001
+ENSG0002	210	A5SS-210	T	<DEL>	.	.	TRANSCRIPT_ID=ENST00021;DONOR_GENE_ID=ENSG0006;DONOR_START=210;DONOR_END=400;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENSG0003	115	A3SS-320	T	<INS>	.	.	TRANSCRIPT_ID=ENST00031;DONOR_GENE_ID=ENSG0007;DONOR_START=320;DONOR_END=380;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
+ENSG0004	277	MXE-477-1103	T	<SUB>	.	.	TRANSCRIPT_ID=ENST00041;DONOR_GENE_ID=ENSG0008;DONOR_START=477;DONOREND=582;DONOR_START=1103;DONOR_END=1228;GENE_SYMBOL=EGFR;GENOMIC_POSITION=chr1:1000-1001
