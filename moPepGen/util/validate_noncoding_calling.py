@@ -82,6 +82,7 @@ def call_noncoding(ref_dir:Path, output_fasta:Path):
     args.output_orf = None
     args.output_path = output_fasta
     args.min_tx_length = 21
+    args.coding_novel_orf = False
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
     args.quiet = True

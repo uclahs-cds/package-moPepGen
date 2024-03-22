@@ -106,6 +106,7 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path, graph_output_d
     args.reference_source = None
     args.max_adjacent_as_mnv = 2
     args.backsplicing_only = False
+    args.coding_novel_orf = False
     args.selenocysteine_termination = True
     args.w2f_reassignment = True
     args.invalid_protein_as_noncoding = False

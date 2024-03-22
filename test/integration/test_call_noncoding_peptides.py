@@ -5,7 +5,7 @@ import subprocess as sp
 import sys
 from test.integration import TestCaseIntegration
 from Bio import SeqIO
-from moPepGen import cli
+from moPepGen import cli, gtf, dna, aa
 
 
 def create_base_args() -> argparse.Namespace:
@@ -19,8 +19,10 @@ def create_base_args() -> argparse.Namespace:
     args.reference_source = None
     args.output_path = None
     args.output_orf = None
+    args.coding_novel_orf = False
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
+    args.coing_novel_orf = False
     args.min_tx_length = 21
     args.orf_assignment = 'max'
     args.w2f_reassignment = False
@@ -108,3 +110,47 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
             self.assertEqual(len(ids),len(set(ids)))
             self.assertTrue(peptides[0].id.split('|')[0] != 'None')
             self.assertTrue(any('W2F' in x for x in ids))
+
+    def test_call_noncoding_peptides_coding(self):
+        """ Test calling for novel ORF peptides from coding TXs """
+        args = create_base_args()
+        args.w2f_reassignment = True
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.output_path = self.work_dir/'noncoding_peptide.fasta'
+        args.output_orf = self.work_dir/'noncoding_orf.fasta'
+        args.include_coding = True
+        cli.call_noncoding_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {args.output_path.name, args.output_orf.name}
+        self.assertEqual(files, expected)
+
+        anno = gtf.GenomicAnnotation()
+        anno.dump_gtf(args.annotation_gtf)
+
+        genome = dna.DNASeqDict()
+        genome.dump_fasta(args.genome_fasta)
+
+        proteome = aa.AminoAcidSeqDict()
+        proteome.dump_fasta(args.proteome_fasta)
+        canonical_peptides = proteome.create_unique_peptide_pool(
+            anno=anno, rule='trypsin', exception='trypsin_exception'
+        )
+        canonical_peptides = set(canonical_peptides)
+
+        with open(args.output_path, 'rt') as handle:
+            novel_peptides = list(SeqIO.parse(handle, 'fasta'))
+
+        # assert that the novel orf peptides don't overlap with the canonical
+        # peptide
+        self.assertEqual(
+            len({str(x.seq) for x in novel_peptides}.intersection(canonical_peptides)),
+            0
+        )
+
+        # assert that novel peptides are called from coding transcripts
+        novel_orf_txs = set().union(
+            *[{y.split('|')[0] for y in x.description.split(' ')} for x in novel_peptides]
+        )
+        self.assertTrue(any(x in proteome for x in novel_orf_txs))

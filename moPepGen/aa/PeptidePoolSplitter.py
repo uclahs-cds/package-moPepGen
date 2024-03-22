@@ -11,7 +11,6 @@ from .VariantPeptideLabel import VariantPeptideInfo, VariantSourceSet, \
 
 if TYPE_CHECKING:
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
-    from moPepGen.gtf import GenomicAnnotation
 
 Databases = Dict[str,VariantPeptidePool]
 

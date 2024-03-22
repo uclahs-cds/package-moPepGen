@@ -48,6 +48,12 @@ class PeptideSegment:
         self.feature_id = feature_id
         self.variant_id = variant_id
 
+    def __repr__(self):
+        """ str """
+        return f"<PeptideSegment query={self.query} ref={self.ref}" +\
+            f" feature_type={self.feature_type} feature_id={self.feature_id}" +\
+            f" variant_id={self.variant_id}>"
+
     def merge(self, other:PeptideSegment) -> PeptideSegment:
         """ merge """
         query = FeatureLocation(

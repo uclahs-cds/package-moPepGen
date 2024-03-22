@@ -26,6 +26,7 @@ def create_base_args() -> argparse.Namespace:
     args.graph_output_dir = None
     args.max_adjacent_as_mnv = 0
     args.backsplicing_only = False
+    args.coding_novel_orf = False
     args.selenocysteine_termination = False
     args.w2f_reassignment = False
     args.max_variants_per_node = [7]
@@ -55,7 +56,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Assert that no canonical peptide with circRNA """
         no_canonical_peptides_with_circ = False
         for seq in seqs:
-            labels = vpi.parse_variant_peptide_id(seq.description)
+            labels = vpi.parse_variant_peptide_id(seq.description, set())
             for label in labels:
                 if isinstance(label, vpi.CircRNAVariantPeptideIdentifier):
                     for other_label in labels:
@@ -641,7 +642,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, None)
         has_incorrect_fasta_header = False
         for peptide in SeqIO.parse(self.work_dir/'vep_moPepGen.fasta', 'fasta'):
-            labels = vpi.parse_variant_peptide_id(peptide.description)
+            labels = vpi.parse_variant_peptide_id(peptide.description, set())
             for label in labels:
                 if not isinstance(label, vpi.CircRNAVariantPeptideIdentifier):
                     continue

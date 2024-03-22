@@ -7,7 +7,7 @@ from pathlib import Path
 from Bio.SeqIO import FastaIO
 from moPepGen import params, svgraph, aa, get_logger, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
-from moPepGen.err import ReferenceSeqnameNotFoundError, warning
+from moPepGen.err import ReferenceSeqnameNotFoundError
 from moPepGen.cli import common
 
 
@@ -59,6 +59,11 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         choices=['max', 'min'],
         default='max',
         metavar='<choice>'
+    )
+    p.add_argument(
+        '--coding-novel-orf',
+        action='store_true',
+        help='Include coding transcripts to find alternative ORFs.'
     )
     p.add_argument(
         '--w2f-reassignment',
@@ -117,22 +122,26 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
     inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)
 
-    noncanonical_pool = aa.VariantPeptidePool()
+    novel_orf_peptide_pool = aa.VariantPeptidePool()
     orf_pool = []
 
     i = 0
     for tx_id in anno.transcripts:
         tx_model = anno.transcripts[tx_id]
-        if inclusion_biotypes and \
-                tx_model.transcript.biotype not in inclusion_biotypes:
-            continue
-        if exclusion_biotypes and \
-                tx_model.transcript.biotype in exclusion_biotypes:
-            continue
-        if tx_id in proteome:
-            continue
-        if tx_model.transcript_len() < args.min_tx_length:
-            continue
+        if tx_model.is_protein_coding:
+            if not args.coding_novel_orf:
+                pass
+        else:
+            if inclusion_biotypes and \
+                    tx_model.transcript.biotype not in inclusion_biotypes:
+                continue
+            if exclusion_biotypes and \
+                    tx_model.transcript.biotype in exclusion_biotypes:
+                continue
+            if tx_id in proteome:
+                continue
+            if tx_model.transcript_len() < args.min_tx_length:
+                continue
 
         try:
             peptides, orfs = call_noncoding_peptide_main(
@@ -149,11 +158,11 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             orf_pool.extend(orfs)
 
             for peptide in peptides:
-                noncanonical_pool.add_peptide(peptide, canonical_peptides,
+                novel_orf_peptide_pool.add_peptide(peptide, canonical_peptides,
                     cleavage_params)
         except ReferenceSeqnameNotFoundError as e:
             if not ReferenceSeqnameNotFoundError.raised:
-                warning(e.args[0] + ' Make sure your GTF and FASTA files match.')
+                logger.warning('%s: Make sure your GTF and FASTA files match.', e.args[0])
                 ReferenceSeqnameNotFoundError.mute()
         except:
             logger.error('Exception raised from %s', tx_id)
@@ -163,7 +172,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
         if i % 5000 == 0:
             logger.info('%i transcripts processed.', i)
 
-    noncanonical_pool.write(args.output_path)
+    novel_orf_peptide_pool.write(args.output_path)
     if args.output_orf:
         with open(args.output_orf, 'w') as handle:
             write_orf(orf_pool, handle)
@@ -223,16 +232,25 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
                 name=label
             )
         )
-    orfs = get_orf_sequences(pgraph, tx_id, tx_model.gene_id, tx_seq)
+    orfs = get_orf_sequences(
+        pgraph=pgraph,
+        tx_id=tx_id,
+        gene_id=tx_model.gene_id,
+        tx_seq=tx_seq,
+        exclude_canonical_orf=False
+    )
     return peptides, orfs
 
 def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str,
-        tx_seq:DNASeqRecordWithCoordinates) -> List[aa.AminoAcidSeqRecord]:
+        tx_seq:DNASeqRecordWithCoordinates, exclude_canonical_orf:bool
+        ) -> List[aa.AminoAcidSeqRecord]:
     """ Get the full ORF sequences """
     seqs = []
     translate_seqs = [tx_seq[i:].translate() for i in range(3)]
     for orf, orf_id in pgraph.orf_id_map.items():
         orf_start = orf[0]
+        if exclude_canonical_orf and tx_seq.orf and tx_seq.orf.start == orf_start:
+            continue
         seq_start = int(orf_start / 3)
         reading_frame_index = orf_start % 3
         #seq_start = int((orf_start - node.orf[0]) / 3)

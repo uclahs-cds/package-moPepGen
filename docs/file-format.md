@@ -212,7 +212,7 @@ The ID of circRNAs consists of two components. They all start with \<transcript_
 
 ## 2 Variant Peptide FASTA
 
-In moPepGen, the headers of the final output variant peptide FASTA contain the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript backbone ID and is followed by the variant IDs that it is associated with, separated by '|'. The variant IDs are defined in the GVF files. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. An integer index is thus always added to the end of each header entry to resolve redundancies.
+In moPepGen, the headers of the final output variant peptide FASTA contain the transcript IDs and variants associated with this variant peptide. The header of a peptide record starts with the transcript backbone ID and is followed by the variant IDs that it is associated with, separated by '|'. The variant IDs are defined in the GVF files. An ORF ID is added if the peptide is found from a novel ORF of the transcript. In some cases, several non-canonical peptides from the same transcript may share the same variants. This is most common in cases of peptide miscleavages. In addition, a frameshifting variant may cause multiple non-canonical peptides. An integer index is thus always added to the end of each header entry to resolve redundancies.
 
 If the same peptide is found in multiple transcripts, all are documented as separate entries in the fasta header, separated by space.
 
