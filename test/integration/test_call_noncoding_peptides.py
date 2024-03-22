@@ -19,9 +19,10 @@ def create_base_args() -> argparse.Namespace:
     args.reference_source = None
     args.output_path = None
     args.output_orf = None
+    args.coding_novel_orf = False
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
-    args.include_coding = False
+    args.coing_novel_orf = False
     args.min_tx_length = 21
     args.orf_assignment = 'max'
     args.w2f_reassignment = False

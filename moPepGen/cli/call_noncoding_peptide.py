@@ -61,7 +61,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
         metavar='<choice>'
     )
     p.add_argument(
-        '--include-coding',
+        '--coding-novel-orf',
         action='store_true',
         help='Include coding transcripts to find alternative ORFs.'
     )
@@ -122,14 +122,14 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
 
     inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)
 
-    noval_orf_peptide_pool = aa.VariantPeptidePool()
+    novel_orf_peptide_pool = aa.VariantPeptidePool()
     orf_pool = []
 
     i = 0
     for tx_id in anno.transcripts:
         tx_model = anno.transcripts[tx_id]
         if tx_model.is_protein_coding:
-            if not args.include_coding:
+            if not args.coding_novel_orf:
                 pass
         else:
             if inclusion_biotypes and \
@@ -158,7 +158,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
             orf_pool.extend(orfs)
 
             for peptide in peptides:
-                noval_orf_peptide_pool.add_peptide(peptide, canonical_peptides,
+                novel_orf_peptide_pool.add_peptide(peptide, canonical_peptides,
                     cleavage_params)
         except ReferenceSeqnameNotFoundError as e:
             if not ReferenceSeqnameNotFoundError.raised:
@@ -172,7 +172,7 @@ def call_noncoding_peptide(args:argparse.Namespace) -> None:
         if i % 5000 == 0:
             logger.info('%i transcripts processed.', i)
 
-    noval_orf_peptide_pool.write(args.output_path)
+    novel_orf_peptide_pool.write(args.output_path)
     if args.output_orf:
         with open(args.output_orf, 'w') as handle:
             write_orf(orf_pool, handle)

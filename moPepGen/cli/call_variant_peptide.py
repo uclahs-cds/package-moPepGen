@@ -84,7 +84,7 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         help='For circRNA, only keep noncanonical peptides spaning the backsplicing site.'
     )
     p.add_argument(
-        '--find-ass',
+        '--coding-novel-orf',
         action='store_true',
         help='Find alternative start site for coding transcripts.'
     )
@@ -325,7 +325,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         w2f_reassignment:bool,
         backsplicing_only:bool,
         save_graph:bool,
-        find_ass:bool,
+        coding_novel_orf:bool,
         **kwargs
         ) -> Tuple[Dict[Seq, List[AnnotatedPeptideLabel]], str, TypeDGraphs, TypePGraphs]:
     """ wrapper function to call variant peptides """
@@ -361,7 +361,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                     w2f=w2f_reassignment,
                     denylist=denylist,
                     save_graph=save_graph,
-                    find_ass=find_ass
+                    coding_novel_orf=coding_novel_orf
                 )
                 main_peptides = set(peptide_map.keys())
                 dgraphs = (dgraph, dgraphs[1], dgraphs[2])
@@ -392,7 +392,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
                 tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params,
                 max_adjacent_as_mnv=max_adjacent_as_mnv, w2f_reassignment=w2f_reassignment,
-                denylist=denylist, save_graph=save_graph, find_ass=find_ass
+                denylist=denylist, save_graph=save_graph, coding_novel_orf=coding_novel_orf
             )
             dgraphs[1][variant.id] = dgraph
             pgraphs[1][variant.id] = pgraph
@@ -567,7 +567,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 'max_variants_per_node': tuple(args.max_variants_per_node),
                 'additional_variants_per_misc': tuple(args.additional_variants_per_misc),
                 'backsplicing_only': args.backsplicing_only,
-                'find_ass': args.find_ass
+                'coding_novel_orf': args.coding_novel_orf
             }
             dispatches.append(dispatch)
 
@@ -652,7 +652,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
         max_adjacent_as_mnv:bool, truncate_sec:bool, w2f:bool,
-        denylist:Set[str], save_graph:bool, find_ass:bool
+        denylist:Set[str], save_graph:bool, coding_novel_orf:bool
         ) -> TypeCallPeptideReturnData:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
@@ -691,7 +691,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
     else:
         peptide_map = {}
 
-    if not tx_model.is_protein_coding or find_ass:
+    if not tx_model.is_protein_coding or coding_novel_orf:
         peptide_novel_orf = pgraph.call_variant_peptides(
             denylist=denylist,
             truncate_sec=truncate_sec,
@@ -714,7 +714,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
         w2f_reassignment:bool, denylist:Set[str], save_graph:bool,
-        find_ass:bool
+        coding_novel_orf:bool
         ) -> TypeCallPeptideReturnData:
     """ Call variant peptides for fusion """
     tx_id = variant.location.seqname
@@ -768,7 +768,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     else:
         peptide_map = {}
 
-    if not tx_model.is_protein_coding or find_ass:
+    if not tx_model.is_protein_coding or coding_novel_orf:
         peptide_novel_orf = pgraph.call_variant_peptides(
             denylist=denylist,
             w2f=w2f_reassignment,

@@ -26,7 +26,7 @@ def create_base_args() -> argparse.Namespace:
     args.graph_output_dir = None
     args.max_adjacent_as_mnv = 0
     args.backsplicing_only = False
-    args.find_ass = False
+    args.coding_novel_orf = False
     args.selenocysteine_termination = False
     args.w2f_reassignment = False
     args.max_variants_per_node = [7]
