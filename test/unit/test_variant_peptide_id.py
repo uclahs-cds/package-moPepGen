@@ -1,11 +1,9 @@
 """ Test module for VariantPeptideIdentifier """
 from typing import List
 import unittest
-from unittest.mock import MagicMock
 from test.unit import create_variants
 from moPepGen import aa
 from moPepGen.aa import VariantPeptideIdentifier as pi
-from moPepGen.gtf import GenomicAnnotation, TranscriptAnnotationModel
 
 
 class TestVaraintPeptideIdentifier(unittest.TestCase):
