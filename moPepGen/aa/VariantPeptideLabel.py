@@ -204,7 +204,7 @@ class VariantPeptideInfo():
 
             if check_source:
                 if tx_id not in coding_tx:
-                    info.sources.add(constant.SOURCE_NONCODING, group_map=group_map)
+                    info.sources.add(constant.SOURCE_NOVEL_ORF, group_map=group_map)
 
                 for gene_id, _ids in var_ids.items():
                     for var_id in _ids:
@@ -243,7 +243,7 @@ class VariantPeptideInfo():
 
     @staticmethod
     def is_noncoding(tx_id:str, inclusion:List[str], exclusion:List[str]) -> bool:
-        """ Check if a transcript is noncoding """
+        """ Check if a transcript is novel ORF """
         if inclusion:
             return tx_id in inclusion
         if exclusion:
@@ -252,12 +252,12 @@ class VariantPeptideInfo():
 
 
     def all_noncoding(self, anno:GenomicAnnotation) -> bool:
-        """ Check if all transcripts are noncoding """
+        """ Check if all transcripts are novel ORF """
         tx_ids = self.get_transcript_ids()
         return all(not anno.transcripts[tx_id].is_protein_coding for tx_id in tx_ids)
 
     def any_noncoding(self, anno:GenomicAnnotation) -> bool:
-        """ Check if all transcripts are noncoding """
+        """ Check if all transcripts are novel ORF """
         tx_ids = self.get_transcript_ids()
         return any(not anno.transcripts[tx_id].is_protein_coding for tx_id in tx_ids)
 

@@ -183,7 +183,7 @@ class BruteForceVariantPeptideCaller():
 
     def get_start_index(self):
         """ Get the "start index" used for filtering variants. For noncoding
-        transcript,s the  "start index" is set to the very beginning. """
+        transcript, the "start index" is set to the very beginning. """
         if self.tx_seq.orf:
             self.start_index = self.tx_seq.orf.start + 3
         else:

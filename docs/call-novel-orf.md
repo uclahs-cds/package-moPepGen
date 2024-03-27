@@ -1,7 +1,7 @@
-{% set command = 'callNoncoding' %}
+{% set command = 'callNovelORF' %}
 # {{ command }}
 
-::: moPepGen.cli.call_noncoding_peptide
+::: moPepGen.cli.call_novel_orf
 	handler: python
     selection:
       members: false

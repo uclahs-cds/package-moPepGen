@@ -62,7 +62,7 @@ LABEL_MAP1 = {
 }
 
 SOURCE_ORDER = {'gSNP': 0, 'gINDEL': 1, 'sSNV': 2, 'sINDEL': 3, 'Fusion':4,
-    'altSplice':5, 'circRNA': 6, 'Noncoding': 7}
+    'altSplice':5, 'circRNA': 6, 'NovelORF': 7}
 
 ANNOTATION_ATTRS = [
     [
@@ -211,12 +211,12 @@ class TestVariantSourceSet(unittest.TestCase):
 
         levels = copy.copy(SOURCE_ORDER)
         levels.update({
-            'Noncoding': 5,
-            frozenset({'Noncoding', 'circRNA'}): 6,
+            'NovelORF': 5,
+            frozenset({'NovelORF', 'circRNA'}): 6,
             'circRNA': 7
         })
         VariantSourceSet.set_levels(levels)
-        set1 = VariantSourceSet(['Noncoding', 'circRNA'])
+        set1 = VariantSourceSet(['NovelORF', 'circRNA'])
         set2 = VariantSourceSet(['circRNA'])
         self.assertTrue(set1 < set2)
 
@@ -281,20 +281,20 @@ class TestVariantPeptideInfo(unittest.TestCase):
 
         peptide = create_aa_record('KHIRJ','ENST0004|ENSG0004|ORF1|1')
         infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
-        self.assertIn('Noncoding', infos[0].sources)
+        self.assertIn('NovelORF', infos[0].sources)
 
         peptide = create_aa_record('KHIRJ','ENST0004|1')
         infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
-        self.assertIn('Noncoding', infos[0].sources)
+        self.assertIn('NovelORF', infos[0].sources)
 
 class TestPeptidePoolSplitter(unittest.TestCase):
     """ Test cases for testing PeptidePoolSplitter """
     def test_append_order_noncoding(self):
-        """ Test the group order noncoding """
+        """ Test the group order novel ORF """
         levels = copy.copy(SOURCE_ORDER)
         splitter = PeptidePoolSplitter(order=levels)
         splitter.append_order_internal_sources()
-        self.assertEqual(splitter.order['Noncoding'], 7)
+        self.assertEqual(splitter.order['NovelORF'], 7)
 
     def test_load_gvf(self):
         """ test loading gvf """
@@ -336,7 +336,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         self.assertTrue(len(splitter.peptides.peptides) > 0)
 
     def test_load_database_with_noncoding(self):
-        """ Test loading database of noncoding """
+        """ Test loading database of novel ORF """
         splitter = PeptidePoolSplitter()
 
         db_data = '\n'.join(PEPTIDE_DB_CASE1)
@@ -550,8 +550,8 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
         order = copy.copy(SOURCE_ORDER)
         order.update({
-            'Noncoding': 6,
-            frozenset(['altSplice', 'Noncoding']): 7,
+            'NovelORF': 6,
+            frozenset(['altSplice', 'NovelORF']): 7,
             'circRNA': 8
         })
         splitter = PeptidePoolSplitter(
@@ -561,9 +561,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         )
         splitter.split(2, [], tx2gene, coding_tx)
 
-        self.assertEqual({'altSplice-Noncoding'}, set(splitter.databases.keys()))
+        self.assertEqual({'altSplice-NovelORF'}, set(splitter.databases.keys()))
 
-        received = {str(x.seq) for x in splitter.databases['altSplice-Noncoding'].peptides}
+        received = {str(x.seq) for x in splitter.databases['altSplice-NovelORF'].peptides}
         expected = {x[0] for x in peptides_data}
         self.assertEqual(expected, received)
 
@@ -583,9 +583,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         label_map = LabelSourceMapping(copy.copy(LABEL_MAP1))
         order = copy.copy(SOURCE_ORDER)
         order.update({
-            'Noncoding': 6,
-            frozenset(['altSplice', 'Noncoding']): 7,
-            frozenset(['altSplice', 'Noncoding', 'CodonReassign']): 8,
+            'NovelORF': 6,
+            frozenset(['altSplice', 'NovelORF']): 7,
+            frozenset(['altSplice', 'NovelORF', 'CodonReassign']): 8,
             'circRNA': 9
         })
         splitter = PeptidePoolSplitter(
@@ -593,9 +593,9 @@ class TestPeptidePoolSplitter(unittest.TestCase):
             order=order,
             label_map=label_map,
         )
-        splitter.split(2, [{'altSplice', 'Noncoding'}], tx2gene, coding_tx)
+        splitter.split(2, [{'altSplice', 'NovelORF'}], tx2gene, coding_tx)
 
-        key = 'altSplice-Noncoding-additional'
+        key = 'altSplice-NovelORF-additional'
         self.assertEqual({key}, set(splitter.databases.keys()))
         received = {str(x.seq) for x in splitter.databases[key].peptides}
         expected = {x[0] for x in peptides_data}

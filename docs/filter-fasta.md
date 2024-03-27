@@ -55,15 +55,15 @@ moPepGen fitlerFasta \
   --enzyme trypsin
 ```
 
-### Filter Variant and Noncoding Peptides
+### Filter Variant and Novel ORF Peptides
 
-This example takes both the variant peptide FASTA and the noncoding peptide FASTA and filters the peptides based on the expression level of the transcripts they are associated with.
+This example takes both the variant peptide FASTA and the novel ORF peptide FASTA and filters the peptides based on the expression level of the transcripts they are associated with.
 
 ```bash
 moPepGen fitlerFasta \
   --input-path \
     path/to/variant_peptides.fasta \
-    path/to/noncoding_peptides.fasta \
+    path/to/novel_orf_peptides.fasta \
   --output-path path/to/variant_peptides_filter.fasta \
   --exprs-table path/to/expression.tsv \
   --delimiter '\t' \
@@ -77,7 +77,7 @@ moPepGen fitlerFasta \
 This example here removes any peptide sequences that appear in the given denylist.
 
 !!! warning:
-When using noncoding peptides in a denylist, do not also pass the noncoding peptide FASTA as an input FASTA, because all peptides will be removed.
+When using novel ORF peptides in a denylist, do not also pass the novel ORF peptide FASTA as an input FASTA, because all peptides will be removed.
 
 ```bash
 moPepGen fitlerFasta \
@@ -98,24 +98,24 @@ moPepGen filterFasta \
 
 ### Complex Filtering
 
-Sometimes we want a more complex filtering strategy. In the example below, we want to first remove any variant peptides that overlap with any noncoding peptides, and then filter again based on the expression level.
+Sometimes we want a more complex filtering strategy. In the example below, we want to first remove any variant peptides that overlap with any novel ORF peptides, and then filter again based on the expression level.
 
-Remove variant peptides if they overlap with any noncoding peptide.
+Remove variant peptides if they overlap with any novel ORF peptide.
 
 ```path
 moPepGen fitlerFasta \
   --input-path variant_peptides.fasta \
   --output-path variant_peptides_filter.fasta \
-  --denylist noncoding.fasta
+  --denylist novel_orf_peptide.fasta
 ```
 
-Filter again with both filtered variant peptides and noncoding peptides based on expression level.
+Filter again with both filtered variant peptides and novel ORF peptides based on expression level.
 
 ```path
 moPepGen fitlerFasta \
   --input-path \
     variant_peptides_filter.fasta \
-    noncoding_peptides.fasta \
+    novel_orf_peptide.fasta \
   --output-path combined_filter.fasta \
   --exprs-table expression.tsv \
   --delimiter '\t' \

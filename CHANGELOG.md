@@ -10,9 +10,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [1.3.2]
+## [1.4.0] - 2024-03-27
 
-- `--include-coding` and `--find-ass` added to `callNoncoding` and `callVariant` to call novel ORF peptides from coding transcripts. #659
+- `--coding-novel-orf` added to `callNoncoding` and `callVariant` to call novel ORF peptides from coding transcripts. #659
+
+- Renamed `callNoncoding` to `callNovelORF` and replaced the internal source type `Noncoding` to `NovelORF`. #863
 
 ## [1.3.1] - 2024-03-18
 
