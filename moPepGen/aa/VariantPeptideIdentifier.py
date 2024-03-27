@@ -307,7 +307,7 @@ class FusionVariantPeptideIdentifier(VariantPeptideIdentifier):
         return second.split(':')[0]
 
 class NovelORFPeptideIdentifier(VariantPeptideIdentifier):
-    """ Noncoding peptide identifier """
+    """ Novel ORF peptide identifier """
     def __init__(self, transcript_id:str, gene_id:str, codon_reassigns:List[str],
             is_protein_coding:bool, orf_id:str=None, index:int=None):
         """ constructor """

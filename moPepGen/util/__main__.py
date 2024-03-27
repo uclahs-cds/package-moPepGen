@@ -21,12 +21,12 @@ def main():
     )
 
     util.brute_force.parse_args(subparsers)
-    util.brute_force_noncoding.parse_args(subparsers)
+    util.brute_force_novel_orf.parse_args(subparsers)
     util.downsample_reference.parse_args(subparsers)
     util.validate_variant_calling.parse_args(subparsers)
     util.fuzz_test.parse_args(subparsers)
     util.extract_gvf.parse_args(subparsers)
-    util.validate_noncoding_calling.parse_args(subparsers)
+    util.validate_novel_orf_calling.parse_args(subparsers)
     util.add_fuzz_test_log.parse_args(subparsers)
 
     args = parser.parse_args()

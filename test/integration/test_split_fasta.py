@@ -35,7 +35,7 @@ class TestSplitDatabase(TestCaseIntegration):
         """ Create base args """
         args = argparse.Namespace()
         args.command = 'splitFasta'
-        args.noncoding_peptides = None
+        args.novel_orf_peptides = None
         args.order_source = None
         args.group_source = None
         args.max_source_groups = 1
@@ -57,7 +57,7 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -66,7 +66,7 @@ class TestSplitDatabase(TestCaseIntegration):
         expected = {
             'test_gINDEL.fasta','test_gSNP.fasta', 'test_Fusion.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
-            'test_Remaining.fasta', 'test_Noncoding.fasta',
+            'test_Remaining.fasta', 'test_NovelORF.fasta',
             'test_CodonReassign.fasta', 'test_SECT.fasta'
         }
         self.assertEqual(files, expected)
@@ -82,7 +82,7 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -92,7 +92,7 @@ class TestSplitDatabase(TestCaseIntegration):
         expected = {
             'test_coding.fasta', 'test_RNAEditingSite.fasta', 'test_Fusion.fasta',
             'test_circRNA.fasta', 'test_Remaining.fasta',
-            'test_Noncoding.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'
+            'test_NovelORF.fasta', 'test_CodonReassign.fasta', 'test_SECT.fasta'
         }
         self.assertEqual(files, expected)
 
@@ -107,7 +107,7 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'vep/vep_gINDEL.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -116,12 +116,12 @@ class TestSplitDatabase(TestCaseIntegration):
             'RNA:RNAEditingSite,Fusion,circRNA',
             'ALT:SECT,CodonReassign'
         ]
-        args.order_source = 'ALT,DNA,RNA,Noncoding'
+        args.order_source = 'ALT,DNA,RNA,NovelORF'
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {
             'test_DNA.fasta', 'test_RNA.fasta',
-            'test_ALT.fasta', 'test_Noncoding.fasta',
+            'test_ALT.fasta', 'test_NovelORF.fasta',
             'test_Remaining.fasta'
         }
         self.assertEqual(files, expected)
@@ -137,17 +137,17 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
-        args.additional_split = ['Noncoding-gSNP']
+        args.additional_split = ['NovelORF-gSNP']
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {
             'test_gINDEL.fasta','test_gSNP.fasta', 'test_Fusion.fasta',
             'test_RNAEditingSite.fasta', 'test_circRNA.fasta',
-            'test_Remaining.fasta', 'test_Noncoding.fasta',
+            'test_Remaining.fasta', 'test_NovelORF.fasta',
             'test_CodonReassign.fasta', 'test_SECT.fasta'
         }
         self.assertEqual(files, expected)
@@ -163,7 +163,7 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -173,7 +173,7 @@ class TestSplitDatabase(TestCaseIntegration):
         expected = {
             'test_coding.fasta', 'test_RNAEditingSite.fasta', 'test_Fusion.fasta',
             'test_circRNA.fasta', 'test_Remaining.fasta',
-            'test_Noncoding.fasta', 'test_ALT.fasta'
+            'test_NovelORF.fasta', 'test_ALT.fasta'
         }
         self.assertEqual(files, expected)
 
@@ -188,7 +188,7 @@ class TestSplitDatabase(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
@@ -200,31 +200,31 @@ class TestSplitDatabase(TestCaseIntegration):
             'NotCir',
             'ALT',
             'NotCirc-ALT',
-            'Noncoding',
-            'Noncoding-NotCirc',
-            'Noncoding-ALT',
+            'NovelORF',
+            'NovelORF-NotCirc',
+            'NovelORF-ALT',
             'circRNA',
             'circRNA-ALT',
             'circRNA-NotCirc',
-            'Noncoding-circRNA'
+            'NovelORF-circRNA'
         ])
         args.max_source_groups = 2
         cli.split_fasta(args)
 
     def test_split_fasta_noncoding_and_alttrans(self):
-        """ test splitFasta with only noncoding and alt trans peptides """
+        """ test splitFasta with only novel ORF and alt trans peptides """
         args = self.create_base_args()
         args.gvf = [
         ]
         args.variant_peptides = None
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
         cli.split_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {
-            'test_Noncoding.fasta', 'test_SECT.fasta',
+            'test_NovelORF.fasta', 'test_SECT.fasta',
             'test_Remaining.fasta', 'test_CodonReassign.fasta'
         }
         self.assertEqual(files, expected)

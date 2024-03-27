@@ -36,7 +36,7 @@ class TestSummarizeFasta(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         cli.summarize_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
@@ -54,9 +54,9 @@ class TestSummarizeFasta(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = None
-        args.order_source = 'gSNP,gINDEL,RNAEditingSite,Fusion,circRNA,rMATS,Noncoding'
+        args.order_source = 'gSNP,gINDEL,RNAEditingSite,Fusion,circRNA,rMATS,NovelORF'
         args.ignore_missing_source = True
         cli.summarize_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
@@ -98,7 +98,7 @@ class TestSummarizeFasta(TestCaseIntegration):
             self.data_dir/'circRNA/circ_rna.gvf'
         ]
         args.variant_peptides = self.data_dir/'peptides/variant.fasta'
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = None
         args.group_source = [
             'ALT:SECT,CodonReassign',
@@ -108,13 +108,13 @@ class TestSummarizeFasta(TestCaseIntegration):
             'NotCir',
             'ALT',
             'NotCirc-ALT',
-            'Noncoding',
-            'Noncoding-NotCirc',
-            'Noncoding-ALT',
+            'NovelORF',
+            'NovelORF-NotCirc',
+            'NovelORF-ALT',
             'circRNA',
             'circRNA-ALT',
             'circRNA-NotCirc',
-            'Noncoding-circRNA'
+            'NovelORF-circRNA'
         ])
         args.ignore_missing_source = True
         cli.summarize_fasta(args)
@@ -123,11 +123,11 @@ class TestSummarizeFasta(TestCaseIntegration):
         self.assertEqual(files, expected)
 
     def test_summarize_fasta_noncoding_only(self):
-        """ summarize fasta noncoding only """
+        """ summarize fasta novel ORF peptides only """
         args = self.create_base_args()
         args.gvf = []
         args.variant_peptides = None
-        args.noncoding_peptides = self.data_dir/'peptides/noncoding.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
         args.alt_translation_peptides = None
         cli.summarize_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
@@ -139,7 +139,7 @@ class TestSummarizeFasta(TestCaseIntegration):
         args = self.create_base_args()
         args.gvf = []
         args.variant_peptides = None
-        args.noncoding_peptides = None
+        args.novel_orf_peptides = None
         args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
         cli.summarize_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
@@ -151,7 +151,7 @@ class TestSummarizeFasta(TestCaseIntegration):
         args = self.create_base_args()
         args.gvf = []
         args.variant_peptides = None
-        args.noncoding_peptides = None
+        args.novel_orf_peptides = None
         args.alt_translation_peptides = None
         with self.assertRaises(ValueError):
             cli.summarize_fasta(args)

@@ -101,9 +101,9 @@ class TestFilterFasta(TestCaseIntegration):
         self.assertEqual(files, expected)
 
     def test_filter_fasta_noncoding_case1(self):
-        """ test filterFasta to filter noncoding peptides """
+        """ test filterFasta to filter novel ORF peptides """
         args = self.generate_default_args()
-        args.input_path = Path('test/files/peptides/noncoding.fasta')
+        args.input_path = Path('test/files/peptides/novel_orf.fasta')
         args.exprs_table = Path('test/files/rsem/rsem.txt')
         args.skip_lines = 1
         args.delimiter = '\t'
@@ -123,10 +123,10 @@ class TestFilterFasta(TestCaseIntegration):
         self.assertTrue(all(x in seqs_raw for x in seqs_filtered))
 
     def test_filter_fasta_noncoding_case2(self):
-        """ test filterFasta to filer noncoding peptides that no sequence should
+        """ test filterFasta to filer novel ORF peptides that no sequence should
         pass. """
         args = self.generate_default_args()
-        args.input_path = Path('test/files/peptides/noncoding.fasta')
+        args.input_path = Path('test/files/peptides/novel_orf.fasta')
         args.exprs_table = Path('test/files/rsem/rsem.txt')
         args.skip_lines = 1
         args.delimiter = '\t'
@@ -154,7 +154,7 @@ class TestFilterFasta(TestCaseIntegration):
         args.quant_cutoff = 100
         args.keep_all_coding = False
         args.keep_all_noncoding = False
-        args.denylist = Path('test/files/peptides/noncoding.fasta')
+        args.denylist = Path('test/files/peptides/novel_orf.fasta')
         cli.filter_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_filtered.fasta'}
@@ -172,7 +172,7 @@ class TestFilterFasta(TestCaseIntegration):
         args.quant_cutoff = 100
         args.keep_all_coding = False
         args.keep_all_noncoding = False
-        args.denylist = Path('test/files/peptides/noncoding.fasta')
+        args.denylist = Path('test/files/peptides/novel_orf.fasta')
         cli.filter_fasta(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_filtered.fasta'}

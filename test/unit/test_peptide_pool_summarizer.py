@@ -58,8 +58,8 @@ class TestPeptidePoolSummarizer(unittest.TestCase):
         # order = copy.copy(SOURCE_ORDER)
         order = {
             'altSplice': 1,
-            frozenset(['altSplice', 'Noncoding']): 2,
-            'Noncoding': 3,
+            frozenset(['altSplice', 'NovelORF']): 2,
+            'NovelORF': 3,
             'circRNA': 4
         }
         source_parser_map = copy.deepcopy(SOURCE_PARSER_MAP)
@@ -73,7 +73,7 @@ class TestPeptidePoolSummarizer(unittest.TestCase):
         )
         self.assertEqual(
             set(summarizer.summary_table.data.keys()),
-            {frozenset(['altSplice', 'Noncoding'])}
+            {frozenset(['altSplice', 'NovelORF'])}
         )
 
         handle = io.StringIO()

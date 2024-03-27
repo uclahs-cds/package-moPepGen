@@ -1,4 +1,4 @@
-""" Test the CLI for callNoncoding """
+""" Test the CLI for callNovelORF """
 import argparse
 import os
 import subprocess as sp
@@ -11,7 +11,7 @@ from moPepGen import cli, gtf, dna, aa
 def create_base_args() -> argparse.Namespace:
     """ Create a base args """
     args = argparse.Namespace()
-    args.command = 'callNoncodingPeptide'
+    args.command = 'callNovelORF'
     args.index_dir = None
     args.genome_fasta = None
     args.annotation_gtf = None
@@ -22,7 +22,7 @@ def create_base_args() -> argparse.Namespace:
     args.coding_novel_orf = False
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
-    args.coing_novel_orf = False
+    args.coding_novel_orf = False
     args.min_tx_length = 21
     args.orf_assignment = 'max'
     args.w2f_reassignment = False
@@ -35,13 +35,13 @@ def create_base_args() -> argparse.Namespace:
     args.quiet = True
     return args
 
-class TestCallNoncodingPeptides(TestCaseIntegration):
-    """ Test cases for moPepGen callNoncoding """
+class TestCallNovelORFPeptides(TestCaseIntegration):
+    """ Test cases for moPepGen callNovelORF """
 
     def test_call_noncoding_cli(self):
-        """ test callNoncoding cli """
+        """ test callNovelORF cli """
         cmd = f"""
-        {sys.executable} -m moPepGen.cli callNoncoding \\
+        {sys.executable} -m moPepGen.cli callNovelORF \\
             -o {self.work_dir}/circ.fasta \\
             -g {self.data_dir}/genome.fasta \\
             -a {self.data_dir}/annotation.gtf \\
@@ -55,15 +55,15 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
             print(res.stderr.decode('utf-8'))
             raise
 
-    def test_call_noncoding_peptides_case1(self):
-        """ test call noncoding peptides """
+    def test_call_novel_orf_peptides_case1(self):
+        """ test call novel ORF peptides """
         args = create_base_args()
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_path = self.work_dir/'noncoding_peptide.fasta'
         args.output_orf = self.work_dir/'noncoding_orf.fasta'
-        cli.call_noncoding_peptide(args)
+        cli.call_novel_orf_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'noncoding_peptide.fasta', 'noncoding_orf.fasta'}
         self.assertEqual(files, expected)
@@ -73,8 +73,8 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
             self.assertEqual(len(ids),len(set(ids)))
             self.assertTrue(peptides[0].id.split('|')[0] != 'None')
 
-    def test_call_noncoding_peptides_case2(self):
-        """ test call noncoding peptides when no ORF is found """
+    def test_call_novel_orf_peptides_case2(self):
+        """ test call novel ORF peptides when no ORF is found """
         args = create_base_args()
         ref_dir = self.data_dir/'downsampled_reference/ENST00000644482.1'
         args.genome_fasta = ref_dir/'genome.fasta'
@@ -82,7 +82,7 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
         args.proteome_fasta = ref_dir/'proteome.fasta'
         args.output_path = self.work_dir/'noncoding_peptide.fasta'
         args.output_orf = self.work_dir/'noncoding_orf.fasta'
-        cli.call_noncoding_peptide(args)
+        cli.call_novel_orf_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'noncoding_peptide.fasta', 'noncoding_orf.fasta'}
         self.assertEqual(files, expected)
@@ -91,7 +91,7 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
         size = os.stat(self.work_dir/'noncoding_orf.fasta').st_size
         self.assertEqual(size, 0)
 
-    def test_call_noncoding_peptides_w2f(self):
+    def test_call_novel_orf_peptides_w2f(self):
         """ With w2f reassignment """
         args = create_base_args()
         args.w2f_reassignment = True
@@ -100,7 +100,7 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_path = self.work_dir/'noncoding_peptide.fasta'
         args.output_orf = self.work_dir/'noncoding_orf.fasta'
-        cli.call_noncoding_peptide(args)
+        cli.call_novel_orf_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'noncoding_peptide.fasta', 'noncoding_orf.fasta'}
         self.assertEqual(files, expected)
@@ -111,7 +111,7 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
             self.assertTrue(peptides[0].id.split('|')[0] != 'None')
             self.assertTrue(any('W2F' in x for x in ids))
 
-    def test_call_noncoding_peptides_coding(self):
+    def test_call_novel_orf_peptides_coding(self):
         """ Test calling for novel ORF peptides from coding TXs """
         args = create_base_args()
         args.w2f_reassignment = True
@@ -121,7 +121,7 @@ class TestCallNoncodingPeptides(TestCaseIntegration):
         args.output_path = self.work_dir/'noncoding_peptide.fasta'
         args.output_orf = self.work_dir/'noncoding_orf.fasta'
         args.include_coding = True
-        cli.call_noncoding_peptide(args)
+        cli.call_novel_orf_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.output_path.name, args.output_orf.name}
         self.assertEqual(files, expected)
