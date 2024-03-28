@@ -23,7 +23,7 @@ CLI_MAIN_DESCRIPTION = """
 
 -- Calling
    callVariant         Call non-canonical peptides from genomic variants.
-   callNoncoding       Call non-canonical peptides from noncoding transcripts.
+   callNovelORF        Call non-canonical peptides from novel ORFs.
    callAltTranslation  Call non-canonital peptides with alternative translation
                        from coding transcripts.
 
@@ -66,7 +66,7 @@ def main():
     cli.add_subparser_parse_rmats(subparsers)
     cli.add_subparser_parse_circexplorer(subparsers)
     cli.add_subparser_call_variant(subparsers)
-    cli.add_subparser_call_noncoding(subparsers)
+    cli.add_subparser_call_novel_orf(subparsers)
     cli.add_subparser_call_alt_translation(subparsers)
     cli.add_subparser_split_fasta(subparsers)
     cli.add_subparser_filter_fasta(subparsers)

@@ -20,7 +20,7 @@ nav:
       - parseRMATS: parse-rmats.md
       - parseCIRCexplorer: parse-circexplorer.md
       - callVariant: call-variant.md
-      - callNoncoding: call-noncoding.md
+      - callNovelORF: call-novel-orf.md
       - callAltTranslation: call-alt-translation.md
       - filterFasta: filter-fasta.md
       - splitFasta: split-fasta.md

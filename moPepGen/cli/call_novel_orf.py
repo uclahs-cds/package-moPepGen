@@ -1,5 +1,5 @@
-""" `callNoncoding` calls novel peptide sequences from noncoding gene sequences.
-It finds all start codons of any noncoding gene. """
+""" `callNovelORF` calls noncanonical peptide sequences from novel ORFs.
+It finds all start codons of any novel ORF gene. """
 from __future__ import annotations
 import argparse
 from typing import TYPE_CHECKING, Set, List, Tuple, IO, Dict
@@ -19,17 +19,17 @@ if TYPE_CHECKING:
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
 # pylint: disable=W0212
-def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
-    """ CLI for moPepGen callNoncoding """
+def add_subparser_call_novel_orf(subparsers:argparse._SubParsersAction):
+    """ CLI for moPepGen callNovelORF """
     p:argparse.ArgumentParser = subparsers.add_parser(
-        name='callNoncoding',
-        help='Call non-canonical peptides from noncoding transcripts.',
+        name='callNovelORF',
+        help='Call non-canonical peptides from novel ORFs.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument(
         '-o', '--output-path',
         type=Path,
-        help='Output path to the noncanonical noncoding peptide FASTA.'
+        help='Output path to the novel ORF peptide FASTA.'
         f" Valid formats: {OUTPUT_FILE_FORMATS}",
         metavar='<file>',
         required=True
@@ -37,7 +37,7 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     p.add_argument(
         '--output-orf',
         type=Path,
-        help='Output path to the FASTA file with noncanonical ORF sequences.'
+        help='Output path to the FASTA file with novel ORF sequences.'
         f" Valid formats: {OUTPUT_FILE_FORMATS}",
         metavar='<file>',
         required=False,
@@ -90,12 +90,12 @@ def add_subparser_call_noncoding(subparsers:argparse._SubParsersAction):
     common.add_args_cleavage(p)
     common.add_args_debug_level(p)
 
-    p.set_defaults(func=call_noncoding_peptide)
+    p.set_defaults(func=call_novel_orf_peptide)
     common.print_help_if_missing_args(p)
     return p
 
-def call_noncoding_peptide(args:argparse.Namespace) -> None:
-    """ Main entrypoint for calling noncoding peptide """
+def call_novel_orf_peptide(args:argparse.Namespace) -> None:
+    """ Main entrypoint for calling novel ORF peptide """
     logger = get_logger()
     common.validate_file_format(
         args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
@@ -185,7 +185,7 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         cleavage_params:params.CleavageParams, orf_assignment:str,
         w2f_reassignment:bool
         ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
-    """ Call noncoding peptides """
+    """ Call novel ORF peptides """
     chrom = tx_model.transcript.location.seqname
     try:
         contig_seq = genome[chrom]

@@ -16,7 +16,7 @@ COMMAND_MAPPER = {
     'parseRMATS': cli.add_subparser_parse_rmats,
     'parseCIRCexplorer': cli.add_subparser_parse_circexplorer,
     'callVariant': cli.add_subparser_call_variant,
-    'callNoncoding': cli.add_subparser_call_noncoding,
+    'callNovelORF': cli.add_subparser_call_novel_orf,
     'callAltTranslation': cli.add_subparser_call_alt_translation,
     'filterFasta': cli.add_subparser_filter_fasta,
     'splitFasta': cli.add_subparser_split_fasta,

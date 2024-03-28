@@ -52,9 +52,9 @@ class PeptidePoolSplitter():
 
     def append_order_internal_sources(self):
         """ Add internal sources that are not present in any GTFs, including
-        noncoding, sec termination, and codon reassignment. """
+        novel ORF, sec termination, and codon reassignment. """
         sources = [
-            constant.SOURCE_NONCODING,
+            constant.SOURCE_NOVEL_ORF,
             constant.SOURCE_SEC_TERMINATION,
             constant.SOURCE_CODON_REASSIGNMENT
         ]

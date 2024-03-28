@@ -14,7 +14,7 @@ from moPepGen.cli import common
 def parse_args(subparsers:argparse._SubParsersAction):
     """ parse command line arguments """
     parser:argparse.ArgumentParser = subparsers.add_parser(
-        name='bruteForceNoncoding',
+        name='bruteForceNovelORF',
         help='Call noncanonical peptides from noncoding gnees with the brute'
         'force algorithm'
     )

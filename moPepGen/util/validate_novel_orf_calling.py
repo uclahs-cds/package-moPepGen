@@ -1,4 +1,4 @@
-""" Validate callNoncoding results with bruteForceNoncoding """
+""" Validate callNovelORF results with bruteForceNoncoding """
 import argparse
 from contextlib import redirect_stdout
 from datetime import datetime
@@ -7,20 +7,20 @@ import random
 from typing import IO, List, Set
 from Bio import SeqIO
 from moPepGen import get_logger
-from moPepGen.cli import call_noncoding_peptide, common
+from moPepGen.cli import call_novel_orf_peptide, common
 from moPepGen.gtf import GtfIO
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen.util.common import load_references
 from moPepGen.util.validate_variant_calling import call_downsample_reference
-from moPepGen.util import brute_force_noncoding
+from moPepGen.util import brute_force_novel_orf
 
 
 # pylint: disable=W0212
 def parse_args(subparsers:argparse._SubParsersAction):
     """ parse args """
     parser:argparse.ArgumentParser = subparsers.add_parser(
-        name='validateNoncodingCalling',
-        help='Validate the noncoding peptide calling result of the graph-based'
+        name='validateNovelORFCalling',
+        help='Validate the novel ORF peptide calling result of the graph-based'
         ' algorithm with the brute force algorithm.'
     )
     parser.add_argument(
@@ -65,10 +65,10 @@ def get_transcript_ids(handle:IO) -> Set[str]:
         tx_ids.add(record.transcript_id)
     return tx_ids
 
-def call_noncoding(ref_dir:Path, output_fasta:Path):
-    """ call callNoncoding """
+def call_novel_orf(ref_dir:Path, output_fasta:Path):
+    """ call callNovelORF """
     args = argparse.Namespace()
-    args.command = 'callNoncoding'
+    args.command = 'callNovelORF'
     args.genome_fasta = ref_dir/'genome.fasta'
     args.annotation_gtf = ref_dir/'annotation.gtf'
     args.proteome_fasta = ref_dir/'proteome.fasta'
@@ -86,7 +86,7 @@ def call_noncoding(ref_dir:Path, output_fasta:Path):
     args.inclusion_biotypes = None
     args.exclusion_biotypes = None
     args.quiet = True
-    call_noncoding_peptide(args)
+    call_novel_orf_peptide(args)
 
 def call_brute_force_noncoding(tx_id:str, ref_dir:Path, output_path:Path):
     """ call bruteForceNoncoding """
@@ -102,7 +102,7 @@ def call_brute_force_noncoding(tx_id:str, ref_dir:Path, output_path:Path):
 
     with open(output_path, 'wt') as handle:
         with redirect_stdout(handle):
-            brute_force_noncoding.main(args)
+            brute_force_novel_orf.main(args)
 
 def get_transcript_length(tx_id:str, ref_dir:Path) -> int:
     """ Get the transcript length """
@@ -114,7 +114,7 @@ def get_transcript_length(tx_id:str, ref_dir:Path) -> int:
     return len(anno.transcripts[tx_id].get_transcript_sequence(genome['chr1']))
 
 def assert_equal(noncoding_fasta:Path, brute_force_txt:Path, output_dir:Path) -> bool:
-    """ Compare the results of callNoncoding and bruteForceNoncoding """
+    """ Compare the results of callNovelORF and bruteForceNovelORF """
     with open(noncoding_fasta, 'rt') as handle:
         noncoding_seqs = set()
         for seq in SeqIO.parse(handle, 'fasta'):
@@ -170,12 +170,12 @@ class ValidationRecord():
         self.completed = datetime.now()
         self.status = status
 
-    def start_call_noncoding(self):
-        """ set timestamp when callNoncoding starts """
+    def start_call_novel_orf(self):
+        """ set timestamp when callNovelORF starts """
         self.call_noncoding_start = datetime.now()
 
-    def end_call_noncoding(self):
-        """ set timestamp when callNoncoding ends """
+    def end_call_novel_orf(self):
+        """ set timestamp when callNovelORF ends """
         self.call_noncoding_end = datetime.now()
 
     def start_brute_force(self):
@@ -271,12 +271,12 @@ def main(args:argparse.Namespace):
 
         record.tx_len = get_transcript_length(tx_id, ref_dir)
 
-        record.start_call_noncoding()
-        call_noncoding(
+        record.start_call_novel_orf()
+        call_novel_orf(
             ref_dir=ref_dir,
             output_fasta=noncoding_fasta
         )
-        record.end_call_noncoding()
+        record.end_call_novel_orf()
 
         record.start_brute_force()
         call_brute_force_noncoding(

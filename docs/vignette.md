@@ -197,7 +197,7 @@ By default `parseCIRCexplorer` accepts the text file output by CIRCexplorer2, ho
 
 ## Non-canonical Peptides Calling
 
-moPepGen provides three commands for non-canonical peptide calling. `callVariant` for calling peptides from variant GVFs, `callNoncoding` for performing 3-frame translation on noncoding transcripts, and `callAltTranslation` for calling peptides that harbor alternative translation events such as selenocysteine termination and W > F substitutants .
+moPepGen provides three commands for non-canonical peptide calling. `callVariant` for calling peptides from variant GVFs, `callNovelORF` for performing 3-frame translation on transcripts to find novel ORFs, and `callAltTranslation` for calling peptides that harbor alternative translation events such as selenocysteine termination and W > F substitutants.
 
 ### Variant Peptides
 
@@ -213,21 +213,21 @@ moPepGen callVariant \
 
 `callVariant` supports multi-processing and the number of processors to use can be specified with the `--threads` argument. The `--selenocysteine-termination` and `--w2f-reassignment` arguments can be used to call variant peptides that also carry selenocysteine termination and W2F reassignment. By default, `callVariant` uses trypsin as the enzyme for *in silico* digestion and allows up to 2 miscleavages, and this can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-variant) for a complete list of arguments supported by `callVariant`.
 
-### Noncoding Peptides
+### Novel ORF Peptides
 
-Noncoding peptides, peptids that could potentially be translated from novel open reading frames in transcripts that are annotated as noncoding, can be called using `callNoncoding`. Note that `callNoncoding` does not take any variants as input but only works with the reference set of noncoding transcripts. There is no need to rerun `callNoncoding` unless you wish to use a different enzyme or reference set.
+Novel ORF peptides, peptides that could potentially be translated from novel open reading frames, can be called using `callNovelORF`. By default, `callNovelORF` only searches for novel ORFs from transcripts canonically annotated as noncoding. Protein coding transcripts can be included using `--coding-novel-orf`. Note that `callNovelORF` does not take any variants as input but only works with the reference set of novel ORF transcripts. There is no need to rerun `callNovelORF` unless you wish to use a different enzyme or reference set.
 
 ```shell
-moPepGen callNoncoding \
+moPepGen callNovelORF \
     --index-dir index \
-    -o noncoding_peptides.fasta
+    -o novel_orf_peptides.fasta
 ```
 
-Similar to `callVariant`, trypsin is the default enzyme and the default maximum number of miscleavages is 2. These can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-noncoding) for a complete list of arguments supported by `callNoncoding`.
+Similar to `callVariant`, trypsin is the default enzyme and the default maximum number of miscleavages is 2. These can be specified with `--cleavage-rule` and `--miscleavage`. See [here](./call-novel-orf) for a complete list of arguments supported by `callNovelORF`.
 
 ### Alternative Translation Peptides
 
-Alternative translation peptides are those that harbor special events during translation, such as selenocysteine termination and W > F substitutants, where the genetic code is not altered but a different polypeptide is produced (see [here](./call-alt-translation) for more details). Similar to noncoding peptides, `callAltTranslation` only calls peptides using reference transcripts.
+Alternative translation peptides are those that harbor special events during translation, such as selenocysteine termination and W > F substitutants, where the genetic code is not altered but a different polypeptide is produced (see [here](./call-alt-translation) for more details). Similar to novel ORF peptides, `callAltTranslation` only calls peptides using reference transcripts.
 
 ```shell
 moPepGen callAltTranslation \
@@ -265,7 +265,7 @@ HETLFLLTFPR
 
 To resolve the issue of collapsed peptides like the example above, we use the `--order-source` argument that takes the priority order of sources considered. It takes the source names in a comma-separated format. For example `--order-source gSNP,RNAEditing` will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Note that the values passed into `--order-source` must match the values used in `--source` in the corresponding parser calls. If `--order-source` is not provided, the source priority order will be inferred from the order of input GVF files.
 
-Besides variant peptides called by `callVariant`, noncoding peptides and alternative translation peptides can also be passed to `summarizeFasta` with `--noncoding-peptides` and `--alt-translation-peptides`.
+Besides variant peptides called by `callVariant`, novel ORF peptides and alternative translation peptides can also be passed to `summarizeFasta` with `--novel-orf-peptides` and `--alt-translation-peptides`.
 
 ### Filtering
 
@@ -308,7 +308,7 @@ Similar to `summarizeFasta`, `splitFasta` also takes a `--order-source` to speci
 
 Note that, when assigning a peptide to a source category, it must carry exclusively the desired type(s) of variants. For example, a peptide of 'ENST00000622235.5|SNV-100-G-T|SNV-110-C-A|2' is assigned to `SNV`, while a peptide of 'ENST00000622235.5|SNV-100-G-T|RES-110-C-A|2' will be assigned to the category of `SNV-RNAEditing` but not `SNV`. `--max-source-groups` is used to specify the maximum number of source groups that should be split into individual FASTA files. The default value is 1, which means all peptides that contain two or more types of variants will not be written into their own FASTA file, but kept in the '\<prefix\>_Remaining.fasta' file.
 
-Similar to `summarizeFasta`, noncoding and alternative translation peptides can be passed to `splitFasta` via `--noncoding-peptides` and `--alt-translation-peptides`.
+Similar to `summarizeFasta`, novel ORF and alternative translation peptides can be passed to `splitFasta` via `--novel-orf-peptides` and `--alt-translation-peptides`.
 
 See [here](./split-fasta) for a complete list of arguments.
 
