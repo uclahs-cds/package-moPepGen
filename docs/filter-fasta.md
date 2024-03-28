@@ -77,7 +77,7 @@ moPepGen fitlerFasta \
 This example here removes any peptide sequences that appear in the given denylist.
 
 !!! warning:
-When using novel ORF peptides in a denylist, do not also pass the novel ORF peptide FASTA as an input FASTA, because all peptides will be removed.
+When using novel ORF peptides in a denylist, do not also pass the novel ORF peptide FASTA as an input FASTA, because all novel ORF peptides will be removed from the output.
 
 ```bash
 moPepGen fitlerFasta \
