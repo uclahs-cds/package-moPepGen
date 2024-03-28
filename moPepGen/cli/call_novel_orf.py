@@ -1,4 +1,4 @@
-""" `callNovelORF` calls noncanonical peptide sequences from novle ORFs of coding
+""" `callNovelORF` calls noncanonical peptide sequences from novel ORFs.
 It finds all start codons of any novel ORF gene. """
 from __future__ import annotations
 import argparse
