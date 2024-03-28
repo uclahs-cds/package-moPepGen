@@ -1,6 +1,6 @@
 """ `splitFasta` takes the FASTA file with variant peptide sequences called by
 [`callVariant`](./call-variant.md) with or without novel ORF peptides called by
-[`callNovelORF`](./call-novle-orf.md), and splits peptide sequences into databases.
+[`callNovelORF`](./call-novel-orf.md), and splits peptide sequences into databases.
 The split database FASTA files can be used for sequential library searching. """
 from __future__ import annotations
 import argparse
