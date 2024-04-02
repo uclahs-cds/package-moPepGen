@@ -1,0 +1,34 @@
+---
+name: Publish Python 🐍 distribution 📦 to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+
+      - name: Build distribution
+        uses: uclahs-cds/tool-pypi-publish-action/build-distribution
+        with:
+          - package-name: mopepgen
+
+  publish-to-pypi:
+    name: Publish Python 🐍 distribution 📦 to PyPI
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+
+      - name: Publish to PyPI
+        uses: uclahs-cds/tool-pypi-publish-action/publish-to-pypi
+        with:
+          - package-name: mopepgen
