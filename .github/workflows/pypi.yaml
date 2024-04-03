@@ -32,6 +32,6 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Publish to PyPI
-        uses: uclahs-cds/tool-pypi-publish-action/publish-to-pypi
+        uses: uclahs-cds/tool-pypi-publish-action/publish-to-pypi@a407d50
         with:
           - package-name: mopepgen
