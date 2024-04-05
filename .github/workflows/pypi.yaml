@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build distribution
-        uses: uclahs-cds/tool-pypi-publish-action/build-distribution@a407d50
+        uses: uclahs-cds/tool-pypi-publish-action/build-distribution@0d60e0c0d46ea8d0486bb15d8940587121f44fd2
         with:
           - package-name: mopepgen
 
@@ -32,6 +32,6 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Publish to PyPI
-        uses: uclahs-cds/tool-pypi-publish-action/publish-to-pypi@a407d50
+        uses: uclahs-cds/tool-pypi-publish-action/publish-to-pypi@0d60e0c0d46ea8d0486bb15d8940587121f44fd2
         with:
           - package-name: mopepgen
