@@ -7,6 +7,7 @@
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=plastic&logo=docker&logoColor=white)](https://github.com/uclahs-cds/package-moPepGen/pkgs/container/mopepgen)
 [![Documentation](https://img.shields.io/static/v1?style=plastic&message=ReadTheDocs&color=2C4AA8&logo=ReadTheDocs&logoColor=FFFFFF&label=Documentation)](https://uclahs-cds.github.io/package-moPepGen/)
 [![License](https://img.shields.io/badge/License-GPL_v2-blue)](./LICENSE.txt)
+[![DOI:10.1101/2024.03.28.587261](https://zenodo.org/badge/DOI/10.1101/2024.03.28.587261.svg)](https://doi.org/10.1101/2024.03.28.587261)
 
 <!-- badges: end -->
 
@@ -25,3 +26,7 @@ pip install git+ssh://git@github.com/uclahs-cds/package-moPepGen.git
 ## Documentation
 
 See [here](https://uclahs-cds.github.io/package-moPepGen/index.html)
+
+## Citation
+
+1. Zhu, C. et al. moPepGen: Rapid and Comprehensive Proteoform Identification. 2024.03.28.587261 Preprint at https://doi.org/10.1101/2024.03.28.587261 (2024).
