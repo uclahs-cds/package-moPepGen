@@ -27,6 +27,9 @@ jobs:
     environment:
       name: pypi
       url: https://pypi.org/p/${{ needs.build.outputs.package_name }}
+    permissions:
+      id-token: write
+
     steps:
       - name: Checkout main
         uses: actions/checkout@v2
