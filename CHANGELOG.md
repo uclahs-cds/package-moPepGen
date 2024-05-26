@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.1] - 2024-05-26
+
+- Fixed `VariantPepidePool` that old versions of `SeqUtils.molecular_weight` don't handle `SeqRecord` objects. #874
+
 ## [1.4.0] - 2024-03-27
 
 - `--coding-novel-orf` added to `callNoncoding` and `callVariant` to call novel ORF peptides from coding transcripts. #659

@@ -36,9 +36,9 @@ class VariantPeptidePool():
             min_mw = cleavage_params.min_mw
             min_length = cleavage_params.min_length
             max_length = cleavage_params.max_length
-            if SeqUtils.molecular_weight(peptide, 'protein') < min_mw:
+            if SeqUtils.molecular_weight(peptide.seq, 'protein') < min_mw:
                 return False
-            if len(peptide.seq) < min_length or len(peptide) > max_length:
+            if len(peptide.seq) < min_length or len(peptide.seq) > max_length:
                 return False
             if str(peptide.seq) in canonical_peptides:
                 return False
