@@ -50,7 +50,7 @@ class TestPeptidePoolSummarizer(unittest.TestCase):
         peptides_data = [
             [
                 'SSSSSSSR',
-                'CIRC-ENST0002-E1-E2|1 ENST0005|SE-2100|1'
+                'CIRC-ENST0002-E1-E2|1 ENST0005|SE-2100|ORF2|1'
             ]
         ]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})

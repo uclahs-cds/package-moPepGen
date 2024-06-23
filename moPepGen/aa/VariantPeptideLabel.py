@@ -203,7 +203,7 @@ class VariantPeptideInfo():
             info = VariantPeptideInfo(str(variant_id), gene_ids, var_ids, variant_id.index)
 
             if check_source:
-                if tx_id not in coding_tx:
+                if variant_id.orf_id is not None:
                     info.sources.add(constant.SOURCE_NOVEL_ORF, group_map=group_map)
 
                 for gene_id, _ids in var_ids.items():
