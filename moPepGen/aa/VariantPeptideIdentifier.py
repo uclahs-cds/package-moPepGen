@@ -238,9 +238,9 @@ class BaseVariantPeptideIdentifier(VariantPeptideIdentifier):
         x = [self.transcript_id]
         if self.gene_id:
             x.append(self.gene_id)
+        x += self.variant_ids
         if self.orf_id:
             x.append(self.orf_id)
-        x += self.variant_ids
         if self.index:
             x.append(str(self.index))
         return '|'.join(x)
