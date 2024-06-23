@@ -283,7 +283,7 @@ class TestVariantPeptideInfo(unittest.TestCase):
         infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
         self.assertIn('NovelORF', infos[0].sources)
 
-        peptide = create_aa_record('KHIRJ','ENST0004|1')
+        peptide = create_aa_record('KHIRJ','ENST0004|ORF1|1')
         infos = VariantPeptideInfo.from_variant_peptide(peptide, tx2gene, coding_tx, label_map)
         self.assertIn('NovelORF', infos[0].sources)
 
@@ -543,7 +543,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         peptides_data = [
             [
                 'SSSSSSSR',
-                'CIRC-ENST0002-E1-E2|1 ENST0005|SE-2100|1'
+                'CIRC-ENST0002-E1-E2|1 ENST0005|SE-2100|ORF2|1'
             ]
         ]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
@@ -576,7 +576,7 @@ class TestPeptidePoolSplitter(unittest.TestCase):
         peptides_data = [
             [
                 'SSSSFSSR',
-                'CIRC-ENST0002-E1-E2|1 ENST0005|SE-2100|W2F-5|1'
+                'CIRC-ENST0002-E1-E2|1 ENST0005|SE-2100|W2F-5|ORF-2|1'
             ]
         ]
         peptides = VariantPeptidePool({create_aa_record(*x) for x in peptides_data})
