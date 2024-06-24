@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed `VariantPeptideIdentifier` that ORF ID was added before variant IDs.
+
 ## [1.4.2] - 2024-06-23
 
 - Fixed `splitFasta` that NovelORF peptides coding transcripts not recognized correctly.
