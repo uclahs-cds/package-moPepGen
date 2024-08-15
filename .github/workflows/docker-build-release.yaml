@@ -1,0 +1,36 @@
+---
+name: Update image in GHCR
+
+run-name: >
+  ${{
+    github.event_name == 'delete' && format(
+      'Delete `{0}{1}`',
+      github.event.ref_type == 'branch' && 'branch-' || '',
+      github.event.ref
+    )
+    || github.ref == 'refs/heads/main' && 'Update `dev`'
+      || format(
+        'Update `{0}{1}`',
+        !startsWith(github.ref, 'refs/tags') && 'branch-' || '',
+        github.ref_name
+      )
+  }} docker tag
+
+on:
+  push:
+    branches-ignore: ['gh-pages']
+    tags: ['v*']
+  delete:
+
+jobs:
+  push-or-delete-image:
+    runs-on: ubuntu-latest
+    name: Update GitHub Container Registry
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: uclahs-cds/tool-Docker-action@v2.1.0
+      # Uncomment if you expect to use non-SemVer release tags
+      # with:
+      #   non-semver-tags: true
