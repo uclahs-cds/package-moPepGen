@@ -192,12 +192,9 @@ Circular RNAs are derived from back-spliced exons and introns. They exist as ind
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
 ##POS=<Description="Gene coordinate of circRNA start">
 #CHROM    POS  ID                            REF  ALT  QUAL  FILTER  INFO
-ENSG0001  413  CIRC-ENST0001-E2-E3-E4        .    .    .     .       OFFSET=0,211,398;LENGTH=72,85,63;INTRON=;TRANSCRIPT=ENST0001;GENE_SYMBOL=SYMB1
-ENSG0002  112  CIRC-ENST0001-E3-E4           .    .    .     .       OFFSET=0,175LENGTH=72,85;INTRON=;TRANSCRIPT=ENST0001;GENE_SYMBOL=SYMB2
-ENSG0002  112  CIRC-ENST0001-E3-I3-E4        .    .    .     .       OFFSET=0,73,175;LENGTH=72,103,85;INTRON=;TRANSCRIPT=ENST0001,ENST0012;GENE_SYMBOL=SYMB2
-ENSG0003  77   CIRC-ENST0003-E2-E3-E4        .    .    .     .       OFFSET=0,181,424;LENGTH=100,175,85;INTRON=;TRANSCRIPT=ENST0003;GENE_SYMBOL=SYMB3
-ENSG0003  77   CIRC-ENST0003-E2-I2-E3-I3-E4  .    .    .     .       OFFSET=0,101,181,357,424;LENGTH=100,80,175,67,85;INTRON=;TRANSCRIPT=ENST0003;GENE_SYMBOL=SYMB3
-ENSG0004  789  CI-ENST0004-I3                .    .    .     .       OFFSET=0;LENGTH=112;INTRON=1;TRNASCRIPT=ENST0004;GENE_SYMBOL=SYMB4
+ENSG00000128408.9	0	CIRC-ENST00000614167.2-0:464	.	.	.	.	OFFSET=0,323;LENGTH=323,82;INTRON=;TRANSCRIPT_ID=ENST00000614167.2;GENE_SYMBOL=RIBC2;GENOMIC_POSITION=chr22:0:464
+ENSG00000099949.21	0	CIRC-ENST00000642151.1-0:197	.	.	.	.	OFFSET=0,98;LENGTH=78,42;INTRON=;TRANSCRIPT_ID=ENST00000642151.1;GENE_SYMBOL=LZTR1;GENOMIC_POSITION=chr22:4980:5177
+ENSG00000099949.21	78	CIRC-ENST00000642151.1-78:98	.	.	.	.	OFFSET=0;LENGTH=20;INTRON=0;TRANSCRIPT_ID=ENST00000642151.1;GENE_SYMBOL=LZTR1;GENOMIC_POSITION=chr22:5058:5078
 ```
 
 circRNAs are not variants that are added to the transcript variant graph, thus the `REF` and `ALT` columns should be kept empty as ".". The `INFO` column must contain the following fields.
@@ -208,7 +205,7 @@ circRNAs are not variants that are added to the transcript variant graph, thus t
 + **`TRANSCRIPT`** The transcript ID of a transcript that is able to generate this circRNA (e.g. contains all exons and introns of the circRNA).
 + **`GENE_SYMBOL`** The name of the gene.
 
-The ID of circRNAs consists of two components. They all start with \<transcript_id>-circRNA or \<transcript_id>-ciRNA where `transcript_id` is the value from the `CHROM` column. Following that is the information for each fragment, indicating whether it is an exon (E) or intron (I) and the index of the fragment. For example, `ENSG0001-circRNA-E2-I2-E3` is made up of the second exon, the second intron, and the third exon of the gene ENSG0001.
+circRNAs IDs follow the format CIRC-\<transcript_id>-<upstrea>:<downstream>, where \<transcript_id> is taken from the INFO column, and \<upstream> and \<downstream> represent the upstream and downstream gene coordinates of the backsplicing site. For example, `CIRC-ENST0001.1-78:135` refers to a circRNA derived from transcript ENST0001.1 with backsplicing occurring between gene positions 78 and 135.
 
 ## 2 Variant Peptide FASTA
 
@@ -232,8 +229,8 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 For circRNA, the FASTA headers follow this style: `<circRNA-ID>|<variant_id_1>|...|<variant_id_k>|<index>`
 
 ```
->ENSG0001-circRNA-E3-E4|1
+>CIRC-ENSG0001-15:68|1
 XXXXXXXXXXXXX
->ENSG0001-circRNA-E3-E4|SNV-110-C-A|2
+>CIRC-ENSG0001-153:285|SNV-110-C-A|2
 XXXXXXXXXXXXX
 ```

@@ -50,14 +50,12 @@ class CIRCexplorer2KnownRecord():
 
         if self.circ_type == 'circRNA':
             fragment_type = 'exon'
-            circ_id = 'CIRC'
         elif self.circ_type == 'ciRNA':
             fragment_type = 'intron'
-            circ_id = 'CI'
         else:
             raise ValueError(f'circRNA type unsupported: {self.circ_type}')
 
-        fragment_ids:List[Tuple(fragment, str, int)] = []
+        fragment_ids:List[Tuple[SeqFeature, str, int]] = []
 
         for i, exon_size in enumerate(self.exon_sizes):
             exon_offset = self.exon_offsets[i]
@@ -95,9 +93,19 @@ class CIRCexplorer2KnownRecord():
             fragments.append(fragment)
 
         fragment_ids.sort(key=lambda x: x[0])
-        circ_id += f'-{tx_id}-' + '-'.join([f"{t}{i+1}" for _,t,i in fragment_ids])
 
-        genomic_location = f"{self.chrom}:{self.start}"
+        genomic_location = f"{self.chrom}:{self.start}:{self.end}"
+        start_gene = anno.coordinate_genomic_to_gene(self.start, gene_id)
+        end_gene = anno.coordinate_genomic_to_gene(self.end - 1, gene_id)
+        if strand == -1:
+            start_gene, end_gene = end_gene, start_gene
+        end_gene += 1
+        backsplicing_site = FeatureLocation(
+            seqname=tx_model.transcript.chrom,
+            start=start_gene,
+            end=end_gene
+        )
+        circ_id = f"CIRC-{tx_id}-{start_gene}:{end_gene}"
 
         return CircRNAModel(
             transcript_id=tx_id,
@@ -106,7 +114,8 @@ class CIRCexplorer2KnownRecord():
             _id=circ_id,
             gene_id=gene_id,
             gene_name=tx_model.transcript.gene_name,
-            genomic_location=genomic_location
+            genomic_location=genomic_location,
+            backsplicing_site=backsplicing_site
         )
 
     def is_valid(self, min_read_number:int) -> bool:
