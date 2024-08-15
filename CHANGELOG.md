@@ -14,6 +14,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `VariantPeptideIdentifier` that ORF ID was added before variant IDs.
 
+### Changed
+
+- Changed variant IDs for circRNAs to use backsplicing site instead of listing all exons/introns. #878
+
 ## [1.4.2] - 2024-06-23
 
 - Fixed `splitFasta` that NovelORF peptides coding transcripts not recognized correctly.
