@@ -17,6 +17,7 @@ run-name: >
   }} docker tag
 
 on:
+  workflow_dispatch:
   push:
     branches-ignore: ['gh-pages']
     tags: ['v*']
