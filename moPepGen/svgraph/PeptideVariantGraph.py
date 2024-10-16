@@ -689,6 +689,28 @@ class PeptideVariantGraph():
             for key, val in inbridges.items():
                 inbridge_list[key] = val
 
+    def create_variant_island_graph(self) -> None:
+        """
+        Create a variant island graph, that all reference amino acids are seperated,
+        on each individual node (each reference node contains one amino acid),
+        and variant sequences are on their own "islands". This can be used when
+        no cleavage is used as enzyme.
+        """
+        queue = deque([self.root])
+
+        while queue:
+            cur = queue.pop()
+
+            if cur is self.stop:
+                continue
+
+            if cur.seq is None:
+                for out_node in cur.out_nodes:
+                    queue.appendleft(out_node)
+                continue
+
+            cur.split_ref_to_single_amino_acid()
+
     def fit_into_cleavages_single_upstream(self, cur:PVGNode) -> T:
         """ Fit node into cleavage sites when it has a single upstream node """
         cur = self.cleave_if_possible(cur)

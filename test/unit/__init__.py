@@ -251,6 +251,19 @@ def create_variants(data) -> List[seqvar.VariantRecord]:
     """ Helper function to create a list of VariantRecord """
     return [create_variant(*x) for x in data]
 
+def create_variant_with_coordinate(query_start:int, query_end:int, start:int, end:int,
+        ref:str, alt:str, _type:str, _id:str, attrs:dict=None, seqname:str=None):
+    """ Create VariantWithCoordinate """
+    return seqvar.VariantRecordWithCoordinate(
+        variant = create_variant(
+            start=start, end=end, ref=ref, alt=alt, _type=_type, _id=_id,
+            attrs=attrs, seqname=seqname
+        ),
+        location=FeatureLocation(
+            start=query_start, end=query_end
+        )
+    )
+
 def create_dgraph1(seq, variants, has_known_orf:bool=True,
         variant_pool:VariantRecordPool=None,
         genome:dna.DNASeqDict=None, anno:gtf.GenomicAnnotation=None
@@ -381,3 +394,21 @@ def get_tx2gene_and_coding_tx(anno:gtf.GenomicAnnotation) -> Tuple[Dict[str,str]
         if tx_model.is_protein_coding:
             coding_tx.add(tx_id)
     return tx2gene, coding_tx
+
+def  create_pvg_node(seq:str, reading_frame_index=0, subgraph_id='TEST001', variants=None,
+        ) -> svgraph.PVGNode:
+    """ Create a PVGNode """
+    if variants is None:
+        variants = []
+    return svgraph.PVGNode(
+        seq = aa.AminoAcidSeqRecordWithCoordinates(
+            seq=Seq(seq),
+            locations=[MatchedLocation(
+                query=FeatureLocation(start=0, end=len(seq)),
+                ref=FeatureLocation(start=0, end=len(seq))
+            )],
+        ),
+        reading_frame_index=reading_frame_index,
+        subgraph_id=subgraph_id,
+        variants = [create_variant_with_coordinate(*x) for x in variants]
+    )

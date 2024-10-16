@@ -657,6 +657,21 @@ class PVGNode():
         self.add_out_edge(new_node)
         return new_node
 
+    def split_ref_to_single_amino_acid(self) -> PVGNode:
+        """ Split reference segments, those don't carry any variants, into nodes
+        that each node contains a single amino acid """
+        i = 0
+        j = 1
+        while True:
+            if len(self.seq.seq) <= i + 1:
+                return self
+            if self.has_variant_at(i, i+1) and self.has_variant_at(j, j+1):
+                i += 1
+                j += 1
+                continue
+            last = self.split_node(i + 1)
+            return last.split_ref_to_single_amino_acid()
+
     def truncate_right(self, i:int) -> PVGNode:
         """ Truncate the right i nucleotides off. """
         right_seq = self.seq[i:]
