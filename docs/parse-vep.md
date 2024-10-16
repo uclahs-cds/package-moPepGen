@@ -29,7 +29,7 @@ moPepGen relies on Ensembl Variant Effect Predictor ([VEP](https://www.ensembl.o
 
 Please refer to the official [VEP Tutorial](https://www.ensembl.org/info/docs/tools/vep/script/vep_tutorial.html) for instructions on downloading, installing and running VEP. The key is to ensure that the annotation version used in `VEP` is the same as the one you would like to use with moPepGen.
 
-`parseVEP` currently only supports the TSV output of `VEP`, please set the suffix of `--output_file` to `.tsv` to ensure the correct format is outputted by `VEP`.
+`parseVEP` currently only supports the TSV output of `VEP`, please set the suffix of `--output_file` to `.tsv` to ensure the correct format is outputted by `VEP`. `VEP`'s default output format is tab-delimited, and the `--tab` option adds extra columns to the output that are not used by moPepGen. So including or excluding `--tab` will not impact the results of moPepGen.
 
 ### Using an Ensembl GTF
 
