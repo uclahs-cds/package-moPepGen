@@ -876,7 +876,7 @@ class PeptideVariantGraph():
             raise ValueError('`circ_rna` must be given.')
 
         self.denylist = denylist or set()
-        cur = PVGCursor(None, self.root, True, [], [])
+        cur = PVGCursor(None, deque([self.root]), True, [], [])
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
         peptide_pool = VariantPeptideDict(
             tx_id=self.id,
@@ -905,17 +905,18 @@ class PeptideVariantGraph():
 
         while not traversal.is_done():
             cur = traversal.queue.pop()
-            if cur.out_node is self.root and cur.out_node.seq is None:
-                for out_node in cur.out_node.out_nodes:
-                    cur = PVGCursor(cur.out_node, out_node, False,
+            target_node = cur.out_nodes[0]
+            if target_node is self.root and target_node.seq is None:
+                for out_node in target_node.out_nodes:
+                    cur = PVGCursor(cur.out_nodes[0], deque([out_node]), False,
                         cur.orfs, [])
                     traversal.queue.appendleft(cur)
                 continue
 
-            if cur.out_node is self.stop:
+            if target_node is self.stop:
                 continue
 
-            if self.is_circ_rna() and cur.out_node.is_hybrid_node(self.subgraphs):
+            if self.is_circ_rna() and target_node.is_hybrid_node(self.subgraphs):
                 self.call_and_stage_silently(
                     cursor=cur, traversal=traversal
                 )
@@ -959,7 +960,7 @@ class PeptideVariantGraph():
     def call_and_stage_known_orf_in_cds(self, cursor:PVGCursor,
             traversal:PVGTraversal) -> None:
         """ Known ORF in CDS branch """
-        target_node = cursor.out_node
+        target_node = cursor.out_nodes[0]
         in_cds = cursor.in_cds
         orfs = [orf.copy() for orf in cursor.orfs]
 
@@ -1024,20 +1025,20 @@ class PeptideVariantGraph():
                 cur_orfs[0].start_gain = cur_start_gain
             else:
                 cur_cleavage_gain = None
-            cur = PVGCursor(target_node, out_node, in_cds, cur_orfs, cur_cleavage_gain)
-            traversal.stage(target_node, out_node, cur)
+            cur = PVGCursor(target_node, deque([out_node]), in_cds, cur_orfs, cur_cleavage_gain)
+            traversal.stage(target_node, deque([out_node]), cur)
 
     def call_and_stage_known_orf_not_in_cds(self, cursor:PVGCursor,
             traversal:PVGTraversal) -> None:
         """ Kown ORF not in CDS branch """
-        target_node = cursor.out_node
+        target_node = cursor.out_nodes[0]
         in_cds = cursor.in_cds
         orfs = []
         start_gain = set()
         if target_node.reading_frame_index != self.known_reading_frame_index():
             for out_node in target_node.out_nodes:
-                cur = PVGCursor(target_node, out_node, False, orfs)
-                traversal.stage(target_node, out_node, cur)
+                cur = PVGCursor(target_node, deque([out_node]), False, orfs)
+                traversal.stage(target_node, deque([out_node]), cur)
             return
 
         start_index = target_node.seq.get_query_index(
@@ -1048,10 +1049,10 @@ class PeptideVariantGraph():
         if start_index == -1:
             for out_node in target_node.out_nodes:
                 cur = PVGCursor(
-                    in_node=target_node, out_node=out_node,
+                    in_node=target_node, out_nodes=deque([out_node]),
                     in_cds=False, orfs=orfs
                 )
-                traversal.stage(target_node, out_node, cur)
+                traversal.stage(target_node, deque([out_node]), cur)
         else:
             start_gain.update(target_node.get_variants_at(start_index))
             additional_variants = []
@@ -1091,29 +1092,29 @@ class PeptideVariantGraph():
                     cur_orf = orf.copy()
                     cur_orf.start_gain = cur_start_gain
                     cur = PVGCursor(
-                        in_node=target_node, out_node=out_node, in_cds=in_cds,
+                        in_node=target_node, out_nodes=deque([out_node]), in_cds=in_cds,
                         orfs=[cur_orf],  cleavage_gain=cur_cleavage_gain
                     )
-                    traversal.stage(target_node, out_node, cur)
+                    traversal.stage(target_node, deque([out_node]), cur)
             self.remove_node(node_copy)
 
     @staticmethod
     def call_and_stage_silently(cursor:PVGCursor, traversal:PVGTraversal):
         """ This is called when the cursor node is invalid. """
-        target_node = cursor.out_node
+        target_node = cursor.out_nodes[0]
         finding_start_site = cursor.finding_start_site
 
         for node in target_node.out_nodes:
-            cursor = PVGCursor(target_node, node, False, [],
+            cursor = PVGCursor(target_node, deque([node]), False, [],
                 [], finding_start_site)
-            traversal.stage(target_node, node, cursor)
+            traversal.stage(target_node, deque([node]), cursor)
 
     def call_and_stage_unknown_orf(self, cursor:PVGCursor,
             traversal:PVGTraversal) -> None:
         """ For a given node in the graph, call miscleavage peptides if it
         is in CDS. For each of its outbond node, stage it until all inbond
         edges of the outbond node is visited. """
-        target_node = cursor.out_node
+        target_node = cursor.out_nodes[0]
         in_cds = cursor.in_cds
         orfs = [orf.copy() for orf in cursor.orfs]
         finding_start_site = cursor.finding_start_site
@@ -1252,9 +1253,9 @@ class PeptideVariantGraph():
             else:
                 filtered_orfs = cur_orfs
 
-            cursor = PVGCursor(target_node, out_node, cur_in_cds, filtered_orfs,
+            cursor = PVGCursor(target_node, deque([out_node]), cur_in_cds, filtered_orfs,
                 cur_cleavage_gain, finding_start_site)
-            traversal.stage(target_node, out_node, cursor)
+            traversal.stage(target_node, deque([out_node]), cursor)
 
         for node, orfs, is_start_codon, additional_variants in node_list:
             if traversal.find_ass and any(o == traversal.known_orf_tx[0] for o in orfs):

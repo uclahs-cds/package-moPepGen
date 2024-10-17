@@ -10,16 +10,16 @@ if TYPE_CHECKING:
     from moPepGen.svgraph.PVGNode import PVGNode
     from moPepGen.svgraph.PVGOrf import PVGOrf
     from moPepGen.seqvar import VariantRecord
-    from moPepGen.svgraph import VariantPeptideDict
+    from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
 
 class PVGCursor():
     """ Helper class for cursors when graph traversal to call peptides. """
-    def __init__(self, in_node:PVGNode, out_node:PVGNode, in_cds:bool,
+    def __init__(self, in_node:PVGNode, out_nodes:Deque[PVGNode], in_cds:bool,
             orfs:List[PVGOrf]=None, cleavage_gain:List[VariantRecord]=None,
             finding_start_site:bool=True):
         """ constructor """
         self.in_node = in_node
-        self.out_node = out_node
+        self.out_nodes = out_nodes
         self.in_cds = in_cds
         self.cleavage_gain = cleavage_gain or []
         self.orfs = orfs or []
@@ -33,7 +33,7 @@ class PVGTraversal():
             pool:VariantPeptideDict, known_orf_tx:Tuple[int,int]=None,
             known_orf_aa:Tuple[int,int]=None, circ_rna:CircRNAModel=None,
             queue:Deque[PVGCursor]=None,
-            stack:Dict[PVGNode, Dict[PVGNode, PVGCursor]]=None,
+            stack:Dict[str, Dict[str, PVGCursor]]=None,
             orf_assignment:str='max', backsplicing_only:bool=False,
             find_ass:bool=False):
         """ constructor """
@@ -195,25 +195,25 @@ class PVGTraversal():
             return 1
         return -1
 
-    def stage(self, in_node:PVGNode, out_node:PVGNode, cursor:PVGCursor):
+    def stage(self, in_node:PVGNode, out_nodes:Deque[PVGNode], cursor:PVGCursor):
         """ When a node is visited through a particular edge during the variant
         peptide finding graph traversal, it is staged until all inbond edges
         are visited. """
-        in_nodes = self.stack.setdefault(out_node, {})
+        in_nodes = self.stack.setdefault(out_nodes[0].id, {})
 
         if in_node in in_nodes:
             return
-        in_nodes[in_node] = cursor
+        in_nodes[in_node.id] = cursor
 
-        if len(in_nodes) != len(out_node.in_nodes):
+        if len(in_nodes) != len(out_nodes[0].in_nodes):
             return
 
-        curs = list(self.stack[out_node].values())
+        curs = list(self.stack[out_nodes[0].id].values())
 
-        is_circ_rna = any(x.variant.is_circ_rna() for x in out_node.variants)
+        is_circ_rna = any(x.variant.is_circ_rna() for x in out_nodes[0].variants)
 
         if self.known_orf_aa[0] is not None:
-            if out_node.reading_frame_index == self.known_reading_frame_index():
+            if out_nodes[0].reading_frame_index == self.known_reading_frame_index():
                 func = self.cmp_known_orf_in_frame
             else:
                 func = self.cmp_known_orf_frame_shifted

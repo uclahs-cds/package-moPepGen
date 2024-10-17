@@ -1,5 +1,6 @@
 """ Module to test PeptideVariantGraph """
 from typing import Tuple, Dict, List
+from collections import deque
 import unittest
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
@@ -623,7 +624,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,30), (0,10))
         orf = PVGOrf([0, None])
-        cursor = PVGCursor(nodes[1], nodes[2], True, [orf])
+        cursor = PVGCursor(nodes[1], deque([nodes[2]]), True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
 
         received = {str(x) for x in traversal.pool.peptides.keys()}
@@ -651,7 +652,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (18,60), (6,20))
         orf = PVGOrf([0, None], set())
-        cursor = PVGCursor(nodes[1], nodes[2], False, [orf])
+        cursor = PVGCursor(nodes[1], deque([nodes[2]]), False, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(traversal.queue), 1)
         self.assertTrue(traversal.queue[-1].in_cds)
@@ -674,7 +675,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         pool = VariantPeptideDict(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (24,90), (8,30))
-        cursor = PVGCursor(nodes[1], nodes[2], False, [0, None], [])
+        cursor = PVGCursor(nodes[1], deque([nodes[2]]), False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(pool.peptides), 2)
         seqs = {str(x) for x in pool.peptides.keys()}
@@ -698,7 +699,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         pool = VariantPeptideDict(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,90), (2,30))
-        cursor = PVGCursor(graph.root, nodes[2], False, [0, None], [])
+        cursor = PVGCursor(graph.root, deque([nodes[2]]), False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(pool.peptides), 0)
 
@@ -723,7 +724,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,90), (0,30))
         orf = PVGOrf([0, None])
-        cursor = PVGCursor(nodes[2], nodes[4], True, [orf])
+        cursor = PVGCursor(nodes[2], deque([nodes[4]]), True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(pool.peptides), 1)
         seqs = {str(x) for x in pool.peptides.keys()}
@@ -750,10 +751,10 @@ class TestPeptideVariantGraph(unittest.TestCase):
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,42), (0,14))
         orf = PVGOrf([0,None])
-        cursor = PVGCursor(nodes[4], nodes[5], False, [orf], [])
+        cursor = PVGCursor(nodes[4], deque([nodes[5]]), False, [orf], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         orf = PVGOrf([0, None])
-        cursor = PVGCursor(nodes[2], nodes[6], True, [orf])
+        cursor = PVGCursor(nodes[2], deque([nodes[6]]), True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertEqual(len(traversal.queue[0].orfs[0].start_gain), 1)
 
@@ -776,7 +777,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         pool = VariantPeptideDict(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
-        cursor = PVGCursor(nodes[5], nodes[6], False, [0, None], [])
+        cursor = PVGCursor(nodes[5], deque([nodes[6]]), False, [0, None], [])
         graph.call_and_stage_known_orf(cursor,  traversal)
         self.assertFalse(traversal.queue[0].in_cds)
 
@@ -797,7 +798,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
         orf = PVGOrf([0, None])
-        cursor = PVGCursor(nodes[1], nodes[3], True, [orf])
+        cursor = PVGCursor(nodes[1], deque([nodes[3]]), True, [orf])
         graph.call_and_stage_known_orf(cursor,  traversal)
         label = list(list(traversal.pool.peptides.values())[0].values())[0].label
         self.assertEqual(label.count('|'), 1)
