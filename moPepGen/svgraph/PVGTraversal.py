@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from moPepGen.svgraph.PVGNode import PVGNode
     from moPepGen.svgraph.PVGOrf import PVGOrf
     from moPepGen.seqvar import VariantRecord
-    from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
+    from moPepGen.svgraph.PVGPeptideFinder import PVGPeptideFinder
 
 class PVGCursor():
     """ Helper class for cursors when graph traversal to call peptides. """
@@ -30,7 +30,7 @@ class PVGTraversal():
     traversal to call variant peptides.
     """
     def __init__(self, check_variants:bool, check_orf:bool,
-            pool:VariantPeptideDict, known_orf_tx:Tuple[int,int]=None,
+            pool:PVGPeptideFinder, known_orf_tx:Tuple[int,int]=None,
             known_orf_aa:Tuple[int,int]=None, circ_rna:CircRNAModel=None,
             queue:Deque[PVGCursor]=None,
             stack:Dict[str, Dict[str, PVGCursor]]=None,

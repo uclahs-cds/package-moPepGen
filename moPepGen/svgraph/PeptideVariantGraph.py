@@ -7,7 +7,7 @@ from Bio.Seq import Seq
 from moPepGen import aa, params
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
-from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
+from moPepGen.svgraph.PVGPeptideFinder import PVGPeptideFinder
 from moPepGen.svgraph.PVGNode import PVGNode
 from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.svgraph.PVGNodeCollapser import PVGNodeCollapser, PVGNodePopCollapser
@@ -15,7 +15,7 @@ from moPepGen.svgraph.PVGTraversal import PVGTraversal, PVGCursor
 
 
 if TYPE_CHECKING:
-    from .VariantPeptideDict import AnnotatedPeptideLabel
+    from .PVGPeptideFinder import AnnotatedPeptideLabel
     from moPepGen.circ import CircRNAModel
     from moPepGen.params import CleavageParams
 
@@ -878,7 +878,7 @@ class PeptideVariantGraph():
         self.denylist = denylist or set()
         cur = PVGCursor(None, deque([self.root]), True, [], [])
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
-        peptide_pool = VariantPeptideDict(
+        peptide_pool = PVGPeptideFinder(
             tx_id=self.id,
             global_variant=self.global_variant,
             gene_id=self.gene_id,

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from moPepGen.params import CleavageParams
     from moPepGen.circ import CircRNAModel
 
-class VariantPeptideMetadata():
+class PVGPeptideMetadata():
     """ Variant peptide metadata """
     def __init__(self, label:str=None, orf:Tuple[int,int]=None,
             is_pure_circ_rna:bool=False, has_variants:bool=False,
@@ -133,7 +133,7 @@ class AnnotatedPeptideLabel:
         """ to line """
         return [f"{self.label}\t{seg.to_line()}" for seg in self.segments]
 
-class MiscleavedNodeSeries():
+class PVGNodePath():
     """ Helper class when calling for miscleavage peptides. The nodes contained
     by this class can be joined to make a miscleavage peptide. """
     def __init__(self, nodes:List[PVGNode], additional_variants:Set[VariantRecord]):
@@ -172,9 +172,9 @@ class MiscleavedNodeSeries():
                 return True
         return False
 
-TypeVariantPeptideMetadataMap = Dict[Seq, Dict[str, VariantPeptideMetadata]]
+TypeVariantPeptideMetadataMap = Dict[Seq, Dict[str, PVGPeptideMetadata]]
 
-class MiscleavedNodes():
+class PVGCandidateNodePaths():
     """ Helper class for looking for peptides with miscleavages. This class
     defines the collection of nodes in sequence that starts from the same node,
     with up to X allowed miscleavages that makes the miscleaved peptide
@@ -189,7 +189,7 @@ class MiscleavedNodes():
         - `leading_node` (PVGNode): The start node that the miscleaved peptides
           are called from. This node must present in the PVG graph.
     """
-    def __init__(self, data:Deque[MiscleavedNodeSeries],
+    def __init__(self, data:Deque[PVGNodePath],
             cleavage_params:CleavageParams, orfs:List[PVGOrf]=None, tx_id:str=None,
             gene_id:str=None, leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
             is_circ_rna:bool=False):
@@ -271,12 +271,12 @@ class MiscleavedNodes():
         segments.sort(key=lambda x:x.query)
         return segments
 
-    def join_miscleaved_peptides(self, pool:TypeVariantPeptideMetadataMap,
+    def join_peptides(self, pool:TypeVariantPeptideMetadataMap,
             check_variants:bool, additional_variants:List[VariantRecord],
             denylist:Set[str], is_start_codon:bool=False,
             circ_rna:CircRNAModel=None, truncate_sec:bool=False,
             check_external_variants:bool=True, check_orf:bool=False
-            ) -> Iterable[Tuple[Seq, VariantPeptideMetadata]]:
+            ) -> Iterable[Tuple[Seq, PVGPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
         Args:
@@ -290,7 +290,7 @@ class MiscleavedNodes():
         """
         for series in self.data:
             queue = series.nodes
-            metadata = VariantPeptideMetadata(check_orf=check_orf)
+            metadata = PVGPeptideMetadata(check_orf=check_orf)
             seqs_to_join:List[Seq] = []
             size:int = 0
             variants:Dict[str,VariantRecord] = {}
@@ -405,12 +405,12 @@ class MiscleavedNodes():
                 yield seq, metadata
 
 
-    def translational_modification(self, seq:Seq, metadata:VariantPeptideMetadata,
+    def translational_modification(self, seq:Seq, metadata:PVGPeptideMetadata,
             denylist:Set[str], variants:Set[VariantRecord], is_start_codon:bool,
             selenocysteines:List[seqvar.VariantRecordWithCoordinate],
             check_variants:bool, check_external_variants:bool, pool:Set[Seq],
             nodes:List[PVGNode]
-            ) -> Iterable[Tuple[Seq,VariantPeptideMetadata]]:
+            ) -> Iterable[Tuple[Seq,PVGPeptideMetadata]]:
         """ Apply any modification that could happen during translation. The
         kinds of modifications that could happen are:
         1. Leading Methionine truncation.
@@ -551,7 +551,7 @@ def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
             + str(label_counter[label])
         peptide_pool.add(seq)
 
-class VariantPeptideDict():
+class PVGPeptideFinder():
     """ Variant peptide pool as dict.
 
     Attributes:
@@ -584,11 +584,11 @@ class VariantPeptideDict():
         self.cleavage_params = cleavage_params
         self.check_orf = check_orf
 
-    def find_miscleaved_nodes(self, node:PVGNode, orfs:List[PVGOrf],
+    def find_candidate_node_paths(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:CleavageParams, tx_id:str, gene_id:str,
             leading_node:PVGNode, subgraphs:SubgraphTree, is_circ_rna:bool,
             backsplicing_only:bool
-            ) -> MiscleavedNodes:
+            ) -> PVGCandidateNodePaths:
         """ Find all miscleaved nodes.
 
         node vs leading_node:
@@ -614,7 +614,7 @@ class VariantPeptideDict():
         if not orfs:
             raise ValueError('ORFs are empty')
         queue = deque([[node]])
-        nodes = MiscleavedNodes(
+        nodes = PVGCandidateNodePaths(
             data=deque([]),
             cleavage_params=cleavage_params,
             orfs=orfs,
@@ -628,7 +628,7 @@ class VariantPeptideDict():
         if not (node.cpop_collapsed or node.truncated) and \
                 (not backsplicing_only or len(node.get_subgraph_id_set()) > 1):
             additional_variants = leading_node.get_downstream_stop_altering_variants()
-            series = MiscleavedNodeSeries([node], additional_variants)
+            series = PVGNodePath([node], additional_variants)
             if series.is_too_long(self.cleavage_params) and not node.selenocysteines:
                 return nodes
             if not series.is_too_short(self.cleavage_params):
@@ -687,7 +687,7 @@ class VariantPeptideDict():
                     continue
 
                 if not _node.cpop_collapsed:
-                    series = MiscleavedNodeSeries(copy.copy(new_batch), additional_variants)
+                    series = PVGNodePath(copy.copy(new_batch), additional_variants)
                     if series.is_too_long(self.cleavage_params) \
                             and not series.has_trailing_selenocysteins():
                         continue
@@ -732,7 +732,7 @@ class VariantPeptideDict():
         """
         if leading_node is None:
             leading_node = node
-        miscleaved_nodes = self.find_miscleaved_nodes(
+        miscleaved_nodes = self.find_candidate_node_paths(
             node=node, orfs=orfs, cleavage_params=cleavage_params,
             tx_id=self.tx_id, gene_id=self.gene_id, leading_node=leading_node,
             subgraphs=subgraphs, is_circ_rna=circ_rna is not None,
@@ -741,7 +741,7 @@ class VariantPeptideDict():
         if self.global_variant and self.global_variant not in additional_variants:
             additional_variants.append(self.global_variant)
 
-        it = miscleaved_nodes.join_miscleaved_peptides(
+        it = miscleaved_nodes.join_peptides(
             pool=self.peptides,
             check_variants=check_variants,
             additional_variants=additional_variants,

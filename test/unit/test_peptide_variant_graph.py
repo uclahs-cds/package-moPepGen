@@ -7,7 +7,7 @@ from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import aa, params, svgraph, seqvar
 from moPepGen.svgraph.PVGOrf import PVGOrf
 from moPepGen.svgraph.PeptideVariantGraph import PVGTraversal, PVGCursor
-from moPepGen.svgraph.VariantPeptideDict import VariantPeptideDict
+from moPepGen.svgraph.PVGPeptideFinder import PVGPeptideFinder
 from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
 VariantData = Tuple[int, int, str, str, str, str, int, int, bool]
@@ -620,7 +620,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,30]
-        pool = VariantPeptideDict(graph.id)
+        pool = PVGPeptideFinder(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,30), (0,10))
         orf = PVGOrf([0, None])
@@ -648,7 +648,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         nodes[2].reading_frame_index = 0
         nodes[4].reading_frame_index = 2
         graph.known_orf = [18,60]
-        pool = VariantPeptideDict(graph.id)
+        pool = PVGPeptideFinder(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (18,60), (6,20))
         orf = PVGOrf([0, None], set())
@@ -672,7 +672,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [24,90]
-        pool = VariantPeptideDict(graph.id)
+        pool = PVGPeptideFinder(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (24,90), (8,30))
         cursor = PVGCursor(nodes[1], deque([nodes[2]]), False, [0, None], [])
@@ -696,7 +696,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.cds_start_nf = True
         graph.known_orf = [6,90]
-        pool = VariantPeptideDict(graph.id)
+        pool = PVGPeptideFinder(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,90), (2,30))
         cursor = PVGCursor(graph.root, deque([nodes[2]]), False, [0, None], [])
@@ -720,7 +720,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001')
         nodes[5].variants[0].is_stop_altering = True
         graph.known_orf = [0,90]
-        pool = VariantPeptideDict(graph.id)
+        pool = PVGPeptideFinder(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,90), (0,30))
         orf = PVGOrf([0, None])
@@ -747,7 +747,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,39]
-        pool = VariantPeptideDict(graph.id)
+        pool = PVGPeptideFinder(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (0,42), (0,14))
         orf = PVGOrf([0,None])
@@ -774,7 +774,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [18,39]
-        pool = VariantPeptideDict(graph.id)
+        pool = PVGPeptideFinder(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
         cursor = PVGCursor(nodes[5], deque([nodes[6]]), False, [0, None], [])
@@ -794,7 +794,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, nodes = create_pgraph(data, 'ENST0001')
         graph.known_orf = [0,39]
-        pool = VariantPeptideDict(graph.id)
+        pool = PVGPeptideFinder(graph.id)
         pool.cleavage_params = graph.cleavage_params
         traversal = PVGTraversal(True, False, pool, (6,13), (18,39))
         orf = PVGOrf([0, None])

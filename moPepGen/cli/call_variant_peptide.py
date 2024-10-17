@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from Bio.Seq import Seq
     from moPepGen import dna, circ
     from moPepGen.svgraph import ThreeFrameCVG, ThreeFrameTVG, PeptideVariantGraph
-    from moPepGen.svgraph.VariantPeptideDict import AnnotatedPeptideLabel
+    from moPepGen.svgraph.PVGPeptideFinder import AnnotatedPeptideLabel
 
 
 INPUT_FILE_FORMATS = ['.gvf']

@@ -3,12 +3,12 @@ import unittest
 from test.unit import create_variants
 from Bio.Seq import Seq
 from moPepGen import params
-from moPepGen.svgraph.VariantPeptideDict import MiscleavedNodes, VariantPeptideDict, \
-    VariantPeptideMetadata
+from moPepGen.svgraph.PVGPeptideFinder import PVGCandidateNodePaths, PVGPeptideFinder, \
+    PVGPeptideMetadata
 import moPepGen.aa.VariantPeptideIdentifier as vpi
 
 
-def create_variant_peptide_dict(tx_id, data) -> VariantPeptideDict:
+def create_variant_peptide_dict(tx_id, data) -> PVGPeptideFinder:
     """ create a VariantPeptideDict """
     peptides = {}
     for x,y in data:
@@ -18,11 +18,11 @@ def create_variant_peptide_dict(tx_id, data) -> VariantPeptideDict:
             variants = set(create_variants(it[0]))
             label = vpi.create_variant_peptide_id(tx_id, variants, None)
             is_pure_circ_ran = len(variants) == 1 and list(variants)[0].is_circ_rna()
-            metadata = VariantPeptideMetadata(label, it[1], is_pure_circ_ran)
+            metadata = PVGPeptideMetadata(label, it[1], is_pure_circ_ran)
             metadata.has_variants = bool(variants)
             metadatas[metadata.label] = metadata
         peptides[seq] = metadatas
-    return VariantPeptideDict(tx_id=tx_id, peptides=peptides)
+    return PVGPeptideFinder(tx_id=tx_id, peptides=peptides)
 
 class TestCaseVariantPeptideDict(unittest.TestCase):
     """ Test cases for VariantPeptideDict """
@@ -76,5 +76,5 @@ class TestCaseMiscleavedNodes(unittest.TestCase):
         """ Test that when X is found in the sequence, it is recognized as an
         invalid sequence. """
         cleavage_params = params.CleavageParams(enzyme='trypsin')
-        misc_nodes = MiscleavedNodes([], cleavage_params)
+        misc_nodes = PVGCandidateNodePaths([], cleavage_params)
         self.assertFalse(misc_nodes.is_valid_seq('AAAAXAAA', set(), set()))
