@@ -689,7 +689,7 @@ class PeptideVariantGraph():
             for key, val in inbridges.items():
                 inbridge_list[key] = val
 
-    def create_variant_island_graph(self) -> None:
+    def create_variant_islands_graph(self) -> None:
         """
         Create a variant island graph, that all reference amino acids are seperated,
         on each individual node (each reference node contains one amino acid),
@@ -697,19 +697,44 @@ class PeptideVariantGraph():
         no cleavage is used as enzyme.
         """
         queue = deque([self.root])
-
+        visited:Set[str] = set()
         while queue:
             cur = queue.pop()
-
+            if cur.id in visited:
+                continue
             if cur is self.stop:
                 continue
-
             if cur.seq is None:
                 for out_node in cur.out_nodes:
                     queue.appendleft(out_node)
                 continue
+            nodes = cur.split_ref_to_single_amino_acid()
+            visited.update([x.id for x in nodes])
+            for out_node in nodes[-1].out_nodes:
+                if out_node.id not in visited:
+                    queue.appendleft(out_node)
 
-            cur.split_ref_to_single_amino_acid()
+    def collapse_ref_nodes(self) -> None:
+        """
+        Traverse through the graph and collapse reference nodes with the same
+        sequence and inbinding nodes.
+        """
+        queue = deque([self.root])
+        visited:Set[str] = set()
+        while queue:
+            cur = queue.pop()
+            if cur.id in visited:
+                continue
+            if cur is self.stop:
+                continue
+            if cur.seq is None:
+                for out_node in cur.out_nodes:
+                    queue.appendleft(out_node)
+                continue
+            cur.collapse_identical_downstreams()
+            visited.add(cur.id)
+            for out_node in cur.out_nodes:
+                queue.appendleft(out_node)
 
     def fit_into_cleavages_single_upstream(self, cur:PVGNode) -> T:
         """ Fit node into cleavage sites when it has a single upstream node """

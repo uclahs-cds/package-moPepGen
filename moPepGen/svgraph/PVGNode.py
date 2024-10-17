@@ -4,7 +4,8 @@ import copy
 from functools import cmp_to_key
 from collections import deque
 import math
-from typing import Dict, List, Set, Tuple, Iterable
+import uuid
+from typing import Dict, List, Set, Tuple, Iterable, Deque
 from moPepGen import aa, circ, seqvar, get_logger
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.seqvar.VariantRecord import VariantRecord
@@ -50,7 +51,8 @@ class PVGNode():
             npop_collapsed:bool=False, cpop_collapsed:bool=False,
             upstream_indel_map:Dict[PVGNode, List[seqvar.VariantRecord]]=None,
             collapsed_variants:Dict[PVGNode, List[seqvar.VariantRecordWithCoordinate]]=None,
-            left_cleavage_pattern_end:int=None, right_cleavage_pattern_start:int=None
+            left_cleavage_pattern_end:int=None, right_cleavage_pattern_start:int=None,
+            id:str=None
             ):
         """ Construct a PVGNode object. """
         self.seq = seq
@@ -72,6 +74,7 @@ class PVGNode():
         self.collapsed_variants = collapsed_variants or {}
         self.left_cleavage_pattern_end = left_cleavage_pattern_end
         self.right_cleavage_pattern_start = right_cleavage_pattern_start
+        self.id = id or str(uuid.uuid4())
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -657,20 +660,53 @@ class PVGNode():
         self.add_out_edge(new_node)
         return new_node
 
-    def split_ref_to_single_amino_acid(self) -> PVGNode:
+    def split_ref_to_single_amino_acid(self) -> Deque[PVGNode]:
         """ Split reference segments, those don't carry any variants, into nodes
         that each node contains a single amino acid """
+        return self._split_ref_to_single_amino_acid(deque([]))
+
+    def _split_ref_to_single_amino_acid(self, all_nodes:Deque[PVGNode]) -> Deque[PVGNode]:
+        """ """
         i = 0
         j = 1
         while True:
             if len(self.seq.seq) <= i + 1:
-                return self
+                all_nodes.append(self)
+                return all_nodes
             if self.has_variant_at(i, i+1) and self.has_variant_at(j, j+1):
                 i += 1
                 j += 1
                 continue
             last = self.split_node(i + 1)
-            return last.split_ref_to_single_amino_acid()
+            all_nodes.append(self)
+            return last._split_ref_to_single_amino_acid(all_nodes)
+
+    def collapse_identical_downstreams(self) -> None:
+        """ Collapse downstream ndoes that are identifical """
+        node_map:Dict[Tuple,List[PVGNode]] = {}
+        for out_node in self.out_nodes:
+            key = (
+                out_node.seq.seq, [x.id for x in out_node.in_nodes],
+                out_node.variants, out_node.selenocysteines,
+                out_node.subgraph_id, out_node.cleavage, out_node.truncated,
+                out_node.orf, out_node.reading_frame_index,
+                out_node.was_bridge, out_node.pre_cleave,
+                out_node.npop_collapsed, out_node.cpop_collapsed
+            )
+            if key in node_map:
+                node_map[key] = [out_node]
+            else:
+                node_map[key].append(out_node)
+
+        for nodes in node_map.values():
+            if len(nodes) > 1:
+                collapsed_node = nodes[0]
+                for node in nodes[1:]:
+                    for out_node in copy.copy(node.out_nodes):
+                        if out_node not in collapsed_node.out_nodes:
+                            collapsed_node.add_out_edge(out_node)
+                        node.remove_out_edge(out_node)
+                    self.remove_out_edge(node)
 
     def truncate_right(self, i:int) -> PVGNode:
         """ Truncate the right i nucleotides off. """

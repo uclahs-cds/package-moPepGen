@@ -830,3 +830,33 @@ class TestPeptideVariantGraph(unittest.TestCase):
         actual = {str(x.seq.seq) for x in nodes[1].out_nodes}
         expect = {'NGSPYQT', 'NGSPYQ'}
         self.assertTrue(expect.issubset(actual))
+
+    def test_create_islands_graph_1(self):
+        r""" Test the fit into cleavage for bridge node that needs to be merged
+        forward
+                     Q                                    Q
+                    /                                    /
+        0      W-SPY-QT               0          -W-S-P-Y-Q-T-
+                /                                  /
+              NGT              ->              N-GT
+             /                                /
+        1 VLR-NGALT                    1 V-L-R-N-G-A-L-T
+
+        """
+        v1 = (25, 26, 'T', 'TAT', 'INDEL', '25-T-TAT', 1, 3, True)
+        v2 = (30, 32, 'CT', 'C', 'INDEL', '30-CT-C', 0, 1, True)
+        data = {
+            1: ('VLR',  [0],  [None], [((0,3),( 0, 3))], 1),
+            2: ('NGT',   [1],  [v1], [((0,1),( 3, 4))], 1),
+            3: ('NGALT',[1],  [None], [((0,5),( 3, 8))], 1),
+            4: ('W',    [0],  [None], [((0,1),(0,1))], 0),
+            5: ('SPY',  [4,2],[None], [((0,3),(1,4))], 0),
+            6: ('QT',   [5],  [None], [((0,2),(4,6))], 0),
+            7: ('Q',    [5],  [v2], [], 0)
+        }
+        graph, _ = create_pgraph(data, 'ENST0001')
+        graph.create_variant_islands_graph()
+        var_nodes = graph.find_node(lambda x:x.seq.seq == 'GT')
+        self.assertEqual(len(var_nodes), 1)
+        vnode_1 = var_nodes[0]
+        self.assertEqual(len(vnode_1.variants), 1)

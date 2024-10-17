@@ -24,10 +24,9 @@ class TestPVGNode(unittest.TestCase):
         """ Test split to single amino acid """
         seq = 'SRSKYLG'
         node = create_pvg_node(seq)
-        last = node.split_ref_to_single_amino_acid()
-        all_nodes = self.collect_all_upstream_nodes(last)
-        self.assertTrue(all(len(x.seq.seq) == 1 for x in all_nodes))
-        self.assertEqual(''.join([str(x.seq.seq) for x in all_nodes]), seq)
+        nodes = node.split_ref_to_single_amino_acid()
+        self.assertTrue(all(len(x.seq.seq) == 1 for x in nodes))
+        self.assertEqual(''.join([str(x.seq.seq) for x in nodes]), seq)
 
     def test_split_ref_to_single_amino_acid_2(self):
         """ Test split to single amino acid with SNVs. All amino acids should be
@@ -40,10 +39,9 @@ class TestPVGNode(unittest.TestCase):
             (5, 6, *variant_2)
         ]
         node = create_pvg_node(seq, variants=variant_data)
-        last = node.split_ref_to_single_amino_acid()
-        all_nodes = self.collect_all_upstream_nodes(last)
-        self.assertTrue(all(len(x.seq.seq) == 1 for x in all_nodes))
-        self.assertEqual(''.join([str(x.seq.seq) for x in all_nodes]), seq)
+        nodes = node.split_ref_to_single_amino_acid()
+        self.assertTrue(all(len(x.seq.seq) == 1 for x in nodes))
+        self.assertEqual(''.join([str(x.seq.seq) for x in nodes]), seq)
 
     def test_split_ref_to_single_amino_acid_3(self):
         """ Test split to single amino acid with INDELs """
@@ -55,9 +53,8 @@ class TestPVGNode(unittest.TestCase):
             (5, 6, *variant_2)
         ]
         node = create_pvg_node(seq, variants=variant_data)
-        last = node.split_ref_to_single_amino_acid()
-        all_nodes = self.collect_all_upstream_nodes(last)
+        nodes = node.split_ref_to_single_amino_acid()
         self.assertEqual(
-            [str(x.seq.seq) for x in all_nodes],
+            [str(x.seq.seq) for x in nodes],
             ['S', 'RS', 'K', 'Y', 'L', 'G']
         )
