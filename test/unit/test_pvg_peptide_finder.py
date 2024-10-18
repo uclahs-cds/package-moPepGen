@@ -88,19 +88,23 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
             9: ('*',  [8],   [None], [((0,1),(7,8))], 0)
         }
         orf = PVGOrf(orf = [0, 7])
-        _, nodes = create_pgraph(data, 'ENST0001')
+        graph, nodes = create_pgraph(data, 'ENST0001')
         finder = PVGPeptideFinder(tx_id)
+        cp = params.CleavageParams(flanking_size=3)
         paths = finder.find_candidate_node_paths_archipel(
-            node=nodes[1], orfs=[orf], cleavage_params=None,
-            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=None,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
-            flanking_size=3
+            node=nodes[1], orfs=[orf], cleavage_params=cp,
+            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=False
         )
-        self.assertEqual(len(paths.data), 1)
-        self.assertEqual(
-            ''.join([str(x.seq.seq) for x in paths.data[0].nodes]),
-            'SKLHYCWI'
-        )
+        peptides = list(paths.join_peptides(
+            pool={},
+            check_variants=True,
+            additional_variants=[],
+            denylist=[],
+            is_start_codon=False
+        ))
+        self.assertEqual(len(peptides), 1)
+        self.assertEqual(peptides[0][0], 'SKLHYCWI')
 
     def test_find_candidate_node_paths_archipel_2(self):
         """ Find candidate node path for archipel peptides """
@@ -118,19 +122,23 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
             8: ('*',  [7],   [None], [((0,1),(6,7))], 0)
         }
         orf = PVGOrf(orf = [0, 7])
-        _, nodes = create_pgraph(data, 'ENST0001')
+        graph, nodes = create_pgraph(data, 'ENST0001')
         finder = PVGPeptideFinder(tx_id)
+        cp = params.CleavageParams(flanking_size=3)
         paths = finder.find_candidate_node_paths_archipel(
-            node=nodes[1], orfs=[orf], cleavage_params=None,
-            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=None,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
-            flanking_size=3
+            node=nodes[1], orfs=[orf], cleavage_params=cp,
+            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=False
         )
+        peptides = list(paths.join_peptides(
+            pool={},
+            check_variants=True,
+            additional_variants=[],
+            denylist=[],
+            is_start_codon=False
+        ))
         self.assertEqual(len(paths.data), 1)
-        self.assertEqual(
-            ''.join([str(x.seq.seq) for x in paths.data[0].nodes]),
-            'SKLHYCW'
-        )
+        self.assertEqual(peptides[0][0], 'SKLHYCW')
 
     def test_find_candidate_node_paths_archipel_3(self):
         """ Find candidate node path for archipel peptides """
@@ -148,19 +156,23 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
             8: ('*',  [7],   [None], [((0,1),(7,8))], 0)
         }
         orf = PVGOrf(orf = [0, 7])
-        _, nodes = create_pgraph(data, 'ENST0001')
+        graph, nodes = create_pgraph(data, 'ENST0001')
         finder = PVGPeptideFinder(tx_id)
+        cp = params.CleavageParams(flanking_size=3)
         paths = finder.find_candidate_node_paths_archipel(
-            node=nodes[1], orfs=[orf], cleavage_params=None,
-            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=None,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=True,
-            flanking_size=3
+            node=nodes[1], orfs=[orf], cleavage_params=cp,
+            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=True
         )
+        peptides = list(paths.join_peptides(
+            pool={},
+            check_variants=True,
+            additional_variants=[],
+            denylist=[],
+            is_start_codon=False
+        ))
         self.assertEqual(len(paths.data), 1)
-        self.assertEqual(
-            ''.join([str(x.seq.seq) for x in paths.data[0].nodes]),
-            'MLHYCWI'
-        )
+        self.assertEqual(peptides[0][0], 'MLHYCWI')
 
     def test_find_candidate_node_paths_archipel_4(self):
         """ Find candidate node path for archipel peptides """
@@ -176,19 +188,23 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
             6: ('*',  [5],   [None], [((0,1),(7,8))], 0)
         }
         orf = PVGOrf(orf = [0, 7])
-        _, nodes = create_pgraph(data, 'ENST0001')
+        graph, nodes = create_pgraph(data, 'ENST0001')
         finder = PVGPeptideFinder(tx_id)
+        cp = params.CleavageParams(flanking_size=3, min_length=5, min_mw=100)
         paths = finder.find_candidate_node_paths_archipel(
-            node=nodes[1], orfs=[orf], cleavage_params=None,
-            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=None,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=True,
-            flanking_size=3
+            node=nodes[1], orfs=[orf], cleavage_params=cp,
+            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=True
         )
+        peptides = list(paths.join_peptides(
+            pool={},
+            check_variants=True,
+            additional_variants=[],
+            denylist=[],
+            is_start_codon=True
+        ))
         self.assertEqual(len(paths.data), 1)
-        self.assertEqual(
-            ''.join([str(x.seq.seq) for x in paths.data[0].nodes]),
-            'MHYCWI'
-        )
+        self.assertEqual(peptides[0][0], 'MHYCWI')
 
     def test_find_candidate_node_paths_archipel_5(self):
         """ Find candidate node path for archipel peptides """
@@ -212,19 +228,23 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
             13: ('*',  [12],   [None], [((0,1),(7,8))], 0)
         }
         orf = PVGOrf(orf = [0, 7])
-        _, nodes = create_pgraph(data, 'ENST0001')
+        graph, nodes = create_pgraph(data, 'ENST0001')
         finder = PVGPeptideFinder(tx_id)
+        cp = params.CleavageParams(flanking_size=3)
         paths = finder.find_candidate_node_paths_archipel(
-            node=nodes[1], orfs=[orf], cleavage_params=None,
-            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=None,
+            node=nodes[1], orfs=[orf], cleavage_params=cp,
+            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
             is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
-            flanking_size=3
         )
+        peptides = list(paths.join_peptides(
+            pool={},
+            check_variants=True,
+            additional_variants=[],
+            denylist=[],
+            is_start_codon=False
+        ))
         self.assertEqual(len(paths.data), 2)
-        self.assertEqual(
-            {''.join([str(x.seq.seq) for x in path.nodes]) for path in paths.data},
-            {'SKLHYCWI', 'SKLHYCWEIQN'}
-        )
+        self.assertEqual({x[0] for x in peptides}, {'SKLHYCWI', 'SKLHYCWEIQN'})
 
 class TestCasePVGCandidateNodePaths(unittest.TestCase):
     """ Test cases for MiscleavedNodes """

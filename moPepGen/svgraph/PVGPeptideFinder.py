@@ -418,7 +418,7 @@ class PVGCandidateNodePaths():
                 if self.is_circ_rna \
                         and (any(v.is_circ_rna() for v in variants.values()) \
                         or any(v.is_circ_rna() for v in orf.start_gain)):
-                    if orf.is_valid_orf_to_misc_nodes(queue, self.subgraphs, circ_rna):
+                    if orf.is_valid_orf_to_node_path(queue, self.subgraphs, circ_rna):
                         if any(n.is_missing_any_variant(in_seq_variants.values()) for n in queue):
                             continue
                         metadata.orf = tuple(orf.orf)
@@ -652,6 +652,8 @@ class PVGPeptideFinder():
           every node. This is useful for PVG derived from a circRNA, and this
           argument is the circRNA variant.
     """
+    PEPTIDE_FINDING_MODES = ['misc', 'archipel']
+
     def __init__(self, tx_id:str, peptides:TypeVariantPeptideMetadataMap=None,
             seqs:Set[Seq]=None, labels:Dict[str,int]=None,
             global_variant:VariantRecord=None, gene_id:str=None,
@@ -787,7 +789,7 @@ class PVGPeptideFinder():
     def find_candidate_node_paths_archipel(self, node:PVGNode,
             orfs:List[PVGOrf], cleavage_params:CleavageParams, tx_id:str, gene_id:str,
             leading_node:PVGNode, subgraphs:SubgraphTree, is_circ_rna:bool,
-            backsplicing_only:bool, is_start_codon:bool, flanking_size:int):
+            backsplicing_only:bool, is_start_codon:bool):
         """
         Find candidate node paths for archipel peptides. Archipel peptides are
         those with a Nterm and a Cterm flanking sequence of up to X canonical
@@ -801,6 +803,7 @@ class PVGPeptideFinder():
         else:
             islands = []
             nflanking = [0]
+        flanking_size = cleavage_params.flanking_size
         cur_path = PVGNodePathArchipel(
             nodes=[node], additional_variants=set(),
             nflanking=nflanking, flanking_size=flanking_size,
@@ -855,7 +858,7 @@ class PVGPeptideFinder():
                 queue.append(new_path)
         return paths
 
-    def add_peptide_sequences(self, node:PVGNode, orfs:List[PVGOrf],
+    def add_peptide_sequences(self, node:PVGNode, orfs:List[PVGOrf], mode:str,
             cleavage_params:CleavageParams, check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord], denylist:Set[str],
             leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
@@ -884,14 +887,24 @@ class PVGPeptideFinder():
         - `backsplicing_only` (bool): Whether to only output variant peptides
             spanning the backsplicing site.
         """
+        assert mode in self.PEPTIDE_FINDING_MODES
         if leading_node is None:
             leading_node = node
-        candidate_paths = self.find_candidate_node_paths_misc(
-            node=node, orfs=orfs, cleavage_params=cleavage_params,
-            tx_id=self.tx_id, gene_id=self.gene_id, leading_node=leading_node,
-            subgraphs=subgraphs, is_circ_rna=circ_rna is not None,
-            backsplicing_only=backsplicing_only
-        )
+
+        if mode == 'misc':
+            candidate_paths = self.find_candidate_node_paths_misc(
+                node=node, orfs=orfs, cleavage_params=cleavage_params,
+                tx_id=self.tx_id, gene_id=self.gene_id, leading_node=leading_node,
+                subgraphs=subgraphs, is_circ_rna=circ_rna is not None,
+                backsplicing_only=backsplicing_only
+            )
+        else:
+            candidate_paths = self.find_candidate_node_paths_archipel(
+                node=node, orfs=orfs, cleavage_params=cleavage_params,
+                tx_id=self.tx_id, gene_id=self.gene_id, leading_node=leading_node,
+                subgraphs=subgraphs, is_circ_rna=circ_rna is not None,
+                backsplicing_only=backsplicing_only, is_start_codon=is_start_codon
+            )
         if self.global_variant and self.global_variant not in additional_variants:
             additional_variants.append(self.global_variant)
 

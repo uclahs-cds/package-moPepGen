@@ -35,7 +35,7 @@ class CleavageParams():
     def __init__(self, enzyme:str=None, exception:str=None, miscleavage:int=2,
             min_mw:int=500, min_length:int=7, max_length:int=25,
             max_variants_per_node:int=7, additional_variants_per_misc:int=2,
-            min_nodes_to_collapse:int=30, naa_to_collapse:int=5):
+            min_nodes_to_collapse:int=30, naa_to_collapse:int=5, flanking_size:int=9):
         """ constructor """
         self.enzyme = enzyme
         self.exception = exception
@@ -47,6 +47,7 @@ class CleavageParams():
         self.additional_variants_per_misc = additional_variants_per_misc
         self.min_nodes_to_collapse = min_nodes_to_collapse
         self.naa_to_collapse = naa_to_collapse
+        self.flanking_size = flanking_size
         if self.exception == 'auto':
             if enzyme == 'trypsin':
                 self.exception = 'trypsin_exception'

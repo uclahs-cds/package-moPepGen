@@ -197,7 +197,7 @@ class PVGOrf():
         return not any(node.is_missing_variant(v) for v in start_gain) \
             and not any(x not in start_gain for x in variants)
 
-    def is_valid_orf_to_misc_nodes(self, nodes:List[PVGNode], subgraphs:SubgraphTree,
+    def is_valid_orf_to_node_path(self, nodes:List[PVGNode], subgraphs:SubgraphTree,
             circ_rna:circ.CircRNAModel) -> bool:
         """ Checks if the ORF is valid for a given series of miscleaved peptide
         nodes. """
