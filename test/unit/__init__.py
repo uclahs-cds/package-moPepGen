@@ -9,6 +9,7 @@ from moPepGen.SeqFeature import FeatureLocation, SeqFeature, MatchedLocation
 from moPepGen import params, svgraph, dna, seqvar, gtf, aa
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen.seqvar import VariantRecordPool
+from moPepGen.svgraph.SubgraphTree import SubgraphTree
 
 
 GENOME_DATA = {
@@ -234,6 +235,77 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
             else:
                 edge_type = 'variant_start'
             graph.add_edge(in_node, node, edge_type)
+
+    return graph, node_list
+
+def create_pgraph(data:PGraphData, _id:str, known_orf:List[int]=None,
+        ) -> Tuple[svgraph.PeptideVariantGraph,Dict[int, svgraph.PVGNode]]:
+    """ Create a peptide variant graph from data """
+    root = svgraph.PVGNode(None, None, subgraph_id=_id)
+    if not known_orf:
+        known_orf = [None, None]
+    cleavage_params = params.CleavageParams(
+        enzyme='trypsin', exception = 'trypsin',
+        miscleavage=0, min_mw=0, min_length=0
+    )
+    graph = svgraph.PeptideVariantGraph(root, _id, known_orf, cleavage_params)
+    graph.subgraphs = SubgraphTree()
+    graph.subgraphs.add_root(
+        _id, feature_type='transcript', feature_id=_id, variant=None
+    )
+    node_list:Dict[int,svgraph.PVGNode] = {0: root}
+    for key, val in data.items():
+        locs = []
+        for (query_start, query_end), (ref_start, ref_end) in val[3]:
+            loc = MatchedLocation(
+                query=FeatureLocation(
+                    start=query_start, end=query_end, reading_frame_index=val[4]
+                ),
+                ref=FeatureLocation(start=ref_start, end=ref_end, seqname=_id)
+            )
+            locs.append(loc)
+
+        seq = aa.AminoAcidSeqRecordWithCoordinates(
+            Seq(val[0]),
+            _id='ENST00001',
+            transcript_id='ENST00001',
+            locations=locs
+        )
+        seq.__class__ = aa.AminoAcidSeqRecordWithCoordinates
+        variants:List[seqvar.VariantRecordWithCoordinate] = []
+
+        for it in val[2]:
+            if it is None:
+                continue
+            location_transcript = FeatureLocation(start=it[0], end=it[1])
+            location_peptide = FeatureLocation(
+                start=it[6], end=it[7], reading_frame_index=val[4]
+            )
+            var_record = seqvar.VariantRecord(
+                location=location_transcript,
+                ref=it[2],
+                alt=it[3],
+                _type=it[4],
+                _id=it[5]
+            )
+            variant = seqvar.VariantRecordWithCoordinate(
+                variant=var_record,
+                location=location_peptide
+            )
+
+            variants.append(variant)
+
+        node = svgraph.PVGNode(
+            seq, val[4], variants=variants, subgraph_id=_id,
+            left_cleavage_pattern_end=1,
+            right_cleavage_pattern_start=len(seq) - 1
+        )
+
+        node_list[key] = node
+        for i in val[1]:
+            node_list[i].add_out_edge(node)
+        if 0 in val[1]:
+            graph.reading_frames[val[4]] = node
 
     return graph, node_list
 

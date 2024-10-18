@@ -977,7 +977,7 @@ class PeptideVariantGraph():
             if upstream_indels:
                 additional_variants += upstream_indels
 
-            traversal.pool.add_miscleaved_sequences(
+            traversal.pool.add_peptide_sequences(
                 node=node_copy,
                 orfs=orfs,
                 cleavage_params=self.cleavage_params,
@@ -1061,7 +1061,7 @@ class PeptideVariantGraph():
             node_copy.truncate_left(start_index)
             orf = PVGOrf(orf=list(traversal.known_orf_tx), start_gain=start_gain,
                 start_node=target_node, subgraph_id=self.id, node_offset=start_index)
-            traversal.pool.add_miscleaved_sequences(
+            traversal.pool.add_peptide_sequences(
                 node=node_copy,
                 orfs=[orf],
                 cleavage_params=self.cleavage_params,
@@ -1260,7 +1260,7 @@ class PeptideVariantGraph():
         for node, orfs, is_start_codon, additional_variants in node_list:
             if traversal.find_ass and any(o == traversal.known_orf_tx[0] for o in orfs):
                 continue
-            traversal.pool.add_miscleaved_sequences(
+            traversal.pool.add_peptide_sequences(
                 node=node,
                 orfs=orfs,
                 cleavage_params=self.cleavage_params,
