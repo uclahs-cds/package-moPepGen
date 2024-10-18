@@ -41,6 +41,7 @@ def create_base_args() -> argparse.Namespace:
     args.min_mw = '500.'
     args.min_length = 7
     args.max_length = 25
+    args.flanking_size = 10
     args.quiet = True
     args.debug_level = 1
     args.noncanonical_transcripts = False

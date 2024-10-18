@@ -62,7 +62,8 @@ class CleavageParams():
             'miscleavage': self.miscleavage,
             'min_mw': self.min_mw,
             'min_length': self.min_length,
-            'max_length': self.max_length
+            'max_length': self.max_length,
+            'flanking_size': self.flanking_size
         }
         if graph_params:
             data.update({

@@ -689,7 +689,7 @@ class PeptideVariantGraph():
             for key, val in inbridges.items():
                 inbridge_list[key] = val
 
-    def create_variant_islands_graph(self) -> None:
+    def create_islands_graph(self) -> None:
         """
         Create a variant island graph, that all reference amino acids are seperated,
         on each individual node (each reference node contains one amino acid),
@@ -838,7 +838,7 @@ class PeptideVariantGraph():
         orfs.sort()
         self.orf_id_map = {v:f"ORF{i+1}" for i,v in enumerate(orfs)}
 
-    def call_variant_peptides(self, check_variants:bool=True,
+    def call_variant_peptides(self, check_variants:bool=True, mode:str='misc',
             check_orf:bool=False, keep_all_occurrence:bool=True, denylist:Set[str]=None,
             circ_rna:CircRNAModel=None, orf_assignment:str='max',
             backsplicing_only:bool=False, truncate_sec:bool=False, w2f:bool=False,
@@ -851,6 +851,7 @@ class PeptideVariantGraph():
         - check_variants (bool): When true, only peptides that carry at
             least 1 variant are kept. When false, all unique peptides
             are reported.
+        - mode (str): Mode for non-canonical peptide calling.
         - check_orf (bool): When true, the ORF ID will be added to the
             variant peptide label.
         - keep_all_occurrence (bool): Whether to keep all occurences of the
@@ -881,6 +882,7 @@ class PeptideVariantGraph():
         peptide_pool = PVGPeptideFinder(
             tx_id=self.id,
             global_variant=self.global_variant,
+            mode=mode,
             gene_id=self.gene_id,
             truncate_sec=truncate_sec,
             w2f=w2f,

@@ -655,13 +655,15 @@ class PVGPeptideFinder():
     PEPTIDE_FINDING_MODES = ['misc', 'archipel']
 
     def __init__(self, tx_id:str, peptides:TypeVariantPeptideMetadataMap=None,
-            seqs:Set[Seq]=None, labels:Dict[str,int]=None,
+            seqs:Set[Seq]=None, labels:Dict[str,int]=None, mode:str='misc',
             global_variant:VariantRecord=None, gene_id:str=None,
             truncate_sec:bool=False, w2f:bool=False, check_external_variants:bool=True,
             cleavage_params:CleavageParams=None, check_orf:bool=False):
         """ constructor """
+        assert mode in self.PEPTIDE_FINDING_MODES
         self.tx_id = tx_id
         self.peptides = peptides or {}
+        self.mode = mode
         self.seqs = seqs or set()
         self.labels = labels or {}
         self.global_variant = global_variant
@@ -858,7 +860,7 @@ class PVGPeptideFinder():
                 queue.append(new_path)
         return paths
 
-    def add_peptide_sequences(self, node:PVGNode, orfs:List[PVGOrf], mode:str,
+    def add_peptide_sequences(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:CleavageParams, check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord], denylist:Set[str],
             leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
@@ -887,11 +889,10 @@ class PVGPeptideFinder():
         - `backsplicing_only` (bool): Whether to only output variant peptides
             spanning the backsplicing site.
         """
-        assert mode in self.PEPTIDE_FINDING_MODES
         if leading_node is None:
             leading_node = node
 
-        if mode == 'misc':
+        if self.mode == 'misc':
             candidate_paths = self.find_candidate_node_paths_misc(
                 node=node, orfs=orfs, cleavage_params=cleavage_params,
                 tx_id=self.tx_id, gene_id=self.gene_id, leading_node=leading_node,

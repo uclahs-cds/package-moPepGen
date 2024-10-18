@@ -97,7 +97,7 @@ def add_args_cleavage(parser:argparse.ArgumentParser, enzyme_only:bool=False):
         help='Enzymatic cleavage rule.',
         default='trypsin',
         metavar='<value>',
-        choices=list(EXPASY_RULES.keys())
+        choices=list(EXPASY_RULES.keys()) + [None]
     )
     group.add_argument(
         '--cleavage-exception',
@@ -135,6 +135,13 @@ def add_args_cleavage(parser:argparse.ArgumentParser, enzyme_only:bool=False):
         help='The maximum length of non-canonical peptides, inclusive.',
         default=25,
         metavar='<number>'
+    )
+    group.add_argument(
+        '--flanking-size',
+        type=int,
+        default=10,
+        help='Flanking size for no enzymatic cleavage.',
+        metavar='<number?'
     )
 
 def add_args_decoy(parser:argparse.ArgumentParser):

@@ -781,7 +781,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
             7: ('Q',    [5],  [v2], [], 0)
         }
         graph, _ = create_pgraph(data, 'ENST0001')
-        graph.create_variant_islands_graph()
+        graph.create_islands_graph()
         var_nodes = graph.find_node(lambda x:x.seq.seq == 'GT')
         self.assertEqual(len(var_nodes), 1)
         vnode_1 = var_nodes[0]

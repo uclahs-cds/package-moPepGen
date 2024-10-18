@@ -204,6 +204,7 @@ class VariantPeptideCaller():
             min_mw=float(args.min_mw),
             min_length=args.min_length,
             max_length=args.max_length,
+            flanking_size=args.flanking_size,
             max_variants_per_node = args.max_variants_per_node[0],
             additional_variants_per_misc = args.additional_variants_per_misc[0],
             min_nodes_to_collapse = args.min_nodes_to_collapse,
@@ -678,10 +679,17 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
 
-    pgraph.create_cleavage_graph()
+    if cleavage_params.enzyme is not None:
+        pgraph.create_cleavage_graph()
+        mode = 'misc'
+    else:
+        pgraph.create_islands_graph()
+        pgraph.collapse_ref_nodes()
+        mode = 'archipel'
 
     if tx_model.is_protein_coding:
         peptide_map = pgraph.call_variant_peptides(
+            mode = mode,
             denylist=denylist,
             truncate_sec=truncate_sec,
             w2f=w2f,
@@ -756,10 +764,18 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     )
     dgraph.fit_into_codons()
     pgraph = dgraph.translate()
-    pgraph.create_cleavage_graph()
+
+    if cleavage_params.enzyme is not None:
+        pgraph.create_cleavage_graph()
+        mode = 'misc'
+    else:
+        pgraph.create_islands_graph()
+        pgraph.collapse_ref_nodes()
+        mode = 'archipel'
 
     if tx_model.is_protein_coding:
         peptide_map = pgraph.call_variant_peptides(
+            mode = mode,
             denylist=denylist,
             w2f=w2f_reassignment,
             check_external_variants=True,
@@ -833,9 +849,17 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph.truncate_three_frames()
     cgraph.fit_into_codons()
     pgraph = cgraph.translate()
-    pgraph.create_cleavage_graph()
+
+    if cleavage_params.enzyme is not None:
+        pgraph.create_cleavage_graph()
+        mode = 'misc'
+    else:
+        pgraph.create_islands_graph()
+        pgraph.collapse_ref_nodes()
+        mode = 'archipel'
+
     peptide_map = pgraph.call_variant_peptides(
-        denylist=denylist, circ_rna=record, backsplicing_only=backsplicing_only,
+        mode=mode, denylist=denylist, circ_rna=record, backsplicing_only=backsplicing_only,
         w2f=w2f_reassignment, check_external_variants=True
     )
     if not save_graph:
