@@ -220,6 +220,23 @@ class VariantPeptideCaller():
         self.reference_data = None
         self.variant_peptides = aa.VariantPeptidePool()
         self.variant_record_pool:seqvar.VariantRecordPoolOnDisk = None
+        self.coding_novel_orf:bool = args.coding_novel_orf
+
+        if self.cleavage_params.enzyme is None:
+            # Temporarily disable novel orf finding (including noncoding fusion
+            # and circRNA) for neoantigen/immunopeptidomics.
+            self.find_novel_orfs = False
+            if self.coding_novel_orf:
+                self.coding_novel_orf = False
+                get_logger().warning(
+                    'Setting --coding-novel-orf to False. Currently not compatible'
+                    ' with --enzyme None.'
+                )
+            self.cleavage_params.max_length = float('inf')
+            self.cleavage_params.min_length = self.cleavage_params.flanking_size
+            self.cleavage_params.min_mw = 0
+        else:
+            self.find_novel_orfs = True
 
         if not self.variant_files:
             if not (self.w2f_reassignment or self.truncate_sec):
@@ -235,11 +252,18 @@ class VariantPeptideCaller():
 
     def load_reference(self):
         """ load reference genome, annotation, and canonical peptides """
+        if self.cleavage_params.enzyme is None:
+            load_canonical_peptides = False
+        else:
+            load_canonical_peptides = True
         genome, anno, _, canonical_peptides = common.load_references(
                 args=self.args,
                 invalid_protein_as_noncoding=self.invalid_protein_as_noncoding,
-                cleavage_params=self.cleavage_params
+                cleavage_params=self.cleavage_params,
+                load_canonical_peptides = load_canonical_peptides
             )
+        if canonical_peptides is None:
+            canonical_peptides = set()
         self.reference_data = params.ReferenceData(
             genome=genome,
             anno=anno,
@@ -321,6 +345,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         pool:seqvar.VariantRecordPool,
         cleavage_params:params.CleavageParams,
         noncanonical_transcripts:bool,
+        find_novel_orfs:bool,
         max_adjacent_as_mnv:bool,
         truncate_sec:bool,
         w2f_reassignment:bool,
@@ -341,11 +366,14 @@ def call_variant_peptides_wrapper(tx_id:str,
                     val[metadata.label] = metadata
 
     main_peptides = None
-    denylist = call_canonical_peptides(
-        tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
-        cleavage_params=cleavage_params, truncate_sec=truncate_sec,
-        w2f=w2f_reassignment
-    )
+    if find_novel_orfs:
+        denylist = call_canonical_peptides(
+            tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
+            cleavage_params=cleavage_params, truncate_sec=truncate_sec,
+            w2f=w2f_reassignment
+        )
+    else:
+        denylist = set()
     dgraphs:TypeDGraphs = (None, {}, {})
     pgraphs:TypePGraphs = (None, {}, {})
     if variant_series.transcriptional:
@@ -405,24 +433,25 @@ def call_variant_peptides_wrapper(tx_id:str,
             )
             raise
 
-    if main_peptides:
-        denylist.update([str(x) for x in main_peptides])
-    for circ_model in variant_series.circ_rna:
-        try:
-            peptide_map, cgraph, pgraph = call_peptide_circ_rna(
-                record=circ_model, variant_pool=pool, gene_seqs=gene_seqs,
-                cleavage_params=cleavage_params,
-                max_adjacent_as_mnv=max_adjacent_as_mnv,
-                w2f_reassignment=w2f_reassignment, denylist=denylist,
-                save_graph=save_graph, backsplicing_only=backsplicing_only
-            )
+    if find_novel_orfs:
+        if main_peptides:
+            denylist.update([str(x) for x in main_peptides])
+        for circ_model in variant_series.circ_rna:
+            try:
+                peptide_map, cgraph, pgraph = call_peptide_circ_rna(
+                    record=circ_model, variant_pool=pool, gene_seqs=gene_seqs,
+                    cleavage_params=cleavage_params,
+                    max_adjacent_as_mnv=max_adjacent_as_mnv,
+                    w2f_reassignment=w2f_reassignment, denylist=denylist,
+                    save_graph=save_graph, backsplicing_only=backsplicing_only
+                )
 
-        except:
-            logger.error("Exception raised from %s", circ_model.id)
-            raise
-        dgraphs[2][circ_model.id] = cgraph
-        pgraphs[2][circ_model.id] = pgraph
-        add_peptide_anno(peptide_map)
+            except:
+                logger.error("Exception raised from %s", circ_model.id)
+                raise
+            dgraphs[2][circ_model.id] = cgraph
+            pgraphs[2][circ_model.id] = pgraph
+            add_peptide_anno(peptide_map)
 
     peptide_anno = {k:list(v.values()) for k,v in peptide_anno.items()}
 
@@ -496,6 +525,8 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         for tx_id in tx_sorted:
             tx_ids = [tx_id]
             tx_model = ref.anno.transcripts[tx_id]
+            if not caller.find_novel_orfs and tx_model.is_protein_coding:
+                continue
             variant_series = pool[tx_id]
             if variant_series.is_empty():
                 continue
@@ -507,21 +538,21 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
             gene_seqs = {}
             if variant_series.is_gene_sequence_needed():
                 gene_id = tx_model.transcript.gene_id
-                _chrom = tx_model.transcript.chrom
+                cur_chrom = tx_model.transcript.chrom
                 gene_model = ref.anno.genes[gene_id]
-                gene_seq = gene_model.get_gene_sequence(ref.genome[_chrom])
+                gene_seq = gene_model.get_gene_sequence(ref.genome[cur_chrom])
                 gene_seqs[gene_id] = gene_seq
 
             tx_seqs = {}
-            for _tx_id in tx_ids:
-                _tx_model = ref.anno.transcripts[_tx_id]
-                _chrom = _tx_model.transcript.chrom
-                tx_seqs[_tx_id] = _tx_model.get_transcript_sequence(ref.genome[_chrom])
-                _gene_id = _tx_model.transcript.gene_id
-                if _gene_id not in gene_seqs:
-                    _gene_model = ref.anno.genes[_gene_id]
-                    _gene_seq = _gene_model.get_gene_sequence(ref.genome[_chrom])
-                    gene_seqs[_gene_id] = _gene_seq
+            for cur_tx_id in tx_ids:
+                cur_tx_model = ref.anno.transcripts[cur_tx_id]
+                cur_chrom = cur_tx_model.transcript.chrom
+                tx_seqs[cur_tx_id] = cur_tx_model.get_transcript_sequence(ref.genome[cur_chrom])
+                cur_gene_id = cur_tx_model.transcript.gene_id
+                if cur_gene_id not in gene_seqs:
+                    cur_gene_model = ref.anno.genes[cur_gene_id]
+                    cur_gene_seq = cur_gene_model.get_gene_sequence(ref.genome[cur_chrom])
+                    gene_seqs[cur_gene_id] = cur_gene_seq
             gene_ids = list({ref.anno.transcripts[x].transcript.gene_id for x in tx_ids})
 
             gene_models = {}
@@ -560,15 +591,16 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                 'pool': dummy_pool,
                 'cleavage_params': caller.cleavage_params,
                 'noncanonical_transcripts': noncanonical_transcripts,
+                'find_novel_orfs': caller.find_novel_orfs,
                 'max_adjacent_as_mnv': caller.max_adjacent_as_mnv,
                 'truncate_sec': caller.truncate_sec,
                 'w2f_reassignment': caller.w2f_reassignment,
                 'save_graph': caller.graph_output_dir is not None,
                 'timeout': args.timeout_seconds,
-                'max_variants_per_node': tuple(args.max_variants_per_node),
-                'additional_variants_per_misc': tuple(args.additional_variants_per_misc),
-                'backsplicing_only': args.backsplicing_only,
-                'coding_novel_orf': args.coding_novel_orf
+                'max_variants_per_node': (caller.cleavage_params.max_variants_per_node,),
+                'additional_variants_per_misc': (caller.cleavage_params.additional_variants_per_misc,),
+                'backsplicing_only': caller.backsplicing_only,
+                'coding_novel_orf': caller.coding_novel_orf
             }
             dispatches.append(dispatch)
 

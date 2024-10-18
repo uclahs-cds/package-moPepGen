@@ -660,40 +660,48 @@ class PVGNode():
         self.add_out_edge(new_node)
         return new_node
 
-    def split_ref_to_single_amino_acid(self) -> Deque[PVGNode]:
+    def split_node_archipel(self) -> Deque[PVGNode]:
         """ Split reference segments, those don't carry any variants, into nodes
         that each node contains a single amino acid """
-        return self._split_ref_to_single_amino_acid(deque([]))
+        return self.split_ref_to_single_amino_acid(deque([]), True)
 
-    def _split_ref_to_single_amino_acid(self, all_nodes:Deque[PVGNode]) -> Deque[PVGNode]:
-        """ """
+    def split_ref_to_single_amino_acid(self, all_nodes:Deque[PVGNode], split_stop:bool
+            ) -> Deque[PVGNode]:
+        """ Split reference amino acids into separate nodes """
         i = 0
         j = 1
         while True:
             if len(self.seq.seq) <= i + 1:
                 all_nodes.append(self)
                 return all_nodes
+            if self.seq.seq[i] == '*':
+                if i > 0:
+                    last = self.split_node(i)
+                else:
+                    last = self.split_node(i+1)
+                all_nodes.append(self)
+                return last.split_ref_to_single_amino_acid(all_nodes, split_stop)
             if self.has_variant_at(i, i+1) and self.has_variant_at(j, j+1):
                 i += 1
                 j += 1
                 continue
             last = self.split_node(i + 1)
             all_nodes.append(self)
-            return last._split_ref_to_single_amino_acid(all_nodes)
+            return last.split_ref_to_single_amino_acid(all_nodes, split_stop)
 
     def collapse_identical_downstreams(self) -> None:
         """ Collapse downstream ndoes that are identifical """
         node_map:Dict[Tuple,List[PVGNode]] = {}
         for out_node in self.out_nodes:
             key = (
-                out_node.seq.seq, [x.id for x in out_node.in_nodes],
-                out_node.variants, out_node.selenocysteines,
+                out_node.seq.seq, (x.id for x in out_node.in_nodes),
+                tuple(out_node.variants), tuple(out_node.selenocysteines),
                 out_node.subgraph_id, out_node.cleavage, out_node.truncated,
-                out_node.orf, out_node.reading_frame_index,
+                tuple(out_node.orf), out_node.reading_frame_index,
                 out_node.was_bridge, out_node.pre_cleave,
                 out_node.npop_collapsed, out_node.cpop_collapsed
             )
-            if key in node_map:
+            if key not in node_map:
                 node_map[key] = [out_node]
             else:
                 node_map[key].append(out_node)

@@ -124,11 +124,33 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_case1(self):
         """ Test variant peptide calling """
         args = create_base_args()
-        args.input_path = [self.data_dir/'vep'/'vep_gSNP.gvf']
+        args.input_path = [
+            self.data_dir/'vep'/'vep_gSNP.gvf',
+            self.data_dir/'vep'/'vep_gINDEL.gvf',
+            self.data_dir/'fusion/star_fusion.gvf'
+        ]
         args.output_path = self.work_dir/'vep_moPepGen.fasta'
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
+        self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_archipel(self):
+        """ Enzyme None """
+        args = create_base_args()
+        args.input_path = [
+            self.data_dir/'vep'/'vep_gSNP.gvf',
+            self.data_dir/'vep'/'vep_gINDEL.gvf',
+            self.data_dir/'fusion/star_fusion.gvf'
+        ]
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.cleavage_rule = 'None'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}

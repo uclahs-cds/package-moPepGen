@@ -24,7 +24,7 @@ class TestPVGNode(unittest.TestCase):
         """ Test split to single amino acid """
         seq = 'SRSKYLG'
         node = create_pvg_node(seq)
-        nodes = node.split_ref_to_single_amino_acid()
+        nodes = node.split_node_archipel()
         self.assertTrue(all(len(x.seq.seq) == 1 for x in nodes))
         self.assertEqual(''.join([str(x.seq.seq) for x in nodes]), seq)
 
@@ -39,7 +39,7 @@ class TestPVGNode(unittest.TestCase):
             (5, 6, *variant_2)
         ]
         node = create_pvg_node(seq, variants=variant_data)
-        nodes = node.split_ref_to_single_amino_acid()
+        nodes = node.split_node_archipel()
         self.assertTrue(all(len(x.seq.seq) == 1 for x in nodes))
         self.assertEqual(''.join([str(x.seq.seq) for x in nodes]), seq)
 
@@ -53,7 +53,7 @@ class TestPVGNode(unittest.TestCase):
             (5, 6, *variant_2)
         ]
         node = create_pvg_node(seq, variants=variant_data)
-        nodes = node.split_ref_to_single_amino_acid()
+        nodes = node.split_node_archipel()
         self.assertEqual(
             [str(x.seq.seq) for x in nodes],
             ['S', 'RS', 'K', 'Y', 'L', 'G']
