@@ -150,6 +150,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.invalid_protein_as_noncoding = True
         args.cleavage_rule = 'None'
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}

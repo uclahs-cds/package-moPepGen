@@ -525,7 +525,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         for tx_id in tx_sorted:
             tx_ids = [tx_id]
             tx_model = ref.anno.transcripts[tx_id]
-            if not caller.find_novel_orfs and tx_model.is_protein_coding:
+            if not caller.find_novel_orfs and not tx_model.is_protein_coding:
                 continue
             variant_series = pool[tx_id]
             if variant_series.is_empty():
@@ -719,17 +719,14 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         pgraph.collapse_ref_nodes()
         mode = 'archipel'
 
-    if tx_model.is_protein_coding:
-        peptide_map = pgraph.call_variant_peptides(
-            mode = mode,
-            denylist=denylist,
-            truncate_sec=truncate_sec,
-            w2f=w2f,
-            check_external_variants=True,
-            check_orf=False
-        )
-    else:
-        peptide_map = {}
+    peptide_map = pgraph.call_variant_peptides(
+        mode = mode,
+        denylist=denylist,
+        truncate_sec=truncate_sec,
+        w2f=w2f,
+        check_external_variants=True,
+        check_orf=False
+    )
 
     if not tx_model.is_protein_coding or coding_novel_orf:
         peptide_novel_orf = pgraph.call_variant_peptides(

@@ -879,7 +879,7 @@ class PeptideVariantGraph():
         self.denylist = denylist or set()
         cur = PVGCursor(None, deque([self.root]), True, [], [])
         queue:Deque[Tuple[PVGNode,bool]] = deque([cur])
-        peptide_pool = PVGPeptideFinder(
+        finder = PVGPeptideFinder(
             tx_id=self.id,
             global_variant=self.global_variant,
             mode=mode,
@@ -892,7 +892,7 @@ class PeptideVariantGraph():
         )
         traversal = PVGTraversal(
             check_variants=check_external_variants,
-            check_orf=check_orf, queue=queue, pool=peptide_pool,
+            check_orf=check_orf, queue=queue, pool=finder,
             circ_rna=circ_rna, orf_assignment=orf_assignment,
             backsplicing_only=backsplicing_only,
             find_ass=find_ass
@@ -937,9 +937,9 @@ class PeptideVariantGraph():
         if check_orf:
             self.create_orf_id_map()
 
-        peptide_pool.translational_modification(w2f, self.denylist)
+        finder.translational_modification(w2f, self.denylist)
 
-        return peptide_pool.get_peptide_sequences(
+        return finder.get_peptide_sequences(
             keep_all_occurrence=keep_all_occurrence,
             orf_id_map=self.orf_id_map,
             check_variants=check_variants

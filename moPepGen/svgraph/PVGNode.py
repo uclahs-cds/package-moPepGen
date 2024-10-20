@@ -663,31 +663,32 @@ class PVGNode():
     def split_node_archipel(self) -> Deque[PVGNode]:
         """ Split reference segments, those don't carry any variants, into nodes
         that each node contains a single amino acid """
-        return self.split_ref_to_single_amino_acid(deque([]), True)
-
-    def split_ref_to_single_amino_acid(self, all_nodes:Deque[PVGNode], split_stop:bool
-            ) -> Deque[PVGNode]:
-        """ Split reference amino acids into separate nodes """
+        nodes = deque([])
         i = 0
-        j = 1
+        cur = self
         while True:
-            if len(self.seq.seq) <= i + 1:
-                all_nodes.append(self)
-                return all_nodes
-            if self.seq.seq[i] == '*':
+            if len(cur.seq.seq) <= i + 1:
+                nodes.append(cur)
+                break
+            if cur.seq.seq[i] == '*':
                 if i > 0:
-                    last = self.split_node(i)
-                else:
-                    last = self.split_node(i+1)
-                all_nodes.append(self)
-                return last.split_ref_to_single_amino_acid(all_nodes, split_stop)
-            if self.has_variant_at(i, i+1) and self.has_variant_at(j, j+1):
-                i += 1
-                j += 1
+                    last = cur.split_node(i)
+                    nodes.append(cur)
+                    cur = last
+                    i = 0
+                last = cur.split_node(i + 1)
+                nodes.append(cur)
+                cur = last
+                i = 0
                 continue
-            last = self.split_node(i + 1)
-            all_nodes.append(self)
-            return last.split_ref_to_single_amino_acid(all_nodes, split_stop)
+            if cur.has_variant_at(i, i+1) and cur.has_variant_at(i+1, i+2):
+                i += 1
+                continue
+            last = cur.split_node(i + 1)
+            nodes.append(cur)
+            cur = last
+            i = 0
+        return nodes
 
     def collapse_identical_downstreams(self) -> None:
         """ Collapse downstream ndoes that are identifical """

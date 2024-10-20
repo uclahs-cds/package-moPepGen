@@ -38,7 +38,7 @@ class CleavageParams():
             min_nodes_to_collapse:int=30, naa_to_collapse:int=5, flanking_size:int=9):
         """ constructor """
         self.enzyme = enzyme
-        if self.enzyme.lower() == 'none':
+        if self.enzyme and self.enzyme.lower() == 'none':
             self.enzyme = None
         self.exception = exception
         self.miscleavage = miscleavage
