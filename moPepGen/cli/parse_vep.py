@@ -38,7 +38,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     )
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     common.add_args_source(p)
-    common.add_args_reference(p, proteome=False)
+    common.add_args_reference(p)
     common.add_args_debug_level(p)
     p.set_defaults(func=parse_vep)
     common.print_help_if_missing_args(p)
@@ -60,7 +60,9 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    genome, anno, *_ = common.load_references(args, load_canonical_peptides=False)
+    genome, anno, *_ = common.load_references(
+        args, load_canonical_peptides=False
+    )
 
     vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
 

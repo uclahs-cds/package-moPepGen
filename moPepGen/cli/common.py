@@ -227,7 +227,7 @@ def add_args_source(parser:argparse.ArgumentParser):
     )
 
 def load_references(args:argparse.Namespace, load_genome:bool=True,
-        load_canonical_peptides:bool=True, load_proteome:bool=False,
+        load_canonical_peptides:bool=True, load_proteome:bool=True,
         invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False,
         cleavage_params:CleavageParams=None
         ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotationOnDisk, Set[str]]:
@@ -255,8 +255,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         if load_proteome:
             proteome = index_dir.load_proteome()
 
-        if invalid_protein_as_noncoding:
-            anno.check_protein_coding(proteome, True)
+        anno.check_protein_coding(proteome, True)
 
         logger.info('Reference indices loaded.')
     else:
@@ -274,8 +273,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             logger.info('Proteome FASTA loaded.')
             anno.check_protein_coding(proteome, invalid_protein_as_noncoding)
 
-        if invalid_protein_as_noncoding:
-            anno.check_protein_coding(proteome, True)
+        anno.check_protein_coding(proteome, True)
 
         if load_genome:
             genome = dna.DNASeqDict()

@@ -17,6 +17,7 @@ class TestParseStarFusion(TestCaseIntegration):
             -o {self.work_dir}/fusion_catcher.gvf \\
             -g {self.data_dir}/genome.fasta \\
             -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta \\
             --source Fusion
         """
         res = sp.run(cmd, shell=True, check=False, capture_output=True)
@@ -36,6 +37,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.reference_source = None
         args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0
@@ -45,7 +47,9 @@ class TestParseStarFusion(TestCaseIntegration):
         expected = {'star_fusion.gvf'}
         self.assertEqual(files, expected)
 
-        genome, anno, *_ = load_references(args, load_canonical_peptides=False)
+        genome, anno, *_ = load_references(
+            args, load_canonical_peptides=False, load_proteome=True
+        )
 
         for record in seqvar.io.parse(self.work_dir/'star_fusion.gvf'):
             gene_id = record.location.seqname
@@ -71,6 +75,7 @@ class TestParseStarFusion(TestCaseIntegration):
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.reference_source = None
         args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0

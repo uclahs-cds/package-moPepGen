@@ -15,6 +15,7 @@ class TestParseREDItools(TestCaseIntegration):
             -i {self.data_dir}/reditools/reditools_annotated.txt \\
             -o {self.work_dir}/reditools.gvf \\
             -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta \\
             --source RES
         """
         res = sp.run(cmd, shell=True, check=False, capture_output=True)
@@ -34,6 +35,7 @@ class TestParseREDItools(TestCaseIntegration):
         args.transcript_id_column = 17
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.reference_source = None
         args.output_path = self.work_dir/'reditools.gvf'
         args.quiet = True

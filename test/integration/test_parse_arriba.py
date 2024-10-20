@@ -38,6 +38,7 @@ class TestParseArriba(TestCaseIntegration):
             -o {self.work_dir}/arriba.gvf \\
             -g {self.data_dir}/genome.fasta \\
             -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta \\
             --source fusion
         """
         res = sp.run(cmd, shell=True, check=False, capture_output=True)

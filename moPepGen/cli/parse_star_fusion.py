@@ -38,7 +38,7 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
         metavar='<number>'
     )
     common.add_args_source(p)
-    common.add_args_reference(p, proteome=False)
+    common.add_args_reference(p)
     common.add_args_debug_level(p)
     p.set_defaults(func=parse_star_fusion)
     common.print_help_if_missing_args(p)
@@ -59,7 +59,9 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    genome, anno, *_ = common.load_references(args, load_canonical_peptides=False)
+    genome, anno, *_ = common.load_references(
+        args, load_canonical_peptides=False
+    )
 
     variants:List[seqvar.VariantRecord] = []
 

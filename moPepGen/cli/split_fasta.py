@@ -125,9 +125,12 @@ def split_fasta(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    _, anno, *_ = common.load_references(args, load_genome=False, \
-        load_proteome=True, load_canonical_peptides=False,
-        check_protein_coding=True)
+    _, anno, *_ = common.load_references(
+        args=args,
+        load_genome=False,
+        load_canonical_peptides=False,
+        check_protein_coding=True
+    )
 
     tx2gene = {}
     coding_tx = set()

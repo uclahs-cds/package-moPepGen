@@ -17,6 +17,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.source = 'circRNA'
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.reference_source = None
         args.circexplorer3 = False
         args.min_read_number = 1
@@ -38,6 +39,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
         args.source = 'circRNA'
         args.index_dir = None
         args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
         args.reference_source = None
         args.circexplorer3 = True
         args.min_read_number = 1
@@ -67,6 +69,7 @@ class TestParseCIRCexplorer(TestCaseIntegration):
             -i {self.data_dir}/circRNA/CIRCexplorer3_circularRNA_known.txt \\
             -o {self.work_dir}/circ.gvf \\
             -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta \\
             --source circRNA
         """
         res = sp.run(cmd, shell=True, check=False, capture_output=True)

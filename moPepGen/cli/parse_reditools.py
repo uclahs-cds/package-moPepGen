@@ -70,7 +70,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         metavar='<number>'
     )
     common.add_args_source(p)
-    common.add_args_reference(p, genome=False, proteome=False)
+    common.add_args_reference(p, genome=False)
     common.add_args_debug_level(p)
     p.set_defaults(func=parse_reditools)
     common.print_help_if_missing_args(p)
@@ -97,7 +97,9 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    _, anno, *_ = common.load_references(args, load_genome=False, load_canonical_peptides=False)
+    _, anno, *_ = common.load_references(
+        args, load_genome=False, load_canonical_peptides=False
+    )
 
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
 

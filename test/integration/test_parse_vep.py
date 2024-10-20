@@ -17,6 +17,7 @@ class TestParseVEP(TestCaseIntegration):
             -o {self.work_dir}/vep.gvf \\
             -g {self.data_dir}/genome.fasta \\
             -a {self.data_dir}/annotation.gtf \\
+            -p {self.data_dir}/translate.fasta \\
             --source VEP
         """
         res = sp.run(cmd, shell=True, check=False, capture_output=True)

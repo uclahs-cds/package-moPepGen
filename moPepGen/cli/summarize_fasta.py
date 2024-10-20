@@ -174,8 +174,10 @@ def summarize_fasta(args:argparse.Namespace) -> None:
     common.print_start_message(args)
 
     _, anno, *_ = common.load_references(
-        args, load_genome=False, load_proteome=False,
-        load_canonical_peptides=False, check_protein_coding=True
+        args=args,
+        load_genome=False,
+        load_canonical_peptides=False,
+        check_protein_coding=True
     )
 
     tx2gene = {}
