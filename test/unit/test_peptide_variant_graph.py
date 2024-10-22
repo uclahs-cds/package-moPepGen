@@ -7,14 +7,6 @@ from moPepGen.svgraph.PeptideVariantGraph import PVGTraversal, PVGCursor
 from moPepGen.svgraph.PVGPeptideFinder import PVGPeptideFinder
 from test.unit import create_pgraph
 
-VariantData = Tuple[int, int, str, str, str, str, int, int, bool]
-PGraphData = Dict[int, Tuple[
-    str,
-    List[int],
-    List[VariantData],
-    List[Tuple[Tuple[int,int], Tuple[int,int]]],
-    int
-]]
 
 class TestPeptideVariantGraph(unittest.TestCase):
     """ Test case for peptide variant graph """

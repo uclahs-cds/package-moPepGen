@@ -142,8 +142,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         """ Enzyme None """
         args = create_base_args()
         args.input_path = [
-            self.data_dir/'vep'/'vep_gSNP.gvf',
-            self.data_dir/'vep'/'vep_gINDEL.gvf',
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'alternative_splicing/alternative_splicing.gvf',
             self.data_dir/'fusion/star_fusion.gvf'
         ]
         args.output_path = self.work_dir/'vep_moPepGen.fasta'

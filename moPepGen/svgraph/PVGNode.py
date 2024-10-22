@@ -44,6 +44,7 @@ class PVGNode():
     def __init__(self, seq:aa.AminoAcidSeqRecordWithCoordinates,
             reading_frame_index:int, subgraph_id:str,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
+            global_variant:VariantRecord=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
             selenocysteines:List[seqvar.VariantRecordWithCoordinate]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
@@ -57,6 +58,7 @@ class PVGNode():
         """ Construct a PVGNode object. """
         self.seq = seq
         self.variants = variants or []
+        self.global_variant = global_variant
         self.in_nodes = in_nodes or set()
         self.out_nodes = out_nodes or set()
         self.selenocysteines = selenocysteines or []
@@ -660,7 +662,7 @@ class PVGNode():
         self.add_out_edge(new_node)
         return new_node
 
-    def split_node_archipel(self) -> Deque[PVGNode]:
+    def split_node_archipel(self, global_variant:VariantRecord) -> Deque[PVGNode]:
         """ Split reference segments, those don't carry any variants, into nodes
         that each node contains a single amino acid """
         nodes = deque([])
@@ -681,7 +683,10 @@ class PVGNode():
                 cur = last
                 i = 0
                 continue
-            if cur.has_variant_at(i, i+1) and cur.has_variant_at(i+1, i+2):
+            variants_1 = cur.get_variants_at(i, i+1)
+            variants_2 = cur.get_variants_at(i+1, i+2)
+            is_global_variant_only = all(v == global_variant for v in set(variants_1 + variants_2))
+            if variants_1 and variants_2 and not is_global_variant_only:
                 i += 1
                 continue
             last = cur.split_node(i + 1)

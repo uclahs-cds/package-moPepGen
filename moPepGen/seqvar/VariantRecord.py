@@ -219,7 +219,8 @@ class VariantRecord():
 
     def __eq__(self, other:VariantRecord) -> bool:
         """ equal to """
-        return self.location == other.location and \
+        return self.__class__ == other.__class__ and \
+            self.location == other.location and \
             self.ref == other.ref and \
             self.alt == other.alt and \
             self.type == other.type

@@ -708,7 +708,8 @@ class PeptideVariantGraph():
                 for out_node in cur.out_nodes:
                     queue.appendleft(out_node)
                 continue
-            nodes = cur.split_node_archipel()
+            global_variant = self.subgraphs[cur.subgraph_id].variant
+            nodes = cur.split_node_archipel(global_variant)
             visited.update([x.id for x in nodes])
             for out_node in nodes[-1].out_nodes:
                 if out_node.id not in visited:

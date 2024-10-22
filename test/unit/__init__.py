@@ -1,11 +1,11 @@
 """ Test module for moPepGen """
 from __future__ import annotations
-from typing import Dict, List, Tuple, Union, Set
+from typing import Dict, List, Tuple, Union, Set, TYPE_CHECKING
 import copy
 from pathlib import Path
 import pickle
 from Bio.Seq import Seq
-from moPepGen.SeqFeature import FeatureLocation, SeqFeature, MatchedLocation
+from moPepGen.SeqFeature import FeatureLocation, MatchedLocation
 from moPepGen import params, svgraph, dna, seqvar, gtf, aa
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen.seqvar import VariantRecordPool
@@ -237,6 +237,16 @@ def create_three_frame_tvg(nodes:Dict[int,list], seq:str, graph_id:str='') -> Ty
             graph.add_edge(in_node, node, edge_type)
 
     return graph, node_list
+
+if TYPE_CHECKING:
+    VariantData = Tuple[int, int, str, str, str, str, int, int, bool]
+    PGraphData = Dict[int, Tuple[
+        str,
+        List[int],
+        List[VariantData],
+        List[Tuple[Tuple[int,int], Tuple[int,int]]],
+        int
+    ]]
 
 def create_pgraph(data:PGraphData, _id:str, known_orf:List[int]=None,
         ) -> Tuple[svgraph.PeptideVariantGraph,Dict[int, svgraph.PVGNode]]:
