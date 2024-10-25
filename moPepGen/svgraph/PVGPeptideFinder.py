@@ -404,6 +404,7 @@ class PVGCandidateNodePaths():
         self.subgraphs = subgraphs
         self.is_circ_rna = is_circ_rna
 
+
     def is_valid_seq(self, seq:Seq, pool:Set[Seq], denylist:Set[str]) -> bool:
         """ Check whether the seq is valid """
         if seq in pool:
@@ -476,8 +477,8 @@ class PVGCandidateNodePaths():
             check_variants:bool, additional_variants:List[VariantRecord],
             denylist:Set[str], is_start_codon:bool=False,
             circ_rna:CircRNAModel=None, truncate_sec:bool=False,
-            check_external_variants:bool=True, check_orf:bool=False
-            ) -> Iterable[Tuple[Seq, PVGPeptideMetadata]]:
+            check_external_variants:bool=True, check_orf:bool=False,
+            clip_nterm_m:bool=True) -> Iterable[Tuple[Seq, PVGPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
         Args:
@@ -600,7 +601,8 @@ class PVGCandidateNodePaths():
 
             seqs = self.translational_modification(seq, metadata, denylist,
                 variants.values(), is_start_codon, selenocysteines,
-                check_variants, check_external_variants, pool, queue
+                check_variants, check_external_variants, pool, queue,
+                clip_nterm_m
             )
             for seq, metadata in seqs:
                 yield seq, metadata
@@ -610,7 +612,7 @@ class PVGCandidateNodePaths():
             denylist:Set[str], variants:Set[VariantRecord], is_start_codon:bool,
             selenocysteines:List[seqvar.VariantRecordWithCoordinate],
             check_variants:bool, check_external_variants:bool, pool:Set[Seq],
-            nodes:List[PVGNode]
+            nodes:List[PVGNode], clip_nterm_m:bool
             ) -> Iterable[Tuple[Seq,PVGPeptideMetadata]]:
         """ Apply any modification that could happen during translation. The
         kinds of modifications that could happen are:
@@ -620,8 +622,10 @@ class PVGCandidateNodePaths():
         if variants or not check_variants:
             is_valid = self.is_valid_seq(seq, pool, denylist)
 
-            is_valid_start =  is_start_codon and seq.startswith('M') and\
-                self.is_valid_seq(seq[1:], pool, denylist)
+            is_valid_start =  is_start_codon and (
+                not clip_nterm_m or
+                (seq.startswith('M') and self.is_valid_seq(seq[1:], pool, denylist))
+            )
 
             if is_valid or is_valid_start:
                 cur_metadata = copy.copy(metadata)
@@ -637,7 +641,7 @@ class PVGCandidateNodePaths():
                     cur_metadata_2.segments = self.create_peptide_segments(nodes)
                     yield seq, cur_metadata_2
 
-                if is_valid_start:
+                if clip_nterm_m and is_valid_start:
                     cur_seq=seq[1:]
                     cur_nodes = list(nodes)
                     cur_nodes[0] = cur_nodes[0].copy()
@@ -685,7 +689,7 @@ class PVGCandidateNodePaths():
                     cur_metadata_2.segments = self.create_peptide_segments(cur_nodes)
                     yield seq_mod, cur_metadata_2
 
-                if is_valid_start:
+                if clip_nterm_m and is_valid_start:
                     cur_seq=seq_mod[1:]
                     cur_nodes[0] = cur_nodes[0].copy()
                     cur_nodes[0].truncate_left(1)
@@ -1068,7 +1072,8 @@ class PVGPeptideFinder():
             circ_rna=circ_rna,
             truncate_sec=self.truncate_sec,
             check_external_variants=self.check_external_variants,
-            check_orf=self.check_orf
+            check_orf=self.check_orf,
+            clip_nterm_m=self.mode == 'misc'
         )
         for seq, metadata in it:
             if 'X' in seq:
