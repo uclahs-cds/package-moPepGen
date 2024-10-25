@@ -136,10 +136,12 @@ class AnnotatedPeptideLabel:
 class PVGNodePath():
     """ Helper class when calling for miscleavage peptides. The nodes contained
     by this class can be joined to make a miscleavage peptide. """
-    def __init__(self, nodes:List[PVGNode], additional_variants:Set[VariantRecord]):
+    def __init__(self, nodes:List[PVGNode], additional_variants:Set[VariantRecord],
+            global_variants:Set[VariantRecord]=None):
         """ Constructor """
         self.nodes = nodes
         self.additional_variants = additional_variants
+        self.global_variants = global_variants or set()
         self._len = None
         self._variants:Dict[str, VariantRecord] = None
 
@@ -221,12 +223,27 @@ class PVGNodePath():
         subgraph_ids = set().union(*[n.get_subgraph_id_set() for n in self.nodes])
         return len(subgraph_ids) > 1
 
+    def number_of_nodes(self) -> int:
+        """ len """
+        return len(self.nodes)
+
+    def has_any_potential_island_variant(self, node:PVGNode) -> bool:
+        """ Checks if the given node has any non global variant """
+        for v in node.variants:
+            if v.variant != node.global_variant and v.variant not in self.global_variants:
+                return True
+        return False
+
 class PVGNodePathArchipel(PVGNodePath):
     """ PVGNodePathArchipel """
     def __init__(self, nodes:List[PVGNode], additional_variants:Set[VariantRecord],
         nflanking:List[PVGNode]=None, cflanking:List[PVGNode]=None, flanking_size:int=9,
-        islands:List[int]=None):
-        super().__init__(nodes, additional_variants)
+        islands:List[int]=None, global_variants:Set[VariantRecord]=None):
+        super().__init__(
+            nodes=nodes,
+            additional_variants=additional_variants,
+            global_variants=global_variants
+        )
         self.nflanking = nflanking or []
         self.cflanking = cflanking or []
         self.flanking_size = flanking_size
@@ -252,11 +269,98 @@ class PVGNodePathArchipel(PVGNodePath):
         new_path.cflanking = copy.copy(self.cflanking)
         new_path.flanking_size = self.flanking_size
         new_path.islands = copy.copy(self.islands)
+        new_path.global_variants = copy.copy(self.global_variants)
         return new_path
 
-    def __len__(self) -> int:
-        """ len """
-        return len(self.nodes)
+    def to_reef(self) -> PVGNodePathReef:
+        """ Convert to PVGNodePathReef """
+        return PVGNodePathReef(
+            nodes=self.nodes,
+            additional_variants=self.additional_variants,
+            global_variants=self.global_variants,
+            flanking_size=self.flanking_size
+        )
+
+    def is_valid_path(self) -> bool:
+        """ Check if path is valid """
+        return self.has_any_island()
+
+class PVGNodePathReefMetadata:
+    """ PVGNodePathReefMetadata """
+    def __init__(self, subgraph_id:int, global_variant:VariantRecord=None,
+            nodes:List[int]=None):
+        """ constructor """
+        self.subgraph_id = subgraph_id
+        self.global_variant = global_variant
+        self.nodes = nodes or []
+
+def append_reef(reefs:List[PVGNodePathReefMetadata], i:int, node:PVGNode):
+    """ append reef """
+    if not reefs:
+        reef = PVGNodePathReefMetadata(
+            subgraph_id=node.subgraph_id,
+            global_variant=node.global_variant,
+            nodes=[i]
+        )
+        reefs.append(reef)
+    elif node.subgraph_id == reefs[-1].subgraph_id:
+        reefs[-1].nodes.append(i)
+    else:
+        reef = PVGNodePathReefMetadata(
+            subgraph_id=node.subgraph_id,
+            global_variant=node.global_variant,
+            nodes=[i]
+        )
+        reefs.append(reef)
+    return reefs
+
+class PVGNodePathReef(PVGNodePath):
+    """ PVGNodePathReef """
+    def __init__(self, nodes:List[PVGNode], additional_variants:Set[VariantRecord],
+            reefs:List[PVGNodePathReefMetadata]=None, global_variants:Set[VariantRecord]=None,
+            flanking_size:int=9):
+        """ Constructor """
+        super().__init__(
+            nodes=nodes,
+            additional_variants=additional_variants,
+            global_variants=global_variants
+        )
+        # (subgraph_id, nodes indices)
+        self.reefs = reefs or self.find_reefs()
+        self.flanking_size = flanking_size
+
+    def find_reefs(self) -> List[PVGNodePathReefMetadata]:
+        """ find all reefs """
+        reefs:List[PVGNodePathReefMetadata] = []
+        for i, node in enumerate(self.nodes):
+            append_reef(reefs, i, node)
+        return reefs
+
+    def is_last_reef_full(self) -> bool:
+        """ Check if the last reef is full """
+        return self.reefs[-1].global_variant is None \
+            and len(self.reefs[-1].nodes) >= self.flanking_size
+
+    def add_node(self, node:PVGNode):
+        """ Add node """
+        self.nodes.append(node)
+        if node.global_variant:
+            self.global_variants.add(node.global_variant)
+        i = len(self.nodes)
+        append_reef(self.reefs, i, node)
+
+    def __copy__(self) -> PVGNodePathReef:
+        """ copy """
+        new_path:PVGNodePathReef = super().__copy__()
+        new_path.__class__ = self.__class__
+        new_path.reefs = copy.deepcopy(self.reefs)
+        new_path.flanking_size = self.flanking_size
+        new_path.global_variants = copy.copy(self.global_variants)
+        return new_path
+
+    def is_valid_path(self) -> bool:
+        """ Check if path is valid """
+        return True
 
 TypeVariantPeptideMetadataMap = Dict[Seq, Dict[str, PVGPeptideMetadata]]
 
@@ -793,13 +897,16 @@ class PVGPeptideFinder():
             leading_node:PVGNode, subgraphs:SubgraphTree, is_circ_rna:bool,
             backsplicing_only:bool, is_start_codon:bool):
         """
-        Find candidate node paths for archipel peptides. Archipel peptides are
-        those with a Nterm and a Cterm flanking sequence of up to X canonical
-        amino acids, and at least one non-canonical peptide "island".
+        This function is used to find node paths in two styles: archipel and reef.
+        Archipel nodes are varaint nodes as islands, separated by reference nodes,
+        and are surrounded by flanking reference nodes (e.g., the ocean). Reef
+        nodes are those only carrying backbone alterning variants, such as large
+        indels (alternative splicing), fusion, and circRNA, without any other
+        small variants.
         """
         if not orfs:
             raise ValueError('ORFs are empty')
-        if node.variants:
+        if any(v.variant != node.global_variant for v in node.variants):
             islands = [0]
             nflanking = []
         else:
@@ -812,7 +919,7 @@ class PVGPeptideFinder():
             islands=islands
         )
 
-        queue = deque([cur_path])
+        queue:Deque[PVGNodePath] = deque([cur_path])
         paths = PVGCandidateNodePaths(
             data=deque([]),
             cleavage_params=cleavage_params,
@@ -830,33 +937,47 @@ class PVGPeptideFinder():
             for out_node in cur_path.nodes[-1].out_nodes:
                 is_stop = len(out_node.seq.seq) == 1 and out_node.seq.seq.startswith('*')
                 if is_stop:
-                    if cur_path.has_any_island() \
+                    if cur_path.is_valid_path() \
                             and (not backsplicing_only or new_path.is_subgraph_spanning()):
                         paths.data.append(cur_path)
                     continue
 
-                new_path = copy.copy(cur_path)
-                i = len(new_path)
-                new_path.append(out_node)
-
-                if not out_node.variants:
-                    if not new_path.has_any_island():
-                        if new_path.is_nflanking_full():
-                            continue
-                        new_path.nflanking.append(i)
+                if isinstance(cur_path, PVGNodePathArchipel):
+                    new_path = copy.copy(cur_path)
+                    i = new_path.number_of_nodes()
+                    new_path.append(out_node)
+                    if not cur_path.has_any_potential_island_variant(out_node):
+                        if not new_path.has_any_island():
+                            if new_path.is_nflanking_full():
+                                if out_node.global_variant:
+                                    new_path = new_path.to_reef()
+                                    queue.append(new_path)
+                                continue
+                            new_path.nflanking.append(i)
+                        else:
+                            if len(new_path.cflanking) > flanking_size:
+                                continue
+                            new_path.cflanking.append(i)
+                            if len(new_path.cflanking) == flanking_size:
+                                if not backsplicing_only or new_path.is_subgraph_spanning():
+                                    paths.data.append(new_path)
+                                continue
                     else:
-                        if len(new_path.cflanking) > flanking_size:
+                        if not is_start_codon and len(new_path.nflanking) < flanking_size:
                             continue
-                        new_path.cflanking.append(i)
-                        if len(new_path.cflanking) == flanking_size:
-                            if not backsplicing_only or new_path.is_subgraph_spanning():
-                                paths.data.append(new_path)
-                            continue
-                else:
-                    if not is_start_codon and len(new_path.nflanking) < flanking_size:
+                        new_path.islands.append(i)
+                        new_path.cflanking = []
+                elif isinstance(cur_path, PVGNodePathReef):
+                    if cur_path.has_any_potential_island_variant(out_node):
+                        paths.data.append(cur_path)
                         continue
-                    new_path.islands.append(i)
-                    new_path.cflanking = []
+                    if cur_path.is_last_reef_full():
+                        paths.data.append(cur_path)
+                        continue
+                    new_path = copy.copy(cur_path)
+                    new_path.add_node(out_node)
+                else:
+                    raise TypeError(f"Unrecognized type {type(cur_path)}")
                 queue.append(new_path)
         return paths
 

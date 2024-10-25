@@ -7,7 +7,7 @@ from moPepGen.svgraph.PVGPeptideFinder import PVGCandidateNodePaths, PVGPeptideF
     PVGPeptideMetadata
 from moPepGen.svgraph.PVGOrf import PVGOrf
 import moPepGen.aa.VariantPeptideIdentifier as vpi
-from test.unit import create_pgraph
+from test.unit import create_pgraph, create_variant
 
 
 def create_pvg_peptide_finder(tx_id, data) -> PVGPeptideFinder:
@@ -245,6 +245,49 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
         ))
         self.assertEqual(len(paths.data), 2)
         self.assertEqual({x[0] for x in peptides}, {'SKLHYCWI', 'SKLHYCWEIQN'})
+
+    def test_find_candidate_node_paths_reef_1(self):
+        """ Find candidate node path for reef peptides """
+        gene_id = 'ENSG0001'
+        tx_id = 'ENST0001'
+        v1 = (41, 42, 'G', '<INS>', 'Insertion', 'RI_41')
+        v2 = (51, 52, 'G', 'C', 'SNV', '41:G-C')
+        data = {
+            1: ('S',  [0],   [(*v1, 0, 1, True)],                    [((0,1),(0,1))], 0),
+            2: ('K',  [1],   [(*v1, 0, 1, True)],                    [((0,1),(1,2))], 0),
+            3: ('L',  [2],   [(*v1, 0, 1, True)],                    [((0,1),(2,3))], 0),
+            4: ('H', [3],    [(*v1, 0, 2, True), (*v2, 0, 1, True)], [             ], 0),
+            5: ('V',  [3],   [(*v1, 0, 1, True)],                    [((0,1),(3,4))], 0),
+            6: ('C',  [4,5], [(*v1, 0, 1, True)],                    [((0,1),(4,5))], 0),
+            7: ('W',  [6],   [(*v1, 0, 1, True)],                    [((0,1),(5,6))], 0),
+            8: ('I',  [7],   [(*v1, 0, 1, True)],                    [((0,1),(6,7))], 0),
+            9: ('*',  [8],   [(*v1, 0, 1, True)],                    [((0,1),(7,8))], 0)
+        }
+        orf = PVGOrf(orf = [0, 7])
+        graph, nodes = create_pgraph(data, 'ENST0001')
+        variant_1 = create_variant(*v1)
+        for n in nodes.values():
+            n.global_variant = variant_1
+
+        finder = PVGPeptideFinder(tx_id)
+        cp = params.CleavageParams(flanking_size=3)
+        paths = finder.find_candidate_node_paths_archipel(
+            node=nodes[1], orfs=[orf], cleavage_params=cp,
+            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=False
+        )
+        peptides = list(paths.join_peptides(
+            pool={},
+            check_variants=True,
+            additional_variants=[],
+            denylist=[],
+            is_start_codon=False
+        ))
+        self.assertEqual(len(peptides), 2)
+        self.assertEqual(
+            {str(x[0]) for x in peptides},
+            {'SKLHCWI', 'SKLVCWI'}
+        )
 
 class TestCasePVGCandidateNodePaths(unittest.TestCase):
     """ Test cases for MiscleavedNodes """
