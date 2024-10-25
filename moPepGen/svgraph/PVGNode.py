@@ -123,7 +123,7 @@ class PVGNode():
         else:
             right_cleavage_pattern_start = None
 
-        return PVGNode(
+        new_node = PVGNode(
             seq=seq,
             variants=variants,
             cleavage=self.cleavage,
@@ -140,6 +140,10 @@ class PVGNode():
             left_cleavage_pattern_end=left_cleavage_pattern_end,
             right_cleavage_pattern_start=right_cleavage_pattern_start
         )
+        for v in new_node.variants:
+            if v.variant == self.global_variant:
+                new_node.global_variant = v.variant
+        return new_node
 
     def add_out_edge(self, node:PVGNode) -> None:
         """ Add a outbound edge from this node.
@@ -630,6 +634,9 @@ class PVGNode():
             right_cleavage_pattern_start=self.right_cleavage_pattern_start
         )
         new_node.orf = self.orf
+        for v in new_node.variants:
+            if v.variant == self.global_variant:
+                new_node.global_variant = v.variant
 
         left_secs, right_secs = self.split_selenocysteines(index)
         self.selenocysteines = left_secs
@@ -744,6 +751,9 @@ class PVGNode():
             cpop_collapsed=self.cpop_collapsed,
             right_cleavage_pattern_start=self.right_cleavage_pattern_start
         )
+        for v in right_node.variants:
+            if v.variant == self.global_variant:
+                right_node.global_variant = v.variant
 
         self.seq = self.seq[:i]
         self.variants = left_variants
@@ -780,6 +790,9 @@ class PVGNode():
             upstream_indel_map=self.upstream_indel_map,
             left_cleavage_pattern_end=self.left_cleavage_pattern_end
         )
+        for v in left_node.variants:
+            if v.variant == self.global_variant:
+                left_node.global_variant = v.variant
         self.upstream_indel_map = {}
 
         self.seq = self.seq[i:]
@@ -836,12 +849,13 @@ class PVGNode():
         """ Find the start amino acid position """
         return self.seq.seq.find('M')
 
-    def copy(self, in_nodes:bool=True, out_nodes:bool=True) -> PVGNode:
+    def copy(self, in_nodes:bool=True, out_nodes:bool=True, id:bool=False) -> PVGNode:
         """ Create a copy of the node """
         new_in_nodes = copy.copy(self.in_nodes) if in_nodes else set()
         new_out_nodes = copy.copy(self.out_nodes) if out_nodes else set()
         return PVGNode(
             seq=self.seq,
+            id=self.id if id else None,
             variants=copy.copy(self.variants),
             in_nodes=new_in_nodes,
             out_nodes=new_out_nodes,
@@ -857,7 +871,8 @@ class PVGNode():
             cpop_collapsed=self.cpop_collapsed,
             upstream_indel_map={k:copy.copy(v) for k,v in self.upstream_indel_map.items()},
             left_cleavage_pattern_end=self.left_cleavage_pattern_end,
-            right_cleavage_pattern_start=self.right_cleavage_pattern_start
+            right_cleavage_pattern_start=self.right_cleavage_pattern_start,
+            global_variant=self.global_variant
         )
 
     def get_nearest_next_ref_index(self) -> int:

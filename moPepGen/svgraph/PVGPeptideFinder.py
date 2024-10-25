@@ -362,6 +362,17 @@ class PVGNodePathReef(PVGNodePath):
         """ Check if path is valid """
         return True
 
+    def generate_kmers(self) -> Set[Tuple[str]]:
+        """ Generate kmers """
+        kmers = set()
+        for i in range(self.number_of_nodes() - self.flanking_size + 1):
+            kmer = self.generate_kmer(i)
+            kmers.add(kmer)
+        return kmers
+
+    def generate_kmer(self, i) -> Tuple[str]:
+        return tuple(self.nodes[j].id for j in range(i, i + self.flanking_size))
+
 TypeVariantPeptideMetadataMap = Dict[Seq, Dict[str, PVGPeptideMetadata]]
 
 class PVGCandidateNodePaths():
@@ -709,6 +720,14 @@ class PVGCandidateNodePaths():
                     all_missing = False
         return any_overlap and all_missing
 
+    def generate_reef_kmers(self) -> Set[Tuple[str]]:
+        """ Generate Kmers for reefs """
+        kmers = set()
+        for path in self.data:
+            if not isinstance(path, PVGNodePathReef):
+                continue
+            kmers.update(path.generate_kmers())
+        return kmers
 
 def update_peptide_pool(seq:aa.AminoAcidSeqRecord,
         peptide_pool:Set[aa.AminoAcidSeqDict],
@@ -895,7 +914,8 @@ class PVGPeptideFinder():
     def find_candidate_node_paths_archipel(self, node:PVGNode,
             orfs:List[PVGOrf], cleavage_params:CleavageParams, tx_id:str, gene_id:str,
             leading_node:PVGNode, subgraphs:SubgraphTree, is_circ_rna:bool,
-            backsplicing_only:bool, is_start_codon:bool):
+            backsplicing_only:bool, is_start_codon:bool, reef_kmers:Set[Tuple[Seq]]
+            ) -> PVGCandidateNodePaths:
         """
         This function is used to find node paths in two styles: archipel and reef.
         Archipel nodes are varaint nodes as islands, separated by reference nodes,
@@ -951,6 +971,9 @@ class PVGPeptideFinder():
                             if new_path.is_nflanking_full():
                                 if out_node.global_variant:
                                     new_path = new_path.to_reef()
+                                    kmer = new_path.generate_kmer(0)
+                                    if kmer in reef_kmers:
+                                        continue
                                     queue.append(new_path)
                                 continue
                             new_path.nflanking.append(i)
@@ -984,8 +1007,9 @@ class PVGPeptideFinder():
     def add_peptide_sequences(self, node:PVGNode, orfs:List[PVGOrf],
             cleavage_params:CleavageParams, check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord], denylist:Set[str],
-            leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
-            circ_rna:CircRNAModel=None, backsplicing_only:bool=False):
+            reef_kmers:Set[Tuple[str]], leading_node:PVGNode=None,
+            subgraphs:SubgraphTree=None, circ_rna:CircRNAModel=None,
+            backsplicing_only:bool=False):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
@@ -1025,8 +1049,10 @@ class PVGPeptideFinder():
                 node=node, orfs=orfs, cleavage_params=cleavage_params,
                 tx_id=self.tx_id, gene_id=self.gene_id, leading_node=leading_node,
                 subgraphs=subgraphs, is_circ_rna=circ_rna is not None,
-                backsplicing_only=backsplicing_only, is_start_codon=is_start_codon
+                backsplicing_only=backsplicing_only, is_start_codon=is_start_codon,
+                reef_kmers=reef_kmers
             )
+            reef_kmers.update(candidate_paths.generate_reef_kmers())
         if self.global_variant and self.global_variant not in additional_variants:
             additional_variants.append(self.global_variant)
 

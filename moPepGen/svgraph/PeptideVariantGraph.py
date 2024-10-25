@@ -973,7 +973,7 @@ class PeptideVariantGraph():
             in_cds = False
             orfs = []
         elif not target_node.npop_collapsed:
-            node_copy = target_node.copy(in_nodes=False)
+            node_copy = target_node.copy(in_nodes=False, id=True)
 
             additional_variants = cursor.cleavage_gain
             upstream_indels = target_node.upstream_indel_map.get(cursor.in_node)
@@ -990,7 +990,8 @@ class PeptideVariantGraph():
                 denylist=self.denylist,
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
-                backsplicing_only=traversal.backsplicing_only
+                backsplicing_only=traversal.backsplicing_only,
+                reef_kmers=traversal.reef_kmers
             )
             self.remove_node(node_copy)
 
@@ -1059,7 +1060,7 @@ class PeptideVariantGraph():
         else:
             start_gain.update(target_node.get_variants_at(start_index))
             additional_variants = []
-            node_copy = target_node.copy(in_nodes=False)
+            node_copy = target_node.copy(in_nodes=False, id=True)
             in_cds = True
             node_copy.truncate_left(start_index)
             orf = PVGOrf(orf=list(traversal.known_orf_tx), start_gain=start_gain,
@@ -1074,7 +1075,8 @@ class PeptideVariantGraph():
                 denylist=self.denylist,
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
-                backsplicing_only=traversal.backsplicing_only
+                backsplicing_only=traversal.backsplicing_only,
+                reef_kmers=traversal.reef_kmers
             )
             cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
@@ -1133,7 +1135,7 @@ class PeptideVariantGraph():
             orfs = []
 
         if in_cds and not target_node.npop_collapsed:
-            cur_copy = target_node.copy(in_nodes=False)
+            cur_copy = target_node.copy(in_nodes=False, id=True)
             cur_orfs = copy.copy(orfs)
             if self.is_circ_rna():
                 additional_variants = []
@@ -1158,7 +1160,7 @@ class PeptideVariantGraph():
             if not finding_start_site:
                 start_indices = [x for x in start_indices if x <= real_fusion_position]
             for start_index in start_indices:
-                cur_copy = target_node.copy(in_nodes=False)
+                cur_copy = target_node.copy(in_nodes=False, id=True)
                 cur_copy.truncate_left(start_index)
                 orf_start = cur_copy.get_orf_start()
                 orf_subgraph_id = cur_copy.get_subgraph_id_at(0)
@@ -1274,7 +1276,8 @@ class PeptideVariantGraph():
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
                 circ_rna=traversal.circ_rna,
-                backsplicing_only=traversal.backsplicing_only
+                backsplicing_only=traversal.backsplicing_only,
+                reef_kmers=traversal.reef_kmers
             )
         for node in trash:
             self.remove_node(node)

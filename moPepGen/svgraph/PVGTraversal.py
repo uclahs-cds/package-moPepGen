@@ -1,11 +1,12 @@
 """ PVGCursor """
 from __future__ import annotations
-from typing import Tuple, List, Deque, Dict, TYPE_CHECKING
+from typing import Tuple, List, Deque, Dict, TYPE_CHECKING, Set
 from functools import cmp_to_key
 from collections import deque
 
 
 if TYPE_CHECKING:
+    from Bio.Seq import Seq
     from moPepGen.circ.CircRNA import CircRNAModel
     from moPepGen.svgraph.PVGNode import PVGNode
     from moPepGen.svgraph.PVGOrf import PVGOrf
@@ -35,7 +36,8 @@ class PVGTraversal():
             queue:Deque[PVGCursor]=None,
             stack:Dict[str, Dict[str, PVGCursor]]=None,
             orf_assignment:str='max', backsplicing_only:bool=False,
-            find_ass:bool=False):
+            find_ass:bool=False,
+            reef_kmers:Set[Tuple[str]]=None):
         """ constructor """
         self.check_variants = check_variants
         self.check_orf = check_orf
@@ -48,6 +50,7 @@ class PVGTraversal():
         self.orf_assignment = orf_assignment
         self.backsplicing_only = backsplicing_only
         self.find_ass = find_ass
+        self.reef_kmers = reef_kmers or set()
 
     def is_done(self) -> bool:
         """ Check if the traversal is done """

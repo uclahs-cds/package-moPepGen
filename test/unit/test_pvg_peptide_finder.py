@@ -94,7 +94,8 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
         paths = finder.find_candidate_node_paths_archipel(
             node=nodes[1], orfs=[orf], cleavage_params=cp,
             tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=False
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
+            reef_kmers=set()
         )
         peptides = list(paths.join_peptides(
             pool={},
@@ -128,7 +129,8 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
         paths = finder.find_candidate_node_paths_archipel(
             node=nodes[1], orfs=[orf], cleavage_params=cp,
             tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=False
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
+            reef_kmers=set()
         )
         peptides = list(paths.join_peptides(
             pool={},
@@ -162,7 +164,8 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
         paths = finder.find_candidate_node_paths_archipel(
             node=nodes[1], orfs=[orf], cleavage_params=cp,
             tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=True
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=True,
+            reef_kmers=set()
         )
         peptides = list(paths.join_peptides(
             pool={},
@@ -194,7 +197,8 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
         paths = finder.find_candidate_node_paths_archipel(
             node=nodes[1], orfs=[orf], cleavage_params=cp,
             tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=True
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=True,
+            reef_kmers=set()
         )
         peptides = list(paths.join_peptides(
             pool={},
@@ -235,6 +239,7 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
             node=nodes[1], orfs=[orf], cleavage_params=cp,
             tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
             is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
+            reef_kmers=set()
         )
         peptides = list(paths.join_peptides(
             pool={},
@@ -253,15 +258,15 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
         v1 = (41, 42, 'G', '<INS>', 'Insertion', 'RI_41')
         v2 = (51, 52, 'G', 'C', 'SNV', '41:G-C')
         data = {
-            1: ('S',  [0],   [(*v1, 0, 1, True)],                    [((0,1),(0,1))], 0),
-            2: ('K',  [1],   [(*v1, 0, 1, True)],                    [((0,1),(1,2))], 0),
-            3: ('L',  [2],   [(*v1, 0, 1, True)],                    [((0,1),(2,3))], 0),
-            4: ('H', [3],    [(*v1, 0, 2, True), (*v2, 0, 1, True)], [             ], 0),
-            5: ('V',  [3],   [(*v1, 0, 1, True)],                    [((0,1),(3,4))], 0),
-            6: ('C',  [4,5], [(*v1, 0, 1, True)],                    [((0,1),(4,5))], 0),
-            7: ('W',  [6],   [(*v1, 0, 1, True)],                    [((0,1),(5,6))], 0),
-            8: ('I',  [7],   [(*v1, 0, 1, True)],                    [((0,1),(6,7))], 0),
-            9: ('*',  [8],   [(*v1, 0, 1, True)],                    [((0,1),(7,8))], 0)
+            1: ('S',  [0],   [(*v1, 0, 1, True)], [((0,1),(0,1))], 0),
+            2: ('K',  [1],   [(*v1, 0, 1, True)], [((0,1),(1,2))], 0),
+            3: ('L',  [2],   [(*v1, 0, 1, True)], [((0,1),(2,3))], 0),
+            4: ('H',  [3],   [(*v1, 0, 2, True), (*v2, 0, 1, True)], [], 0),
+            5: ('V',  [3],   [(*v1, 0, 1, True)], [((0,1),(3,4))], 0),
+            6: ('C',  [4,5], [(*v1, 0, 1, True)], [((0,1),(4,5))], 0),
+            7: ('W',  [6],   [(*v1, 0, 1, True)], [((0,1),(5,6))], 0),
+            8: ('I',  [7],   [(*v1, 0, 1, True)], [((0,1),(6,7))], 0),
+            9: ('*',  [8],   [(*v1, 0, 1, True)], [((0,1),(7,8))], 0)
         }
         orf = PVGOrf(orf = [0, 7])
         graph, nodes = create_pgraph(data, 'ENST0001')
@@ -272,9 +277,10 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
         finder = PVGPeptideFinder(tx_id)
         cp = params.CleavageParams(flanking_size=3)
         paths = finder.find_candidate_node_paths_archipel(
-            node=nodes[1], orfs=[orf], cleavage_params=cp,
+            node=nodes[1].copy(id=True), orfs=[orf], cleavage_params=cp,
             tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
-            is_circ_rna=False, backsplicing_only=False, is_start_codon=False
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
+            reef_kmers=set()
         )
         peptides = list(paths.join_peptides(
             pool={},
@@ -288,6 +294,15 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
             {str(x[0]) for x in peptides},
             {'SKLHCWI', 'SKLVCWI'}
         )
+        # Test the same sequence won't be called as reef twice.
+        kmers = paths.generate_reef_kmers()
+        paths = finder.find_candidate_node_paths_archipel(
+            node=nodes[2].copy(id=True), orfs=[orf], cleavage_params=cp,
+            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
+            reef_kmers=kmers
+        )
+        self.assertEqual(len(paths.data), 0)
 
 class TestCasePVGCandidateNodePaths(unittest.TestCase):
     """ Test cases for MiscleavedNodes """
