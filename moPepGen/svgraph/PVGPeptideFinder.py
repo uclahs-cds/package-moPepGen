@@ -926,7 +926,21 @@ class PVGPeptideFinder():
         """
         if not orfs:
             raise ValueError('ORFs are empty')
+
+        paths = PVGCandidateNodePaths(
+            data=deque([]),
+            cleavage_params=cleavage_params,
+            orfs=orfs,
+            tx_id=tx_id,
+            gene_id=gene_id,
+            leading_node=leading_node,
+            subgraphs=subgraphs,
+            is_circ_rna=is_circ_rna
+        )
+
         if any(v.variant != node.global_variant for v in node.variants):
+            if not is_start_codon:
+                return paths
             islands = [0]
             nflanking = []
         else:
@@ -938,18 +952,7 @@ class PVGPeptideFinder():
             nflanking=nflanking, flanking_size=flanking_size,
             islands=islands
         )
-
         queue:Deque[PVGNodePath] = deque([cur_path])
-        paths = PVGCandidateNodePaths(
-            data=deque([]),
-            cleavage_params=cleavage_params,
-            orfs=orfs,
-            tx_id=tx_id,
-            gene_id=gene_id,
-            leading_node=leading_node,
-            subgraphs=subgraphs,
-            is_circ_rna=is_circ_rna
-        )
 
         while queue:
             cur_path = queue.pop()

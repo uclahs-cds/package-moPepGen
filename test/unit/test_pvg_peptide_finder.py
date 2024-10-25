@@ -304,6 +304,15 @@ class TestCasePVGPeptideFinder(unittest.TestCase):
         )
         self.assertEqual(len(paths.data), 0)
 
+        # Test that nothing should return from a variant node.
+        paths = finder.find_candidate_node_paths_archipel(
+            node=nodes[4].copy(id=True), orfs=[orf], cleavage_params=cp,
+            tx_id=tx_id, gene_id=gene_id, leading_node=None, subgraphs=graph.subgraphs,
+            is_circ_rna=False, backsplicing_only=False, is_start_codon=False,
+            reef_kmers=kmers
+        )
+        self.assertEqual(len(paths.data), 0)
+
 class TestCasePVGCandidateNodePaths(unittest.TestCase):
     """ Test cases for MiscleavedNodes """
     def test_is_valid_x(self):
