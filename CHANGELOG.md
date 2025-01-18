@@ -10,9 +10,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.3] - 2025-01-18
+
 ### Fixed
 
 - Fixed `VariantPeptideIdentifier` that ORF ID was added before variant IDs.
+
+- Fixed `callVariant` that failed on small circRNA with a lot of variants at the step that creates the cleavage graph. #885
 
 ### Changed
 

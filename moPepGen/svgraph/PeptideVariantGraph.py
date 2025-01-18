@@ -303,6 +303,11 @@ class PeptideVariantGraph():
         inbridge_list:Dict[PVGNode,List[PVGNode]] = {}
 
         for route in routes:
+            if self.nodes_have_too_many_variants(route):
+                for i, node in enumerate(route):
+                    if i > 0:
+                        trash.add((route[i-1], node))
+                continue
             for i,node in enumerate(route):
                 node_is_bridge = node.is_bridge()
                 if i == 0:
