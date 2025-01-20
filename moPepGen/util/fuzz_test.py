@@ -630,13 +630,15 @@ class FuzzTestCase():
         args.min_length = 7
         args.max_length = 25
         args.threads = 1
-        args.max_variants_per_node = 9
-        args.additional_variants_per_misc = 2
+        args.max_variants_per_node = (9, )
+        args.additional_variants_per_misc = (2, )
         args.min_nodes_to_collapse = 30
         args.naa_to_collapse = 5
         args.noncanonical_transcripts = False
         args.invalid_protein_as_noncoding = False
         args.debug_level = 1
+        args.timeout_seconds = 300
+        args.coding_novel_orf = False
         call_variant_peptide(args=args)
 
     def brute_force(self):

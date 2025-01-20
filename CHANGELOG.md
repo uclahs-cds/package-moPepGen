@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that failed on small circRNA with a lot of variants at the step that creates the cleavage graph. #885
 
+- Fixed `fuzzTest`. Parameters missing for `callVariant`.
+
 ### Changed
 
 - Changed variant IDs for circRNAs to use backsplicing site instead of listing all exons/introns. #878
