@@ -1227,11 +1227,16 @@ class ThreeFrameTVG():
         subgraph_out:Set[TVGNode] = set()
         visited = set()
         queue:Deque[TVGNode] = deque([e.out_node for e in start.out_edges])
-        end_nodes = set()
+
+        # This `end_nodes` is to set the boundray of the current variant bubble.
+        # Any "inbrige" and "outbrange" nodes to and from any node outside of
+        # the current variant bubble should not be considered.
+        end_nodes = {}
         for n in members:
             for out_node in n.get_out_nodes():
                 if out_node not in members:
-                    end_nodes.add(out_node)
+                    end_nodes[out_node.id] = out_node
+
         while queue:
             cur = queue.pop()
             len_before = len(visited)
@@ -1278,7 +1283,7 @@ class ThreeFrameTVG():
                             and cur.get_first_subgraph_id() != cur.get_last_subgraph_id():
                         subgraph_out.add(cur)
                         continue
-                    if cur in end_nodes:
+                    if cur.id in end_nodes:
                         continue
                 elif cur is not end:
                     # This is when an altSplice indel/sub carries additional frameshift
