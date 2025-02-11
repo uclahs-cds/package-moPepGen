@@ -146,6 +146,7 @@ class PeptideVariantGraph():
             return_first (bool): When true, returns the first node rather
                 than last. Defaults to False
         """
+        original_seq = copy.copy(node.seq.seq)
         first_node = node
         exception_sites = node.seq.get_enzymatic_cleave_exception_sites(
             self.cleavage_params.exception
