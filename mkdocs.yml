@@ -14,7 +14,7 @@ nav:
       - updateIndex: update-index.md
       - parseVEP: parse-vep.md
       - parseREDItools: parse-reditools.md
-      - parseSTARFuion: parse-star-fusion.md
+      - parseSTARFusion: parse-star-fusion.md
       - parseFusionCatcher: parse-fusion-catcher.md
       - parseArriba: parse-arriba.md
       - parseRMATS: parse-rmats.md
