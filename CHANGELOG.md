@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed issue that `callVariant` fails on transcripts with SEC very close to the start codon.
 
+- Fixed issue with extremely long run-time with complex alt splice events. #892
+
 ## [1.4.3] - 2025-01-18
 
 ### Fixed
