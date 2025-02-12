@@ -27,7 +27,7 @@ def create_base_args() -> argparse.Namespace:
     args.max_adjacent_as_mnv = 0
     args.backsplicing_only = False
     args.coding_novel_orf = False
-    args.selenocysteine_termination = False
+    args.selenocysteine_termination = True
     args.w2f_reassignment = False
     args.max_variants_per_node = [7]
     args.additional_variants_per_misc = [2]
@@ -67,7 +67,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
                             no_canonical_peptides_with_circ = True
         self.assertFalse(no_canonical_peptides_with_circ)
 
-    def default_test_case(self, gvf:List[Path], reference:Path, expect:Path=None):
+    def default_test_case(self, gvf:List[Path], reference:Path, expect:Path=None,
+            extra_args:dict=None):
         """ Wrapper function to test actual cases.
 
         Args:
@@ -85,6 +86,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.annotation_gtf = reference/'annotation.gtf'
         args.proteome_fasta = reference/'proteome.fasta'
         args.reference_source = None
+        if extra_args:
+            for k,v in extra_args.items():
+                args.__setattr__(k,v)
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
@@ -1250,3 +1254,19 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case84(self):
+        """ In-bubble reference node was treated as subgraph-in mistakenly. """
+        test_dir = self.data_dir/'fuzz/54'
+        gvf = [
+            test_dir/'AltSplice.gvf',
+            test_dir/'gSNP.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(
+            gvf, reference, expected, {
+                'selenocysteine_termination': True,
+                'w2f_reassignment': True
+            }
+        )
