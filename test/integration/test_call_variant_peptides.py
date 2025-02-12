@@ -27,7 +27,7 @@ def create_base_args() -> argparse.Namespace:
     args.max_adjacent_as_mnv = 0
     args.backsplicing_only = False
     args.coding_novel_orf = False
-    args.selenocysteine_termination = True
+    args.selenocysteine_termination = False
     args.w2f_reassignment = False
     args.max_variants_per_node = [7]
     args.additional_variants_per_misc = [2]
@@ -1256,11 +1256,36 @@ class TestCallVariantPeptides(TestCaseIntegration):
         self.default_test_case(gvf, reference, expected)
 
     def test_call_variant_peptide_case84(self):
-        """ In-bubble reference node was treated as subgraph-in mistakenly. """
+        """ Reported in #889. This case has 4 alternative splicing events (1 INS
+        and 3 DEL), and a small indel. The indel is downstream, very close to the
+        last DEL. The issue happened when aligning variant bubbles. When looking
+        for additional in-bridge, out-bridge nodes to the bubble, the out-bridge
+        node, with the indel, has the same subgraph ID, so the process keeps going
+        until it meets the main subgraph. So the solution is, we will now only
+        look for in-bridge and out-bridge nodes connected to any of the nodes in
+        the members of the variant bubble. """
         test_dir = self.data_dir/'fuzz/54'
         gvf = [
             test_dir/'AltSplice.gvf',
             test_dir/'gSNP.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(
+            gvf, reference, expected, {
+                'selenocysteine_termination': True,
+                'w2f_reassignment': True
+            }
+        )
+
+    def test_call_variant_peptide_case85(self):
+        """
+        This test case is reported by a fuzz test where the transcript has a
+        selenocysteine (SEC) and is very close to the start codon.
+        """
+        test_dir = self.data_dir/'fuzz/55'
+        gvf = [
+            test_dir/'fake_variants.gvf'
         ]
         expected = test_dir/'brute_force.txt'
         reference = test_dir
