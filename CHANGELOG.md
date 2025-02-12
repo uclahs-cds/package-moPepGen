@@ -10,6 +10,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.4] - 2025-02-11
+
+### Fixed
+
+- Fixed issue reported in #889 where variant bubbles alignment failed due to incorrect handling of in-bridge and out-bridge nodes with the same subgraph ID. The fix ensures that only in-bridge and out-bridge nodes connected to any of the nodes in the members of the variant bubble are considered.
+
+- Fixed issue that `callVariant` fails on transcripts with SEC very close to the start codon.
+
 ## [1.4.3] - 2025-01-18
 
 ### Fixed

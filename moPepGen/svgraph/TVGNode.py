@@ -4,6 +4,7 @@ from typing import List, Set, Tuple, Dict, Deque, TYPE_CHECKING
 import copy
 from collections import deque
 import math
+import uuid
 from Bio.Seq import Seq
 from moPepGen.dna import DNASeqRecordWithCoordinates
 from moPepGen import seqvar, aa
@@ -29,7 +30,7 @@ class TVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
-            level:int=0, was_bridge:bool=False):
+            level:int=0, was_bridge:bool=False, id:str=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -48,6 +49,7 @@ class TVGNode():
         self.global_variant = global_variant
         self.level = level
         self.was_bridge = was_bridge
+        self.id = id or str(uuid.uuid4())
 
     def create_node(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,

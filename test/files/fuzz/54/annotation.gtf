@@ -1,0 +1,8 @@
+chr1	.	gene	1	126182	.	+	.	 gene_id ENSG00000105976.16; gene_type protein_coding; gene_name MET;
+chr1	.	transcript	51951	83219	.	+	.	 gene_id ENSG00000105976.16; transcript_id ENST00000495962.1; gene_type protein_coding; gene_name MET;
+chr1	.	exon	51951	52054	.	+	.	 gene_id ENSG00000105976.16; transcript_id ENST00000495962.1; gene_type protein_coding; gene_name MET;
+chr1	.	exon	52577	52652	.	+	.	 gene_id ENSG00000105976.16; transcript_id ENST00000495962.1; gene_type protein_coding; gene_name MET;
+chr1	.	exon	59473	59664	.	+	.	 gene_id ENSG00000105976.16; transcript_id ENST00000495962.1; gene_type protein_coding; gene_name MET;
+chr1	.	exon	67755	67889	.	+	.	 gene_id ENSG00000105976.16; transcript_id ENST00000495962.1; gene_type protein_coding; gene_name MET;
+chr1	.	exon	68657	68830	.	+	.	 gene_id ENSG00000105976.16; transcript_id ENST00000495962.1; gene_type protein_coding; gene_name MET;
+chr1	.	exon	83160	83219	.	+	.	 gene_id ENSG00000105976.16; transcript_id ENST00000495962.1; gene_type protein_coding; gene_name MET;

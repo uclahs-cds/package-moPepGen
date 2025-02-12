@@ -53,6 +53,7 @@ def parse_args(subparsers:argparse._SubParsersAction):
         nargs='*',
         metavar='<values>'
     )
+    common.add_args_debug_level(parser)
     common.add_args_reference(parser, proteome=True, index=False)
     parser.set_defaults(func=main)
     common.print_help_if_missing_args(parser)
@@ -120,12 +121,13 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path, graph_output_d
     args.min_mw = 500.
     args.min_length = 7
     args.max_length = 25
-    args.max_variants_per_node = 9
-    args.additional_variants_per_misc = 2
+    args.max_variants_per_node = (7,)
+    args.additional_variants_per_misc = (2,)
     args.min_nodes_to_collapse = 30
     args.naa_to_collapse = 5
     args.noncanonical_transcripts = False
     args.threads = 1
+    args.timeout_seconds = 900
     call_variant_peptide(args=args)
 
 def call_brute_force(gvf_files:Path, ref_dir:Path, output_path:str, force:bool,
