@@ -10,9 +10,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.4] - 2025-02-11
+
+### Fixed
+
+- Fixed issue reported in #889 where variant bubbles alignment failed due to incorrect handling of in-bridge and out-bridge nodes with the same subgraph ID. The fix ensures that only in-bridge and out-bridge nodes connected to any of the nodes in the members of the variant bubble are considered.
+
+- Fixed issue that `callVariant` fails on transcripts with SEC very close to the start codon.
+
+- Fixed issue with extremely long run-time with complex alt splice events. #892
+
+## [1.4.3] - 2025-01-18
+
 ### Fixed
 
 - Fixed `VariantPeptideIdentifier` that ORF ID was added before variant IDs.
+
+- Fixed `callVariant` that failed on small circRNA with a lot of variants at the step that creates the cleavage graph. #885
+
+- Fixed `fuzzTest`. Parameters missing for `callVariant`.
 
 ### Changed
 

@@ -1,0 +1,33 @@
+##fileformat=VCFv4.2
+##mopepgen_version=1.4.3
+##parser=parseVEP
+##reference_index=
+##genome_fasta=
+##annotation_gtf=
+##source=
+##CHROM=<Description="Gene ID">
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+##INFO=<ID=OFFSET,Number=+,Type=Integer,Description="Offsets of fragments (exons or introns)">
+##INFO=<ID=LENGTH,Number=+,Type=Integer,Description="Lengths of fragments (exons or introns)">
+##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
+##INFO=<ID=START,Number=1,Type=Integer,Description="Start Position">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End Position">
+##INFO=<ID=DONOR_START,Number=1,Type=Integer,Description="Donor Start Position">
+##INFO=<ID=DONOR_END,Number=1,Type=Integer,Description="Donor End Position">
+##INFO=<ID=COORDINATE,Number=1,Type=String,Description="Coordinate for Insertion or Substitution">
+##INFO=<ID=ACCEPTER_GENE_ID,Number=1,Type=String,Description="3' Accepter Transcript's Gene ID">
+##INFO=<ID=ACCEPTER_TRANSCRIPT_ID,Number=1,Type=String,Description="3' Accepter Transcript's Transcript ID">
+##INFO=<ID=ACCEPTER_POSITION,Number=1,Type=Integer,Description="Position of the break point of the 3' accepter transcript">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+FAKEG00000361	282	FAKEG00000361-281-T-A	T	A	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-180:181;GENE_SYMBOL=
+FAKEG00000361	371	FAKEG00000361-370-G-A	G	A	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-91:92;GENE_SYMBOL=
+FAKEG00000361	13	FAKEG00000361-12-G-A	G	A	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-449:450;GENE_SYMBOL=
+FAKEG00000361	373	FAKEG00000361-372-T-C	T	C	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-89:90;GENE_SYMBOL=
+FAKEG00000361	375	FAKEG00000361-374-C-G	C	G	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-87:88;GENE_SYMBOL=
+FAKEG00000361	319	FAKEG00000361-318-G-C	G	C	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-143:144;GENE_SYMBOL=
+FAKEG00000361	378	FAKEG00000361-377-C-G	C	G	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-84:85;GENE_SYMBOL=
+FAKEG00000361	250	FAKEG00000361-249-T-C	T	C	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-212:213;GENE_SYMBOL=
+FAKEG00000361	383	FAKEG00000361-382-A-T	A	T	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-79:80;GENE_SYMBOL=
+FAKEG00000361	314	FAKEG00000361-313-G-C	G	C	.	.	TRANSCRIPT_ID=FAKET00000361;GENOMIC_POSITION=chrF-148:149;GENE_SYMBOL=

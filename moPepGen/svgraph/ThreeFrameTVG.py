@@ -1227,6 +1227,16 @@ class ThreeFrameTVG():
         subgraph_out:Set[TVGNode] = set()
         visited = set()
         queue:Deque[TVGNode] = deque([e.out_node for e in start.out_edges])
+
+        # This `end_nodes` is to set the boundray of the current variant bubble.
+        # Any "inbrige" and "outbrange" nodes to and from any node outside of
+        # the current variant bubble should not be considered.
+        end_nodes = {}
+        for n in members:
+            for out_node in n.get_out_nodes():
+                if out_node not in members:
+                    end_nodes[out_node.id] = out_node
+
         while queue:
             cur = queue.pop()
             len_before = len(visited)
@@ -1272,6 +1282,8 @@ class ThreeFrameTVG():
                             and cur.get_first_subgraph_id() == start.subgraph_id \
                             and cur.get_first_subgraph_id() != cur.get_last_subgraph_id():
                         subgraph_out.add(cur)
+                        continue
+                    if cur.id in end_nodes:
                         continue
                 elif cur is not end:
                     # This is when an altSplice indel/sub carries additional frameshift
@@ -1406,17 +1418,19 @@ class ThreeFrameTVG():
             # the input node itself.
             return node, set()
 
-        visited:Set[TVGNode] = {node}
+        visited:Dict[str, TVGNode] = {node.id: node}
         # When a new farthest node is found, the downstream nodes of the old
         # farthest node are put into this `exceptions` container, so they
         # can be visited again.
         exceptions:Set[TVGNode] = set()
+        non_members:Set[str] = set()
         while queue:
             cur:TVGNode = queue.popleft()
             if cur is None:
                 continue
 
             if cur.reading_frame_index != node.reading_frame_index:
+                non_members.add(cur.id)
                 continue
 
             if subgraph_checker:
@@ -1425,7 +1439,7 @@ class ThreeFrameTVG():
                     subgraph_checker = False
 
             visited_len_before = len(visited)
-            visited.add(cur)
+            visited[cur.id] = cur
             visited_len_after = len(visited)
             if visited_len_before == visited_len_after:
                 if cur is farthest and cur is not node:
@@ -1485,7 +1499,8 @@ class ThreeFrameTVG():
             queue.append(farthest)
             exceptions.add(cur)
             continue
-        return farthest, visited
+        members = {v for k,v in visited.items() if k not in non_members}
+        return farthest, members
 
     def first_node_is_smaller(self, first:TVGNode, second:TVGNode) -> bool:
         """ Check if the first node is larger """
@@ -1616,6 +1631,11 @@ class ThreeFrameTVG():
             new_bridge = bridge_in.copy()
             for edge in bridge_in.out_edges:
                 self.add_edge(new_bridge, edge.out_node, edge.type)
+                # Here we want to limit the process within the variant bubble.
+                # In-bridge nodes should not be merged with their outgoing nodes
+                # that do not belong to the bubble.
+                if edge.out_node not in members:
+                    end_nodes.add(edge.out_node)
             bridge_map[new_bridge] = bridge_in
             trash.add(bridge_in)
 
@@ -1658,7 +1678,7 @@ class ThreeFrameTVG():
             for out_edge in copy.copy(cur.out_edges):
                 out_node:TVGNode = out_edge.out_node
 
-                # So this is the case that some of the end_nodes are in end_nodes
+                # So this is the case that some of the out_nodes are in end_nodes
                 # but not the others.
                 if out_node in end_nodes:
                     new_node = cur.copy()

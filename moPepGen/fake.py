@@ -753,7 +753,7 @@ def fake_genomic_annotation(n_genes:int, chrom:str, min_exons:int, max_exons:int
         )
         gene_start = tx_model.transcript.location.start
         gene_end = tx_model.transcript.location.end
-        loc = FeatureLocation(start=gene_start, end=gene_end, seqname=chrom)
+        loc = FeatureLocation(start=gene_start, end=gene_end, seqname=chrom, strand=strand)
         gene_model = GeneAnnotationModel(
             location=loc, chrom=chrom, transcripts=[tx_id], type='gene',
             attributes=copy.deepcopy(tx_model.transcript.attributes)

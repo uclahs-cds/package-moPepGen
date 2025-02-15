@@ -68,7 +68,8 @@ class TestCallVariantPeptides(TestCaseIntegration):
                             no_canonical_peptides_with_circ = True
         self.assertFalse(no_canonical_peptides_with_circ)
 
-    def default_test_case(self, gvf:List[Path], reference:Path, expect:Path=None):
+    def default_test_case(self, gvf:List[Path], reference:Path, expect:Path=None,
+            extra_args:dict=None):
         """ Wrapper function to test actual cases.
 
         Args:
@@ -86,6 +87,9 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.annotation_gtf = reference/'annotation.gtf'
         args.proteome_fasta = reference/'proteome.fasta'
         args.reference_source = None
+        if extra_args:
+            for k,v in extra_args.items():
+                args.__setattr__(k,v)
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
@@ -1275,3 +1279,44 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case84(self):
+        """ Reported in #889. This case has 4 alternative splicing events (1 INS
+        and 3 DEL), and a small indel. The indel is downstream, very close to the
+        last DEL. The issue happened when aligning variant bubbles. When looking
+        for additional in-bridge, out-bridge nodes to the bubble, the out-bridge
+        node, with the indel, has the same subgraph ID, so the process keeps going
+        until it meets the main subgraph. So the solution is, we will now only
+        look for in-bridge and out-bridge nodes connected to any of the nodes in
+        the members of the variant bubble. """
+        test_dir = self.data_dir/'fuzz/54'
+        gvf = [
+            test_dir/'AltSplice.gvf',
+            test_dir/'gSNP.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(
+            gvf, reference, expected, {
+                'selenocysteine_termination': True,
+                'w2f_reassignment': True
+            }
+        )
+
+    def test_call_variant_peptide_case85(self):
+        """
+        This test case is reported by a fuzz test where the transcript has a
+        selenocysteine (SEC) and is very close to the start codon.
+        """
+        test_dir = self.data_dir/'fuzz/55'
+        gvf = [
+            test_dir/'fake_variants.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(
+            gvf, reference, expected, {
+                'selenocysteine_termination': True,
+                'w2f_reassignment': True
+            }
+        )

@@ -670,8 +670,7 @@ class PVGCandidateNodePaths():
                 cur_metadata.label = label
                 cur_metadata.has_variants = bool(cur_variants)
 
-                if is_valid:
-                    cur_metadata_2 = copy.copy(cur_metadata)
+                if is_valid or is_valid_start:
                     cur_nodes = []
                     cut_offset = sec.location.start
                     for node in nodes:
@@ -686,15 +685,18 @@ class PVGCandidateNodePaths():
                         else:
                             cut_offset = max(0, cut_offset - len(node.seq.seq))
                             continue
-                    cur_metadata_2.segments = self.create_peptide_segments(cur_nodes)
-                    yield seq_mod, cur_metadata_2
+                    if is_valid:
+                        cur_metadata_2 = copy.copy(cur_metadata)
+                        cur_metadata_2.segments = self.create_peptide_segments(cur_nodes)
+                        yield seq_mod, cur_metadata_2
 
-                if clip_nterm_m and is_valid_start:
-                    cur_seq=seq_mod[1:]
-                    cur_nodes[0] = cur_nodes[0].copy()
-                    cur_nodes[0].truncate_left(1)
-                    cur_metadata.segments = self.create_peptide_segments(cur_nodes)
-                    yield cur_seq, cur_metadata
+                    if is_valid_start:
+                        cur_metadata_2 = copy.copy(cur_metadata)
+                        cur_seq=seq_mod[1:]
+                        cur_nodes[0] = cur_nodes[0].copy()
+                        cur_nodes[0].truncate_left(1)
+                        cur_metadata_2.segments = self.create_peptide_segments(cur_nodes)
+                        yield cur_seq, cur_metadata_2
 
     @staticmethod
     def any_overlaps_and_all_missing_variant(nodes:Iterable[PVGNode], variant:VariantRecord):
