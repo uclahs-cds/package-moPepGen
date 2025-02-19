@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.5] - 2025-02-19
+
+### Fixed
+
+- Variant peptide not split correclty if it is derived from fusion that the upstream and downstream are the same gene. #897
+
 ## [1.4.4] - 2025-02-11
 
 ### Fixed
