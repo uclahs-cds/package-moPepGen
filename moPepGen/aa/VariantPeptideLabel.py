@@ -189,9 +189,14 @@ class VariantPeptideInfo():
                 var_ids = {
                     first_gene_id: variant_id.first_variants
                         + [variant_id.fusion_id] \
-                        + variant_id.peptide_variants,
-                    second_gene_id: variant_id.second_variants
+                        + variant_id.peptide_variants
                 }
+                if second_gene_id != first_gene_id:
+                    var_ids[second_gene_id] = variant_id.second_variants
+                else:
+                    var_ids[first_gene_id] = list(set(
+                        var_ids[first_gene_id] +  variant_id.second_variants
+                    ))
                 tx_id = first_tx_id
 
             elif isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
