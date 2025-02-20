@@ -19,7 +19,7 @@ jobs:
         with:
           package-name: mopepgen
 
-  publish-to-py`pi:
+  publish-to-pypi:
     name: Publish Python 🐍 distribution 📦 to PyPI
     needs:
       - build
