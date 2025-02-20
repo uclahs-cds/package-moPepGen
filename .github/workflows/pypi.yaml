@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://test.pypi.org/p/${{ needs.build.outputs.package_name }}
+      url: https://pypi.org/p/${{ needs.build.outputs.package_name }}
     permissions:
       id-token: write
 
