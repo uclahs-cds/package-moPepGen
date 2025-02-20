@@ -15,18 +15,18 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build distribution
-        uses: uclahs-cds/tool-pypi-publish-action/build-distribution@58e64514405eafe4f8c40130001cbd4d62acdf5c
+        uses: uclahs-cds/tool-pypi-publish-action/build-distribution@8a59b1548652d33f0a224775805d9a39767f0605
         with:
           package-name: mopepgen
 
-  publish-to-pypi:
+  publish-to-py`pi:
     name: Publish Python 🐍 distribution 📦 to PyPI
     needs:
       - build
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/${{ needs.build.outputs.package_name }}
+      url: https://test.pypi.org/p/${{ needs.build.outputs.package_name }}
     permissions:
       id-token: write
 
@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Publish to PyPI
-        uses: uclahs-cds/tool-pypi-publish-action/publish-to-pypi
+        uses: uclahs-cds/tool-pypi-publish-action/publish-to-pypi@8a59b1548652d33f0a224775805d9a39767f0605
         with:
           package-name: mopepgen
           url: https://upload.pypi.org/legacy/
