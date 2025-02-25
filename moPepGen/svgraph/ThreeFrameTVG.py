@@ -1248,7 +1248,10 @@ class ThreeFrameTVG():
             is_bridge_out = any(
                 e.out_node.get_first_rf_index() != this_id
                     or e.out_node.get_last_rf_index() != this_id
-                    and any(v.variant.is_frameshifting() for v in cur.variants)
+                    and any(
+                        v.variant.is_frameshifting()
+                        for v in cur.variants
+                    )
                     and not cur.is_reference()
                     and e.out_node not in members
                 for e in cur.out_edges
@@ -1396,6 +1399,8 @@ class ThreeFrameTVG():
         if not node.get_reference_next().out_edges:
             return node.get_reference_next(), set()
 
+        start_variants = {v.variant for v in node.variants}
+
         def is_candidate_out_node(x:TVGNode, y:TVGNode):
             # Note: have to use y.subgraph_id because for deletion, subgraph_id
             # is different from get_first_subgraph_id()
@@ -1431,6 +1436,10 @@ class ThreeFrameTVG():
 
             if cur.reading_frame_index != node.reading_frame_index:
                 non_members.add(cur.id)
+                continue
+
+            cur_variants = {v.variant for v in cur.variants}
+            if any(v.is_frameshifting() and v not in start_variants for v in cur_variants):
                 continue
 
             if subgraph_checker:
@@ -1611,6 +1620,7 @@ class ThreeFrameTVG():
                 end_nodes = {end_node}
         else:
             end_nodes = {end_node}
+
         bridges = self.find_bridge_nodes_between(start_node, end_node, members)
         bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges
 
