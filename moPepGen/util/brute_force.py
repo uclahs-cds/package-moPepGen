@@ -1112,26 +1112,31 @@ class BruteForceVariantPeptideCaller():
                     and (variant.is_insertion() or variant.is_deletion()) \
                     and not variant.is_alternative_splicing():
                 variant.to_end_inclusion(self.tx_seq)
-
-            variant_type_mapper[variant.id] = (variant, 'transcriptional')
+            var_id = variant.get_minimal_identifier()
+            variant_type_mapper[var_id] = (variant, 'transcriptional')
         for variant in self.variant_pool[self.tx_id].intronic:
-            variant_type_mapper[variant.id] = (variant, 'intronic')
+            var_id = variant.get_minimal_identifier()
+            variant_type_mapper[var_id] = (variant, 'intronic')
         if fusion:
             for variant in self.variant_pool[self.tx_id].fusion:
                 if variant.location.start < start_index - 1:
                     continue
-                variant_type_mapper[variant.id] = (variant, 'fusion')
+                var_id = variant.get_minimal_identifier()
+                variant_type_mapper[var_id] = (variant, 'fusion')
                 accepter_tx_id = variant.attrs['ACCEPTER_TRANSCRIPT_ID']
                 if accepter_tx_id not in self.variant_pool:
                     continue
                 accepter_var_series = self.variant_pool[accepter_tx_id]
                 for accepter_var in accepter_var_series.transcriptional:
-                    variant_type_mapper[accepter_var.id] = (accepter_var, 'transcriptional')
+                    var_id = accepter_var.get_minimal_identifier()
+                    variant_type_mapper[var_id] = (accepter_var, 'transcriptional')
                 for accepter_var in accepter_var_series.intronic:
-                    variant_type_mapper[accepter_var.id] = (accepter_var, 'intronic')
+                    var_id = accepter_var.get_minimal_identifier()
+                    variant_type_mapper[var_id] = (accepter_var, 'intronic')
         if circ_rna:
             for variant in self.variant_pool[self.tx_id].circ_rna:
-                variant_type_mapper[variant.id] = (variant, 'circ_rna')
+                var_id = variant.get_minimal_identifier()
+                variant_type_mapper[var_id] = (variant, 'circ_rna')
 
         all_variants = [v[0] for v in variant_type_mapper.values()]
 
@@ -1139,17 +1144,18 @@ class BruteForceVariantPeptideCaller():
             for inds in combinations(range(len(all_variants)), i + 1):
                 variants = [all_variants[i] for i in inds]
                 if fusion \
-                        and not any(variant_type_mapper[v.id][1] == 'fusion'
-                                    for v in variants):
+                        and not any(variant_type_mapper[v.get_minimal_identifier()][1]
+                                    == 'fusion' for v in variants):
                     continue
                 if circ_rna \
-                        and not any(variant_type_mapper[v.id][1] == 'circ_rna'
-                                    for v in variants):
+                        and not any(variant_type_mapper[v.get_minimal_identifier()][1]
+                                    == 'circ_rna' for v in variants):
                     continue
                 pool = seqvar.VariantRecordPool()
                 pool.anno = self.variant_pool.anno
                 for variant in variants:
-                    var_type = variant_type_mapper[variant.id][1]
+                    var_id = variant.get_minimal_identifier()
+                    var_type = variant_type_mapper[var_id][1]
                     tx_id = variant.transcript_id
                     if var_type == 'transcriptional':
                         pool.add_transcriptional_variant(variant, tx_id)

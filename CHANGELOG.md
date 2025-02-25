@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.6-rc1] - 2025-02-24
+
+### Fixed
+
+- Fix callVariant for a case that a bridge-out node was not identified correctly with a lot of framshift variants.
+
 ## [1.4.5] - 2025-02-19
 
 ### Fixed
