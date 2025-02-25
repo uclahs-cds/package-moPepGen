@@ -1,0 +1,13 @@
+##fileformat=VCFv4.2
+##mopepgen_version=1.4.5
+##parser=parseVEP
+##reference_index=/hot/project/process/MissingPeptides/MISP-000132-MissingPeptidesPanCanP1/ref/GRCh38-EBI-GENCODE45/moPepGen/1.4.1
+##genome_fasta=
+##annotation_gtf=
+##source=gSNP
+##CHROM=<Description="Gene ID">
+##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+##INFO=<ID=GENOMIC_POSITION,Number=1,Type=String,Description="Genomic Position">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG00000129158.11	13553	INDEL-13553-A-AAGGAGGAAGGA	A	AAGGAGGAAGGA	.	.	TRANSCRIPT_ID=ENST00000265965.10;GENOMIC_POSITION=chr11:17999494-17999495;GENE_SYMBOL=SERGEF
