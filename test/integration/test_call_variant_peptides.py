@@ -1295,3 +1295,17 @@ class TestCallVariantPeptides(TestCaseIntegration):
                 'w2f_reassignment': True
             }
         )
+
+    def test_call_variant_peptide_case86(self):
+        """
+        Issue that a bridge-out node was not identified correctly with a lot of
+        framshift variants.
+        """
+        test_dir = self.data_dir/'comb/case_86'
+        gvf = [
+            test_dir/'gSNP.gvf',
+            test_dir/'AltSplice.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)

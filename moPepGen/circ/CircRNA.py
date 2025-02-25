@@ -33,6 +33,10 @@ class CircRNAModel():
         self.genomic_position = genomic_location
         self.backsplicing_site = backsplicing_site
 
+    def get_minimal_identifier(self) -> str:
+        """ Get the minimal identifier of the circRNA """
+        return f"{self.gene_id}:{self.id}"
+
     def get_gene_coordinates(self, gene:GeneAnnotationModel) -> None:
         """ Get the coordinates of the gene """
         features:List[SeqFeature] = []

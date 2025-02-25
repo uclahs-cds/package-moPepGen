@@ -263,6 +263,10 @@ class VariantRecord():
         """ accetper transcript ID """
         return self.attrs['ACCEPTER_TRANSCRIPT_ID']
 
+    def get_minimal_identifier(self) -> str:
+        """ Get minimal identifier """
+        return f"{self.location.start}-{self.ref}-{self.alt}-{self.id}"
+
     def get_donor_start(self) -> int:
         """ Get donor start position """
         if self.type in ['Insertion', 'Substitution']:
