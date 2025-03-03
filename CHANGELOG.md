@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.6-rc2] - 2025-03-03
+
+- Fixed callVariant that variant bubble not identified correctly.
+
 ## [1.4.6-rc1] - 2025-02-24
 
 ### Fixed
