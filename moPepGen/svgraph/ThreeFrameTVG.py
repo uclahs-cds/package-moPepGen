@@ -1903,7 +1903,7 @@ class ThreeFrameTVG():
                     cur = self.merge_with_outbonds(cur)[0]
                 queue.appendleft(cur)
                 continue
-            
+
             self.align_variants(cur)
 
             self.collapse_equivalent_nodes(cur)

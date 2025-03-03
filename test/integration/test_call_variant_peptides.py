@@ -1309,10 +1309,10 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
-    
+
     def test_call_variant_peptide_case87(self):
         """
-        Issue that the in-member end node not treated as a end node when aligning 
+        Issue that the in-member end node not treated as an end node when aligning
         the vairant bubble.
         """
         test_dir = self.data_dir/'comb/case_87'
