@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Chenghao Zhu">
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>Vignette - moPepGen</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Vignette";
+    var mkdocs_page_input_path = "vignette.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> moPepGen</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../basics/">moPepGen Basics</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../quick-start/">Quick Start</a>
+                    </li>
+                </ul>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Vignette</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reference-data">Reference Data</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#parsing">Parsing</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#snp-indel">SNP &amp; INDEL</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fusion">Fusion</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#alternative-splicing">Alternative Splicing</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#rna-editing-sites">RNA Editing Sites</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#circrna">CircRNA</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-canonical-peptides-calling">Non-canonical Peptides Calling</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#variant-peptides">Variant Peptides</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#novel-orf-peptides">Novel ORF Peptides</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#alternative-translation-peptides">Alternative Translation Peptides</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-processing">Post-processing</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#summarizing">Summarizing</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#filtering">Filtering</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#splitting">Splitting</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#target-decoy-database">Target-Decoy Database</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#shortening-fasta-headers">Shortening FASTA headers</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../file-format/">File Format</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Commands</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../generate-index/">generateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../update-index/">updateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-vep/">parseVEP</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-reditools/">parseREDItools</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-star-fusion/">parseSTARFusion</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-fusion-catcher/">parseFusionCatcher</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-arriba/">parseArriba</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-rmats/">parseRMATS</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-circexplorer/">parseCIRCexplorer</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-variant/">callVariant</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-novel-orf/">callNovelORF</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-alt-translation/">callAltTranslation</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../filter-fasta/">filterFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../split-fasta/">splitFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../merge-fasta/">mergeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../encode-fasta/">encodeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../decoy-fasta/">decoyFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../summarize-fasta/">summarizeFasta</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">moPepGen</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Vignette</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/uclahs-cds/package-moPepGen/edit/master/docs/vignette.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="vignette">Vignette</h1>
+<p>Welcome to the vignette for moPepGen, a powerful Python package designed for generating custom proteogenomic peptide databases for proteomics library search. This vignette aims to provide you with a comprehensive overview and step-by-step guide on utilizing moPepGen to create custom databases for non-canonical peptide detection in mass spectrometry-based proteomics experiments. A small demo dataset has been provided, and each step should take no more than one minute to run on any computer.</p>
+<h2 id="installation">Installation</h2>
+<p>moPepGen is a command line tool designated to execute in a Unix-like environment. For MacOS and Linux users, moPepGen can be installed using the command below. For Windows users, we recommend installing and running moPepGen from WSL (Windows Subsystem for Linux). Installation should take about one minute to finish.</p>
+<pre><code class="language-shell">pip install git+ssh://git@github.com/uclahs-cds/package-moPepGen.git
+</code></pre>
+<p>Install a specific version.</p>
+<pre><code class="language-shell">pip install git+ssh://git@github.com/uclahs-cds/package-moPepGen.git@v0.11.3
+</code></pre>
+<p>You can also clone the repo and install it directly from the source code.</p>
+<pre><code class="language-shell">git clone git@github.com:uclahs-cds/package-moPepGen.git
+cd package-moPepGen
+pip install . --use-feature=in-tree-build
+</code></pre>
+<h2 id="reference-data">Reference Data</h2>
+<p>moPepGen requires a set of reference files, including the reference genome, its annotation and the translated protein sequences. We currently support reference files downloaded from two sources, ENSEMBL and GENCODE. See <a href="/generate-index/#input">here</a> for more details.</p>
+<p>A simulated reference set is provided for demonstration. The demo reference set only contains 5 transcripts and is only about 40 KB in size so should run very easily on any computer. The demo reference set can be downloaded with the commands below.</p>
+<pre><code class="language-shell">cd ~
+mkdir -p moPepGen-demo
+cd moPepGen-demo
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/genome.fasta
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/annotation.gtf
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/translate.fasta
+</code></pre>
+<p>Convert reference set into index files for quick access by moPepGen.</p>
+<pre><code class="language-shell">moPepGen generateIndex \
+    -g genome.fasta \
+    -a annotation.gtf \
+    -p translate.fasta \
+    -o ./index
+</code></pre>
+<h2 id="parsing">Parsing</h2>
+<p>The moPepGen workflow starts with parsing a variety of variant files into GVF, a TSV format derived from VCF, to be used by moPepGen to call variant peptides.</p>
+<h3 id="snp-indel">SNP &amp; INDEL</h3>
+<p>Single nucleotide variants (SNVs/SNPs) and small insertions/deletions (INDELs) called by variant callers (<em>e.g.</em> GATK and Mutect2) must be annotated by the Variant Effect Predictor (VEP) first to get the genes each variant is associated with. Here is an example command with the arguments we commonly use. Please ensure that your <code>${OUTFILE_FILE}</code> ends in the suffix <code>.tsv</code> or <code>.txt</code>, as they are the formats accepted by <code>parseVEP</code>.</p>
+<p>Note that, the VEP cache files must be downloaded prior to running VEP (see <a href="https://useast.ensembl.org/info/docs/tools/vep/script/vep_cache.html">here</a>). The VEP developers recommend downloading the VEP cache version which corresponds to the Ensembl VEP installation. We also strongly recommend explicitly providing the exact reference genome and GTF file used in moPepGen to VEP to ensure the consistency of transcript IDs (i.e., using <code>--custom ${ANNOTATION_GTF},${REFERENCE_VERSION},gtf</code>). The exact genome FASTA and annotation GTF files should be used later when calling for variant peptides.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you use <code>--chr</code> to limit the chromosomes to annotate, make sure the style matches your VCF/BED file. For example, if the chromosomes have the 'chr' prefix in your VCF file (<em>i.e.</em>, chr1, chr2, ...), you must include the prefix as well (<em>i.e.</em>, <code>--chr chr1,chr2,chr3</code>).</p>
+</div>
+<p>The example data does not work for VEP.</p>
+<pre><code class="language-shell">vep \
+    --offline \
+    --cache \
+    --check_ref \
+    --no_stats \
+    --fork ${N_THREADS} \
+    --buffer_size 10000 \
+    --distance 0 \
+    --assembly GRCh38 \
+    --no_intergenic \
+    --chr 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19.20,21,22,X,Y,M \
+    -i ${INPUT_GVF_FILE} \
+    -o ${OUTPUT_TSV_FILE} \
+    --fasta ${GENOME_FASTA} \
+    --custom ${ANNOTATION_GTF},${REFERENCE_VERSION},gtf
+</code></pre>
+<p>If you provided a custom GTF file to VEP, please also use a filter command to only keep the annotation records from the custom reference.</p>
+<pre><code class="language-shell">filter_vep \
+    --force_overwrite \
+    -i ${INPUT_FILE} \
+    -o ${OUTPUT_FILE} \
+    --filter &quot;Source = ${REFERENCE_VERSION}&quot;
+</code></pre>
+<p>For demonstration, we provide the following VEP output file in TSV format, to be used by moPepGen.</p>
+<pre><code class="language-shell">wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/vep/vep_snp.txt
+</code></pre>
+<p>The output VEP TSV file must be parsed by <code>parseVEP</code> into GVF format.</p>
+<pre><code class="language-shell">moPepGen parseVEP \
+    -i vep_snp.txt \
+    --index-dir index \
+    -o vep_snp.gvf \
+    --source SNV
+</code></pre>
+<p>The <code>--source</code> argument is used to specify the type of variants (<em>e.g.</em>, SNP, SNV, INDEL) parsed. The source names are used in later post-processing steps, and are required by all moPepGen parsers.</p>
+<h3 id="fusion">Fusion</h3>
+<p>moPepGen provides parsers to three fusion callers, <a href="https://github.com/STAR-Fusion/STAR-Fusion">STAR-Fusion</a>, <a href="https://github.com/suhrig/arriba">Arriba</a> and <a href="https://github.com/ndaniel/fusioncatcher">FusionCatcher</a>.</p>
+<p>As an example, we provide a STAR-Fusion TSV output file for demonstration.</p>
+<pre><code class="language-shell">wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/fusion/star_fusion.txt
+</code></pre>
+<p>Parse it into GVF format.</p>
+<pre><code class="language-shell">moPepGen parseSTARFusion \
+    -i star_fusion.txt \
+    --index-dir index \
+    --source Fusion \
+    -o star_fusion.gvf
+</code></pre>
+<p>By default, <code>parseSTARFusion</code> only keeps fusion events with minimal <code>est_J</code> value of 5. This can be altered by the <code>--min-est-j</code> argument.</p>
+<h3 id="alternative-splicing">Alternative Splicing</h3>
+<p>moPepGen accepts alternative splicing (AS) events estimated by <a href="https://rnaseq-mats.sourceforge.net/">rMATS</a>. RMATS estimates five AS events: SE (skipped exon), A3SS (alternative 3' splicing), A5SS (alternative 5' splicing), MXE (mutually exclusive exons), and RI (retained introns), accepted by <code>parseRMATS</code> as separate input channels. Noted that only the *.JC.txt files are supported.</p>
+<p>Example data:</p>
+<pre><code class="language-shell">wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_se_case_1.SE.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_a3ss_case_1.A3SS.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_a5ss_case_1.A5SS.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_mxe_case_1.MXE.JC.txt
+wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/alternative_splicing/rmats_ri_case_1.RI.JC.txt
+</code></pre>
+<p>Parse AS events output by rMATS into GVF format with <code>parseRMATS</code>. Note that you don't have to provide all 5 AS files to <code>parseRMATS</code>.
+By default, <code>parseRMATS</code> only accepts AS events with inclusion and exclusion junction counts of at least 1. These cutoffs can be set by <code>--min-ijc</code> and <code>--min-sjc</code>. See <a href="./parse-rmats">here</a> for a complete list of arguments.</p>
+<h3 id="rna-editing-sites">RNA Editing Sites</h3>
+<p>RNA editing sites are specific positions within mRNA molecules where nucleotides undergo post-transcriptional modifications. moPepGen supports RNA editing sites called by <a href="https://github.com/BioinfoUNIBA/REDItools">REDItools</a>. Note that the REDItools output must be annotated by the <code>AnnotateTable.py</code> from the REDItools package prior to being passed to <code>parseREDItools</code>. Below is the command that can be used to perform the annotation. Note that the <code>${ANNOTATION_GTF}</code> must be the same file later used in <code>parseREDItools</code> and <code>callVariant</code>. <code>${PREFIX}</code> is the prefix of column names for gene and transcript IDs.</p>
+<pre><code class="language-shell">AnnotateTable.py \
+    -i ${INPUT_TXT} \
+    -a ${ANNOTATION_GTF} \
+    -s 4 \
+    -c 1,2,3 \
+    -n ${PREFIX} \
+    -o ${OUTPUT_TXT}
+</code></pre>
+<p>Example data:</p>
+<pre><code class="language-shell">wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/reditools/reditools_annotated.txt
+</code></pre>
+<p>Parse REDItools output to GVF:
+By default, <code>parseREDItools</code> looks for the transcript ID in column 17. This can be changed with <code>--transcript-id-column</code>, which takes a 1-based column number. See <a href="./parse-reditools">here</a> for a complete list of arguments.</p>
+<h3 id="circrna">CircRNA</h3>
+<p>CircRNAs are commonly recognized as noncoding RNAs, but evidence has shown that they are potentially translatable. moPepGen accepts circRNA events called by <a href="https://circexplorer2.readthedocs.io/en/latest/">CIRCexplorer</a>.</p>
+<p>Download demo data:</p>
+<pre><code class="language-shell">wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/circRNA/CIRCexplorer_circularRNA_known.txt
+</code></pre>
+<p>Parse it into GVF format.</p>
+<pre><code class="language-shell">moPepGen parseCIRCexplorer \
+    -i CIRCexplorer_circularRNA_known.txt \
+    -o circRNA_CIRCexplorer.gvf \
+    --index-dir index \
+    --source CircRNA
+</code></pre>
+<p>By default <code>parseCIRCexplorer</code> accepts the text file output by CIRCexplorer2, however, CIRCexplorer3 is also supported with the <code>--circexplorer3</code> flag. We also provide a series of filtering parameters that can be found <a href="./parse-circexplorer">here</a>.</p>
+<h2 id="non-canonical-peptides-calling">Non-canonical Peptides Calling</h2>
+<p>moPepGen provides three commands for non-canonical peptide calling. <code>callVariant</code> for calling peptides from variant GVFs, <code>callNovelORF</code> for performing 3-frame translation on transcripts to find novel ORFs, and <code>callAltTranslation</code> for calling peptides that harbor alternative translation events such as selenocysteine termination and W &gt; F substitutants.</p>
+<h3 id="variant-peptides">Variant Peptides</h3>
+<p>Variant peptides, peptides that harbor any variant, can be called using the <code>callVariant</code> command. <code>callVariant</code> must take one or more GVF files produced by moPepGen parsers.</p>
+<pre><code class="language-shell">moPepGen callVariant \
+    -i vep_snp.gvf star_fusion.gvf alt_splice_rmats.gvf rna_editing_reditools.gvf circRNA_CIRCexplorer.gvf \
+    --index-dir index \
+    -o variant_peptides.fasta \
+    --threads 4
+</code></pre>
+<p><code>callVariant</code> supports multi-processing and the number of processors to use can be specified with the <code>--threads</code> argument. The <code>--selenocysteine-termination</code> and <code>--w2f-reassignment</code> arguments can be used to call variant peptides that also carry selenocysteine termination and W2F reassignment. By default, <code>callVariant</code> uses trypsin as the enzyme for <em>in silico</em> digestion and allows up to 2 miscleavages, and this can be specified with <code>--cleavage-rule</code> and <code>--miscleavage</code>. See <a href="./call-variant">here</a> for a complete list of arguments supported by <code>callVariant</code>.</p>
+<h3 id="novel-orf-peptides">Novel ORF Peptides</h3>
+<p>Novel ORF peptides, peptides that could potentially be translated from novel open reading frames, can be called using <code>callNovelORF</code>. By default, <code>callNovelORF</code> only searches for novel ORFs from transcripts canonically annotated as noncoding. Protein coding transcripts can be included using <code>--coding-novel-orf</code>. Note that <code>callNovelORF</code> does not take any variants as input but only works with the reference set of novel ORF transcripts. There is no need to rerun <code>callNovelORF</code> unless you wish to use a different enzyme or reference set.</p>
+<pre><code class="language-shell">moPepGen callNovelORF \
+    --index-dir index \
+    -o novel_orf_peptides.fasta
+</code></pre>
+<p>Similar to <code>callVariant</code>, trypsin is the default enzyme and the default maximum number of miscleavages is 2. These can be specified with <code>--cleavage-rule</code> and <code>--miscleavage</code>. See <a href="./call-novel-orf">here</a> for a complete list of arguments supported by <code>callNovelORF</code>.</p>
+<h3 id="alternative-translation-peptides">Alternative Translation Peptides</h3>
+<p>Alternative translation peptides are those that harbor special events during translation, such as selenocysteine termination and W &gt; F substitutants, where the genetic code is not altered but a different polypeptide is produced (see <a href="./call-alt-translation">here</a> for more details). Similar to novel ORF peptides, <code>callAltTranslation</code> only calls peptides using reference transcripts.</p>
+<pre><code class="language-shell">moPepGen callAltTranslation \
+    --index-dir index \
+    -o alt_trans_peptides.fasta
+</code></pre>
+<p>And again, <code>callAltTranslation</code> also uses trypsin as the default enzyme, and up to 2 miscleavages by default. See <a href="./call-alt-translation">here</a> for a complete list of arguments.</p>
+<h2 id="post-processing">Post-processing</h2>
+<p>moPepGen provides a series of post-processing commands that aim to deliver FASTA files ready for database searching. The post-processing tasks include generating summary statistics of a non-canonical database, filtering a database by transcript abundance, splitting a database to separate tiered databases, creating decoy databases, shortening fasta headers for easy handling by search engines, and merging multiple database files for multiplexed proteomic experiments.</p>
+<h3 id="summarizing">Summarizing</h3>
+<p>The typical first step after generating a variant peptide database is to inspect its contents. <code>summarizeFasta</code> takes a variant peptide fasta file output by <code>callVariant</code> and summarizes the variant peptides by categories based on the value of <code>--source</code> you input when calling the parser commands. <code>summarizeFasta</code> must take all GVFs used as input to <code>callVariant</code>.</p>
+<pre><code class="language-shell">moPepGen summarizeFasta \
+    --gvf vep_snp.gvf star_fusion.gvf alt_splice_rmats.gvf rna_editing_reditools.gvf circRNA_CIRCexplorer.gvf \
+    --variant-peptides variant_peptides.fasta \
+    --index-dir index
+</code></pre>
+<p>By default, <code>summarizeFasta</code> outputs to stdout, which can be saved to a text file using the <code>-o</code> argument. In case <code>--output-image</code> is given, a horizontal bar plot will be saved.</p>
+<p><img alt="summarize-fasta-bar-plot" src="../img/summarize-fasta.png" /></p>
+<p>Because moPepGen calls enzymatically cleaved peptides, there is the possibility that the same peptide is called from multiple transcripts, or the same transcript with different or different combinations of variants. For example, the peptide below is called twice from two separate transcripts with two different variants.</p>
+<pre><code>&gt;ENST00000622235.5|SNV-100-G-T|4 ENST00000614167.2|RES-202-G-A|2
+HETLFLLTFPR
+</code></pre>
+<p>To resolve the issue of collapsed peptides like the example above, we use the <code>--order-source</code> argument that takes the priority order of sources considered. It takes the source names in a comma-separated format. For example <code>--order-source gSNP,RNAEditing</code> will prioritize gSNP over RNA editing events, thus the example peptide above will be assigned to the gSNP category. Note that the values passed into <code>--order-source</code> must match the values used in <code>--source</code> in the corresponding parser calls. If <code>--order-source</code> is not provided, the source priority order will be inferred from the order of input GVF files.</p>
+<p>Besides variant peptides called by <code>callVariant</code>, novel ORF peptides and alternative translation peptides can also be passed to <code>summarizeFasta</code> with <code>--novel-orf-peptides</code> and <code>--alt-translation-peptides</code>.</p>
+<h3 id="filtering">Filtering</h3>
+<p>The <code>fitlerFasta</code> module is designed to take an RNA abundance matrix and filter the non-canonical peptides based on the abundances of their corresponding transcripts.</p>
+<p>We provide an example RSEM table for demonstration.</p>
+<pre><code class="language-shell">wget https://github.com/uclahs-cds/package-moPepGen/raw/main/test/files/rsem/rsem.txt
+</code></pre>
+<pre><code class="language-shell">moPepGen filterFasta \
+    -i variant_peptides.fasta \
+    -o variant_peptides_filtered.fasta \
+    --exprs-table rsem.txt \
+    --skip-lines 1 \
+    --tx-id-col 1 \
+    --quant-col 6 \
+    --quant-cutoff 10 \
+    --index ./index
+</code></pre>
+<p><code>--skip-lines</code> indicates the top x number of lines in the abundance matrix that should be skipped. These lines are usually headers or notes output by the quantitation software. <code>--tx-id-col</code> is used to specify the 1-based column number for transcript IDs. Any type of quantitation metrics can be used for filtering (<em>e.g.</em> count, TPM, FPKM) as long as a desired cutoff is given in <code>--quant-cutoff</code> (inclusive). Note that the same reference GTF should be used during quantitation so the transcript IDs can be mapped correctly to variant peptides called by moPepGen.</p>
+<h3 id="splitting">Splitting</h3>
+<p>The <code>splitFasta</code> command is provided to split a variant peptide database into several separate databases for tiered database searching, particularly for the purpose of database-specific false discovery rate control.</p>
+<pre><code class="language-shell">mkdir -p split
+moPepGen splitFasta \
+    --variant-peptides variant_peptides.fasta \
+    --gvf vep_snp.gvf star_fusion.gvf alt_splice_rmats.gvf rna_editing_reditools.gvf circRNA_CIRCexplorer.gvf \
+    --output-prefix split/split \
+    --index-dir index
+</code></pre>
+<p>Similar to <code>summarizeFasta</code>, <code>splitFasta</code> also takes a <code>--order-source</code> to specify the priority order of which category a peptide should be assigned to, which will be inferred from the input GVFs if not specified. <code>--group-source</code> is used to group sources as a super category. For example, <code>--group-source Germline:gSNP,gINDEL Somatic:sSNV,sINDEL</code> will group sources of <code>gSNP</code> and <code>gINDEL</code> together as <code>Germline</code>, and <code>sSNV</code> and <code>sINDEL</code> as <code>Somatic</code>.</p>
+<p>Note that, when assigning a peptide to a source category, it must carry exclusively the desired type(s) of variants. For example, a peptide of 'ENST00000622235.5|SNV-100-G-T|SNV-110-C-A|2' is assigned to <code>SNV</code>, while a peptide of 'ENST00000622235.5|SNV-100-G-T|RES-110-C-A|2' will be assigned to the category of <code>SNV-RNAEditing</code> but not <code>SNV</code>. <code>--max-source-groups</code> is used to specify the maximum number of source groups that should be split into individual FASTA files. The default value is 1, which means all peptides that contain two or more types of variants will not be written into their own FASTA file, but kept in the '\&lt;prefix&gt;_Remaining.fasta' file.</p>
+<p>Similar to <code>summarizeFasta</code>, novel ORF and alternative translation peptides can be passed to <code>splitFasta</code> via <code>--novel-orf-peptides</code> and <code>--alt-translation-peptides</code>.</p>
+<p>See <a href="./split-fasta">here</a> for a complete list of arguments.</p>
+<h3 id="target-decoy-database">Target-Decoy Database</h3>
+<p>Most search engines expect a target-decoy database as input to estimate the false discovery rate (FDR). We provide a <code>decoyFasta</code> command, that takes a variant peptide database and adds decoy sequences with either the <code>reverse</code> or <code>shuffle</code> algorithm.</p>
+<pre><code class="language-shell">moPepGen decoyFasta \
+    -i split/split_gSNP_encode.fasta \
+    -o split/split_gSNP_decoy.fasta \
+    --method reverse
+</code></pre>
+<p>By default, amino acid residues at cleavage sites are unmodified. Trypsin is the default enzyme and can be changed using <code>--enzyme</code>.  <code>--non-shuffle-pattern</code> can be used to specify additional amino acid residues to be fixed in the decoy sequence. By default, the N- and C-terminal residues are also fixed, which can be turned off by setting <code>--keep-peptide-nterm</code> or <code>--keep-peptide-cterm</code> to <code>false</code>. See <a href="./decoy-fasta">here</a> for a complete list of arguments.</p>
+<h3 id="shortening-fasta-headers">Shortening FASTA headers</h3>
+<p>Some search engines have limits on how long the database FASTA headers can be. The headers of moPepGen's variant FASTA files could be very long, because the same peptide can be called from different transcripts. We provide a shortening approach by replacing all FASTA headers with UUIDs and storing the mapping information in a <code>.dict</code> file with the same prefix.</p>
+<pre><code class="language-shell">moPepGen encodeFasta \
+    -i split/split_gSNP.fasta \
+    -o split/split_gSNP_encode.fasta
+</code></pre>
+<p>Note that for decoy peptides, the same UUID as in their target sequences will be used, with the decoy prefix/suffix retained. The resulting <code>.dict</code> file can be used for mapping both back to the original FASTA header.</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../file-format/" class="btn btn-neutral float-right" title="File Format">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../quick-start/" class="btn btn-neutral" title="Quick Start"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/uclahs-cds/package-moPepGen/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../quick-start/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../file-format/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
