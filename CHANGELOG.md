@@ -20,6 +20,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed callVariant with variant bubble finding error starting from a out-bridge node.
 
+- Fixed callVariant that peptide annotation not created correctly with SEC
+
 ## [1.4.6-rc1] - 2025-02-24
 
 ### Fixed
