@@ -325,7 +325,7 @@ class TestVEPRecord(unittest.TestCase):
 
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:38-50',
+            location='chr1:38-40',
             allele='-',
             gene='ENSG0001',
             feature='ENST0001.1',
@@ -437,7 +437,7 @@ class TestVEPRecord(unittest.TestCase):
 
         vep_record = VEPParser.VEPRecord(
             uploaded_variation='rs55971985',
-            location='chr1:2-7',
+            location='chr1:6-7',
             allele='-',
             gene='ENSG0001',
             feature='ENST0001.1',

@@ -22,6 +22,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed callVariant that peptide annotation not created correctly with SEC
 
+## Changed
+
+- A check added when converting a genomic location to gene coordinate to ensure they overlap.
+
 ## [1.4.6-rc1] - 2025-02-24
 
 ### Fixed
