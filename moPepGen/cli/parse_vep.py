@@ -8,7 +8,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import argparse
 import gzip
-from typing import Dict, List
 from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, TranscriptionStartSiteMutationError
@@ -20,6 +19,7 @@ INPUT_FILE_FORMATS = ['.tsv', '.txt', '.tsv.gz', '.txt.gz']
 OUTPUT_FILE_FORMATS = ['.gvf']
 
 if TYPE_CHECKING:
+    from typing import Dict, List
     from logging import Logger
 
 # pylint: disable=W0212
@@ -121,7 +121,7 @@ def parse_vep(args:argparse.Namespace) -> None:
                 except:
                     if args.skip_failed:
                         logger.warning(
-                            f"VEP record failed to convert: {record}"
+                            "VEP record failed to convert: %s", str(record)
                         )
                         tally.failed.total += 1
                         continue
