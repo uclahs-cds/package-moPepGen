@@ -479,6 +479,7 @@ class MiscleavedNodes():
                             cut_offset = 0
                         else:
                             cut_offset = max(0, cut_offset - len(node.seq.seq))
+                            cur_nodes.append(node)
                             continue
                     if is_valid:
                         cur_metadata_2 = copy.copy(cur_metadata)
