@@ -1742,8 +1742,6 @@ class ThreeFrameTVG():
         for trash_node in trash:
             self.remove_node(trash_node)
 
-        return start_node, end_node
-
     def expand_alignments(self, start:TVGNode) -> List[TVGNode]:
         r""" Expand the aligned variants into the range of codons. For
         frameshifting mutations, a copy of each downstream node will be
@@ -1904,7 +1902,11 @@ class ThreeFrameTVG():
                 queue.appendleft(cur)
                 continue
 
-            self.align_variants(cur)
+            cur_copy = str(cur.seq.seq)
+            try:
+                self.align_variants(cur)
+            except err.FailedToFindVariantBubbleError:
+                continue
 
             self.collapse_equivalent_nodes(cur)
             if cur.out_edges:
