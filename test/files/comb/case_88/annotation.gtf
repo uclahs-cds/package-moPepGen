@@ -1,0 +1,10 @@
+chr1	.	gene	1	26244	.	+	.	 gene_id ENSG00000137959.17; gene_type protein_coding; gene_name IFI44L;
+chr1	.	transcript	630	22461	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;
+chr1	.	exon	630	670	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;
+chr1	.	exon	8005	9098	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;
+chr1	.	exon	9819	10014	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;
+chr1	.	exon	15436	15588	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;
+chr1	.	exon	17131	17302	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;
+chr1	.	exon	21120	21220	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;
+chr1	.	exon	21534	21708	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;
+chr1	.	exon	21874	22461	.	+	.	 gene_id ENSG00000137959.17; transcript_id ENST00000476876.6; gene_type protein_coding; gene_name IFI44L; tag RNA_Seq_supported_only;

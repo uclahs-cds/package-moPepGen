@@ -1,0 +1,17 @@
+chr1	.	gene	1	14144	.	+	.	 gene_id ENSG00000143727.16; gene_type protein_coding; gene_name ACP1;
+chr1	.	transcript	826	13236	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	CDS	826	868	.	+	0	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	exon	826	868	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	CDS	7727	7800	.	+	2	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	exon	7727	7800	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	CDS	7898	7926	.	+	0	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	exon	7898	7926	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	CDS	8053	8116	.	+	1	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	exon	8053	8166	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	exon	11001	11062	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	exon	12841	12946	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	exon	13088	13236	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	UTR	8117	8166	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	UTR	11001	11062	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	UTR	12841	12946	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
+chr1	.	UTR	13088	13236	.	+	.	 gene_id ENSG00000143727.16; transcript_id ENST00000453390.5; gene_type protein_coding; gene_name ACP1; protein_id ENSP00000411121.1;
