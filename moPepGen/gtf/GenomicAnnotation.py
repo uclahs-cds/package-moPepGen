@@ -179,6 +179,12 @@ class GenomicAnnotation():
     def coordinate_genomic_to_gene(self, index:int, gene:str) -> int:
         """ Get the gene coordinate from genomic coordinate. """
         gene_location = self.genes[gene].location
+        if not gene_location.start <= index < gene_location.end:
+            loc = f"{self.genes[gene].chrom}:{gene_location.start}-{gene_location.end}"
+            raise ValueError(
+                f"The position does not overlap with the gene. index: {index}, "
+                f"gene: {gene}, {loc}"
+            )
         if gene_location.strand == 1:
             return index - gene_location.start
         if gene_location.strand == -1:

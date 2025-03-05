@@ -445,6 +445,13 @@ class TestGTF(unittest.TestCase):
         x = anno.coordinate_gene_to_transcript(19, gene_id, tx_id)
         self.assertEqual(x, 10)
 
+        anno = create_genomic_annotation(ANNOTATION_DATA)
+        gene_id = ANNOTATION_ATTRS[0]['gene_id']
+        tx_id = ANNOTATION_DATA['genes'][0]['transcripts'][0]
+        with self.assertRaises(ValueError):
+            ## This gene is 0-40, so 50 is out of the gene.
+            anno.coordinate_gene_to_transcript(50, gene_id, tx_id)
+
     def test_coordinate_convert_tx_exon_start(self):
         """ Convert coodinate from transcript to genomic when the index is the
         start of an exon"""

@@ -158,6 +158,14 @@ def add_args_decoy(parser:argparse.ArgumentParser):
         metavar='<value>'
     )
 
+def add_args_skip_failed(parser:argparse.ArgumentParser):
+    """ add --skip-failed """
+    parser.add_argument(
+        '--skip-failed',
+        action='store_true',
+        help='When set, the failed records will be skipped.'
+    )
+
 def add_args_debug_level(parser:argparse.ArgumentParser):
     """ add debug level """
     parser.add_argument(

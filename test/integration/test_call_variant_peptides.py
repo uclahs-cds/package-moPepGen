@@ -1309,3 +1309,30 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case87(self):
+        """
+        Issue that the in-member end node not treated as an end node when aligning
+        the vairant bubble.
+        """
+        test_dir = self.data_dir/'comb/case_87'
+        gvf = [
+            test_dir/'gSNP.gvf',
+            test_dir/'AltSplice.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case88(self):
+        """
+        Issue that variant bubble finding error starting from a out-bridge node.
+        """
+        test_dir = self.data_dir/'comb/case_88'
+        gvf = [
+            test_dir/'gSNP.gvf',
+            test_dir/'AltSplice.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)

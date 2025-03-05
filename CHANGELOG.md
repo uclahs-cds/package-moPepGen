@@ -10,6 +10,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.6-rc2] - 2025-03-03
+
+### Fixed
+
+- Fixed callVariant that variant bubble not identified correctly.
+
+- Fixed parseVEP that failed records will now be skipped with --skip-failed. #902
+
+- Fixed callVariant with variant bubble finding error starting from a out-bridge node.
+
+- Fixed callVariant that peptide annotation not created correctly with SEC
+
+## Changed
+
+- A check added when converting a genomic location to gene coordinate to ensure they overlap.
+
 ## [1.4.6-rc1] - 2025-02-24
 
 ### Fixed
