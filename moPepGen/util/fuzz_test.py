@@ -639,6 +639,7 @@ class FuzzTestCase():
         args.debug_level = 1
         args.timeout_seconds = 300
         args.coding_novel_orf = False
+        args.skip_failed = False
         call_variant_peptide(args=args)
 
     def brute_force(self):

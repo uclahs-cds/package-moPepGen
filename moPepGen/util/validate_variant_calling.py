@@ -128,6 +128,7 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path, graph_output_d
     args.noncanonical_transcripts = False
     args.threads = 1
     args.timeout_seconds = 900
+    args.skip_failed = False
     call_variant_peptide(args=args)
 
 def call_brute_force(gvf_files:Path, ref_dir:Path, output_path:str, force:bool,
