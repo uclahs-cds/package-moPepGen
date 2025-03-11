@@ -5,12 +5,12 @@ GVF file. The GVF file can be later used to call variant peptides using
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import argparse
-from typing import List
 from moPepGen import get_logger, seqvar, parser, err
 from moPepGen.cli import common
 
 
 if TYPE_CHECKING:
+    from typing import List
     from logging import Logger
 
 INPUT_FILE_FORMATS = ['.tsv', '.txt']

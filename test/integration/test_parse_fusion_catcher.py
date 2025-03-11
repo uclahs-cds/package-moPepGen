@@ -56,6 +56,7 @@ class TestParseFusionCatcher(TestCaseIntegration):
                 self.assertEqual(str(right_seq), fusion_seq[1])
 
     def create_base_args(self) -> argparse.Namespace:
+        """ Create base args """
         args = argparse.Namespace()
         args.command = 'parseFusionCatcher'
         args.source = 'Fusion'
