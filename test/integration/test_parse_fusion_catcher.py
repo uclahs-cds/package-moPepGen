@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 import subprocess as sp
 import sys
+from unittest.mock import Mock
 from test.unit import load_references
 from test.integration import TestCaseIntegration
 from moPepGen import cli, parser
@@ -54,11 +55,9 @@ class TestParseFusionCatcher(TestCaseIntegration):
                 right_seq = gene2_seq.seq[_start2:_end2]
                 self.assertEqual(str(right_seq), fusion_seq[1])
 
-    def test_parse_fusion_catcher(self):
-        """ Test parseFusionCatcher """
+    def create_base_args(self) -> argparse.Namespace:
         args = argparse.Namespace()
         args.command = 'parseFusionCatcher'
-        args.input_path = self.data_dir/'fusion/fusion_catcher.txt'
         args.source = 'Fusion'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
@@ -68,9 +67,31 @@ class TestParseFusionCatcher(TestCaseIntegration):
         args.output_path = self.work_dir/'fusion_catcher.gvf'
         args.max_common_mapping = 0
         args.min_spanning_unique = 5
+        args.skip_failed = False
         args.quiet = True
+        return args
+
+    def test_parse_fusion_catcher(self):
+        """ Test parseFusionCatcher """
+        args = self.create_base_args()
+        args.input_path = self.data_dir/'fusion/fusion_catcher.txt'
         cli.parse_fusion_catcher(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'fusion_catcher.gvf'}
         self.assertEqual(files, expected)
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
+
+    def test_parse_fusion_catcher_skip_failed(self):
+        """ Test parseFusionCatcher with --skip-failed """
+        from moPepGen import parser
+        parser.FusionCatcherParser.FusionCatcherRecord.convert_to_variant_records = Mock(
+            side_effect=ValueError()
+        )
+
+        args = self.create_base_args()
+        args.input_path = self.data_dir/'fusion/fusion_catcher.txt'
+        with self.assertRaises(ValueError):
+            cli.parse_fusion_catcher(args)
+
+        args.skip_failed = True
+        cli.parse_fusion_catcher(args)

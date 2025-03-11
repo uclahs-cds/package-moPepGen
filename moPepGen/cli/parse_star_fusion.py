@@ -103,6 +103,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
         tally.total += 1
         if record.est_j < args.min_est_j:
             tally.skipped.insufficient_evidence += 1
+            tally.skipped.total += 1
             continue
         try:
             var_records = record.convert_to_variant_records(anno, genome)
@@ -110,13 +111,14 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
             tally.succeed += 1
         except err.GeneNotFoundError:
             tally.skipped.invalid_gene_id += 1
+            tally.skipped.total += 1
             continue
         except:
             if args.skip_failed:
                 tally.skipped.invalid_position += 1
+                tally.skipped.total += 1
                 continue
-            else:
-                raise
+            raise
 
     logger.info('STAR-Fusion output %s loaded.', fusion)
 

@@ -146,8 +146,8 @@ def parse_arriba(args:argparse.Namespace) -> None:
                 if args.skip_failed:
                     tally.skipped.invalid_position += 1
                     tally.skipped.total += 1
-                else:
-                    raise
+                    continue
+                raise
 
     logger.info('Arriba output %s loaded.', fusion)
 
