@@ -323,13 +323,13 @@ class VariantPeptideCaller():
         except ValueError:
             if self.args.skip_failed:
                 self.tally.n_transcripts_invalid += 1
-                return
+                return None
             raise
         if variant_series.is_empty():
-            return
+            return None
         if self.noncanonical_transcripts and \
                 not variant_series.has_any_noncanonical_transcripts():
-            return
+            return None
         tx_ids += variant_series.get_additional_transcripts()
 
         gene_seqs = {}
@@ -439,6 +439,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         **kwargs
         ) -> CallVariantOutput:
     """ wrapper function to call variant peptides """
+    # pylint: disable=W0702
     logger = get_logger()
     peptide_anno:Dict[Seq, Dict[str, AnnotatedPeptideLabel]] = {}
 
