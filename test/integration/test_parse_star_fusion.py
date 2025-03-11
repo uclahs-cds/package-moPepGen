@@ -2,6 +2,7 @@
 import argparse
 import subprocess as sp
 import sys
+from unittest import mock
 from test.integration import TestCaseIntegration
 from moPepGen import cli, seqvar
 from moPepGen.cli.common import load_references
@@ -27,12 +28,11 @@ class TestParseStarFusion(TestCaseIntegration):
             print(res.stderr.decode('utf-8'))
             raise
 
-    def test_star_fusion_record_case1(self):
-        """ Test parseSTARFusion """
+    def create_base_args(self) -> argparse.Namespace:
+        """ Create base args """
         args = argparse.Namespace()
         args.command = 'parseSTARFusion'
         args.source = 'Fusion'
-        args.input_path = self.data_dir/'fusion/star_fusion.txt'
         args.index_dir = None
         args.genome_fasta = self.data_dir/'genome.fasta'
         args.annotation_gtf = self.data_dir/'annotation.gtf'
@@ -40,6 +40,13 @@ class TestParseStarFusion(TestCaseIntegration):
         args.output_path = self.work_dir/'star_fusion.gvf'
         args.min_est_j = 3.0
         args.quiet = True
+        args.skip_failed =False
+        return args
+
+    def test_star_fusion_record_case1(self):
+        """ Test parseSTARFusion """
+        args = self.create_base_args()
+        args.input_path = self.data_dir/'fusion/star_fusion.txt'
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'star_fusion.gvf'}
@@ -64,19 +71,23 @@ class TestParseStarFusion(TestCaseIntegration):
 
     def test_parse_star_fusion_case1(self):
         """ test parseSTARFusion case1 """
-        args = argparse.Namespace()
-        args.command = 'parseSTARFusion'
+        args = self.create_base_args()
         args.input_path = self.data_dir/'fusion/star_fusion.txt'
-        args.source = 'Fusion'
-        args.index_dir = None
-        args.genome_fasta = self.data_dir/'genome.fasta'
-        args.annotation_gtf = self.data_dir/'annotation.gtf'
-        args.reference_source = None
-        args.output_path = self.work_dir/'star_fusion.gvf'
-        args.min_est_j = 3.0
-        args.quiet = True
         cli.parse_star_fusion(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'star_fusion.gvf'}
         self.assertEqual(files, expected)
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
+
+    @mock.patch(
+        "moPepGen.parser.STARFusionParser.STARFusionRecord.convert_to_variant_records",
+        new=mock.MagicMock(side_effect=ValueError())
+    )
+    def test_parse_star_fusion_skip_failed(self):
+        """ test parseSTARFusion case1 """
+        args = self.create_base_args()
+        args.input_path = self.data_dir/'fusion/star_fusion.txt'
+        with self.assertRaises(ValueError):
+            cli.parse_star_fusion(args)
+        args.skip_failed = True
+        cli.parse_star_fusion(args)

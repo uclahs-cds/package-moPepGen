@@ -10,6 +10,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.6-rc3] - 2025-03-10
+
+- Added --skip-failed flag to callVariant, parseArriba, parserSTARFusion, parseFusionCatcher.
+
+- Added tally table to parseREDITools, parseCIRCExplorer, and parseRMATS
+
 ## [1.4.6-rc2] - 2025-03-03
 
 ### Fixed
