@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.4.6-rc3] - 2025-03-10
 
-- Added --skip-failed flag to callVariant.
+- Added --skip-failed flag to callVariant, parseArriba.
 
 ## [1.4.6-rc2] - 2025-03-03
 

@@ -2,14 +2,15 @@
 import argparse
 import subprocess as sp
 import sys
+from unittest.mock import Mock
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
 
 class TestParseArriba(TestCaseIntegration):
     """ Test cases for moPepGen parseSTARFusion """
-    def test_parse_arriba(self):
-        """ Test parseArriba """
+    def create_base_args(self) -> argparse.Namespace:
+        """ Create base args """
         args = argparse.Namespace()
         args.command = 'parseArriba'
         args.input_path = self.data_dir/'fusion/arriba.txt'
@@ -24,6 +25,12 @@ class TestParseArriba(TestCaseIntegration):
         args.min_split_read2 = 1
         args.min_confidence = 'medium'
         args.quiet = False
+        args.skip_failed = False
+        return args
+
+    def test_parse_arriba(self):
+        """ Test parseArriba """
+        args = self.create_base_args()
         cli.parse_arriba(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'arriba.gvf'}
@@ -47,3 +54,16 @@ class TestParseArriba(TestCaseIntegration):
             print(cmd)
             print(res.stderr.decode('utf-8'))
             raise
+
+    def test_parse_arriba_skip_failed(self):
+        """ Test parseArriba with skip failed """
+        from moPepGen import parser
+        parser.ArribaParser.ArribaRecord.convert_to_variant_records = Mock(
+            side_effect=ValueError()
+        )
+        args = self.create_base_args()
+        with self.assertRaises(ValueError):
+            cli.parse_arriba(args)
+
+        args.skip_failed = True
+        cli.parse_arriba(args)

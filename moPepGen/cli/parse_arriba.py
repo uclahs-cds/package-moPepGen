@@ -136,6 +136,7 @@ def parse_arriba(args:argparse.Namespace) -> None:
                 continue
             try:
                 var_records = record.convert_to_variant_records(anno, genome)
+                variants.extend(var_records)
                 tally.succeed += 1
             except err.GeneNotFoundError:
                 tally.skipped.invalid_gene_id += 1
@@ -145,7 +146,8 @@ def parse_arriba(args:argparse.Namespace) -> None:
                 if args.skip_failed:
                     tally.skipped.invalid_position += 1
                     tally.skipped.total += 1
-            variants.extend(var_records)
+                else:
+                    raise
 
     logger.info('Arriba output %s loaded.', fusion)
 
