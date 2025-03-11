@@ -59,7 +59,8 @@ class TallyTable():
 
     def log(self):
         """ Show tally results """
-        self.logger.info("Records successfully processed: %i", self.total)
+        self.logger.info("Totally records read: %i", self.total)
+        self.logger.info("Records successfully processed: %i", self.succeed)
         self.logger.info("Records failed: %i", self.failed.total)
         if self.failed.total > 0:
             self.logger.info("Out of those failed,")
