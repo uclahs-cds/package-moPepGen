@@ -2,7 +2,7 @@
 import argparse
 import subprocess as sp
 import sys
-from unittest.mock import Mock
+from unittest import mock
 from test.integration import TestCaseIntegration
 from moPepGen import cli, seqvar
 from moPepGen.cli.common import load_references
@@ -79,12 +79,12 @@ class TestParseStarFusion(TestCaseIntegration):
         self.assertEqual(files, expected)
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
+    @mock.patch(
+        "moPepGen.parser.STARFusionParser.STARFusionRecord.convert_to_variant_records",
+        new=mock.MagicMock(side_effect=ValueError())
+    )
     def test_parse_star_fusion_skip_failed(self):
         """ test parseSTARFusion case1 """
-        from moPepGen import parser
-        parser.STARFusionParser.STARFusionRecord.convert_to_variant_records = Mock(
-            side_effect=ValueError()
-        )
         args = self.create_base_args()
         args.input_path = self.data_dir/'fusion/star_fusion.txt'
         with self.assertRaises(ValueError):

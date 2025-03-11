@@ -2,7 +2,7 @@
 import argparse
 import subprocess as sp
 import sys
-from unittest.mock import Mock
+from unittest import mock
 from test.integration import TestCaseIntegration
 from moPepGen import cli
 
@@ -55,12 +55,12 @@ class TestParseArriba(TestCaseIntegration):
             print(res.stderr.decode('utf-8'))
             raise
 
+    @mock.patch(
+        "moPepGen.parser.ArribaParser.ArribaRecord.convert_to_variant_records",
+        new=mock.MagicMock(side_effect=ValueError())
+    )
     def test_parse_arriba_skip_failed(self):
         """ Test parseArriba with skip failed """
-        from moPepGen import parser
-        parser.ArribaParser.ArribaRecord.convert_to_variant_records = Mock(
-            side_effect=ValueError()
-        )
         args = self.create_base_args()
         with self.assertRaises(ValueError):
             cli.parse_arriba(args)

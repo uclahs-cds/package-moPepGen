@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 import subprocess as sp
 import sys
-from unittest.mock import Mock
+from unittest import mock
 from test.unit import load_references
 from test.integration import TestCaseIntegration
 from moPepGen import cli, parser
@@ -81,13 +81,12 @@ class TestParseFusionCatcher(TestCaseIntegration):
         self.assertEqual(files, expected)
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
+    @mock.patch(
+        "moPepGen.parser.FusionCatcherParser.FusionCatcherRecord.convert_to_variant_records",
+        new=mock.MagicMock(side_effect=ValueError())
+    )
     def test_parse_fusion_catcher_skip_failed(self):
         """ Test parseFusionCatcher with --skip-failed """
-        from moPepGen import parser
-        parser.FusionCatcherParser.FusionCatcherRecord.convert_to_variant_records = Mock(
-            side_effect=ValueError()
-        )
-
         args = self.create_base_args()
         args.input_path = self.data_dir/'fusion/fusion_catcher.txt'
         with self.assertRaises(ValueError):

@@ -4,12 +4,16 @@ file. The GVF file can then be used to call variant peptides using
 [callVariant](call-variant.md)
 """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import argparse
 from pathlib import Path
-from typing import Dict, List
 from moPepGen import get_logger, seqvar, parser
 from moPepGen.cli import common
 
+
+if TYPE_CHECKING:
+    from typing import Dict, List
+    from logging import Logger
 
 INPUT_FILE_FORMATS = ['.tsv', '.txt']
 OUTPUT_FILE_FORMATS = ['.gvf']
@@ -76,9 +80,26 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
     common.print_help_if_missing_args(p)
     return p
 
+class TallyTable():
+    """ Tally table """
+    def __init__(self, logger:Logger):
+        """ Constructor """
+        self.total:int = 0
+        self.succeed:int = 0
+        self.skipped:int = 0
+        self.logger = logger
+
+    def log(self):
+        """ Show tally results """
+        self.logger.info("Summary:")
+        self.logger.info("Totally records read: %i", self.total)
+        self.logger.info("Records successfully processed: %i", self.succeed)
+        self.logger.info("Records skipped: %i", self.skipped)
+
 def parse_reditools(args:argparse.Namespace) -> None:
     """ Parse REDItools output and save it in the GVF format. """
     logger = get_logger()
+    tally = TallyTable(logger)
     # unpack args
     table_file:Path = args.input_path
     output_path:Path = args.output_path
@@ -102,6 +123,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
     variants:Dict[str, List[seqvar.VariantRecord]] = {}
 
     for record in parser.REDItoolsParser.parse(table_file, transcript_id_column):
+        tally.total += 1
         _vars = record.convert_to_variant_records(
             anno=anno,
             min_coverage_alt=min_coverage_alt,
@@ -109,6 +131,10 @@ def parse_reditools(args:argparse.Namespace) -> None:
             min_coverage_rna=min_coverage_rna,
             min_coverage_dna=min_coverage_dna
         )
+        if not _vars:
+            tally.skipped += 1
+        else:
+            tally.succeed += 1
         for variant in _vars:
             gene_id = variant.location.seqname
             if gene_id not in variants:
@@ -139,3 +165,5 @@ def parse_reditools(args:argparse.Namespace) -> None:
     seqvar.io.write(all_records, output_path, metadata)
 
     logger.info('Variants written to disk.')
+
+    tally.log()
