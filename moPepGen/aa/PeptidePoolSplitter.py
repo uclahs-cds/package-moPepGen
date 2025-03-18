@@ -1,7 +1,8 @@
 """ module for peptide pool splitter """
 from __future__ import annotations
-from typing import Dict, IO, List, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from pathlib import Path
+import itertools
 from moPepGen.seqvar import GVFMetadata
 from moPepGen import seqvar, circ, constant, VARIANT_PEPTIDE_SOURCE_DELIMITER, \
     SPLIT_DATABASE_KEY_SEPARATER
@@ -10,9 +11,9 @@ from .VariantPeptideLabel import VariantPeptideInfo, VariantSourceSet, \
     LabelSourceMapping
 
 if TYPE_CHECKING:
+    from typing import Dict, IO, List, Set, Union, FrozenSet
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
-
-Databases = Dict[str,VariantPeptidePool]
+    Databases = Dict[str,VariantPeptidePool]
 
 class PeptidePoolSplitter():
     """ PeptidePoolSplitter to split peptide pool into separate databases.
@@ -30,15 +31,24 @@ class PeptidePoolSplitter():
             variant sources, and values are the splitted VariantPeptidePool.
         sources (Set[str]): Variant sources.
     """
-    def __init__(self, peptides:VariantPeptidePool=None, order:Dict[str,int]=None,
+    def __init__(self, peptides:VariantPeptidePool=None,
+            order:Dict[Union[str,FrozenSet[str]],int]=None,
             label_map:LabelSourceMapping=None, group_map:Dict[str,str]=None,
-            databases:Databases=None):
+            databases:Databases=None, sources:Set[str]=None):
         self.peptides = peptides
         self.databases = databases or {}
         self.label_map = label_map or LabelSourceMapping()
         self.group_map = group_map or {}
         self.order = order or {}
-
+        if sources:
+            self.sources = sources
+        else:
+            self.sources = set()
+            for sources in self.order:
+                if isinstance(sources, str):
+                    self.sources.add(sources)
+                else:
+                    self.sources.update([s for s in sources if s not in ['+', '*']])
 
     def get_reversed_group_map(self) -> Dict[str, List[str]]:
         """ Reverse group map """
@@ -73,6 +83,7 @@ class PeptidePoolSplitter():
         if source in self.order:
             return
         self.order[source] = max(self.order.values()) + 1 if self.order else 0
+        self.sources.add(source)
 
     def load_database(self, handle:IO) -> None:
         """ load peptide database """
@@ -117,6 +128,29 @@ class PeptidePoolSplitter():
             peptide_sources.append([x.sources for x in peptide_infos])
         return peptide_sources
 
+    def create_wildcard_map(self):
+        """ Create a wildcard map """
+        wildcard_map = {}
+        wildcard_chrs = ['+', '*']
+        for sources in sorted(self.order, key=lambda x: self.order[x]):
+            if isinstance(sources, str):
+                sources = frozenset([sources])
+            if not any(x in wildcard_chrs for x in sources):
+                if sources not in wildcard_map:
+                    wildcard_map[sources] = sources
+                continue
+            individual_sources = [x for x in self.sources if x not in sources]
+            if all(x in sources for x in wildcard_chrs):
+                raise ValueError(f"Invalid wildcard in souce order: {sources}")
+            start = 0 if '*' in sources else 1
+            for i in range(start, len(individual_sources)):
+                for extra_sources in itertools.combinations(individual_sources, i):
+                    expanded_sources = [x for x in sources if x not in wildcard_chrs] + list(extra_sources)
+                    expanded_sources = frozenset(expanded_sources)
+                    if expanded_sources not in wildcard_map:
+                        wildcard_map[expanded_sources] = sources
+        return wildcard_map
+
     def split(self, max_groups:int, additional_split:List[Set],
             tx2gene:Dict[str,str], coding_tx:Set[str]):
         """ Split peptide pool into separate databases """
@@ -124,13 +158,15 @@ class PeptidePoolSplitter():
         VariantSourceSet.set_levels(self.order)
         delimiter = VARIANT_PEPTIDE_SOURCE_DELIMITER
         additional_split = [VariantSourceSet(x) for x in additional_split]
+        wildcard_map = self.create_wildcard_map()
         for peptide in self.peptides.peptides:
             peptide_infos = VariantPeptideInfo.from_variant_peptide(
                 peptide=peptide,
                 tx2gene=tx2gene,
                 coding_tx=coding_tx,
                 label_map=self.label_map,
-                group_map=self.group_map
+                group_map=self.group_map,
+                wildcard_map=wildcard_map
             )
             peptide_infos.sort()
 
