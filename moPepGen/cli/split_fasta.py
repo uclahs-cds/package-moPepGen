@@ -66,7 +66,10 @@ def add_subparser_split_fasta(subparser:argparse._SubParsersAction):
     p.add_argument(
         '--order-source',
         type=str,
-        help='Order of sources, separate by comma. E.g., SNP,SNV,Fusion',
+        help='Order of sources, separate by comma (e.g., SNP,SNV,Fusion). Whildcard'
+        ' characters are supported. "SNV-*" will match all peptides with SNV with'
+        ' or without other variant sources. "SNV-+" will match all peptides with'
+        ' SNV with at least another variant source.',
         metavar='<value>'
     )
     p.add_argument(

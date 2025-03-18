@@ -228,3 +228,40 @@ class TestSplitDatabase(TestCaseIntegration):
             'test_Remaining.fasta', 'test_CodonReassign.fasta'
         }
         self.assertEqual(files, expected)
+
+    def test_split_fasta_source_order_wildcards(self):
+        """ test splitFasta with source order of combinations with wildcards """
+        args = self.create_base_args()
+        args.gvf = [
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'reditools/reditools.gvf',
+            self.data_dir/'fusion/star_fusion.gvf',
+            self.data_dir/'circRNA/circ_rna.gvf'
+        ]
+        args.variant_peptides = self.data_dir/'peptides/variant.fasta'
+        args.novel_orf_peptides = self.data_dir/'peptides/novel_orf.fasta'
+        args.alt_translation_peptides = self.data_dir/'peptides/alt_translation.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.group_source = [
+            'Alt:SECT,CodonReassign',
+            'Variant:gSNP,gINDEL,sSNV,sINDEL,Fusion,altSplice,RNAEditingSite'
+        ]
+        args.order_source = ','.join([
+            'Variant',
+            'NovelORF',
+            'Variant-NovelORF',
+            'circRNA',
+            'circRNA-+',
+            'Alt-*'
+        ])
+        args.max_source_groups = 4
+        cli.split_fasta(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {
+            'test_Variant.fasta', 'test_NovelORF.fasta',
+            'test_Variant-NovelORF.fasta', 'test_circRNA.fasta',
+            'test_circRNA-PLUS.fasta', 'test_Alt-ALL.fasta'
+        }
+        self.assertEqual(files, expected)
