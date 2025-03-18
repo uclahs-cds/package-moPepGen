@@ -44,11 +44,11 @@ class PeptidePoolSplitter():
             self.sources = sources
         else:
             self.sources = set()
-            for sources in self.order:
+            for source_group in self.order:
                 if isinstance(sources, str):
-                    self.sources.add(sources)
+                    self.sources.add(source_group)
                 else:
-                    self.sources.update([s for s in sources if s not in ['+', '*']])
+                    self.sources.update([s for s in source_group if s not in ['+', '*']])
 
     def get_reversed_group_map(self) -> Dict[str, List[str]]:
         """ Reverse group map """
@@ -145,7 +145,8 @@ class PeptidePoolSplitter():
             start = 0 if '*' in sources else 1
             for i in range(start, len(individual_sources)):
                 for extra_sources in itertools.combinations(individual_sources, i):
-                    expanded_sources = [x for x in sources if x not in wildcard_chrs] + list(extra_sources)
+                    expanded_sources = [x for x in sources if x not in wildcard_chrs] \
+                        + list(extra_sources)
                     expanded_sources = frozenset(expanded_sources)
                     if expanded_sources not in wildcard_map:
                         wildcard_map[expanded_sources] = sources

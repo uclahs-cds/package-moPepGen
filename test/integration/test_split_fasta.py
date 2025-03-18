@@ -230,7 +230,7 @@ class TestSplitDatabase(TestCaseIntegration):
         self.assertEqual(files, expected)
 
     def test_split_fasta_source_order_wildcards(self):
-        """ test splitFasta with source order of combinations """
+        """ test splitFasta with source order of combinations with wildcards """
         args = self.create_base_args()
         args.gvf = [
             self.data_dir/'vep/vep_gSNP.gvf',
