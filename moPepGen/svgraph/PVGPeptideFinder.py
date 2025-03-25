@@ -671,7 +671,7 @@ class PVGCandidateNodePaths():
                 cur_metadata.has_variants = bool(cur_variants)
 
                 if is_valid or is_valid_start:
-                    cur_nodes = []
+                    cur_nodes:List[PVGNode] = []
                     cut_offset = sec.location.start
                     for node in nodes:
                         if cut_offset == 0:
@@ -679,11 +679,12 @@ class PVGCandidateNodePaths():
                             continue
                         if len(node.seq.seq) > cut_offset:
                             node = node.copy()
-                            node.truncate_left(cut_offset)
+                            node.truncate_right(cut_offset)
                             cur_nodes.append(node)
                             cut_offset = 0
                         else:
                             cut_offset = max(0, cut_offset - len(node.seq.seq))
+                            cur_nodes.append(node)
                             continue
                     if is_valid:
                         cur_metadata_2 = copy.copy(cur_metadata)

@@ -1,10 +1,11 @@
 """ module for peptide peptide labels """
 from __future__ import annotations
-from typing import Dict, Iterable, List, TYPE_CHECKING, Set
+from typing import TYPE_CHECKING
 from moPepGen import err, seqvar, circ, constant, SPLIT_DATABASE_KEY_SEPARATER
 from . import VariantPeptideIdentifier as pi
 
 if TYPE_CHECKING:
+    from typing import Dict, Iterable, List, Set, FrozenSet
     from .AminoAcidSeqRecord import AminoAcidSeqRecord
     from moPepGen.gtf import GenomicAnnotation
 
@@ -26,7 +27,8 @@ class VariantSourceSet(set):
     def __init__(self, *args):
         """ constructor """
         for it in list(*args):
-            self.validate(it)
+            if it not in ['+', '*']:
+                self.validate(it)
         super().__init__(*args)
 
     def validate(self, it):
@@ -58,7 +60,11 @@ class VariantSourceSet(set):
 
     def __str__(self) -> str:
         """ str """
-        sorted_list = [x for x in self.levels if x in self]
+        sorted_list = [x for x in self.levels if x in self and x not in ['+', '*']]
+        if '*' in self:
+            sorted_list.append('ALL')
+        elif '+' in self:
+            sorted_list.append('PLUS')
         return SPLIT_DATABASE_KEY_SEPARATER.join(sorted_list)
 
     def __gt__(self, other:VariantSourceSet) -> bool:
@@ -161,11 +167,14 @@ class VariantPeptideInfo():
     def from_variant_peptide(peptide:AminoAcidSeqRecord,
             tx2gene:Dict[str,str], coding_tx:Set[str],
             label_map:LabelSourceMapping=None,
-            check_source:bool=True, group_map:Dict[str,str]=None
+            check_source:bool=True, group_map:Dict[str,str]=None,
+            wildcard_map:Dict[FrozenSet[str],FrozenSet[str]]=None
             ) -> List[VariantPeptideInfo]:
         """ Parse from a variant peptide record """
         if group_map is None:
             group_map = {}
+        if wildcard_map is None:
+            wildcard_map = {}
         info_list = []
         variant_ids = pi.parse_variant_peptide_id(peptide.description, coding_tx)
         for variant_id in variant_ids:
@@ -189,9 +198,14 @@ class VariantPeptideInfo():
                 var_ids = {
                     first_gene_id: variant_id.first_variants
                         + [variant_id.fusion_id] \
-                        + variant_id.peptide_variants,
-                    second_gene_id: variant_id.second_variants
+                        + variant_id.peptide_variants
                 }
+                if second_gene_id != first_gene_id:
+                    var_ids[second_gene_id] = variant_id.second_variants
+                else:
+                    var_ids[first_gene_id] = list(set(
+                        var_ids[first_gene_id] +  variant_id.second_variants
+                    ))
                 tx_id = first_tx_id
 
             elif isinstance(variant_id, pi.BaseVariantPeptideIdentifier):
@@ -221,7 +235,11 @@ class VariantPeptideInfo():
                         else:
                             source = label_map.get_source(gene_id, var_id)
                             info.sources.add(source, group_map=group_map)
-
+                try:
+                    sources = wildcard_map[frozenset(info.sources)]
+                    info.sources = VariantSourceSet(sources)
+                except KeyError:
+                    pass
             info_list.append(info)
         return info_list
 

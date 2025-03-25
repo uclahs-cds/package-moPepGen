@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 INPUT_FILE_FORMATS = ['.gvf']
 OUTPUT_FILE_FORMATS = ['.fasta', '.fa']
 
+
 # pylint: disable=W0212
 def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
     """ CLI for moPepGen callPeptides """
@@ -143,6 +144,7 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         default=1,
         metavar='<number>'
     )
+    common.add_args_skip_failed(p)
     common.add_args_reference(p)
     common.add_args_cleavage(p)
     common.add_args_debug_level(p)
@@ -158,6 +160,12 @@ class TallyTable:
         """ constructor """
         self.n_transcripts_total = 0
         self.n_transcripts_processed = 0
+        self.n_transcripts_invalid = 0
+        self.n_transcripts_failed = {
+            'variant': 0,
+            'fusion': 0,
+            'circRNA': 0
+        }
         self.n_total_peptides = 0
         self.n_valid_peptides = 0
         self.logger = logger
@@ -167,6 +175,11 @@ class TallyTable:
         self.logger.info("callVariant summary:")
         self.logger.info("Total transcripts with variants: %i", self.n_transcripts_total)
         self.logger.info("Total transcripts processed: %i", self.n_transcripts_processed)
+        self.logger.info("Number of invalid transcripts: %i", self.n_transcripts_invalid)
+        self.logger.info("Number of transcripts failed when calling for:")
+        self.logger.info("    Variant peptides: %i", self.n_transcripts_failed['variant'])
+        self.logger.info("    Fusion peptides: %i", self.n_transcripts_failed['fusion'])
+        self.logger.info("    circRNA peptides: %i", self.n_transcripts_failed['circRNA'])
         self.logger.info(
             "Total variant peptides generated (including redundant): %i",
             self.n_total_peptides
@@ -325,16 +338,112 @@ class VariantPeptideCaller():
             with open(self.graph_output_dir/f"{tx_id}_circRNA_{var_id}_PVG.json", 'wt') as handle:
                 json.dump(data, handle)
 
-TypeDGraphs = Tuple[
-    svgraph.ThreeFrameTVG,
-    Dict[str, svgraph.ThreeFrameTVG],
-    Dict[str, svgraph.ThreeFrameCVG]
-]
-TypePGraphs = Tuple[
-    svgraph.PeptideVariantGraph,
-    Dict[str, svgraph.PeptideVariantGraph],
-    Dict[str, svgraph.PeptideVariantGraph]
-]
+    def gather_data_for_call_variant(self, tx_id:str, pool:seqvar.VariantRecordPoolOnDisk):
+        """ Gather data for callVariant """
+        ref = self.reference_data
+        tx_ids = [tx_id]
+        tx_model = ref.anno.transcripts[tx_id]
+        try:
+            variant_series = pool[tx_id]
+        except ValueError:
+            if self.args.skip_failed:
+                self.tally.n_transcripts_invalid += 1
+                return None
+            raise
+        if variant_series.is_empty():
+            return None
+        if self.noncanonical_transcripts and \
+                not variant_series.has_any_noncanonical_transcripts():
+            return None
+        tx_ids += variant_series.get_additional_transcripts()
+
+        gene_seqs = {}
+        if variant_series.is_gene_sequence_needed():
+            gene_id = tx_model.transcript.gene_id
+            _chrom = tx_model.transcript.chrom
+            gene_model = ref.anno.genes[gene_id]
+            gene_seq = gene_model.get_gene_sequence(ref.genome[_chrom])
+            gene_seqs[gene_id] = gene_seq
+
+        tx_seqs = {}
+        for _tx_id in tx_ids:
+            _tx_model = ref.anno.transcripts[_tx_id]
+            _chrom = _tx_model.transcript.chrom
+            tx_seqs[_tx_id] = _tx_model.get_transcript_sequence(ref.genome[_chrom])
+            _gene_id = _tx_model.transcript.gene_id
+            if _gene_id not in gene_seqs:
+                _gene_model = ref.anno.genes[_gene_id]
+                _gene_seq = _gene_model.get_gene_sequence(ref.genome[_chrom])
+                gene_seqs[_gene_id] = _gene_seq
+        gene_ids = list({ref.anno.transcripts[x].transcript.gene_id for x in tx_ids})
+
+        gene_models = {}
+        for gene_id in gene_ids:
+            dummy_gene_model = copy.deepcopy(ref.anno.genes[gene_id])
+            dummy_gene_model.transcripts = [x for x in dummy_gene_model.transcripts
+                if x in tx_ids]
+            gene_models[gene_id] = dummy_gene_model
+
+        dummy_anno = gtf.GenomicAnnotation(
+            genes=gene_models,
+            transcripts={tx_id: ref.anno.transcripts[tx_id] for tx_id in tx_ids},
+            source=ref.anno.source
+        )
+        reference_data = params.ReferenceData(
+            genome=None,
+            anno=dummy_anno,
+            canonical_peptides=set()    # Not providing canonical peptide at this point.
+        )
+        dummy_pool = seqvar.VariantRecordPool()
+        dummy_pool.anno = dummy_anno
+        dummy_pool.data[tx_id] = variant_series
+        for add_tx in tx_ids:
+            if add_tx != tx_id:
+                try:
+                    dummy_pool[add_tx] = pool[add_tx]
+                except KeyError:
+                    continue
+
+        return {
+            'tx_id': tx_id,
+            'variant_series': variant_series,
+            'tx_seqs': tx_seqs,
+            'gene_seqs': gene_seqs,
+            'reference_data': reference_data,
+            'pool': dummy_pool,
+            'cleavage_params': self.cleavage_params,
+            'noncanonical_transcripts': self.noncanonical_transcripts,
+            'max_adjacent_as_mnv': self.max_adjacent_as_mnv,
+            'truncate_sec': self.truncate_sec,
+            'w2f_reassignment': self.w2f_reassignment,
+            'save_graph': self.graph_output_dir is not None,
+            'timeout': self.args.timeout_seconds,
+            'max_variants_per_node': tuple(self.args.max_variants_per_node),
+            'additional_variants_per_misc': tuple(self.args.additional_variants_per_misc),
+            'backsplicing_only': self.args.backsplicing_only,
+            'coding_novel_orf': self.args.coding_novel_orf,
+            'skip_failed': self.args.skip_failed
+        }
+
+
+if TYPE_CHECKING:
+    TypeDGraphs = Tuple[
+        svgraph.ThreeFrameTVG,
+        Dict[str, svgraph.ThreeFrameTVG],
+        Dict[str, svgraph.ThreeFrameCVG]
+    ]
+    TypePGraphs = Tuple[
+        svgraph.PeptideVariantGraph,
+        Dict[str, svgraph.PeptideVariantGraph],
+        Dict[str, svgraph.PeptideVariantGraph]
+    ]
+    CallVariantOutput = Tuple[
+        Dict[Seq, List[AnnotatedPeptideLabel]],
+        str,
+        TypeDGraphs,
+        TypePGraphs,
+        Tuple[bool,bool,bool]
+    ]
 # pylint: disable=unused-argument
 @common.timeout()
 def call_variant_peptides_wrapper(tx_id:str,
@@ -352,9 +461,11 @@ def call_variant_peptides_wrapper(tx_id:str,
         backsplicing_only:bool,
         save_graph:bool,
         coding_novel_orf:bool,
+        skip_failed:bool,
         **kwargs
-        ) -> Tuple[Dict[Seq, List[AnnotatedPeptideLabel]], str, TypeDGraphs, TypePGraphs]:
+        ) -> CallVariantOutput:
     """ wrapper function to call variant peptides """
+    # pylint: disable=W0702
     logger = get_logger()
     peptide_anno:Dict[Seq, Dict[str, AnnotatedPeptideLabel]] = {}
 
@@ -376,6 +487,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         denylist = set()
     dgraphs:TypeDGraphs = (None, {}, {})
     pgraphs:TypePGraphs = (None, {}, {})
+    success_flags = (True, True, True)
     if variant_series.transcriptional:
         try:
             if not noncanonical_transcripts or \
@@ -397,8 +509,12 @@ def call_variant_peptides_wrapper(tx_id:str,
                 pgraphs = (pgraph, pgraphs[1], pgraphs[2])
                 add_peptide_anno(peptide_map)
         except:
-            logger.error('Exception raised from %s', tx_id)
-            raise
+            if skip_failed:
+                logger.warning('Variant peptides calling failed from %s', tx_id)
+                success_flags = (False, success_flags[1], success_flags[2])
+            else:
+                logger.error('Exception raised from %s', tx_id)
+                raise
 
     exclude_variant_types = ['Fusion', 'Insertion', 'Deletion', 'Substitution', 'circRNA']
     for variant in variant_series.fusion:
@@ -427,11 +543,18 @@ def call_variant_peptides_wrapper(tx_id:str,
             pgraphs[1][variant.id] = pgraph
             add_peptide_anno(peptide_map)
         except:
-            logger.error(
-                "Exception raised from fusion %s, donor: %s, accepter: %s",
-                variant.id, tx_id, variant.attrs['ACCEPTER_TRANSCRIPT_ID']
-            )
-            raise
+            if skip_failed:
+                logger.warning(
+                    'Variant peptides calling failed from %s with fusion: %s',
+                    tx_id, variant.id
+                )
+                success_flags = (success_flags[0], False, success_flags[2])
+            else:
+                logger.error(
+                    "Exception raised from fusion %s, donor: %s, accepter: %s",
+                    variant.id, tx_id, variant.attrs['ACCEPTER_TRANSCRIPT_ID']
+                )
+                raise
 
     if find_novel_orfs:
         if main_peptides:
@@ -446,16 +569,23 @@ def call_variant_peptides_wrapper(tx_id:str,
                     save_graph=save_graph, backsplicing_only=backsplicing_only
                 )
 
-            except:
+        except:
+            if skip_failed:
+                logger.warning(
+                    'Variant peptides calling failed from %s with circRNA: %s',
+                    tx_id, circ_model.id
+                )
+                success_flags = (success_flags[0], success_flags[1], False)
+            else:
                 logger.error("Exception raised from %s", circ_model.id)
                 raise
-            dgraphs[2][circ_model.id] = cgraph
-            pgraphs[2][circ_model.id] = pgraph
-            add_peptide_anno(peptide_map)
+        dgraphs[2][circ_model.id] = cgraph
+        pgraphs[2][circ_model.id] = pgraph
+        add_peptide_anno(peptide_map)
 
     peptide_anno = {k:list(v.values()) for k,v in peptide_anno.items()}
 
-    return peptide_anno, tx_id, dgraphs, pgraphs
+    return peptide_anno, tx_id, dgraphs, pgraphs, success_flags
 
 def caller_reducer(dispatch):
     """ wrapper for ParallelPool. Also reduces the complexity if the run is timed out. """
@@ -492,7 +622,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
     common.print_start_message(args)
     caller.load_reference()
     caller.create_in_disk_variant_pool()
-    noncanonical_transcripts = caller.noncanonical_transcripts
     ref = caller.reference_data
     logger = get_logger()
     caller.logger = logger
@@ -512,9 +641,6 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         logger.info('Variants sorted')
         caller.tally.n_transcripts_total = len(tx_sorted)
 
-        # Not providing canonical peptide pool to each task for now.
-        canonical_peptides = set()
-
         if caller.threads > 1:
             process_pool = ParallelPool(ncpus=caller.threads)
 
@@ -523,85 +649,9 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         dispatches = []
         i = 0
         for tx_id in tx_sorted:
-            tx_ids = [tx_id]
-            tx_model = ref.anno.transcripts[tx_id]
-            if not caller.find_novel_orfs and not tx_model.is_protein_coding:
+            dispatch = caller.gather_data_for_call_variant(tx_id, pool)
+            if not dispatch:
                 continue
-            variant_series = pool[tx_id]
-            if variant_series.is_empty():
-                continue
-            if noncanonical_transcripts and \
-                    not variant_series.has_any_noncanonical_transcripts():
-                continue
-            tx_ids += variant_series.get_additional_transcripts()
-
-            gene_seqs = {}
-            if variant_series.is_gene_sequence_needed():
-                gene_id = tx_model.transcript.gene_id
-                cur_chrom = tx_model.transcript.chrom
-                gene_model = ref.anno.genes[gene_id]
-                gene_seq = gene_model.get_gene_sequence(ref.genome[cur_chrom])
-                gene_seqs[gene_id] = gene_seq
-
-            tx_seqs = {}
-            for cur_tx_id in tx_ids:
-                cur_tx_model = ref.anno.transcripts[cur_tx_id]
-                cur_chrom = cur_tx_model.transcript.chrom
-                tx_seqs[cur_tx_id] = cur_tx_model.get_transcript_sequence(ref.genome[cur_chrom])
-                cur_gene_id = cur_tx_model.transcript.gene_id
-                if cur_gene_id not in gene_seqs:
-                    cur_gene_model = ref.anno.genes[cur_gene_id]
-                    cur_gene_seq = cur_gene_model.get_gene_sequence(ref.genome[cur_chrom])
-                    gene_seqs[cur_gene_id] = cur_gene_seq
-            gene_ids = list({ref.anno.transcripts[x].transcript.gene_id for x in tx_ids})
-
-            gene_models = {}
-            for gene_id in gene_ids:
-                dummy_gene_model = copy.deepcopy(ref.anno.genes[gene_id])
-                dummy_gene_model.transcripts = [x for x in dummy_gene_model.transcripts
-                    if x in tx_ids]
-                gene_models[gene_id] = dummy_gene_model
-
-            dummy_anno = gtf.GenomicAnnotation(
-                genes=gene_models,
-                transcripts={tx_id:ref.anno.transcripts[tx_id] for tx_id in tx_ids},
-                source=ref.anno.source
-            )
-            reference_data = params.ReferenceData(
-                genome=None,
-                anno=dummy_anno,
-                canonical_peptides=canonical_peptides
-            )
-            dummy_pool = seqvar.VariantRecordPool()
-            dummy_pool.anno = dummy_anno
-            dummy_pool.data[tx_id] = variant_series
-            for add_tx in tx_ids:
-                if add_tx != tx_id:
-                    try:
-                        dummy_pool[add_tx] = caller.variant_record_pool[add_tx]
-                    except KeyError:
-                        continue
-
-            dispatch = {
-                'tx_id': tx_id,
-                'variant_series': variant_series,
-                'tx_seqs': tx_seqs,
-                'gene_seqs': gene_seqs,
-                'reference_data': reference_data,
-                'pool': dummy_pool,
-                'cleavage_params': caller.cleavage_params,
-                'noncanonical_transcripts': noncanonical_transcripts,
-                'find_novel_orfs': caller.find_novel_orfs,
-                'max_adjacent_as_mnv': caller.max_adjacent_as_mnv,
-                'truncate_sec': caller.truncate_sec,
-                'w2f_reassignment': caller.w2f_reassignment,
-                'save_graph': caller.graph_output_dir is not None,
-                'timeout': args.timeout_seconds,
-                'max_variants_per_node': (caller.cleavage_params.max_variants_per_node,),
-                'additional_variants_per_misc': (caller.cleavage_params.additional_variants_per_misc,),
-                'backsplicing_only': caller.backsplicing_only,
-                'coding_novel_orf': caller.coding_novel_orf
-            }
             dispatches.append(dispatch)
 
             caller.tally.n_transcripts_processed += 1
@@ -619,7 +669,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     results = [ caller_reducer(dispatches[0]) ]
 
                 # pylint: disable=W0621
-                for peptide_anno, tx_id, dgraphs, pgraphs in results:
+                for peptide_anno, tx_id, dgraphs, pgraphs, success_flags in results:
                     caller.tally.n_total_peptides += len(peptide_anno)
                     for peptide in peptide_anno:
                         is_valid = peptide_table.is_valid(
@@ -633,6 +683,12 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
                     if caller.graph_output_dir is not None:
                         caller.write_dgraphs(tx_id, dgraphs)
                         caller.write_pgraphs(tx_id, pgraphs)
+                    if not success_flags[0]:
+                        caller.tally.n_transcripts_failed['variant'] += 1
+                    if not success_flags[1]:
+                        caller.tally.n_transcripts_failed['fusion'] += 1
+                    if not success_flags[2]:
+                        caller.tally.n_transcripts_failed['circRNA'] += 1
                 dispatches = []
 
             i += 1

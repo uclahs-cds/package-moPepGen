@@ -3,6 +3,7 @@ import argparse
 from typing import List
 from pathlib import Path
 import sys
+from unittest.mock import Mock
 import subprocess as sp
 from test.integration import TestCaseIntegration
 from test.unit import create_variant
@@ -48,6 +49,7 @@ def create_base_args() -> argparse.Namespace:
     args.invalid_protein_as_noncoding = False
     args.threads = 1
     args.timeout_seconds = 1800
+    args.skip_failed = False
     return args
 
 class TestCallVariantPeptides(TestCaseIntegration):
@@ -177,6 +179,33 @@ class TestCallVariantPeptides(TestCaseIntegration):
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_skip_failed(self):
+        """ Test errors were handled by --skip-failed in callVariant """
+        # pylint: disable=import-outside-toplevel
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "moPepGen.cli.call_variant_peptide",
+            Path(__file__).parent.parent.parent/"moPepGen/cli/call_variant_peptide.py"
+        )
+        call_variant_peptide_module = importlib.util.module_from_spec(spec)
+        sys.modules["moPepGen.cli.call_variant_peptide"] = call_variant_peptide_module
+        spec.loader.exec_module(call_variant_peptide_module)
+
+        call_variant_peptide_module.call_peptide_main = Mock(side_effect=ValueError())
+
+        args = create_base_args()
+        args.input_path = [self.data_dir/'vep'/'vep_gSNP.gvf']
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+
+        with self.assertRaises(ValueError):
+            call_variant_peptide_module.call_variant_peptide(args)
+
+        args.skip_failed = True
+        call_variant_peptide_module.call_variant_peptide(args)
 
     def test_call_variant_peptide_case2(self):
         """ Test variant peptide calling with fusion """
@@ -1320,3 +1349,44 @@ class TestCallVariantPeptides(TestCaseIntegration):
                 'w2f_reassignment': True
             }
         )
+
+    def test_call_variant_peptide_case86(self):
+        """
+        Issue that a bridge-out node was not identified correctly with a lot of
+        framshift variants.
+        """
+        test_dir = self.data_dir/'comb/case_86'
+        gvf = [
+            test_dir/'gSNP.gvf',
+            test_dir/'AltSplice.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case87(self):
+        """
+        Issue that the in-member end node not treated as an end node when aligning
+        the vairant bubble.
+        """
+        test_dir = self.data_dir/'comb/case_87'
+        gvf = [
+            test_dir/'gSNP.gvf',
+            test_dir/'AltSplice.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case88(self):
+        """
+        Issue that variant bubble finding error starting from a out-bridge node.
+        """
+        test_dir = self.data_dir/'comb/case_88'
+        gvf = [
+            test_dir/'gSNP.gvf',
+            test_dir/'AltSplice.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)

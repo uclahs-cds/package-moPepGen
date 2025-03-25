@@ -1248,7 +1248,10 @@ class ThreeFrameTVG():
             is_bridge_out = any(
                 e.out_node.get_first_rf_index() != this_id
                     or e.out_node.get_last_rf_index() != this_id
-                    and any(v.variant.is_frameshifting() for v in cur.variants)
+                    and any(
+                        v.variant.is_frameshifting()
+                        for v in cur.variants
+                    )
                     and not cur.is_reference()
                     and e.out_node not in members
                 for e in cur.out_edges
@@ -1396,6 +1399,8 @@ class ThreeFrameTVG():
         if not node.get_reference_next().out_edges:
             return node.get_reference_next(), set()
 
+        start_variants = {v.variant for v in node.variants}
+
         def is_candidate_out_node(x:TVGNode, y:TVGNode):
             # Note: have to use y.subgraph_id because for deletion, subgraph_id
             # is different from get_first_subgraph_id()
@@ -1431,6 +1436,10 @@ class ThreeFrameTVG():
 
             if cur.reading_frame_index != node.reading_frame_index:
                 non_members.add(cur.id)
+                continue
+
+            cur_variants = {v.variant for v in cur.variants}
+            if any(v.is_frameshifting() and v not in start_variants for v in cur_variants):
                 continue
 
             if subgraph_checker:
@@ -1571,10 +1580,7 @@ class ThreeFrameTVG():
 
         Args:
             node (TVGNode): The node of which the outbound nodes will
-                be aligned.
-            branch_out_size (int): The size limit that if a variant is larger
-                that it, it will branch out even if it's not a frameshifting
-                mutation.
+                be aligned
         Returns:
             The original input node.
         """
@@ -1600,28 +1606,25 @@ class ThreeFrameTVG():
         if not end_node:
             raise err.FailedToFindVariantBubbleError()
 
+        end_nodes = {end_node.id}
         if not self.is_circ_rna() and end_node.is_subgraph_end():
             subgraph_ends = {end_node}
             subgraph_ends.update(self.find_other_subgraph_end_nodes(end_node, members))
-            end_nodes = set()
             if len(subgraph_ends) > 1:
                 for subgraph_end in subgraph_ends:
-                    end_nodes.update(subgraph_end.get_out_nodes())
-            else:
-                end_nodes = {end_node}
-        else:
-            end_nodes = {end_node}
+                    end_nodes.update([x.id for x in subgraph_end.get_out_nodes()])
+
         bridges = self.find_bridge_nodes_between(start_node, end_node, members)
         bridge_ins, bridge_outs, subgraph_ins, subgraph_outs = bridges
 
         for bridge in bridge_outs:
             for e in bridge.out_edges:
-                end_nodes.add(e.out_node)
+                end_nodes.add(e.out_node.id)
 
         for subgraph in subgraph_outs:
             for e in subgraph.out_edges:
                 if e.out_node not in members:
-                    end_nodes.add(e.out_node)
+                    end_nodes.add(e.out_node.id)
 
         new_nodes:Set[TVGNode] = set()
         queue = deque()
@@ -1635,7 +1638,7 @@ class ThreeFrameTVG():
                 # In-bridge nodes should not be merged with their outgoing nodes
                 # that do not belong to the bubble.
                 if edge.out_node not in members:
-                    end_nodes.add(edge.out_node)
+                    end_nodes.add(edge.out_node.id)
             bridge_map[new_bridge] = bridge_in
             trash.add(bridge_in)
 
@@ -1654,7 +1657,7 @@ class ThreeFrameTVG():
 
         while queue:
             cur:TVGNode = queue.pop()
-            if cur in end_nodes or not cur.out_edges:
+            if cur.id in end_nodes or not cur.out_edges:
                 if cur not in bridge_map:
                     new_nodes.add(cur)
                 else:
@@ -1663,7 +1666,7 @@ class ThreeFrameTVG():
 
             # When all out nodes are in `end_nodes`. This is to avoid the `cur`
             # to be replicated.
-            if all(x in end_nodes for x in cur.get_out_nodes()):
+            if all(x.id in end_nodes for x in cur.get_out_nodes()):
                 new_node = cur.copy()
                 trash.add(cur)
                 for edge in cur.out_edges:
@@ -1680,7 +1683,7 @@ class ThreeFrameTVG():
 
                 # So this is the case that some of the out_nodes are in end_nodes
                 # but not the others.
-                if out_node in end_nodes:
+                if out_node.id in end_nodes:
                     new_node = cur.copy()
                     trash.add(cur)
                     for edge in cur.out_edges:
@@ -1713,7 +1716,7 @@ class ThreeFrameTVG():
                         else 'variant_end'
                     self.add_edge(new_node, edge.out_node, _type=edge_type)
 
-                if out_node not in end_nodes:
+                if out_node.id not in end_nodes:
                     queue.appendleft(new_node)
 
                 if cur in bridge_map:
@@ -1738,8 +1741,6 @@ class ThreeFrameTVG():
 
         for trash_node in trash:
             self.remove_node(trash_node)
-
-        return start_node, end_node
 
     def expand_alignments(self, start:TVGNode) -> List[TVGNode]:
         r""" Expand the aligned variants into the range of codons. For
@@ -1901,7 +1902,10 @@ class ThreeFrameTVG():
                 queue.appendleft(cur)
                 continue
 
-            self.align_variants(cur)
+            try:
+                self.align_variants(cur)
+            except err.FailedToFindVariantBubbleError:
+                continue
 
             self.collapse_equivalent_nodes(cur)
             if cur.out_edges:

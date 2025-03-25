@@ -7,13 +7,17 @@ The created GVF file can be then used to call for variant peptides using
 [callVariant](call-variant.md)
 """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import argparse
-from typing import Dict, Set
 from pathlib import Path
 from moPepGen import get_logger, seqvar
 from moPepGen.parser import RMATSParser
 from moPepGen.cli import common
 
+
+if TYPE_CHECKING:
+    from typing import Dict, Set
+    from logging import Logger
 
 INPUT_FILE_FORMATS = ['.tsv', '.txt']
 OUTPUT_FILE_FORMATS = ['.gvf']
@@ -102,9 +106,27 @@ def add_subparser_parse_rmats(subparsers:argparse._SubParsersAction):
     common.print_help_if_missing_args(p)
     return p
 
+class TallyTable():
+    """ Tally table """
+    def __init__(self, logger:Logger):
+        """ Constructor """
+        self.total:int = 0
+        self.succeed:int = 0
+        self.skipped:int = 0
+        self.logger = logger
+
+    def log(self):
+        """ Show tally results """
+        self.logger.info("Summary:")
+        self.logger.info("Totally records read: %i", self.total)
+        self.logger.info("Records successfully processed: %i", self.succeed)
+        self.logger.info("Records skipped: %i", self.skipped)
+
+
 def parse_rmats(args:argparse.Namespace) -> None:
     """ Parse rMATS results into TSV """
     logger = get_logger()
+    tally = TallyTable(logger)
 
     skipped_exon = args.skipped_exon
     alternative_5 = args.alternative_5_splicing
@@ -138,6 +160,7 @@ def parse_rmats(args:argparse.Namespace) -> None:
         if path:
             logger.info("Start parsing %s file %s", event_type, path)
             for record in RMATSParser.parse(path, event_type):
+                tally.total += 1
                 try:
                     var_records = record.convert_to_variant_records(
                         anno=anno, genome=genome,
@@ -146,6 +169,10 @@ def parse_rmats(args:argparse.Namespace) -> None:
                 except:
                     logger.error(record.gene_id)
                     raise
+                if var_records:
+                    tally.succeed += 1
+                else:
+                    tally.skipped += 1
                 for var_record in var_records:
                     tx_id = var_record.transcript_id
                     if tx_id not in variants:
@@ -170,3 +197,5 @@ def parse_rmats(args:argparse.Namespace) -> None:
     seqvar.io.write(variants_sorted, output_path, metadata)
 
     logger.info('Variants written to disk.')
+
+    tally.log()

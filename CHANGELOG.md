@@ -10,6 +10,44 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.6-rc4] - 2025-03-18
+
+- Added the support for wildcard characters in `splitFasta`. #906
+
+## [1.4.6-rc3] - 2025-03-10
+
+- Added --skip-failed flag to callVariant, parseArriba, parserSTARFusion, parseFusionCatcher.
+
+- Added tally table to parseREDITools, parseCIRCExplorer, and parseRMATS
+
+## [1.4.6-rc2] - 2025-03-03
+
+### Fixed
+
+- Fixed callVariant that variant bubble not identified correctly.
+
+- Fixed parseVEP that failed records will now be skipped with --skip-failed. #902
+
+- Fixed callVariant with variant bubble finding error starting from a out-bridge node.
+
+- Fixed callVariant that peptide annotation not created correctly with SEC
+
+## Changed
+
+- A check added when converting a genomic location to gene coordinate to ensure they overlap.
+
+## [1.4.6-rc1] - 2025-02-24
+
+### Fixed
+
+- Fix callVariant for a case that a bridge-out node was not identified correctly with a lot of framshift variants.
+
+## [1.4.5] - 2025-02-19
+
+### Fixed
+
+- Variant peptide not split correclty if it is derived from fusion that the upstream and downstream are the same gene. #897
+
 ## [1.4.4] - 2025-02-11
 
 ### Fixed
