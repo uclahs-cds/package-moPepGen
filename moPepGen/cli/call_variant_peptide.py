@@ -413,6 +413,7 @@ class VariantPeptideCaller():
             'pool': dummy_pool,
             'cleavage_params': self.cleavage_params,
             'noncanonical_transcripts': self.noncanonical_transcripts,
+            'find_novel_orfs': self.find_novel_orfs,
             'max_adjacent_as_mnv': self.max_adjacent_as_mnv,
             'truncate_sec': self.truncate_sec,
             'w2f_reassignment': self.w2f_reassignment,
@@ -568,20 +569,19 @@ def call_variant_peptides_wrapper(tx_id:str,
                     w2f_reassignment=w2f_reassignment, denylist=denylist,
                     save_graph=save_graph, backsplicing_only=backsplicing_only
                 )
-
-        except:
-            if skip_failed:
-                logger.warning(
-                    'Variant peptides calling failed from %s with circRNA: %s',
-                    tx_id, circ_model.id
-                )
-                success_flags = (success_flags[0], success_flags[1], False)
-            else:
-                logger.error("Exception raised from %s", circ_model.id)
-                raise
-        dgraphs[2][circ_model.id] = cgraph
-        pgraphs[2][circ_model.id] = pgraph
-        add_peptide_anno(peptide_map)
+            except:
+                if skip_failed:
+                    logger.warning(
+                        'Variant peptides calling failed from %s with circRNA: %s',
+                        tx_id, circ_model.id
+                    )
+                    success_flags = (success_flags[0], success_flags[1], False)
+                else:
+                    logger.error("Exception raised from %s", circ_model.id)
+                    raise
+            dgraphs[2][circ_model.id] = cgraph
+            pgraphs[2][circ_model.id] = pgraph
+            add_peptide_anno(peptide_map)
 
     peptide_anno = {k:list(v.values()) for k,v in peptide_anno.items()}
 

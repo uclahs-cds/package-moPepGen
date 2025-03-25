@@ -47,6 +47,7 @@ def create_base_args() -> argparse.Namespace:
     args.debug_level = 1
     args.noncanonical_transcripts = False
     args.invalid_protein_as_noncoding = False
+    args.find_novel_orfs = True
     args.threads = 1
     args.timeout_seconds = 1800
     args.skip_failed = False
