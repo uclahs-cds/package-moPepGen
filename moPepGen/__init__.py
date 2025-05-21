@@ -8,7 +8,7 @@ import logging
 from . import constant
 
 
-__version__ = '1.4.6-rc4'
+__version__ = '1.4.6'
 
 ## Error messages
 ERROR_INDEX_IN_INTRON = 'The genomic index seems to be in an intron'

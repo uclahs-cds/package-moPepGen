@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.4.6] - 2025-05-21
+
+- Fixed biopython version #908
+
 ## [1.4.6-rc4] - 2025-03-18
 
 - Added the support for wildcard characters in `splitFasta`. #906
