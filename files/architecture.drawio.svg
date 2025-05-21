@@ -1,0 +1,462 @@
+<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1154px" height="794px" viewBox="-0.5 -0.5 1154 794" content="&lt;mxfile&gt;&lt;diagram id=&quot;2I-iQ1U2yxw9CNmi5RX6&quot; name=&quot;Page-1&quot;&gt;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&lt;/diagram&gt;&lt;/mxfile&gt;">
+    <defs>
+        <clipPath id="mx-clip-403-81-372-26-0">
+            <rect x="403" y="81" width="372" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-403-107-372-26-0">
+            <rect x="403" y="107" width="372" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-403-133-372-26-0">
+            <rect x="403" y="133" width="372" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-403-159-372-26-0">
+            <rect x="403" y="159" width="372" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-403-185-372-26-0">
+            <rect x="403" y="185" width="372" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-403-211-372-26-0">
+            <rect x="403" y="211" width="372" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-403-237-372-32-0">
+            <rect x="403" y="237" width="372" height="32"/>
+        </clipPath>
+        <clipPath id="mx-clip-403-269-372-26-0">
+            <rect x="403" y="269" width="372" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-403-295-372-26-0">
+            <rect x="403" y="295" width="372" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-31-221-257-24-0">
+            <rect x="31" y="221" width="257" height="24"/>
+        </clipPath>
+        <clipPath id="mx-clip-31-245-257-26-0">
+            <rect x="31" y="245" width="257" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-31-271-257-26-0">
+            <rect x="31" y="271" width="257" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-31-190-26-0">
+            <rect x="76" y="31" width="190" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-57-190-26-0">
+            <rect x="76" y="57" width="190" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-83-190-26-0">
+            <rect x="76" y="83" width="190" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-109-190-26-0">
+            <rect x="76" y="109" width="190" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-405-192-26-0">
+            <rect x="76" y="405" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-431-192-26-0">
+            <rect x="76" y="431" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-457-192-26-0">
+            <rect x="76" y="457" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-483-192-26-0">
+            <rect x="76" y="483" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-509-192-26-0">
+            <rect x="76" y="509" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-535-192-26-0">
+            <rect x="76" y="535" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-561-192-26-0">
+            <rect x="76" y="561" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-587-192-26-0">
+            <rect x="76" y="587" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-613-192-26-0">
+            <rect x="76" y="613" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-639-192-26-0">
+            <rect x="76" y="639" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-665-192-26-0">
+            <rect x="76" y="665" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-691-192-26-0">
+            <rect x="76" y="691" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-717-192-26-0">
+            <rect x="76" y="717" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-743-192-26-0">
+            <rect x="76" y="743" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-76-769-192-26-0">
+            <rect x="76" y="769" width="192" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-531-132-26-0">
+            <rect x="543" y="531" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-557-132-26-0">
+            <rect x="543" y="557" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-583-132-26-0">
+            <rect x="543" y="583" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-609-132-26-0">
+            <rect x="543" y="609" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-635-132-26-0">
+            <rect x="543" y="635" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-661-132-26-0">
+            <rect x="543" y="661" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-687-132-26-0">
+            <rect x="543" y="687" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-713-132-26-0">
+            <rect x="543" y="713" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-543-739-132-26-0">
+            <rect x="543" y="739" width="132" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-473-411-257-24-0">
+            <rect x="473" y="411" width="257" height="24"/>
+        </clipPath>
+        <clipPath id="mx-clip-473-435-257-26-0">
+            <rect x="473" y="435" width="257" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-863-101-257-26-0">
+            <rect x="863" y="101" width="257" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-863-191-257-26-0">
+            <rect x="863" y="191" width="257" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-863-217-257-26-0">
+            <rect x="863" y="217" width="257" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-863-323-257-26-0">
+            <rect x="863" y="323" width="257" height="26"/>
+        </clipPath>
+    </defs>
+    <g>
+        <path d="M 399 76 L 399 50 L 779 50 L 779 76" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 399 76 L 399 316 L 779 316 L 779 76" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 399 76 L 779 76" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="588.5" y="67.5">
+                VEP2VariantPeptides
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-81-372-26-0)" font-size="12px">
+            <text x="404.5" y="93.5">
+                vep: TranscriptVEP
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-107-372-26-0)" font-size="12px">
+            <text x="404.5" y="119.5">
+                annotation: TranscriptGTF
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-133-372-26-0)" font-size="12px">
+            <text x="404.5" y="145.5">
+                genome: DNASeqRecords
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-159-372-26-0)" font-size="12px">
+            <text x="404.5" y="171.5">
+                proteome: AminoAcidSeqRecords
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-185-372-26-0)" font-size="12px">
+            <text x="404.5" y="197.5">
+                canonical_peptides: set(SeqRecord)
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-211-372-26-0)" font-size="12px">
+            <text x="404.5" y="223.5">
+                variant_peptides: set(Seq
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-237-372-32-0)" font-size="12px">
+            <text x="404.5" y="249.5">
+                __init__(self)
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-269-372-26-0)" font-size="12px">
+            <text x="404.5" y="281.5">
+                call_canonical_peptides(self, enzyme:str='trypsin')
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-403-295-372-26-0)" font-size="12px">
+            <text x="404.5" y="307.5">
+                call_variant_peptides(self, enzyme:str='trypsin')
+            </text>
+        </g>
+        <path d="M 291.5 215.5 L 345.25 215.5 L 345.25 89 L 392.63 89" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 397.88 89 L 390.88 92.5 L 392.63 89 L 390.88 85.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 26.5 216 L 26.5 190 L 291.5 190 L 291.5 216" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 26.5 216 L 26.5 292 L 291.5 292 L 291.5 216" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 26.5 216 L 291.5 216" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="158.5" y="207.5">
+                TranscriptVEP
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-31-221-257-24-0)" font-size="12px">
+            <text x="32" y="233.5">
+                key (str): transcript id
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-31-245-257-26-0)" font-size="12px">
+            <text x="32" y="257.5">
+                value (List[VEPRecord]): list of VEPRecords
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-31-271-257-26-0)" font-size="12px">
+            <text x="32" y="283.5">
+                call_variant_peptides(self, genome, proteome, ...) -&gt; SeqRecords
+            </text>
+        </g>
+        <path d="M 71.5 26 L 71.5 0 L 269 0 L 269 26" fill="#f8cecc" stroke="#b85450" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 71.5 26 L 71.5 130 L 269 130 L 269 26" fill="none" stroke="#b85450" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 71.5 26 L 269 26" fill="none" stroke="#b85450" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="169.75" y="17.5">
+                read_vep() -&gt; List[VEPTranscript]
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-31-190-26-0)" font-size="12px">
+            <text x="77" y="43.5">
+                path_vep: string
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-57-190-26-0)" font-size="12px">
+            <text x="77" y="69.5">
+                consequences: List[string]
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-83-190-26-0)" font-size="12px">
+            <text x="77" y="95.5">
+                proteins: List[string]
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-109-190-26-0)" font-size="12px">
+            <text x="77" y="121.5">
+                cdnas: SeqRecords
+            </text>
+        </g>
+        <path d="M 171.5 374 L 171.5 320 L 6.5 320 L 6.5 253 L 20.13 253" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 25.38 253 L 18.38 256.5 L 20.13 253 L 18.38 249.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 71.5 400 L 71.5 374 L 271.5 374 L 271.5 400" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 71.5 400 L 71.5 790 L 271.5 790 L 271.5 400" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 71.5 400 L 271.5 400" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="171" y="391.5">
+                VEPRecord
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-405-192-26-0)" font-size="12px">
+            <text x="77" y="417.5">
+                uploaded_variation: string
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-431-192-26-0)" font-size="12px">
+            <text x="77" y="443.5">
+                location: string
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-457-192-26-0)" font-size="12px">
+            <text x="77" y="469.5">
+                allele: string
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-483-192-26-0)" font-size="12px">
+            <text x="77" y="495.5">
+                gene: string
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-509-192-26-0)" font-size="12px">
+            <text x="77" y="521.5">
+                feature: string
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-535-192-26-0)" font-size="12px">
+            <text x="77" y="547.5">
+                feature: string
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-561-192-26-0)" font-size="12px">
+            <text x="77" y="573.5">
+                consequence: List[string]
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-587-192-26-0)" font-size="12px">
+            <text x="77" y="599.5">
+                cDNA_position: int
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-613-192-26-0)" font-size="12px">
+            <text x="77" y="625.5">
+                CDS_position: int
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-639-192-26-0)" font-size="12px">
+            <text x="77" y="651.5">
+                protein_position: int
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-665-192-26-0)" font-size="12px">
+            <text x="77" y="677.5">
+                amino_acids: List[string]
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-691-192-26-0)" font-size="12px">
+            <text x="77" y="703.5">
+                codons: List[string]
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-717-192-26-0)" font-size="12px">
+            <text x="77" y="729.5">
+                existing_variation: string
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-743-192-26-0)" font-size="12px">
+            <text x="77" y="755.5">
+                extra: Dict
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-76-769-192-26-0)" font-size="12px">
+            <text x="77" y="781.5">
+                extra: Dict
+            </text>
+        </g>
+        <path d="M 601.5 380 L 601.5 360 L 379 360 L 379 115 L 392.63 115" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 397.88 115 L 390.88 118.5 L 392.63 115 L 390.88 111.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 539 526 L 539 500 L 679 500 L 679 526" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 539 526 L 539 760 L 679 760 L 679 526" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 539 526 L 679 526" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="608.5" y="517.5">
+                GTFRecord
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-531-132-26-0)" font-size="12px">
+            <text x="544.5" y="543.5">
+                seqname: str
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-557-132-26-0)" font-size="12px">
+            <text x="544.5" y="569.5">
+                source: str
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-583-132-26-0)" font-size="12px">
+            <text x="544.5" y="595.5">
+                feature: str
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-609-132-26-0)" font-size="12px">
+            <text x="544.5" y="621.5">
+                start: int
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-635-132-26-0)" font-size="12px">
+            <text x="544.5" y="647.5">
+                end: int
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-661-132-26-0)" font-size="12px">
+            <text x="544.5" y="673.5">
+                score: float
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-687-132-26-0)" font-size="12px">
+            <text x="544.5" y="699.5">
+                strand: str
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-713-132-26-0)" font-size="12px">
+            <text x="544.5" y="725.5">
+                frame: int
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-543-739-132-26-0)" font-size="12px">
+            <text x="544.5" y="751.5">
+                frame: int
+            </text>
+        </g>
+        <path d="M 469 406 L 469 380 L 734 380 L 734 406" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 469 406 L 469 456 L 734 456 L 734 406" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 469 406 L 734 406" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="601" y="397.5">
+                TranscriptGTF
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-473-411-257-24-0)" font-size="12px">
+            <text x="474.5" y="423.5">
+                key (str): transcript id
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-473-435-257-26-0)" font-size="12px">
+            <text x="474.5" y="447.5">
+                value (List[GTFRecord]): list of GTFRecords
+            </text>
+        </g>
+        <path d="M 609 500 L 609 480 L 449 480 L 449 443 L 462.63 443" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 467.88 443 L 460.88 446.5 L 462.63 443 L 460.88 439.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 399 303 L 345.25 303 L 345.25 279 L 297.87 279" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 292.62 279 L 299.62 275.5 L 297.87 279 L 299.62 282.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 96 L 859 70 L 1124 70 L 1124 96" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 96 L 859 122 L 1124 122 L 1124 96" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 96 L 1124 96" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="991" y="87.5">
+                DNASeqRecords(list)
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-863-101-257-26-0)" font-size="12px">
+            <text x="864.5" y="113.5">
+                self: List[DNASeqRecord]
+            </text>
+        </g>
+        <path d="M 859 179.5 L 819 179.5 L 819 159.33 L 789.93 159.33" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 784.68 159.33 L 791.68 155.83 L 789.93 159.33 L 791.68 162.83 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 186 L 859 160 L 1124 160 L 1124 186" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 186 L 859 238 L 1124 238 L 1124 186" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 186 L 1124 186" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="991" y="177.5">
+                AminoAcidSeqRecords(list)
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-863-191-257-26-0)" font-size="12px">
+            <text x="864.5" y="203.5">
+                self: List[AminoAcidSeqRecord]
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-863-217-257-26-0)" font-size="12px">
+            <text x="864.5" y="229.5">
+                call_unique_peptides()
+            </text>
+        </g>
+        <path d="M 859 109 L 819 109 L 819 131.33 L 783.85 131.33" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 778.6 131.33 L 785.6 127.83 L 783.85 131.33 L 785.6 134.83 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 991.5 292 L 991.5 252 L 1144 252 L 1144 199 L 1130.37 199" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 1125.12 199 L 1132.12 195.5 L 1130.37 199 L 1132.12 202.5 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 318 L 859 292 L 1124 292 L 1124 318" fill="#dae8fc" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 318 L 859 344 L 1124 344 L 1124 318" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 859 318 L 1124 318" fill="none" stroke="#6c8ebf" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="#000000" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="991" y="309.5">
+                AminoAcidSeqRecord(SeqRecord)
+            </text>
+        </g>
+        <g fill="#000000" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-863-323-257-26-0)" font-size="12px">
+            <text x="864.5" y="335.5">
+                digest()
+            </text>
+        </g>
+    </g>
+</svg>
