@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
+from Bio.Data import CodonTable
 from moPepGen import dna, aa, params, get_logger
 from moPepGen.index import IndexDir
 from moPepGen.cli import common
@@ -102,6 +103,23 @@ def generate_index(args:argparse.Namespace):
     )
     logger.info('Genome annotation GTF saved to disk.')
 
+    # Organize codon table
+    codon_tables = index_dir.metadata.codon_tables
+    valid_codon_tables = common.get_valid_codon_tables()
+    for it in args.chr_codon_table:
+        k,v = it.split(':')
+        if k not in genome:
+            logger.warning(
+                'In --chr-codon-table %s, chromosome %s not found in the genome. ',
+                it, k
+            )
+        assert v in valid_codon_tables
+        codon_tables[k] = v
+
+    for chr in genome:
+        if chr not in codon_tables:
+            codon_tables[chr] = args.codon_table
+
     # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(
         anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
@@ -122,5 +140,6 @@ def generate_index(args:argparse.Namespace):
 
     # save metadata
     index_dir.metadata.source = anno.source
+
     index_dir.save_metadata()
     logger.info('metadata saved.')

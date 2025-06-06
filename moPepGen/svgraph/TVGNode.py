@@ -679,12 +679,12 @@ class TVGNode():
 
         self.seq = new_seq
 
-    def translate(self) -> PVGNode:
+    def translate(self, table:str='Standard') -> PVGNode:
         """ translate to a PVGNode """
         if not self.out_edges:
-            seq = self.seq[:len(self.seq) - len(self.seq) % 3].translate()
+            seq = self.seq[:len(self.seq) - len(self.seq) % 3].translate(table=table)
         else:
-            seq = self.seq.translate()
+            seq = self.seq.translate(table=table)
 
         locations = []
         for loc in self.seq.locations:
@@ -728,18 +728,18 @@ class TVGNode():
             level=self.level
         )
 
-    def get_ith_variant_var_aa(self, i:int) -> Seq:
+    def get_ith_variant_var_aa(self, i:int, table:str='Standard') -> Seq:
         """ Get the variant amino acid sequence of the ith variant """
         v = self.variants[i]
         loc = v.location
         lhs = loc.start - loc.start % 3
         rhs = loc.end + (3 - loc.end % 3) % 3
         rhs = min(rhs, len(self.seq.seq))
-        seq = self.seq.seq[lhs:rhs]
+        seq:Seq = self.seq.seq[lhs:rhs]
         seq = seq[:len(seq) - len(seq) % 3]
-        return seq.translate(to_stop=False)
+        return seq.translate(table=table, to_stop=False)
 
-    def get_ith_variant_ref_aa(self, i:int, tx_seq:Seq) -> Seq:
+    def get_ith_variant_ref_aa(self, i:int, tx_seq:Seq, table:str='Standard') -> Seq:
         """ Get the reference amino acid sequence of the ith variant. """
         v = self.variants[i]
         if v.variant.type == 'Insertion':
@@ -763,7 +763,7 @@ class TVGNode():
         if rhs > v.variant.location.end:
             seq += tx_seq[v.variant.location.end:rhs]
         seq = seq[:len(seq) - len(seq) % 3]
-        return seq.translate(to_stop=False)
+        return seq.translate(table=table, to_stop=False)
 
     def get_ref_sequence(self, tx_seq:Seq) -> Seq:
         """ Get the reference sequence """

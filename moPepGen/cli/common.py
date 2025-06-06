@@ -11,6 +11,7 @@ import functools
 import time
 import logging
 import pkg_resources
+from Bio.Data import CodonTable
 from moPepGen import aa, dna, gtf, seqvar, get_logger, constant
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen.index import IndexDir
@@ -59,6 +60,23 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         choices=['GENCODE', 'ENSEMBL'],
         help='Source of reference genome and annotation.',
         default=None
+    )
+    valid_codon_tables = get_valid_codon_tables()
+    group.add_argument(
+        '--codon-table',
+        type=str,
+        default='Standard',
+        choices=valid_codon_tables,
+        help=f'Codon table. Defaults to "Standard". Supported codon tables: {valid_codon_tables}'
+    )
+    group.add_argument(
+        '--chr-codon-table',
+        type=str,
+        nargs='*',
+        default=[],
+        help='Chromosome specific codon table. Must be specified in the format of'
+        ' "chrM:SGC1", where "chrM" is the chromosome name and "SGC1" is the codon'
+        f' table to use to translate genes on chrM. Supported codon tables: {valid_codon_tables}'
     )
     if proteome:
         group.add_argument(
@@ -429,3 +447,11 @@ def setup_loggers(level:str):
     logger.addHandler(handler)
 
     return logger
+
+def get_valid_codon_tables():
+    return {
+        name
+        for codon_table in CodonTable.unambiguous_dna_by_id.values()
+        for name in codon_table.names
+        if name is not None
+    }
