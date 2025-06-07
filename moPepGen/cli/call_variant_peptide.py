@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from moPepGen import dna, circ
     from moPepGen.svgraph import ThreeFrameCVG, ThreeFrameTVG, PeptideVariantGraph
     from moPepGen.svgraph.VariantPeptideDict import AnnotatedPeptideLabel
+    from moPepGen.gtf import GeneAnnotationModel
 
 
 INPUT_FILE_FORMATS = ['.gvf']
@@ -247,15 +248,17 @@ class VariantPeptideCaller():
 
     def load_reference(self):
         """ load reference genome, annotation, and canonical peptides """
-        genome, anno, _, canonical_peptides = common.load_references(
+        genome, anno, _, canonical_peptides, codon_tables = common.load_references(
                 args=self.args,
                 invalid_protein_as_noncoding=self.invalid_protein_as_noncoding,
-                cleavage_params=self.cleavage_params
+                cleavage_params=self.cleavage_params,
+                load_codon_tables=True
             )
         self.reference_data = params.ReferenceData(
             genome=genome,
             anno=anno,
-            canonical_peptides=canonical_peptides
+            canonical_peptides=canonical_peptides,
+            codon_tables=codon_tables
         )
 
     def create_in_disk_variant_pool(self):
@@ -318,6 +321,7 @@ class VariantPeptideCaller():
         ref = self.reference_data
         tx_ids = [tx_id]
         tx_model = ref.anno.transcripts[tx_id]
+        codon_table = ref.codon_tables[tx_model.transcript.chrom]
         try:
             variant_series = pool[tx_id]
         except ValueError:
@@ -352,7 +356,7 @@ class VariantPeptideCaller():
                 gene_seqs[_gene_id] = _gene_seq
         gene_ids = list({ref.anno.transcripts[x].transcript.gene_id for x in tx_ids})
 
-        gene_models = {}
+        gene_models:dict[str,GeneAnnotationModel] = {}
         for gene_id in gene_ids:
             dummy_gene_model = copy.deepcopy(ref.anno.genes[gene_id])
             dummy_gene_model.transcripts = [x for x in dummy_gene_model.transcripts
@@ -364,10 +368,12 @@ class VariantPeptideCaller():
             transcripts={tx_id: ref.anno.transcripts[tx_id] for tx_id in tx_ids},
             source=ref.anno.source
         )
+
         reference_data = params.ReferenceData(
             genome=None,
             anno=dummy_anno,
-            canonical_peptides=set()    # Not providing canonical peptide at this point.
+            canonical_peptides=set(),    # Not providing canonical peptide at this point.
+            codon_tables={}
         )
         dummy_pool = seqvar.VariantRecordPool()
         dummy_pool.anno = dummy_anno
@@ -385,6 +391,7 @@ class VariantPeptideCaller():
             'tx_seqs': tx_seqs,
             'gene_seqs': gene_seqs,
             'reference_data': reference_data,
+            'codon_table': codon_table,
             'pool': dummy_pool,
             'cleavage_params': self.cleavage_params,
             'noncanonical_transcripts': self.noncanonical_transcripts,
@@ -426,6 +433,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         reference_data:params.ReferenceData,
+        codon_table:str,
         pool:seqvar.VariantRecordPool,
         cleavage_params:params.CleavageParams,
         noncanonical_transcripts:bool,
@@ -465,7 +473,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                     variant_series.has_any_alternative_splicing():
                 peptide_map, dgraph, pgraph = call_peptide_main(
                     tx_id=tx_id, tx_variants=variant_series.transcriptional,
-                    variant_pool=pool, ref=reference_data,
+                    variant_pool=pool, ref=reference_data, codon_table=codon_table,
                     tx_seqs=tx_seqs, gene_seqs=gene_seqs,
                     cleavage_params=cleavage_params,
                     max_adjacent_as_mnv=max_adjacent_as_mnv,
@@ -506,9 +514,10 @@ def call_variant_peptides_wrapper(tx_id:str,
             variant_pool[tx_id].transcriptional = filtered_variants
             peptide_map, dgraph, pgraph = call_peptide_fusion(
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
-                tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params,
-                max_adjacent_as_mnv=max_adjacent_as_mnv, w2f_reassignment=w2f_reassignment,
-                denylist=denylist, save_graph=save_graph, coding_novel_orf=coding_novel_orf
+                codon_table=codon_table, tx_seqs=tx_seqs, gene_seqs=gene_seqs,
+                cleavage_params=cleavage_params, max_adjacent_as_mnv=max_adjacent_as_mnv,
+                w2f_reassignment=w2f_reassignment, denylist=denylist, save_graph=save_graph,
+                coding_novel_orf=coding_novel_orf
             )
             dgraphs[1][variant.id] = dgraph
             pgraphs[1][variant.id] = pgraph
@@ -533,7 +542,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         try:
             peptide_map, cgraph, pgraph = call_peptide_circ_rna(
                 record=circ_model, variant_pool=pool, gene_seqs=gene_seqs,
-                cleavage_params=cleavage_params,
+                cleavage_params=cleavage_params, codon_table=codon_table,
                 max_adjacent_as_mnv=max_adjacent_as_mnv,
                 w2f_reassignment=w2f_reassignment, denylist=denylist,
                 save_graph=save_graph, backsplicing_only=backsplicing_only
@@ -706,7 +715,7 @@ if TYPE_CHECKING:
 
 def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         variant_pool:seqvar.VariantRecordPoolOnDisk,
-        ref:params.ReferenceData,
+        ref:params.ReferenceData, codon_table:str,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
@@ -735,7 +744,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
-    pgraph = dgraph.translate()
+    pgraph = dgraph.translate(table=codon_table)
 
     pgraph.create_cleavage_graph()
 
@@ -768,7 +777,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
 
 def call_peptide_fusion(variant:seqvar.VariantRecord,
         variant_pool:seqvar.VariantRecordPoolOnDisk,
-        ref:params.ReferenceData,
+        ref:params.ReferenceData, codon_table:str,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
@@ -814,7 +823,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
-    pgraph = dgraph.translate()
+    pgraph = dgraph.translate(table=codon_table)
     pgraph.create_cleavage_graph()
 
     if tx_model.is_protein_coding:
@@ -844,7 +853,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
-        gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
+        gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates], codon_table:str,
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
         backsplicing_only:bool, w2f_reassignment:bool, denylist:Set[str],
         save_graph:bool
@@ -891,7 +900,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph.extend_loop()
     cgraph.truncate_three_frames()
     cgraph.fit_into_codons()
-    pgraph = cgraph.translate()
+    pgraph = cgraph.translate(table=codon_table)
     pgraph.create_cleavage_graph()
     peptide_map = pgraph.call_variant_peptides(
         denylist=denylist, circ_rna=record, backsplicing_only=backsplicing_only,

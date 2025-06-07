@@ -104,21 +104,12 @@ def generate_index(args:argparse.Namespace):
     logger.info('Genome annotation GTF saved to disk.')
 
     # Organize codon table
-    codon_tables = index_dir.metadata.codon_tables
-    valid_codon_tables = common.get_valid_codon_tables()
-    for it in args.chr_codon_table:
-        k,v = it.split(':')
-        if k not in genome:
-            logger.warning(
-                'In --chr-codon-table %s, chromosome %s not found in the genome. ',
-                it, k
-            )
-        assert v in valid_codon_tables
-        codon_tables[k] = v
-
-    for chr in genome:
-        if chr not in codon_tables:
-            codon_tables[chr] = args.codon_table
+    codon_tables = common.create_codon_table_map(
+        codon_table=args.codon_table,
+        chr_codon_table=args.chr_codon_table,
+        chroms=set(genome.keys())
+    )
+    index_dir.metadata.codon_tables = codon_tables
 
     # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(

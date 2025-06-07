@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Added `--codon-table` and `--chr-codon-table`. The former sets the codon table to use, and the latter overrides it for specific chromosomes.
+
+- Added the support for codon table for callVariant.
+
 ## [1.4.6] - 2025-05-21
 
 - Fixed biopython version #908

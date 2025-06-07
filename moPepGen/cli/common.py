@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from typing import Tuple, Set, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from pathlib import Path
 import errno
 import signal
@@ -18,6 +18,7 @@ from moPepGen.index import IndexDir
 
 
 if TYPE_CHECKING:
+    from typing import Tuple, Set, List, Dict
     from moPepGen.params import CleavageParams
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
@@ -248,8 +249,8 @@ def add_args_source(parser:argparse.ArgumentParser):
 def load_references(args:argparse.Namespace, load_genome:bool=True,
         load_canonical_peptides:bool=True, load_proteome:bool=False,
         invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False,
-        cleavage_params:CleavageParams=None
-        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotationOnDisk, Set[str]]:
+        load_codon_tables:bool=False, cleavage_params:CleavageParams=None
+        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotationOnDisk, Set[str], Dict[str,str]]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
     logger = get_logger()
@@ -278,6 +279,8 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             anno.check_protein_coding(proteome, True)
 
         logger.info('Reference indices loaded.')
+
+        codon_tables = index_dir.metadata.codon_tables
     else:
         if (check_protein_coding is True or load_canonical_peptides is True) and \
                 args.proteome_fasta is None:
@@ -312,10 +315,19 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             )
             logger.info('canonical peptide pool generated.')
 
+        if load_codon_tables:
+            codon_tables = create_codon_table_map(
+                codon_table=args.codon_table,
+                chr_codon_table=args.chr_codon_table,
+                chroms=set(genome.keys()) if load_genome else None
+            )
+        else:
+            codon_tables = None
+
     if not load_proteome:
         proteome = None
 
-    return genome, anno, proteome, canonical_peptides
+    return genome, anno, proteome, canonical_peptides,codon_tables
 
 def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
     """ Generate metadata """
@@ -455,3 +467,24 @@ def get_valid_codon_tables():
         for name in codon_table.names
         if name is not None
     }
+
+def create_codon_table_map(codon_table:str, chr_codon_table:List[str],
+        chroms:Set[str]) -> Dict[str,str]:
+    """ Create codon table map. """
+    codon_tables = {}
+    valid_codon_tables = get_valid_codon_tables()
+    for it in chr_codon_table:
+        k,v = it.split(':')
+        if chroms and k not in chroms:
+            get_logger().warning(
+                'In --chr-codon-table %s, chromosome %s not found in the genome. ',
+                it, k
+            )
+        assert v in valid_codon_tables
+        codon_tables[k] = v
+
+    for chr in chroms:
+        if chr not in codon_tables:
+            codon_tables[chr] = codon_table
+
+    return codon_tables
