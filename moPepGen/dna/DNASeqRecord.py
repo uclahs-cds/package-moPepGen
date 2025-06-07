@@ -100,7 +100,7 @@ class DNASeqRecord(SeqRecord):
             start += 3
 
     def iter_enzymatic_cleave_sites(self, rule:str, exception:str=None,
-            start:int=None, end:int=None) -> Iterable[int]:
+            start:int=None, end:int=None, table:str=None) -> Iterable[int]:
         """ Returns a generator of the enzymatic cleave sites of a given range.
         Default is the entire sequence.
 
@@ -117,7 +117,8 @@ class DNASeqRecord(SeqRecord):
             start = 0
         if end is None:
             end = len(self)
-        peptides = str(self.seq[start:end].translate())
+        assert table is not None
+        peptides = str(self.seq[start:end].translate(table=table))
         rule = EXPASY_RULES[rule]
         exception = EXPASY_RULES.get(exception, exception)
         exceptions = [] if exception is None else \

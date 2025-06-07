@@ -1,11 +1,12 @@
 """ This module defined classes in order to group certain parameters together. """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING
 
 from moPepGen import aa
 
 
 if TYPE_CHECKING:
+    from typing import Set, Dict
     from moPepGen import dna, gtf
 
 
@@ -82,9 +83,11 @@ class ReferenceData():
         - proteome (aa.AminoAcidSeqDict)
     """
     def __init__(self, genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
-            canonical_peptides:Set[str], proteome:aa.AminoAcidSeqDict=None):
+            canonical_peptides:Set[str], proteome:aa.AminoAcidSeqDict=None,
+            codon_tables:Dict[str,str]=None):
         """ constructor """
         self.genome = genome
         self.anno = anno
         self.canonical_peptides = canonical_peptides
         self.proteome = proteome  or aa.AminoAcidSeqDict()
+        self.codon_tables = codon_tables or {}

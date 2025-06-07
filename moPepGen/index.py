@@ -37,18 +37,20 @@ class CanonicalPoolMetadata:
 class IndexMetadata:
     """ Index metadata """
     def __init__(self, version:MetaVersion, canonical_pools:List[CanonicalPoolMetadata],
-            source:str):
+            source:str, codon_tables:dict[str,str]):
         """ constructor """
         self.version = version
         self.canonical_pools = canonical_pools
         self.source = source
+        self.codon_tables = codon_tables
 
     def jsonfy(self):
         """ jsonfy """
         return {
             'version': self.version.jsonfy(),
             'canonical_pools': [it.jsonfy() for it in self.canonical_pools],
-            'source': self.source
+            'source': self.source,
+            'codon_tables': self.codon_tables
         }
 
     def register_canonical_pool(self, cleavage_params:CleavageParams):
@@ -96,7 +98,8 @@ class IndexDir:
         self.metadata = IndexMetadata(
             version=MetaVersion(),
             canonical_pools=[],
-            source=None
+            source=None,
+            codon_tables={}
         )
 
     def load_metadata(self) -> IndexMetadata:
@@ -114,10 +117,12 @@ class IndexDir:
                 )
                 canonical_pools.append(pool)
             source = data['source']
+            codon_tables = data['codon_tables']
         return IndexMetadata(
             version=version,
             canonical_pools=canonical_pools,
-            source=source
+            source=source,
+            codon_tables=codon_tables
         )
 
     def validate_metadata(self) -> bool:

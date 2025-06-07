@@ -1913,7 +1913,7 @@ class ThreeFrameTVG():
                 for node in end_nodes:
                     queue.appendleft(node)
 
-    def translate(self) -> PeptideVariantGraph:
+    def translate(self, table:str='Standard') -> PeptideVariantGraph:
         r""" Converts a DNA transcript variant graph into a peptide variant
         graph. A stop * is added to the end of all branches.
 
@@ -1964,9 +1964,13 @@ class ThreeFrameTVG():
                 else:
                     orf = out_node.orf
 
-                out_node.check_stop_altering(self.seq.seq, orf[1])
+                out_node.check_stop_altering(
+                    tx_seq=self.seq.seq,
+                    cds_end=orf[1],
+                    table=table
+                )
 
-                new_pnode = out_node.translate()
+                new_pnode = out_node.translate(table=table)
 
                 if not self.is_circ_rna():
                     new_pnode.fix_selenocysteines(self.sect_variants, self.subgraphs)

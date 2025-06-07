@@ -102,6 +102,14 @@ def generate_index(args:argparse.Namespace):
     )
     logger.info('Genome annotation GTF saved to disk.')
 
+    # Organize codon table
+    codon_tables = common.create_codon_table_map(
+        codon_table=args.codon_table,
+        chr_codon_table=args.chr_codon_table,
+        chroms=set(genome.keys())
+    )
+    index_dir.metadata.codon_tables = codon_tables
+
     # canoincal peptide pool
     canonical_peptides = proteome.create_unique_peptide_pool(
         anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
@@ -122,5 +130,6 @@ def generate_index(args:argparse.Namespace):
 
     # save metadata
     index_dir.metadata.source = anno.source
+
     index_dir.save_metadata()
     logger.info('metadata saved.')

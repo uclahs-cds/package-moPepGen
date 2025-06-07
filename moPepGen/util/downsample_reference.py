@@ -27,8 +27,7 @@ from moPepGen import gtf, dna, aa
 from moPepGen.gtf import GtfIO
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
-from moPepGen.cli.common import add_args_cleavage, add_args_reference, \
-    print_help_if_missing_args, add_args_debug_level
+from moPepGen.cli import common
 
 
 # pylint: disable=W0212
@@ -66,11 +65,11 @@ def parse_args(subparsers:argparse._SubParsersAction):
         help='Create translate sequences for noncoding at any possible ORF.',
         default='true'
     )
-    add_args_reference(parser, index=False)
-    add_args_cleavage(parser)
-    add_args_debug_level(parser)
+    common.add_args_reference(parser, index=False)
+    common.add_args_cleavage(parser)
+    common.add_args_debug_level(parser)
     parser.set_defaults(func=main)
-    print_help_if_missing_args(parser)
+    common.print_help_if_missing_args(parser)
     return parser
 
 GeneTranscriptModel = Tuple[gtf.GeneAnnotationModel, Dict[str, \
@@ -105,7 +104,7 @@ def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
             gene.transcripts.append(transcript_id)
         transcripts[transcript_id].add_record(feature, record)
 
-def downsample_gtf(path:Path, gene_list=None, tx_list=None) -> gtf.GeneAnnotationModel:
+def downsample_gtf(path:Path, gene_list=None, tx_list=None) -> gtf.GenomicAnnotation:
     """ Downsample a GTF file """
     anno = gtf.GenomicAnnotation()
 
@@ -227,7 +226,8 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
     return genome, anno
 
 def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
-        genome:dna.DNASeqDict) -> Dict[str, aa.AminoAcidSeqRecord]:
+        genome:dna.DNASeqDict, codon_tables:Dict[str,str]
+        ) -> Dict[str, aa.AminoAcidSeqRecord]:
     """ Translate all possible ORF of a noncoding transcript """
     tx_model = anno.transcripts[tx_id]
     protein_id = tx_id.replace('ENST', 'ENSP')
@@ -235,11 +235,12 @@ def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
     chrom = tx_model.transcript.chrom
     tx_seq = tx_model.get_transcript_sequence(genome[chrom])
     start_positions = tx_seq.find_all_start_codons()
+    table = codon_tables[chrom]
 
     translates = {}
     for start in start_positions:
         end = start + math.floor((len(tx_seq) - start) / 3) * 3
-        aa_seq = tx_seq[start:end].translate(to_stop=True)
+        aa_seq = tx_seq[start:end].translate(to_stop=True, table=table)
         end = start + len(aa_seq) * 3
         orf = f"ORF{start}:{end}"
         alt_protein_id = f"{protein_id}-{orf}"
@@ -354,10 +355,17 @@ def main(args:argparse.Namespace):
     genome, anno = shift_reference(gene_seqs, anno)
     proteins = downsample_proteins(protein_fasta, anno)
 
+    chroms = {tx_model.transcript.chrom for tx_model in anno.transcripts.values()}
+    codon_tables = common.create_codon_table_map(
+        codon_table=args.codon_table,
+        chr_codon_table=args.chr_codon_table,
+        chroms=chroms
+    )
+
     if translate_noncoding:
         for tx_id in copy.copy(list(anno.transcripts.keys())):
             if tx_id not in proteins:
-                aa_seqs = get_noncoding_translate(tx_id, anno, genome)
+                aa_seqs = get_noncoding_translate(tx_id, anno, genome, codon_tables)
                 proteins.update(aa_seqs)
 
     with open(output_dir/'annotation.gtf', 'wt') as handle:

@@ -13,6 +13,8 @@ class TestGenerateIndex(TestCaseIntegration):
         args.genome_fasta = self.data_dir / 'genome.fasta'
         args.annotation_gtf = self.data_dir / 'annotation.gtf'
         args.proteome_fasta = self.data_dir / 'translate.fasta'
+        args.codon_table = 'Standard'
+        args.chr_codon_table = ['chrM:SGC1']
         args.gtf_symlink = False
         args.reference_source = None
         args.invalid_protein_as_noncoding = False
