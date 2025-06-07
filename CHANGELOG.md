@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added the support for codon table for `callNovelORF` and `callAltTranslation`.
 
+- Added codon table to `downsampleReference`.
+
 ## [1.4.6] - 2025-05-21
 
 - Fixed biopython version #908

@@ -461,6 +461,7 @@ def setup_loggers(level:str):
     return logger
 
 def get_valid_codon_tables():
+    """ Get the list of codon table supported by biopython """
     return {
         name
         for codon_table in CodonTable.unambiguous_dna_by_id.values()

@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
-from Bio.Data import CodonTable
 from moPepGen import dna, aa, params, get_logger
 from moPepGen.index import IndexDir
 from moPepGen.cli import common
