@@ -79,7 +79,8 @@ def call_alt_translation(args:argparse.Namespace) -> None:
     common.print_start_message(args)
 
     genome, anno, _, canonical_peptides, codon_tables = common.load_references(
-        args=args, load_proteome=True, cleavage_params=cleavage_params
+        args=args, load_proteome=True, cleavage_params=cleavage_params,
+        load_codon_tables=True
     )
 
     peptide_pool = aa.VariantPeptidePool()
@@ -88,11 +89,12 @@ def call_alt_translation(args:argparse.Namespace) -> None:
         tx_model = anno.transcripts[tx_id]
         if not tx_model.is_protein_coding:
             continue
-
+        codon_table = codon_tables[tx_model.transcript.chrom]
         try:
             peptides = call_alt_translation_main(
                 tx_id=tx_id, tx_model=tx_model,
                 genome=genome, anno=anno,
+                codon_table=codon_table,
                 cleavage_params=cleavage_params,
                 w2f_reassignment=args.w2f_reassignment,
                 sec_truncation=args.selenocysteine_termination
@@ -113,7 +115,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
     logger.info('Alternative translation peptide FASTA file written to disk.')
 
 def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
-        genome:DNASeqDict, anno:GenomicAnnotation,
+        genome:DNASeqDict, anno:GenomicAnnotation, codon_table:str,
         cleavage_params:params.CleavageParams,
         w2f_reassignment:bool, sec_truncation:bool):
     """ wrapper of graph operations to call peptides """
@@ -132,7 +134,7 @@ def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     )
     dgraph.gather_sect_variants(anno)
     dgraph.init_three_frames()
-    pgraph = dgraph.translate()
+    pgraph = dgraph.translate(table=codon_table)
     pgraph.create_cleavage_graph()
     peptide_anno = pgraph.call_variant_peptides(
         check_variants=True,

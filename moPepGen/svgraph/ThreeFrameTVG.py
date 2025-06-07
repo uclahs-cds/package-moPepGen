@@ -1964,7 +1964,11 @@ class ThreeFrameTVG():
                 else:
                     orf = out_node.orf
 
-                out_node.check_stop_altering(self.seq.seq, orf[1])
+                out_node.check_stop_altering(
+                    tx_seq=self.seq.seq,
+                    cds_end=orf[1],
+                    table=table
+                )
 
                 new_pnode = out_node.translate(table=table)
 

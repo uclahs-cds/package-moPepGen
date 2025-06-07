@@ -461,8 +461,9 @@ def call_variant_peptides_wrapper(tx_id:str,
     main_peptides = None
     denylist = call_canonical_peptides(
         tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
-        cleavage_params=cleavage_params, truncate_sec=truncate_sec,
-        w2f=w2f_reassignment
+        cleavage_params=cleavage_params,
+        codon_table=codon_table,
+        truncate_sec=truncate_sec, w2f=w2f_reassignment
     )
     dgraphs:TypeDGraphs = (None, {}, {})
     pgraphs:TypePGraphs = (None, {}, {})
@@ -685,7 +686,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
         tx_seq:dna.DNASeqRecordWithCoordinates,
         cleavage_params:params.CleavageParams,
-        truncate_sec:bool, w2f:bool):
+        codon_table:str, truncate_sec:bool, w2f:bool):
     """ Call canonical peptides """
     tx_model = ref.anno.transcripts[tx_id]
     dgraph = svgraph.ThreeFrameTVG(
@@ -698,7 +699,7 @@ def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
     )
     dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()
-    pgraph = dgraph.translate()
+    pgraph = dgraph.translate(table=codon_table)
     pgraph.create_cleavage_graph()
     peptide_map = pgraph.call_variant_peptides(
         check_variants=False, truncate_sec=truncate_sec, w2f=w2f,

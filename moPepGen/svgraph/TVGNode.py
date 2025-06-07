@@ -784,7 +784,7 @@ class TVGNode():
 
         return seq
 
-    def check_stop_altering(self, tx_seq:Seq, cds_end:int=None):
+    def check_stop_altering(self, tx_seq:Seq, cds_end:int=None, table:str='Standard'):
         """ Checks if any variant is stop altering """
         if not self.variants:
             return
@@ -805,8 +805,8 @@ class TVGNode():
         for i,v in enumerate(self.variants):
             if v.variant.type in {'Fusion', 'circRNA'}:
                 continue
-            ref_aa = self.get_ith_variant_ref_aa(i, tx_seq)
-            var_aa = self.get_ith_variant_var_aa(i)
+            ref_aa = self.get_ith_variant_ref_aa(i, tx_seq, table=table)
+            var_aa = self.get_ith_variant_var_aa(i, table=table)
             v.is_silent = v.variant.is_snv() and ref_aa == var_aa
             v.is_stop_altering = \
                 (v.variant.is_snv() and ref_aa == '*' and var_aa != '*') \
