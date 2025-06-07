@@ -1004,7 +1004,7 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         graph.mrna_end_nf = True
         graph.has_known_orf = True
         graph.seq.orf = FeatureLocation(start=0, end=15)
-        pgraph = graph.translate()
+        pgraph = graph.translate(table='Standard')
         x = [x for x in pgraph.root.out_nodes if x.seq.seq == 'MK'][0]
         node = list(list(x.out_nodes)[0].out_nodes)[0]
         self.assertEqual(str(node.seq.seq), 'K')
