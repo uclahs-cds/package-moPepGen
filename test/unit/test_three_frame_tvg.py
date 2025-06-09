@@ -1009,6 +1009,22 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         node = list(list(x.out_nodes)[0].out_nodes)[0]
         self.assertEqual(str(node.seq.seq), 'K')
 
+    def test_translate_mito(self):
+        """ Test that node is translated correctly for mitochondria genes. """
+        data = {
+            1: ['ATTAAA', ['RF0'], []],
+            2: ['AAAAAA', [1], []],
+            3: ['AAAAAA', [2], []]
+        }
+        graph, _ = create_three_frame_tvg(data, 'ATTAAAAAAAAAAAAAAA')
+        graph.mrna_end_nf = True
+        graph.has_known_orf = True
+        graph.seq.orf = FeatureLocation(start=0, end=15)
+        pgraph = graph.translate(table='SGC1')
+        x = [x for x in pgraph.root.out_nodes if x.seq.seq == 'IK'][0]
+        node = list(list(x.out_nodes)[0].out_nodes)[0]
+        self.assertEqual(str(node.seq.seq), 'K')
+
     def test_fusion_breakpoint_end_of_transcript(self):
         """ Test case for fusion that the donor breakpoint is the end of the
         transcript """
