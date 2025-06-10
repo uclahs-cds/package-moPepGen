@@ -77,7 +77,8 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         default=[],
         help='Chromosome specific codon table. Must be specified in the format of'
         ' "chrM:SGC1", where "chrM" is the chromosome name and "SGC1" is the codon'
-        f' table to use to translate genes on chrM. Supported codon tables: {valid_codon_tables}'
+        f' table to use to translate genes on chrM. Supported codon tables: {valid_codon_tables}.'
+        ' By default, "SGC1" is assigned to mitochondrial chromosomes.'
     )
     if proteome:
         group.add_argument(
@@ -316,9 +317,19 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             logger.info('canonical peptide pool generated.')
 
         if load_codon_tables:
+            chr_codon_table:List[str] = args.chr_codon_table
+            if not chr_codon_table:
+                if anno.source == 'GENCODE':
+                    chr_codon_table.append(
+                        'chrM:SGC1'
+                    )
+                elif anno.source == 'ENSEMBL':
+                    chr_codon_table.append(
+                        'MT:SGC1'
+                    )
             codon_tables = create_codon_table_map(
                 codon_table=args.codon_table,
-                chr_codon_table=args.chr_codon_table,
+                chr_codon_table=chr_codon_table,
                 chroms=set(genome.keys()) if load_genome else None
             )
         else:

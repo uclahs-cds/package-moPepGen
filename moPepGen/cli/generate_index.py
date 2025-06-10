@@ -6,6 +6,7 @@ command. It is recommended to run `generateIndex` before any analysis using
 moPepGen to avoid processing the reference files repeatedly and save massive
 time. """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import argparse
 from pathlib import Path
 import sys
@@ -13,6 +14,9 @@ from moPepGen import dna, aa, params, get_logger
 from moPepGen.index import IndexDir
 from moPepGen.cli import common
 
+
+if TYPE_CHECKING:
+    from typing import List
 
 # pylint: disable=W0212
 def add_subparser_generate_index(subparsers:argparse._SubParsersAction):
@@ -103,9 +107,19 @@ def generate_index(args:argparse.Namespace):
     logger.info('Genome annotation GTF saved to disk.')
 
     # Organize codon table
+    chr_codon_table:List[str] = args.chr_codon_table
+    if not chr_codon_table:
+        if anno.source == 'GENCODE':
+            chr_codon_table.append(
+                'chrM:SGC1'
+            )
+        elif anno.source == 'ENSEMBL':
+            chr_codon_table.append(
+                'MT:SGC1'
+            )
     codon_tables = common.create_codon_table_map(
         codon_table=args.codon_table,
-        chr_codon_table=args.chr_codon_table,
+        chr_codon_table=chr_codon_table,
         chroms=set(genome.keys())
     )
     index_dir.metadata.codon_tables = codon_tables
