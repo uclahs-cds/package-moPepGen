@@ -26,6 +26,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added `force_init_met` to `PeptideVariantGraph.call_variant_peptide` to control whether the initial amino acid should be forced to Methionine.
 
+- Updated the reference data loading function to directly return a `ReferenceData` object.
+
 ## [1.4.6] - 2025-05-21
 
 - Fixed biopython version #908

@@ -117,7 +117,7 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    genome, anno, proteome, canonical_peptides, codon_tables = common.load_references(
+    ref_data = common.load_references(
         args=args, load_proteome=True, cleavage_params=cleavage_params,
         load_codon_tables=True
     )
@@ -128,9 +128,9 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
     orf_pool = []
 
     i = 0
-    for tx_id in anno.transcripts:
-        tx_model = anno.transcripts[tx_id]
-        codon_table = codon_tables[tx_model.transcript.chrom]
+    for tx_id in ref_data.anno.transcripts:
+        tx_model = ref_data.anno.transcripts[tx_id]
+        codon_table = ref_data.codon_tables[tx_model.transcript.chrom]
         if tx_model.is_protein_coding:
             if not args.coding_novel_orf:
                 pass
@@ -141,15 +141,15 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
             if exclusion_biotypes and \
                     tx_model.transcript.biotype in exclusion_biotypes:
                 continue
-            if tx_id in proteome:
+            if tx_id in ref_data.proteome:
                 continue
             if tx_model.transcript_len() < args.min_tx_length:
                 continue
 
         try:
             peptides, orfs = call_noncoding_peptide_main(
-                tx_id=tx_id, tx_model=tx_model, genome=genome,
-                canonical_peptides=canonical_peptides,
+                tx_id=tx_id, tx_model=tx_model, genome=ref_data.genome,
+                canonical_peptides=ref_data.canonical_peptides,
                 codon_table=codon_table,
                 cleavage_params=cleavage_params,
                 orf_assignment=args.orf_assignment,
@@ -162,8 +162,11 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
             orf_pool.extend(orfs)
 
             for peptide in peptides:
-                novel_orf_peptide_pool.add_peptide(peptide, canonical_peptides,
-                    cleavage_params)
+                novel_orf_peptide_pool.add_peptide(
+                    peptide=peptide,
+                    canonical_peptides=ref_data.canonical_peptides,
+                    cleavage_params=cleavage_params
+                )
         except ReferenceSeqnameNotFoundError as e:
             if not ReferenceSeqnameNotFoundError.raised:
                 logger.warning('%s: Make sure your GTF and FASTA files match.', e.args[0])

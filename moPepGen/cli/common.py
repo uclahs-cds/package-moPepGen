@@ -12,7 +12,7 @@ import time
 import logging
 import pkg_resources
 from Bio.Data import CodonTable
-from moPepGen import aa, dna, gtf, seqvar, get_logger, constant
+from moPepGen import aa, dna, gtf, seqvar, get_logger, constant, params
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen.index import IndexDir
 from moPepGen.params import CodonTableInfo
@@ -20,7 +20,7 @@ from moPepGen.params import CodonTableInfo
 
 if TYPE_CHECKING:
     from typing import Tuple, Set, List, Dict
-    from moPepGen.params import CleavageParams
+    from moPepGen.params import CleavageParams, ReferenceData
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
     """ If no args are provided, print help and exit """
@@ -268,13 +268,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         load_canonical_peptides:bool=True, load_proteome:bool=False,
         invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False,
         load_codon_tables:bool=False, cleavage_params:CleavageParams=None
-        ) -> Tuple[
-            dna.DNASeqDict,
-            gtf.GenomicAnnotationOnDisk,
-            Set[str],
-            Dict[str,str],
-            Dict[str, CodonTableInfo]
-        ]:
+        ) -> ReferenceData:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
     logger = get_logger()
@@ -367,7 +361,13 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
     if not load_proteome:
         proteome = None
 
-    return genome, anno, proteome, canonical_peptides,codon_tables
+    return params.ReferenceData(
+        genome=genome,
+        anno=anno,
+        canonical_peptides=canonical_peptides,
+        proteome=proteome,
+        codon_tables=codon_tables
+    )
 
 def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
     """ Generate metadata """

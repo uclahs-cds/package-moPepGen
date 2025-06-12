@@ -249,17 +249,11 @@ class VariantPeptideCaller():
 
     def load_reference(self):
         """ load reference genome, annotation, and canonical peptides """
-        genome, anno, _, canonical_peptides, codon_tables = common.load_references(
-                args=self.args,
-                invalid_protein_as_noncoding=self.invalid_protein_as_noncoding,
-                cleavage_params=self.cleavage_params,
-                load_codon_tables=True
-            )
-        self.reference_data = params.ReferenceData(
-            genome=genome,
-            anno=anno,
-            canonical_peptides=canonical_peptides,
-            codon_tables=codon_tables
+        self.reference_data = common.load_references(
+            args=self.args,
+            invalid_protein_as_noncoding=self.invalid_protein_as_noncoding,
+            cleavage_params=self.cleavage_params,
+            load_codon_tables=True
         )
 
     def create_in_disk_variant_pool(self):

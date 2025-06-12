@@ -79,22 +79,22 @@ def call_alt_translation(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    genome, anno, _, canonical_peptides, codon_tables = common.load_references(
+    ref_data = common.load_references(
         args=args, load_proteome=True, cleavage_params=cleavage_params,
         load_codon_tables=True
     )
 
     peptide_pool = aa.VariantPeptidePool()
 
-    for tx_id in anno.transcripts:
-        tx_model = anno.transcripts[tx_id]
+    for tx_id in ref_data.anno.transcripts:
+        tx_model = ref_data.anno.transcripts[tx_id]
         if not tx_model.is_protein_coding:
             continue
-        codon_table = codon_tables[tx_model.transcript.chrom]
+        codon_table = ref_data.codon_tables[tx_model.transcript.chrom]
         try:
             peptides = call_alt_translation_main(
                 tx_id=tx_id, tx_model=tx_model,
-                genome=genome, anno=anno,
+                genome=ref_data.genome, anno=ref_data.anno,
                 codon_table=codon_table,
                 cleavage_params=cleavage_params,
                 w2f_reassignment=args.w2f_reassignment,
@@ -107,7 +107,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
         for peptide in peptides:
             peptide_pool.add_peptide(
                 peptide=peptide,
-                canonical_peptides=canonical_peptides,
+                canonical_peptides=ref_data.canonical_peptides,
                 cleavage_params=cleavage_params
             )
 
