@@ -355,10 +355,28 @@ def main(args:argparse.Namespace):
     genome, anno = shift_reference(gene_seqs, anno)
     proteins = downsample_proteins(protein_fasta, anno)
 
+     # Organize codon table
+    chr_codon_table:List[str] = args.chr_codon_table
+    if not chr_codon_table:
+        if anno.source == 'GENCODE':
+            chr_codon_table.append('chrM:SGC1')
+        elif anno.source == 'ENSEMBL':
+            chr_codon_table.append('MT:SGC1')
+
+    chr_start_codons:List[str] = args.chr_start_codons
+    if not chr_start_codons:
+        if anno.source == 'GENCODE':
+            chr_start_codons.append('chrM:ATG,ATA,ATT')
+        elif anno.source == 'ENSEMBL':
+            chr_start_codons.append('MT:ATG,ATA,ATT')
+
     chroms = {tx_model.transcript.chrom for tx_model in anno.transcripts.values()}
+
     codon_tables = common.create_codon_table_map(
         codon_table=args.codon_table,
-        chr_codon_table=args.chr_codon_table,
+        chr_codon_table=chr_codon_table,
+        start_codons=args.start_codons,
+        chr_start_codons=chr_start_codons,
         chroms=chroms
     )
 

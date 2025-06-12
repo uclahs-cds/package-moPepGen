@@ -5,7 +5,6 @@ import os
 import sys
 from typing import TYPE_CHECKING
 from pathlib import Path
-import dataclasses
 import errno
 import signal
 import functools

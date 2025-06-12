@@ -13,7 +13,6 @@ from moPepGen.cli import common
 
 
 if TYPE_CHECKING:
-    from Bio.Seq import Seq
     from moPepGen.gtf import TranscriptAnnotationModel
     from moPepGen.dna import DNASeqDict
     from moPepGen.params import CodonTableInfo

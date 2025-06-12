@@ -113,6 +113,7 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
                     pointer.is_protein_coding = False
             else:
                 pointer.is_protein_coding = tx_id in proteome
+            # pylint: disable=W0212
             if tx_id in self.transcripts._cache:
                 self.transcripts._cache[tx_id].is_protein_coding = pointer.is_protein_coding
 
