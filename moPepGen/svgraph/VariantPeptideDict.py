@@ -276,7 +276,8 @@ class MiscleavedNodes():
             check_variants:bool, additional_variants:List[VariantRecord],
             denylist:Set[str], is_start_codon:bool=False,
             circ_rna:CircRNAModel=None, truncate_sec:bool=False,
-            check_external_variants:bool=True, check_orf:bool=False
+            check_external_variants:bool=True, check_orf:bool=False,
+            force_init_met:bool=True
             ) -> Iterable[Tuple[Seq, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -397,7 +398,7 @@ class MiscleavedNodes():
             # Start codon is always translated to Methionine, but for some codon
             # tables, the direct translation of some start codons is not M.
             # Check SGC1 for example.
-            if is_start_codon and not seq.startswith('M'):
+            if force_init_met and is_start_codon and not seq.startswith('M'):
                 seq = Seq('M') + seq[1:]
             is_in_denylist = seq in denylist and (not is_start_codon or seq[1:] in denylist)
             if not seq in pool and is_in_denylist:
@@ -719,7 +720,8 @@ class VariantPeptideDict():
             check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord], denylist:Set[str],
             leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
-            circ_rna:CircRNAModel=None, backsplicing_only:bool=False):
+            circ_rna:CircRNAModel=None, backsplicing_only:bool=False,
+            force_init_met:bool=True):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
@@ -764,7 +766,8 @@ class VariantPeptideDict():
             circ_rna=circ_rna,
             truncate_sec=self.truncate_sec,
             check_external_variants=self.check_external_variants,
-            check_orf=self.check_orf
+            check_orf=self.check_orf,
+            force_init_met=force_init_met
         )
         for seq, metadata in it:
             if 'X' in seq:

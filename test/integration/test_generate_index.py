@@ -21,6 +21,8 @@ class TestGenerateIndex(TestCaseIntegration):
         args.proteome_fasta = self.data_dir / 'translate.fasta'
         args.codon_table = 'Standard'
         args.chr_codon_table = ['chrM:SGC1']
+        args.start_codons = ['ATG']
+        args.chr_start_codons = ['chrM:ATG,ATA,ATT']
         args.gtf_symlink = False
         args.reference_source = None
         args.invalid_protein_as_noncoding = False
@@ -90,8 +92,13 @@ class TestGenerateIndex(TestCaseIntegration):
 
         codon_tables = index_dir.metadata.codon_tables
         self.assertEqual(set(codon_tables.keys()), {'chr22', 'chrM'})
-        self.assertEqual(codon_tables['chr22'], 'Standard')
-        self.assertEqual(codon_tables['chrM'], 'SGC1')
+        self.assertEqual(codon_tables['chr22'].codon_table, 'Standard')
+        self.assertEqual(codon_tables['chrM'].codon_table, 'SGC1')
+        self.assertEqual(set(codon_tables['chr22'].start_codons), {'ATG'})
+        self.assertEqual(
+            set(codon_tables['chrM'].start_codons),
+            {'ATG', 'ATA', 'ATT'}
+        )
 
     def test_generate_index_case2(self):
         """ Test genreate index """

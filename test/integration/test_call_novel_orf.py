@@ -19,6 +19,8 @@ def create_base_args() -> argparse.Namespace:
     args.reference_source = None
     args.codon_table = 'Standard'
     args.chr_codon_table = ['chrM:SGC1']
+    args.start_codons = ['ATG']
+    args.chr_start_codons = ['chrM:ATG,ATA,ATT']
     args.output_path = None
     args.output_orf = None
     args.coding_novel_orf = False
@@ -40,7 +42,7 @@ def create_base_args() -> argparse.Namespace:
 class TestCallNovelORFPeptides(TestCaseIntegration):
     """ Test cases for moPepGen callNovelORF """
 
-    def test_call_noncoding_cli(self):
+    def test_call_novel_orf_cli(self):
         """ test callNovelORF cli """
         cmd = f"""
         {sys.executable} -m moPepGen.cli callNovelORF \\

@@ -800,7 +800,8 @@ class PeptideVariantGraph():
             check_orf:bool=False, keep_all_occurrence:bool=True, denylist:Set[str]=None,
             circ_rna:CircRNAModel=None, orf_assignment:str='max',
             backsplicing_only:bool=False, truncate_sec:bool=False, w2f:bool=False,
-            check_external_variants:bool=True, find_ass:bool=False
+            check_external_variants:bool=True, find_ass:bool=False,
+            force_init_met:bool=True
             ) -> Dict[Seq, List[AnnotatedPeptideLabel]]:
         """ Walk through the graph and find all noncanonical peptides.
 
@@ -851,7 +852,8 @@ class PeptideVariantGraph():
             check_orf=check_orf, queue=queue, pool=peptide_pool,
             circ_rna=circ_rna, orf_assignment=orf_assignment,
             backsplicing_only=backsplicing_only,
-            find_ass=find_ass
+            find_ass=find_ass,
+            force_init_met=force_init_met
         )
 
         if self.has_known_orf():
@@ -944,7 +946,8 @@ class PeptideVariantGraph():
                 denylist=self.denylist,
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
-                backsplicing_only=traversal.backsplicing_only
+                backsplicing_only=traversal.backsplicing_only,
+                force_init_met=traversal.force_init_met
             )
             self.remove_node(node_copy)
 
@@ -1028,7 +1031,8 @@ class PeptideVariantGraph():
                 denylist=self.denylist,
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
-                backsplicing_only=traversal.backsplicing_only
+                backsplicing_only=traversal.backsplicing_only,
+                force_init_met=traversal.force_init_met
             )
             cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
@@ -1228,7 +1232,8 @@ class PeptideVariantGraph():
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
                 circ_rna=traversal.circ_rna,
-                backsplicing_only=traversal.backsplicing_only
+                backsplicing_only=traversal.backsplicing_only,
+                force_init_met=traversal.force_init_met
             )
         for node in trash:
             self.remove_node(node)
@@ -1338,7 +1343,7 @@ class PVGTraversal():
             queue:Deque[PVGCursor]=None,
             stack:Dict[PVGNode, Dict[PVGNode, PVGCursor]]=None,
             orf_assignment:str='max', backsplicing_only:bool=False,
-            find_ass:bool=False):
+            find_ass:bool=False, force_init_met:bool=True):
         """ constructor """
         self.check_variants = check_variants
         self.check_orf = check_orf
@@ -1351,6 +1356,7 @@ class PVGTraversal():
         self.orf_assignment = orf_assignment
         self.backsplicing_only = backsplicing_only
         self.find_ass = find_ass
+        self.force_init_met = force_init_met
 
     def is_done(self) -> bool:
         """ Check if the traversal is done """

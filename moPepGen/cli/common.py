@@ -342,18 +342,19 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
 
         if load_codon_tables:
             chr_codon_table:List[str] = args.chr_codon_table
-            chr_start_codons:List[str] = args.chr_start_codons
             if not chr_codon_table:
                 if anno.source == 'GENCODE':
                     chr_codon_table.append('chrM:SGC1')
                 elif anno.source == 'ENSEMBL':
                     chr_codon_table.append('MT:SGC1')
+
+            chr_start_codons:List[str] = args.chr_start_codons
             if not chr_start_codons:
-                if not chr_start_codons:
-                    if anno.source == 'GENCODE':
-                        chr_start_codons.append('chrM:ATG,ATA,ATT')
-                    elif anno.source == 'ENSEMBL':
-                        chr_start_codons.append('MT:ATG,ATA,ATT')
+                if anno.source == 'GENCODE':
+                    chr_start_codons.append('chrM:ATG,ATA,ATT')
+                elif anno.source == 'ENSEMBL':
+                    chr_start_codons.append('MT:ATG,ATA,ATT')
+
             codon_tables = create_codon_table_map(
                 codon_table=args.codon_table,
                 chr_codon_table=chr_codon_table,
@@ -539,6 +540,7 @@ def create_codon_table_map(codon_table:str, chr_codon_table:List[str],
         codon_tables[k].start_codons = v.split(',')
 
     for chr in chroms:
-        codon_tables[chr].start_codons = start_codons
+        if not codon_tables[chr].start_codons:
+            codon_tables[chr].start_codons = start_codons
 
     return codon_tables

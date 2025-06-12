@@ -24,6 +24,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `GenomicAnnotationOnDisk` that when using on-the-fly indices, the `is_protein_coding` attributes of transcripts are not updated correctly.
 
+- Added `force_init_met` to `PeptideVariantGraph.call_variant_peptide` to control whether the initial amino acid should be forced to Methionine.
+
 ## [1.4.6] - 2025-05-21
 
 - Fixed biopython version #908

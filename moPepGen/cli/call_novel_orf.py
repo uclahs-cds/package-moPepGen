@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from typing import TYPE_CHECKING, Set, List, Tuple, IO, Dict
 from pathlib import Path
+from Bio.Seq import Seq
 from Bio.SeqIO import FastaIO
 from moPepGen import params, svgraph, aa, get_logger, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
@@ -245,13 +246,14 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         gene_id=tx_model.gene_id,
         tx_seq=tx_seq,
         exclude_canonical_orf=False,
-        codon_table=codon_table
+        codon_table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
     )
     return peptides, orfs
 
 def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str,
         tx_seq:DNASeqRecordWithCoordinates, exclude_canonical_orf:bool,
-        codon_table:str
+        codon_table:str, start_codons:List[str]
         ) -> List[aa.AminoAcidSeqRecord]:
     """ Get the full ORF sequences """
     seqs = []
@@ -260,6 +262,7 @@ def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str
         orf_start = orf[0]
         if exclude_canonical_orf and tx_seq.orf and tx_seq.orf.start == orf_start:
             continue
+        assert tx_seq.seq[orf_start:orf_start+3] in start_codons
         seq_start = int(orf_start / 3)
         reading_frame_index = orf_start % 3
         #seq_start = int((orf_start - node.orf[0]) / 3)
@@ -271,6 +274,8 @@ def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str
         seq_end = seq_start + seq_len
         seqname = f"{tx_id}|{gene_id}|{orf_id}|{orf_start}-{orf_end}"
         seq = translate_seq[seq_start:seq_end]
+        if seq.seq[0] != 'M':
+            seq.seq = Seq('M') + seq.seq[1:]
         seq.id = seqname
         seq.name = seqname
         seq.description = seqname
