@@ -1108,7 +1108,7 @@ class PeptideVariantGraph():
 
         start_indices = []
         if cursor.finding_start_site:
-            start_indices = target_node.seq.find_all_start_sites()
+            start_indices = target_node.start_codons
             if not finding_start_site:
                 start_indices = [x for x in start_indices if x <= real_fusion_position]
             for start_index in start_indices:

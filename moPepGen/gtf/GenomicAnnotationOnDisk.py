@@ -1,6 +1,6 @@
 """ Module for GenomicAnnotationOnDisk """
 from __future__ import annotations
-from typing import Dict, IO, Union, Tuple
+from typing import TYPE_CHECKING
 import io
 from pathlib import Path
 from moPepGen.version import MetaVersion
@@ -10,6 +10,10 @@ from moPepGen.gtf.GTFPointer import (
     GenePointer, TranscriptPointer
 )
 
+
+if TYPE_CHECKING:
+    from typing import Dict, IO, Union, Tuple
+    from moPepGen.aa import AminoAcidSeqDict
 
 class GenomicAnnotationOnDisk(GenomicAnnotation):
     """ An on disk version of GenomicAnnotation that uses minimal memory. """
@@ -92,6 +96,25 @@ class GenomicAnnotationOnDisk(GenomicAnnotation):
             self.source = source
         else:
             self.infer_source()
+
+    def check_protein_coding(self, proteome:AminoAcidSeqDict,
+            invalid_protein_as_noncoding:bool) -> None:
+        """ Checks if each transcript is protein coding """
+        for tx_id in self.transcripts:
+            pointer = self.transcripts.get_pointer(tx_id)
+            if invalid_protein_as_noncoding:
+                if tx_id in proteome:
+                    if '*' in proteome[tx_id].seq:
+                        proteome.pop(tx_id)
+                        pointer.is_protein_coding = False
+                    else:
+                        pointer.is_protein_coding = True
+                else:
+                    pointer.is_protein_coding = False
+            else:
+                pointer.is_protein_coding = tx_id in proteome
+            if tx_id in self.transcripts._cache:
+                self.transcripts._cache[tx_id].is_protein_coding = pointer.is_protein_coding
 
     def load_index(self, file:Union[str,Path], source:str):
         """ Load index from idx files """

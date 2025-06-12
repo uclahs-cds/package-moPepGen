@@ -25,6 +25,8 @@ def create_base_args() -> argparse.Namespace:
     args.reference_source = None
     args.codon_table = 'Standard'
     args.chr_codon_table = ['chrM:SGC1']
+    args.start_codons = ['ATG']
+    args.chr_start_codons = ['chrM:ATG,ATA,ATT']
     args.output_path = None
     args.graph_output_dir = None
     args.max_adjacent_as_mnv = 0

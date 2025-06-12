@@ -5,6 +5,7 @@ import os
 import sys
 from typing import TYPE_CHECKING
 from pathlib import Path
+import dataclasses
 import errno
 import signal
 import functools
@@ -15,6 +16,7 @@ from Bio.Data import CodonTable
 from moPepGen import aa, dna, gtf, seqvar, get_logger, constant
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen.index import IndexDir
+from moPepGen.params import CodonTableInfo
 
 
 if TYPE_CHECKING:
@@ -79,6 +81,22 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         ' "chrM:SGC1", where "chrM" is the chromosome name and "SGC1" is the codon'
         f' table to use to translate genes on chrM. Supported codon tables: {valid_codon_tables}.'
         ' By default, "SGC1" is assigned to mitochondrial chromosomes.'
+    )
+    group.add_argument(
+        '--start-codons',
+        type=str,
+        nargs='*',
+        default=['ATG'],
+        help='Default start codon(s) to use for novel ORF translation. Defaults to ["ATG"].'
+    )
+    group.add_argument(
+        '--chr-start-codons',
+        type=str,
+        nargs='*',
+        default=[],
+        help='Chromosome specific start codon(s). For example, "chrM:ATG,ATA,ATT".'
+        'By defualt, mitochondrial chromosome name is automatically inferred and'
+        'start codon "ATG", "ATA", "ATT", "ATC" and "GTG" are assigned to it.'
     )
     if proteome:
         group.add_argument(
@@ -251,7 +269,13 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         load_canonical_peptides:bool=True, load_proteome:bool=False,
         invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False,
         load_codon_tables:bool=False, cleavage_params:CleavageParams=None
-        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotationOnDisk, Set[str], Dict[str,str]]:
+        ) -> Tuple[
+            dna.DNASeqDict,
+            gtf.GenomicAnnotationOnDisk,
+            Set[str],
+            Dict[str,str],
+            Dict[str, CodonTableInfo]
+        ]:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
     logger = get_logger()
@@ -318,18 +342,23 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
 
         if load_codon_tables:
             chr_codon_table:List[str] = args.chr_codon_table
+            chr_start_codons:List[str] = args.chr_start_codons
             if not chr_codon_table:
                 if anno.source == 'GENCODE':
-                    chr_codon_table.append(
-                        'chrM:SGC1'
-                    )
+                    chr_codon_table.append('chrM:SGC1')
                 elif anno.source == 'ENSEMBL':
-                    chr_codon_table.append(
-                        'MT:SGC1'
-                    )
+                    chr_codon_table.append('MT:SGC1')
+            if not chr_start_codons:
+                if not chr_start_codons:
+                    if anno.source == 'GENCODE':
+                        chr_start_codons.append('chrM:ATG,ATA,ATT')
+                    elif anno.source == 'ENSEMBL':
+                        chr_start_codons.append('MT:ATG,ATA,ATT')
             codon_tables = create_codon_table_map(
                 codon_table=args.codon_table,
                 chr_codon_table=chr_codon_table,
+                start_codons=args.start_codons,
+                chr_start_codons=chr_start_codons,
                 chroms=set(genome.keys()) if load_genome else None
             )
         else:
@@ -481,7 +510,8 @@ def get_valid_codon_tables():
     }
 
 def create_codon_table_map(codon_table:str, chr_codon_table:List[str],
-        chroms:Set[str]) -> Dict[str,str]:
+        start_codons:List[str], chr_start_codons:List[str], chroms:Set[str]
+        ) -> Dict[str,CodonTableInfo]:
     """ Create codon table map. """
     codon_tables = {}
     valid_codon_tables = get_valid_codon_tables()
@@ -493,10 +523,22 @@ def create_codon_table_map(codon_table:str, chr_codon_table:List[str],
                 it, k
             )
         assert v in valid_codon_tables
-        codon_tables[k] = v
+        codon_tables[k] = CodonTableInfo(codon_table=v)
 
     for chr in chroms:
         if chr not in codon_tables:
-            codon_tables[chr] = codon_table
+            codon_tables[chr] = CodonTableInfo(codon_table=codon_table)
+
+    for it in chr_start_codons:
+        k,v = it.split(':')
+        if chroms and k not in chroms:
+            get_logger().warning(
+                'In --chr-start-codon %s, chromosome %s not found in the genome. ',
+                it, k
+            )
+        codon_tables[k].start_codons = v.split(',')
+
+    for chr in chroms:
+        codon_tables[chr].start_codons = start_codons
 
     return codon_tables

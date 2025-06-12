@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from Bio.Seq import Seq
     from moPepGen.gtf import TranscriptAnnotationModel, GenomicAnnotation
     from moPepGen.dna import DNASeqDict
+    from moPepGen.params import CodonTableInfo
 
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
@@ -115,7 +116,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
     logger.info('Alternative translation peptide FASTA file written to disk.')
 
 def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
-        genome:DNASeqDict, anno:GenomicAnnotation, codon_table:str,
+        genome:DNASeqDict, anno:GenomicAnnotation, codon_table:CodonTableInfo,
         cleavage_params:params.CleavageParams,
         w2f_reassignment:bool, sec_truncation:bool):
     """ wrapper of graph operations to call peptides """
@@ -134,7 +135,10 @@ def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
     )
     dgraph.gather_sect_variants(anno)
     dgraph.init_three_frames()
-    pgraph = dgraph.translate(table=codon_table)
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
     pgraph.create_cleavage_graph()
     peptide_anno = pgraph.call_variant_peptides(
         check_variants=True,

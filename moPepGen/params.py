@@ -1,12 +1,12 @@
 """ This module defined classes in order to group certain parameters together. """
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
+import dataclasses
 from moPepGen import aa
 
 
 if TYPE_CHECKING:
-    from typing import Set, Dict
+    from typing import Set, Dict, List
     from moPepGen import dna, gtf
 
 
@@ -91,3 +91,9 @@ class ReferenceData():
         self.canonical_peptides = canonical_peptides
         self.proteome = proteome  or aa.AminoAcidSeqDict()
         self.codon_tables = codon_tables or {}
+
+@dataclasses.dataclass
+class CodonTableInfo:
+    """ Codon table info """
+    codon_table: str
+    start_codons: List[str] = dataclasses.field(default_factory=list)

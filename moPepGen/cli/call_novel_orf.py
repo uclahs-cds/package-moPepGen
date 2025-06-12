@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from Bio.Seq import Seq
     from moPepGen.gtf import TranscriptAnnotationModel
     from moPepGen.dna import DNASeqDict
+    from moPepGen.params import CodonTableInfo
 
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
@@ -184,7 +185,7 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
 
 
 def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
-        genome:DNASeqDict, canonical_peptides:Set[str], codon_table:str,
+        genome:DNASeqDict, canonical_peptides:Set[str], codon_table:CodonTableInfo,
         cleavage_params:params.CleavageParams, orf_assignment:str,
         w2f_reassignment:bool
         ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
@@ -208,7 +209,10 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         coordinate_feature_id=tx_id
     )
     dgraph.init_three_frames()
-    pgraph = dgraph.translate(table=codon_table)
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
     pgraph.create_cleavage_graph()
     peptide_anno = pgraph.call_variant_peptides(
         check_variants=False,

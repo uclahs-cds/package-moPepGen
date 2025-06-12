@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from moPepGen.svgraph import ThreeFrameCVG, ThreeFrameTVG, PeptideVariantGraph
     from moPepGen.svgraph.VariantPeptideDict import AnnotatedPeptideLabel
     from moPepGen.gtf import GeneAnnotationModel
+    from moPepGen.params import CodonTableInfo
 
 
 INPUT_FILE_FORMATS = ['.gvf']
@@ -433,7 +434,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         reference_data:params.ReferenceData,
-        codon_table:str,
+        codon_table:CodonTableInfo,
         pool:seqvar.VariantRecordPool,
         cleavage_params:params.CleavageParams,
         noncanonical_transcripts:bool,
@@ -686,7 +687,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
         tx_seq:dna.DNASeqRecordWithCoordinates,
         cleavage_params:params.CleavageParams,
-        codon_table:str, truncate_sec:bool, w2f:bool):
+        codon_table:CodonTableInfo, truncate_sec:bool, w2f:bool):
     """ Call canonical peptides """
     tx_model = ref.anno.transcripts[tx_id]
     dgraph = svgraph.ThreeFrameTVG(
@@ -699,7 +700,10 @@ def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
     )
     dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()
-    pgraph = dgraph.translate(table=codon_table)
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
     pgraph.create_cleavage_graph()
     peptide_map = pgraph.call_variant_peptides(
         check_variants=False, truncate_sec=truncate_sec, w2f=w2f,
@@ -716,7 +720,7 @@ if TYPE_CHECKING:
 
 def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         variant_pool:seqvar.VariantRecordPoolOnDisk,
-        ref:params.ReferenceData, codon_table:str,
+        ref:params.ReferenceData, codon_table:CodonTableInfo,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
@@ -745,7 +749,10 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
-    pgraph = dgraph.translate(table=codon_table)
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
 
     pgraph.create_cleavage_graph()
 
@@ -778,7 +785,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
 
 def call_peptide_fusion(variant:seqvar.VariantRecord,
         variant_pool:seqvar.VariantRecordPoolOnDisk,
-        ref:params.ReferenceData, codon_table:str,
+        ref:params.ReferenceData, codon_table:CodonTableInfo,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
@@ -824,7 +831,10 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
-    pgraph = dgraph.translate(table=codon_table)
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
     pgraph.create_cleavage_graph()
 
     if tx_model.is_protein_coding:
@@ -854,7 +864,8 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
 
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
-        gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates], codon_table:str,
+        gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
+        codon_table:CodonTableInfo,
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
         backsplicing_only:bool, w2f_reassignment:bool, denylist:Set[str],
         save_graph:bool
@@ -901,7 +912,10 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph.extend_loop()
     cgraph.truncate_three_frames()
     cgraph.fit_into_codons()
-    pgraph = cgraph.translate(table=codon_table)
+    pgraph = cgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
     pgraph.create_cleavage_graph()
     peptide_map = pgraph.call_variant_peptides(
         denylist=denylist, circ_rna=record, backsplicing_only=backsplicing_only,

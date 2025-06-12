@@ -679,12 +679,14 @@ class TVGNode():
 
         self.seq = new_seq
 
-    def translate(self, table:str='Standard') -> PVGNode:
+    def translate(self, table:str='Standard', start_codons:List[str]=None) -> PVGNode:
         """ translate to a PVGNode """
+        if not start_codons:
+            start_codons = ['ATG']
         if not self.out_edges:
-            seq = self.seq[:len(self.seq) - len(self.seq) % 3].translate(table=table)
+            peptide = self.seq[:len(self.seq) - len(self.seq) % 3].translate(table=table)
         else:
-            seq = self.seq.translate(table=table)
+            peptide = self.seq.translate(table=table)
 
         locations = []
         for loc in self.seq.locations:
@@ -712,17 +714,24 @@ class TVGNode():
             )
             locations.append(MatchedLocation(query=query, ref=ref))
 
-        seq.__class__ = aa.AminoAcidSeqRecordWithCoordinates
-        seq.locations = locations
-        seq.orf = self.orf
+        peptide.__class__ = aa.AminoAcidSeqRecordWithCoordinates
+        peptide.locations = locations
+        peptide.orf = self.orf
+
+        cur_start_codons:List[int] = []
+        for i in range(len(peptide)):
+            codon = self.seq.seq[i * 3: (i + 1) * 3]
+            if codon in start_codons:
+                cur_start_codons.append(i)
 
         # translate the dna variant location to peptide coordinates.
         variants = [v.to_protein_coordinates() for v in self.variants]
 
         return PVGNode(
-            seq=seq,
+            seq=peptide,
             variants=variants,
             orf=[None, None],
+            start_codons=cur_start_codons,
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
             level=self.level

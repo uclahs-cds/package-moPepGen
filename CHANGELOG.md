@@ -12,11 +12,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Added `--codon-table` and `--chr-codon-table`. The former sets the codon table to use, and the latter overrides it for specific chromosomes.
 
+- Added `--star-codons` and `--chr-star-codons` to specify start codons to use.
+
 - Added the support for codon table for `callVariant`.
 
 - Added the support for codon table for `callNovelORF` and `callAltTranslation`.
 
 - Added codon table to `downsampleReference`.
+
+- Fixed graph algorithms to use specified codon table and start codon
+
+- Fixed `GenomicAnnotationOnDisk` that when using on-the-fly indices, the `is_protein_coding` attributes of transcripts are not updated correctly.
 
 ## [1.4.6] - 2025-05-21
 
