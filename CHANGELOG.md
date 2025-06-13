@@ -28,6 +28,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Updated the reference data loading function to directly return a `ReferenceData` object.
 
+- Updated `bruteForce` to specify codon table and start codons.
+
 ## [1.4.6] - 2025-05-21
 
 - Fixed biopython version #908

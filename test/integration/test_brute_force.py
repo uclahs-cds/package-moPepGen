@@ -39,6 +39,10 @@ class TestBruteForce(TestCaseIntegration):
         args = create_base_args()
         args.input_gvf = gvf
         args.reference_dir = reference
+        args.codon_table = 'Standard'
+        args.chr_codon_table = ['chrM:SGC1']
+        args.start_codons = ['ATG']
+        args.chr_start_codons = ['chrM:ATG,ATA,ATT']
         args.max_adjacent_as_mnv = 0
         args.w2f_reassignment = False
         args.selenocysteine_termination = False

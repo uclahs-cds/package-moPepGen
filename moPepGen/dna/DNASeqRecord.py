@@ -139,20 +139,10 @@ class DNASeqRecord(SeqRecord):
         return list(self.iter_enzymatic_cleave_sites(rule=rule,
             exception=exception, start=start, end=end))
 
-    def find_all_start_codons(self) -> List[int]:
+    def find_all_start_codons(self, start_codons:List[str]) -> List[int]:
         """ Find all start codon positions """
-        start_positions = []
-        start_codon = 'ATG'
-        while True:
-            if len(start_positions) == 0:
-                i = 0
-            else:
-                i = start_positions[-1] + 1
-            j = self.seq[i:].find(start_codon)
-            if j == -1:
-                break
-            start_positions.append(i + j)
-        return start_positions
+        pattern = '|'.join(start_codons)
+        return [m.start() for m in re.finditer(pattern, str(self.seq))]
 
     def find_last_cleave_position(self, end:int, rule:str, exception:str=None,
             miscleavage:int=0) -> int:
