@@ -1052,7 +1052,7 @@ class BruteForceVariantPeptideCaller():
 
             aa_seq = seq[cds_start:cur_cds_end].translate(table=codon_table, to_stop=False)
             if aa_seq[0] != 'M':
-                aa_seq = Seq('M') + aa_seq
+                aa_seq = Seq('M') + aa_seq[1:]
             if not is_circ_rna:
                 for sec_start in sec_positions:
                     if (sec_start - cds_start) % 3 == 0:
