@@ -105,6 +105,10 @@ def call_variant(gvf_files:Path, ref_dir:Path, output_fasta:Path, graph_output_d
     args.annotation_gtf = ref_dir/'annotation.gtf'
     args.proteome_fasta = ref_dir/'proteome.fasta'
     args.reference_source = None
+    args.codon_table = 'Standard'
+    args.chr_codon_table = []
+    args.start_codons = ['ATG']
+    args.chr_start_codons = []
     args.max_adjacent_as_mnv = 2
     args.backsplicing_only = False
     args.coding_novel_orf = False
@@ -137,6 +141,10 @@ def call_brute_force(gvf_files:Path, ref_dir:Path, output_path:str, force:bool,
     args = argparse.Namespace()
     args.input_gvf = gvf_files
     args.reference_dir = ref_dir
+    args.codon_table = 'Standard'
+    args.chr_codon_table = []
+    args.start_codons = ['ATG']
+    args.chr_start_codons = []
     args.force = force
     args.variant_ids = variant_ids
     args.max_adjacent_as_mnv = 2

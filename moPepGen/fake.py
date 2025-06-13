@@ -45,11 +45,11 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
             if frames_shifted != 0:
                 break
     tx_start = tx_model.transcript.location.start
-    tx_end = tx_model.transcript.location.end
+    tx_end = tx_model.transcript.location.end - 1
     if tx_model.transcript.strand == -1:
         tx_start, tx_end = tx_end, tx_start
     tx_start = anno.coordinate_genomic_to_gene(tx_start, gene_id)
-    tx_end = anno.coordinate_genomic_to_gene(tx_end - 1, gene_id) + 1
+    tx_end = anno.coordinate_genomic_to_gene(tx_end, gene_id) + 1
 
     while True:
         if frames_shifted >= 0:
