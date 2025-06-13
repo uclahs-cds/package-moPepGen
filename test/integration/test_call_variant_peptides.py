@@ -1384,3 +1384,15 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case89(self):
+        """
+        Issue that variant bubble finding error starting from a out-bridge node.
+        """
+        test_dir = self.data_dir/'fuzz/89'
+        gvf = [
+            test_dir/'fake_variants.gvf',
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
