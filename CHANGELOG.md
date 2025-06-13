@@ -30,6 +30,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Updated `bruteForce` to specify codon table and start codons.
 
+- Updated `fuzzTest` to pass codon tabel and start codons to `callVariant` and `bruteForce`
+
 ## [1.4.6] - 2025-05-21
 
 - Fixed biopython version #908

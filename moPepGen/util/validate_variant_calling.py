@@ -59,21 +59,6 @@ def parse_args(subparsers:argparse._SubParsersAction):
     common.print_help_if_missing_args(parser)
     return parser
 
-def call_downsample_reference(genome:Path, anno:Path, protein:Path, tx_id:List[str],
-        output_dir:Path):
-    """ downsample reference """
-    args = argparse.Namespace()
-    args.genome_fasta = genome
-    args.annotation_gtf = anno
-    args.proteome_fasta = protein
-    args.tx_list = tx_id
-    args.gene_list = None
-    args.output_dir = output_dir
-    args.miscleavage = 2
-    args.min_mw = 500.
-    args.translate_noncoding = 'false'
-    downsample_reference.main(args)
-
 def extract_gvf(tx_id:List[str], gvf_files:List[Path], output_dir:Path) -> List[Path]:
     """ extract GVF """
     i = 0
@@ -199,13 +184,21 @@ def main(args:argparse.Namespace):
     output_dir.mkdir(exist_ok=True)
     ref_dir = output_dir/'index'
     ref_dir.mkdir(exist_ok=True)
-    call_downsample_reference(
-        genome=args.genome_fasta,
-        anno=args.annotation_gtf,
-        protein=args.proteome_fasta,
-        tx_id=args.tx_id,
-        output_dir=ref_dir
-    )
+    downsample_reference.main(args=argparse.Namespace(
+        genome_fasta = args.genome_fasta,
+        annotation_gtf = args.annotation_gtf,
+        proteome_fasta = args.proteome_fasta,
+        codon_table = args.codon_table,
+        chr_codon_table = args.chr_codon_table,
+        start_codons = args.start_codons,
+        chr_start_codons = args.chr_start_codons,
+        tx_list = args.tx_id,
+        gene_list = None,
+        output_dir = ref_dir,
+        miscleavage = 2,
+        min_mw = 500.,
+        translate_noncoding = 'false'
+    ))
 
     logger.info('Reference files downsampling completed.')
 

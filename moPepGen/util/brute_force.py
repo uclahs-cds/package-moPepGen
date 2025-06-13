@@ -155,10 +155,10 @@ class ORFTracker:
     def get_next_in_frame_orf(self, orf:int):
         """ Get the next in frame ORF. """
         i = self.orf_to_index[orf]
-        reading_frame = self.orf_starts[i] % 3
+        reading_frame = orf % 3
         for j in self.reading_frames[reading_frame]:
             if j > i:
-                return j
+                return self.orf_starts[j]
         return -1
 
     def get_last_in_frame_orf(self, orf:int, lhs:int):
@@ -169,7 +169,7 @@ class ORFTracker:
             if j <= i:
                 return -1
             if self.orf_starts[j] <= lhs:
-                return j
+                return self.orf_starts[j]
         return -1
 
 class BruteForceVariantPeptideCaller():
@@ -1030,7 +1030,7 @@ class BruteForceVariantPeptideCaller():
         if not is_coding or is_circ_rna:
             alt_seq = dna.DNASeqRecord(seq)
             orf_tracker =ORFTracker(
-                orf_starts= alt_seq.find_all_start_codons(start_codons)
+                orf_starts=alt_seq.find_all_start_codons(start_codons)
             )
             if is_fusion:
                 fusion_var = None
