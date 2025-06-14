@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from typing import TYPE_CHECKING, Set, List, Tuple, IO, Dict
 from pathlib import Path
+from Bio.Seq import Seq
 from Bio.SeqIO import FastaIO
 from moPepGen import params, svgraph, aa, get_logger, VARIANT_PEPTIDE_SOURCE_DELIMITER
 from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
@@ -12,9 +13,9 @@ from moPepGen.cli import common
 
 
 if TYPE_CHECKING:
-    from Bio.Seq import Seq
     from moPepGen.gtf import TranscriptAnnotationModel
     from moPepGen.dna import DNASeqDict
+    from moPepGen.params import CodonTableInfo
 
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
@@ -116,8 +117,9 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    genome, anno, proteome, canonical_peptides = common.load_references(
-        args=args, load_proteome=True, cleavage_params=cleavage_params
+    ref_data = common.load_references(
+        args=args, load_proteome=True, cleavage_params=cleavage_params,
+        load_codon_tables=True
     )
 
     inclusion_biotypes, exclusion_biotypes = common.load_inclusion_exclusion_biotypes(args)
@@ -126,8 +128,9 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
     orf_pool = []
 
     i = 0
-    for tx_id in anno.transcripts:
-        tx_model = anno.transcripts[tx_id]
+    for tx_id in ref_data.anno.transcripts:
+        tx_model = ref_data.anno.transcripts[tx_id]
+        codon_table = ref_data.codon_tables[tx_model.transcript.chrom]
         if tx_model.is_protein_coding:
             if not args.coding_novel_orf:
                 pass
@@ -138,15 +141,16 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
             if exclusion_biotypes and \
                     tx_model.transcript.biotype in exclusion_biotypes:
                 continue
-            if tx_id in proteome:
+            if tx_id in ref_data.proteome:
                 continue
             if tx_model.transcript_len() < args.min_tx_length:
                 continue
 
         try:
             peptides, orfs = call_noncoding_peptide_main(
-                tx_id=tx_id, tx_model=tx_model, genome=genome,
-                canonical_peptides=canonical_peptides,
+                tx_id=tx_id, tx_model=tx_model, genome=ref_data.genome,
+                canonical_peptides=ref_data.canonical_peptides,
+                codon_table=codon_table,
                 cleavage_params=cleavage_params,
                 orf_assignment=args.orf_assignment,
                 w2f_reassignment=args.w2f_reassignment
@@ -158,8 +162,11 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
             orf_pool.extend(orfs)
 
             for peptide in peptides:
-                novel_orf_peptide_pool.add_peptide(peptide, canonical_peptides,
-                    cleavage_params)
+                novel_orf_peptide_pool.add_peptide(
+                    peptide=peptide,
+                    canonical_peptides=ref_data.canonical_peptides,
+                    cleavage_params=cleavage_params
+                )
         except ReferenceSeqnameNotFoundError as e:
             if not ReferenceSeqnameNotFoundError.raised:
                 logger.warning('%s: Make sure your GTF and FASTA files match.', e.args[0])
@@ -181,7 +188,7 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
 
 
 def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
-        genome:DNASeqDict, canonical_peptides:Set[str],
+        genome:DNASeqDict, canonical_peptides:Set[str], codon_table:CodonTableInfo,
         cleavage_params:params.CleavageParams, orf_assignment:str,
         w2f_reassignment:bool
         ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
@@ -205,7 +212,10 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         coordinate_feature_id=tx_id
     )
     dgraph.init_three_frames()
-    pgraph = dgraph.translate()
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
     pgraph.create_cleavage_graph()
     peptide_anno = pgraph.call_variant_peptides(
         check_variants=False,
@@ -237,20 +247,24 @@ def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
         tx_id=tx_id,
         gene_id=tx_model.gene_id,
         tx_seq=tx_seq,
-        exclude_canonical_orf=False
+        exclude_canonical_orf=False,
+        codon_table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
     )
     return peptides, orfs
 
 def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str,
-        tx_seq:DNASeqRecordWithCoordinates, exclude_canonical_orf:bool
+        tx_seq:DNASeqRecordWithCoordinates, exclude_canonical_orf:bool,
+        codon_table:str, start_codons:List[str]
         ) -> List[aa.AminoAcidSeqRecord]:
     """ Get the full ORF sequences """
     seqs = []
-    translate_seqs = [tx_seq[i:].translate() for i in range(3)]
+    translate_seqs = [tx_seq[i:].translate(table=codon_table) for i in range(3)]
     for orf, orf_id in pgraph.orf_id_map.items():
         orf_start = orf[0]
         if exclude_canonical_orf and tx_seq.orf and tx_seq.orf.start == orf_start:
             continue
+        assert tx_seq.seq[orf_start:orf_start+3] in start_codons
         seq_start = int(orf_start / 3)
         reading_frame_index = orf_start % 3
         #seq_start = int((orf_start - node.orf[0]) / 3)
@@ -262,6 +276,8 @@ def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str
         seq_end = seq_start + seq_len
         seqname = f"{tx_id}|{gene_id}|{orf_id}|{orf_start}-{orf_end}"
         seq = translate_seq[seq_start:seq_end]
+        if seq.seq[0] != 'M':
+            seq.seq = Seq('M') + seq.seq[1:]
         seq.id = seqname
         seq.name = seqname
         seq.description = seqname

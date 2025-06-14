@@ -18,6 +18,10 @@ def create_base_args() -> argparse.Namespace:
     args.annotation_gtf = None
     args.proteome_fasta = None
     args.reference_source = None
+    args.codon_table = 'Standard'
+    args.chr_codon_table = ['chrM:SGC1']
+    args.start_codons = ['ATG']
+    args.chr_start_codons = ['chrM:ATG,ATA,ATT']
     args.output_path = None
     args.w2f_reassignment = True
     args.selenocysteine_termination = True

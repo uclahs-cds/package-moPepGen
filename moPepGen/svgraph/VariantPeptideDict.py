@@ -157,7 +157,8 @@ class MiscleavedNodeSeries():
         return not(
             len(self) <= param.max_length
             or (
-                self.nodes[0].seq.seq.startswith('M')
+                self.nodes[0].start_codons
+                and self.nodes[0].start_codons[0] == 0
                 and len(self) <= param.max_length + 1
             )
         )
@@ -275,7 +276,8 @@ class MiscleavedNodes():
             check_variants:bool, additional_variants:List[VariantRecord],
             denylist:Set[str], is_start_codon:bool=False,
             circ_rna:CircRNAModel=None, truncate_sec:bool=False,
-            check_external_variants:bool=True, check_orf:bool=False
+            check_external_variants:bool=True, check_orf:bool=False,
+            force_init_met:bool=True
             ) -> Iterable[Tuple[Seq, VariantPeptideMetadata]]:
         """ join miscleaved peptides and update the peptide pool.
 
@@ -286,7 +288,12 @@ class MiscleavedNodes():
             - `additional_variants` (List[VariantRecord]): Additional variants,
               e.g., start gain, cleavage gain, stop lost.
             - `denylist` (Set[str]): Peptide sequences that should be excluded.
-            - `is_start_codon` (bool): Whether the node contains start codon.
+            - `is_start_codon` (bool): Whether the first amino acid is translated
+              from a start codon.
+            - `circ_rna` (CircRNAModel): The circRNA model from which the peptide
+              is derived. `None` is exepcted when the peptide is from a linear
+              transcript.
+            - `truncate_sec` (bool): Whether to call selenocysteine truncation.
         """
         for series in self.data:
             queue = series.nodes
@@ -384,11 +391,15 @@ class MiscleavedNodes():
 
             if not selenocysteines \
                     and not self.seq_has_valid_size(size=size) \
-                    and not (seqs_to_join[0].startswith('M')
-                                and self.seq_has_valid_size(size=size-1)):
+                    and not (is_start_codon and self.seq_has_valid_size(size=size-1)):
                 continue
 
             seq = Seq(''.join(seqs_to_join))
+            # Start codon is always translated to Methionine, but for some codon
+            # tables, the direct translation of some start codons is not M.
+            # Check SGC1 for example.
+            if force_init_met and is_start_codon and not seq.startswith('M'):
+                seq = Seq('M') + seq[1:]
             is_in_denylist = seq in denylist and (not is_start_codon or seq[1:] in denylist)
             if not seq in pool and is_in_denylist:
                 continue
@@ -419,6 +430,7 @@ class MiscleavedNodes():
         if variants or not check_variants:
             is_valid = self.is_valid_seq(seq, pool, denylist)
 
+            # The first amino acid must be Methionine at this point.
             is_valid_start =  is_start_codon and seq.startswith('M') and\
                 self.is_valid_seq(seq[1:], pool, denylist)
 
@@ -708,7 +720,8 @@ class VariantPeptideDict():
             check_variants:bool, is_start_codon:bool,
             additional_variants:List[VariantRecord], denylist:Set[str],
             leading_node:PVGNode=None, subgraphs:SubgraphTree=None,
-            circ_rna:CircRNAModel=None, backsplicing_only:bool=False):
+            circ_rna:CircRNAModel=None, backsplicing_only:bool=False,
+            force_init_met:bool=True):
         """ Add amino acid sequences starting from the given node, with number
         of miscleavages no more than a given number. The sequences being added
         are the sequence of the current node, and plus n of downstream nodes,
@@ -720,7 +733,7 @@ class VariantPeptideDict():
         - `cleavage_params` (CleavageParams): Cleavage related parameters.
         - `check_variants` (bool): Whether to check for variants.
         - `is_start_codon` (bool): Whether the peptide starts with the start
-            codon (M).
+            codon.
         - `additional_variants` (List[VariantRecord]): Additional variants,
             e.g., start gain, cleavage gain, stop lost.
         - `denylist` (Set[str]): Peptide sequences that should be excluded.
@@ -753,7 +766,8 @@ class VariantPeptideDict():
             circ_rna=circ_rna,
             truncate_sec=self.truncate_sec,
             check_external_variants=self.check_external_variants,
-            check_orf=self.check_orf
+            check_orf=self.check_orf,
+            force_init_met=force_init_met
         )
         for seq, metadata in it:
             if 'X' in seq:

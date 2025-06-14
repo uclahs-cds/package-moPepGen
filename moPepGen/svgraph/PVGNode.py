@@ -44,6 +44,7 @@ class PVGNode():
             reading_frame_index:int, subgraph_id:str,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             in_nodes:Set[PVGNode]=None, out_nodes:Set[PVGNode]=None,
+            start_codons:List[int]=None,
             selenocysteines:List[seqvar.VariantRecordWithCoordinate]=None,
             cleavage:bool=False, truncated:bool=False, orf:List[int]=None,
             was_bridge:bool=False, pre_cleaved:bool=False, level:int=0,
@@ -57,6 +58,7 @@ class PVGNode():
         self.variants = variants or []
         self.in_nodes = in_nodes or set()
         self.out_nodes = out_nodes or set()
+        self.start_codons = start_codons or []
         self.selenocysteines = selenocysteines or []
         self.cleavage = cleavage
         self.truncated = truncated
@@ -75,17 +77,19 @@ class PVGNode():
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
+        # Basic features
         start, stop, _ = index.indices(len(self.seq))
         location = FeatureLocation(start=start, end=stop)
         seq = self.seq.__getitem__(index)
-        variants = []
-
-        for variant in self.variants:
-            if variant.location.overlaps(location):
-                variants.append(variant.shift(-start))
 
         npop_collapsed = self.npop_collapsed and start == 0
         cpop_collapsed = self.cpop_collapsed and stop == len(seq) or stop == -1
+
+        # Slice variants
+        variants = []
+        for variant in self.variants:
+            if variant.location.overlaps(location):
+                variants.append(variant.shift(-start))
 
         if start == 0:
             upstream_indel_map = {k:copy.copy(v) for k,v in self.upstream_indel_map.items()}
@@ -103,10 +107,17 @@ class PVGNode():
             if filtered_variants:
                 collapsed_variants[upstream] = filtered_variants
 
+        # Slice slenocysteines
         secs = []
         for sec in self.selenocysteines:
             if start <= sec.location.start < stop:
                 secs.append(sec.shift(-start))
+
+        # Slice start codons
+        start_codons = []
+        for sc in self.start_codons:
+            if start <= sc < stop:
+                start_codons.append(sc)
 
         if self.left_cleavage_pattern_end and start < self.left_cleavage_pattern_end:
             left_cleavage_pattern_end = self.left_cleavage_pattern_end - start
@@ -123,6 +134,7 @@ class PVGNode():
             variants=variants,
             cleavage=self.cleavage,
             orf=self.orf,
+            start_codons=start_codons,
             selenocysteines=secs,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
@@ -542,7 +554,8 @@ class PVGNode():
         return sorted(self.out_nodes, key=cmp_to_key(sort_func))[0]
 
     def split_selenocysteines(self, index:int):
-        """ Split selenocysteines """
+        """ Split selenocysteines into two sets. The right set is shifted by a
+        given index. """
         left_secs:List[seqvar.VariantRecordWithCoordinate] = []
         right_secs:List[seqvar.VariantRecordWithCoordinate] = []
         for sec in self.selenocysteines:
@@ -551,6 +564,18 @@ class PVGNode():
             else:
                 right_secs.append(sec.shift(-index))
         return left_secs, right_secs
+
+    def split_start_codons(self, index:int):
+        """ Split start codons into two sets. The right set is shifted by a
+        given index. """
+        left_start_codons = []
+        right_start_codons = []
+        for sc in self.start_codons:
+            if sc < index:
+                left_start_codons.append(sc)
+            else:
+                right_start_codons.append(sc - index)
+        return left_start_codons, right_start_codons
 
     def split_node(self, index:int, cleavage:bool=False, pre_cleave:bool=False,
             pop_collapse:bool=False, cleavage_range:Tuple[int,int]=None
@@ -630,6 +655,10 @@ class PVGNode():
         self.selenocysteines = left_secs
         new_node.selenocysteines = right_secs
 
+        left_start_codons, right_start_codons = self.split_start_codons(index)
+        self.start_codons = left_start_codons
+        new_node.start_codons = right_start_codons
+
         if cleavage:
             new_node.cleavage = True
             if cleavage_range:
@@ -688,6 +717,10 @@ class PVGNode():
         self.selenocysteines = left_secs
         right_node.selenocysteines = right_secs
 
+        left_start_codons, right_start_codons = self.split_start_codons(i)
+        self.start_codons = left_start_codons
+        right_node.start_codons = right_start_codons
+
         return right_node
 
     def truncate_left(self, i:int) -> PVGNode:
@@ -725,6 +758,10 @@ class PVGNode():
         left_node.selenocysteines = left_secs
         self.selenocysteines = right_secs
 
+        left_start_codons, right_start_codons = self.split_start_codons(i)
+        left_node.start_codons = left_start_codons
+        self.start_codons = right_start_codons
+
         return left_node
 
     def append_left(self, other:PVGNode) -> None:
@@ -743,6 +780,10 @@ class PVGNode():
             sec = sec.shift(len(other.seq.seq))
             secs.append(sec)
         self.selenocysteines = secs
+        start_codons = copy.copy(other.start_codons)
+        for start_codon in self.start_codons:
+            start_codons.append(start_codon + len(other.seq.seq))
+        self.start_codons = start_codons
         self.left_cleavage_pattern_end = other.left_cleavage_pattern_end
 
     def append_right(self, other:PVGNode) -> None:
@@ -762,14 +803,17 @@ class PVGNode():
             sec = sec.shift(len(self.seq.seq))
             self.selenocysteines.append(sec)
 
+        for start_codon in other.start_codons:
+            self.start_codons.append(start_codon + len(self.seq.seq))
+
         self.seq = new_seq
         self.cpop_collapsed = other.cpop_collapsed
         self.truncated = other.truncated
         self.right_cleavage_pattern_start = other.right_cleavage_pattern_start
 
     def find_start_index(self) -> int:
-        """ Find the start amino acid position """
-        return self.seq.seq.find('M')
+        """ Return the first start codon index int the sequence. """
+        return self.start_codons[0] if self.start_codons else -1
 
     def copy(self, in_nodes:bool=True, out_nodes:bool=True) -> PVGNode:
         """ Create a copy of the node """
@@ -783,6 +827,7 @@ class PVGNode():
             cleavage=self.cleavage,
             truncated=self.truncated,
             orf=self.orf,
+            start_codons=copy.copy(self.start_codons),
             selenocysteines=copy.copy(self.selenocysteines),
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
@@ -807,7 +852,7 @@ class PVGNode():
 
     def get_orf_start(self, i:int=0) -> int:
         """ get the ORF start position at the reference transcript sequence
-        given M is found at the query postion i.
+        given start codon is at the query postion i.
         """
         k = self.reading_frame_index
         if self.seq.locations:

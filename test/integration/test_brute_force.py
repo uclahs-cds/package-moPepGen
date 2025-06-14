@@ -39,6 +39,10 @@ class TestBruteForce(TestCaseIntegration):
         args = create_base_args()
         args.input_gvf = gvf
         args.reference_dir = reference
+        args.codon_table = 'Standard'
+        args.chr_codon_table = ['chrM:SGC1']
+        args.start_codons = ['ATG']
+        args.chr_start_codons = ['chrM:ATG,ATA,ATT']
         args.max_adjacent_as_mnv = 0
         args.w2f_reassignment = False
         args.selenocysteine_termination = False
@@ -411,4 +415,13 @@ class TestBruteForce(TestCaseIntegration):
         ]
         expected = self.data_dir/'fuzz/39/brute_force.txt'
         reference = self.data_dir/'fuzz/39'
+        self.default_test_case(gvf, reference, expected)
+
+    def test_brute_force_fuzz_case89(self):
+        """ Fuzz test 89 """
+        gvf = [
+            self.data_dir/'fuzz/89/fake_variants.gvf'
+        ]
+        expected = self.data_dir/'fuzz/89/brute_force.txt'
+        reference = self.data_dir/'fuzz/89'
         self.default_test_case(gvf, reference, expected)

@@ -6,10 +6,10 @@ from moPepGen import fake
 
 class TestCaseFake(unittest.TestCase):
     """ Test cases for fake """
-    def assert_no_stop_codon_besides_sec(self, tx_seq):
+    def assert_no_stop_codon_besides_sec(self, tx_seq, table):
         """ Asserts that the given transcript sequence contains no stop codon
         other than selenocysteines. """
-        aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
+        aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate(table=table)
         sec_sites = {int(sec.start - tx_seq.orf.start)/3
             for sec in tx_seq.selenocysteine}
         k = 0
@@ -50,10 +50,10 @@ class TestCaseFake(unittest.TestCase):
             if tx_model.is_protein_coding:
                 chrom = tx_model.transcript.chrom
                 tx_seq = tx_model.get_transcript_sequence(genome[chrom])
-                aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate()
+                aa_seq = tx_seq.seq[tx_seq.orf.start:tx_seq.orf.end].translate(table='Standard')
                 if not tx_model.is_cds_start_nf():
                     self.assertTrue(aa_seq.startswith('M'))
-                self.assert_no_stop_codon_besides_sec(tx_seq)
+                self.assert_no_stop_codon_besides_sec(tx_seq, table='Standard')
                 for sec in tx_seq.selenocysteine:
                     self.assertEqual((sec.start - tx_seq.orf.start) % 3, 0)
                     self.assertEqual(tx_seq.seq[sec.start:sec.end], 'TGA')
