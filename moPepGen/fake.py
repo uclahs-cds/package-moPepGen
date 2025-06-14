@@ -567,7 +567,7 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
                     if mrna_end_nf:
                         cds_start = offset
                     else:
-                        cds_start = offset + random.randint(1, exon_len - 1)
+                        cds_start = offset + random.randint(3, exon_len - 1)
             else:
                 cds_start = offset
 

@@ -34,6 +34,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that during TVG alignment, node merged from multiple frameshifts which together go back to the origianl frame, was not recognized as `was_brige` in a bubble
 
+- Fixed `fuzzTest` that cds start should be at least 3 nucleotide away from the cds end.
+
 ## [1.4.6] - 2025-05-21
 
 - Fixed biopython version #908
