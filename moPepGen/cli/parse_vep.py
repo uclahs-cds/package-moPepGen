@@ -91,7 +91,9 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    genome, anno, *_ = common.load_references(args, load_canonical_peptides=False)
+    ref_data = common.load_references(args, load_canonical_peptides=False)
+    genome = ref_data.genome
+    anno = ref_data.anno
 
     vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
 

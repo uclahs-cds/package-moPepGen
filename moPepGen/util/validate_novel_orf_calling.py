@@ -11,7 +11,7 @@ from moPepGen.cli import call_novel_orf_peptide, common
 from moPepGen.gtf import GtfIO
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
 from moPepGen.util.common import load_references
-from moPepGen.util.validate_variant_calling import call_downsample_reference
+from moPepGen.util import downsample_reference
 from moPepGen.util import brute_force_novel_orf
 
 
@@ -261,13 +261,21 @@ def main(args:argparse.Namespace):
         noncoding_fasta = output_dir/'call_noncoding.fasta'
         brute_force_txt = output_dir/'brute_force_noncoding.fasta'
 
-        call_downsample_reference(
-            genome=args.genome_fasta,
-            anno=args.annotation_gtf,
-            protein=args.proteome_fasta,
-            tx_id=tx_id,
-            output_dir=ref_dir
-        )
+        downsample_reference.main(args=argparse.Namespace(
+            genome_fasta = args.genome_fasta,
+            annotation_gtf = args.annotation_gtf,
+            proteome_fasta = args.proteome_fasta,
+            codon_table = args.codon_table,
+            chr_codon_table = args.chr_codon_table,
+            star_codons = args.start_codons,
+            chr_start_codons = args.chr_start_codons,
+            tx_list = tx_id,
+            gene_list = None,
+            output_dir = output_dir,
+            miscleavage = 2,
+            min_mw = 500.,
+            translate_noncoding = 'false'
+        ))
 
         record.tx_len = get_transcript_length(tx_id, ref_dir)
 

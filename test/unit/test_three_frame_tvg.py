@@ -1004,8 +1004,24 @@ class TestCaseThreeFrameTVG(unittest.TestCase):
         graph.mrna_end_nf = True
         graph.has_known_orf = True
         graph.seq.orf = FeatureLocation(start=0, end=15)
-        pgraph = graph.translate()
+        pgraph = graph.translate(table='Standard')
         x = [x for x in pgraph.root.out_nodes if x.seq.seq == 'MK'][0]
+        node = list(list(x.out_nodes)[0].out_nodes)[0]
+        self.assertEqual(str(node.seq.seq), 'K')
+
+    def test_translate_mito(self):
+        """ Test that node is translated correctly for mitochondria genes. """
+        data = {
+            1: ['ATTAAA', ['RF0'], []],
+            2: ['AAAAAA', [1], []],
+            3: ['AAAAAA', [2], []]
+        }
+        graph, _ = create_three_frame_tvg(data, 'ATTAAAAAAAAAAAAAAA')
+        graph.mrna_end_nf = True
+        graph.has_known_orf = True
+        graph.seq.orf = FeatureLocation(start=0, end=15)
+        pgraph = graph.translate(table='SGC1')
+        x = [x for x in pgraph.root.out_nodes if x.seq.seq == 'IK'][0]
         node = list(list(x.out_nodes)[0].out_nodes)[0]
         self.assertEqual(str(node.seq.seq), 'K')
 
