@@ -576,12 +576,12 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
                     if cds_start_nf:
                         cds_end = offset + exon_len
                     else:
-                        cds_end = offset + exon_len - random.randint(5, exon_len - 1)
+                        cds_end = offset + exon_len - random.randint(5, exon_len - 5)
                 else:
                     if mrna_end_nf:
                         cds_end = offset + exon_len
                     else:
-                        cds_end = offset + exon_len - random.randint(1, exon_len - 5)
+                        cds_end = offset + exon_len - random.randint(5, exon_len - 5)
             else:
                 cds_end = offset + exon_len
 
@@ -902,7 +902,7 @@ def fake_genome_and_annotation(n_genes:int) -> Tuple[DNASeqDict, GenomicAnnotati
     params = {
         'min_intron_size': 20,
         'max_intron_size': 500,
-        'min_exon_size': 10,
+        'min_exon_size': 15,
         'max_exon_size': 300,
         'min_intergenic_size': 10,
         'max_intergenic_size': 50,
