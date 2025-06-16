@@ -335,10 +335,6 @@ class AminoAcidSeqRecord(SeqRecord):
         return list(self.iter_enzymatic_cleave_sites_with_range(rule=rule,
             exception=exception))
 
-    def find_all_start_sites(self) -> List[int]:
-        """ Find all start positions """
-        return [x.start() for x in re.finditer('M', str(self.seq))]
-
     def find_all_cleave_and_stop_sites(self, rule:str, exception:str=None,
             exception_sites:List[int]=None) -> List[int]:
         """ Find all enzymatic lceave sites and stop sites """

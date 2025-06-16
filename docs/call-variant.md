@@ -9,6 +9,10 @@
       show_root_heading: false
       show_source: false
 
+{% include 'partials/_args_reference.md' %}
+
+{% include 'partials/_args_codon_table.md' %}
+
 ## Usage
 
 ```

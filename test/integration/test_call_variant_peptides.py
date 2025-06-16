@@ -23,6 +23,10 @@ def create_base_args() -> argparse.Namespace:
     args.annotation_gtf = None
     args.proteome_fasta = None
     args.reference_source = None
+    args.codon_table = 'Standard'
+    args.chr_codon_table = ['chrM:SGC1']
+    args.start_codons = ['ATG']
+    args.chr_start_codons = ['chrM:ATG,ATA,ATT']
     args.output_path = None
     args.graph_output_dir = None
     args.max_adjacent_as_mnv = 0
@@ -181,6 +185,21 @@ class TestCallVariantPeptides(TestCaseIntegration):
 
         args.skip_failed = True
         call_variant_peptide_module.call_variant_peptide(args)
+
+    def test_call_variant_peptide_mtsnv(self):
+        """ Test that mtSNV is handled and the corrent codon table is used. """
+        args = create_base_args()
+        args.input_path = [self.data_dir/'vep/mtsnv.gvf']
+        args.output_path = self.work_dir/'mtsnv.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.reference_source = 'GENCODE'
+        cli.call_variant_peptide(args)
+        expected_file = self.data_dir/'vep/mtsnv.fasta'
+        expected = {x.seq for x in SeqIO.parse(expected_file, 'fasta')}
+        received = {x.seq for x in SeqIO.parse(args.output_path, 'fasta')}
+        self.assertEqual(expected, received)
 
     def test_call_variant_peptide_case2(self):
         """ Test variant peptide calling with fusion """
@@ -1361,6 +1380,18 @@ class TestCallVariantPeptides(TestCaseIntegration):
         gvf = [
             test_dir/'gSNP.gvf',
             test_dir/'AltSplice.gvf'
+        ]
+        expected = test_dir/'brute_force.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected)
+
+    def test_call_variant_peptide_case89(self):
+        """
+        Issue that variant bubble finding error starting from a out-bridge node.
+        """
+        test_dir = self.data_dir/'fuzz/89'
+        gvf = [
+            test_dir/'fake_variants.gvf',
         ]
         expected = test_dir/'brute_force.txt'
         reference = test_dir

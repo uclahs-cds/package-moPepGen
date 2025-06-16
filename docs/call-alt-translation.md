@@ -11,6 +11,10 @@
 
 {% include 'partials/_caution_on_reference_version.md' %}
 
+{% include 'partials/_args_reference.md' %}
+
+{% include 'partials/_args_codon_table.md' %}
+
 ## Usage
 
 ```

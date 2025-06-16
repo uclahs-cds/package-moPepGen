@@ -1,11 +1,12 @@
 """ This module defined classes in order to group certain parameters together. """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Set
-
+from typing import TYPE_CHECKING
+import dataclasses
 from moPepGen import aa
 
 
 if TYPE_CHECKING:
+    from typing import Set, Dict, List
     from moPepGen import dna, gtf
 
 
@@ -72,19 +73,25 @@ class CleavageParams():
             })
         return data
 
-class ReferenceData():
+@dataclasses.dataclass
+class ReferenceData:
     """ Reference related parameters
 
     ## Attributes
         - genome (dna.DNASeqDict)
-        - anno (gtf.GeneAnnotationModel)
+        - anno (GenomicAnnotation)
         - canonical_peptides (Set[str])
         - proteome (aa.AminoAcidSeqDict)
+        - codon_tables (Dict[str, CodonTableInfo])
     """
-    def __init__(self, genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
-            canonical_peptides:Set[str], proteome:aa.AminoAcidSeqDict=None):
-        """ constructor """
-        self.genome = genome
-        self.anno = anno
-        self.canonical_peptides = canonical_peptides
-        self.proteome = proteome  or aa.AminoAcidSeqDict()
+    genome: dna.DNASeqDict
+    anno: gtf.GenomicAnnotation
+    canonical_peptides: Set[str] = dataclasses.field(default_factory=set)
+    proteome: aa.AminoAcidSeqDict = dataclasses.field(default_factory=aa.AminoAcidSeqDict)
+    codon_tables: Dict[str, CodonTableInfo] = dataclasses.field(default_factory=dict)
+
+@dataclasses.dataclass
+class CodonTableInfo:
+    """ Codon table info """
+    codon_table: str
+    start_codons: List[str] = dataclasses.field(default_factory=list)

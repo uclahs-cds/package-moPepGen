@@ -51,7 +51,7 @@ class TestDNASeqRecord(unittest.TestCase):
     def test_find_all_start_codons(self):
         """ find all start codons """
         seq = dna.DNASeqRecord('CCCCCCCCATGCCCCCCCCATGCCCCCCCATGCCCCCCCC')
-        starts = seq.find_all_start_codons()
+        starts = seq.find_all_start_codons(start_codons=['ATG'])
         self.assertEqual(len(starts), 3)
         self.assertTrue(all(seq.seq[i:i+3] == 'ATG' for i in starts))
 

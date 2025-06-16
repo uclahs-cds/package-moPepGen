@@ -612,6 +612,10 @@ class FuzzTestCase():
         args.annotation_gtf = self.config.path_annotation_gtf
         args.proteome_fasta = self.config.path_proteome_fasta
         args.reference_source = None
+        args.codon_table = 'Standard'
+        args.chr_codon_table = []
+        args.start_codons = ['ATG']
+        args.chr_start_codons = []
         args.output_path = self.record.call_variant_fasta
         if self.config.save_graph:
             args.graph_output_dir = self.record.work_dir/'graph'
@@ -649,6 +653,10 @@ class FuzzTestCase():
         if self.record.circ_gvf_file.exists():
             args.input_gvf.append(self.record.circ_gvf_file)
         args.reference_dir = self.config.ref_dir
+        args.codon_table = 'Standard'
+        args.chr_codon_table = []
+        args.start_codons = ['ATG']
+        args.chr_start_codons = []
         args.force = True
         args.variant_ids = []
         args.max_adjacent_as_mnv = 2
