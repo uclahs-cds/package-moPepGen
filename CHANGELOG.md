@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.5.0] - 2025-06-15
+
 - Added `--codon-table` and `--chr-codon-table`. The former sets the codon table to use, and the latter overrides it for specific chromosomes.
 
 - Added `--star-codons` and `--chr-star-codons` to specify start codons to use.
