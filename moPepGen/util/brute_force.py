@@ -14,7 +14,6 @@ from moPepGen.cli import common as cli_common
 from moPepGen.seqvar.VariantRecord import VariantRecord
 from moPepGen.seqvar.VariantRecordPool import VariantRecordPool
 from moPepGen.seqvar.VariantRecordWithCoordinate import VariantRecordWithCoordinate
-from moPepGen.util.common import load_references
 
 
 # pylint: disable=W0212

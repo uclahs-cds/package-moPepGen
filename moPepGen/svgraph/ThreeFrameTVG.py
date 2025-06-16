@@ -1915,8 +1915,6 @@ class ThreeFrameTVG():
                 queue.appendleft(cur)
                 continue
 
-            cur_seq = str(cur.seq.seq)
-
             try:
                 self.align_variants(cur)
             except err.FailedToFindVariantBubbleError:
