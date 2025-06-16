@@ -36,4 +36,4 @@ See [here](https://uclahs-cds.github.io/package-moPepGen/index.html)
 
 ## Citation
 
-1. Zhu, C. et al. moPepGen: Rapid and Comprehensive Identification of Non-canonical Peptides. 2024.03.28.587261 Preprint at https://doi.org/10.1101/2024.03.28.587261 (2024).
+1. Zhu, C., Liu, L.Y., Ha, A. et al. Identification of non-canonical peptides with moPepGen. *Nat Biotechnol* (2025). https://doi.org/10.1038/s41587-025-02701-0
