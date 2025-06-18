@@ -2,6 +2,8 @@
 useful when working with multiplexed proteomic experiments such as TMT """
 from __future__ import annotations
 import argparse
+from pathlib import Path
+from Bio import SeqIO
 from moPepGen import get_logger
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
 from moPepGen.cli import common
@@ -31,6 +33,13 @@ def add_subparser_merge_fasta(subparsers:argparse._SubParsersAction):
         action='store_true',
         help='Remove duplicate FASTA header entries after merging.'
     )
+    parser.add_argument(
+        '--denylist',
+        type=Path,
+        nargs='*',
+        default=[],
+        help='Denylist of peptide sequences.'
+    )
     common.add_args_debug_level(parser)
     parser.set_defaults(func=merge_fasta)
     common.print_help_if_missing_args(parser)
@@ -49,14 +58,23 @@ def merge_fasta(args:argparse.Namespace):
         output_file, OUTPUT_FILE_FORMATS, check_writable=True
     )
 
+    denylist = set()
+    for path in args.denylist:
+        for rec in SeqIO.parse(path, 'fasta'):
+            denylist.add(rec.seq)
+
     pool = None
 
     for file in input_files:
         with open(file, 'rt') as handle:
             if pool is None:
                 pool = VariantPeptidePool.load(handle)
+                if denylist:
+                    pool = pool.filter_denylist(denylist)
             else:
                 second_pool = VariantPeptidePool.load(handle)
+                if denylist:
+                    second_pool = second_pool.filter_denylist(denylist)
                 for peptide in second_pool.peptides:
                     pool.add_peptide(
                         peptide=peptide,

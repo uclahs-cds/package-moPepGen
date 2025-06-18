@@ -145,3 +145,10 @@ class VariantPeptidePool():
                 peptide.description = label
                 filtered_pool.peptides.add(peptide)
         return filtered_pool
+
+    def filter_denylist(self, denylist:Set[str]):
+        filtered_pool = VariantPeptidePool()
+        for peptide in self.peptides:
+            if peptide.seq not in denylist:
+                filtered_pool.peptides.add(peptide)
+        return filtered_pool
