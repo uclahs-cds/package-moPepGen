@@ -147,6 +147,7 @@ class VariantPeptidePool():
         return filtered_pool
 
     def filter_denylist(self, denylist:Set[str]):
+        """ Filter variant peptides that overlay with a denylist """
         filtered_pool = VariantPeptidePool()
         for peptide in self.peptides:
             if peptide.seq not in denylist:
