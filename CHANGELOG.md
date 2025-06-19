@@ -38,6 +38,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `fuzzTest` that cds start should be at least 3 nucleotide away from the cds end.
 
+- Added `--denylist` to `mergeFasta`
+
 ## [1.4.6] - 2025-05-21
 
 - Fixed biopython version #908
