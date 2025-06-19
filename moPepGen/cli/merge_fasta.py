@@ -38,7 +38,7 @@ def add_subparser_merge_fasta(subparsers:argparse._SubParsersAction):
         type=Path,
         nargs='*',
         default=[],
-        help='Denylist of peptide sequences.'
+        help=f"Denylist of peptide sequences. Valid formats: {INPUT_FILE_FORMATS}"
     )
     common.add_args_debug_level(parser)
     parser.set_defaults(func=merge_fasta)
@@ -57,6 +57,11 @@ def merge_fasta(args:argparse.Namespace):
     common.validate_file_format(
         output_file, OUTPUT_FILE_FORMATS, check_writable=True
     )
+
+    for path in args.denylist:
+        common.validate_file_format(
+            path, INPUT_FILE_FORMATS, check_readable=True
+        )
 
     denylist = set()
     for path in args.denylist:
