@@ -36,6 +36,7 @@ def create_base_args() -> argparse.Namespace:
     args.w2f_reassignment = False
     args.max_variants_per_node = [7]
     args.additional_variants_per_misc = [2]
+    args.in_bubble_cap_step_down = 0
     args.min_nodes_to_collapse = 30
     args.naa_to_collapse = 5
     args.inclusion_biotypes = None
