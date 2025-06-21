@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Chenghao Zhu">
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>Quick Start - moPepGen</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Quick Start";
+    var mkdocs_page_input_path = "quick-start.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> moPepGen</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../basics/">moPepGen Basics</a>
+                    </li>
+                </ul>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">Quick Start</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#downloading-reference-files">Downloading Reference Files</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#gencode">GENCODE</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ensembl">Ensembl</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#build-reference-index">Build Reference Index</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#parse-vep-output">Parse VEP output</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#call-variant-peptides">Call Variant Peptides</a>
+    </li>
+    </ul>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../vignette/">Vignette</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../file-format/">File Format</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Commands</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../generate-index/">generateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../update-index/">updateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-vep/">parseVEP</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-reditools/">parseREDItools</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-star-fusion/">parseSTARFusion</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-fusion-catcher/">parseFusionCatcher</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-arriba/">parseArriba</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-rmats/">parseRMATS</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-circexplorer/">parseCIRCexplorer</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-variant/">callVariant</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-novel-orf/">callNovelORF</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-alt-translation/">callAltTranslation</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../filter-fasta/">filterFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../split-fasta/">splitFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../merge-fasta/">mergeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../encode-fasta/">encodeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../decoy-fasta/">decoyFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../summarize-fasta/">summarizeFasta</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">moPepGen</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Quick Start</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/uclahs-cds/package-moPepGen/edit/master/docs/quick-start.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h2 id="quick-start">Quick Start</h2>
+<h3 id="downloading-reference-files">Downloading Reference Files</h3>
+<p>moPepGen requires a coherent set of reference genome, proteome and Gene transfer format (GTF) files to run. The key is to ensure that the genome annotation version is consistent between the GTF and proteome FASTA and that the reference genome build version is the same between all three.</p>
+<p>To ensure consistency, we recommend downloading the reference genome FASTA, reference proteome FASTA and genome annotation GTF from the same source. At this time reference files from GENCODE and Ensembl are supported. We do not foresee support for UniProt proteomes in the near future since there is no fail-safe method to map all IDs to formats found in commonly used genome annotation GTFs.</p>
+<h4 id="gencode">GENCODE</h4>
+<p>At the time of writing, the <a href="https://www.gencodegenes.org/">GENCODE</a> <a href="https://www.gencodegenes.org/human/">Human</a> release is at v41 (GRCh38.p13).</p>
+<ol>
+<li>Under Fasta files, download the <code>Genome sequence (GRCh38.p13)</code> <code>ALL</code> <code>Fasta</code> file (<code>GRCh38.p13.genome.fa.gz</code>).</li>
+<li>Under Fasta files, download the <code>Protein-coding transcript translation sequences</code> <code>CHR</code> <code>Fasta</code> file (<code>gencode.v41.pc_translations.fa.gz</code>) - Please ensure that this FASTA contains <code>amino acid</code> sequences, not nucleotide sequences.</li>
+<li>Under GTF/GFF3 files, download the <code>Comprehensive gene annotation</code> <code>ALL</code> <code>GTF</code> file (<code>gencode.v41.chr_patch_hapl_scaff.annotation.gtf.gz</code>).</li>
+</ol>
+<h4 id="ensembl">Ensembl</h4>
+<p>At the time of writing, the <a href="https://www.ensembl.org/index.html">Ensembl</a> Release is at 107 (Jul 2022). We illustrate using the Human GRCh38.p13 genome from the FTP Download <a href="https://www.ensembl.org/info/data/ftp/index.html">page</a>.</p>
+<ol>
+<li>Click on <code>DNA (FASTA)</code> and download <code>Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz</code></li>
+<li>Click on <code>Protein sequence (FASTA)</code> and download <code>Homo_sapiens.GRCh38.pep.all.fa.gz</code></li>
+<li>Click on <code>Gene sets</code> <code>GTF</code> and download <code>Homo_sapiens.GRCh38.107.chr_patch_hapl_scaff.gtf.gz</code></li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>Do not mix and match</strong> GENCODE and Ensembl reference files, the chromosome names and transcript IDs DO NOT MATCH</p>
+</div>
+<h3 id="build-reference-index">Build Reference Index</h3>
+<p>Creating index files for the genome, proteome and GTF annotations, as well as a canonical peptide pool to be used in further steps. By default, the <code>generateIndex</code> subcommand uses trypsin as the protease, considering up to 2 miscleavages, and a minimal peptide molecular weight of 500 Da. However, those settings can be adjusted using command line arguments. See <code>moPepGen generateIndex --help</code>.</p>
+<pre><code>moPepGen generateIndex \
+    --genome-fasta path/to/genom.fasta \
+    --annotation-gtf path/to/annotation.gtf \
+    --proteome-fasta path/to/proteome.fasta \
+    --output-dir path/to/index
+</code></pre>
+<h3 id="parse-vep-output">Parse VEP output</h3>
+<p>Convert the VEP output TXT files to a VCF-like format that moPepGen recognizes. It can take multiple VEP output files. For example, if SNP and INDEL are called separately, they can be parsed together.</p>
+<pre><code>moPepGen parseVEP \
+    -i path/to/vep_1.txt path/to/vep_2.txt
+    --index-dir path/to/index \
+    --output-prefix path/to/parsed_vep
+</code></pre>
+<h3 id="call-variant-peptides">Call Variant Peptides</h3>
+<p>Call variant peptides using the parsed variant GVF file generated by <code>parseVEP</code>. <code>callVariant</code> takes multiple variant GVF files to combine variant types. They must all be parsed by <code>moPepGen</code> parsers. Cleavage rule, miscleavage and minimal molecular weight are also set to default values as below.</p>
+<pre><code>moPepGen callPeptide \
+    -i path/to/vep.gvf \
+    -o vep_moPepGen.fasta
+    --index-dir path/to/index \
+    --cleavage-rule trypsin \
+    --miscleavage 2 \
+    --min-mw 500
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../vignette/" class="btn btn-neutral float-right" title="Vignette">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../basics/" class="btn btn-neutral" title="moPepGen Basics"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/uclahs-cds/package-moPepGen/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../basics/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../vignette/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
