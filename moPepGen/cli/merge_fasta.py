@@ -83,7 +83,7 @@ def merge_fasta(args:argparse.Namespace):
             with open(path, 'rb') as handle:
                 peptides = pickle.load(handle)
                 for peptide in peptides:
-                    denylist.add(peptide.seq)
+                    denylist.add(peptide)
 
     if all_fasta_have_table(input_files):
         temp_file = common.get_peptide_table_path_temp(output_file)
