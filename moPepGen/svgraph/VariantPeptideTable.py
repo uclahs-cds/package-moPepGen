@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from Bio import SeqUtils
 from Bio.SeqIO import FastaIO
+from Bio.Seq import Seq
 from moPepGen import VARIANT_PEPTIDE_SOURCE_DELIMITER, aa
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.VariantPeptideDict import AnnotatedPeptideLabel, PeptideSegment
@@ -11,7 +12,6 @@ from moPepGen.svgraph.VariantPeptideDict import AnnotatedPeptideLabel, PeptideSe
 if TYPE_CHECKING:
     from typing import Dict, Set, IO, List, Tuple
     from pathlib import Path
-    from Bio.Seq import Seq
     from moPepGen.params import CleavageParams
 
 VARIANT_PEPTIDE_TABLE_HEADERS = [
@@ -148,7 +148,7 @@ class VariantPeptideTable:
                 break
             if line.startswith('#'):
                 continue
-            seq = line.split('\t')[0]
+            seq = Seq(line.split('\t')[0])
             indices = self.index.setdefault(seq, [])
             if indices and indices[-1][1] == cur_start:
                 indices[-1] = (indices[-1][0], cur_end)
