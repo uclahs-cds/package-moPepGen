@@ -70,7 +70,7 @@ def merge_fasta(args:argparse.Namespace):
 
     for path in args.denylist:
         common.validate_file_format(
-            path, INPUT_FILE_FORMATS, check_readable=True
+            path, DENYLIST_FORMATS, check_readable=True
         )
 
     denylist:Set[Seq] = set()
