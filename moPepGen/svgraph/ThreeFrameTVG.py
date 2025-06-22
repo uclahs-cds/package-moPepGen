@@ -1546,25 +1546,28 @@ class ThreeFrameTVG():
         return len(variants) > max_in_bubble_variants
 
     @staticmethod
-    def get_max_in_bubble_variants(n:int) -> int:
+    def get_max_in_bubble_variants(n:int, down_steps:int=0) -> int:
         """ Get the `max_in_bubble_variants` based on the total number of variants
         in a variant bubble. The values are set so the number of combinations to
         consider won't be too much more than 5,000. """
-        if n <= 12:
-            return -1
-        if n <= 14:
-            return 7
-        if n <= 15:
-            return 6
-        if n <= 16:
-            return 5
-        if n <= 21:
-            return 4
-        if n <= 34:
-            return 3
-        if n <= 100:
-            return 2
-        return 1
+        caps = [
+            (12, -1),
+            (14, 7),
+            (15, 6),
+            (16, 5),
+            (21, 4),
+            (34, 3),
+            (100, 2),
+            (float('inf'), 1),
+        ]
+        for i, (threshold, _) in enumerate(caps):
+            if n <= threshold:
+                cap_index = i
+                break
+        else:
+            cap_index = len(caps) - 1
+        j = min(cap_index + down_steps, len(caps) - 1)
+        return caps[j][1]
 
     def align_variants(self, node:TVGNode) -> Tuple[TVGNode, TVGNode]:
         r""" Aligns all variants at that overlaps to the same start and end
@@ -1594,7 +1597,10 @@ class ThreeFrameTVG():
         for member in members:
             member_variants.update([v.variant.id for v in member.variants])
 
-        max_in_bubble_variants = self.get_max_in_bubble_variants(len(member_variants))
+        max_in_bubble_variants = self.get_max_in_bubble_variants(
+            n=len(member_variants),
+            down_steps=self.cleavage_params.in_bubble_cap_step_down
+        )
 
         if len(member_variants) >= 13:
             get_logger().warning(
