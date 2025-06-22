@@ -6,7 +6,7 @@ import argparse
 import os
 from pathlib import Path
 from Bio import SeqIO
-from moPepGen import get_logger, svgraph
+from moPepGen import get_logger
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
 from moPepGen.svgraph.VariantPeptideTable import VariantPeptideTable
 from moPepGen.cli import common

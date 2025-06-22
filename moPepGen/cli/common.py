@@ -551,4 +551,3 @@ def get_peptide_table_path(path:Path) -> Path:
 def get_peptide_table_path_temp(path:Path) -> Path:
     """ Get the temp peptide table path """
     return path.parent/f"{path.stem}_peptide_table.tmp"
-
