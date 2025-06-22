@@ -10,11 +10,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [1.5.0-rc2] - 2025-06-19
+## [1.5.0-rc2] - 2025-06-21
 
 - Add `--in-bubble-cap-step-down` to `callVariant` for TVG in case of hypermutated regions.
 
 - Fixed `callVariant` that timeout error not caught when `--skip-failed` is given
+
+- Updated `mergeFasta` to also merge the peptide table if exists.
+
+- Updated `callVariant` so the peptide table is sorted and the order of peptides will sync with the fasta file.
 
 ## [1.5.0-rc1] - 2025-06-17
 
