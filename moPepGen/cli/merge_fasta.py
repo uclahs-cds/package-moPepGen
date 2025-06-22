@@ -149,7 +149,7 @@ def merge_peptide_table(paths:Iterable[Path], peptide_table:VariantPeptideTable,
         with open(table_path, 'rt') as handle:
             table = VariantPeptideTable(handle)
             table.generate_index()
-            for peptide in table.index.items():
+            for peptide in table.index:
                 if peptide in denylist:
                     continue
                 annos = table.load_peptide_annotation(peptide)
