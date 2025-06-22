@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import argparse
 import os
 from pathlib import Path
+import pickle
 from Bio import SeqIO
 from moPepGen import get_logger
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
 INPUT_FILE_FORMATS = ['.fasta', '.fa']
 OUTPUT_FILE_FORMATS = ['.fasta', '.fa']
+DENYLIST_FORMATS = ['.fasta', '.fa', '.pkl']
 
 # pylint: disable=W0212
 def add_subparser_merge_fasta(subparsers:argparse._SubParsersAction):
@@ -46,7 +48,7 @@ def add_subparser_merge_fasta(subparsers:argparse._SubParsersAction):
         type=Path,
         nargs='*',
         default=[],
-        help=f"Denylist of peptide sequences. Valid formats: {INPUT_FILE_FORMATS}"
+        help=f"Denylist of peptide sequences. Valid formats: {DENYLIST_FORMATS}"
     )
     common.add_args_debug_level(parser)
     parser.set_defaults(func=merge_fasta)
@@ -72,9 +74,16 @@ def merge_fasta(args:argparse.Namespace):
         )
 
     denylist:Set[Seq] = set()
+    path:Path
     for path in args.denylist:
-        for rec in SeqIO.parse(path, 'fasta'):
-            denylist.add(rec.seq)
+        if path.suffix in ['.fasta', 'fa']:
+            for rec in SeqIO.parse(path, 'fasta'):
+                denylist.add(rec.seq)
+        elif path.suffix in ['.pkl']:
+            with open(path, 'rb') as handle:
+                peptides = pickle.load(handle)
+                for peptide in peptides:
+                    denylist.add(peptide.seq)
 
     if all_fasta_have_table(input_files):
         temp_file = common.get_peptide_table_path_temp(output_file)
