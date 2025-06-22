@@ -88,7 +88,7 @@ def merge_fasta(args:argparse.Namespace):
     if all_fasta_have_table(input_files):
         temp_file = common.get_peptide_table_path_temp(output_file)
         table_file = common.get_peptide_table_path(output_file)
-        with open(temp_file, 'wt') as handle:
+        with open(temp_file, 'w+') as handle:
             peptide_table = VariantPeptideTable(handle=handle)
             peptide_table.write_header()
             merge_peptide_table(
