@@ -153,7 +153,7 @@ def merge_peptide_table(paths:Iterable[Path], peptide_table:VariantPeptideTable,
                 if peptide in denylist:
                     continue
                 annos = table.load_peptide_annotation(peptide)
-                for anno in annos:
+                for anno in annos.values():
                     peptide_table.add_peptide(seq=peptide, peptide_anno=anno)
         if logger:
             logger.info("Database FASTA file loaded: %s", path)
