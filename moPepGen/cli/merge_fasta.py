@@ -1,13 +1,21 @@
 """ `MergeFasta` merges a serious of database FASTA files into one. This is
 useful when working with multiplexed proteomic experiments such as TMT """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import argparse
+import os
 from pathlib import Path
 from Bio import SeqIO
-from moPepGen import get_logger
+from moPepGen import get_logger, svgraph
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
+from moPepGen.svgraph.VariantPeptideTable import VariantPeptideTable
 from moPepGen.cli import common
 
+
+if TYPE_CHECKING:
+    from typing import Iterable, Set
+    from Bio.Seq import Seq
+    from logging import Logger
 
 INPUT_FILE_FORMATS = ['.fasta', '.fa']
 OUTPUT_FILE_FORMATS = ['.fasta', '.fa']
@@ -53,7 +61,7 @@ def merge_fasta(args:argparse.Namespace):
         common.validate_file_format(
             file, INPUT_FILE_FORMATS, check_readable=True
         )
-    output_file = args.output_path
+    output_file:Path = args.output_path
     common.validate_file_format(
         output_file, OUTPUT_FILE_FORMATS, check_writable=True
     )
@@ -63,15 +71,48 @@ def merge_fasta(args:argparse.Namespace):
             path, INPUT_FILE_FORMATS, check_readable=True
         )
 
-    denylist = set()
+    denylist:Set[Seq] = set()
     for path in args.denylist:
         for rec in SeqIO.parse(path, 'fasta'):
             denylist.add(rec.seq)
 
+    if all_fasta_have_table(input_files):
+        temp_file = common.get_peptide_table_path_temp(output_file)
+        table_file = common.get_peptide_table_path(output_file)
+        with open(temp_file, 'wt') as handle:
+            peptide_table = VariantPeptideTable(handle=handle)
+            peptide_table.write_header()
+            merge_peptide_table(
+                paths=input_files,
+                peptide_table=peptide_table,
+                denylist=denylist,
+                logger=logger
+            )
+            peptide_table.write_fasta(output_file)
+            peptide_table.sort_table(table_file)
+        os.remove(temp_file)
+    else:
+        pool = merge_peptide_fasta(
+            paths=input_files,
+            denylist=denylist,
+            logger=logger
+        )
+        if args.dedup_header:
+            pool.remove_redundant_headers()
+        pool.write(output_file)
+
+    logger.info("Merged FASTA file saved to %s", output_file)
+
+def all_fasta_have_table(paths:Iterable[Path]):
+    """ Check wether all fasta files have the peptide table """
+    return all(common.get_peptide_table_path(Path(str(path))).exists() for path in paths)
+
+def merge_peptide_fasta(paths:Iterable[Path], denylist:Set[Seq], logger:Logger=None):
+    """ Merge peptides from FASTA files. """
     pool = None
 
-    for file in input_files:
-        with open(file, 'rt') as handle:
+    for path in paths:
+        with open(path, 'rt') as handle:
             if pool is None:
                 pool = VariantPeptidePool.load(handle)
                 if denylist:
@@ -86,10 +127,25 @@ def merge_fasta(args:argparse.Namespace):
                         canonical_peptides=set(),
                         skip_checking=True
                     )
-            logger.info("Database FASTA file loaded: %s", file)
+            if logger:
+                logger.info("Database FASTA file loaded: %s", path)
 
-    if args.dedup_header:
-        pool.remove_redundant_headers()
-    pool.write(output_file)
+    return pool
 
-    logger.info("Merged FASTA file saved to %s", output_file)
+def merge_peptide_table(paths:Iterable[Path], peptide_table:VariantPeptideTable,
+        denylist:Set[Seq], logger:Logger=None):
+    """ Merge peptides from FASTA table """
+    for path in paths:
+        table_path = common.get_peptide_table_path(path)
+        with open(table_path, 'rt') as handle:
+            table = VariantPeptideTable(handle)
+            table.generate_index()
+            for peptide in table.index.items():
+                if peptide in denylist:
+                    continue
+                annos = table.load_peptide_annotation(peptide)
+                for anno in annos:
+                    peptide_table.add_peptide(seq=peptide, peptide_anno=anno)
+        if logger:
+            logger.info("Database FASTA file loaded: %s", path)
+    return peptide_table

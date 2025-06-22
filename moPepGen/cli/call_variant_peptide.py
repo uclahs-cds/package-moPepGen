@@ -14,6 +14,7 @@ import copy
 import json
 from typing import List, Set, TYPE_CHECKING, Dict, Tuple, Union
 from pathlib import Path
+import os
 from contextlib import ExitStack
 from pathos.pools import ParallelPool
 from moPepGen import svgraph, aa, seqvar, gtf, params, get_logger
@@ -204,8 +205,12 @@ class VariantPeptideCaller():
         common.validate_file_format(
             self.output_path, OUTPUT_FILE_FORMATS, check_writable=True
         )
-        self.peptide_table_output_path:Path = \
-            Path(args.output_path).parent/f"{Path(args.output_path).stem}_peptide_table.txt"
+        self.peptide_table_temp_path:Path = common.get_peptide_table_path_temp(
+            path=Path(self.output_path)
+        )
+        self.peptide_table_output_path:Path = common.get_peptide_table_path(
+            path=Path(self.output_path)
+        )
         self.graph_output_dir:Path = args.graph_output_dir
         if self.graph_output_dir is not None:
             common.validate_file_format(
@@ -604,7 +609,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     with ExitStack() as stack:
         pool = stack.enter_context(seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool))
-        seq_anno_handle = stack.enter_context(open(caller.peptide_table_output_path, 'w+'))
+        seq_anno_handle = stack.enter_context(open(caller.peptide_table_temp_path, 'w+'))
 
         peptide_table = svgraph.VariantPeptideTable(seq_anno_handle)
         peptide_table.write_header()
@@ -676,7 +681,10 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         logger.info('All transcripts processed. Preparing FASTA file..')
         peptide_table.write_fasta(caller.output_path)
         logger.info('Variant peptide FASTA written.')
-        caller.tally.log()
+        peptide_table.sort_table(caller.peptide_table_output_path)
+        logger.info('Variant peptide table soted.')
+    os.remove(caller.peptide_table_temp_path)
+    caller.tally.log()
 
 def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
         tx_seq:dna.DNASeqRecordWithCoordinates,
