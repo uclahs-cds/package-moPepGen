@@ -24,8 +24,7 @@ def parse(handle:IO, format:str=Literal['tsv', 'vcf']) -> Iterable[VEPRecord]:
     """
     if format == 'tsv':
         return parse_tsv(handle)
-    else:
-        return parse_vcf(handle)
+    return parse_vcf(handle)
 
 def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
     """ Parse a VEP output text file and return as an iterator.
