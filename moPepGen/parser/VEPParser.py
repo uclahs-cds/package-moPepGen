@@ -13,14 +13,14 @@ if TYPE_CHECKING:
     from typing import List, Tuple, Iterable, IO
 
 def parse(handle:IO, format:str=Literal['tsv', 'vcf']) -> Iterable[VEPRecord]:
-    """ Parse a VEP output text file and return as an iterator.
+    """ Parse a VEP output file and return as an iterator.
 
     Args:
         handle (IO): A file-like object containing the VEP output.
-        format (str): The format of the VEP output, currently only 'tsv' is supported.
+        format (str): The format of the VEP output, either 'tsv' or 'vcf'.
 
     Return:
-        A iterable of VEPRecord.
+        An iterable of VEPRecord.
     """
     if format == 'tsv':
         return parse_tsv(handle)
