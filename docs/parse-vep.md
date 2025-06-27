@@ -29,7 +29,13 @@ moPepGen relies on Ensembl Variant Effect Predictor ([VEP](https://www.ensembl.o
 
 Please refer to the official [VEP Tutorial](https://www.ensembl.org/info/docs/tools/vep/script/vep_tutorial.html) for instructions on downloading, installing and running VEP. The key is to ensure that the annotation version used in `VEP` is the same as the one you would like to use with moPepGen.
 
-`parseVEP` currently only supports the TSV output of `VEP`, please set the suffix of `--output_file` to `.tsv` to ensure the correct format is outputted by `VEP`. `VEP`'s default output format is tab-delimited, and the `--tab` option adds extra columns to the output that are not used by moPepGen. So including or excluding `--tab` will not impact the results of moPepGen.
+`parseVEP` supports both the TSV and VCF format of output of `VEP`. For TSV, `VEP`'s default is tab-delimited, and the `--tab` option adds extra columns to the output that are not used by moPepGen. So including or excluding `--tab` will not impact the results of moPepGen. As for `VCF`, the `CSQ` info field is parsed, and the default format is expected, containing the following fields:
+
+```
+Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|DISTANCE|STRAND|FLAGS|SYMBOL_SOURCE|HGNC_ID
+```
+
+When using VCF format, all records are processed and the sample columns are not utilized. For multi-sample VCF files, consider split it before calling `parseVEP`.
 
 ### Using an Ensembl GTF
 

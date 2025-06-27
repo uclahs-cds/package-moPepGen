@@ -20,6 +20,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Updated `callVariant` so the peptide table is sorted and the order of peptides will sync with the fasta file.
 
+- Added support of VEP VCF files in `parseVEP`
+
 ## [1.5.0-rc1] - 2025-06-17
 
 - Added `--codon-table` and `--chr-codon-table`. The former sets the codon table to use, and the latter overrides it for specific chromosomes.

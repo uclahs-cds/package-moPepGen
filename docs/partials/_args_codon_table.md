@@ -42,7 +42,7 @@ The chromosome names must be specified correctly, same as what used in the genom
 --codon-table Standard \
 --chr-codon-table 'chrM:SGC1' \
 --start-codons 'ATG' \
---chr-start-codongs 'chrM:ATG,ATA,ATT
+--chr-start-codons 'chrM:ATG,ATA,ATT
 ```
 
 or
@@ -52,5 +52,5 @@ or
 --codon-table Standard \
 --chr-codon-table 'MT:SGC1' \
 --start-codons 'ATG' \
---chr-start-codongs 'MT:ATG,ATA,ATT
+--chr-start-codons 'MT:ATG,ATA,ATT
 ```
