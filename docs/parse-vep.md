@@ -35,6 +35,8 @@ Please refer to the official [VEP Tutorial](https://www.ensembl.org/info/docs/to
 Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|DISTANCE|STRAND|FLAGS|SYMBOL_SOURCE|HGNC_ID
 ```
 
+When using VCF format, all records are processed and the sample columns are not utilized. For multi-sample VCF files, consider split it before calling `parseVEP`.
+
 ### Using an Ensembl GTF
 
 `VEP` automatically uses an Ensembl GTF for annotation. Please ensure that the release version and genome build version is consistent with the references files downloaded. This is available in the name of the cache in output headers (for example, `107_GRCh38`).
