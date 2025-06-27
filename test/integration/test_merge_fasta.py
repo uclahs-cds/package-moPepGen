@@ -169,3 +169,15 @@ class TestMergeFasta(TestCaseIntegration):
             {str(x.seq) for x in pool.peptides},
             {'AAAAAK'}
         )
+
+    def test_merge_fasta_table(self):
+        """ Test merge fasta with peptide table """
+        args = self.create_base_arg()
+        args.input_path = [
+            self.data_dir/'peptides/gsnp.fasta',
+            self.data_dir/'peptides/mtsnv.fasta'
+        ]
+
+        cli.merge_fasta(args)
+
+        self.assertTrue(args.output_path.exists())

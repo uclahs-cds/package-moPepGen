@@ -543,3 +543,11 @@ def create_codon_table_map(codon_table:str, chr_codon_table:List[str],
             codon_tables[chr].start_codons = start_codons
 
     return codon_tables
+
+def get_peptide_table_path(path:Path) -> Path:
+    """ Get the peptide table file path from the given path for peptide fasta. """
+    return path.parent/f"{path.stem}_peptide_table.txt"
+
+def get_peptide_table_path_temp(path:Path) -> Path:
+    """ Get the temp peptide table path """
+    return path.parent/f"{path.stem}_peptide_table.tmp"
