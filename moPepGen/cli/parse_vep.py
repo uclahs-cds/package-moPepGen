@@ -15,7 +15,7 @@ from moPepGen import seqvar, get_logger
 from moPepGen.cli import common
 
 
-INPUT_FILE_FORMATS = ['.tsv', '.txt', '.tsv.gz', '.txt.gz']
+INPUT_FILE_FORMATS = ['.tsv', '.txt', '.tsv.gz', '.txt.gz', '.vcf', '.vcf.gz']
 OUTPUT_FILE_FORMATS = ['.gvf']
 
 if TYPE_CHECKING:
@@ -100,15 +100,18 @@ def parse_vep(args:argparse.Namespace) -> None:
     tally = TallyTable(logger)
 
     for vep_file in vep_files:
+        if '.vcf' in vep_file.suffixes:
+            format = 'vcf'
+        else:
+            format = 'tsv'
         opener = gzip.open if vep_file.suffix == '.gz' else open
         with opener(vep_file, 'rt') as handle:
-            for record in VEPParser.parse(handle):
+            for record in VEPParser.parse(handle, format=format):
                 tally.total += 1
                 transcript_id = record.feature
 
                 if transcript_id not in vep_records:
                     vep_records[transcript_id] = []
-
 
                 try:
                     record = record.convert_to_variant_record(anno, genome)

@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed `callVariant` that timeout error not caught when `--skip-failed` is given
 
+- Added support of VEP VCF files in `parseVEP'
+
 ## [1.5.0-rc1] - 2025-06-17
 
 - Added `--codon-table` and `--chr-codon-table`. The former sets the codon table to use, and the latter overrides it for specific chromosomes.

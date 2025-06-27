@@ -80,3 +80,15 @@ class TestParseVEP(TestCaseIntegration):
         expected = {'vep.gvf'}
         self.assertEqual(files, expected)
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
+
+    def test_parse_vep_vcf(self):
+        """ Test parsing VEP output in VCF format into GVF """
+        args = self.create_base_args()
+        args.input_path = [
+            self.data_dir/'vep'/'vep_snp.vcf'
+        ]
+        cli.parse_vep(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep.gvf'}
+        self.assertEqual(files, expected)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)

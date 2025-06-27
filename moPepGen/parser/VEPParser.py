@@ -1,7 +1,7 @@
 """ This module defines the class for a single VEP record
 """
 from __future__ import annotations
-from typing import List, Tuple, Iterable, IO
+from typing import TYPE_CHECKING, Literal
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.err import TranscriptionStopSiteMutationError, \
@@ -9,7 +9,25 @@ from moPepGen.err import TranscriptionStopSiteMutationError, \
 from moPepGen import seqvar, dna, gtf
 
 
-def parse(handle:IO) -> Iterable[VEPRecord]:
+if TYPE_CHECKING:
+    from typing import List, Tuple, Iterable, IO
+
+def parse(handle:IO, format:str=Literal['tsv', 'vcf']) -> Iterable[VEPRecord]:
+    """ Parse a VEP output text file and return as an iterator.
+
+    Args:
+        handle (IO): A file-like object containing the VEP output.
+        format (str): The format of the VEP output, currently only 'tsv' is supported.
+
+    Return:
+        A iterable of VEPRecord.
+    """
+    if format == 'tsv':
+        return parse_tsv(handle)
+    else:
+        return parse_vcf(handle)
+
+def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
     """ Parse a VEP output text file and return as an iterator.
 
     Args:
@@ -52,6 +70,50 @@ def parse(handle:IO) -> Iterable[VEPRecord]:
             existing_variation='' if fields[12] == '-' else fields[12],
             extra=extra
         )
+
+def parse_vcf(handle:IO) -> Iterable[VEPRecord]:
+    """ Parse a VEP output VCF file and return as an iterator.
+
+    Args:
+        handle (IO): A file-like object containing the VEP output in VCF format.
+
+    Return:
+        A iterable of VEPRecord.
+    """
+    for line in handle:
+        if line.startswith('#'):
+            continue
+        fields = line.rstrip().split('\t')
+        info = {}
+        item:str
+        for item in fields[7].split(';'):
+            if '=' in item:
+                key, value = item.split('=', 1)
+                info[key] = value
+            else:
+                info[item] = True
+        if 'CSQ' not in info:
+            continue
+        for csq in info['CSQ'].split(','):
+            attrs = csq.split('|')
+            yield VEPRecord(
+                uploaded_variation=fields[2],
+                location=fields[0] + ':' + fields[1],
+                allele=attrs[0],
+                gene=attrs[4],
+                feature=attrs[6],
+                feature_type=attrs[5],
+                consequences=attrs[1].split('&'),
+                cdna_position=attrs[12],
+                cds_position=attrs[13],
+                protein_position=attrs[14],
+                amino_acids=tuple(attrs[15].split('/')),
+                codons=tuple(attrs[16].split('/')),
+                existing_variation=attrs[17] if attrs[17] != '-' else '',
+                extra={
+                    'IMPACT': attrs[2]
+                }
+            )
 
 class VEPRecord():
     """ A VEPRecord object holds the an entry from the VEP output. The VEP
