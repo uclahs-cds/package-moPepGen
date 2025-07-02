@@ -2,6 +2,7 @@
 """
 from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
+import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.err import TranscriptionStopSiteMutationError, \
@@ -10,9 +11,9 @@ from moPepGen import seqvar, dna, gtf
 
 
 if TYPE_CHECKING:
-    from typing import List, Tuple, Iterable, IO
+    from typing import List, Tuple, Iterable, IO, Dict
 
-def parse(handle:IO, format:str=Literal['tsv', 'vcf']) -> Iterable[VEPRecord]:
+def parse(handle:IO, format:str=Literal['tsv', 'vcf'], samples:List[str]=None) -> Iterable[VEPRecord]:
     """ Parse a VEP output file and return as an iterator.
 
     Args:
@@ -24,7 +25,7 @@ def parse(handle:IO, format:str=Literal['tsv', 'vcf']) -> Iterable[VEPRecord]:
     """
     if format == 'tsv':
         return parse_tsv(handle)
-    return parse_vcf(handle)
+    return parse_vcf(handle, samples=samples)
 
 def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
     """ Parse a VEP output text file and return as an iterator.
@@ -70,7 +71,7 @@ def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
             extra=extra
         )
 
-def parse_vcf(handle:IO) -> Iterable[VEPRecord]:
+def parse_vcf(handle:IO, samples:List[str]=None) -> Iterable[VEPRecord]:
     """ Parse a VEP output VCF file and return as an iterator.
 
     Args:
@@ -80,8 +81,24 @@ def parse_vcf(handle:IO) -> Iterable[VEPRecord]:
         A iterable of VEPRecord.
     """
     for line in handle:
-        if line.startswith('#'):
+        if line.startswith('##'):
             continue
+        if line.startswith('#'):
+            headers = line.rstrip().split('\t')
+            sample_index:Dict[str, int] = {}
+            for i, header in enumerate(headers):
+                if i <= 8:
+                    continue
+                if not samples or header in samples:
+                    sample_index[header] = i
+            # Checks if all samples are present in the VEP VCF headers.
+            if samples:
+                for sample in samples:
+                    if sample not in sample_index:
+                        raise ValueError(
+                            f"Sample '{sample}' not found in VEP VCF headers."
+                        )
+                continue
         fields = line.rstrip().split('\t')
         info = {}
         item:str
@@ -93,9 +110,10 @@ def parse_vcf(handle:IO) -> Iterable[VEPRecord]:
                 info[item] = True
         if 'CSQ' not in info:
             continue
+        vep_records = []
         for csq in info['CSQ'].split(','):
             attrs = csq.split('|')
-            yield VEPRecord(
+            record = VEPRecord(
                 uploaded_variation=fields[2],
                 location=fields[0] + ':' + fields[1],
                 allele=attrs[0],
@@ -113,6 +131,40 @@ def parse_vcf(handle:IO) -> Iterable[VEPRecord]:
                     'IMPACT': attrs[2]
                 }
             )
+            vep_records.append(record)
+
+        sample_genotypes = {}
+        keys = fields[8].split(':')
+        for sample, i in sample_index.items():
+            values = fields[i].split(':')
+            genotype = {k:v for k, v in zip(keys, values)}
+            gt = genotype['GT']
+            is_phased = '|' in gt
+            is_detected = gt not in ['.', './.', '.|.', '0|0', '0/0']
+            phase_sets = []
+            if is_phased:
+                if gt.startswith('1|'):
+                    phase_sets.append('PS1')
+                if gt.endswith('|1'):
+                    phase_sets.append('PS2')
+            sample_genotypes[sample] = {
+                'GT': gt,
+                'is_phased': is_phased,
+                'is_detected': is_detected,
+                'phase_sets': phase_sets
+            }
+
+        for record in vep_records:
+            for sample, genotype in sample_genotypes.items():
+                if not genotype['is_detected']:
+                    # No variant for this sample, so we can skip it.
+                    continue
+                cur_record = copy.deepcopy(record)
+                cur_record.extra.update({
+                    'SAMPLE': sample,
+                    'PHASE_SETS': genotype['phase_sets']
+                })
+                yield cur_record
 
 class VEPRecord():
     """ A VEPRecord object holds the an entry from the VEP output. The VEP

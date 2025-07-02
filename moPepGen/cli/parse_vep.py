@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import argparse
 import gzip
+from contextlib import ExitStack
 from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, TranscriptionStartSiteMutationError
@@ -39,7 +40,24 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         parser=p, formats=INPUT_FILE_FORMATS, plural=True,
         message='File path to the VEP output TXT file.'
     )
-    common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
+    common.add_args_output_path(
+        parser=p, formats=OUTPUT_FILE_FORMATS
+    )
+    p.add_argument(
+        '--output-prefix',
+        type=Path,
+        help='Output prefix. Only used when inputs are VCF files.',
+        metavar = '<value>'
+    )
+    p.add_argument(
+        '--samples',
+        type=str,
+        nargs='+',
+        default=[],
+        help='Samples to be parsed from the VCF file. If not provided, all samples'
+        ' from the VCF file will be parsed. This option is only used when the inputs'
+        ' are VCF files.'
+    )
     common.add_args_source(p)
     common.add_args_skip_failed(p)
     common.add_args_reference(p, proteome=False)
@@ -80,14 +98,31 @@ def parse_vep(args:argparse.Namespace) -> None:
     logger = get_logger()
     # unpack args
     vep_files:List[Path] = args.input_path
+    format = None
     for file in vep_files:
         common.validate_file_format(
             file, INPUT_FILE_FORMATS, check_readable=True
         )
-    output_path:Path = args.output_path
-    common.validate_file_format(
-        output_path, OUTPUT_FILE_FORMATS, check_writable=True
-    )
+        if '.vcf' in file.suffixes:
+            format_i = 'vcf'
+        else:
+            format_i = 'tsv'
+        if format is None:
+            format = format_i
+        elif format != format_i:
+            raise ValueError(
+                "All input files must be in the same format. "
+                f"Got {format} and {format_i}."
+            )
+    if format == 'tsv':
+        output_path:Path = args.output_path
+        common.validate_file_format(
+            output_path, OUTPUT_FILE_FORMATS, check_writable=True
+        )
+    else:
+        output_prefix:Path = args.output_prefix
+        output_dir = output_prefix.parent
+        output_prefix = output_prefix.name
 
     common.print_start_message(args)
 
@@ -95,26 +130,26 @@ def parse_vep(args:argparse.Namespace) -> None:
     genome = ref_data.genome
     anno = ref_data.anno
 
-    vep_records:Dict[str, List[seqvar.VariantRecord]] = {}
+    # sample -> transcript_id -> list of variant records
+    vep_records:Dict[str, Dict[str, List[seqvar.VariantRecord]]] = {}
+
+    if format == 'vcf':
+        samples = args.samples
+    else:
+        samples = ['default']
 
     tally = TallyTable(logger)
 
     for vep_file in vep_files:
-        if '.vcf' in vep_file.suffixes:
-            format = 'vcf'
-        else:
-            format = 'tsv'
         opener = gzip.open if vep_file.suffix == '.gz' else open
         with opener(vep_file, 'rt') as handle:
-            for record in VEPParser.parse(handle, format=format):
+            for vep_record in VEPParser.parse(handle, format=format):
                 tally.total += 1
-                transcript_id = record.feature
-
-                if transcript_id not in vep_records:
-                    vep_records[transcript_id] = []
+                sample = vep_record.extra.get('SAMPLE', 'default')
+                transcript_id = vep_record.feature
 
                 try:
-                    record = record.convert_to_variant_record(anno, genome)
+                    record = vep_record.convert_to_variant_record(anno, genome)
                     tally.succeed += 1
                 except TranscriptionStopSiteMutationError:
                     tally.failed.total += 1
@@ -127,13 +162,17 @@ def parse_vep(args:argparse.Namespace) -> None:
                 except:
                     if args.skip_failed:
                         logger.warning(
-                            "VEP record failed to convert: %s", str(record)
+                            "VEP record failed to convert: %s", str(vep_record)
                         )
                         tally.failed.total += 1
                         continue
                     raise
 
-                vep_records[transcript_id].append(record)
+                if sample not in vep_records:
+                    vep_records[sample] = {}
+                if transcript_id not in vep_records[sample]:
+                    vep_records[sample][transcript_id] = []
+                vep_records[sample][transcript_id].append(record)
 
         logger.info('VEP file %s loaded.', vep_file)
 
@@ -143,20 +182,26 @@ def parse_vep(args:argparse.Namespace) -> None:
         logger.warning('No variant record is saved.')
         return
 
-    for records in vep_records.values():
-        records.sort()
+    for sample_records in vep_records.values():
+        for records in sample_records.values():
+            records.sort()
 
-    logger.info('VEP sorting done.')
+    logger.info('GVF records sorted.')
 
     metadata = common.generate_metadata(args)
 
     tx_rank = anno.get_transcript_rank()
-    ordered_keys = sorted(vep_records.keys(), key=lambda x:tx_rank[x])
 
-    all_records = []
-    for key in ordered_keys:
-        all_records.extend(vep_records[key])
+    for sample, sample_records in vep_records.items():
+        ordered_keys = sorted(sample_records.keys(), key=lambda x: tx_rank[x])
 
-    seqvar.io.write(all_records, output_path, metadata)
+        sorted_records = []
+        for key in ordered_keys:
+            sorted_records.extend(sample_records[key])
 
-    logger.info('Variant info written to disk.')
+        if format == 'vcf':
+            output_path = output_dir/f"{output_prefix}_{sample}.gvf"
+
+        seqvar.io.write(sorted_records, output_path, metadata)
+
+        logger.info('Variant GVF written: %s', output_path)
