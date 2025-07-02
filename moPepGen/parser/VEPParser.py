@@ -323,6 +323,9 @@ class VEPRecord():
             'GENE_SYMBOL': gene_model.gene_name
         }
 
+        if 'PHASE_SETS' in self.extra and self.extra['PHASE_SETS']:
+            attrs['PHASE_SETS'] = ','.join(self.extra['PHASE_SETS'])
+
         try:
             return seqvar.VariantRecord(
                 location=FeatureLocation(
