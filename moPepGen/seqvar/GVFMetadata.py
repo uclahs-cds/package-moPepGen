@@ -28,9 +28,8 @@ class GVFMetadata():
         alt (dict): Alternative allele fields.
         info (dict): Information fields.
     """
-    def __init__(self, parser:str, source:str, chrom:str,
-            reference_index:str=None, genome_fasta:str=None,
-            annotation_gtf:str=None, version:str=None, info=None,
+    def __init__(self, parser:str, source:str, chrom:str, reference_index:str=None,
+            genome_fasta:str=None, annotation_gtf:str=None, version:str=None, info=None,
             additional=None):
         """ Construct a TVFMetadata object. """
         self.parser = parser
@@ -45,8 +44,13 @@ class GVFMetadata():
         self.additional = additional
         self.version = version or __version__
 
-    def add_info(self, variant_type:str) -> None:
+    def add_info(self, variant_type:str, is_phased:bool=False) -> None:
         """ Add a INFO field to the metadata. """
+        if is_phased:
+            self.info.update({
+                'PHASE_SETS': GVF_METADATA_ADDITIONAL['Base']['PHASE_SETS']
+            })
+
         self.add_alt(variant_type)
         if variant_type in self.added_types:
             return

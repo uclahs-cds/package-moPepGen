@@ -95,3 +95,4 @@ class TestParseVEP(TestCaseIntegration):
         self.assertEqual(files, expected)
         for file_name in expected:
             self.assert_gvf_order(self.work_dir/file_name, args.annotation_gtf)
+

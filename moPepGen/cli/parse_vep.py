@@ -40,13 +40,18 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
         parser=p, formats=INPUT_FILE_FORMATS, plural=True,
         message='File path to the VEP output TXT file.'
     )
-    common.add_args_output_path(
-        parser=p, formats=OUTPUT_FILE_FORMATS
+    p.add_argument(
+        '-o', '--output-path',
+        type=Path,
+        help=f'File path to the output file. Valid formats: {OUTPUT_FILE_FORMATS}',
+        metavar='<file>',
+        default=None
     )
     p.add_argument(
         '--output-prefix',
         type=Path,
         help='Output prefix. Only used when inputs are VCF files.',
+        default=None,
         metavar = '<value>'
     )
     p.add_argument(
@@ -140,10 +145,13 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     tally = TallyTable(logger)
 
+    phase_sets = set()
+
     for vep_file in vep_files:
         opener = gzip.open if vep_file.suffix == '.gz' else open
         with opener(vep_file, 'rt') as handle:
-            for vep_record in VEPParser.parse(handle, format=format):
+            it = VEPParser.parse(handle, format=format, samples=samples, phase_sets=phase_sets)
+            for vep_record in it:
                 tally.total += 1
                 sample = vep_record.extra.get('SAMPLE', 'default')
                 transcript_id = vep_record.feature
@@ -188,8 +196,6 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     logger.info('GVF records sorted.')
 
-    metadata = common.generate_metadata(args)
-
     tx_rank = anno.get_transcript_rank()
 
     for sample, sample_records in vep_records.items():
@@ -202,6 +208,7 @@ def parse_vep(args:argparse.Namespace) -> None:
         if format == 'vcf':
             output_path = output_dir/f"{output_prefix}_{sample}.gvf"
 
+        metadata = common.generate_metadata(args)
         seqvar.io.write(sorted_records, output_path, metadata)
 
         logger.info('Variant GVF written: %s', output_path)
