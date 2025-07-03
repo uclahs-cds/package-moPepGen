@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Chenghao Zhu">
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title> args codon table - moPepGen</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../../css/theme.css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../../assets/_mkdocstrings.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = " args codon table";
+    var mkdocs_page_input_path = "partials/_args_codon_table.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> moPepGen</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../basics/">moPepGen Basics</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../quick-start/">Quick Start</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../vignette/">Vignette</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../file-format/">File Format</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Commands</span></p>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../../generate-index/">generateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../update-index/">updateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../parse-vep/">parseVEP</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../parse-reditools/">parseREDItools</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../parse-star-fusion/">parseSTARFusion</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../parse-fusion-catcher/">parseFusionCatcher</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../parse-arriba/">parseArriba</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../parse-rmats/">parseRMATS</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../parse-circexplorer/">parseCIRCexplorer</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../call-variant/">callVariant</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../call-novel-orf/">callNovelORF</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../call-alt-translation/">callAltTranslation</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../filter-fasta/">filterFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../split-fasta/">splitFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../merge-fasta/">mergeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../encode-fasta/">encodeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../decoy-fasta/">decoyFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../../summarize-fasta/">summarizeFasta</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">moPepGen</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li> args codon table</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/uclahs-cds/package-moPepGen/edit/master/docs/partials/_args_codon_table.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h2 id="codon-table-start-codon">Codon Table &amp; Start Codon</h2>
+<h3 id="codon-table">Codon Table</h3>
+<p>The NCBI standard codon table is used by default, which is used for the majority of nulcear gene translation in eukaryote cells. See <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi">here</a> for a complete list of NCBI codon tables.</p>
+<p>The default codon table can be override using <code>--codon-table</code>. For example:</p>
+<pre><code class="language-shell">--codon-table ’Ciliate Nuclear'
+</code></pre>
+<p>The <code>--chr-codon-table</code> can be used to specify the codon table used for a specific chomosome. The example below uses the 'Vertebrate Mitochondrial' (SGC1) codon table for genes from the mitochondria chomosome, and the standard codon table otherwise.</p>
+<pre><code class="language-shell">--codon-table Standard \
+--chr-codon-table 'chrM:SGC1'
+</code></pre>
+<h3 id="start-codons">Start Codons</h3>
+<p>Stard codons usually do not need to be specified. The standard start codon <code>ATG</code> is used by default, and it is translated as Methionine as start codon and in elongation. However, in some cases, for example, mitochondria, <code>ATA</code> and <code>ATT</code> may also be used as start codon. While <code>ATT</code> is translatted into Isoleucine during elongation, Methionine is still used as start codon.</p>
+<p>Similar to codon table, the default codon table can be override using <code>--start-codons</code>.</p>
+<pre><code class="language-shell">--start-codons ATG
+</code></pre>
+<p>The <code>--chr-start-codon</code> can also be used to assign start codons to a specific chomosome. The example below assigns <code>ATG</code>, <code>ATA</code>, and <code>ATT</code> to the mitochondrial chromosome.</p>
+<pre><code class="language-shell">--chr-start-codons 'chrM:ATG,ATA,ATT'
+</code></pre>
+<h3 id="default">Default</h3>
+<p>The chromosome names must be specified correctly, same as what used in the genome fasta and annotation GTF file. By default, moPepGen infers the reference source of the annotation (<em>i.e.</em>, GENCODE or EMSEMBL), and uses the 'SGC1' codon table for mitochondirla chromosome. So the default is equivalent to:</p>
+<pre><code class="language-shell">--reference-source GENCODE \
+--codon-table Standard \
+--chr-codon-table 'chrM:SGC1' \
+--start-codons 'ATG' \
+--chr-start-codons 'chrM:ATG,ATA,ATT
+</code></pre>
+<p>or</p>
+<pre><code class="language-shell">--reference-source ENSEMBL \
+--codon-table Standard \
+--chr-codon-table 'MT:SGC1' \
+--start-codons 'ATG' \
+--chr-start-codons 'MT:ATG,ATA,ATT
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/uclahs-cds/package-moPepGen/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
