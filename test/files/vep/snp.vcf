@@ -1,17 +1,17 @@
 ##fileformat=VCFv4.2
 ##FILTER=<ID=PASS,Description="All filters passed">
-##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Phased genotypes">
 ##contig=<ID=chr22,length=5448>
 ##contig=<ID=chrM,length=71>
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	UCLA0001
-chr22	611	.	T	A	.	PASS	.	GT	0/1
-chr22	1157	.	G	A	.	PASS	.	GT	0/1
-chr22	1179	.	C	T	.	PASS	.	GT	0/1
-chr22	1205	.	G	A	.	PASS	.	GT	0/1
-chr22	1426	.	G	A	.	PASS	.	GT	0/1
-chr22	4864	.	G	A	.	PASS	.	GT	0/1
-chr22	4764	.	G	A	.	PASS	.	GT	0/1
-chr22	4164	.	G	A	.	PASS	.	GT	0/1
-chrM	41	.	G	A	.	PASS	.	GT	0/1
-chrM	48	.	C	A	.	PASS	.	GT	0/1
-chrM	50	.	C	T	.	PASS	.	GT	0/1
+chr22	611	.	T	A	.	PASS	.	GT	0|1
+chr22	1157	.	G	A	.	PASS	.	GT	0|1
+chr22	1179	.	C	T	.	PASS	.	GT	1|0
+chr22	1205	.	G	A	.	PASS	.	GT	1|0
+chr22	1426	.	G	A	.	PASS	.	GT	1|0
+chr22	4864	.	G	A	.	PASS	.	GT	0|1
+chr22	4764	.	G	A	.	PASS	.	GT	0|1
+chr22	4164	.	G	A	.	PASS	.	GT	1|0
+chrM	41	.	G	A	.	PASS	.	GT	1
+chrM	48	.	C	A	.	PASS	.	GT	1
+chrM	50	.	C	T	.	PASS	.	GT	1

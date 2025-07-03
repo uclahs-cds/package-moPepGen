@@ -35,7 +35,7 @@ Please refer to the official [VEP Tutorial](https://www.ensembl.org/info/docs/to
 Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|DISTANCE|STRAND|FLAGS|SYMBOL_SOURCE|HGNC_ID
 ```
 
-When using VCF format, all records are processed and the sample columns are not utilized. For multi-sample VCF files, consider split it before calling `parseVEP`.
+When using VCF format, the `--samples` argument can be used to specify the columns you would like to parse, and the variant records will be split into sample-specific GVF files. By default, all sample columns will be processed.
 
 ### Using an Ensembl GTF
 

@@ -57,6 +57,8 @@ def parse_attrs(info:str) -> Dict[str, Union[str,int]]:
         val = val.strip('"')
         if key in constant.ATTRS_POSITION:
             val = str(int(val) - 1)
+        if key in constant.ATTRS_MULTIPLE:
+            val = val.split(',')
         attrs[key] = val
     return attrs
 
@@ -135,7 +137,8 @@ def write(variants:Iterable[VariantRecord], output_path:str,
         for record in variants:
             line = record.to_string()
             temp_file.write(line + '\n')
-            metadata.add_info(record.type)
+            is_phased = record.attrs.get('PHASE_SETS', None) is not None
+            metadata.add_info(variant_type=record.type, is_phased=is_phased)
         with open(output_path, 'w') as out_file:
             for line in metadata.to_strings():
                 out_file.write(line + '\n')

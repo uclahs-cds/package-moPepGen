@@ -39,6 +39,8 @@ class TestParseVEP(TestCaseIntegration):
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.reference_source = None
         args.output_path = Path(self.work_dir/'vep.gvf')
+        args.output_prefix = Path(self.work_dir/'vep')
+        args.samples = []
         args.quiet = True
         return args
 
@@ -89,6 +91,7 @@ class TestParseVEP(TestCaseIntegration):
         ]
         cli.parse_vep(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
-        expected = {'vep.gvf'}
+        expected = {'vep_UCLA0001.gvf'}
         self.assertEqual(files, expected)
-        self.assert_gvf_order(args.output_path, args.annotation_gtf)
+        for file_name in expected:
+            self.assert_gvf_order(self.work_dir/file_name, args.annotation_gtf)

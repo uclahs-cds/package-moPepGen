@@ -108,6 +108,13 @@ GVF_METADATA_INFO:Dict[str,Dict[str,Union[int,str]]] = {
 }
 
 GVF_METADATA_ADDITIONAL:Dict[str,Dict[str,Dict[str,Union[int, str]]]] = {
+    'Base': {
+        'PHASE_SETS': {
+            'Number': '*',
+            'Type': 'String',
+            'Description': 'Phase sets.'
+        },
+    },
     'circRNA': {
         'POS': {
             'Description': '"Gene coordinate of circRNA start"'

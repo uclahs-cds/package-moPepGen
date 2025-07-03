@@ -60,11 +60,16 @@ class TestSeqvarIO(unittest.TestCase):
 
     def test_parse_metadata(self):
         """ Test the metadata header is parsed correctly """
-        gvf_path = 'test/files/vep/vep_gSNP.gvf'
+        gvf_path = 'test/files/vep/vep_gSNP_UCLA0001.gvf'
         with open(gvf_path, 'rt') as handle:
             metadata = seqvar.GVFMetadata.parse(handle)
             records = list(seqvar.io.parse(handle))
+            for record in records:
+                if 'PHASE_SETS' in record.attrs:
+                    self.assertIsInstance(record.attrs['PHASE_SETS'], list)
         self.assertEqual(metadata.source, 'gSNP')
         self.assertEqual(metadata.parser, 'parseVEP')
         self.assertIn('TRANSCRIPT_ID', metadata.info)
-        self.assertEqual(len(records), 10)
+        self.assertIn('PHASE_SETS', metadata.info)
+        self.assertEqual(len(records), 16)
+        self.assertEqual(metadata.phase_pairs, {('PS1', 'PS2')})
