@@ -8,7 +8,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import argparse
 import gzip
-from contextlib import ExitStack
 from pathlib import Path
 from moPepGen.parser import VEPParser
 from moPepGen.err import TranscriptionStopSiteMutationError, TranscriptionStartSiteMutationError
@@ -158,7 +157,12 @@ def parse_vep(args:argparse.Namespace) -> None:
     for vep_file in vep_files:
         opener = gzip.open if vep_file.suffix == '.gz' else open
         with opener(vep_file, 'rt') as handle:
-            it = VEPParser.parse(handle, format=format, samples=samples, current_phase_sets=phase_sets)
+            it = VEPParser.parse(
+                handle=handle,
+                format=format,
+                samples=samples,
+                current_phase_sets=phase_sets
+            )
             for vep_record in it:
                 tally.total += 1
                 sample = vep_record.extra.get('SAMPLE', 'default')

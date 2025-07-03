@@ -90,7 +90,7 @@ def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[st
     """
     if current_phase_sets is None:
         current_phase_sets = set()
-    max_phase_set = max([int(ps[1][2:]) for ps in current_phase_sets]) \
+    max_phase_set = max(int(ps[1][2:]) for ps in current_phase_sets) \
         if current_phase_sets else 0
     phase_sets = (f"PS{max_phase_set + 1}", f"PS{max_phase_set + 2}")
     for line in handle:
@@ -150,7 +150,7 @@ def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[st
         keys = fields[8].split(':')
         for sample, i in sample_index.items():
             values = fields[i].split(':')
-            genotype = {k:v for k, v in zip(keys, values)}
+            genotype = dict(zip(keys, values))
             gt = genotype['GT']
             is_phased = '|' in gt
             is_detected = gt not in ['.', './.', '.|.', '0|0', '0/0']
