@@ -121,11 +121,19 @@ def parse_vep(args:argparse.Namespace) -> None:
             )
     if format == 'tsv':
         output_path:Path = args.output_path
+        if output_path is None:
+            raise ValueError(
+                "--output-path must be provided when the input files are TSV or TXT."
+            )
         common.validate_file_format(
             output_path, OUTPUT_FILE_FORMATS, check_writable=True
         )
     else:
         output_prefix:Path = args.output_prefix
+        if output_prefix is None:
+            raise ValueError(
+                "--output-prefix must be provided when the input files are VCF."
+            )
         output_dir = output_prefix.parent
         output_prefix = output_prefix.name
 
