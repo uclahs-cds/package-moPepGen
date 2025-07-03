@@ -6,7 +6,7 @@ from .GVFMetadataInfo import GVF_METADATA_INFO, GVF_METADATA_ADDITIONAL
 
 
 if TYPE_CHECKING:
-    from typing import List, IO, Tuple
+    from typing import List, IO, Tuple, Set
 
 ALT_DESCRIPTION = {
     'DEL': 'Deletion relative to the reference',
@@ -33,7 +33,7 @@ class GVFMetadata():
     """
     def __init__(self, parser:str, source:str, chrom:str, reference_index:str=None,
             genome_fasta:str=None, annotation_gtf:str=None, version:str=None, info=None,
-            additional=None, phase_pairs:List[Tuple[str,str]]=None):
+            additional=None, phase_pairs:Set[Tuple[str,str]]=None):
         """ Construct a TVFMetadata object. """
         self.parser = parser
         self.source = source
@@ -46,7 +46,7 @@ class GVFMetadata():
         self.added_types = []
         self.additional = additional
         self.version = version or __version__
-        self.phase_pairs = phase_pairs or []
+        self.phase_pairs = phase_pairs or set()
 
     def add_info(self, variant_type:str, is_phased:bool=False) -> None:
         """ Add a INFO field to the metadata. """
