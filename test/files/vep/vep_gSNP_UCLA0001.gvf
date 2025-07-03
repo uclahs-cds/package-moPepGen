@@ -5,6 +5,7 @@
 ##genome_fasta=
 ##annotation_gtf=
 ##source=gSNP
+##phase_pairs=PS1|PS2
 ##CHROM=<Description="Gene ID">
 ##INFO=<ID=TRANSCRIPT_ID,Number=1,Type=String,Description="Transcript ID">
 ##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">

@@ -20,7 +20,7 @@ INPUT_FILE_FORMATS = ['.tsv', '.txt', '.tsv.gz', '.txt.gz', '.vcf', '.vcf.gz']
 OUTPUT_FILE_FORMATS = ['.gvf']
 
 if TYPE_CHECKING:
-    from typing import Dict, List
+    from typing import Dict, List, Tuple, Set
     from logging import Logger
 
 # pylint: disable=W0212
@@ -145,12 +145,12 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     tally = TallyTable(logger)
 
-    phase_sets = set()
+    phase_sets:Set[Tuple[str, str]] = set()
 
     for vep_file in vep_files:
         opener = gzip.open if vep_file.suffix == '.gz' else open
         with opener(vep_file, 'rt') as handle:
-            it = VEPParser.parse(handle, format=format, samples=samples, phase_sets=phase_sets)
+            it = VEPParser.parse(handle, format=format, samples=samples, current_phase_sets=phase_sets)
             for vep_record in it:
                 tally.total += 1
                 sample = vep_record.extra.get('SAMPLE', 'default')
@@ -208,7 +208,7 @@ def parse_vep(args:argparse.Namespace) -> None:
         if format == 'vcf':
             output_path = output_dir/f"{output_prefix}_{sample}.gvf"
 
-        metadata = common.generate_metadata(args)
+        metadata = common.generate_metadata(args, phase_pairs=phase_sets)
         seqvar.io.write(sorted_records, output_path, metadata)
 
         logger.info('Variant GVF written: %s', output_path)

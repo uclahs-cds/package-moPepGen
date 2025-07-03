@@ -72,3 +72,4 @@ class TestSeqvarIO(unittest.TestCase):
         self.assertIn('TRANSCRIPT_ID', metadata.info)
         self.assertIn('PHASE_SETS', metadata.info)
         self.assertEqual(len(records), 16)
+        self.assertEqual(metadata.phase_pairs, {('PS1', 'PS2')})

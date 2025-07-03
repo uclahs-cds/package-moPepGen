@@ -14,19 +14,21 @@ if TYPE_CHECKING:
     from typing import List, Tuple, Iterable, IO, Dict, Set
 
 def parse(handle:IO, format:str=Literal['tsv', 'vcf'], samples:List[str]=None,
-        phase_sets:Set[str]=None) -> Iterable[VEPRecord]:
+        current_phase_sets:Set[Tuple[str, str]]=None) -> Iterable[VEPRecord]:
     """ Parse a VEP output file and return as an iterator.
 
     Args:
         handle (IO): A file-like object containing the VEP output.
         format (str): The format of the VEP output, either 'tsv' or 'vcf'.
+        current_phase_sets (Set[Tuple[str, str]]): A set of phase sets that have
+            been used.
 
     Return:
         An iterable of VEPRecord.
     """
     if format == 'tsv':
         return parse_tsv(handle)
-    return parse_vcf(handle, samples=samples, current_phase_sets=phase_sets)
+    return parse_vcf(handle, samples=samples, current_phase_sets=current_phase_sets)
 
 def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
     """ Parse a VEP output text file and return as an iterator.
@@ -72,7 +74,7 @@ def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
             extra=extra
         )
 
-def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[str]=None
+def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[str, str]]=None
         ) -> Iterable[VEPRecord]:
     """ Parse a VEP output VCF file and return as an iterator.
 
@@ -80,15 +82,17 @@ def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[str]=Non
         handle (IO): A file-like object containing the VEP output in VCF format.
         samples (List[str]): A list of sample names from the VCF file to be parsed.
             If None, all samples will be parsed.
-        current_phase_sets (Set[str]): A set of phase sets that have been used.
+        current_phase_sets (Set[Tuple[str, str]]): A set of phase sets that have
+            been used.
 
     Return:
         A iterable of VEPRecord.
     """
     if current_phase_sets is None:
         current_phase_sets = set()
-    max_phase_set = max([int(ps[2:]) for ps in current_phase_sets]) if current_phase_sets else 0
-    phase_sets = [f"PS{max_phase_set + 1}", f"PS{max_phase_set + 2}"]
+    max_phase_set = max([int(ps[1][2:]) for ps in current_phase_sets]) \
+        if current_phase_sets else 0
+    phase_sets = (f"PS{max_phase_set + 1}", f"PS{max_phase_set + 2}")
     for line in handle:
         if line.startswith('##'):
             continue
@@ -152,7 +156,7 @@ def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[str]=Non
             is_detected = gt not in ['.', './.', '.|.', '0|0', '0/0']
             cur_phase_set = []
             if is_phased:
-                current_phase_sets.update(phase_sets)
+                current_phase_sets.add(phase_sets)
                 if gt.startswith('1|'):
                     cur_phase_set.append(phase_sets[0])
                 if gt.endswith('|1'):
