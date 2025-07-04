@@ -135,9 +135,8 @@ def parse_circexplorer(args:argparse.Namespace):
 
     common.print_start_message(args)
 
-    _, anno, *_ = common.load_references(
-        args=args, load_genome=False, load_canonical_peptides=False
-    )
+    ref_data = common.load_references(args, False, False)
+    anno = ref_data.anno
 
     circ_records:Dict[str, List[circ.CircRNAModel]] = {}
 

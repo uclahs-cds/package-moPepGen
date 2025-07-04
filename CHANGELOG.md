@@ -10,6 +10,56 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.5.0-rc2] - 2025-06-21
+
+- Add `--in-bubble-cap-step-down` to `callVariant` for TVG in case of hypermutated regions.
+
+- Fixed `callVariant` that timeout error not caught when `--skip-failed` is given
+
+- Updated `mergeFasta` to also merge the peptide table if exists.
+
+- Updated `callVariant` so the peptide table is sorted and the order of peptides will sync with the fasta file.
+
+- Added support of VEP VCF files in `parseVEP`
+
+- Added support for multip-sample VCF
+
+- Added support for phased genotypes in `parseVEP`.
+
+## [1.5.0-rc1] - 2025-06-17
+
+- Added `--codon-table` and `--chr-codon-table`. The former sets the codon table to use, and the latter overrides it for specific chromosomes.
+
+- Added `--star-codons` and `--chr-star-codons` to specify start codons to use.
+
+- Added the support for codon table for `callVariant`.
+
+- Added the support for codon table for `callNovelORF` and `callAltTranslation`.
+
+- Added codon table to `downsampleReference`.
+
+- Fixed graph algorithms to use specified codon table and start codon
+
+- Fixed `GenomicAnnotationOnDisk` that when using on-the-fly indices, the `is_protein_coding` attributes of transcripts are not updated correctly.
+
+- Added `force_init_met` to `PeptideVariantGraph.call_variant_peptide` to control whether the initial amino acid should be forced to Methionine.
+
+- Updated the reference data loading function to directly return a `ReferenceData` object.
+
+- Updated `bruteForce` to specify codon table and start codons.
+
+- Updated `fuzzTest` to pass codon tabel and start codons to `callVariant` and `bruteForce`
+
+- Fixed `callVariant` that during TVG alignment, node merged from multiple frameshifts which together go back to the origianl frame, was not recognized as `was_brige` in a bubble
+
+- Fixed `fuzzTest` that cds start should be at least 3 nucleotide away from the cds end.
+
+- Added `--denylist` to `mergeFasta`
+
+## [1.4.6] - 2025-05-21
+
+- Fixed biopython version #908
+
 ## [1.4.6-rc4] - 2025-03-18
 
 - Added the support for wildcard characters in `splitFasta`. #906

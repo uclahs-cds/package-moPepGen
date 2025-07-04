@@ -1,11 +1,12 @@
 """ This module defined classes in order to group certain parameters together. """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Set
-
+from typing import TYPE_CHECKING
+import dataclasses
 from moPepGen import aa
 
 
 if TYPE_CHECKING:
+    from typing import Set, Dict, List
     from moPepGen import dna, gtf
 
 
@@ -35,7 +36,8 @@ class CleavageParams():
     def __init__(self, enzyme:str=None, exception:str=None, miscleavage:int=2,
             min_mw:int=500, min_length:int=7, max_length:int=25,
             max_variants_per_node:int=7, additional_variants_per_misc:int=2,
-            min_nodes_to_collapse:int=30, naa_to_collapse:int=5, flanking_size:int=9):
+            in_bubble_cap_step_down:int=0, min_nodes_to_collapse:int=30,
+            naa_to_collapse:int=5, flanking_size:int=9):
         """ constructor """
         self.enzyme = enzyme
         if self.enzyme and self.enzyme.lower() == 'none':
@@ -47,6 +49,7 @@ class CleavageParams():
         self.max_length = max_length
         self.max_variants_per_node = max_variants_per_node
         self.additional_variants_per_misc = additional_variants_per_misc
+        self.in_bubble_cap_step_down = in_bubble_cap_step_down
         self.min_nodes_to_collapse = min_nodes_to_collapse
         self.naa_to_collapse = naa_to_collapse
         self.flanking_size = flanking_size
@@ -76,19 +79,25 @@ class CleavageParams():
             })
         return data
 
-class ReferenceData():
+@dataclasses.dataclass
+class ReferenceData:
     """ Reference related parameters
 
     ## Attributes
         - genome (dna.DNASeqDict)
-        - anno (gtf.GeneAnnotationModel)
+        - anno (GenomicAnnotation)
         - canonical_peptides (Set[str])
         - proteome (aa.AminoAcidSeqDict)
+        - codon_tables (Dict[str, CodonTableInfo])
     """
-    def __init__(self, genome:dna.DNASeqDict, anno:gtf.GenomicAnnotation,
-            canonical_peptides:Set[str], proteome:aa.AminoAcidSeqDict=None):
-        """ constructor """
-        self.genome = genome
-        self.anno = anno
-        self.canonical_peptides = canonical_peptides
-        self.proteome = proteome  or aa.AminoAcidSeqDict()
+    genome: dna.DNASeqDict
+    anno: gtf.GenomicAnnotation
+    canonical_peptides: Set[str] = dataclasses.field(default_factory=set)
+    proteome: aa.AminoAcidSeqDict = dataclasses.field(default_factory=aa.AminoAcidSeqDict)
+    codon_tables: Dict[str, CodonTableInfo] = dataclasses.field(default_factory=dict)
+
+@dataclasses.dataclass
+class CodonTableInfo:
+    """ Codon table info """
+    codon_table: str
+    start_codons: List[str] = dataclasses.field(default_factory=list)

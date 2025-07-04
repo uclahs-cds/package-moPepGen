@@ -101,9 +101,9 @@ def parse_fusion_catcher(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
-    genome, anno, *_ = common.load_references(
-        args=args, load_canonical_peptides=False
-    )
+    ref_data = common.load_references(args=args, load_canonical_peptides=False)
+    genome = ref_data.genome
+    anno = ref_data.anno
 
     variants:List[seqvar.VariantRecord] = []
 

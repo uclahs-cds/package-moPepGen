@@ -12,8 +12,11 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+from turtle import tracer
 from typing import List, Set, TYPE_CHECKING, Dict, Tuple, Union
 from pathlib import Path
+import os
+import dataclasses
 from contextlib import ExitStack
 from pathos.pools import ParallelPool
 from moPepGen import svgraph, aa, seqvar, gtf, params, get_logger
@@ -27,6 +30,8 @@ if TYPE_CHECKING:
     from moPepGen import dna, circ
     from moPepGen.svgraph import ThreeFrameCVG, ThreeFrameTVG, PeptideVariantGraph
     from moPepGen.svgraph.PVGPeptideFinder import AnnotatedPeptideLabel
+    from moPepGen.gtf import GeneAnnotationModel
+    from moPepGen.params import CodonTableInfo, CleavageParams
 
 
 INPUT_FILE_FORMATS = ['.gvf']
@@ -109,6 +114,13 @@ def add_subparser_call_variant(subparsers:argparse._SubParsersAction):
         default=(2,),
         nargs='+',
         metavar='<number>'
+    )
+    p.add_argument(
+        '--in-bubble-cap-step-down',
+        type=int,
+        default=0,
+        metavar='<number>',
+        help='In bubble variant caps default step down.'
     )
     p.add_argument(
         '--min-nodes-to-collapse',
@@ -202,8 +214,12 @@ class VariantPeptideCaller():
         common.validate_file_format(
             self.output_path, OUTPUT_FILE_FORMATS, check_writable=True
         )
-        self.peptide_table_output_path:Path = \
-            Path(args.output_path).parent/f"{Path(args.output_path).stem}_peptide_table.txt"
+        self.peptide_table_temp_path:Path = common.get_peptide_table_path_temp(
+            path=Path(self.output_path)
+        )
+        self.peptide_table_output_path:Path = common.get_peptide_table_path(
+            path=Path(self.output_path)
+        )
         self.graph_output_dir:Path = args.graph_output_dir
         if self.graph_output_dir is not None:
             common.validate_file_format(
@@ -220,6 +236,7 @@ class VariantPeptideCaller():
             flanking_size=args.flanking_size,
             max_variants_per_node = args.max_variants_per_node[0],
             additional_variants_per_misc = args.additional_variants_per_misc[0],
+            in_bubble_cap_step_down=args.in_bubble_cap_step_down,
             min_nodes_to_collapse = args.min_nodes_to_collapse,
             naa_to_collapse = args.naa_to_collapse
         )
@@ -269,18 +286,12 @@ class VariantPeptideCaller():
             load_canonical_peptides = False
         else:
             load_canonical_peptides = True
-        genome, anno, _, canonical_peptides = common.load_references(
-                args=self.args,
-                invalid_protein_as_noncoding=self.invalid_protein_as_noncoding,
-                cleavage_params=self.cleavage_params,
-                load_canonical_peptides = load_canonical_peptides
-            )
-        if canonical_peptides is None:
-            canonical_peptides = set()
-        self.reference_data = params.ReferenceData(
-            genome=genome,
-            anno=anno,
-            canonical_peptides=canonical_peptides
+        self.reference_data = common.load_references(
+            args=self.args,
+            invalid_protein_as_noncoding=self.invalid_protein_as_noncoding,
+            cleavage_params=self.cleavage_params,
+            load_canonical_peptides = load_canonical_peptides,
+            load_codon_tables=True
         )
 
     def create_in_disk_variant_pool(self):
@@ -343,6 +354,7 @@ class VariantPeptideCaller():
         ref = self.reference_data
         tx_ids = [tx_id]
         tx_model = ref.anno.transcripts[tx_id]
+        codon_table = ref.codon_tables[tx_model.transcript.chrom]
         try:
             variant_series = pool[tx_id]
         except ValueError:
@@ -377,7 +389,7 @@ class VariantPeptideCaller():
                 gene_seqs[_gene_id] = _gene_seq
         gene_ids = list({ref.anno.transcripts[x].transcript.gene_id for x in tx_ids})
 
-        gene_models = {}
+        gene_models:dict[str,GeneAnnotationModel] = {}
         for gene_id in gene_ids:
             dummy_gene_model = copy.deepcopy(ref.anno.genes[gene_id])
             dummy_gene_model.transcripts = [x for x in dummy_gene_model.transcripts
@@ -389,10 +401,12 @@ class VariantPeptideCaller():
             transcripts={tx_id: ref.anno.transcripts[tx_id] for tx_id in tx_ids},
             source=ref.anno.source
         )
+
         reference_data = params.ReferenceData(
             genome=None,
             anno=dummy_anno,
-            canonical_peptides=set()    # Not providing canonical peptide at this point.
+            canonical_peptides=set(),    # Not providing canonical peptide at this point.
+            codon_tables={}
         )
         dummy_pool = seqvar.VariantRecordPool()
         dummy_pool.anno = dummy_anno
@@ -410,6 +424,7 @@ class VariantPeptideCaller():
             'tx_seqs': tx_seqs,
             'gene_seqs': gene_seqs,
             'reference_data': reference_data,
+            'codon_table': codon_table,
             'pool': dummy_pool,
             'cleavage_params': self.cleavage_params,
             'noncanonical_transcripts': self.noncanonical_transcripts,
@@ -421,11 +436,11 @@ class VariantPeptideCaller():
             'timeout': self.args.timeout_seconds,
             'max_variants_per_node': tuple(self.args.max_variants_per_node),
             'additional_variants_per_misc': tuple(self.args.additional_variants_per_misc),
+            'in_bubble_cap_step_down': self.args.in_bubble_cap_step_down,
             'backsplicing_only': self.args.backsplicing_only,
             'coding_novel_orf': self.args.coding_novel_orf,
             'skip_failed': self.args.skip_failed
         }
-
 
 if TYPE_CHECKING:
     TypeDGraphs = Tuple[
@@ -452,6 +467,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         reference_data:params.ReferenceData,
+        codon_table:CodonTableInfo,
         pool:seqvar.VariantRecordPool,
         cleavage_params:params.CleavageParams,
         noncanonical_transcripts:bool,
@@ -463,6 +479,7 @@ def call_variant_peptides_wrapper(tx_id:str,
         save_graph:bool,
         coding_novel_orf:bool,
         skip_failed:bool,
+        tracer:TimeoutTracer,
         **kwargs
         ) -> CallVariantOutput:
     """ wrapper function to call variant peptides """
@@ -480,8 +497,12 @@ def call_variant_peptides_wrapper(tx_id:str,
     main_peptides = None
     if find_novel_orfs:
         denylist = call_canonical_peptides(
-            tx_id=tx_id, ref=reference_data, tx_seq=tx_seqs[tx_id],
-            cleavage_params=cleavage_params, truncate_sec=truncate_sec,
+            tx_id=tx_id,
+            ref=reference_data,
+            tx_seq=tx_seqs[tx_id],
+            cleavage_params=cleavage_params,
+            codon_table=codon_table,
+            truncate_sec=truncate_sec,
             w2f=w2f_reassignment
         )
     else:
@@ -489,13 +510,14 @@ def call_variant_peptides_wrapper(tx_id:str,
     dgraphs:TypeDGraphs = (None, {}, {})
     pgraphs:TypePGraphs = (None, {}, {})
     success_flags = (True, True, True)
+    tracer.backbone = 'main'
     if variant_series.transcriptional:
         try:
             if not noncanonical_transcripts or \
                     variant_series.has_any_alternative_splicing():
                 peptide_map, dgraph, pgraph = call_peptide_main(
                     tx_id=tx_id, tx_variants=variant_series.transcriptional,
-                    variant_pool=pool, ref=reference_data,
+                    variant_pool=pool, ref=reference_data, codon_table=codon_table,
                     tx_seqs=tx_seqs, gene_seqs=gene_seqs,
                     cleavage_params=cleavage_params,
                     max_adjacent_as_mnv=max_adjacent_as_mnv,
@@ -503,13 +525,16 @@ def call_variant_peptides_wrapper(tx_id:str,
                     w2f=w2f_reassignment,
                     denylist=denylist,
                     save_graph=save_graph,
-                    coding_novel_orf=coding_novel_orf
+                    coding_novel_orf=coding_novel_orf,
+                    tracer=tracer
                 )
                 main_peptides = set(peptide_map.keys())
                 dgraphs = (dgraph, dgraphs[1], dgraphs[2])
                 pgraphs = (pgraph, pgraphs[1], pgraphs[2])
                 add_peptide_anno(peptide_map)
-        except:
+        except Exception as e:
+            if  isinstance(e, TimeoutError):
+                raise
             if skip_failed:
                 logger.warning('Variant peptides calling failed from %s', tx_id)
                 success_flags = (False, success_flags[1], success_flags[2])
@@ -517,6 +542,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                 logger.error('Exception raised from %s', tx_id)
                 raise
 
+    tracer.backbone = 'fusion'
     exclude_variant_types = ['Fusion', 'Insertion', 'Deletion', 'Substitution', 'circRNA']
     for variant in variant_series.fusion:
         try:
@@ -536,14 +562,17 @@ def call_variant_peptides_wrapper(tx_id:str,
             variant_pool[tx_id].transcriptional = filtered_variants
             peptide_map, dgraph, pgraph = call_peptide_fusion(
                 variant=variant, variant_pool=variant_pool, ref=reference_data,
-                tx_seqs=tx_seqs, gene_seqs=gene_seqs, cleavage_params=cleavage_params,
-                max_adjacent_as_mnv=max_adjacent_as_mnv, w2f_reassignment=w2f_reassignment,
-                denylist=denylist, save_graph=save_graph, coding_novel_orf=coding_novel_orf
+                codon_table=codon_table, tx_seqs=tx_seqs, gene_seqs=gene_seqs,
+                cleavage_params=cleavage_params, max_adjacent_as_mnv=max_adjacent_as_mnv,
+                w2f_reassignment=w2f_reassignment, denylist=denylist, save_graph=save_graph,
+                coding_novel_orf=coding_novel_orf, tracer=tracer
             )
             dgraphs[1][variant.id] = dgraph
             pgraphs[1][variant.id] = pgraph
             add_peptide_anno(peptide_map)
-        except:
+        except Exception as e:
+            if  isinstance(e, TimeoutError):
+                raise
             if skip_failed:
                 logger.warning(
                     'Variant peptides calling failed from %s with fusion: %s',
@@ -557,6 +586,7 @@ def call_variant_peptides_wrapper(tx_id:str,
                 )
                 raise
 
+    tracer.backbone = 'circRNA'
     if find_novel_orfs:
         if main_peptides:
             denylist.update([str(x) for x in main_peptides])
@@ -564,10 +594,19 @@ def call_variant_peptides_wrapper(tx_id:str,
             try:
                 peptide_map, cgraph, pgraph = call_peptide_circ_rna(
                     record=circ_model, variant_pool=pool, gene_seqs=gene_seqs,
-                    cleavage_params=cleavage_params,
+                    cleavage_params=cleavage_params, codon_table=codon_table,
                     max_adjacent_as_mnv=max_adjacent_as_mnv,
                     w2f_reassignment=w2f_reassignment, denylist=denylist,
-                    save_graph=save_graph, backsplicing_only=backsplicing_only
+                    save_graph=save_graph, backsplicing_only=backsplicing_only,
+                    tracer=tracer
+                )
+            except Exception as e:
+                if  isinstance(e, TimeoutError):
+                    raise
+                if skip_failed:
+                    logger.warning(
+                        'Variant peptides calling failed from %s with circRNA: %s',
+                        tx_id, circ_model.id
                 )
             except:
                 if skip_failed:
@@ -587,33 +626,49 @@ def call_variant_peptides_wrapper(tx_id:str,
 
     return peptide_anno, tx_id, dgraphs, pgraphs, success_flags
 
+@dataclasses.dataclass
+class TimeoutTracer:
+    """ Tracking time out """
+    backbone:str = None
+    graph:str = None
+
 def caller_reducer(dispatch):
     """ wrapper for ParallelPool. Also reduces the complexity if the run is timed out. """
     max_variants_per_node = dispatch['max_variants_per_node']
     additional_variants_per_misc = dispatch['additional_variants_per_misc']
+    in_bubble_cap_step_down = dispatch['in_bubble_cap_step_down']
     tx_id = dispatch['tx_id']
+    tracer = TimeoutTracer()
+    dispatch['tracer'] = tracer
     while True:
         try:
             return call_variant_peptides_wrapper(**dispatch)
         except TimeoutError as e:
             new_dispatch = copy.copy(dispatch)
-            p = copy.copy(new_dispatch['cleavage_params'])
-            max_variants_per_node = max_variants_per_node[1:]
-            if len(max_variants_per_node) == 0:
-                max_variants_per_node = (p.max_variants_per_node - 1, )
-                if max_variants_per_node[0] <= 0:
-                    raise ValueError(f"Failed to finish transcript: {tx_id}") from e
-            additional_variants_per_misc = additional_variants_per_misc[1:]
-            if len(additional_variants_per_misc) == 0:
-                additional_variants_per_misc = (0,)
+            p:CleavageParams = copy.copy(new_dispatch['cleavage_params'])
+            if tracer.graph == 'TVG':
+                in_bubble_cap_step_down += 1
+            else:
+                max_variants_per_node = max_variants_per_node[1:]
+                if len(max_variants_per_node) == 0:
+                    max_variants_per_node = (p.max_variants_per_node - 1, )
+                    if max_variants_per_node[0] <= 0:
+                        raise ValueError(f"Failed to finish transcript: {tx_id}") from e
+                additional_variants_per_misc = additional_variants_per_misc[1:]
+                if len(additional_variants_per_misc) == 0:
+                    additional_variants_per_misc = (0,)
             p.max_variants_per_node = max_variants_per_node[0]
             p.additional_variants_per_misc = additional_variants_per_misc[0]
+            p.in_bubble_cap_step_down = in_bubble_cap_step_down
             new_dispatch['cleavage_params'] = p
+            new_dispatch['tracer'] = TimeoutTracer()
             dispatch = new_dispatch
             get_logger().warning(
                 "Transcript %s timed out. Retry with "
-                "--max-variants-per-node %i --additional-variants-per-misc %i",
-                tx_id, p.max_variants_per_node, p.additional_variants_per_misc
+                "--max-variants-per-node %i --additional-variants-per-misc %i"
+                "and `--in-bubble-cap-step-down` %i",
+                tx_id, p.max_variants_per_node, p.additional_variants_per_misc,
+                in_bubble_cap_step_down
             )
 
 def call_variant_peptide(args:argparse.Namespace) -> None:
@@ -629,7 +684,7 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
 
     with ExitStack() as stack:
         pool = stack.enter_context(seqvar.VariantRecordPoolOnDiskOpener(caller.variant_record_pool))
-        seq_anno_handle = stack.enter_context(open(caller.peptide_table_output_path, 'w+'))
+        seq_anno_handle = stack.enter_context(open(caller.peptide_table_temp_path, 'w+'))
 
         peptide_table = svgraph.VariantPeptideTable(seq_anno_handle)
         peptide_table.write_header()
@@ -701,12 +756,15 @@ def call_variant_peptide(args:argparse.Namespace) -> None:
         logger.info('All transcripts processed. Preparing FASTA file..')
         peptide_table.write_fasta(caller.output_path)
         logger.info('Variant peptide FASTA written.')
-        caller.tally.log()
+        peptide_table.sort_table(caller.peptide_table_output_path)
+        logger.info('Variant peptide table soted.')
+    os.remove(caller.peptide_table_temp_path)
+    caller.tally.log()
 
 def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
         tx_seq:dna.DNASeqRecordWithCoordinates,
         cleavage_params:params.CleavageParams,
-        truncate_sec:bool, w2f:bool):
+        codon_table:CodonTableInfo, truncate_sec:bool, w2f:bool):
     """ Call canonical peptides """
     tx_model = ref.anno.transcripts[tx_id]
     dgraph = svgraph.ThreeFrameTVG(
@@ -719,7 +777,10 @@ def call_canonical_peptides(tx_id:str, ref:params.ReferenceData,
     )
     dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()
-    pgraph = dgraph.translate()
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
     pgraph.create_cleavage_graph()
     peptide_map = pgraph.call_variant_peptides(
         check_variants=False, truncate_sec=truncate_sec, w2f=w2f,
@@ -736,16 +797,19 @@ if TYPE_CHECKING:
 
 def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         variant_pool:seqvar.VariantRecordPoolOnDisk,
-        ref:params.ReferenceData,
+        ref:params.ReferenceData, codon_table:CodonTableInfo,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams,
         max_adjacent_as_mnv:bool, truncate_sec:bool, w2f:bool,
-        denylist:Set[str], save_graph:bool, coding_novel_orf:bool
+        denylist:Set[str], save_graph:bool, coding_novel_orf:bool,
+        tracer:TimeoutTracer
         ) -> TypeCallPeptideReturnData:
     """ Call variant peptides for main variants (except cirRNA). """
     tx_model = ref.anno.transcripts[tx_id]
     tx_seq = tx_seqs[tx_id]
+
+    tracer.graph = 'TVG'
 
     dgraph = svgraph.ThreeFrameTVG(
         seq=tx_seq,
@@ -765,7 +829,12 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
-    pgraph = dgraph.translate()
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
+
+    tracer.graph = 'PVG'
 
     if cleavage_params.enzyme is not None:
         pgraph.create_cleavage_graph()
@@ -802,12 +871,12 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
 
 def call_peptide_fusion(variant:seqvar.VariantRecord,
         variant_pool:seqvar.VariantRecordPoolOnDisk,
-        ref:params.ReferenceData,
+        ref:params.ReferenceData, codon_table:CodonTableInfo,
         tx_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
         w2f_reassignment:bool, denylist:Set[str], save_graph:bool,
-        coding_novel_orf:bool
+        coding_novel_orf:bool, tracer:TimeoutTracer
         ) -> TypeCallPeptideReturnData:
     """ Call variant peptides for fusion """
     tx_id = variant.location.seqname
@@ -815,6 +884,8 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
     tx_seq = tx_seqs[tx_id]
     tx_seq = tx_seq[:variant.location.start]
     donor_tx_id = variant.accepter_transcript_id
+
+    tracer.graph = 'TVG'
 
     orf_start = tx_seq.orf.start + 3 if tx_seq.orf else 3
     if variant.location.start < orf_start:
@@ -848,7 +919,12 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         anno=ref.anno, tx_seqs=tx_seqs, gene_seqs=gene_seqs
     )
     dgraph.fit_into_codons()
-    pgraph = dgraph.translate()
+    pgraph = dgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
+
+    tracer.graph = 'PVG'
 
     if cleavage_params.enzyme is not None:
         pgraph.create_cleavage_graph()
@@ -887,9 +963,10 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
 def call_peptide_circ_rna(record:circ.CircRNAModel,
         variant_pool:seqvar.VariantRecordPool,
         gene_seqs:Dict[str, dna.DNASeqRecordWithCoordinates],
+        codon_table:CodonTableInfo,
         cleavage_params:params.CleavageParams, max_adjacent_as_mnv:bool,
         backsplicing_only:bool, w2f_reassignment:bool, denylist:Set[str],
-        save_graph:bool
+        save_graph:bool, tracer:TimeoutTracer
         )-> TypeCallPeptideReturnData:
     """ Call variant peptides from a given circRNA """
     gene_id = record.gene_id
@@ -898,6 +975,8 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     circ_seq = record.get_circ_rna_sequence(gene_seq)
     for loc in circ_seq.locations:
         loc.ref.seqname = record.id
+
+    tracer.graph = 'TVG'
 
     # Alternative splicing should not be included. Alternative splicing
     # represented as Insertion, Deletion or Substitution.
@@ -933,7 +1012,12 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
     cgraph.extend_loop()
     cgraph.truncate_three_frames()
     cgraph.fit_into_codons()
-    pgraph = cgraph.translate()
+    pgraph = cgraph.translate(
+        table=codon_table.codon_table,
+        start_codons=codon_table.start_codons
+    )
+
+    tracer.graph = 'PVG'
 
     if cleavage_params.enzyme is not None:
         pgraph.create_cleavage_graph()

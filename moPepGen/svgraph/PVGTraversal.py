@@ -36,8 +36,8 @@ class PVGTraversal():
             queue:Deque[PVGCursor]=None,
             stack:Dict[str, Dict[str, PVGCursor]]=None,
             orf_assignment:str='max', backsplicing_only:bool=False,
-            find_ass:bool=False,
-            reef_kmers:Set[Tuple[str]]=None):
+            find_ass:bool=False, reef_kmers:Set[Tuple[str]]=None,
+            force_init_met:bool=False):
         """ constructor """
         self.check_variants = check_variants
         self.check_orf = check_orf
@@ -51,6 +51,7 @@ class PVGTraversal():
         self.backsplicing_only = backsplicing_only
         self.find_ass = find_ass
         self.reef_kmers = reef_kmers or set()
+        self.force_init_met = force_init_met
 
     def is_done(self) -> bool:
         """ Check if the traversal is done """

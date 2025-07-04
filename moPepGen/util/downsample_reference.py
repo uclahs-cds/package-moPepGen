@@ -17,9 +17,10 @@ command line usage:
         --gene-list ENSG0001 ENSG0002 \
         --output-dir path/to/downsampled_index
 """
+from __future__ import annotations
 import argparse
 import copy
-from typing import List, Tuple, Iterable, Dict
+from typing import TYPE_CHECKING
 from pathlib import Path
 import math
 from Bio import SeqIO
@@ -27,9 +28,12 @@ from moPepGen import gtf, dna, aa
 from moPepGen.gtf import GtfIO
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
 from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
-from moPepGen.cli.common import add_args_cleavage, add_args_reference, \
-    print_help_if_missing_args, add_args_debug_level
+from moPepGen.cli import common
 
+
+if TYPE_CHECKING:
+    from typing import List, Tuple, Iterable, Dict
+    from moPepGen.cli.common import CodonTableInfo
 
 # pylint: disable=W0212
 def parse_args(subparsers:argparse._SubParsersAction):
@@ -66,15 +70,16 @@ def parse_args(subparsers:argparse._SubParsersAction):
         help='Create translate sequences for noncoding at any possible ORF.',
         default='true'
     )
-    add_args_reference(parser, index=False)
-    add_args_cleavage(parser)
-    add_args_debug_level(parser)
+    common.add_args_reference(parser, index=False)
+    common.add_args_cleavage(parser)
+    common.add_args_debug_level(parser)
     parser.set_defaults(func=main)
-    print_help_if_missing_args(parser)
+    common.print_help_if_missing_args(parser)
     return parser
 
-GeneTranscriptModel = Tuple[gtf.GeneAnnotationModel, Dict[str, \
-    gtf.TranscriptAnnotationModel]]
+if TYPE_CHECKING:
+    GeneTranscriptModel = Tuple[gtf.GeneAnnotationModel, Dict[str, \
+        gtf.TranscriptAnnotationModel]]
 
 def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
     """ Parse GTF """
@@ -105,7 +110,7 @@ def parse_gtf(path:Path) -> Iterable[GeneTranscriptModel]:
             gene.transcripts.append(transcript_id)
         transcripts[transcript_id].add_record(feature, record)
 
-def downsample_gtf(path:Path, gene_list=None, tx_list=None) -> gtf.GeneAnnotationModel:
+def downsample_gtf(path:Path, gene_list=None, tx_list=None) -> gtf.GenomicAnnotation:
     """ Downsample a GTF file """
     anno = gtf.GenomicAnnotation()
 
@@ -227,19 +232,21 @@ def shift_reference(gene_seqs:dna.DNASeqDict, anno:gtf.GenomicAnnotation
     return genome, anno
 
 def get_noncoding_translate(tx_id:str, anno:gtf.GenomicAnnotation,
-        genome:dna.DNASeqDict) -> Dict[str, aa.AminoAcidSeqRecord]:
+        genome:dna.DNASeqDict, codon_tables:Dict[str,CodonTableInfo]
+        ) -> Dict[str, aa.AminoAcidSeqRecord]:
     """ Translate all possible ORF of a noncoding transcript """
     tx_model = anno.transcripts[tx_id]
     protein_id = tx_id.replace('ENST', 'ENSP')
     gene_id = tx_model.transcript.gene_id
     chrom = tx_model.transcript.chrom
     tx_seq = tx_model.get_transcript_sequence(genome[chrom])
-    start_positions = tx_seq.find_all_start_codons()
+    table = codon_tables[chrom]
+    start_positions = tx_seq.find_all_start_codons(start_codons=table.start_codons)
 
     translates = {}
     for start in start_positions:
         end = start + math.floor((len(tx_seq) - start) / 3) * 3
-        aa_seq = tx_seq[start:end].translate(to_stop=True)
+        aa_seq = tx_seq[start:end].translate(to_stop=True, table=table.codon_table)
         end = start + len(aa_seq) * 3
         orf = f"ORF{start}:{end}"
         alt_protein_id = f"{protein_id}-{orf}"
@@ -354,10 +361,35 @@ def main(args:argparse.Namespace):
     genome, anno = shift_reference(gene_seqs, anno)
     proteins = downsample_proteins(protein_fasta, anno)
 
+     # Organize codon table
+    chr_codon_table:List[str] = args.chr_codon_table
+    if not chr_codon_table:
+        if anno.source == 'GENCODE':
+            chr_codon_table.append('chrM:SGC1')
+        elif anno.source == 'ENSEMBL':
+            chr_codon_table.append('MT:SGC1')
+
+    chr_start_codons:List[str] = args.chr_start_codons
+    if not chr_start_codons:
+        if anno.source == 'GENCODE':
+            chr_start_codons.append('chrM:ATG,ATA,ATT')
+        elif anno.source == 'ENSEMBL':
+            chr_start_codons.append('MT:ATG,ATA,ATT')
+
+    chroms = {tx_model.transcript.chrom for tx_model in anno.transcripts.values()}
+
+    codon_tables = common.create_codon_table_map(
+        codon_table=args.codon_table,
+        chr_codon_table=chr_codon_table,
+        start_codons=args.start_codons,
+        chr_start_codons=chr_start_codons,
+        chroms=chroms
+    )
+
     if translate_noncoding:
         for tx_id in copy.copy(list(anno.transcripts.keys())):
             if tx_id not in proteins:
-                aa_seqs = get_noncoding_translate(tx_id, anno, genome)
+                aa_seqs = get_noncoding_translate(tx_id, anno, genome, codon_tables)
                 proteins.update(aa_seqs)
 
     with open(output_dir/'annotation.gtf', 'wt') as handle:

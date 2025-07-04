@@ -45,11 +45,11 @@ def fake_variant_record(anno:GenomicAnnotation, genome:DNASeqDict,
             if frames_shifted != 0:
                 break
     tx_start = tx_model.transcript.location.start
-    tx_end = tx_model.transcript.location.end
+    tx_end = tx_model.transcript.location.end - 1
     if tx_model.transcript.strand == -1:
         tx_start, tx_end = tx_end, tx_start
     tx_start = anno.coordinate_genomic_to_gene(tx_start, gene_id)
-    tx_end = anno.coordinate_genomic_to_gene(tx_end - 1, gene_id) + 1
+    tx_end = anno.coordinate_genomic_to_gene(tx_end, gene_id) + 1
 
     while True:
         if frames_shifted >= 0:
@@ -562,12 +562,12 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
                     if cds_start_nf:
                         cds_start = offset
                     else:
-                        cds_start = offset + random.randint(1, exon_len - 3)
+                        cds_start = offset + random.randint(1, exon_len - 5)
                 else:
                     if mrna_end_nf:
                         cds_start = offset
                     else:
-                        cds_start = offset + random.randint(1, exon_len - 1)
+                        cds_start = offset + random.randint(5, exon_len - 1)
             else:
                 cds_start = offset
 
@@ -576,12 +576,12 @@ def fake_transcript_model(n_exons:int, is_coding:bool, is_selenoprotein:bool,
                     if cds_start_nf:
                         cds_end = offset + exon_len
                     else:
-                        cds_end = offset + exon_len - random.randint(3, exon_len - 3)
+                        cds_end = offset + exon_len - random.randint(5, exon_len - 5)
                 else:
                     if mrna_end_nf:
                         cds_end = offset + exon_len
                     else:
-                        cds_end = offset + exon_len - random.randint(3, exon_len - 3)
+                        cds_end = offset + exon_len - random.randint(5, exon_len - 5)
             else:
                 cds_end = offset + exon_len
 
@@ -902,7 +902,7 @@ def fake_genome_and_annotation(n_genes:int) -> Tuple[DNASeqDict, GenomicAnnotati
     params = {
         'min_intron_size': 20,
         'max_intron_size': 500,
-        'min_exon_size': 10,
+        'min_exon_size': 15,
         'max_exon_size': 300,
         'min_intergenic_size': 10,
         'max_intergenic_size': 50,

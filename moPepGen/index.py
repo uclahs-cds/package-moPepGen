@@ -10,6 +10,7 @@ import pickle
 from moPepGen import gtf, logger, err
 from moPepGen.version import MetaVersion
 from moPepGen.params import CleavageParams
+from moPepGen.params import CodonTableInfo
 
 
 if TYPE_CHECKING:
@@ -37,18 +38,26 @@ class CanonicalPoolMetadata:
 class IndexMetadata:
     """ Index metadata """
     def __init__(self, version:MetaVersion, canonical_pools:List[CanonicalPoolMetadata],
-            source:str):
+            source:str, codon_tables:dict[str,CodonTableInfo]):
         """ constructor """
         self.version = version
         self.canonical_pools = canonical_pools
         self.source = source
+        self.codon_tables = codon_tables
 
     def jsonfy(self):
         """ jsonfy """
         return {
             'version': self.version.jsonfy(),
             'canonical_pools': [it.jsonfy() for it in self.canonical_pools],
-            'source': self.source
+            'source': self.source,
+            'codon_tables': {
+                chrom: {
+                    'codon_table': info.codon_table,
+                    'start_codons': info.start_codons
+                }
+                for chrom, info in self.codon_tables.items()
+            }
         }
 
     def register_canonical_pool(self, cleavage_params:CleavageParams):
@@ -96,7 +105,8 @@ class IndexDir:
         self.metadata = IndexMetadata(
             version=MetaVersion(),
             canonical_pools=[],
-            source=None
+            source=None,
+            codon_tables={}
         )
 
     def load_metadata(self) -> IndexMetadata:
@@ -114,10 +124,17 @@ class IndexDir:
                 )
                 canonical_pools.append(pool)
             source = data['source']
+            codon_tables = {
+                chrom: CodonTableInfo(
+                    codon_table=info['codon_table'],
+                    start_codons=info['start_codons']
+                ) for chrom, info in data['codon_tables'].items()
+            }
         return IndexMetadata(
             version=version,
             canonical_pools=canonical_pools,
-            source=source
+            source=source,
+            codon_tables=codon_tables
         )
 
     def validate_metadata(self) -> bool:

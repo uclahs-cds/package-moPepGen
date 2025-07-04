@@ -100,7 +100,7 @@ class DNASeqRecord(SeqRecord):
             start += 3
 
     def iter_enzymatic_cleave_sites(self, rule:str, exception:str=None,
-            start:int=None, end:int=None) -> Iterable[int]:
+            start:int=None, end:int=None, table:str=None) -> Iterable[int]:
         """ Returns a generator of the enzymatic cleave sites of a given range.
         Default is the entire sequence.
 
@@ -117,7 +117,8 @@ class DNASeqRecord(SeqRecord):
             start = 0
         if end is None:
             end = len(self)
-        peptides = str(self.seq[start:end].translate())
+        assert table is not None
+        peptides = str(self.seq[start:end].translate(table=table))
         rule = EXPASY_RULES[rule]
         exception = EXPASY_RULES.get(exception, exception)
         exceptions = [] if exception is None else \
@@ -138,20 +139,10 @@ class DNASeqRecord(SeqRecord):
         return list(self.iter_enzymatic_cleave_sites(rule=rule,
             exception=exception, start=start, end=end))
 
-    def find_all_start_codons(self) -> List[int]:
+    def find_all_start_codons(self, start_codons:List[str]) -> List[int]:
         """ Find all start codon positions """
-        start_positions = []
-        start_codon = 'ATG'
-        while True:
-            if len(start_positions) == 0:
-                i = 0
-            else:
-                i = start_positions[-1] + 1
-            j = self.seq[i:].find(start_codon)
-            if j == -1:
-                break
-            start_positions.append(i + j)
-        return start_positions
+        pattern = '|'.join(start_codons)
+        return [m.start() for m in re.finditer(pattern, str(self.seq))]
 
     def find_last_cleave_position(self, end:int, rule:str, exception:str=None,
             miscleavage:int=0) -> int:

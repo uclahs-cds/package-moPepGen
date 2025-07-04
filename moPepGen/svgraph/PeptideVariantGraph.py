@@ -848,7 +848,8 @@ class PeptideVariantGraph():
             check_orf:bool=False, keep_all_occurrence:bool=True, denylist:Set[str]=None,
             circ_rna:CircRNAModel=None, orf_assignment:str='max',
             backsplicing_only:bool=False, truncate_sec:bool=False, w2f:bool=False,
-            check_external_variants:bool=True, find_ass:bool=False
+            check_external_variants:bool=True, find_ass:bool=False,
+            force_init_met:bool=True
             ) -> Dict[Seq, List[AnnotatedPeptideLabel]]:
         """ Walk through the graph and find all noncanonical peptides.
 
@@ -901,7 +902,8 @@ class PeptideVariantGraph():
             check_orf=check_orf, queue=queue, pool=finder,
             circ_rna=circ_rna, orf_assignment=orf_assignment,
             backsplicing_only=backsplicing_only,
-            find_ass=find_ass
+            find_ass=find_ass,
+            force_init_met=force_init_met
         )
 
         if self.has_known_orf():
@@ -996,7 +998,8 @@ class PeptideVariantGraph():
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
                 backsplicing_only=traversal.backsplicing_only,
-                reef_kmers=traversal.reef_kmers
+                reef_kmers=traversal.reef_kmers,
+                force_init_met=traversal.force_init_met
             )
             self.remove_node(node_copy)
 
@@ -1081,7 +1084,8 @@ class PeptideVariantGraph():
                 leading_node=target_node,
                 subgraphs=self.subgraphs,
                 backsplicing_only=traversal.backsplicing_only,
-                reef_kmers=traversal.reef_kmers
+                reef_kmers=traversal.reef_kmers,
+                force_init_met=traversal.force_init_met
             )
             cleavage_gain = target_node.get_cleavage_gain_variants()
             for out_node in target_node.out_nodes:
@@ -1161,7 +1165,7 @@ class PeptideVariantGraph():
 
         start_indices = []
         if cursor.finding_start_site:
-            start_indices = target_node.seq.find_all_start_sites()
+            start_indices = target_node.start_codons
             if not finding_start_site:
                 start_indices = [x for x in start_indices if x <= real_fusion_position]
             for start_index in start_indices:
@@ -1282,7 +1286,8 @@ class PeptideVariantGraph():
                 subgraphs=self.subgraphs,
                 circ_rna=traversal.circ_rna,
                 backsplicing_only=traversal.backsplicing_only,
-                reef_kmers=traversal.reef_kmers
+                reef_kmers=traversal.reef_kmers,
+                force_init_met=traversal.force_init_met
             )
         for node in trash:
             self.remove_node(node)

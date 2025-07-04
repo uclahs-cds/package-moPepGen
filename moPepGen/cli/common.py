@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from typing import Tuple, Set, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from pathlib import Path
 import errno
 import signal
@@ -11,13 +11,16 @@ import functools
 import time
 import logging
 import pkg_resources
-from moPepGen import aa, dna, gtf, seqvar, get_logger, constant
+from Bio.Data import CodonTable
+from moPepGen import aa, dna, gtf, seqvar, get_logger, constant, params
 from moPepGen.aa.expasy_rules import EXPASY_RULES
 from moPepGen.index import IndexDir
+from moPepGen.params import CodonTableInfo
 
 
 if TYPE_CHECKING:
-    from moPepGen.params import CleavageParams
+    from typing import Tuple, Set, List, Dict
+    from moPepGen.params import CleavageParams, ReferenceData
 
 def print_help_if_missing_args(parser:argparse.ArgumentParser):
     """ If no args are provided, print help and exit """
@@ -59,6 +62,40 @@ def add_args_reference(parser:argparse.ArgumentParser, genome:bool=True,
         choices=['GENCODE', 'ENSEMBL'],
         help='Source of reference genome and annotation.',
         default=None
+    )
+    valid_codon_tables = get_valid_codon_tables()
+    group.add_argument(
+        '--codon-table',
+        type=str,
+        default='Standard',
+        choices=valid_codon_tables,
+        help=f'Codon table. Defaults to "Standard". Supported codon tables: {valid_codon_tables}'
+    )
+    group.add_argument(
+        '--chr-codon-table',
+        type=str,
+        nargs='*',
+        default=[],
+        help='Chromosome specific codon table. Must be specified in the format of'
+        ' "chrM:SGC1", where "chrM" is the chromosome name and "SGC1" is the codon'
+        f' table to use to translate genes on chrM. Supported codon tables: {valid_codon_tables}.'
+        ' By default, "SGC1" is assigned to mitochondrial chromosomes.'
+    )
+    group.add_argument(
+        '--start-codons',
+        type=str,
+        nargs='*',
+        default=['ATG'],
+        help='Default start codon(s) to use for novel ORF translation. Defaults to ["ATG"].'
+    )
+    group.add_argument(
+        '--chr-start-codons',
+        type=str,
+        nargs='*',
+        default=[],
+        help='Chromosome specific start codon(s). For example, "chrM:ATG,ATA,ATT".'
+        'By defualt, mitochondrial chromosome name is automatically inferred and'
+        'start codon "ATG", "ATA", "ATT", "ATC" and "GTG" are assigned to it.'
     )
     if proteome:
         group.add_argument(
@@ -237,14 +274,14 @@ def add_args_source(parser:argparse.ArgumentParser):
 def load_references(args:argparse.Namespace, load_genome:bool=True,
         load_canonical_peptides:bool=True, load_proteome:bool=True,
         invalid_protein_as_noncoding:bool=False, check_protein_coding:bool=False,
-        cleavage_params:CleavageParams=None
-        ) -> Tuple[dna.DNASeqDict, gtf.GenomicAnnotationOnDisk, Set[str]]:
+        load_codon_tables:bool=False, cleavage_params:CleavageParams=None
+        ) -> ReferenceData:
     """ Load reference files. If index_dir is specified, data will be loaded
     from pickles, otherwise, will read from FASTA and GTF. """
     logger = get_logger()
     genome = None
     anno = None
-    canonical_peptides = None
+    canonical_peptides = set()
     if invalid_protein_as_noncoding:
         load_proteome = True
 
@@ -266,6 +303,8 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         anno.check_protein_coding(proteome, True)
 
         logger.info('Reference indices loaded.')
+
+        codon_tables = index_dir.metadata.codon_tables
     else:
         if (check_protein_coding is True or load_canonical_peptides is True) and \
                 args.proteome_fasta is None:
@@ -302,12 +341,44 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
             )
             logger.info('canonical peptide pool generated.')
 
+        if load_codon_tables:
+            chr_codon_table:List[str] = args.chr_codon_table
+            if not chr_codon_table:
+                if anno.source == 'GENCODE':
+                    chr_codon_table.append('chrM:SGC1')
+                elif anno.source == 'ENSEMBL':
+                    chr_codon_table.append('MT:SGC1')
+
+            chr_start_codons:List[str] = args.chr_start_codons
+            if not chr_start_codons:
+                if anno.source == 'GENCODE':
+                    chr_start_codons.append('chrM:ATG,ATA,ATT')
+                elif anno.source == 'ENSEMBL':
+                    chr_start_codons.append('MT:ATG,ATA,ATT')
+
+            codon_tables = create_codon_table_map(
+                codon_table=args.codon_table,
+                chr_codon_table=chr_codon_table,
+                start_codons=args.start_codons,
+                chr_start_codons=chr_start_codons,
+                chroms=set(genome.keys()) if load_genome else None
+            )
+        else:
+            codon_tables = None
+
     if not load_proteome:
         proteome = None
 
-    return genome, anno, proteome, canonical_peptides
+    return params.ReferenceData(
+        genome=genome,
+        anno=anno,
+        canonical_peptides=canonical_peptides,
+        proteome=proteome,
+        codon_tables=codon_tables
+    )
 
-def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
+def generate_metadata(args:argparse.Namespace, phase_pairs:Set[Tuple[str,str]]=None
+        ) -> seqvar.GVFMetadata:
     """ Generate metadata """
     if args.index_dir:
         reference_index = args.index_dir.resolve()
@@ -326,7 +397,8 @@ def generate_metadata(args:argparse.Namespace) -> seqvar.GVFMetadata:
         chrom='Gene ID',
         reference_index=reference_index,
         genome_fasta=genome_fasta,
-        annotation_gtf=annotation_gtf
+        annotation_gtf=annotation_gtf,
+        phase_pairs=phase_pairs
     )
 
 def load_inclusion_exclusion_biotypes(args:argparse.Namespace
@@ -437,3 +509,55 @@ def setup_loggers(level:str):
     logger.addHandler(handler)
 
     return logger
+
+def get_valid_codon_tables():
+    """ Get the list of codon table supported by biopython """
+    return {
+        name
+        for codon_table in CodonTable.unambiguous_dna_by_id.values()
+        for name in codon_table.names
+        if name is not None
+    }
+
+def create_codon_table_map(codon_table:str, chr_codon_table:List[str],
+        start_codons:List[str], chr_start_codons:List[str], chroms:Set[str]
+        ) -> Dict[str,CodonTableInfo]:
+    """ Create codon table map. """
+    codon_tables = {}
+    valid_codon_tables = get_valid_codon_tables()
+    for it in chr_codon_table:
+        k,v = it.split(':')
+        if chroms and k not in chroms:
+            get_logger().warning(
+                'In --chr-codon-table %s, chromosome %s not found in the genome. ',
+                it, k
+            )
+        assert v in valid_codon_tables
+        codon_tables[k] = CodonTableInfo(codon_table=v)
+
+    for chr in chroms:
+        if chr not in codon_tables:
+            codon_tables[chr] = CodonTableInfo(codon_table=codon_table)
+
+    for it in chr_start_codons:
+        k,v = it.split(':')
+        if chroms and k not in chroms:
+            get_logger().warning(
+                'In --chr-start-codon %s, chromosome %s not found in the genome. ',
+                it, k
+            )
+        codon_tables[k].start_codons = v.split(',')
+
+    for chr in chroms:
+        if not codon_tables[chr].start_codons:
+            codon_tables[chr].start_codons = start_codons
+
+    return codon_tables
+
+def get_peptide_table_path(path:Path) -> Path:
+    """ Get the peptide table file path from the given path for peptide fasta. """
+    return path.parent/f"{path.stem}_peptide_table.txt"
+
+def get_peptide_table_path_temp(path:Path) -> Path:
+    """ Get the temp peptide table path """
+    return path.parent/f"{path.stem}_peptide_table.tmp"

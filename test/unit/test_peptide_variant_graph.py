@@ -373,7 +373,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,45])
         graph.cleavage_params.miscleavage = 1
-        peptides = graph.call_variant_peptides()
+        peptides = graph.call_variant_peptides(force_init_met=False)
         received = {str(x) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR'}
         self.assertEqual(received, expected)
@@ -391,7 +391,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,60])
         graph.cleavage_params.miscleavage = 1
-        peptides = graph.call_variant_peptides()
+        peptides = graph.call_variant_peptides(force_init_met=False)
         received = {str(x) for x in peptides}
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
@@ -407,7 +407,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,60])
         graph.cleavage_params.miscleavage = 1
-        peptides = graph.call_variant_peptides()
+        peptides = graph.call_variant_peptides(force_init_met=False)
         received = {str(x) for x in peptides}
         expected = {'SSSSR', 'SSSSRSSSIR', 'SSSIR', 'SSSIRSSSSS'}
         self.assertEqual(received, expected)
@@ -428,7 +428,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         }
         graph, _ = create_pgraph(data, 'ENST0001', known_orf=[0,60])
         graph.cleavage_params.miscleavage = 1
-        peptides = graph.call_variant_peptides()
+        peptides = graph.call_variant_peptides(force_init_met=False)
         received = {str(x) for x in peptides}
         expected = {'SSSSKSS', 'SS'}
         self.assertEqual(received, expected)
@@ -447,7 +447,7 @@ class TestPeptideVariantGraph(unittest.TestCase):
         graph, nodes = create_pgraph(data, 'ENST0001', known_orf=[0,60])
         graph.cleavage_params.miscleavage = 2
         nodes[5].truncated = True
-        res = graph.call_variant_peptides()
+        res = graph.call_variant_peptides(force_init_met=False)
         received = {str(x) for x in res}
         expected = {'SSSSKSSSSR', 'SSSSR', 'SSSSKSSSSRSSSPK', 'SSSSRSSSPK'}
         self.assertEqual(received, expected)
@@ -484,10 +484,13 @@ class TestPeptideVariantGraph(unittest.TestCase):
             4: ('SSSSR', [2], [], locations, 1)
         }
         graph_id = 'ENST0001'
-        graph, _ = create_pgraph(data, graph_id, )
+        graph, nodes = create_pgraph(data, graph_id, )
+        nodes[1].start_codons = [0]
+        nodes[2].start_codons = [0]
         res = graph.call_variant_peptides(
             check_variants=False, check_orf=True,
-            check_external_variants=False
+            check_external_variants=False,
+            force_init_met=False
         )
 
         received = {str(x) for x in res}

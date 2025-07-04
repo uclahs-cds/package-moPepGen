@@ -1,7 +1,8 @@
 """ This module defines the class for a single VEP record
 """
 from __future__ import annotations
-from typing import List, Tuple, Iterable, IO
+from typing import TYPE_CHECKING, Literal
+import copy
 from Bio.Seq import Seq
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.err import TranscriptionStopSiteMutationError, \
@@ -9,7 +10,27 @@ from moPepGen.err import TranscriptionStopSiteMutationError, \
 from moPepGen import seqvar, dna, gtf
 
 
-def parse(handle:IO) -> Iterable[VEPRecord]:
+if TYPE_CHECKING:
+    from typing import List, Tuple, Iterable, IO, Dict, Set
+
+def parse(handle:IO, format:str=Literal['tsv', 'vcf'], samples:List[str]=None,
+        current_phase_sets:Set[Tuple[str, str]]=None) -> Iterable[VEPRecord]:
+    """ Parse a VEP output file and return as an iterator.
+
+    Args:
+        handle (IO): A file-like object containing the VEP output.
+        format (str): The format of the VEP output, either 'tsv' or 'vcf'.
+        current_phase_sets (Set[Tuple[str, str]]): A set of phase sets that have
+            been used.
+
+    Return:
+        An iterable of VEPRecord.
+    """
+    if format == 'tsv':
+        return parse_tsv(handle)
+    return parse_vcf(handle, samples=samples, current_phase_sets=current_phase_sets)
+
+def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
     """ Parse a VEP output text file and return as an iterator.
 
     Args:
@@ -52,6 +73,112 @@ def parse(handle:IO) -> Iterable[VEPRecord]:
             existing_variation='' if fields[12] == '-' else fields[12],
             extra=extra
         )
+
+def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[str, str]]=None
+        ) -> Iterable[VEPRecord]:
+    """ Parse a VEP output VCF file and return as an iterator.
+
+    Args:
+        handle (IO): A file-like object containing the VEP output in VCF format.
+        samples (List[str]): A list of sample names from the VCF file to be parsed.
+            If None, all samples will be parsed.
+        current_phase_sets (Set[Tuple[str, str]]): A set of phase sets that have
+            been used.
+
+    Return:
+        A iterable of VEPRecord.
+    """
+    if current_phase_sets is None:
+        current_phase_sets = set()
+    max_phase_set = max(int(ps[1][2:]) for ps in current_phase_sets) \
+        if current_phase_sets else 0
+    phase_sets = (f"PS{max_phase_set + 1}", f"PS{max_phase_set + 2}")
+    for line in handle:
+        if line.startswith('##'):
+            continue
+        if line.startswith('#'):
+            headers = line.rstrip().split('\t')
+            sample_index:Dict[str, int] = {}
+            for i, header in enumerate(headers):
+                if i <= 8:
+                    continue
+                if not samples or header in samples:
+                    sample_index[header] = i
+            # Checks if all samples are present in the VEP VCF headers.
+            if samples:
+                for sample in samples:
+                    if sample not in sample_index:
+                        raise ValueError(
+                            f"Sample '{sample}' not found in VEP VCF headers."
+                        )
+                continue
+        fields = line.rstrip().split('\t')
+        info = {}
+        item:str
+        for item in fields[7].split(';'):
+            if '=' in item:
+                key, value = item.split('=', 1)
+                info[key] = value
+            else:
+                info[item] = True
+        if 'CSQ' not in info:
+            continue
+        vep_records = []
+        for csq in info['CSQ'].split(','):
+            attrs = csq.split('|')
+            record = VEPRecord(
+                uploaded_variation=fields[2],
+                location=fields[0] + ':' + fields[1],
+                allele=attrs[0],
+                gene=attrs[4],
+                feature=attrs[6],
+                feature_type=attrs[5],
+                consequences=attrs[1].split('&'),
+                cdna_position=attrs[12],
+                cds_position=attrs[13],
+                protein_position=attrs[14],
+                amino_acids=tuple(attrs[15].split('/')),
+                codons=tuple(attrs[16].split('/')),
+                existing_variation=attrs[17] if attrs[17] != '-' else '',
+                extra={
+                    'IMPACT': attrs[2]
+                }
+            )
+            vep_records.append(record)
+
+        sample_genotypes = {}
+        keys = fields[8].split(':')
+        for sample, i in sample_index.items():
+            values = fields[i].split(':')
+            genotype = dict(zip(keys, values))
+            gt = genotype['GT']
+            is_phased = '|' in gt
+            is_detected = gt not in ['.', './.', '.|.', '0|0', '0/0']
+            cur_phase_set = []
+            if is_phased:
+                current_phase_sets.add(phase_sets)
+                if gt.startswith('1|'):
+                    cur_phase_set.append(phase_sets[0])
+                if gt.endswith('|1'):
+                    cur_phase_set.append(phase_sets[1])
+            sample_genotypes[sample] = {
+                'GT': gt,
+                'is_phased': is_phased,
+                'is_detected': is_detected,
+                'phase_sets': cur_phase_set
+            }
+
+        for record in vep_records:
+            for sample, genotype in sample_genotypes.items():
+                if not genotype['is_detected']:
+                    # No variant for this sample, so we can skip it.
+                    continue
+                cur_record = copy.deepcopy(record)
+                cur_record.extra.update({
+                    'SAMPLE': sample,
+                    'PHASE_SETS': genotype['phase_sets']
+                })
+                yield cur_record
 
 class VEPRecord():
     """ A VEPRecord object holds the an entry from the VEP output. The VEP
@@ -209,6 +336,9 @@ class VEPRecord():
             'GENOMIC_POSITION': self.location,
             'GENE_SYMBOL': gene_model.gene_name
         }
+
+        if 'PHASE_SETS' in self.extra and self.extra['PHASE_SETS']:
+            attrs['PHASE_SETS'] = ','.join(self.extra['PHASE_SETS'])
 
         try:
             return seqvar.VariantRecord(

@@ -1,16 +1,17 @@
 """ Varaint Peptide Table """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Set, IO, List, Tuple
+from typing import TYPE_CHECKING
 from Bio import SeqUtils
 from Bio.SeqIO import FastaIO
+from Bio.Seq import Seq
 from moPepGen import VARIANT_PEPTIDE_SOURCE_DELIMITER, aa
 from moPepGen.SeqFeature import FeatureLocation
 from moPepGen.svgraph.PVGPeptideFinder import AnnotatedPeptideLabel, PeptideSegment
 
 
 if TYPE_CHECKING:
+    from typing import Dict, Set, IO, List, Tuple
     from pathlib import Path
-    from Bio.Seq import Seq
     from moPepGen.params import CleavageParams
 
 VARIANT_PEPTIDE_TABLE_HEADERS = [
@@ -25,9 +26,11 @@ class VariantPeptideTable:
         self.index = index or {}
         self.header_delimeter = VARIANT_PEPTIDE_SOURCE_DELIMITER
 
-    def write_header(self):
+    def write_header(self, handle:IO=None):
         """ Write header """
-        self.handle.write('#' + '\t'.join(VARIANT_PEPTIDE_TABLE_HEADERS) + '\n')
+        if handle is None:
+            handle = self.handle
+        handle.write('#' + '\t'.join(VARIANT_PEPTIDE_TABLE_HEADERS) + '\n')
 
     def is_valid(self, seq:Seq, canonical_peptides:Set[str],
             cleavage_params:CleavageParams=None):
@@ -88,7 +91,7 @@ class VariantPeptideTable:
                 fields = dict(zip(VARIANT_PEPTIDE_TABLE_HEADERS, line.split('\t')))
                 if seq != fields['sequence']:
                     raise ValueError(
-                        f"Peptide ({seq}) does not match with table record ({fields[0]})."
+                        f"Peptide ({seq}) does not match with table record ({fields['sequence']})."
                     )
                 header = fields['header']
                 label = anno.setdefault(header, AnnotatedPeptideLabel(label=header, segments=[]))
@@ -145,9 +148,23 @@ class VariantPeptideTable:
                 break
             if line.startswith('#'):
                 continue
-            seq = line.split('\t')[0]
+            seq = Seq(line.split('\t')[0])
             indices = self.index.setdefault(seq, [])
             if indices and indices[-1][1] == cur_start:
                 indices[-1] = (indices[-1][0], cur_end)
             else:
                 indices.append((cur_start, cur_end))
+
+    def sort_table(self, path:Path):
+        """ Sort peptide table """
+        with open(path, 'wt') as handle:
+            self.write_header(handle)
+            for seq in self.index:
+                annos = self.load_peptide_annotation(seq)
+                for anno in annos.values():
+                    for seg in anno.segments:
+                        subseq = str(seq[seg.query.start:seg.query.end])
+                        line = '\t'.join([
+                            str(seq), anno.label, subseq, seg.to_line()
+                        ]) + '\n'
+                        handle.write(line)

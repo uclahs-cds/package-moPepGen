@@ -12,12 +12,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Build distribution
-        uses: uclahs-cds/tool-pypi-publish-action/build-distribution@8a59b1548652d33f0a224775805d9a39767f0605
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          package-name: mopepgen
+          python-version: "3.x"
+
+      - name: Install pypa/build
+        run: |
+          python3 -m pip install build --user
+
+      - name: Build a binary wheel and a source tarball
+        run: |
+          python3 -m build
+
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: "dist/"
 
   publish-to-pypi:
     name: Publish Python 🐍 distribution 📦 to PyPI
@@ -26,16 +40,18 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/${{ needs.build.outputs.package_name }}
+      url: https://pypi.org/p/mopepgen
     permissions:
       id-token: write
 
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v2
-
-      - name: Publish to PyPI
-        uses: uclahs-cds/tool-pypi-publish-action/publish-to-pypi@8a59b1548652d33f0a224775805d9a39767f0605
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
         with:
-          package-name: mopepgen
-          url: https://upload.pypi.org/legacy/
+          name: python-package-distributions
+          path: "dist/"
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://upload.pypi.org/legacy/

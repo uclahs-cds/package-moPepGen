@@ -79,8 +79,11 @@ class TestAnnotationModel(unittest.TestCase):
             'cds': [(0,8,attributes), (10, 18, attributes)]
         }
         model = create_transcript_model(data)
-        chrom = SeqIO.read('test/files/genome.fasta', 'fasta')
-        seq = model.get_transcript_sequence(chrom)
+        genome = {
+            seq.id: seq for seq in
+            SeqIO.parse('test/files/genome.fasta', 'fasta')
+        }
+        seq = model.get_transcript_sequence(genome['chr22'])
         self.assertEqual(len(seq.seq), 16)
 
     def test_get_transcript_sequence_case2(self):
@@ -98,8 +101,11 @@ class TestAnnotationModel(unittest.TestCase):
             'exon': [(0,8,attributes), (10, 18, attributes)]
         }
         model = create_transcript_model(data)
-        chrom = SeqIO.read('test/files/genome.fasta', 'fasta')
-        seq = model.get_transcript_sequence(chrom)
+        genome = {
+            seq.id: seq for seq in
+            SeqIO.parse('test/files/genome.fasta', 'fasta')
+        }
+        seq = model.get_transcript_sequence(genome['chr22'])
         self.assertIs(seq.orf, None)
 
     def test_get_transcript_sequence_case3(self):
@@ -118,8 +124,11 @@ class TestAnnotationModel(unittest.TestCase):
         }
         model = create_transcript_model(data)
         model.cds[0].frame = 1
-        chrom = SeqIO.read('test/files/genome.fasta', 'fasta')
-        seq = model.get_transcript_sequence(chrom)
+        genome = {
+            seq.id: seq for seq in
+            SeqIO.parse('test/files/genome.fasta', 'fasta')
+        }
+        seq = model.get_transcript_sequence(genome['chr22'])
         self.assertEqual(seq.orf.start, 1)
 
     def test_get_transcript_index_case1(self):
@@ -202,7 +211,7 @@ class TestGTF(unittest.TestCase):
         anno = self.load_gtf('test/files/annotation.gtf')
 
         self.assertIsInstance(anno, gtf.GenomicAnnotation)
-        self.assertEqual(len(anno.transcripts), 5)
+        self.assertEqual(len(anno.transcripts), 6)
         for key, val in anno.transcripts.items():
             self.assertEqual(val.transcript.transcript_id, key)
             for cds in val.cds:
