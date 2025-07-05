@@ -1,6 +1,7 @@
 """ Module for GVF metadata """
 from __future__ import annotations
 from typing import TYPE_CHECKING
+import copy
 from moPepGen import __version__, constant
 from .GVFMetadataInfo import GVF_METADATA_INFO, GVF_METADATA_ADDITIONAL
 
@@ -180,3 +181,23 @@ class GVFMetadata():
             it = handle.readline()
         handle.seek(pos)
         return cls(**metadata)
+
+    def combine_phase_sets(self, phase_sets:List[Set[str]]) -> List[Set[str]]:
+        """ Merge the phase sets from this metadata to the given phase sets. """
+        phase_sets = copy.deepcopy(phase_sets)
+        existing_phases = set().union(*phase_sets)
+        incoming_phases = set()
+        for phase_set in self.phase_sets:
+            if any(x in existing_phases for x in phase_set):
+                raise ValueError(
+                    "Phase sets in the GVF metadata are not disjoint with existing"
+                    " phase sets. Please check the GVF file."
+                )
+            if any(x in incoming_phases for x in phase_set):
+                raise ValueError(
+                    "Phase sets in the GVF metadata are not disjoint. "
+                    "Please check the GVF file."
+                )
+            incoming_phases.update(phase_set)
+            phase_sets.append(phase_set)
+        return phase_sets

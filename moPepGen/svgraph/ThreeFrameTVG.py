@@ -323,12 +323,19 @@ class ThreeFrameTVG():
     def create_node(self, seq:DNASeqRecordWithCoordinates,
             variants:List[VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
-            subgraph_id:str=None, level:int=0, global_variant:VariantRecord=None
+            subgraph_id:str=None, level:int=0, global_variant:VariantRecord=None,
+            phase_set:Set[str]=None
             ) -> TVGNode:
         """ create a node """
+        if phase_set is None:
+            phase_set = set()
+            if variants is not None:
+                for v in variants:
+                    phase_set.update(v.variant.phase_set)
         return TVGNode(
             seq=seq,
             variants=variants,
+            phase_set=phase_set,
             branch=branch,
             orf=orf,
             reading_frame_index=reading_frame_index,
@@ -812,6 +819,7 @@ class ThreeFrameTVG():
             var_i.location.seqname = subgraph_id
             node = list(root.out_edges)[0].out_node
             node.variants.append(var_i)
+            node.phase_set.update(var_i.variant.phase_set)
             is_frameshifting = False
             if var.variant.is_frameshifting():
                 is_frameshifting = True
@@ -853,8 +861,10 @@ class ThreeFrameTVG():
 
             if var_start < source_start:
                 raise ValueError(
-                    'The location of cursor is behind the variant. Something'
-                    ' must have messed up during creating the variant graph.'
+                    'The variant start position (%d) is before the current cursor'
+                    ' position (%d). This indicates an inconsistency in the variant'
+                    ' graph construction process.'
+                    % (var_start, source_start)
                 )
 
             if var_start == source_start:

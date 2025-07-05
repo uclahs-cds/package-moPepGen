@@ -1,7 +1,7 @@
 """ Module for generic variant record """
 from __future__ import annotations
 import copy
-from typing import TYPE_CHECKING, Dict, Iterable, List
+from typing import TYPE_CHECKING
 from moPepGen import constant, ERROR_NO_TX_AVAILABLE, \
     ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
         ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
@@ -13,6 +13,7 @@ _VARIANT_TYPES = ['SNV', 'INDEL', 'MNV', 'Fusion', 'RNAEditingSite',
 
 # To avoid circular import
 if TYPE_CHECKING:
+    from typing import Dict, Iterable, List, Set
     from moPepGen.gtf import GenomicAnnotation
     from moPepGen.dna import DNASeqDict, DNASeqRecord, DNASeqRecordWithCoordinates
 
@@ -262,6 +263,13 @@ class VariantRecord():
     def accepter_transcript_id(self) -> str:
         """ accetper transcript ID """
         return self.attrs['ACCEPTER_TRANSCRIPT_ID']
+
+    @property
+    def phase_set(self) -> Set[str]:
+        """ Get the phase set of the variant """
+        if 'PHASE_SET' in self.attrs:
+            return set(self.attrs['PHASE_SET'])
+        return set()
 
     def get_minimal_identifier(self) -> str:
         """ Get minimal identifier """

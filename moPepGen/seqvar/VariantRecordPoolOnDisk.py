@@ -162,29 +162,11 @@ class VariantRecordPoolOnDisk():
         series.sort()
         return series
 
-    def load_phase_sets(self, metadata:GVFMetadata):
-        """ Load phase sets from metadata """
-        existing_phases = set().union(*self.phase_sets)
-        incoming_phases = set()
-        for phase_set in metadata.phase_sets:
-            if any(x in existing_phases for x in phase_set):
-                raise ValueError(
-                    "Phase sets in the GVF metadata are not disjoint with existing"
-                    " phase sets. Please check the GVF file."
-                )
-            if any(x in incoming_phases for x in phase_set):
-                raise ValueError(
-                    "Phase sets in the GVF metadata are not disjoint. "
-                    "Please check the GVF file."
-                )
-            incoming_phases.update(phase_set)
-            self.phase_sets.append(phase_set)
-
     def load_index(self, index_file:Path, gvf_file:Path, gvf_handle:IO):
         """ Load index file """
         with open(gvf_file, 'rt') as handle:
             metadata = GVFMetadata.parse(handle)
-            self.load_phase_sets(metadata)
+            self.phase_sets = metadata.combine_phase_sets(self.phase_sets)
 
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
@@ -203,7 +185,7 @@ class VariantRecordPoolOnDisk():
         """ generate index """
         with open(gvf_file, 'rt') as handle:
             metadata = GVFMetadata.parse(handle)
-            self.load_phase_sets(metadata)
+            self.phase_sets = metadata.combine_phase_sets(self.phase_sets)
 
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
