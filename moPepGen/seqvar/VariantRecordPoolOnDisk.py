@@ -1,7 +1,7 @@
 """ Variant Record Pool """
 from __future__ import annotations
 import copy
-from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from pathlib import Path
 from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512, circ, constant
 from moPepGen.seqvar.GVFIndex import GVFPointer, iterate_pointer
@@ -11,6 +11,7 @@ from . import VariantRecord
 
 # To avoid circular import
 if TYPE_CHECKING:
+    from typing import Dict, IO, Iterable, List, Union, Set
     from moPepGen.gtf import GenomicAnnotation
     from moPepGen.dna import DNASeqDict, DNASeqRecordWithCoordinates
 
@@ -92,13 +93,15 @@ class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
     def __init__(self, pointers:Dict[str, List[GVFPointer]]=None,
             gvf_files:List[Path]=None, gvf_handles:List[IO]=None,
-            anno:GenomicAnnotation=None, genome:DNASeqDict=None) -> None:
+            anno:GenomicAnnotation=None, genome:DNASeqDict=None,
+            phase_sets:List[Set[str]]=None) -> None:
         """ constructor """
         self.pointers = pointers or {}
         self.gvf_files = gvf_files or []
         self.gvf_handles = gvf_handles or []
         self.anno = anno
         self.genome = genome
+        self.phase_sets = phase_sets or []
 
     def __contains__(self, key:str):
         """ conteins """
@@ -159,10 +162,30 @@ class VariantRecordPoolOnDisk():
         series.sort()
         return series
 
+    def load_phase_sets(self, metadata:GVFMetadata):
+        """ Load phase sets from metadata """
+        existing_phases = set().union(*self.phase_sets)
+        incoming_phases = set()
+        for phase_set in metadata.phase_sets:
+            if any(x in existing_phases for x in phase_set):
+                raise ValueError(
+                    "Phase sets in the GVF metadata are not disjoint with existing"
+                    " phase sets. Please check the GVF file."
+                )
+            if any(x in incoming_phases for x in phase_set):
+                raise ValueError(
+                    "Phase sets in the GVF metadata are not disjoint. "
+                    "Please check the GVF file."
+                )
+            incoming_phases.update(phase_set)
+            self.phase_sets.append(phase_set)
+
     def load_index(self, index_file:Path, gvf_file:Path, gvf_handle:IO):
         """ Load index file """
         with open(gvf_file, 'rt') as handle:
             metadata = GVFMetadata.parse(handle)
+            self.load_phase_sets(metadata)
+
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
         with open(index_file, 'rt') as idx_handle:
@@ -180,6 +203,8 @@ class VariantRecordPoolOnDisk():
         """ generate index """
         with open(gvf_file, 'rt') as handle:
             metadata = GVFMetadata.parse(handle)
+            self.load_phase_sets(metadata)
+
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
         for pointer in iterate_pointer(gvf_handle, is_circ_rna):

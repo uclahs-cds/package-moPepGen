@@ -30,10 +30,15 @@ class GVFMetadata():
         annotation_gtf (str): Path to the annotation GTF file.
         alt (dict): Alternative allele fields.
         info (dict): Information fields.
+        additional (dict): Additional metadata fields.
+        version (str): Version of moPepGen.
+        phase_sets (List[Set[str,str]]): Phase sets for phased variants.
+        source (str): Source of the variants, e.g., 'VEP', 'CIRCexplorer'.
+        chrom (str): Chromosome or gene ID.
     """
     def __init__(self, parser:str, source:str, chrom:str, reference_index:str=None,
             genome_fasta:str=None, annotation_gtf:str=None, version:str=None, info=None,
-            additional=None, phase_pairs:Set[Tuple[str,str]]=None):
+            additional=None, phase_sets:List[Set[str,str]]=None):
         """ Construct a TVFMetadata object. """
         self.parser = parser
         self.source = source
@@ -46,7 +51,7 @@ class GVFMetadata():
         self.added_types = []
         self.additional = additional
         self.version = version or __version__
-        self.phase_pairs = phase_pairs or set()
+        self.phase_sets = phase_sets or list()
 
     def add_info(self, variant_type:str, is_phased:bool=False) -> None:
         """ Add a INFO field to the metadata. """
@@ -114,10 +119,10 @@ class GVFMetadata():
             f'##annotation_gtf={annotation_gtf}',
             f'##source={self.source}'
         ]
-        if self.phase_pairs:
-            phase_pairs = sorted(self.phase_pairs, key=lambda x: x[0])
+        if self.phase_sets:
+            phase_pairs = sorted(self.phase_sets, key=lambda x: x[0])
             phase_pairs = ','.join([f'{ps1}|{ps2}' for ps1,ps2 in phase_pairs])
-            res.append(f'##phase_pairs={phase_pairs}')
+            res.append(f'##phase_sets={phase_pairs}')
         res += [
             f'##CHROM=<Description="{self.chrom}">',
             *[f'##ALT=<ID={key},Description="{val}">' for key, val in self.alt],
@@ -140,8 +145,8 @@ class GVFMetadata():
             key, val = it.lstrip('##').rstrip().split('=', 1)
             if val == '':
                 val = None
-            if key == 'phase_pairs':
-                metadata[key] = {tuple(ps.split('|')) for ps in val.split(',')}
+            if key == 'phase_sets':
+                metadata[key] = [set(ps.split('|')) for ps in val.split(',')]
             elif key == 'CHROM':
                 key = key.lower()
                 for it in val.strip('<>').split(','):

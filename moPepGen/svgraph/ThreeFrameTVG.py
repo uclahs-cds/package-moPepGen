@@ -49,7 +49,7 @@ class ThreeFrameTVG():
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
             cleavage_params:CleavageParams=None, gene_id:str=None,
             sect_variants:List[VariantRecordWithCoordinate]=None,
-            max_adjacent_as_mnv:int=2):
+            max_adjacent_as_mnv:int=2, phase_sets:List[Set[str]]=None):
         """ Constructor to create a TranscriptVariantGraph object. """
         self.seq = seq
         self.id = _id
@@ -77,6 +77,7 @@ class ThreeFrameTVG():
         self.gene_id = gene_id
         self.sect_variants = sect_variants or []
         self.max_adjacent_as_mnv = max_adjacent_as_mnv
+        self.phase_sets = phase_sets or []
 
     def is_circ_rna(self) -> bool:
         """ If the graph is a circRNA """

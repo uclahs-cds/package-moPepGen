@@ -390,7 +390,7 @@ def generate_metadata(args:argparse.Namespace, phase_pairs:Set[Tuple[str,str]]=N
         reference_index=reference_index,
         genome_fasta=genome_fasta,
         annotation_gtf=annotation_gtf,
-        phase_pairs=phase_pairs
+        phase_sets=phase_pairs
     )
 
 def load_inclusion_exclusion_biotypes(args:argparse.Namespace
