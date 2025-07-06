@@ -152,7 +152,7 @@ def parse_vep(args:argparse.Namespace) -> None:
 
     tally = TallyTable(logger)
 
-    phase_sets:Set[Tuple[str, str]] = set()
+    phase_groups:Set[Tuple[str, str]] = set()
 
     for vep_file in vep_files:
         opener = gzip.open if vep_file.suffix == '.gz' else open
@@ -161,7 +161,7 @@ def parse_vep(args:argparse.Namespace) -> None:
                 handle=handle,
                 format=format,
                 samples=samples,
-                current_phase_sets=phase_sets
+                current_phase_groups=phase_groups
             )
             for vep_record in it:
                 tally.total += 1
@@ -220,7 +220,7 @@ def parse_vep(args:argparse.Namespace) -> None:
         if format == 'vcf':
             output_path = output_dir/f"{output_prefix}_{sample}.gvf"
 
-        metadata = common.generate_metadata(args, phase_pairs=phase_sets)
+        metadata = common.generate_metadata(args, phase_groups=phase_groups)
         seqvar.io.write(sorted_records, output_path, metadata)
 
         logger.info('Variant GVF written: %s', output_path)
