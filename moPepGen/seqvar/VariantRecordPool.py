@@ -30,7 +30,7 @@ class VariantRecordPool():
             transcript ID (e.g., UTR). In gene coordinates.
     """
     def __init__(self, data:Dict[str, TranscriptionalVariantSeries]=None,
-            anno:GenomicAnnotation=None, phase_sets:List[Set[str]]=None):
+            anno:GenomicAnnotation=None, phase_groups:List[Set[str]]=None):
         """ Constructor
 
         Args:
@@ -44,7 +44,7 @@ class VariantRecordPool():
         """
         self.data = data or {}
         self.anno = anno
-        self.phase_sets = phase_sets or []
+        self.phase_groups = phase_groups or []
 
     def __contins__(self, key:str):
         """ in """
@@ -113,7 +113,7 @@ class VariantRecordPool():
         handle.seek(0)
         metadata = GVFMetadata.parse(handle)
         handle.seek(0)
-        self.phase_sets = metadata.combine_phase_sets(self.phase_sets)
+        self.phase_groups = metadata.combine_phase_groups(self.phase_groups)
 
         if metadata.is_circ_rna():
             for record in circ.io.parse(handle):

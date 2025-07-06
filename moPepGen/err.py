@@ -105,9 +105,9 @@ class MNVParsingError(Exception):
 
 class PhaseSetsUncompatibleError(Exception):
     """ Error to be raised when phase sets are uncompatible """
-    def __init__(self, phase_sets1:Set[str], phase_sets2:Set[str]):
+    def __init__(self, phase_set1:Set[str], phase_set2:Set[str]):
         """ constructor """
-        msg = f"Phase sets {phase_sets1} and {phase_sets2} are uncompatible."
+        msg = f"Phase sets {phase_set1} and {phase_set2} are uncompatible."
         super().__init__(msg)
 
 def warning(msg:str) -> None:

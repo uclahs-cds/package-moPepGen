@@ -35,7 +35,7 @@ class ThreeFrameCVG(ThreeFrameTVG):
             coordinate_feature_type:str=None, coordinate_feature_id:str=None,
             subgraphs:SubgraphTree=None, hypermutated_region_warned:bool=False,
             cleavage_params:CleavageParams=None,
-            max_adjacent_as_mnv:int=2, phase_sets:List[Set[str]]=None):
+            max_adjacent_as_mnv:int=2, phase_groups:List[Set[str]]=None):
         """ Construct a CircularVariantGraph
 
         Args:
@@ -73,7 +73,7 @@ class ThreeFrameCVG(ThreeFrameTVG):
             coordinate_feature_type=coordinate_feature_type,
             coordinate_feature_id=coordinate_feature_id,
             hypermutated_region_warned=hypermutated_region_warned,
-            phase_sets=phase_sets
+            phase_groups=phase_groups
         )
 
     def get_circ_variant_with_coordinate(self) -> VariantRecordWithCoordinate:

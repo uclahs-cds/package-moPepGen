@@ -33,13 +33,13 @@ class GVFMetadata():
         info (dict): Information fields.
         additional (dict): Additional metadata fields.
         version (str): Version of moPepGen.
-        phase_sets (List[Set[str,str]]): Phase sets for phased variants.
+        phase_groups (List[Set[str,str]]): Phase groups for phased variants.
         source (str): Source of the variants, e.g., 'VEP', 'CIRCexplorer'.
         chrom (str): Chromosome or gene ID.
     """
     def __init__(self, parser:str, source:str, chrom:str, reference_index:str=None,
             genome_fasta:str=None, annotation_gtf:str=None, version:str=None, info=None,
-            additional=None, phase_sets:List[Set[str,str]]=None):
+            additional=None, phase_groups:List[Set[str,str]]=None):
         """ Construct a TVFMetadata object. """
         self.parser = parser
         self.source = source
@@ -52,7 +52,7 @@ class GVFMetadata():
         self.added_types = []
         self.additional = additional
         self.version = version or __version__
-        self.phase_sets = phase_sets or list()
+        self.phase_groups = phase_groups or list()
 
     def add_info(self, variant_type:str, is_phased:bool=False) -> None:
         """ Add a INFO field to the metadata. """
@@ -120,10 +120,10 @@ class GVFMetadata():
             f'##annotation_gtf={annotation_gtf}',
             f'##source={self.source}'
         ]
-        if self.phase_sets:
-            phase_pairs = sorted(self.phase_sets, key=lambda x: x[0])
-            phase_pairs = ','.join([f'{ps1}|{ps2}' for ps1,ps2 in phase_pairs])
-            res.append(f'##phase_sets={phase_pairs}')
+        if self.phase_groups:
+            phase_groups = sorted(self.phase_groups, key=lambda x: x[0])
+            phase_groups = ','.join([f'{ps1}|{ps2}' for ps1,ps2 in phase_groups])
+            res.append(f'##phase_groups={phase_groups}')
         res += [
             f'##CHROM=<Description="{self.chrom}">',
             *[f'##ALT=<ID={key},Description="{val}">' for key, val in self.alt],
@@ -146,7 +146,7 @@ class GVFMetadata():
             key, val = it.lstrip('##').rstrip().split('=', 1)
             if val == '':
                 val = None
-            if key == 'phase_sets':
+            if key == 'phase_groups':
                 metadata[key] = [set(ps.split('|')) for ps in val.split(',')]
             elif key == 'CHROM':
                 key = key.lower()
@@ -182,12 +182,12 @@ class GVFMetadata():
         handle.seek(pos)
         return cls(**metadata)
 
-    def combine_phase_sets(self, phase_sets:List[Set[str]]) -> List[Set[str]]:
-        """ Merge the phase sets from this metadata to the given phase sets. """
-        phase_sets = copy.deepcopy(phase_sets)
-        existing_phases = set().union(*phase_sets)
+    def combine_phase_groups(self, phase_groups:List[Set[str]]) -> List[Set[str]]:
+        """ Merge the phase groups from this metadata to the given phase groups. """
+        phase_groups = copy.deepcopy(phase_groups)
+        existing_phases = set().union(*phase_groups)
         incoming_phases = set()
-        for phase_set in self.phase_sets:
+        for phase_set in self.phase_groups:
             if any(x in existing_phases for x in phase_set):
                 raise ValueError(
                     "Phase sets in the GVF metadata are not disjoint with existing"
@@ -199,5 +199,5 @@ class GVFMetadata():
                     "Please check the GVF file."
                 )
             incoming_phases.update(phase_set)
-            phase_sets.append(phase_set)
-        return phase_sets
+            phase_groups.append(phase_set)
+        return phase_groups

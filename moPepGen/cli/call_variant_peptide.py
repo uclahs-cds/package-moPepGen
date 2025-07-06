@@ -387,7 +387,7 @@ class VariantPeptideCaller():
         dummy_pool = seqvar.VariantRecordPool()
         dummy_pool.anno = dummy_anno
         dummy_pool.data[tx_id] = variant_series
-        dummy_pool.phase_sets = pool.phase_sets
+        dummy_pool.phase_groups = pool.phase_groups
         for add_tx in tx_ids:
             if add_tx != tx_id:
                 try:
@@ -784,7 +784,7 @@ def call_peptide_main(tx_id:str, tx_variants:List[seqvar.VariantRecord],
         max_adjacent_as_mnv=max_adjacent_as_mnv,
         coordinate_feature_type='transcript',
         coordinate_feature_id=tx_id,
-        phase_sets=variant_pool.phase_sets,
+        phase_groups=variant_pool.phase_groups,
     )
     dgraph.gather_sect_variants(ref.anno)
     dgraph.init_three_frames()
@@ -869,7 +869,7 @@ def call_peptide_fusion(variant:seqvar.VariantRecord,
         max_adjacent_as_mnv=max_adjacent_as_mnv,
         coordinate_feature_type='transcript',
         coordinate_feature_id=tx_id,
-        phase_sets=variant_pool.phase_sets,
+        phase_groups=variant_pool.phase_groups,
     )
     dgraph.gather_sect_variants(ref.anno)
     dgraph.sect_variants = [v for v in dgraph.sect_variants
@@ -960,7 +960,7 @@ def call_peptide_circ_rna(record:circ.CircRNAModel,
         max_adjacent_as_mnv=max_adjacent_as_mnv,
         coordinate_feature_type='gene',
         coordinate_feature_id=gene_id,
-        phase_sets=variant_pool.phase_sets,
+        phase_groups=variant_pool.phase_groups,
     )
     cgraph.init_three_frames()
     cgraph.create_variant_circ_graph(variant_records)
