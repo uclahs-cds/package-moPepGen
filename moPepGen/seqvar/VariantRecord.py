@@ -6,6 +6,7 @@ from moPepGen import constant, ERROR_NO_TX_AVAILABLE, \
     ERROR_VARIANT_NOT_IN_GENE_COORDINATE, ERROR_INDEX_IN_INTRON, \
         ERROR_REF_LENGTH_NOT_MATCH_WITH_LOCATION
 from moPepGen.SeqFeature import FeatureLocation
+# from moPepGen.seqvar import PhaseSet
 
 
 _VARIANT_TYPES = ['SNV', 'INDEL', 'MNV', 'Fusion', 'RNAEditingSite',
