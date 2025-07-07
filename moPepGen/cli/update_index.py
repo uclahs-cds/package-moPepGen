@@ -75,13 +75,16 @@ def update_index(args:argparse.Namespace):
     logger.info('Proteome loaded.')
 
     # create canonical peptide pool
-    canonical_peptides = proteome.create_unique_peptide_pool(
-        anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
-        min_mw=min_mw, min_length = min_length, max_length = max_length
-    )
-    logger.info('Canoincal peptide pool generated.')
-    index_dir.save_canonical_peptides(canonical_peptides, cleavage_params, override=args.force)
-    logger.info('Canoincal peptide pool saved.')
+    if rule is None or rule.lower() == 'none':
+        logger.info('No cleavage rule specified. Skip generating canonical peptides.')
+    else:
+        canonical_peptides = proteome.create_unique_peptide_pool(
+            anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
+            min_mw=min_mw, min_length = min_length, max_length = max_length
+        )
+        logger.info('Canoincal peptide pool generated.')
+        index_dir.save_canonical_peptides(canonical_peptides, cleavage_params, override=args.force)
+        logger.info('Canoincal peptide pool saved.')
 
     if not pool_exists:
         index_dir.save_metadata()

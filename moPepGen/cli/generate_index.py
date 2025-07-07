@@ -131,7 +131,9 @@ def generate_index(args:argparse.Namespace):
     index_dir.metadata.codon_tables = codon_tables
 
     # canonical peptide pool
-    if rule is not None and rule.lower() != 'none':
+    if rule is None or rule.lower() == 'none':
+        logger.info('No cleavage rule specified. Skip generating canonical peptides.')
+    else:
         canonical_peptides = proteome.create_unique_peptide_pool(
             anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
             min_mw=min_mw, min_length = min_length, max_length = max_length
