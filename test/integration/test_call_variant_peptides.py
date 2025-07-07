@@ -58,6 +58,31 @@ def create_base_args() -> argparse.Namespace:
     args.skip_failed = False
     return args
 
+def create_args_generate_index(work_dir:Path, data_dir:Path) -> argparse.Namespace:
+    """ Generate args for generate_index """
+    args = argparse.Namespace()
+    args.command = 'generateIndex'
+    args.genome_fasta = data_dir/'genome.fasta'
+    args.annotation_gtf = data_dir/'annotation.gtf'
+    args.proteome_fasta = data_dir/'translate.fasta'
+    args.codon_table = 'Standard'
+    args.chr_codon_table = ['chrM:SGC1']
+    args.start_codons = ['ATG']
+    args.chr_start_codons = ['chrM:ATG,ATA,ATT']
+    args.gtf_symlink = False
+    args.reference_source = None
+    args.invalid_protein_as_noncoding = False
+    args.cleavage_rule = 'trypsin'
+    args.cleavage_exception = 'trypsin_exception'
+    args.min_mw = 500.
+    args.min_length = 7
+    args.max_length = 25
+    args.miscleavage = 2
+    args.quiet = True
+    args.force = False
+    args.output_dir = work_dir/'index'
+    return args
+
 class TestCallVariantPeptides(TestCaseIntegration):
     """ Test cases for moPepGen callPeptides """
 
@@ -168,6 +193,31 @@ class TestCallVariantPeptides(TestCaseIntegration):
         cli.call_variant_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
+        self.assertEqual(files, expected)
+
+    def test_call_variant_peptide_case1_with_index(self):
+        """ Test case for peptide calling with index """
+        # Test index works
+        args = create_base_args()
+        args.input_path = [
+            self.data_dir/'vep/vep_gSNP.gvf',
+            self.data_dir/'vep/vep_gINDEL.gvf',
+            self.data_dir/'alternative_splicing/alternative_splicing.gvf',
+            self.data_dir/'fusion/star_fusion.gvf'
+        ]
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        args.invalid_protein_as_noncoding = True
+        args.cleavage_rule = 'None'
+
+        args2 = create_args_generate_index(self.work_dir, self.data_dir)
+        cli.generate_index(args2)
+        args.index_dir = args2.output_dir
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'index', 'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
         self.assertEqual(files, expected)
 
     def test_call_variant_peptide_case1_sect_and_w2f(self):

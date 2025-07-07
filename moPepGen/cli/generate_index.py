@@ -130,18 +130,21 @@ def generate_index(args:argparse.Namespace):
     )
     index_dir.metadata.codon_tables = codon_tables
 
-    # canoincal peptide pool
-    canonical_peptides = proteome.create_unique_peptide_pool(
-        anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
-        min_mw=min_mw, min_length = min_length, max_length = max_length
-    )
-    cleavage_params = params.CleavageParams(
-        enzyme=rule, exception=exception, miscleavage=miscleavage,
-        min_mw=min_mw, min_length = min_length, max_length = max_length
-    )
-    logger.info('canonical peptide pool generated.')
-    index_dir.save_canonical_peptides(canonical_peptides, cleavage_params)
-    logger.info('canonical peptide pool saved to disk.')
+    # canonical peptide pool
+    if rule is None or rule.lower() == 'none':
+        logger.info('No cleavage rule specified. Skip generating canonical peptides.')
+    else:
+        canonical_peptides = proteome.create_unique_peptide_pool(
+            anno=anno, rule=rule, exception=exception, miscleavage=miscleavage,
+            min_mw=min_mw, min_length = min_length, max_length = max_length
+        )
+        cleavage_params = params.CleavageParams(
+            enzyme=rule, exception=exception, miscleavage=miscleavage,
+            min_mw=min_mw, min_length = min_length, max_length = max_length
+        )
+        logger.info('canonical peptide pool generated.')
+        index_dir.save_canonical_peptides(canonical_peptides, cleavage_params)
+        logger.info('canonical peptide pool saved to disk.')
 
     # create list of coding transcripts
     coding_tx = {tx_id for tx_id, tx_model in anno.transcripts.items()

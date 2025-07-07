@@ -72,3 +72,14 @@ class TestGenerateIndex(TestCaseIntegration):
             {x.name for x in args.index_dir.rglob('canonical_peptides*')},
             {'canonical_peptides_001.pkl'}
         )
+
+    def test_update_index_no_cleavage(self):
+        """ test udpate index case 1 """
+        args = self.create_base_args()
+        args.cleavage_rule = None
+        cli.update_index(args)
+        # No additional canonical peptides file should be created
+        self.assertEqual(
+            {x.name for x in args.index_dir.rglob('canonical_peptides*')},
+            {'canonical_peptides_001.pkl'}
+        )
