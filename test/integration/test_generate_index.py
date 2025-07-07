@@ -114,6 +114,25 @@ class TestGenerateIndex(TestCaseIntegration):
         }
         self.assertEqual(files, expected)
 
+    def test_generate_index_no_cleavage(self):
+        """ Test genreate index with no cleavage (`--cleavage-rule None`) """
+        args = self.create_base_args()
+        args.cleavage_rule = None
+        args.cleavage_exception = None
+        cli.generate_index(args)
+        files = {str(file.name) for file in args.output_dir.glob('*')}
+        expected = {
+            'genome.pkl',
+            'proteome.pkl',
+            'annotation.gtf',
+            'annotation_gene.idx',
+            'annotation_tx.idx',
+            # 'canonical_peptides_001.pkl', should not be generated
+            'coding_transcripts.pkl',
+            'metadata.json'
+        }
+        self.assertEqual(files, expected)
+
 class TestCaseGenomicAnnotationOnDisk(TestCaseIntegration):
     """ Test case for GenomicAnnotationOnDisk """
     def test_generate_index(self):
