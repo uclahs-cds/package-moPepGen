@@ -26,21 +26,52 @@ if TYPE_CHECKING:
     from moPepGen.seqvar import VariantRecord
 
 class ThreeFrameTVG():
-    """ Defines the DAG data structure for the transcript and its variants.
+    """
+    Defines the DAG data structure for the transcript and its variants.
 
     Attributes:
-        seq (DNASeqRecordWithCoordinates): The original sequence of the
-            transcript (reference).
-        root (TVGNode): The root of the graph. The sequence of the root node
-            must be None.
-        reading_frames (List[TVGNode]): List of three null nodes. Each node is
-            the root to the subgraph of the corresponding reading frame.
-        has_known_orf (bool): whether
-        cds_start_nf (bool)
-        mrna_end_nf (bool)
-        global_variant (VariantRecord)
-        id (str)
+        seq (DNASeqRecordWithCoordinates): The original sequence of the transcript
+            (reference).
+        id (str): Unique identifier for the transcript variant graph.
+        root (TVGNode): The root of the graph. The sequence of the root node must
+            be None.
+        reading_frames (List[TVGNode]): List of three null nodes. Each node is the
+            root to the subgraph of the corresponding reading frame.
+        cds_start_nf (bool): Indicates if the CDS start is not found.
+        has_known_orf (bool): Whether the transcript has a known open reading frame
+            (ORF).
+        mrna_end_nf (bool): Indicates if the mRNA end is not found.
+        global_variant (VariantRecord): The global variant record associated with
+            the graph.
+        subgraphs (SubgraphTree): The tree structure managing subgraphs for variant
+            bubbles and alternative splicing.
+        hypermutated_region_warned (bool): Whether a warning for hypermutated regions
+            has been issued.
+        cleavage_params (CleavageParams): Parameters for peptide cleavage (e.g.,
+            enzyme type).
+        gene_id (str): The gene identifier associated with the transcript.
+        sect_variants (List[VariantRecordWithCoordinate]): List of selenocysteine
+            truncation variants.
+        max_adjacent_as_mnv (int): Maximum number of adjacent variants to merge as
+            multi-nucleotide variants (MNV).
+
+    Constants:
+        VARIANT_BUBBLE_CAPS (List[Tuple[Union[int, float], int]]):
+            Caps for in-bubble variants to consider per combination used in
+            hypermutated regions.
     """
+
+    VARIANT_BUBBLE_CAPS:List[Tuple[Union[int, float],int]] = [
+        (12, -1),
+        (14, 7),
+        (15, 6),
+        (16, 5),
+        (21, 4),
+        (34, 3),
+        (100, 2),
+        (float('inf'), 1),
+    ]
+
     def __init__(self, seq:Union[DNASeqRecordWithCoordinates,None],
             _id:str, root:TVGNode=None, reading_frames:List[TVGNode]=None,
             cds_start_nf:bool=False, has_known_orf:bool=None,
@@ -1545,21 +1576,11 @@ class ThreeFrameTVG():
                 variants.add(variant.variant)
         return len(variants) > max_in_bubble_variants
 
-    @staticmethod
-    def get_max_in_bubble_variants(n:int, down_steps:int=0) -> int:
+    def get_max_in_bubble_variants(self, n:int, down_steps:int=0) -> int:
         """ Get the `max_in_bubble_variants` based on the total number of variants
         in a variant bubble. The values are set so the number of combinations to
         consider won't be too much more than 5,000. """
-        caps = [
-            (12, -1),
-            (14, 7),
-            (15, 6),
-            (16, 5),
-            (21, 4),
-            (34, 3),
-            (100, 2),
-            (float('inf'), 1),
-        ]
+        caps = self.VARIANT_BUBBLE_CAPS
         for i, (threshold, _) in enumerate(caps):
             if n <= threshold:
                 cap_index = i

@@ -21,13 +21,14 @@ from pathos.pools import ParallelPool
 from moPepGen import svgraph, aa, seqvar, gtf, params, get_logger
 from moPepGen.cli import common
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
+from moPepGen.svgraph import ThreeFrameTVG
 
 
 if TYPE_CHECKING:
     from logging import Logger
     from Bio.Seq import Seq
     from moPepGen import dna, circ
-    from moPepGen.svgraph import ThreeFrameCVG, ThreeFrameTVG, PeptideVariantGraph
+    from moPepGen.svgraph import ThreeFrameCVG, PeptideVariantGraph
     from moPepGen.svgraph.VariantPeptideDict import AnnotatedPeptideLabel
     from moPepGen.gtf import GeneAnnotationModel
     from moPepGen.params import CodonTableInfo, CleavageParams
@@ -610,6 +611,11 @@ def caller_reducer(dispatch):
             p:CleavageParams = copy.copy(new_dispatch['cleavage_params'])
             if tracer.graph == 'TVG':
                 in_bubble_cap_step_down += 1
+                if in_bubble_cap_step_down > len(ThreeFrameTVG.VARIANT_BUBBLE_CAPS):
+                    raise ValueError(
+                        f"Failed to finish transcript: {tx_id} "
+                        f"with in_bubble_cap_step_down: {in_bubble_cap_step_down}"
+                    ) from e
             else:
                 max_variants_per_node = max_variants_per_node[1:]
                 if len(max_variants_per_node) == 0:
