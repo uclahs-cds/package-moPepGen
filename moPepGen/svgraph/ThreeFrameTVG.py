@@ -1545,21 +1545,22 @@ class ThreeFrameTVG():
                 variants.add(variant.variant)
         return len(variants) > max_in_bubble_variants
 
-    @staticmethod
-    def get_max_in_bubble_variants(n:int, down_steps:int=0) -> int:
+    VARIANT_BUBBLE_CAPS:List[Tuple[Union[int, float],int]] = [
+        (12, -1),
+        (14, 7),
+        (15, 6),
+        (16, 5),
+        (21, 4),
+        (34, 3),
+        (100, 2),
+        (float('inf'), 1),
+    ]
+
+    def get_max_in_bubble_variants(self, n:int, down_steps:int=0) -> int:
         """ Get the `max_in_bubble_variants` based on the total number of variants
         in a variant bubble. The values are set so the number of combinations to
         consider won't be too much more than 5,000. """
-        caps = [
-            (12, -1),
-            (14, 7),
-            (15, 6),
-            (16, 5),
-            (21, 4),
-            (34, 3),
-            (100, 2),
-            (float('inf'), 1),
-        ]
+        caps = self.VARIANT_BUBBLE_CAPS
         for i, (threshold, _) in enumerate(caps):
             if n <= threshold:
                 cap_index = i

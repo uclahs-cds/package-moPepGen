@@ -610,6 +610,11 @@ def caller_reducer(dispatch):
             p:CleavageParams = copy.copy(new_dispatch['cleavage_params'])
             if tracer.graph == 'TVG':
                 in_bubble_cap_step_down += 1
+                if in_bubble_cap_step_down > len(ThreeFrameTVG.VARIANT_BUBBLE_CAPS):
+                    raise ValueError(
+                        f"Failed to finish transcript: {tx_id} "
+                        f"with in_bubble_cap_step_down: {in_bubble_cap_step_down}"
+                    ) from e
             else:
                 max_variants_per_node = max_variants_per_node[1:]
                 if len(max_variants_per_node) == 0:
