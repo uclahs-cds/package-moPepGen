@@ -74,6 +74,7 @@ def add_subparser_parse_reditools(subparsers:argparse._SubParsersAction):
         metavar='<number>'
     )
     common.add_args_source(p)
+    common.add_args_skip_failed(p)
     common.add_args_reference(p, genome=False, proteome=False)
     common.add_args_debug_level(p)
     p.set_defaults(func=parse_reditools)
@@ -129,13 +130,22 @@ def parse_reditools(args:argparse.Namespace) -> None:
 
     for record in parser.REDItoolsParser.parse(table_file, transcript_id_column):
         tally.total += 1
-        _vars = record.convert_to_variant_records(
-            anno=anno,
-            min_coverage_alt=min_coverage_alt,
-            min_frequency_alt=min_frequency_alt,
-            min_coverage_rna=min_coverage_rna,
-            min_coverage_dna=min_coverage_dna
-        )
+        try:
+            _vars = record.convert_to_variant_records(
+                anno=anno,
+                min_coverage_alt=min_coverage_alt,
+                min_frequency_alt=min_frequency_alt,
+                min_coverage_rna=min_coverage_rna,
+                min_coverage_dna=min_coverage_dna
+            )
+        except:
+            if args.skip_failed:
+                tally.skipped += 1
+                logger.warning(
+                    "Failed to parse record %s. Skipping it.", record.id
+                )
+                continue
+            raise
         if not _vars:
             tally.skipped += 1
         else:
