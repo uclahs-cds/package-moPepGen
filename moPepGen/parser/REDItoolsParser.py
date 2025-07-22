@@ -90,7 +90,6 @@ class REDItoolsRecord():
         self.coverage_q = coverage_q
         self.mean_quality = mean_quality
         self.base_count = base_count
-        self.all_subs = all_subs
         self.frequency = frequency
         self.g_coverage_q = g_coverage_q
         self.transcript_id = transcript_id

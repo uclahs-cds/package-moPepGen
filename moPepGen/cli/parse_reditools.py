@@ -142,7 +142,7 @@ def parse_reditools(args:argparse.Namespace) -> None:
             if args.skip_failed:
                 tally.skipped += 1
                 logger.warning(
-                    "Failed to parse record %s. Skipping it.", record.id
+                    "Failed to parse record %s. Skipping it.", str(record)
                 )
                 continue
             raise
