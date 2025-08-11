@@ -1473,3 +1473,17 @@ class TestCallVariantPeptides(TestCaseIntegration):
         expected = test_dir/'brute_force.txt'
         reference = test_dir
         self.default_test_case(gvf, reference, expected)
+    
+    def test_call_variant_peptide_archipel_case_1(self):
+        """
+        Test callVariant with --cleavage-rule None. Example data provided by lyl
+        """
+        test_dir = self.data_dir/'lyl/case_1'
+        gvf = [
+            test_dir/'muttable.gvf'
+        ]
+        expected = test_dir/'expected.txt'
+        reference = test_dir
+        self.default_test_case(gvf, reference, expected, {
+            'cleavage_rule': 'None'
+        })

@@ -722,7 +722,9 @@ class PVGNode():
             variants_1 = cur.get_variants_at(i, i+1)
             variants_2 = cur.get_variants_at(i+1, i+2)
             is_global_variant_only = all(v == global_variant for v in set(variants_1 + variants_2))
-            if variants_1 and variants_2 and not is_global_variant_only:
+            is_stop_codon = cur.seq.seq[i] == '*' \
+                or cur.seq.seq[i + 1] == '*'
+            if variants_1 and variants_2 and not is_global_variant_only and not is_stop_codon:
                 i += 1
                 continue
             last = cur.split_node(i + 1)

@@ -705,6 +705,7 @@ class PeptideVariantGraph():
         visited:Set[str] = set()
         while queue:
             cur = queue.pop()
+            cur_seq = str(cur.seq.seq) if cur.seq else None
             if cur.id in visited:
                 continue
             if cur is self.stop:
