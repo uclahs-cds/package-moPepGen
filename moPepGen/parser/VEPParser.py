@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from typing import List, Tuple, Iterable, IO, Dict, Set
 
 def parse(handle:IO, format:str=Literal['tsv', 'vcf'], samples:List[str]=None,
-        current_phase_sets:Set[Tuple[str, str]]=None) -> Iterable[VEPRecord]:
+        current_phase_groups:Set[Tuple[str, str]]=None) -> Iterable[VEPRecord]:
     """ Parse a VEP output file and return as an iterator.
 
     Args:
@@ -28,7 +28,7 @@ def parse(handle:IO, format:str=Literal['tsv', 'vcf'], samples:List[str]=None,
     """
     if format == 'tsv':
         return parse_tsv(handle)
-    return parse_vcf(handle, samples=samples, current_phase_sets=current_phase_sets)
+    return parse_vcf(handle, samples=samples, current_phase_groups=current_phase_groups)
 
 def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
     """ Parse a VEP output text file and return as an iterator.
@@ -74,7 +74,7 @@ def parse_tsv(handle:IO) -> Iterable[VEPRecord]:
             extra=extra
         )
 
-def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[str, str]]=None
+def parse_vcf(handle:IO, samples:List[str]=None, current_phase_groups:Set[Tuple[str, str]]=None
         ) -> Iterable[VEPRecord]:
     """ Parse a VEP output VCF file and return as an iterator.
 
@@ -88,10 +88,10 @@ def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[st
     Return:
         A iterable of VEPRecord.
     """
-    if current_phase_sets is None:
-        current_phase_sets = set()
-    max_phase_set = max(int(ps[1][2:]) for ps in current_phase_sets) \
-        if current_phase_sets else 0
+    if current_phase_groups is None:
+        current_phase_groups = set()
+    max_phase_set = max(int(ps[1][2:]) for ps in current_phase_groups) \
+        if current_phase_groups else 0
     phase_sets = (f"PS{max_phase_set + 1}", f"PS{max_phase_set + 2}")
     for line in handle:
         if line.startswith('##'):
@@ -156,7 +156,7 @@ def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[st
             is_detected = gt not in ['.', './.', '.|.', '0|0', '0/0']
             cur_phase_set = []
             if is_phased:
-                current_phase_sets.add(phase_sets)
+                current_phase_groups.add(phase_sets)
                 if gt.startswith('1|'):
                     cur_phase_set.append(phase_sets[0])
                 if gt.endswith('|1'):
@@ -165,7 +165,7 @@ def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[st
                 'GT': gt,
                 'is_phased': is_phased,
                 'is_detected': is_detected,
-                'phase_sets': cur_phase_set
+                'phase_set': cur_phase_set
             }
 
         for record in vep_records:
@@ -176,7 +176,7 @@ def parse_vcf(handle:IO, samples:List[str]=None, current_phase_sets:Set[Tuple[st
                 cur_record = copy.deepcopy(record)
                 cur_record.extra.update({
                     'SAMPLE': sample,
-                    'PHASE_SETS': genotype['phase_sets']
+                    'PHASE_SET': genotype['phase_set']
                 })
                 yield cur_record
 
@@ -337,8 +337,8 @@ class VEPRecord():
             'GENE_SYMBOL': gene_model.gene_name
         }
 
-        if 'PHASE_SETS' in self.extra and self.extra['PHASE_SETS']:
-            attrs['PHASE_SETS'] = ','.join(self.extra['PHASE_SETS'])
+        if 'PHASE_SET' in self.extra and self.extra['PHASE_SET']:
+            attrs['PHASE_SET'] = ','.join(self.extra['PHASE_SET'])
 
         try:
             return seqvar.VariantRecord(

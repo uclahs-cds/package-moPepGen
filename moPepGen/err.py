@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from moPepGen import get_logger
 
 if TYPE_CHECKING:
+    from typing import Set
     from moPepGen.gtf.GTFSeqFeature import GTFSeqFeature
     from moPepGen.version import MetaVersion
     from moPepGen.params import CleavageParams
@@ -100,6 +101,13 @@ class MNVParsingError(Exception):
     def __init__(self):
         """ constructor """
         msg = "Trying to parse a MNV, which is currently unsupported."
+        super().__init__(msg)
+
+class PhaseSetsUncompatibleError(Exception):
+    """ Error to be raised when phase sets are uncompatible """
+    def __init__(self, phase_set1:Set[str], phase_set2:Set[str]):
+        """ constructor """
+        msg = f"Phase sets {phase_set1} and {phase_set2} are uncompatible."
         super().__init__(msg)
 
 def warning(msg:str) -> None:

@@ -369,7 +369,7 @@ def load_references(args:argparse.Namespace, load_genome:bool=True,
         codon_tables=codon_tables
     )
 
-def generate_metadata(args:argparse.Namespace, phase_pairs:Set[Tuple[str,str]]=None
+def generate_metadata(args:argparse.Namespace, phase_groups:Set[Tuple[str,str]]=None
         ) -> seqvar.GVFMetadata:
     """ Generate metadata """
     if args.index_dir:
@@ -390,7 +390,7 @@ def generate_metadata(args:argparse.Namespace, phase_pairs:Set[Tuple[str,str]]=N
         reference_index=reference_index,
         genome_fasta=genome_fasta,
         annotation_gtf=annotation_gtf,
-        phase_pairs=phase_pairs
+        phase_groups=phase_groups
     )
 
 def load_inclusion_exclusion_biotypes(args:argparse.Namespace

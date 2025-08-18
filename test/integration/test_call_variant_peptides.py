@@ -346,6 +346,21 @@ class TestCallVariantPeptides(TestCaseIntegration):
         seqs = list(SeqIO.parse(args.output_path, 'fasta'))
         self.assertTrue(len(seqs) > 0)
 
+    def test_call_variant_peptide_phased(self):
+        """ Test variant peptide calling with phased variants """
+        args = create_base_args()
+        args.input_path = [
+            self.data_dir/'vep/vep_gSNP_UCLA0001.gvf'
+        ]
+        args.output_path = self.work_dir/'vep_moPepGen.fasta'
+        args.genome_fasta = self.data_dir/'genome.fasta'
+        args.annotation_gtf = self.data_dir/'annotation.gtf'
+        args.proteome_fasta = self.data_dir/'translate.fasta'
+        cli.call_variant_peptide(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'vep_moPepGen.fasta', 'vep_moPepGen_peptide_table.txt'}
+        self.assertEqual(files, expected)
+
     def test_call_variant_peptide_case4(self):
         """ Test variant peptide calling with alternative splicing """
         args = create_base_args()

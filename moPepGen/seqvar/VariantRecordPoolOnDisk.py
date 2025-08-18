@@ -1,7 +1,7 @@
 """ Variant Record Pool """
 from __future__ import annotations
 import copy
-from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from pathlib import Path
 from moPepGen import ERROR_INDEX_IN_INTRON, check_sha512, circ, constant
 from moPepGen.seqvar.GVFIndex import GVFPointer, iterate_pointer
@@ -11,6 +11,7 @@ from . import VariantRecord
 
 # To avoid circular import
 if TYPE_CHECKING:
+    from typing import Dict, IO, Iterable, List, Union, Set
     from moPepGen.gtf import GenomicAnnotation
     from moPepGen.dna import DNASeqDict, DNASeqRecordWithCoordinates
 
@@ -92,13 +93,15 @@ class VariantRecordPoolOnDisk():
     """ Variant record pool in disk """
     def __init__(self, pointers:Dict[str, List[GVFPointer]]=None,
             gvf_files:List[Path]=None, gvf_handles:List[IO]=None,
-            anno:GenomicAnnotation=None, genome:DNASeqDict=None) -> None:
+            anno:GenomicAnnotation=None, genome:DNASeqDict=None,
+            phase_groups:List[Set[str]]=None) -> None:
         """ constructor """
         self.pointers = pointers or {}
         self.gvf_files = gvf_files or []
         self.gvf_handles = gvf_handles or []
         self.anno = anno
         self.genome = genome
+        self.phase_groups = phase_groups or []
 
     def __contains__(self, key:str):
         """ conteins """
@@ -163,6 +166,8 @@ class VariantRecordPoolOnDisk():
         """ Load index file """
         with open(gvf_file, 'rt') as handle:
             metadata = GVFMetadata.parse(handle)
+            self.phase_groups = metadata.combine_phase_groups(self.phase_groups)
+
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
         with open(index_file, 'rt') as idx_handle:
@@ -180,6 +185,8 @@ class VariantRecordPoolOnDisk():
         """ generate index """
         with open(gvf_file, 'rt') as handle:
             metadata = GVFMetadata.parse(handle)
+            self.phase_groups = metadata.combine_phase_groups(self.phase_groups)
+
         is_circ_rna = metadata.is_circ_rna()
         gvf_handle.seek(0)
         for pointer in iterate_pointer(gvf_handle, is_circ_rna):

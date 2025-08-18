@@ -1,6 +1,6 @@
 """ Module for TVGNode class """
 from __future__ import annotations
-from typing import List, Set, Tuple, Dict, Deque, TYPE_CHECKING
+from typing import TYPE_CHECKING
 import copy
 from collections import deque
 import math
@@ -13,6 +13,7 @@ from .PVGNode import PVGNode
 from .TVGEdge import TVGEdge
 
 if TYPE_CHECKING:
+    from typing import List, Set, Tuple, Dict, Deque, Set
     from moPepGen.svgraph import SubgraphTree
 
 class TVGNode():
@@ -30,7 +31,7 @@ class TVGNode():
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
-            level:int=0, was_bridge:bool=False, id:str=None):
+            level:int=0, was_bridge:bool=False, id:str=None, phase_set:Set[str]=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -49,13 +50,14 @@ class TVGNode():
         self.global_variant = global_variant
         self.level = level
         self.was_bridge = was_bridge
+        self.phase_set = phase_set or set()
         self.id = id or str(uuid.uuid4())
 
     def create_node(self, seq:DNASeqRecordWithCoordinates,
             variants:List[seqvar.VariantRecordWithCoordinate]=None,
             branch:bool=False, orf:List[int]=None, reading_frame_index:int=None,
             subgraph_id:str=None, global_variant:seqvar.VariantRecord=None,
-            level:int=None, was_bridge:bool=False):
+            level:int=None, was_bridge:bool=False, phase_set:Set[str]=None):
         """ Constructor for TVGNode.
 
         Args:
@@ -72,7 +74,8 @@ class TVGNode():
             subgraph_id=subgraph_id,
             global_variant=global_variant or self.global_variant,
             level=level or self.level,
-            was_bridge=was_bridge
+            was_bridge=was_bridge,
+            phase_set=phase_set or copy.copy(self.phase_set)
         )
 
     def __hash__(self):
@@ -93,6 +96,7 @@ class TVGNode():
         seq = self.seq.__getitem__(index)
         variants = []
 
+        phase_set = set()
         for variant in self.variants:
             if variant.location.overlaps(location):
                 new_start = max(variant.location.start, location.start)
@@ -114,6 +118,7 @@ class TVGNode():
                 )
                 new_variant = new_variant.shift(-start)
                 variants.append(new_variant)
+                phase_set.update(variant.variant.phase_set)
         return self.create_node(
             seq=seq,
             variants=variants,
@@ -121,7 +126,8 @@ class TVGNode():
             branch=self.branch,
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            phase_set=phase_set
         )
 
     def is_bridge(self) -> None:
@@ -419,7 +425,8 @@ class TVGNode():
             subgraph_id=self.subgraph_id,
             global_variant=self.global_variant,
             level=self.level,
-            was_bridge=self.was_bridge
+            was_bridge=self.was_bridge,
+            phase_set=copy.copy(self.phase_set)
         )
 
     def deepcopy(self, subgraph_id:str=None, level_increment:int=None) -> TVGNode:
@@ -505,6 +512,8 @@ class TVGNode():
         left_seq = self.seq[:i]
         left_variants = []
         right_variants = []
+        left_phase_set = set()
+        right_phase_set = set()
 
         for variant in self.variants:
             if variant.location.start < i:
@@ -523,6 +532,8 @@ class TVGNode():
                     variant=variant.variant, location=new_loc
                 )
                 left_variants.append(new_variant)
+                left_phase_set.update(variant.variant.phase_set)
+
             if variant.location.end > i:
                 start = max(variant.location.start, i)
                 start_offset = variant.location.start_offset \
@@ -540,6 +551,7 @@ class TVGNode():
                 )
                 new_variant = new_variant.shift(-i)
                 right_variants.append(new_variant)
+                right_phase_set.update(variant.variant.phase_set)
 
         left_node = self.create_node(
             seq=left_seq,
@@ -549,12 +561,14 @@ class TVGNode():
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
             global_variant=self.global_variant,
-            level=self.level
+            level=self.level,
+            phase_set=left_phase_set
         )
 
         self.seq = self.seq[i:]
         self.variants = right_variants
         self.branch = False
+        self.phase_set = right_phase_set
 
         return left_node
 
@@ -566,6 +580,8 @@ class TVGNode():
         right_seq = self.seq[i:]
         left_variants = []
         right_variants = []
+        left_phase_set = set()
+        right_phase_set = set()
 
         for variant in self.variants:
             if variant.location.start < i:
@@ -584,6 +600,8 @@ class TVGNode():
                     variant=variant.variant, location=new_loc
                 )
                 left_variants.append(new_variant)
+                left_phase_set.update(variant.variant.phase_set)
+
             if variant.location.end > i:
                 start = max(variant.location.start, i)
                 start_offset = variant.location.start_offset \
@@ -601,6 +619,7 @@ class TVGNode():
                 )
                 new_variant = new_variant.shift(-i)
                 right_variants.append(new_variant)
+                right_phase_set.update(variant.variant.phase_set)
 
         right_node = self.create_node(
             seq=right_seq,
@@ -610,11 +629,13 @@ class TVGNode():
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
             level=self.level,
-            was_bridge=self.was_bridge
+            was_bridge=self.was_bridge,
+            phase_set=right_phase_set
         )
 
         self.seq = self.seq[:i]
         self.variants = left_variants
+        self.phase_set = left_phase_set
 
         return right_node
 
@@ -647,6 +668,7 @@ class TVGNode():
             else:
                 variants.append(v_r.shift(len(other.seq.seq)))
         self.variants = variants
+        self.phase_set.update(other.phase_set)
 
     def append_right(self, other:TVGNode) -> None:
         """ Combine the other node the the right. """
@@ -678,6 +700,7 @@ class TVGNode():
                 self.variants.append(v_r.shift(len(self.seq.seq)))
 
         self.seq = new_seq
+        self.phase_set.update(other.phase_set)
 
     def translate(self, table:str='Standard', start_codons:List[str]=None) -> PVGNode:
         """ translate to a PVGNode """
@@ -734,7 +757,8 @@ class TVGNode():
             start_codons=cur_start_codons,
             reading_frame_index=self.reading_frame_index,
             subgraph_id=self.subgraph_id,
-            level=self.level
+            level=self.level,
+            phase_set=self.phase_set
         )
 
     def get_ith_variant_var_aa(self, i:int, table:str='Standard') -> Seq:
