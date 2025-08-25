@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+- Fix `parseSTARFusion` that the latest STAR-Fusion does not report `est_J` and `est_S`. #936
+
 ## [1.5.0-rc2] - 2025-06-21
 
 - Add `--in-bubble-cap-step-down` to `callVariant` for TVG in case of hypermutated regions.

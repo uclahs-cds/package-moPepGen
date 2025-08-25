@@ -81,6 +81,17 @@ class TestParseStarFusion(TestCaseIntegration):
         self.assertEqual(files, expected)
         self.assert_gvf_order(args.output_path, args.annotation_gtf)
 
+    def test_parse_star_fusion_case2(self):
+        """ test parseSTARFusion case2 """
+        args = self.create_base_args()
+        args.min_est_j = -1
+        args.input_path = self.data_dir/'fusion/star_fusion_2.txt'
+        cli.parse_star_fusion(args)
+        files = {str(file.name) for file in self.work_dir.glob('*')}
+        expected = {'star_fusion.gvf'}
+        self.assertEqual(files, expected)
+        self.assert_gvf_order(args.output_path, args.annotation_gtf)
+
     @mock.patch(
         "moPepGen.parser.STARFusionParser.STARFusionRecord.convert_to_variant_records",
         new=mock.MagicMock(side_effect=ValueError())
