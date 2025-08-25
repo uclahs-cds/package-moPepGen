@@ -21,7 +21,7 @@ def parse(path:str) -> Iterable[STARFusionRecord]:
                 line = next(handle, None)
                 continue
             if not headers:
-                raise ValueError(f"Failed to parse headers from STAR-Fusion file.")
+                raise ValueError("Failed to parse headers from STAR-Fusion file.")
             fields = line.rstrip().split('\t')
             has_est_j = True
             has_est_s = True
