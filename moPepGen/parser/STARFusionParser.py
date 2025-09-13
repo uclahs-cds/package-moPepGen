@@ -14,17 +14,29 @@ def parse(path:str) -> Iterable[STARFusionRecord]:
     """
     with open(path, 'r') as handle:
         line = next(handle, None)
+        headers = None
         while line:
             if line.startswith('#'):
+                headers = line.rstrip().lstrip('#').split('\t')
                 line = next(handle, None)
                 continue
+            if not headers:
+                raise ValueError("Failed to parse headers from STAR-Fusion file.")
             fields = line.rstrip().split('\t')
+            has_est_j = True
+            has_est_s = True
+            if "est_J" not in headers:
+                has_est_j = False
+                fields.insert(3, None)
+            if "est_S" not in headers:
+                has_est_s = False
+                fields.insert(4, None)
             yield STARFusionRecord(
                 fusion_name=fields[0],
                 junction_read_count=int(fields[1]),
                 spanning_frag_count=int(fields[2]),
-                est_j=float(fields[3]),
-                est_s=float(fields[4]),
+                est_j=float(fields[3]) if has_est_j else None,
+                est_s=float(fields[4]) if has_est_s else None,
                 splice_type=fields[5],
                 left_gene=fields[6].split('^')[-1],
                 left_breakpoint=fields[7],

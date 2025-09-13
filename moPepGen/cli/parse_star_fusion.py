@@ -36,9 +36,10 @@ def add_subparser_parse_star_fusion(subparsers:argparse._SubParsersAction):
     common.add_args_output_path(p, OUTPUT_FILE_FORMATS)
     p.add_argument(
         '--min-est-j',
-        help='Minimal estimated junction reads to be included.',
+        help='Minimal estimated junction reads to be included. Default to not'
+        ' filtering by `est_J`',
         type=float,
-        default=5.0,
+        default=-1,
         metavar='<number>'
     )
     common.add_args_skip_failed(p)
@@ -103,7 +104,7 @@ def parse_star_fusion(args:argparse.Namespace) -> None:
 
     for record in parser.STARFusionParser.parse(fusion):
         tally.total += 1
-        if record.est_j < args.min_est_j:
+        if args.min_est_j > 0 and record.est_j < args.min_est_j:
             tally.skipped.insufficient_evidence += 1
             tally.skipped.total += 1
             continue
