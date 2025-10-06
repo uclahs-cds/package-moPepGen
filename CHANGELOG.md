@@ -16,7 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fix `parseRMATS` to accept ijc_sample_1, sjc_sample1, ijc_sample_2, and sjc_sample_2 as comma seperated values. #939
 
-- Fix `parseRMATS` to also filter for ijc_sample_1 and sjc_sample2. #939
+- Fix `parseRMATS` to also filter for ijc_sample_1 and sjc_sample_2. #939
 
 - Added test case for `parseRMATS` SE with comma seperated values for ijc_sample_1, ijc_sample_2, sjc_sample_1, and sjc_sample_2. #939
 
