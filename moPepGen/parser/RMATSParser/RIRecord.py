@@ -104,7 +104,10 @@ class RIRecord(RMATSRecord):
 
         var_id = f"RI_{start_gene}-{end_gene}"
 
-        if not retained_in_ref and any(x >= min_ijc for x in self.ijc_sample_1):
+        ijc_qc_flag = any(x >= min_ijc for x in self.ijc_sample_1)
+        if self.ijc_sample_2:
+            ijc_qc_flag &= any(x >= min_ijc for x in self.ijc_sample_2)
+        if not retained_in_ref and ijc_qc_flag:
             insert_position = start_gene - 1
             location = FeatureLocation(seqname=self.gene_id,
                 start=insert_position, end=insert_position + 1)
@@ -124,7 +127,11 @@ class RIRecord(RMATSRecord):
                 _id = var_id
                 record = seqvar.VariantRecord(location, ref, alt, _type, _id, attrs)
                 variants.append(record)
-        if not spliced_in_ref and any(x >= min_sjc for x in self.sjc_sample_1):
+
+        sjc_qc_flag = any(x >= min_sjc for x in self.sjc_sample_1)
+        if self.sjc_sample_2:
+            sjc_qc_flag &= any(x >= min_sjc for x in self.sjc_sample_2)
+        if not spliced_in_ref and sjc_qc_flag:
             del_start = start_gene
             del_end = end_gene
             location = FeatureLocation(seqname=self.gene_id,

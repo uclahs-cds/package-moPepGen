@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fix `parseRMATS` to accept ijc_sample_1, sjc_sample1, ijc_sample_2, and sjc_sample_2 as common seperated values. #939
 
+- Fix `parseRMATS` to also filter for ijc_sample_1 and sjc_sample2. #939
+
 ## [1.5.0-rc2] - 2025-06-21
 
 - Add `--in-bubble-cap-step-down` to `callVariant` for TVG in case of hypermutated regions.

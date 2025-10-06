@@ -128,12 +128,18 @@ class MXERecord(RMATSRecord):
             tx_model = anno.transcripts[tx_id]
 
             # For MXE, the first exon is 'inclusion' and second is 'skipped'.
-            if any(x >= min_ijc for x in self.ijc_sample_1):
+            ijc_qc_flag = any(x >= min_ijc for x in self.ijc_sample_1)
+            if self.ijc_sample_2:
+                ijc_qc_flag &= any(x >= min_ijc for x in self.ijc_sample_2)
+            if ijc_qc_flag:
                 aln = first_downstream_junction.align_to_transcript(tx_model, True, False)
                 if aln:
                     variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
-            if any(x >= min_sjc for x in self.sjc_sample_1):
+            sjc_qc_flag = any(x >= min_sjc for x in self.sjc_sample_1)
+            if self.sjc_sample_2:
+                sjc_qc_flag &= any(x >= min_sjc for x in self.sjc_sample_2)
+            if sjc_qc_flag:
                 aln = second_upstream_junction.align_to_transcript(tx_model, False, True)
                 if aln:
                     variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
