@@ -120,6 +120,16 @@ class TestParseRMATS(TestCaseIntegration):
                 ))
         self.assertEqual(received_values, expect_values)
 
+    def test_parse_rmats_se_case_4(self):
+        """ rMATS skipped exon when the retained version is annotated. This
+        should results an deletion. """
+        args = self.create_base_args()
+        args.skipped_exon = self.data_dir\
+            /'alternative_splicing/rmats_se_case_4.SE.JC.txt'
+        cli.parse_rmats(args)
+        records = list(seqvar.io.parse(args.output_path))
+        self.assertEqual(len(records), 2)
+
     def test_parse_rmats_a5ss_case_1(self):
         """ rMATS A5SS when the longer version is annotated. This should
         results a deletion. """

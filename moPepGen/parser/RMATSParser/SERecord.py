@@ -14,8 +14,8 @@ class SERecord(RMATSRecord):
     def __init__(self, gene_id:str, gene_symbol:str, chrom:str, exon_start:int,
             exon_end:int, upstream_exon_start:int, upstream_exon_end:int,
             downstream_exon_start:int, downstream_exon_end:int,
-            ijc_sample_1:int, sjc_sample_1:int, ijc_sample_2:int,
-            sjc_sample_2:int, inc_form_len:int, skip_form_len:int,
+            ijc_sample_1:List[int], sjc_sample_1:List[int], ijc_sample_2:List[int],
+            sjc_sample_2:List[int], inc_form_len:int, skip_form_len:int,
             pvalue:float, fdr:float):
         """ Constructor """
         super().__init__(gene_id, gene_symbol, chrom)
@@ -48,10 +48,10 @@ class SERecord(RMATSRecord):
             upstream_exon_end=int(fields[8]),
             downstream_exon_start=int(fields[9]),
             downstream_exon_end=int(fields[10]),
-            ijc_sample_1=int(fields[12]),
-            sjc_sample_1=int(fields[13]),
-            ijc_sample_2=None if fields[14] == '' else int(fields[14]),
-            sjc_sample_2=None if fields[15] == '' else int(fields[15]),
+            ijc_sample_1=[int(x) for x in fields[12].split(',') if x != ''],
+            sjc_sample_1=[int(x) for x in fields[13].split(',') if x != ''],
+            ijc_sample_2=[int(x) for x in fields[14].split(',') if x != ''],
+            sjc_sample_2=[int(x) for x in fields[15].split(',') if x != ''],
             inc_form_len=int(fields[16]),
             skip_form_len=int(fields[17]),
             pvalue=None if fields[18] == 'NA' else float(fields[18]),
@@ -127,12 +127,18 @@ class SERecord(RMATSRecord):
         for tx_id in tx_ids:
             tx_model = anno.transcripts[tx_id]
 
-            if self.sjc_sample_1 >= min_sjc:
+            sjc_qc_flag = any(x >= min_sjc for x in self.sjc_sample_1)
+            if self.sjc_sample_2:
+                sjc_qc_flag &= any(x >= min_sjc for x in self.sjc_sample_2)
+            if sjc_qc_flag:
                 aln = skip_junction.align_to_transcript(tx_model, False, False)
                 if aln:
                     variants += aln.convert_to_variant_records(anno, gene_seq, var_id)
 
-            if self.ijc_sample_1 >= min_ijc:
+            ijc_qc_flag = any(x >= min_ijc for x in self.ijc_sample_1)
+            if self.ijc_sample_2:
+                ijc_qc_flag &= any(x >= min_ijc for x in self.ijc_sample_2)
+            if ijc_qc_flag:
                 aln = upstream_junction.align_to_transcript( tx_model, False, True)
                 if aln:
                     variants += aln.convert_to_variant_records(anno, gene_seq, var_id)

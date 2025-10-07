@@ -10,9 +10,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.5.0-rc2] - 2025-10-06
+
 - Fix `parseSTARFusion` that the latest STAR-Fusion does not report `est_J` and `est_S`. #936
 
-## [1.5.0-rc2] - 2025-06-21
+- Fix `parseRMATS` to accept ijc_sample_1, sjc_sample1, ijc_sample_2, and sjc_sample_2 as comma seperated values. #939
+
+- Fix `parseRMATS` to also filter for ijc_sample_1 and sjc_sample_2. #939
+
+- Added test case for `parseRMATS` SE with comma seperated values for ijc_sample_1, ijc_sample_2, sjc_sample_1, and sjc_sample_2. #939
 
 - Add `--in-bubble-cap-step-down` to `callVariant` for TVG in case of hypermutated regions.
 

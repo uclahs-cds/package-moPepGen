@@ -1,0 +1,2 @@
+ID	GeneID	geneSymbol	chr	strand	exonStart_0base	exonEnd	upstreamES	upstreamEE	downstreamES	downstreamEE	ID	IJC_SAMPLE_1	SJC_SAMPLE_1	IJC_SAMPLE_2	SJC_SAMPLE_2	IncFormLen	SkipFormLen	PValue	FDR	IncLevel1	IncLevel2	IncLevelDifference
+0	ENSG00000128408.9	RIBC2	chr22	+	323	405	0	323	405	750	0	1,2,1	1,2,1	2,2,1	2,2,1	148	74	NA	NA	NA		NA
