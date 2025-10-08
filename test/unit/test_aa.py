@@ -77,7 +77,7 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
         self.assertEqual(seq.transcript_id, 'ENST00000631435')
         self.assertEqual(seq.gene_id, 'ENSG00000282253')
 
-    def test_nfer_ids_ensembl_case2(self):
+    def test_infer_ids_ensembl_case2(self):
         """ Test that error will raise with GENCODE style. """
         header = 'ENSP00000493376.2|ENST00000641515.2|ENSG00000186092.6|OTTH'+\
             'UMG00000001094.4|OTTHUMT00000003223.4|OR4F5-202|OR4F5|326'
@@ -90,7 +90,7 @@ class TestAminoAcidSeqRecord(unittest.TestCase):
         with self.assertRaises(ValueError):
             seq.infer_ids_ensembl()
 
-    def test_nfer_ids_ensembl_case3(self):
+    def test_infer_ids_ensembl_case3(self):
         """ Test that IDs are infered correctly with ENSEMBL style for GRCh37. """
         seq = aa.AminoAcidSeqRecord(
             seq=Seq('GTGG'),
