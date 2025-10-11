@@ -122,7 +122,8 @@ class AminoAcidSeqRecord(SeqRecord):
         """ Infers the gene, transcript, and protein ID from description base
         on the ENSEMBL format
         """
-        p = r'^(?P<protein_id>.+) pep (\bchromosome\b|\bsupercontig\b|\bscaffold\b):' +\
+        p = r'^(?P<protein_id>.+?) pep(?::[a-zA-Z0-9_,]+)? ' +\
+            r'(\bchromosome\b|\bsupercontig\b|\bscaffold\b):' +\
             r'(?P<genome_build>.+?):(?P<chromosome>.+?):(?P<position>\d+:\d+):(?P<strand>.+) ' +\
             r'gene:(?P<gene_id>.+) transcript:(?P<transcript_id>\S+) .+'
 

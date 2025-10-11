@@ -37,7 +37,7 @@ def add_subparser_parse_vep(subparsers:argparse._SubParsersAction):
     )
     common.add_args_input_path(
         parser=p, formats=INPUT_FILE_FORMATS, plural=True,
-        message='File path to the VEP output TXT file.'
+        message='File path to the VEP output TXT or VCF file.'
     )
     p.add_argument(
         '-o', '--output-path',
