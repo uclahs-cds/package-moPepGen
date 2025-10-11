@@ -38,6 +38,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed that ENSEMBL GRCh37 style IDs not recognized for translate FASTA. #941
 
+- Fixed GitHub workflow to build documentation site. #933
+
 ## [1.5.0-rc1] - 2025-06-17
 
 - Added `--codon-table` and `--chr-codon-table`. The former sets the codon table to use, and the latter overrides it for specific chromosomes.

@@ -26,7 +26,7 @@ jobs:
           echo '.' >> requirements.txt
 
       - name: Deploy docs
-        uses: zhuchcn/mkdocs-deploy-gh-pages@nomaterial
+        uses: mhausenblas/mkdocs-deploy-gh-pages@a31c6b13a80e4a4fbb525eeb7a2a78253bb15fa5
         env:
           GITHUB_TOKEN: ${{ secrets.DEPLOY_DOCS }}
           CONFIG_FILE: mkdocs.yml
