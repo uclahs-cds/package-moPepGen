@@ -38,7 +38,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Fixed that ENSEMBL GRCh37 style IDs not recognized for translate FASTA. #941
 
-- Fixed GitHub workflow to build documenation site. #933
+- Fixed GitHub workflow to build documentation site. #933
 
 ## [1.5.0-rc1] - 2025-06-17
 
