@@ -39,6 +39,8 @@ class PVGNode():
           from upstream node to indel variants. When a node contains INDELs is
           collapsed with a canonical peptide node, the upstream node will be
           called for miscleaved peptides that has corresponding INDELs.
+        - `collapsed_variants` (Dict[PVGNode, List[seqvar.VariantRecordWithCoordinate]]):
+            A mapping from downstream node to collapsed variants.
     """
     def __init__(self, seq:aa.AminoAcidSeqRecordWithCoordinates,
             reading_frame_index:int, subgraph_id:str,
@@ -51,7 +53,8 @@ class PVGNode():
             npop_collapsed:bool=False, cpop_collapsed:bool=False,
             upstream_indel_map:Dict[PVGNode, List[seqvar.VariantRecord]]=None,
             collapsed_variants:Dict[PVGNode, List[seqvar.VariantRecordWithCoordinate]]=None,
-            left_cleavage_pattern_end:int=None, right_cleavage_pattern_start:int=None
+            left_cleavage_pattern_end:int=None, right_cleavage_pattern_start:int=None,
+            phase_set:Set[str]=None
             ):
         """ Construct a PVGNode object. """
         self.seq = seq
@@ -74,6 +77,7 @@ class PVGNode():
         self.collapsed_variants = collapsed_variants or {}
         self.left_cleavage_pattern_end = left_cleavage_pattern_end
         self.right_cleavage_pattern_start = right_cleavage_pattern_start
+        self.phase_set = phase_set or set()
 
     def __getitem__(self, index) -> PVGNode:
         """ get item """
@@ -87,9 +91,11 @@ class PVGNode():
 
         # Slice variants
         variants = []
+        phase_set = set()
         for variant in self.variants:
             if variant.location.overlaps(location):
                 variants.append(variant.shift(-start))
+                phase_set.update(variant.variant.phase_set)
 
         if start == 0:
             upstream_indel_map = {k:copy.copy(v) for k,v in self.upstream_indel_map.items()}
@@ -145,7 +151,8 @@ class PVGNode():
             upstream_indel_map=upstream_indel_map,
             collapsed_variants=collapsed_variants,
             left_cleavage_pattern_end=left_cleavage_pattern_end,
-            right_cleavage_pattern_start=right_cleavage_pattern_start
+            right_cleavage_pattern_start=right_cleavage_pattern_start,
+            phase_set=phase_set
         )
 
     def add_out_edge(self, node:PVGNode) -> None:
@@ -612,34 +619,42 @@ class PVGNode():
 
         left_variants = []
         right_variants = []
+        left_phase_set = set()
+        right_phase_set = set()
         for variant in self.variants:
             if variant.location.start < index:
                 if variant.location.end <= index:
                     left_variants.append(variant)
                 else:
                     left_variants.append(variant[:index])
+                left_phase_set.update(variant.variant.phase_set)
             elif variant.location.start == index and cleavage \
                     and not variant.downstream_cleavage_altering:
                 cleave_alts = variant[index:index+1]
                 cleave_alts = cleave_alts.shift(-1)
                 cleave_alts.downstream_cleavage_altering = True
                 left_variants.append(cleave_alts)
+                left_phase_set.update(variant.variant.phase_set)
 
             if variant.location.end > index:
                 right_variants.append(variant.shift(-index))
+                right_phase_set.update(variant.variant.phase_set)
             elif variant.location.end == index and cleavage \
                     and not variant.upstream_cleavage_altering:
                 cleave_alts = variant.shift(-index)
                 cleave_alts.upstream_cleavage_altering = True
                 right_variants.append(cleave_alts)
+                right_phase_set.update(variant.variant.phase_set)
 
         self.seq = left_seq
         self.variants = left_variants
+        self.phase_set = left_phase_set
 
         new_node = PVGNode(
             seq=right_seq,
             reading_frame_index=self.reading_frame_index,
             variants=right_variants,
+            phase_set=right_phase_set,
             orf=self.orf,
             was_bridge=self.was_bridge,
             pre_cleaved=pre_cleave,
@@ -691,16 +706,21 @@ class PVGNode():
         right_seq = self.seq[i:]
         left_variants = []
         right_variants = []
+        left_phase_set = set()
+        right_phase_set = set()
 
         for variant in self.variants:
             if variant.location.start < i:
                 left_variants.append(variant)
+                left_phase_set.update(variant.variant.phase_set)
             if variant.location.end > i:
                 right_variants.append(variant.shift(-i))
+                right_phase_set.update(variant.variant.phase_set)
 
         right_node = PVGNode(
             seq=right_seq,
             variants=right_variants,
+            phase_set=right_phase_set,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
@@ -711,6 +731,7 @@ class PVGNode():
 
         self.seq = self.seq[:i]
         self.variants = left_variants
+        self.phase_set = left_phase_set
         self.right_cleavage_pattern_start = None
 
         left_secs, right_secs = self.split_selenocysteines(i)
@@ -730,16 +751,21 @@ class PVGNode():
         left_seq = self.seq[:i]
         left_variants = []
         right_variants = []
+        left_phase_set = set()
+        right_phase_set = set()
 
         for variant in self.variants:
             if variant.location.start < i:
                 left_variants.append(variant)
+                left_phase_set.update(variant.variant.phase_set)
             if variant.location.end > i:
                 right_variants.append(variant.shift(-i))
+                right_phase_set.update(variant.variant.phase_set)
 
         left_node = PVGNode(
             seq=left_seq,
             variants=left_variants,
+            phase_set=left_phase_set,
             reading_frame_index=self.reading_frame_index,
             was_bridge=self.was_bridge,
             subgraph_id=self.subgraph_id,
@@ -752,6 +778,7 @@ class PVGNode():
 
         self.seq = self.seq[i:]
         self.variants = right_variants
+        self.phase_set = right_phase_set
         self.left_cleavage_pattern_end = None
 
         left_secs, right_secs = self.split_selenocysteines(i)
@@ -772,6 +799,7 @@ class PVGNode():
         for variant in self.variants:
             variants.append(variant.shift(len(other.seq.seq)))
         self.variants = variants
+        self.phase_set.update(other.phase_set)
         self.upstream_indel_map = {k:copy.copy(v) for k,v in
             other.upstream_indel_map.items()}
 
@@ -795,6 +823,7 @@ class PVGNode():
             if not variant.downstream_cleavage_altering:
                 variants.append(variant)
         self.variants = variants
+        self.phase_set.update(other.phase_set)
 
         for variant in other.variants:
             self.variants.append(variant.shift(len(self.seq.seq)))
@@ -837,7 +866,8 @@ class PVGNode():
             cpop_collapsed=self.cpop_collapsed,
             upstream_indel_map={k:copy.copy(v) for k,v in self.upstream_indel_map.items()},
             left_cleavage_pattern_end=self.left_cleavage_pattern_end,
-            right_cleavage_pattern_start=self.right_cleavage_pattern_start
+            right_cleavage_pattern_start=self.right_cleavage_pattern_start,
+            phase_set=copy.copy(self.phase_set)
         )
 
     def get_nearest_next_ref_index(self) -> int:

@@ -1,7 +1,7 @@
 """ Variant Record Pool """
 from __future__ import annotations
 import copy
-from typing import Dict, IO, Iterable, List, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from moPepGen import ERROR_INDEX_IN_INTRON, circ
 from . import VariantRecord, io, GVFMetadata
 from .VariantRecordPoolOnDisk import TranscriptionalVariantSeries
@@ -9,10 +9,11 @@ from .VariantRecordPoolOnDisk import TranscriptionalVariantSeries
 
 # To avoid circular import
 if TYPE_CHECKING:
+    from typing import Dict, IO, Iterable, List, Union, Set
     from moPepGen.gtf import GenomicAnnotation
     from moPepGen.dna import DNASeqDict
 
-T = Dict[str, List[VariantRecord]]
+    T = Dict[str, List[VariantRecord]]
 
 class VariantRecordPool():
     """ This is used to store all variant records read in from GVF files.
@@ -29,7 +30,7 @@ class VariantRecordPool():
             transcript ID (e.g., UTR). In gene coordinates.
     """
     def __init__(self, data:Dict[str, TranscriptionalVariantSeries]=None,
-            anno:GenomicAnnotation=None):
+            anno:GenomicAnnotation=None, phase_groups:List[Set[str]]=None):
         """ Constructor
 
         Args:
@@ -43,6 +44,7 @@ class VariantRecordPool():
         """
         self.data = data or {}
         self.anno = anno
+        self.phase_groups = phase_groups or []
 
     def __contins__(self, key:str):
         """ in """
@@ -111,6 +113,7 @@ class VariantRecordPool():
         handle.seek(0)
         metadata = GVFMetadata.parse(handle)
         handle.seek(0)
+        self.phase_groups = metadata.combine_phase_groups(self.phase_groups)
 
         if metadata.is_circ_rna():
             for record in circ.io.parse(handle):

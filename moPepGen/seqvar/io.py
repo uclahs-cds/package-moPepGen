@@ -137,7 +137,7 @@ def write(variants:Iterable[VariantRecord], output_path:str,
         for record in variants:
             line = record.to_string()
             temp_file.write(line + '\n')
-            is_phased = record.attrs.get('PHASE_SETS', None) is not None
+            is_phased = record.attrs.get('PHASE_SET', None) is not None
             metadata.add_info(variant_type=record.type, is_phased=is_phased)
         with open(output_path, 'w') as out_file:
             for line in metadata.to_strings():
