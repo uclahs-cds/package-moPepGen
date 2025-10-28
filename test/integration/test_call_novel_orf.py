@@ -124,7 +124,7 @@ class TestCallNovelORFPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
         args.output_path = self.work_dir/'noncoding_peptide.fasta'
         args.output_orf = self.work_dir/'noncoding_orf.fasta'
-        args.include_coding = True
+        args.coding_novel_orf = True
         cli.call_novel_orf_peptide(args)
         files = {str(file.name) for file in self.work_dir.glob('*')}
         expected = {args.output_path.name, args.output_orf.name}
@@ -157,4 +157,11 @@ class TestCallNovelORFPeptides(TestCaseIntegration):
         novel_orf_txs = set().union(
             *[{y.split('|')[0] for y in x.description.split(' ')} for x in novel_peptides]
         )
-        self.assertTrue(any(x in proteome for x in novel_orf_txs))
+        # The check should verify that at least one transcript has coding transcripts
+        # by checking if transcript IDs from novel peptides match any in proteome keys
+        proteome_tx_ids = set(proteome.keys())
+        coding_txs_found = novel_orf_txs.intersection(proteome_tx_ids)
+        self.assertTrue(
+            len(coding_txs_found) > 0,
+            f"No coding transcripts found. Novel ORF txs: {novel_orf_txs}, Proteome txs: {proteome_tx_ids}"
+        )

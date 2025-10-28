@@ -5,9 +5,6 @@ import os
 import sys
 from typing import TYPE_CHECKING
 from pathlib import Path
-import errno
-import signal
-import functools
 import time
 import logging
 import pkg_resources
@@ -450,28 +447,8 @@ def validate_file_format(file:Path, types:List[str]=None, check_readable:bool=Fa
             if not os.access(file.parent, os.W_OK):
                 raise PermissionError(f"Permission denied: '{file}'")
 
-# pylint: disable=unused-argument
-def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
-    """ Decorator to raise a TimeoutError if the process runs over time. """
-    def decorator(func):
-        def _handle_timeout(signum, frame):
-            raise TimeoutError(error_message)
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if 'timeout' in kwargs and kwargs['timeout']:
-                seconds = kwargs['timeout']
-            signal.signal(signal.SIGALRM, _handle_timeout)
-            signal.alarm(seconds)
-            try:
-                result = func(*args, **kwargs)
-            finally:
-                signal.alarm(0)
-            return result
-
-        return wrapper
-
-    return decorator
+# Import timeout decorator from shared utility module
+from moPepGen.util.timeout import timeout
 
 def setup_loggers(level:str):
     """ Initialize loggers for both init and run """
@@ -545,11 +522,3 @@ def create_codon_table_map(codon_table:str, chr_codon_table:List[str],
             codon_tables[chr].start_codons = start_codons
 
     return codon_tables
-
-def get_peptide_table_path(path:Path) -> Path:
-    """ Get the peptide table file path from the given path for peptide fasta. """
-    return path.parent/f"{path.stem}_peptide_table.txt"
-
-def get_peptide_table_path_temp(path:Path) -> Path:
-    """ Get the temp peptide table path """
-    return path.parent/f"{path.stem}_peptide_table.tmp"

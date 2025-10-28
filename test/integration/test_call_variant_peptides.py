@@ -163,16 +163,7 @@ class TestCallVariantPeptides(TestCaseIntegration):
     def test_call_variant_peptide_skip_failed(self):
         """ Test errors were handled by --skip-failed in callVariant """
         # pylint: disable=import-outside-toplevel
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "moPepGen.cli.call_variant_peptide",
-            Path(__file__).parent.parent.parent/"moPepGen/cli/call_variant_peptide.py"
-        )
-        call_variant_peptide_module = importlib.util.module_from_spec(spec)
-        sys.modules["moPepGen.cli.call_variant_peptide"] = call_variant_peptide_module
-        spec.loader.exec_module(call_variant_peptide_module)
-
-        call_variant_peptide_module.call_peptide_main = Mock(side_effect=ValueError())
+        from unittest.mock import patch
 
         args = create_base_args()
         args.input_path = [self.data_dir/'vep'/'vep_gSNP.gvf']
@@ -181,11 +172,15 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.annotation_gtf = self.data_dir/'annotation.gtf'
         args.proteome_fasta = self.data_dir/'translate.fasta'
 
-        with self.assertRaises(ValueError):
-            call_variant_peptide_module.call_variant_peptide(args)
+        # Patch call_peptide_main to raise ValueError (this is what skip_failed catches)
+        with patch('moPepGen.pipeline.call_variant_workers.call_peptide_main', side_effect=ValueError()):
+            with self.assertRaises(ValueError):
+                cli.call_variant_peptide(args)
 
+        # With skip_failed=True, the error should be caught and logged
         args.skip_failed = True
-        call_variant_peptide_module.call_variant_peptide(args)
+        with patch('moPepGen.pipeline.call_variant_workers.call_peptide_main', side_effect=ValueError()):
+            cli.call_variant_peptide(args)
 
     def test_call_variant_peptide_mtsnv(self):
         """ Test that mtSNV is handled and the corrent codon table is used. """

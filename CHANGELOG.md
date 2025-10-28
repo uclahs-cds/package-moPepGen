@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.5.0-rc3] - 2025-10-28
+
+- Refactor `callVariant` to split the single script into seperate modules under `pipelien`.
+
 ## [1.5.0-rc2] - 2025-10-06
 
 - Fix `parseSTARFusion` that the latest STAR-Fusion does not report `est_J` and `est_S`. #936

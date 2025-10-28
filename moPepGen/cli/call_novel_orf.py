@@ -2,20 +2,14 @@
 It finds all start codons of any novel ORF gene. """
 from __future__ import annotations
 import argparse
-from typing import TYPE_CHECKING, Set, List, Tuple, IO, Dict
 from pathlib import Path
-from Bio.Seq import Seq
-from Bio.SeqIO import FastaIO
-from moPepGen import params, svgraph, aa, get_logger, VARIANT_PEPTIDE_SOURCE_DELIMITER
-from moPepGen.dna.DNASeqRecord import DNASeqRecordWithCoordinates
+from moPepGen import params, aa, get_logger
 from moPepGen.err import ReferenceSeqnameNotFoundError
 from moPepGen.cli import common
-
-
-if TYPE_CHECKING:
-    from moPepGen.gtf import TranscriptAnnotationModel
-    from moPepGen.dna import DNASeqDict
-    from moPepGen.params import CodonTableInfo
+from moPepGen.pipeline.call_novel_orf_worker import (
+    call_novel_orf_for_transcript,
+    write_orf_fasta
+)
 
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
@@ -95,9 +89,10 @@ def add_subparser_call_novel_orf(subparsers:argparse._SubParsersAction):
     common.print_help_if_missing_args(p)
     return p
 
-def call_novel_orf_peptide(args:argparse.Namespace) -> None:
-    """ Main entrypoint for calling novel ORF peptide """
+def call_novel_orf_peptide(args: argparse.Namespace) -> None:
+    """Main entrypoint for calling novel ORF peptides."""
     logger = get_logger()
+
     common.validate_file_format(
         args.output_path, OUTPUT_FILE_FORMATS, check_writable=True
     )
@@ -117,6 +112,7 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
+    # Load references in CLI layer
     ref_data = common.load_references(
         args=args, load_proteome=True, cleavage_params=cleavage_params,
         load_codon_tables=True
@@ -131,9 +127,11 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
     for tx_id in ref_data.anno.transcripts:
         tx_model = ref_data.anno.transcripts[tx_id]
         codon_table = ref_data.codon_tables[tx_model.transcript.chrom]
+
+        # Filter transcripts
         if tx_model.is_protein_coding:
             if not args.coding_novel_orf:
-                pass
+                continue
         else:
             if inclusion_biotypes and \
                     tx_model.transcript.biotype not in inclusion_biotypes:
@@ -147,8 +145,10 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
                 continue
 
         try:
-            peptides, orfs = call_noncoding_peptide_main(
-                tx_id=tx_id, tx_model=tx_model, genome=ref_data.genome,
+            peptides, orfs = call_novel_orf_for_transcript(
+                tx_id=tx_id,
+                tx_model=tx_model,
+                genome=ref_data.genome,
                 canonical_peptides=ref_data.canonical_peptides,
                 codon_table=codon_table,
                 cleavage_params=cleavage_params,
@@ -182,111 +182,7 @@ def call_novel_orf_peptide(args:argparse.Namespace) -> None:
     novel_orf_peptide_pool.write(args.output_path)
     if args.output_orf:
         with open(args.output_orf, 'w') as handle:
-            write_orf(orf_pool, handle)
+            write_orf_fasta(orf_pool, handle)
 
     logger.info('Noncanonical peptide FASTA file written to disk.')
 
-
-def call_noncoding_peptide_main(tx_id:str, tx_model:TranscriptAnnotationModel,
-        genome:DNASeqDict, canonical_peptides:Set[str], codon_table:CodonTableInfo,
-        cleavage_params:params.CleavageParams, orf_assignment:str,
-        w2f_reassignment:bool
-        ) -> Tuple[Set[aa.AminoAcidSeqRecord],List[aa.AminoAcidSeqRecord]]:
-    """ Call novel ORF peptides """
-    chrom = tx_model.transcript.location.seqname
-    try:
-        contig_seq = genome[chrom]
-    except KeyError as e:
-        raise ReferenceSeqnameNotFoundError(chrom) from e
-
-    tx_seq = tx_model.get_transcript_sequence(contig_seq)
-
-    dgraph = svgraph.ThreeFrameTVG(
-        seq=tx_seq,
-        _id=tx_id,
-        cds_start_nf=True,
-        has_known_orf=False,
-        cleavage_params=cleavage_params,
-        gene_id=tx_model.gene_id,
-        coordinate_feature_type='transcript',
-        coordinate_feature_id=tx_id
-    )
-    dgraph.init_three_frames()
-    pgraph = dgraph.translate(
-        table=codon_table.codon_table,
-        start_codons=codon_table.start_codons
-    )
-    pgraph.create_cleavage_graph()
-    peptide_anno = pgraph.call_variant_peptides(
-        check_variants=False,
-        check_orf=True,
-        denylist=canonical_peptides,
-        orf_assignment=orf_assignment,
-        w2f=w2f_reassignment,
-        check_external_variants=False
-    )
-    peptide_map:Dict[Seq, Set[str]] = {}
-    for seq, annotated_labels in peptide_anno.items():
-        for label in annotated_labels:
-            if seq in peptide_map:
-                peptide_map[seq].add(label.label)
-            else:
-                peptide_map[seq] = {label.label}
-    peptides = set()
-    for seq, labels in peptide_map.items():
-        label = VARIANT_PEPTIDE_SOURCE_DELIMITER.join(labels)
-        peptides.add(
-            aa.AminoAcidSeqRecord(
-                seq=seq,
-                description=label,
-                name=label
-            )
-        )
-    orfs = get_orf_sequences(
-        pgraph=pgraph,
-        tx_id=tx_id,
-        gene_id=tx_model.gene_id,
-        tx_seq=tx_seq,
-        exclude_canonical_orf=False,
-        codon_table=codon_table.codon_table,
-        start_codons=codon_table.start_codons
-    )
-    return peptides, orfs
-
-def get_orf_sequences(pgraph:svgraph.PeptideVariantGraph, tx_id:str, gene_id:str,
-        tx_seq:DNASeqRecordWithCoordinates, exclude_canonical_orf:bool,
-        codon_table:str, start_codons:List[str]
-        ) -> List[aa.AminoAcidSeqRecord]:
-    """ Get the full ORF sequences """
-    seqs = []
-    translate_seqs = [tx_seq[i:].translate(table=codon_table) for i in range(3)]
-    for orf, orf_id in pgraph.orf_id_map.items():
-        orf_start = orf[0]
-        if exclude_canonical_orf and tx_seq.orf and tx_seq.orf.start == orf_start:
-            continue
-        assert tx_seq.seq[orf_start:orf_start+3] in start_codons
-        seq_start = int(orf_start / 3)
-        reading_frame_index = orf_start % 3
-        #seq_start = int((orf_start - node.orf[0]) / 3)
-        translate_seq = translate_seqs[reading_frame_index]
-        seq_len = translate_seq.seq[seq_start:].find('*')
-        if seq_len == -1:
-            seq_len = len(translate_seq.seq) - seq_start
-        orf_end = orf_start + seq_len * 3
-        seq_end = seq_start + seq_len
-        seqname = f"{tx_id}|{gene_id}|{orf_id}|{orf_start}-{orf_end}"
-        seq = translate_seq[seq_start:seq_end]
-        if seq.seq[0] != 'M':
-            seq.seq = Seq('M') + seq.seq[1:]
-        seq.id = seqname
-        seq.name = seqname
-        seq.description = seqname
-        seqs.append(seq)
-    return seqs
-
-def write_orf(orfs:List[aa.AminoAcidSeqRecord], handle:IO):
-    """ Write ORF sequences """
-    record2title = lambda x: x.description
-    writer = FastaIO.FastaWriter(handle, record2title=record2title)
-    for record in orfs:
-        writer.write_record(record)
