@@ -1,4 +1,4 @@
-"""Timeout decorator utility for function execution limits."""
+"""Timeout decorator for pipeline function execution limits."""
 from __future__ import annotations
 import os
 import errno

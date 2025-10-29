@@ -9,8 +9,11 @@ import pickle
 from Bio import SeqIO
 from moPepGen import get_logger
 from moPepGen.aa.VariantPeptidePool import VariantPeptidePool
-from moPepGen.svgraph.VariantPeptideTable import VariantPeptideTable
-from moPepGen.util import paths
+from moPepGen.svgraph.VariantPeptideTable import (
+    VariantPeptideTable,
+    get_peptide_table_path,
+    get_peptide_table_path_temp
+)
 from moPepGen.cli import common
 
 
@@ -87,8 +90,8 @@ def merge_fasta(args:argparse.Namespace):
                     denylist.add(peptide)
 
     if all_fasta_have_table(input_files):
-        temp_file = paths.get_peptide_table_path_temp(output_file)
-        table_file = paths.get_peptide_table_path(output_file)
+        temp_file = get_peptide_table_path_temp(output_file)
+        table_file = get_peptide_table_path(output_file)
         with open(temp_file, 'w+') as handle:
             peptide_table = VariantPeptideTable(handle=handle)
             peptide_table.write_header()
@@ -115,7 +118,7 @@ def merge_fasta(args:argparse.Namespace):
 
 def all_fasta_have_table(files:Iterable[Path]):
     """ Check wether all fasta files have the peptide table """
-    return all(paths.get_peptide_table_path(Path(str(path))).exists() for path in files)
+    return all(get_peptide_table_path(Path(str(path))).exists() for path in files)
 
 def merge_peptide_fasta(files:Iterable[Path], denylist:Set[Seq], logger:Logger=None):
     """ Merge peptides from FASTA files. """
@@ -146,7 +149,7 @@ def merge_peptide_table(files:Iterable[Path], peptide_table:VariantPeptideTable,
         denylist:Set[Seq], logger:Logger=None):
     """ Merge peptides from FASTA table """
     for path in files:
-        table_path = paths.get_peptide_table_path(path)
+        table_path = get_peptide_table_path(path)
         with open(table_path, 'rt') as handle:
             table = VariantPeptideTable(handle)
             table.generate_index()

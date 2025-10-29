@@ -9,11 +9,15 @@ from pathos.pools import ParallelPool
 
 from moPepGen import svgraph, seqvar, gtf, params, get_logger
 from moPepGen.svgraph import ThreeFrameTVG
-from moPepGen.util.paths import get_peptide_table_path, get_peptide_table_path_temp
+from moPepGen.svgraph.VariantPeptideTable import (
+    get_peptide_table_path,
+    get_peptide_table_path_temp
+)
 
 from .models import CallVariantDispatch, CallResult, Flags, Limits, TimeoutTracer, GraphPhase
-from .io import GraphWriter
+from .graph_writer import GraphWriter
 from . import call_variant_workers as workers
+
 
 if TYPE_CHECKING:
     from typing import List

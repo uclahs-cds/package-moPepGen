@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from moPepGen.cli import common
 from moPepGen import params
-from moPepGen.pipeline.call_variant_orchestrator import CallVariantOrchestrator
+from moPepGen.pipeline.orchestrator import CallVariantOrchestrator
 
 INPUT_FILE_FORMATS = ['.gvf']
 OUTPUT_FILE_FORMATS = ['.fasta', '.fa']

@@ -62,7 +62,7 @@ def call_alt_translation_for_transcript(
         coordinate_feature_id=tx_id
     )
 
-    # Gather Sec/TRP variants from annotation
+    # Gather Sec variants from annotation
     dgraph.gather_sect_variants(anno)
     dgraph.init_three_frames()
 

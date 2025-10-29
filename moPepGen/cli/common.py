@@ -447,9 +447,6 @@ def validate_file_format(file:Path, types:List[str]=None, check_readable:bool=Fa
             if not os.access(file.parent, os.W_OK):
                 raise PermissionError(f"Permission denied: '{file}'")
 
-# Import timeout decorator from shared utility module
-from moPepGen.util.timeout import timeout
-
 def setup_loggers(level:str):
     """ Initialize loggers for both init and run """
     # pylint: disable=protected-access

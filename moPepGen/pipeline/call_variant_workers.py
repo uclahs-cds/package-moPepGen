@@ -1,8 +1,24 @@
+"""Worker functions for calling variant peptides.
+
+This module contains the core worker functions that process individual transcripts
+to call variant peptides from different sources (SNVs, indels, fusions, circRNA).
+These workers are designed to be called by the orchestrator, either serially or
+in parallel, with timeout and step-down policy support.
+
+The workflow for each transcript:
+1. Call canonical peptides (for denylist)
+2. Process main transcriptional variants (SNVs, indels, splicing)
+3. Process fusion variants
+4. Process circRNA variants
+
+Each processing step builds DNA graphs (TVG/CVG) and peptide graphs (PVG) to
+call variant peptides while excluding canonical sequences.
+"""
 from __future__ import annotations
 from typing import Dict, List, Set, Tuple, TYPE_CHECKING
 from moPepGen import svgraph, get_logger, params
 from moPepGen.SeqFeature import FeatureLocation, SeqFeature
-from moPepGen.util.timeout import timeout
+from .timeout import timeout
 from .models import TimeoutTracer, GraphPhase
 
 if TYPE_CHECKING:
@@ -34,6 +50,24 @@ def call_canonical_peptides(tx_id: str, ref: params.ReferenceData,
         tx_seq: 'dna.DNASeqRecordWithCoordinates',
         cleavage_params: params.CleavageParams,
         codon_table: 'CodonTableInfo', truncate_sec: bool, w2f: bool):
+    """Call canonical peptides from a transcript for denylist creation.
+
+    Canonical peptides are those that can be produced from the reference
+    transcript without any variants. These are used as a denylist to exclude
+    non-variant peptides from variant peptide calls.
+
+    Args:
+        tx_id: Transcript identifier.
+        ref: Reference data containing genome, annotation, and proteome.
+        tx_seq: Transcript DNA sequence with coordinates.
+        cleavage_params: Parameters for peptide cleavage (enzyme, miscleavage, etc.).
+        codon_table: Codon table information (standard, mitochondrial, etc.).
+        truncate_sec: Whether to truncate at selenocysteine (Sec/U) codons.
+        w2f: Whether to include W>F (Tryptophan to Phenylalanine) reassignment.
+
+    Returns:
+        Set of canonical peptide sequences as strings.
+    """
     tx_model = ref.anno.transcripts[tx_id]
     dgraph = svgraph.ThreeFrameTVG(
         seq=tx_seq, _id=tx_id,
@@ -67,6 +101,36 @@ def call_peptide_main(tx_id: str, tx_variants: List['seqvar.VariantRecord'],
         denylist: Set[str], save_graph: bool, coding_novel_orf: bool,
         tracer: TimeoutTracer
         ) -> TypeCallPeptideReturnData:
+    """Call variant peptides from transcriptional variants (main workflow).
+
+    This is the main worker function for processing transcriptional variants
+    including SNVs, indels, and alternative splicing events. It builds a
+    three-frame transcript variant graph (TVG), translates it to a peptide
+    variant graph (PVG), and calls variant peptides.
+
+    Args:
+        tx_id: Transcript identifier.
+        tx_variants: List of variant records affecting this transcript.
+        variant_pool: Pool of all variants for coordinate lookups.
+        ref: Reference data containing genome, annotation, and proteome.
+        codon_table: Codon table information for translation.
+        tx_seqs: Dictionary mapping transcript IDs to their DNA sequences.
+        gene_seqs: Dictionary mapping gene IDs to their DNA sequences.
+        cleavage_params: Parameters for peptide cleavage.
+        max_adjacent_as_mnv: Maximum distance to merge adjacent variants as MNV.
+        truncate_sec: Whether to truncate at selenocysteine codons.
+        w2f: Whether to include W>F reassignment.
+        denylist: Set of canonical peptide sequences to exclude.
+        save_graph: Whether to save and return graph objects.
+        coding_novel_orf: Whether to call novel ORF peptides from coding transcripts.
+        tracer: Timeout tracer for debugging timeout issues.
+
+    Returns:
+        Tuple of (peptide_map, dgraph, pgraph):
+            - peptide_map: Dictionary mapping peptide sequences to annotations.
+            - dgraph: Three-frame transcript variant graph (TVG) or None.
+            - pgraph: Peptide variant graph (PVG) or None.
+    """
     tx_model = ref.anno.transcripts[tx_id]
     tx_seq = tx_seqs[tx_id]
 
@@ -136,6 +200,34 @@ def call_peptide_fusion(variant: 'seqvar.VariantRecord',
         w2f_reassignment: bool, denylist: Set[str], save_graph: bool,
         coding_novel_orf: bool, tracer: TimeoutTracer
         ) -> TypeCallPeptideReturnData:
+    """Call variant peptides from gene fusion events.
+
+    Processes gene fusion variants by building transcript variant graphs
+    for each donor and acceptor segment, then translating to peptides.
+    Only fusion-specific variants are included in the output.
+
+    Args:
+        variant: Fusion variant record containing breakpoint information.
+        variant_pool: Pool of all variants for coordinate lookups.
+        ref: Reference data containing genome, annotation, and proteome.
+        codon_table: Codon table information for translation.
+        tx_seqs: Dictionary mapping transcript IDs to their DNA sequences.
+        gene_seqs: Dictionary mapping gene IDs to their DNA sequences.
+        cleavage_params: Parameters for peptide cleavage.
+        max_adjacent_as_mnv: Maximum distance to merge adjacent variants as MNV.
+        w2f_reassignment: Whether to include W>F reassignment.
+        denylist: Set of canonical peptide sequences to exclude.
+        save_graph: Whether to save and return graph objects.
+        coding_novel_orf: Whether to call novel ORF peptides from coding transcripts.
+        tracer: Timeout tracer for debugging timeout issues.
+
+    Returns:
+        Tuple of (peptide_map, dgraph, pgraph):
+            - peptide_map: Dictionary mapping peptide sequences to annotations,
+              filtered to only include fusion-specific peptides.
+            - dgraph: Three-frame transcript variant graph (TVG) or None.
+            - pgraph: Peptide variant graph (PVG) or None.
+    """
     tx_id = variant.location.seqname
     tx_model = ref.anno.transcripts[tx_id]
     tx_seq = tx_seqs[tx_id]
@@ -219,6 +311,31 @@ def call_peptide_circ_rna(record: 'circ.CircRNAModel',
         backsplicing_only: bool, w2f_reassignment: bool, denylist: Set[str],
         save_graph: bool, tracer: TimeoutTracer
         ) -> TypeCallPeptideReturnData:
+    """Call variant peptides from circular RNA.
+
+    Processes circular RNA by building a three-frame circular variant graph
+    (CVG) and translating it to peptides. Handles backsplicing junctions
+    and optionally filters to backsplicing-only peptides.
+
+    Args:
+        record: Circular RNA model containing fragment information.
+        variant_pool: Pool of all variants for coordinate lookups.
+        gene_seqs: Dictionary mapping gene IDs to their DNA sequences.
+        codon_table: Codon table information for translation.
+        cleavage_params: Parameters for peptide cleavage.
+        max_adjacent_as_mnv: Maximum distance to merge adjacent variants as MNV.
+        backsplicing_only: Whether to only report peptides spanning backsplice junction.
+        w2f_reassignment: Whether to include W>F reassignment.
+        denylist: Set of canonical peptide sequences to exclude.
+        save_graph: Whether to save and return graph objects.
+        tracer: Timeout tracer for debugging timeout issues.
+
+    Returns:
+        Tuple of (peptide_map, dgraph, pgraph):
+            - peptide_map: Dictionary mapping peptide sequences to annotations.
+            - dgraph: Three-frame circular variant graph (CVG) or None.
+            - pgraph: Peptide variant graph (PVG) or None.
+    """
     gene_id = record.gene_id
     gene_seq = gene_seqs[gene_id]
     record.fragments.sort()
