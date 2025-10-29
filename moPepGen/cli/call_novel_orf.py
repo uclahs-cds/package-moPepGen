@@ -185,4 +185,3 @@ def call_novel_orf_peptide(args: argparse.Namespace) -> None:
             write_orf_fasta(orf_pool, handle)
 
     logger.info('Noncanonical peptide FASTA file written to disk.')
-

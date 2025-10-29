@@ -281,15 +281,11 @@ class DecoyFasta():
                 yield target_seq
                 yield self.decoy_db[i]
         elif self.order == 'target_first':
-            for seq in self.target_db:
-                yield seq
-            for seq in self.decoy_db:
-                yield seq
+            yield from self.target_db
+            yield from self.decoy_db
         elif self.order == 'decoy_first':
-            for seq in self.decoy_db:
-                yield seq
-            for seq in self.target_db:
-                yield seq
+            yield from self.decoy_db
+            yield from self.target_db
         else:
             raise ValueError(f'Order {self.order} is not supported.')
 

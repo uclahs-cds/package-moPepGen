@@ -28,22 +28,22 @@ if TYPE_CHECKING:
     from moPepGen.svgraph import ThreeFrameTVG, ThreeFrameCVG, PeptideVariantGraph
     from moPepGen.svgraph.VariantPeptideDict import AnnotatedPeptideLabel
 
-# Type aliases
-TypeDGraphs = Tuple[
-    'ThreeFrameTVG',
-    Dict[str, 'ThreeFrameTVG'],
-    Dict[str, 'ThreeFrameCVG']
-]
-TypePGraphs = Tuple[
-    'PeptideVariantGraph',
-    Dict[str, 'PeptideVariantGraph'],
-    Dict[str, 'PeptideVariantGraph']
-]
-TypeCallPeptideReturnData = Tuple[
-    Dict['Seq', List['AnnotatedPeptideLabel']],
-    'ThreeFrameTVG | ThreeFrameCVG',
-    'PeptideVariantGraph'
-]
+    # Type aliases
+    TypeDGraphs = Tuple[
+        'ThreeFrameTVG',
+        Dict[str, 'ThreeFrameTVG'],
+        Dict[str, 'ThreeFrameCVG']
+    ]
+    TypePGraphs = Tuple[
+        'PeptideVariantGraph',
+        Dict[str, 'PeptideVariantGraph'],
+        Dict[str, 'PeptideVariantGraph']
+    ]
+    TypeCallPeptideReturnData = Tuple[
+        Dict['Seq', List['AnnotatedPeptideLabel']],
+        'ThreeFrameTVG | ThreeFrameCVG',
+        'PeptideVariantGraph'
+    ]
 
 
 def call_canonical_peptides(tx_id: str, ref: params.ReferenceData,
@@ -421,10 +421,69 @@ def call_variant_peptides_wrapper(tx_id: str,
             TypePGraphs,
             Tuple[bool, bool, bool]
         ]:
+    """Orchestrate variant peptide calling for all variant types in a transcript.
+
+    This is the main entry point for processing a single transcript. It
+    coordinates calling of:
+    1. Canonical peptides (for denylist)
+    2. Main transcriptional variants (SNVs, indels, splicing)
+    3. Fusion variants
+    4. Circular RNA variants
+
+    The function is wrapped with @timeout() decorator to enforce time limits.
+    It catches exceptions from individual processing steps and either skips
+    or re-raises them based on skip_failed parameter.
+
+    Args:
+        tx_id: Transcript identifier to process.
+        variant_series: Collection of all variants affecting this transcript,
+            organized by type (transcriptional, fusion, circRNA).
+        tx_seqs: Dictionary mapping transcript IDs to their DNA sequences.
+        gene_seqs: Dictionary mapping gene IDs to their DNA sequences.
+        reference_data: Reference data (genome, annotation, proteome).
+        codon_table: Codon table information for translation.
+        pool: Variant record pool for coordinate lookups.
+        cleavage_params: Parameters for peptide cleavage.
+        noncanonical_transcripts: Whether to process non-coding transcripts.
+        max_adjacent_as_mnv: Maximum distance to merge adjacent variants as MNV.
+        truncate_sec: Whether to truncate at selenocysteine codons.
+        w2f_reassignment: Whether to include W>F reassignment.
+        backsplicing_only: For circRNA, only report backsplicing-spanning peptides.
+        save_graph: Whether to save and return graph objects.
+        coding_novel_orf: Whether to call novel ORF peptides from coding transcripts.
+        skip_failed: Whether to skip and log failures instead of raising exceptions.
+        tracer: Timeout tracer for debugging which phase timed out.
+        **kwargs: Additional keyword arguments (ignored, for compatibility).
+
+    Returns:
+        Tuple of (peptide_anno, tx_id, dgraphs, pgraphs, success_flags):
+            - peptide_anno: Dict mapping peptide sequences to their annotations
+            - tx_id: Transcript identifier (same as input)
+            - dgraphs: Tuple of (main_tvg, {fusion_id: tvg}, {circ_id: cvg})
+            - pgraphs: Tuple of (main_pvg, {fusion_id: pvg}, {circ_id: pvg})
+            - success_flags: Tuple of (variant_success, fusion_success, circ_success)
+
+    Raises:
+        TimeoutError: If processing exceeds the timeout limit.
+        Exception: Other exceptions if skip_failed=False.
+
+    Note:
+        The tracer.backbone attribute is updated throughout processing to
+        track which variant type is being processed when timeouts occur.
+    """
     logger = get_logger()
     peptide_anno: Dict['Seq', Dict[str, 'AnnotatedPeptideLabel']] = {}
 
     def add_peptide_anno(x: Dict['Seq', List['AnnotatedPeptideLabel']]):
+        """Merge peptide annotations from a processing step into the accumulator.
+
+        Deduplicates annotations by label to avoid adding the same peptide
+        variant multiple times. Each unique label is stored once.
+
+        Args:
+            x: Dictionary mapping peptide sequences to lists of annotations
+               from a single processing step (main/fusion/circRNA).
+        """
         for seq, seq_data in x.items():
             val = peptide_anno.setdefault(seq, {})
             for metadata in seq_data:

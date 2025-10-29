@@ -140,25 +140,25 @@ def _process_with_stepdown(dispatch: CallVariantDispatch):
     logger = get_logger()
     policy = StepDownPolicy(dispatch.limits)
     # Prepare kwargs for worker
-    base_kwargs = dict(
-        tx_id=dispatch.tx_id,
-        variant_series=dispatch.variant_series,
-        tx_seqs=dispatch.tx_seqs,
-        gene_seqs=dispatch.gene_seqs,
-        reference_data=dispatch.reference_data,
-        codon_table=dispatch.codon_table,
-        pool=dispatch.pool,
-        cleavage_params=dispatch.cleavage_params,
-        noncanonical_transcripts=dispatch.flags.noncanonical_transcripts,
-        max_adjacent_as_mnv=dispatch.limits.max_adjacent_as_mnv,
-        truncate_sec=dispatch.flags.truncate_sec,
-        w2f_reassignment=dispatch.flags.w2f_reassignment,
-        backsplicing_only=dispatch.flags.backsplicing_only,
-        save_graph=dispatch.save_graph,
-        coding_novel_orf=dispatch.flags.coding_novel_orf,
-        skip_failed=dispatch.flags.skip_failed,
-        timeout=dispatch.timeout_seconds,
-    )
+    base_kwargs = {
+        'tx_id': dispatch.tx_id,
+        'variant_series': dispatch.variant_series,
+        'tx_seqs': dispatch.tx_seqs,
+        'gene_seqs': dispatch.gene_seqs,
+        'reference_data': dispatch.reference_data,
+        'codon_table': dispatch.codon_table,
+        'pool': dispatch.pool,
+        'cleavage_params': dispatch.cleavage_params,
+        'noncanonical_transcripts': dispatch.flags.noncanonical_transcripts,
+        'max_adjacent_as_mnv': dispatch.limits.max_adjacent_as_mnv,
+        'truncate_sec': dispatch.flags.truncate_sec,
+        'w2f_reassignment': dispatch.flags.w2f_reassignment,
+        'backsplicing_only': dispatch.flags.backsplicing_only,
+        'save_graph': dispatch.save_graph,
+        'coding_novel_orf': dispatch.flags.coding_novel_orf,
+        'skip_failed': dispatch.flags.skip_failed,
+        'timeout': dispatch.timeout_seconds,
+    }
     tracer = TimeoutTracer()
     base_kwargs['tracer'] = tracer
 
@@ -177,7 +177,7 @@ def _process_with_stepdown(dispatch: CallVariantDispatch):
                     'circRNA': success_flags[2]
                 }
             )
-        except TimeoutError as e:
+        except TimeoutError:
             p = policy.next(tracer, base_kwargs['cleavage_params'], dispatch.tx_id)
             base_kwargs['cleavage_params'] = p
             tracer = TimeoutTracer()
@@ -262,29 +262,7 @@ class CallVariantOrchestrator:
 
         self.invalid_protein_as_noncoding = args.invalid_protein_as_noncoding
 
-    def _load_reference(self):
-        """Load reference data if not already provided via constructor.
-
-        This method provides lazy loading of reference data, which includes:
-        - Genome sequences
-        - Gene/transcript annotations
-        - Canonical peptides (for denylist)
-        - Codon tables (per chromosome)
-
-        If reference_data was provided to __init__, this is a no-op.
-        Otherwise, it imports and calls common.load_references().
-        """
-        if self.reference_data is not None:
-            return  # Already loaded
-
-        # Lazy import only when needed (backward compatibility)
-        from moPepGen.cli import common as _common
-        self.reference_data = _common.load_references(
-            args=self.args,
-            invalid_protein_as_noncoding=self.invalid_protein_as_noncoding,
-            cleavage_params=self.cleavage_params,
-            load_codon_tables=True,
-        )
+        self.variant_record_pool = None
 
     def _create_variant_pool(self):
         """Create variant record pool from GVF files.
