@@ -1,3 +1,23 @@
+"""Orchestrator for parallel/serial variant peptide calling with step-down policy.
+
+This module coordinates the processing of transcripts to call variant peptides
+from genomic variants. It handles:
+- Loading and organizing variant data by transcript
+- Dispatching work to worker functions (serial or parallel)
+- Step-down policy for handling timeouts (retry with reduced parameters)
+- Aggregating results and writing output files
+
+The orchestrator uses a step-down policy to handle transcripts that timeout
+during processing. When a timeout occurs, it automatically retries with more
+conservative parameters (fewer variants per node, stricter bubble caps) to
+ensure the work can complete.
+
+Key Components:
+- CallVariantOrchestrator: Main class that coordinates the entire workflow
+- StepDownPolicy: Manages parameter adjustments on timeout
+- _process_with_stepdown: Wrapper for worker calls with retry logic
+- _gather_dispatch: Prepares isolated data for each transcript
+"""
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import argparse
@@ -21,14 +41,52 @@ from . import call_variant_workers as workers
 
 if TYPE_CHECKING:
     from typing import List
+    from seqvar import VariantRecordPoolOnDisk
+    from svgraph import VariantPeptideTable
 
 class StepDownPolicy:
+    """Manages parameter step-down for timeout recovery.
+
+    When a transcript times out during processing, this policy determines
+    how to adjust parameters for the retry. It steps down parameters in
+    this order:
+
+    1. For TVG (DNA graph) timeouts: Increase in_bubble_cap_step_down
+       to reduce variant combinations in the DNA graph.
+
+    2. For PVG (peptide graph) timeouts: Reduce max_variants_per_node
+       and additional_variants_per_misc to limit graph complexity.
+
+    Each transcript gets its own StepDownPolicy instance, so timeouts
+    in one transcript don't affect others.
+
+    Attributes:
+        max_variants_per_node: List of values to try for max variants per node.
+        additional_variants_per_misc: List of values for additional misc variants.
+        in_bubble_cap_step_down: Current bubble cap step-down level.
+    """
     def __init__(self, limits: Limits):
         self.max_variants_per_node = list(limits.max_variants_per_node)
         self.additional_variants_per_misc = list(limits.additional_variants_per_misc)
         self.in_bubble_cap_step_down = limits.in_bubble_cap_step_down
 
     def next(self, tracer: TimeoutTracer, cleavage_params: params.CleavageParams, tx_id: str):
+        """Generate next set of parameters after a timeout.
+
+        Adjusts parameters based on which graph phase (TVG or PVG) timed out.
+        Uses the tracer to determine where the timeout occurred.
+
+        Args:
+            tracer: TimeoutTracer indicating which graph phase timed out.
+            cleavage_params: Current cleavage parameters to adjust.
+            tx_id: Transcript ID (for error messages).
+
+        Returns:
+            Updated CleavageParams with stepped-down values.
+
+        Raises:
+            ValueError: If we've exhausted all step-down options.
+        """
         p = dataclasses.replace(cleavage_params)
         if tracer.graph == GraphPhase.TVG:
             self.in_bubble_cap_step_down += 1
@@ -59,6 +117,26 @@ class StepDownPolicy:
 
 
 def _process_with_stepdown(dispatch: CallVariantDispatch):
+    """Process a transcript with automatic retry on timeout.
+
+    This is the main entry point for processing a single transcript. It
+    calls the worker function and catches TimeoutError. On timeout, it
+    uses StepDownPolicy to adjust parameters and retries.
+
+    Each transcript gets its own StepDownPolicy instance, ensuring that
+    timeout handling is isolated and doesn't affect other transcripts.
+
+    Args:
+        dispatch: CallVariantDispatch containing all data and parameters
+                  needed to process one transcript.
+
+    Returns:
+        CallResult with peptide annotations and optional graph data.
+
+    Raises:
+        ValueError: If step-down policy exhausts all options and still
+                    cannot complete the transcript.
+    """
     logger = get_logger()
     policy = StepDownPolicy(dispatch.limits)
     # Prepare kwargs for worker
@@ -86,13 +164,18 @@ def _process_with_stepdown(dispatch: CallVariantDispatch):
 
     while True:
         try:
-            peptide_anno, tx_id, dgraphs, pgraphs, success_flags = workers.call_variant_peptides_wrapper(**base_kwargs)
+            peptide_anno, tx_id, dgraphs, pgraphs, success_flags = \
+                workers.call_variant_peptides_wrapper(**base_kwargs)
             return CallResult(
                 tx_id=tx_id,
                 peptide_anno=peptide_anno,
                 dgraphs=dgraphs,
                 pgraphs=pgraphs,
-                success={'variant': success_flags[0], 'fusion': success_flags[1], 'circRNA': success_flags[2]}
+                success={
+                    'variant': success_flags[0],
+                    'fusion': success_flags[1],
+                    'circRNA': success_flags[2]
+                }
             )
         except TimeoutError as e:
             p = policy.next(tracer, base_kwargs['cleavage_params'], dispatch.tx_id)
@@ -108,6 +191,34 @@ def _process_with_stepdown(dispatch: CallVariantDispatch):
 
 
 class CallVariantOrchestrator:
+    """Orchestrates variant peptide calling across all transcripts.
+
+    This is the main coordinator for the callVariant pipeline. It:
+    1. Loads reference data (genome, annotation, canonical peptides)
+    2. Creates variant pools from GVF files
+    3. Sorts transcripts by rank for processing
+    4. Dispatches work to workers (parallel or serial)
+    5. Aggregates results and writes output files
+
+    The orchestrator supports both parallel and serial execution modes.
+    In parallel mode, it uses pathos.pools.ParallelPool to process multiple
+    transcripts simultaneously. In serial mode, it processes one at a time.
+
+    Graph saving is optional and controlled by graph_output_dir. When enabled,
+    DNA graphs (TVG/CVG) and peptide graphs (PVG) are written to JSON files
+    for debugging and visualization.
+
+    Attributes:
+        args: Command-line arguments from argparse.
+        variant_files: List of GVF input files.
+        output_path: Path for output FASTA file.
+        graph_output_dir: Optional directory for saving graph JSON files.
+        threads: Number of parallel threads (1 = serial).
+        reference_data: Reference data (genome, annotation, canonical peptides).
+        cleavage_params: Peptide cleavage parameters.
+        flags: Boolean flags controlling behavior.
+        limits: Numerical limits for graph construction.
+    """
     def __init__(self, args: argparse.Namespace, reference_data: params.ReferenceData = None):
         self.args = args
         self.variant_files: List = args.input_path
@@ -152,7 +263,17 @@ class CallVariantOrchestrator:
         self.invalid_protein_as_noncoding = args.invalid_protein_as_noncoding
 
     def _load_reference(self):
-        """Load reference data if not already provided via constructor."""
+        """Load reference data if not already provided via constructor.
+
+        This method provides lazy loading of reference data, which includes:
+        - Genome sequences
+        - Gene/transcript annotations
+        - Canonical peptides (for denylist)
+        - Codon tables (per chromosome)
+
+        If reference_data was provided to __init__, this is a no-op.
+        Otherwise, it imports and calls common.load_references().
+        """
         if self.reference_data is not None:
             return  # Already loaded
 
@@ -166,13 +287,41 @@ class CallVariantOrchestrator:
         )
 
     def _create_variant_pool(self):
+        """Create variant record pool from GVF files.
+
+        Builds a VariantRecordPoolOnDisk that indexes all variants by
+        transcript ID. This allows efficient lookup of variants affecting
+        each transcript during processing.
+        """
         self.variant_record_pool = seqvar.VariantRecordPoolOnDisk(
             gvf_files=self.variant_files,
             anno=self.reference_data.anno,
             genome=self.reference_data.genome,
         )
 
-    def _gather_dispatch(self, tx_id: str, pool: 'seqvar.VariantRecordPoolOnDisk') -> CallVariantDispatch | None:
+    def _gather_dispatch(self, tx_id: str, pool: VariantRecordPoolOnDisk
+            ) -> CallVariantDispatch | None:
+        """Prepare dispatch object for a single transcript.
+
+        Gathers all data needed to process one transcript in isolation:
+        - Variant series for the transcript
+        - Transcript and gene sequences
+        - Related transcripts (for fusions)
+        - Codon table for the chromosome
+        - Isolated genomic annotation and variant pool
+
+        This isolation is critical for parallel processing - each worker
+        gets a self-contained dataset with no shared references to avoid
+        race conditions.
+
+        Args:
+            tx_id: Transcript identifier to gather data for.
+            pool: Variant record pool containing all variants.
+
+        Returns:
+            CallVariantDispatch object with all necessary data, or None
+            if the transcript should be skipped (no variants, etc.).
+        """
         ref = self.reference_data
         tx_ids = [tx_id]
         tx_model = ref.anno.transcripts[tx_id]
@@ -185,7 +334,8 @@ class CallVariantOrchestrator:
             raise
         if variant_series.is_empty():
             return None
-        if self.flags.noncanonical_transcripts and not variant_series.has_any_noncanonical_transcripts():
+        if self.flags.noncanonical_transcripts and \
+                not variant_series.has_any_noncanonical_transcripts():
             return None
         tx_ids += variant_series.get_additional_transcripts()
 
@@ -253,12 +403,32 @@ class CallVariantOrchestrator:
         )
 
     def run(self):
+        """Execute the complete variant peptide calling workflow.
+
+        Main entry point that orchestrates the entire pipeline:
+
+        1. Create variant pool from GVF files
+        2. Open output files (FASTA and peptide table)
+        3. Sort transcripts by rank for optimal processing order
+        4. Process transcripts (parallel or serial based on self.threads)
+        5. Write final FASTA and peptide table files
+        6. Clean up temporary files
+
+        Progress is logged every 1000 transcripts. The peptide table is
+        written to a temporary file during processing, then sorted and
+        moved to the final location.
+
+        Raises:
+            Various exceptions from worker functions if skip_failed=False.
+        """
         self._create_variant_pool()
         ref = self.reference_data
         logger = self.logger
 
         with ExitStack() as stack:
-            pool = stack.enter_context(seqvar.VariantRecordPoolOnDiskOpener(self.variant_record_pool))
+            pool = stack.enter_context(
+                seqvar.VariantRecordPoolOnDiskOpener(self.variant_record_pool)
+            )
             seq_anno_handle = stack.enter_context(open(self.peptide_table_temp_path, 'w+'))
 
             peptide_table = svgraph.VariantPeptideTable(seq_anno_handle)
@@ -287,7 +457,10 @@ class CallVariantOrchestrator:
                     processed += 1
                     self._handle_result(result, peptide_table, ref, graph_writer)
                     if processed % 1000 == 0:
-                        logger.info('%.2f %% ( %i / %i ) transcripts processed.', processed / n_total * 100, processed, n_total)
+                        logger.info(
+                            '%.2f %% ( %i / %i ) transcripts processed.',
+                            processed / n_total * 100, processed, n_total
+                        )
             else:
                 # Serial execution
                 for tx_id in tx_sorted:
@@ -298,7 +471,10 @@ class CallVariantOrchestrator:
                     processed += 1
                     self._handle_result(result, peptide_table, ref, graph_writer)
                     if processed % 1000 == 0:
-                        logger.info('%.2f %% ( %i / %i ) transcripts processed.', processed / n_total * 100, processed, n_total)
+                        logger.info(
+                            '%.2f %% ( %i / %i ) transcripts processed.',
+                            processed / n_total * 100, processed, n_total
+                        )
 
             logger.info('All transcripts processed. Preparing FASTA file..')
             peptide_table.write_fasta(self.output_path)
@@ -308,7 +484,23 @@ class CallVariantOrchestrator:
 
         os.remove(self.peptide_table_temp_path)
 
-    def _handle_result(self, result: CallResult, peptide_table: 'svgraph.VariantPeptideTable', ref: params.ReferenceData, graph_writer: GraphWriter | None):
+    def _handle_result(self, result: CallResult, peptide_table: VariantPeptideTable,
+            ref: params.ReferenceData, graph_writer: GraphWriter | None):
+        """Process results from a single transcript.
+
+        Takes the peptide annotations and optional graphs from a completed
+        transcript and:
+        1. Filters peptides against canonical peptides (denylist)
+        2. Validates peptides against cleavage parameters (length, MW)
+        3. Writes valid peptides to the peptide table
+        4. Optionally writes DNA and peptide graphs to JSON files
+
+        Args:
+            result: CallResult containing peptide annotations and graphs.
+            peptide_table: VariantPeptideTable for writing peptides.
+            ref: Reference data (for canonical peptides denylist).
+            graph_writer: Optional GraphWriter for saving graph JSON files.
+        """
         # Write peptides if valid relative to canonical pool
         for peptide in result.peptide_anno:
             is_valid = peptide_table.is_valid(
