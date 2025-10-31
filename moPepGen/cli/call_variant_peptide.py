@@ -1,4 +1,14 @@
-"""CLI shim for callVariant: delegates to the orchestrator while preserving the public CLI."""
+"""
+`callVariant` is the core of moPepGen. It takes multiple GVF files, generated
+by any moPepGen parser, and calls variant peptides caused by genomic variants
+using a graph-based algorithm. For any transcript, it creates a three-frame
+transcript variant graph by incorporating all variants from any sources (SNV,
+INDEL, fusion, alternative splicing, RNA editing, and circRNA). The transcript
+variant graph is then translated into a peptide variant graph, followed by
+converting to a cleavage graph based on the enzymatic cleavage rule. The
+variant peptide graph is than used to call for variant peptides that contains
+at least one variant, and do not present in the canonical peptide pool.
+"""
 from __future__ import annotations
 import argparse
 from pathlib import Path
