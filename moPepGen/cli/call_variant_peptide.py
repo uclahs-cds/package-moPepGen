@@ -67,7 +67,8 @@ def add_subparser_call_variant(subparsers: argparse._SubParsersAction):
         '--max-variants-per-node',
         type=int,
         help='Maximal number of variants per node. Useful when local regions are '
-            'heavily mutated. When creating the cleavage graph, nodes containing variants larger than this value are skipped. Set -1 to disable.',
+            'heavily mutated. When creating the cleavage graph, nodes containing '
+            'variants larger than this value are skipped. Set -1 to disable.',
         default=[7],
         nargs='+',
         metavar='<number>'

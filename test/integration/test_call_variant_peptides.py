@@ -3,7 +3,6 @@ import argparse
 from typing import List
 from pathlib import Path
 import sys
-from unittest.mock import Mock
 import subprocess as sp
 from test.integration import TestCaseIntegration
 from test.unit import create_variant
@@ -173,13 +172,19 @@ class TestCallVariantPeptides(TestCaseIntegration):
         args.proteome_fasta = self.data_dir/'translate.fasta'
 
         # Patch call_peptide_main to raise ValueError (this is what skip_failed catches)
-        with patch('moPepGen.pipeline.call_variant_workers.call_peptide_main', side_effect=ValueError()):
+        with patch(
+            'moPepGen.pipeline.call_variant_workers.call_peptide_main',
+            side_effect=ValueError()
+        ):
             with self.assertRaises(ValueError):
                 cli.call_variant_peptide(args)
 
         # With skip_failed=True, the error should be caught and logged
         args.skip_failed = True
-        with patch('moPepGen.pipeline.call_variant_workers.call_peptide_main', side_effect=ValueError()):
+        with patch(
+            'moPepGen.pipeline.call_variant_workers.call_peptide_main',
+            side_effect=ValueError()
+        ):
             cli.call_variant_peptide(args)
 
     def test_call_variant_peptide_mtsnv(self):

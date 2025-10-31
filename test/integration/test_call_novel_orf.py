@@ -163,5 +163,6 @@ class TestCallNovelORFPeptides(TestCaseIntegration):
         coding_txs_found = novel_orf_txs.intersection(proteome_tx_ids)
         self.assertTrue(
             len(coding_txs_found) > 0,
-            f"No coding transcripts found. Novel ORF txs: {novel_orf_txs}, Proteome txs: {proteome_tx_ids}"
+            f"No coding transcripts found. Novel ORF txs: {novel_orf_txs}, "
+            f"Proteome txs: {proteome_tx_ids}"
         )
