@@ -106,8 +106,7 @@ class VariantRecordPoolOnDisk():
 
     def __iter__(self) -> Iterable[str]:
         """ generator """
-        for key in self.pointers:
-            yield key
+        yield from self.pointers.keys()
 
     def __getitem__(self, key:str) -> TranscriptionalVariantSeries:
         """ Load variants and return as a TranscriptVariants object """

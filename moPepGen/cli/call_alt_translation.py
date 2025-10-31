@@ -2,17 +2,10 @@
 harbor any alternative translation event. """
 from __future__ import annotations
 import argparse
-from typing import TYPE_CHECKING, Dict, Set
 from pathlib import Path
-from moPepGen import params, svgraph, aa, get_logger, VARIANT_PEPTIDE_SOURCE_DELIMITER
+from moPepGen import params, aa, get_logger
 from moPepGen.cli import common
-
-
-if TYPE_CHECKING:
-    from Bio.Seq import Seq
-    from moPepGen.gtf import TranscriptAnnotationModel, GenomicAnnotation
-    from moPepGen.dna import DNASeqDict
-    from moPepGen.params import CodonTableInfo
+from moPepGen.pipeline.call_alt_translation_worker import call_alt_translation_for_transcript
 
 OUTPUT_FILE_FORMATS = ['.fa', '.fasta']
 
@@ -54,8 +47,8 @@ def add_subparser_call_alt_translation(subparsers:argparse._SubParsersAction):
     return p
 
 
-def call_alt_translation(args:argparse.Namespace) -> None:
-    """ Main entrypoint for calling alternative translation peptides """
+def call_alt_translation(args: argparse.Namespace) -> None:
+    """Main entrypoint for calling alternative translation peptides."""
     logger = get_logger()
 
     common.validate_file_format(
@@ -79,6 +72,7 @@ def call_alt_translation(args:argparse.Namespace) -> None:
 
     common.print_start_message(args)
 
+    # Load references in CLI layer
     ref_data = common.load_references(
         args=args, load_proteome=True, cleavage_params=cleavage_params,
         load_codon_tables=True
@@ -86,15 +80,20 @@ def call_alt_translation(args:argparse.Namespace) -> None:
 
     peptide_pool = aa.VariantPeptidePool()
 
+    # Process each coding transcript
     for tx_id in ref_data.anno.transcripts:
         tx_model = ref_data.anno.transcripts[tx_id]
         if not tx_model.is_protein_coding:
             continue
+
         codon_table = ref_data.codon_tables[tx_model.transcript.chrom]
+
         try:
-            peptides = call_alt_translation_main(
-                tx_id=tx_id, tx_model=tx_model,
-                genome=ref_data.genome, anno=ref_data.anno,
+            peptides = call_alt_translation_for_transcript(
+                tx_id=tx_id,
+                tx_model=tx_model,
+                genome=ref_data.genome,
+                anno=ref_data.anno,
                 codon_table=codon_table,
                 cleavage_params=cleavage_params,
                 w2f_reassignment=args.w2f_reassignment,
@@ -114,53 +113,3 @@ def call_alt_translation(args:argparse.Namespace) -> None:
     peptide_pool.write(args.output_path)
 
     logger.info('Alternative translation peptide FASTA file written to disk.')
-
-def call_alt_translation_main(tx_id:str, tx_model:TranscriptAnnotationModel,
-        genome:DNASeqDict, anno:GenomicAnnotation, codon_table:CodonTableInfo,
-        cleavage_params:params.CleavageParams,
-        w2f_reassignment:bool, sec_truncation:bool):
-    """ wrapper of graph operations to call peptides """
-    chrom = tx_model.transcript.chrom
-    tx_seq = tx_model.get_transcript_sequence(genome[chrom])
-
-    dgraph = svgraph.ThreeFrameTVG(
-        seq=tx_seq,
-        _id=tx_id,
-        cds_start_nf=tx_model.is_cds_start_nf(),
-        has_known_orf=True,
-        mrna_end_nf=tx_model.is_mrna_end_nf(),
-        cleavage_params=cleavage_params,
-        coordinate_feature_type='transcript',
-        coordinate_feature_id=tx_id
-    )
-    dgraph.gather_sect_variants(anno)
-    dgraph.init_three_frames()
-    pgraph = dgraph.translate(
-        table=codon_table.codon_table,
-        start_codons=codon_table.start_codons
-    )
-    pgraph.create_cleavage_graph()
-    peptide_anno = pgraph.call_variant_peptides(
-        check_variants=True,
-        truncate_sec=sec_truncation,
-        w2f=w2f_reassignment,
-        check_external_variants=False
-    )
-    peptide_map:Dict[Seq, Set[str]] = {}
-    for seq, annotated_labels in peptide_anno.items():
-        for label in annotated_labels:
-            if seq in peptide_map:
-                peptide_map[seq].add(label.label)
-            else:
-                peptide_map[seq] = {label.label}
-    peptides = set()
-    for seq, labels in peptide_map.items():
-        label = VARIANT_PEPTIDE_SOURCE_DELIMITER.join(labels)
-        peptides.add(
-            aa.AminoAcidSeqRecord(
-                seq=seq,
-                description=label,
-                name=label
-            )
-        )
-    return peptides

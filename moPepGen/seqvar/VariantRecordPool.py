@@ -58,8 +58,7 @@ class VariantRecordPool():
 
     def __iter__(self) -> Iterable[str]:
         """ generator """
-        for key in self.data:
-            yield key
+        yield from self.data.keys()
 
     def __copy__(self) -> VariantRecordPool:
         """ copy """

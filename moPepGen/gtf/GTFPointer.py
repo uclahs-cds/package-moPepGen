@@ -177,8 +177,7 @@ class GTFPointerDict(dict, Mapping[str, GTFPointer]):
 
     def __iter__(self) -> Iterable[str]:
         """ Iterator """
-        for k in self.keys():
-            yield k
+        yield from self.keys()
 
     def validate(self, val, __type):
         """ Ensures the values are GTFPointers """
