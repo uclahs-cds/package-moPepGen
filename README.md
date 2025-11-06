@@ -1,4 +1,4 @@
-> > [!IMPORTANT]
+> [!IMPORTANT]
 > Due to technical issues, this repository will not be maintained temporarily. Active maintenance and development have moved to [zhuchcn/package-moPepGen](https://github.com/zhuchcn/package-moPepGen).
 > For issues or support, please open an issue in that repository.
 
