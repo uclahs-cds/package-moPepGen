@@ -1,7 +1,7 @@
 ---
 site_name: moPepGen
 docs_dir: docs/
-repo_url: https://github.com/uclahs-cds/package-moPepGen
+repo_url: https://github.com/zhuchcn/package-moPepGen
 site_author: Chenghao Zhu
 nav:
   - Home: index.md
