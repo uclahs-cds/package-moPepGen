@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Chenghao Zhu">
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>splitFasta - moPepGen</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "splitFasta";
+    var mkdocs_page_input_path = "split-fasta.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> moPepGen</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../basics/">moPepGen Basics</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../quick-start/">Quick Start</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../vignette/">Vignette</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../file-format/">File Format</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Commands</span></p>
+                <ul class="current">
+                    <li class="toctree-l1"><a class="reference internal" href="../generate-index/">generateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../update-index/">updateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-vep/">parseVEP</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-reditools/">parseREDItools</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-star-fusion/">parseSTARFusion</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-fusion-catcher/">parseFusionCatcher</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-arriba/">parseArriba</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-rmats/">parseRMATS</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-circexplorer/">parseCIRCexplorer</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-variant/">callVariant</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-novel-orf/">callNovelORF</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-alt-translation/">callAltTranslation</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../filter-fasta/">filterFasta</a>
+                    </li>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">splitFasta</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#moPepGen.cli.split_fasta">moPepGen.cli.split_fasta</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#basic-usage">Basic usage</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#group-sources">Group sources</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#additional-split">Additional split</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#arguments">Arguments</a>
+    </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../merge-fasta/">mergeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../encode-fasta/">encodeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../decoy-fasta/">decoyFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../summarize-fasta/">summarizeFasta</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">moPepGen</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Commands &raquo;</li>
+        
+      
+    
+    <li>splitFasta</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/zhuchcn/package-moPepGen/edit/master/docs/split-fasta.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="splitfasta">splitFasta</h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="moPepGen.cli.split_fasta"></a>
+    <div class="doc doc-contents first">
+
+      <p><code>splitFasta</code> takes the FASTA file with variant peptide sequences called by
+<a href="../call-variant/"><code>callVariant</code></a> with or without novel ORF peptides called by
+<a href="../call-novel-orf/"><code>callNovelORF</code></a>, and splits peptide sequences into databases.
+The split database FASTA files can be used for sequential library searching. </p>
+
+
+    </div>
+
+  </div>
+
+<h2 id="usage">Usage</h2>
+<pre><code>usage: moPepGen splitFasta [-h] [--gvf &lt;files&gt; [&lt;files&gt; ...]]
+                           [--variant-peptides &lt;file&gt;]
+                           [--novel-orf-peptides &lt;file&gt;]
+                           [--alt-translation-peptides &lt;file&gt;] [-o &lt;value&gt;]
+                           [--order-source &lt;value&gt;]
+                           [--group-source [&lt;value&gt; ...]]
+                           [--max-source-groups &lt;number&gt;]
+                           [--additional-split [&lt;value&gt; ...]] [-a &lt;file&gt;]
+                           [--reference-source {GENCODE,ENSEMBL}]
+                           [--codon-table {Alternative Flatworm Mitochondrial,Cephalodiscidae Mitochondrial,Mold Mitochondrial,Blepharisma Macronuclear,SGC3,Archaeal,Karyorelict Nuclear,Gracilibacteria,Thraustochytrium Mitochondrial,Trematode Mitochondrial,Hexamita Nuclear,Pterobranchia Mitochondrial,SGC5,Echinoderm Mitochondrial,Mycoplasma,SGC4,SGC2,Pachysolen tannophilus Nuclear,SGC9,Plant Plastid,Mesodinium Nuclear,Candidate Division SR1,Coelenterate Mitochondrial,Standard,Balanophoraceae Plastid,Ascidian Mitochondrial,Condylostoma Nuclear,Ciliate Nuclear,Vertebrate Mitochondrial,Alternative Yeast Nuclear,Scenedesmus obliquus Mitochondrial,Dasycladacean Nuclear,Bacterial,Invertebrate Mitochondrial,Yeast Mitochondrial,SGC8,Euplotid Nuclear,SGC0,SGC1,Spiroplasma,Flatworm Mitochondrial,Chlorophycean Mitochondrial,Blastocrithidia Nuclear,Protozoan Mitochondrial,Peritrich Nuclear}]
+                           [--chr-codon-table [CHR_CODON_TABLE ...]]
+                           [--start-codons [START_CODONS ...]]
+                           [--chr-start-codons [CHR_START_CODONS ...]]
+                           [-p &lt;file&gt;] [--invalid-protein-as-noncoding]
+                           [--index-dir [&lt;file&gt;]]
+                           [--debug-level &lt;value|number&gt;] [-q]
+
+Split variant peptide FASTA database generated by moPepGen into separate
+files.
+
+options:
+  -h, --help            show this help message and exit
+  --gvf &lt;files&gt; [&lt;files&gt; ...]
+                        File path to GVF files. All GVF files must be
+                        generated by moPepGen parsers. Valid formats: ['.gvf']
+                        (default: None)
+  --variant-peptides &lt;file&gt;
+                        File path to the variant peptide FASTA database file.
+                        Must be generated by moPepGen callVariant. Valid
+                        formats: ['.fasta', '.fa'] (default: None)
+  --novel-orf-peptides &lt;file&gt;
+                        File path to the novel ORF peptide FASTA database
+                        file. Must be generated by moPepGen callNovelORF.
+                        Valid formats: ['.fasta', '.fa'] (default: None)
+  --alt-translation-peptides &lt;file&gt;
+                        File path to the alt translation peptide FASTA file.
+                        Must begenerated by moPepGen callAltTranslation. Valid
+                        formats: ['.fasta', '.fa'] (default: None)
+  -o &lt;value&gt;, --output-prefix &lt;value&gt;
+                        Output prefix (default: None)
+  --order-source &lt;value&gt;
+                        Order of sources, separate by comma (e.g.,
+                        SNP,SNV,Fusion). Whildcard characters are supported.
+                        &quot;SNV-*&quot; will match all peptides with SNV with or
+                        without other variant sources. &quot;SNV-+&quot; will match all
+                        peptides with SNV with at least another variant
+                        source. (default: None)
+  --group-source [&lt;value&gt; ...]
+                        Group sources. The peptides with sources grouped will
+                        be written to the same FASTA file. E.g.,
+                        &quot;PointMutation:gSNP,sSNV INDEL:gINDEL,sINDEL&quot;.
+                        (default: None)
+  --max-source-groups &lt;number&gt;
+                        Maximal number of different source groups to be
+                        separate into individual database FASTA files.
+                        Defaults to 1 (default: 1)
+  --additional-split [&lt;value&gt; ...]
+                        For peptides that were not already split into FASTAs
+                        up to max_source_groups, those involving the following
+                        source will be split into additional FASTAs with
+                        decreasing priority. E.g., 'gSNP-NovelORF', 'gSNP-
+                        NovelORF gSNP-gINDEL' (default: None)
+  --debug-level &lt;value|number&gt;
+                        Debug level. (default: INFO)
+  -q, --quiet           Quiet (default: False)
+
+Reference Files:
+  -a &lt;file&gt;, --annotation-gtf &lt;file&gt;
+                        Path to the annotation GTF file. Only ENSEMBL and
+                        GENCODE are supported. Its version must be the same as
+                        the genome and proteome FASTA. (default: None)
+  --reference-source {GENCODE,ENSEMBL}
+                        Source of reference genome and annotation. (default:
+                        None)
+  --codon-table {Alternative Flatworm Mitochondrial,Cephalodiscidae Mitochondrial,Mold Mitochondrial,Blepharisma Macronuclear,SGC3,Archaeal,Karyorelict Nuclear,Gracilibacteria,Thraustochytrium Mitochondrial,Trematode Mitochondrial,Hexamita Nuclear,Pterobranchia Mitochondrial,SGC5,Echinoderm Mitochondrial,Mycoplasma,SGC4,SGC2,Pachysolen tannophilus Nuclear,SGC9,Plant Plastid,Mesodinium Nuclear,Candidate Division SR1,Coelenterate Mitochondrial,Standard,Balanophoraceae Plastid,Ascidian Mitochondrial,Condylostoma Nuclear,Ciliate Nuclear,Vertebrate Mitochondrial,Alternative Yeast Nuclear,Scenedesmus obliquus Mitochondrial,Dasycladacean Nuclear,Bacterial,Invertebrate Mitochondrial,Yeast Mitochondrial,SGC8,Euplotid Nuclear,SGC0,SGC1,Spiroplasma,Flatworm Mitochondrial,Chlorophycean Mitochondrial,Blastocrithidia Nuclear,Protozoan Mitochondrial,Peritrich Nuclear}
+                        Codon table. Defaults to &quot;Standard&quot;. Supported codon
+                        tables: {'Alternative Flatworm Mitochondrial',
+                        'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial',
+                        'Blepharisma Macronuclear', 'SGC3', 'Archaeal',
+                        'Karyorelict Nuclear', 'Gracilibacteria',
+                        'Thraustochytrium Mitochondrial', 'Trematode
+                        Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia
+                        Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial',
+                        'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus
+                        Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium
+                        Nuclear', 'Candidate Division SR1', 'Coelenterate
+                        Mitochondrial', 'Standard', 'Balanophoraceae Plastid',
+                        'Ascidian Mitochondrial', 'Condylostoma Nuclear',
+                        'Ciliate Nuclear', 'Vertebrate Mitochondrial',
+                        'Alternative Yeast Nuclear', 'Scenedesmus obliquus
+                        Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial',
+                        'Invertebrate Mitochondrial', 'Yeast Mitochondrial',
+                        'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1',
+                        'Spiroplasma', 'Flatworm Mitochondrial',
+                        'Chlorophycean Mitochondrial', 'Blastocrithidia
+                        Nuclear', 'Protozoan Mitochondrial', 'Peritrich
+                        Nuclear'} (default: Standard)
+  --chr-codon-table [CHR_CODON_TABLE ...]
+                        Chromosome specific codon table. Must be specified in
+                        the format of &quot;chrM:SGC1&quot;, where &quot;chrM&quot; is the
+                        chromosome name and &quot;SGC1&quot; is the codon table to use
+                        to translate genes on chrM. Supported codon tables:
+                        {'Alternative Flatworm Mitochondrial',
+                        'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial',
+                        'Blepharisma Macronuclear', 'SGC3', 'Archaeal',
+                        'Karyorelict Nuclear', 'Gracilibacteria',
+                        'Thraustochytrium Mitochondrial', 'Trematode
+                        Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia
+                        Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial',
+                        'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus
+                        Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium
+                        Nuclear', 'Candidate Division SR1', 'Coelenterate
+                        Mitochondrial', 'Standard', 'Balanophoraceae Plastid',
+                        'Ascidian Mitochondrial', 'Condylostoma Nuclear',
+                        'Ciliate Nuclear', 'Vertebrate Mitochondrial',
+                        'Alternative Yeast Nuclear', 'Scenedesmus obliquus
+                        Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial',
+                        'Invertebrate Mitochondrial', 'Yeast Mitochondrial',
+                        'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1',
+                        'Spiroplasma', 'Flatworm Mitochondrial',
+                        'Chlorophycean Mitochondrial', 'Blastocrithidia
+                        Nuclear', 'Protozoan Mitochondrial', 'Peritrich
+                        Nuclear'}. By default, &quot;SGC1&quot; is assigned to
+                        mitochondrial chromosomes. (default: [])
+  --start-codons [START_CODONS ...]
+                        Default start codon(s) to use for novel ORF
+                        translation. Defaults to [&quot;ATG&quot;]. (default: ['ATG'])
+  --chr-start-codons [CHR_START_CODONS ...]
+                        Chromosome specific start codon(s). For example,
+                        &quot;chrM:ATG,ATA,ATT&quot;.By defualt, mitochondrial
+                        chromosome name is automatically inferred andstart
+                        codon &quot;ATG&quot;, &quot;ATA&quot;, &quot;ATT&quot;, &quot;ATC&quot; and &quot;GTG&quot; are
+                        assigned to it. (default: [])
+  -p &lt;file&gt;, --proteome-fasta &lt;file&gt;
+                        Path to the translated protein sequence FASTA file.
+                        Only ENSEMBL and GENCODE are supported. Its version
+                        must be the same as genome FASTA and annotation GTF.
+                        (default: None)
+  --invalid-protein-as-noncoding
+                        Treat any transcript that the protein sequence is
+                        invalid ( contains the * symbol) as noncoding.
+                        (default: False)
+  --index-dir [&lt;file&gt;]  Path to the directory of index files generated by
+                        moPepGen generateIndex. If given, --genome-fasta,
+                        --proteome-fasta and --anntotation-gtf will be
+                        ignored. (default: None)
+
+</code></pre>
+<h2 id="examples">Examples</h2>
+<h3 id="basic-usage">Basic usage</h3>
+<p>A basic usage is below.</p>
+<pre><code class="language-bash">moPepGen splitFasta \
+  --gvf \
+    path/to/gSNP.gvf \
+    path/to/gINDEL.gvf \
+    path/to/reditools.gvf \
+  --variant-peptides path/to/variant.fasta \
+  --index-dir path/to/index \
+  --max-source-groups 1 \
+  --output-prefix path/to/split
+</code></pre>
+<p>The example above splits the variant peptide sequence database into four FASTA files, <code>split_gSNP.fasta</code>, <code>split_gINDEL.fasta</code>, <code>split_RNAEditing.fasta</code>, <code>split_Remaining.fasta</code>. Variant peptides are split into individual FASTA file of its variant source group based on the order of GVF files. Peptides with more than one variant sources are written into the <code>*_Remaining.fasta</code> because the <code>--max-source-groups</code> is set to 1.</p>
+<h3 id="group-sources">Group sources</h3>
+<p>Sometimes we want to group variant sources together. See example below.</p>
+<pre><code class="language-bash">moPepGen splitFasta \
+  --gvf \
+    path/to/gSNP.gvf \
+    path/to/gINDEL.gvf \
+    path/to/reditools.gvf \
+  --variant-peptides path/to/variant.fasta \
+  --index-dir path/to/index \
+  --group-source Coding:gSNP,gINDEL \
+  --order-source Coding,RNAEditing \
+  --max-source-groups 1 \
+  --output-prefix path/to/split
+</code></pre>
+<p>This example outputs three split FASTA files, <code>split_Coding.fasta</code>, <code>split_RNAEditing.fasta</code>, and <code>split_Remaining.fasta</code>.</p>
+<h3 id="additional-split">Additional split</h3>
+<p>Additional split allows you to split the records with the source group specified that would otherwise be placed along with all other records exceeding <code>--max-source-groups</code> into <code>remaining.fasta</code>. See the example below.</p>
+<pre><code class="language-bash">moPepGen splitFasta \
+  --gvf \
+    path/to/gSNP.gvf \
+    path/to/gINDEL.gvf \
+    path/to/reditools.gvf \
+  --variant-peptides path/to/variant.fasta \
+  --index-dir path/to/index \
+  --max-source-groups 1 \
+  --additional-split gSNP-gINDL gSNP-RNAEditing \
+  --output-prefix path/to/split
+</code></pre>
+<p>As a result, <code>split_gSNP.fasta</code> and <code>split_gINDEL.fasta</code> will be written. <code>split_gSNP-gINDEL.fasta</code> and <code>split_gSNP-RNAEditing.fasta</code> will also be written although the number of variant sources (2) is larger than the value specified through <code>--max-source-groups</code>.</p>
+<h2 id="arguments">Arguments</h2>
+<p><strong>-h, --help</strong><br/></p>
+<p style="margin-left: 15px;">
+show this help message and exit
+
+
+</p>
+
+<p><strong>--gvf</strong> <strong><em>&lt;files&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to GVF files. All GVF files must be generated by moPepGen parsers. Valid formats: ['.gvf']
+
+
+</p>
+
+<p><strong>--variant-peptides</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the variant peptide FASTA database file. Must be generated by moPepGen callVariant. Valid formats: ['.fasta', '.fa']
+
+
+</p>
+
+<p><strong>--novel-orf-peptides</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the novel ORF peptide FASTA database file. Must be generated by moPepGen callNovelORF. Valid formats: ['.fasta', '.fa']
+
+
+</p>
+
+<p><strong>--alt-translation-peptides</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the alt translation peptide FASTA file. Must begenerated by moPepGen callAltTranslation. Valid formats: ['.fasta', '.fa']
+
+
+</p>
+
+<p><strong>-o, --output-prefix</strong> <strong><em>&lt;value&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Output prefix
+
+
+</p>
+
+<p><strong>--order-source</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Order of sources, separate by comma (e.g., SNP,SNV,Fusion). Whildcard characters are supported. "SNV-*" will match all peptides with SNV with or without other variant sources. "SNV-+" will match all peptides with SNV with at least another variant source.
+
+
+</p>
+
+<p><strong>--group-source</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Group sources. The peptides with sources grouped will be written to the same FASTA file. E.g., "PointMutation:gSNP,sSNV INDEL:gINDEL,sINDEL".
+
+
+</p>
+
+<p><strong>--max-source-groups</strong> <strong><em>&lt;number&gt;</em></strong> <em>int</em><br/></p>
+<p style="margin-left: 15px;">
+Maximal number of different source groups to be separate into individual database FASTA files. Defaults to 1
+ int <br/>Default: 1 
+
+</p>
+
+<p><strong>--additional-split</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+For peptides that were not already split into FASTAs up to max_source_groups, those involving the following source will be split into additional FASTAs with decreasing priority. E.g.,  'gSNP-NovelORF', 'gSNP-NovelORF gSNP-gINDEL'
+
+
+</p>
+
+<p><strong>-a, --annotation-gtf</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the annotation GTF file. Only ENSEMBL and GENCODE are supported. Its version must be the same as the genome and proteome FASTA.
+
+
+</p>
+
+<p><strong>--reference-source</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Source of reference genome and annotation.
+
+ <br/>Choices: ['GENCODE', 'ENSEMBL'] 
+</p>
+
+<p><strong>--codon-table</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Codon table. Defaults to "Standard". Supported codon tables: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'}
+ str <br/>Default: Standard 
+ <br/>Choices: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'} 
+</p>
+
+<p><strong>--chr-codon-table</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Chromosome specific codon table. Must be specified in the format of "chrM:SGC1", where "chrM" is the chromosome name and "SGC1" is the codon table to use to translate genes on chrM. Supported codon tables: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'}. By default, "SGC1" is assigned to mitochondrial chromosomes.
+ str <br/>Default: [] 
+
+</p>
+
+<p><strong>--start-codons</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Default start codon(s) to use for novel ORF translation. Defaults to ["ATG"].
+ str <br/>Default: ['ATG'] 
+
+</p>
+
+<p><strong>--chr-start-codons</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Chromosome specific start codon(s). For example, "chrM:ATG,ATA,ATT".By defualt, mitochondrial chromosome name is automatically inferred andstart codon "ATG", "ATA", "ATT", "ATC" and "GTG" are assigned to it.
+ str <br/>Default: [] 
+
+</p>
+
+<p><strong>-p, --proteome-fasta</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the translated protein sequence FASTA file. Only ENSEMBL and GENCODE are supported. Its version must be the same as genome FASTA and annotation GTF.
+
+
+</p>
+
+<p><strong>--invalid-protein-as-noncoding</strong><br/></p>
+<p style="margin-left: 15px;">
+Treat any transcript that the protein sequence is invalid ( contains the * symbol) as noncoding.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>--index-dir</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the directory of index files generated by moPepGen generateIndex. If given, --genome-fasta, --proteome-fasta and --anntotation-gtf will be ignored.
+
+
+</p>
+
+<p><strong>--debug-level</strong> <strong><em>&lt;value|number&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Debug level.
+ str <br/>Default: INFO 
+
+</p>
+
+<p><strong>-q, --quiet</strong><br/></p>
+<p style="margin-left: 15px;">
+Quiet
+  <br/>Default: False 
+
+</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../merge-fasta/" class="btn btn-neutral float-right" title="mergeFasta">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../filter-fasta/" class="btn btn-neutral" title="filterFasta"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/zhuchcn/package-moPepGen/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../filter-fasta/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../merge-fasta/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

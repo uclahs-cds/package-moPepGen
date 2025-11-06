@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##mopepgen_version=0.0.1
+##parser=parseCIRCexplorer
+##reference_index=/path/to/reference/index
+##genome_fasta=/path/to/genome.fasta
+##annotation_gtf=/path/to/annotaion.gtf
+##CHROM=<Description='Gene ID'>
+##INFO=<ID=OFFSET,Number=+,Type=Integer,Description="Offset of fragments (exons or introns)">
+##INFO=<ID=LENGTH,Number=+,Type=Integer,Description="Length of fragments (exons or introns)">
+##INFO=<ID=INTRON,Number=+,Type=Integer,Description="Indices of fragments that are introns">
+##INFO=<ID=TRANSCRIPT,Number=1,Type=String,Description="Transcripts associated with this circRNA">
+##INFO=<ID=GENE_SYMBOL,Number=1,Type=String,Description="Gene Symbol">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+ENSG0001	413	CIRC-ENST0001-E2-E3-E4	.	.	.	.	OFFSET=0,211,398;LENGTH=72,85,63;INTRON=;TRANSCRIPT=ENST0001;GENE_SYMBOL=SYMB1
+ENSG0002	112	CIRC-ENST0001-E3-E4	.	.	.	.	OFFSET=0,175LENGTH=72,85;INTRON=;TRANSCRIPT=ENST0001;GENE_SYMBOL=SYMB2
+ENSG0002	112	CIRC-ENST0001-E3-I3-E4	.	.	.	.	OFFSET=0,73,175;LENGTH=72,103,85;INTRON=;TRANSCRIPT=ENST0001,ENST0012;GENE_SYMBOL=SYMB2
+ENSG0003	77	CIRC-ENST0003-E2-E3-E4	.	.	.	.	OFFSET=0,181,424;LENGTH=100,175,85;INTRON=;TRANSCRIPT=ENST0003;GENE_SYMBOL=SYMB3
+ENSG0003	77	CIRC-ENST0003-E2-I2-E3-I3-E4	.	.	.	.	OFFSET=0,101,181,357,424;LENGTH=100,80,175,67,85;INTRON=;TRANSCRIPT=ENST0003;GENE_SYMBOL=SYMB3
+ENSG0004	789	CI-ENST0004-I3	.	.	.	.	OFFSET=0;LENGTH=112;INTRON=1;TRNASCRIPT=ENST0004;GENE_SYMBOL=SYMB4

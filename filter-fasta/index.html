@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Chenghao Zhu">
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>filterFasta - moPepGen</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "filterFasta";
+    var mkdocs_page_input_path = "filter-fasta.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> moPepGen</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../basics/">moPepGen Basics</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../quick-start/">Quick Start</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../vignette/">Vignette</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../file-format/">File Format</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Commands</span></p>
+                <ul class="current">
+                    <li class="toctree-l1"><a class="reference internal" href="../generate-index/">generateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../update-index/">updateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-vep/">parseVEP</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-reditools/">parseREDItools</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-star-fusion/">parseSTARFusion</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-fusion-catcher/">parseFusionCatcher</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-arriba/">parseArriba</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-rmats/">parseRMATS</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-circexplorer/">parseCIRCexplorer</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-variant/">callVariant</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-novel-orf/">callNovelORF</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-alt-translation/">callAltTranslation</a>
+                    </li>
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">filterFasta</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#moPepGen.cli.filter_fasta">moPepGen.cli.filter_fasta</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#arguments">Arguments</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#filter-by-expression">Filter by Expression</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#filter-by-expression-and-miscleavages">Filter by Expression and Miscleavages</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#filter-variant-and-novel-orf-peptides">Filter Variant and Novel ORF Peptides</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#filter-by-denylist">Filter by Denylist</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#complex-filtering">Complex Filtering</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../split-fasta/">splitFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../merge-fasta/">mergeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../encode-fasta/">encodeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../decoy-fasta/">decoyFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../summarize-fasta/">summarizeFasta</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">moPepGen</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Commands &raquo;</li>
+        
+      
+    
+    <li>filterFasta</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/zhuchcn/package-moPepGen/edit/master/docs/filter-fasta.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="filterfasta">filterFasta</h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="moPepGen.cli.filter_fasta"></a>
+    <div class="doc doc-contents first">
+
+      <p><code>filterFasta</code> takes the FASTA file of variant peptides (output by
+<code>callVariant</code>) or novel ORF peptides (output by <code>callNovelORF</code>) and filters it
+based on the gene expression data. A expresion table must be given as a CSV
+or TSV. </p>
+
+
+    </div>
+
+  </div>
+
+<h2 id="usage">Usage</h2>
+<pre><code>usage: moPepGen filterFasta [-h] -i &lt;file&gt; -o &lt;file&gt; [--denylist &lt;file&gt;]
+                            [--exprs-table &lt;file&gt;] [--skip-lines &lt;value&gt;]
+                            [--delimiter &lt;value&gt;] [--tx-id-col &lt;number&gt;]
+                            [--quant-col &lt;number&gt;] [--quant-cutoff &lt;number&gt;]
+                            [--keep-all-coding] [--keep-all-noncoding]
+                            [--keep-canonical] [--miscleavages [min]:[max]]
+                            [--enzyme {arg-c,asp-n,bnps-skatole,caspase 1,caspase 2,caspase 3,caspase 4,caspase 5,caspase 6,caspase 7,caspase 8,caspase 9,caspase 10,chymotrypsin high specificity,chymotrypsin low specificity,clostripain,cnbr,enterokinase,factor xa,formic acid,glutamyl endopeptidase,granzyme b,hydroxylamine,iodosobenzoic acid,lysc,lysn,ntcb,pepsin ph1.3,pepsin ph2.0,proline endopeptidase,proteinase k,staphylococcal peptidase i,thermolysin,thrombin,trypsin,trypsin_exception}]
+                            [-a &lt;file&gt;] [--reference-source {GENCODE,ENSEMBL}]
+                            [--codon-table {Alternative Flatworm Mitochondrial,Cephalodiscidae Mitochondrial,Mold Mitochondrial,Blepharisma Macronuclear,SGC3,Archaeal,Karyorelict Nuclear,Gracilibacteria,Thraustochytrium Mitochondrial,Trematode Mitochondrial,Hexamita Nuclear,Pterobranchia Mitochondrial,SGC5,Echinoderm Mitochondrial,Mycoplasma,SGC4,SGC2,Pachysolen tannophilus Nuclear,SGC9,Plant Plastid,Mesodinium Nuclear,Candidate Division SR1,Coelenterate Mitochondrial,Standard,Balanophoraceae Plastid,Ascidian Mitochondrial,Condylostoma Nuclear,Ciliate Nuclear,Vertebrate Mitochondrial,Alternative Yeast Nuclear,Scenedesmus obliquus Mitochondrial,Dasycladacean Nuclear,Bacterial,Invertebrate Mitochondrial,Yeast Mitochondrial,SGC8,Euplotid Nuclear,SGC0,SGC1,Spiroplasma,Flatworm Mitochondrial,Chlorophycean Mitochondrial,Blastocrithidia Nuclear,Protozoan Mitochondrial,Peritrich Nuclear}]
+                            [--chr-codon-table [CHR_CODON_TABLE ...]]
+                            [--start-codons [START_CODONS ...]]
+                            [--chr-start-codons [CHR_START_CODONS ...]]
+                            [--index-dir [&lt;file&gt;]]
+                            [--debug-level &lt;value|number&gt;] [-q]
+
+Filter noncanonical peptides according to gene expression or gene biotypes.
+
+options:
+  -h, --help            show this help message and exit
+  -i &lt;file&gt;, --input-path &lt;file&gt;
+                        Input FASTA file, must be generated by either moPepGen
+                        callVariant or callNovelORF. Valid formats: ['.fasta',
+                        '.fa'] (default: None)
+  -o &lt;file&gt;, --output-path &lt;file&gt;
+                        File path to the output file. Valid formats:
+                        ['.fasta', '.fa'] (default: None)
+  --denylist &lt;file&gt;     Path to the peptide sequence deny list. When using
+                        novel ORF peptides as denylist, make sure it is no
+                        also passed as a input FASTA file, because all peptide
+                        sequences will be removed. Valid formats: [&quot;.fasta&quot;]
+                        (default: None)
+  --exprs-table &lt;file&gt;  Path to the RNAseq quantification results. (default:
+                        None)
+  --skip-lines &lt;value&gt;  Number of lines to skip when reading the expression
+                        table.Defaults to 0 (default: 0)
+  --delimiter &lt;value&gt;   Delimiter of the expression table. Defaults to tab.
+                        (default: )
+  --tx-id-col &lt;number&gt;  The index for transcript ID in the RNAseq
+                        quantification results. Index is 1-based. (default:
+                        None)
+  --quant-col &lt;number&gt;  The column index number for quantification. Index is
+                        1-based. (default: None)
+  --quant-cutoff &lt;number&gt;
+                        Quantification cutoff. (default: None)
+  --keep-all-coding     Keep all coding genes, regardless of their expression
+                        level. (default: False)
+  --keep-all-noncoding  Keep all noncoding genes, regardless of their
+                        expression level. (default: False)
+  --keep-canonical      Keep peptides called from canonical ORFs. Only useful
+                        together with denylist. (default: False)
+  --miscleavages [min]:[max]
+                        Range of miscleavages per peptide to allow. Min and
+                        max are included. For example, &quot;1:2&quot; will keep all
+                        peptides with 1 or 2 miscleavages. (default: None)
+  --enzyme {arg-c,asp-n,bnps-skatole,caspase 1,caspase 2,caspase 3,caspase 4,caspase 5,caspase 6,caspase 7,caspase 8,caspase 9,caspase 10,chymotrypsin high specificity,chymotrypsin low specificity,clostripain,cnbr,enterokinase,factor xa,formic acid,glutamyl endopeptidase,granzyme b,hydroxylamine,iodosobenzoic acid,lysc,lysn,ntcb,pepsin ph1.3,pepsin ph2.0,proline endopeptidase,proteinase k,staphylococcal peptidase i,thermolysin,thrombin,trypsin,trypsin_exception}
+                        Enzyme name. Ignored if --miscleavages is not
+                        specified. (default: trypsin)
+  --debug-level &lt;value|number&gt;
+                        Debug level. (default: INFO)
+  -q, --quiet           Quiet (default: False)
+
+Reference Files:
+  -a &lt;file&gt;, --annotation-gtf &lt;file&gt;
+                        Path to the annotation GTF file. Only ENSEMBL and
+                        GENCODE are supported. Its version must be the same as
+                        the genome and proteome FASTA. (default: None)
+  --reference-source {GENCODE,ENSEMBL}
+                        Source of reference genome and annotation. (default:
+                        None)
+  --codon-table {Alternative Flatworm Mitochondrial,Cephalodiscidae Mitochondrial,Mold Mitochondrial,Blepharisma Macronuclear,SGC3,Archaeal,Karyorelict Nuclear,Gracilibacteria,Thraustochytrium Mitochondrial,Trematode Mitochondrial,Hexamita Nuclear,Pterobranchia Mitochondrial,SGC5,Echinoderm Mitochondrial,Mycoplasma,SGC4,SGC2,Pachysolen tannophilus Nuclear,SGC9,Plant Plastid,Mesodinium Nuclear,Candidate Division SR1,Coelenterate Mitochondrial,Standard,Balanophoraceae Plastid,Ascidian Mitochondrial,Condylostoma Nuclear,Ciliate Nuclear,Vertebrate Mitochondrial,Alternative Yeast Nuclear,Scenedesmus obliquus Mitochondrial,Dasycladacean Nuclear,Bacterial,Invertebrate Mitochondrial,Yeast Mitochondrial,SGC8,Euplotid Nuclear,SGC0,SGC1,Spiroplasma,Flatworm Mitochondrial,Chlorophycean Mitochondrial,Blastocrithidia Nuclear,Protozoan Mitochondrial,Peritrich Nuclear}
+                        Codon table. Defaults to &quot;Standard&quot;. Supported codon
+                        tables: {'Alternative Flatworm Mitochondrial',
+                        'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial',
+                        'Blepharisma Macronuclear', 'SGC3', 'Archaeal',
+                        'Karyorelict Nuclear', 'Gracilibacteria',
+                        'Thraustochytrium Mitochondrial', 'Trematode
+                        Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia
+                        Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial',
+                        'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus
+                        Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium
+                        Nuclear', 'Candidate Division SR1', 'Coelenterate
+                        Mitochondrial', 'Standard', 'Balanophoraceae Plastid',
+                        'Ascidian Mitochondrial', 'Condylostoma Nuclear',
+                        'Ciliate Nuclear', 'Vertebrate Mitochondrial',
+                        'Alternative Yeast Nuclear', 'Scenedesmus obliquus
+                        Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial',
+                        'Invertebrate Mitochondrial', 'Yeast Mitochondrial',
+                        'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1',
+                        'Spiroplasma', 'Flatworm Mitochondrial',
+                        'Chlorophycean Mitochondrial', 'Blastocrithidia
+                        Nuclear', 'Protozoan Mitochondrial', 'Peritrich
+                        Nuclear'} (default: Standard)
+  --chr-codon-table [CHR_CODON_TABLE ...]
+                        Chromosome specific codon table. Must be specified in
+                        the format of &quot;chrM:SGC1&quot;, where &quot;chrM&quot; is the
+                        chromosome name and &quot;SGC1&quot; is the codon table to use
+                        to translate genes on chrM. Supported codon tables:
+                        {'Alternative Flatworm Mitochondrial',
+                        'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial',
+                        'Blepharisma Macronuclear', 'SGC3', 'Archaeal',
+                        'Karyorelict Nuclear', 'Gracilibacteria',
+                        'Thraustochytrium Mitochondrial', 'Trematode
+                        Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia
+                        Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial',
+                        'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus
+                        Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium
+                        Nuclear', 'Candidate Division SR1', 'Coelenterate
+                        Mitochondrial', 'Standard', 'Balanophoraceae Plastid',
+                        'Ascidian Mitochondrial', 'Condylostoma Nuclear',
+                        'Ciliate Nuclear', 'Vertebrate Mitochondrial',
+                        'Alternative Yeast Nuclear', 'Scenedesmus obliquus
+                        Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial',
+                        'Invertebrate Mitochondrial', 'Yeast Mitochondrial',
+                        'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1',
+                        'Spiroplasma', 'Flatworm Mitochondrial',
+                        'Chlorophycean Mitochondrial', 'Blastocrithidia
+                        Nuclear', 'Protozoan Mitochondrial', 'Peritrich
+                        Nuclear'}. By default, &quot;SGC1&quot; is assigned to
+                        mitochondrial chromosomes. (default: [])
+  --start-codons [START_CODONS ...]
+                        Default start codon(s) to use for novel ORF
+                        translation. Defaults to [&quot;ATG&quot;]. (default: ['ATG'])
+  --chr-start-codons [CHR_START_CODONS ...]
+                        Chromosome specific start codon(s). For example,
+                        &quot;chrM:ATG,ATA,ATT&quot;.By defualt, mitochondrial
+                        chromosome name is automatically inferred andstart
+                        codon &quot;ATG&quot;, &quot;ATA&quot;, &quot;ATT&quot;, &quot;ATC&quot; and &quot;GTG&quot; are
+                        assigned to it. (default: [])
+  --index-dir [&lt;file&gt;]  Path to the directory of index files generated by
+                        moPepGen generateIndex. If given, --genome-fasta,
+                        --proteome-fasta and --anntotation-gtf will be
+                        ignored. (default: None)
+
+</code></pre>
+<h2 id="arguments">Arguments</h2>
+<p><strong>-h, --help</strong><br/></p>
+<p style="margin-left: 15px;">
+show this help message and exit
+
+
+</p>
+
+<p><strong>-i, --input-path</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Input FASTA file, must be generated by either moPepGen callVariant or callNovelORF. Valid formats: ['.fasta', '.fa']
+
+
+</p>
+
+<p><strong>-o, --output-path</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+File path to the output file. Valid formats: ['.fasta', '.fa']
+
+
+</p>
+
+<p><strong>--denylist</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the peptide sequence deny list. When using novel ORF peptides as denylist, make sure it is no also passed as a input FASTA file, because all peptide sequences will be removed. Valid formats: [".fasta"]
+
+
+</p>
+
+<p><strong>--exprs-table</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the RNAseq quantification results.
+
+
+</p>
+
+<p><strong>--skip-lines</strong> <strong><em>&lt;value&gt;</em></strong> <em>int</em><br/></p>
+<p style="margin-left: 15px;">
+Number of lines to skip when reading the expression table.Defaults to 0
+ int <br/>Default: 0 
+
+</p>
+
+<p><strong>--delimiter</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Delimiter of the expression table. Defaults to tab.
+ str <br/>Default:   
+
+</p>
+
+<p><strong>--tx-id-col</strong> <strong><em>&lt;number&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+The index for transcript ID in the RNAseq quantification results. Index is 1-based.
+
+
+</p>
+
+<p><strong>--quant-col</strong> <strong><em>&lt;number&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+The column index number for quantification. Index is 1-based.
+
+
+</p>
+
+<p><strong>--quant-cutoff</strong> <strong><em>&lt;number&gt;</em></strong> <em>float</em><br/></p>
+<p style="margin-left: 15px;">
+Quantification cutoff.
+
+
+</p>
+
+<p><strong>--keep-all-coding</strong><br/></p>
+<p style="margin-left: 15px;">
+Keep all coding genes, regardless of their expression level.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>--keep-all-noncoding</strong><br/></p>
+<p style="margin-left: 15px;">
+Keep all noncoding genes, regardless of their expression level.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>--keep-canonical</strong><br/></p>
+<p style="margin-left: 15px;">
+Keep peptides called from canonical ORFs. Only useful together with denylist.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>--miscleavages</strong> <strong><em>[min]:[max]</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Range of miscleavages per peptide to allow. Min and max are included. For example, "1:2" will keep all peptides with 1 or 2 miscleavages.
+
+
+</p>
+
+<p><strong>--enzyme</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Enzyme name. Ignored if --miscleavages is not specified.
+ str <br/>Default: trypsin 
+ <br/>Choices: ['arg-c', 'asp-n', 'bnps-skatole', 'caspase 1', 'caspase 2', 'caspase 3', 'caspase 4', 'caspase 5', 'caspase 6', 'caspase 7', 'caspase 8', 'caspase 9', 'caspase 10', 'chymotrypsin high specificity', 'chymotrypsin low specificity', 'clostripain', 'cnbr', 'enterokinase', 'factor xa', 'formic acid', 'glutamyl endopeptidase', 'granzyme b', 'hydroxylamine', 'iodosobenzoic acid', 'lysc', 'lysn', 'ntcb', 'pepsin ph1.3', 'pepsin ph2.0', 'proline endopeptidase', 'proteinase k', 'staphylococcal peptidase i', 'thermolysin', 'thrombin', 'trypsin', 'trypsin_exception'] 
+</p>
+
+<p><strong>-a, --annotation-gtf</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the annotation GTF file. Only ENSEMBL and GENCODE are supported. Its version must be the same as the genome and proteome FASTA.
+
+
+</p>
+
+<p><strong>--reference-source</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Source of reference genome and annotation.
+
+ <br/>Choices: ['GENCODE', 'ENSEMBL'] 
+</p>
+
+<p><strong>--codon-table</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Codon table. Defaults to "Standard". Supported codon tables: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'}
+ str <br/>Default: Standard 
+ <br/>Choices: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'} 
+</p>
+
+<p><strong>--chr-codon-table</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Chromosome specific codon table. Must be specified in the format of "chrM:SGC1", where "chrM" is the chromosome name and "SGC1" is the codon table to use to translate genes on chrM. Supported codon tables: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'}. By default, "SGC1" is assigned to mitochondrial chromosomes.
+ str <br/>Default: [] 
+
+</p>
+
+<p><strong>--start-codons</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Default start codon(s) to use for novel ORF translation. Defaults to ["ATG"].
+ str <br/>Default: ['ATG'] 
+
+</p>
+
+<p><strong>--chr-start-codons</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Chromosome specific start codon(s). For example, "chrM:ATG,ATA,ATT".By defualt, mitochondrial chromosome name is automatically inferred andstart codon "ATG", "ATA", "ATT", "ATC" and "GTG" are assigned to it.
+ str <br/>Default: [] 
+
+</p>
+
+<p><strong>--index-dir</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the directory of index files generated by moPepGen generateIndex. If given, --genome-fasta, --proteome-fasta and --anntotation-gtf will be ignored.
+
+
+</p>
+
+<p><strong>--debug-level</strong> <strong><em>&lt;value|number&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Debug level.
+ str <br/>Default: INFO 
+
+</p>
+
+<p><strong>-q, --quiet</strong><br/></p>
+<p style="margin-left: 15px;">
+Quiet
+  <br/>Default: False 
+
+</p>
+
+<h2 id="examples">Examples</h2>
+<h3 id="filter-by-expression">Filter by Expression</h3>
+<p>The example below filters the variant peptide sequences based on their expression level. The expression table is given as TSV file, with the first column being the transcript ID, and the fourth column being the expression level. Peptides are removed if the transcript it is associated has the expression level smaller than 2. Any transcript quantitation value can be used, including read count, TPM, and FPKM.</p>
+<pre><code class="language-bash">moPepGen fitlerFasta \
+  --input-path path/to/variant_peptides.fasta \
+  --output-path path/to/variant_peptides_filter.fasta \
+  --exprs-table path/to/expression.tsv \
+  --delimiter '\t' \
+  --tx-id-col 1 \
+  --quant-col 4 \
+  --quant-cutoff 2
+</code></pre>
+<h3 id="filter-by-expression-and-miscleavages">Filter by Expression and Miscleavages</h3>
+<p>This example is the same as above with the addition of a filter by miscleavages. Any peptides with more than 3 miscleavages will be dropped.</p>
+<pre><code class="language-bash">moPepGen fitlerFasta \
+  --input-path path/to/variant_peptides.fasta \
+  --output-path path/to/variant_peptides_filter.fasta \
+  --exprs-table path/to/expression.tsv \
+  --delimiter '\t' \
+  --tx-id-col 1 \
+  --quant-col 4 \
+  --quant-cutoff 2 \
+  --miscleavages 0:2 \
+  --enzyme trypsin
+</code></pre>
+<h3 id="filter-variant-and-novel-orf-peptides">Filter Variant and Novel ORF Peptides</h3>
+<p>This example takes both the variant peptide FASTA and the novel ORF peptide FASTA and filters the peptides based on the expression level of the transcripts they are associated with.</p>
+<pre><code class="language-bash">moPepGen fitlerFasta \
+  --input-path \
+    path/to/variant_peptides.fasta \
+    path/to/novel_orf_peptides.fasta \
+  --output-path path/to/variant_peptides_filter.fasta \
+  --exprs-table path/to/expression.tsv \
+  --delimiter '\t' \
+  --tx-id-col 1 \
+  --quant-col 4 \
+  --quant-cutoff 2
+</code></pre>
+<h3 id="filter-by-denylist">Filter by Denylist</h3>
+<p>This example here removes any peptide sequences that appear in the given denylist.</p>
+<p>!!! warning:
+When using novel ORF peptides in a denylist, do not also pass the novel ORF peptide FASTA as an input FASTA, because all novel ORF peptides will be removed from the output.</p>
+<pre><code class="language-bash">moPepGen fitlerFasta \
+  --input-path path/to/variant_peptides.fasta \
+  --output-path path/to/variant_peptides_filter.fasta \
+  --denylist path/to/denylist.fasta
+</code></pre>
+<p>Use the <code>--keep-canonical</code> option to keep peptides that are called from canonical ORFs even if they are in the denylist. Canonical ORFs include coding transcripts with mutation(s) and fusion transcripts where the upstream transcript is coding. Peptides called from circRNAs are considered noncanonical ORFs.</p>
+<pre><code class="language-bash">moPepGen filterFasta \
+  --input-path path/to/variant_peptides.fasta \
+  --output-path path/to/variant_peptides_filter.fasta \
+  --denylist path/to/denylist.fasta \
+  --keep-canonical
+</code></pre>
+<h3 id="complex-filtering">Complex Filtering</h3>
+<p>Sometimes we want a more complex filtering strategy. In the example below, we want to first remove any variant peptides that overlap with any novel ORF peptides, and then filter again based on the expression level.</p>
+<p>Remove variant peptides if they overlap with any novel ORF peptide.</p>
+<pre><code class="language-path">moPepGen fitlerFasta \
+  --input-path variant_peptides.fasta \
+  --output-path variant_peptides_filter.fasta \
+  --denylist novel_orf_peptide.fasta
+</code></pre>
+<p>Filter again with both filtered variant peptides and novel ORF peptides based on expression level.</p>
+<pre><code class="language-path">moPepGen fitlerFasta \
+  --input-path \
+    variant_peptides_filter.fasta \
+    novel_orf_peptide.fasta \
+  --output-path combined_filter.fasta \
+  --exprs-table expression.tsv \
+  --delimiter '\t' \
+  --tx-id-col 1 \
+  --quant-col 4 \
+  --quant-cutoff 2
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../split-fasta/" class="btn btn-neutral float-right" title="splitFasta">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../call-alt-translation/" class="btn btn-neutral" title="callAltTranslation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/zhuchcn/package-moPepGen/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../call-alt-translation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../split-fasta/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

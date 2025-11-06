@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="Chenghao Zhu">
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>generateIndex - moPepGen</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700" />
+
+  <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+  <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "generateIndex";
+    var mkdocs_page_input_path = "generate-index.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> moPepGen</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../basics/">moPepGen Basics</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../quick-start/">Quick Start</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../vignette/">Vignette</a>
+                    </li>
+                </ul>
+                <ul>
+                    <li class="toctree-l1"><a class="reference internal" href="../file-format/">File Format</a>
+                    </li>
+                </ul>
+                <p class="caption"><span class="caption-text">Commands</span></p>
+                <ul class="current">
+                    <li class="toctree-l1 current"><a class="reference internal current" href="./">generateIndex</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#moPepGen.cli.generate_index">moPepGen.cli.generate_index</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#arguments">Arguments</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#input">Input</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#output">Output</a>
+    </li>
+    </ul>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../update-index/">updateIndex</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-vep/">parseVEP</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-reditools/">parseREDItools</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-star-fusion/">parseSTARFusion</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-fusion-catcher/">parseFusionCatcher</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-arriba/">parseArriba</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-rmats/">parseRMATS</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../parse-circexplorer/">parseCIRCexplorer</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-variant/">callVariant</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-novel-orf/">callNovelORF</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../call-alt-translation/">callAltTranslation</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../filter-fasta/">filterFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../split-fasta/">splitFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../merge-fasta/">mergeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../encode-fasta/">encodeFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../decoy-fasta/">decoyFasta</a>
+                    </li>
+                    <li class="toctree-l1"><a class="reference internal" href="../summarize-fasta/">summarizeFasta</a>
+                    </li>
+                </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">moPepGen</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Commands &raquo;</li>
+        
+      
+    
+    <li>generateIndex</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/zhuchcn/package-moPepGen/edit/master/docs/generate-index.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  
+  <hr/>
+</div>
+
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="generateindex">generateIndex</h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="moPepGen.cli.generate_index"></a>
+    <div class="doc doc-contents first">
+
+      <p><code>generateIndex</code> takes the reference genome FASTA, annotation GTF, and the
+translated proteome FASTA file, and processes them so they can be read by
+subsequent moPepGen commands quickly. The outputted index files also contain the
+canonical peptide pool. The index files can then be used in any moPepGen
+command. It is recommended to run <code>generateIndex</code> before any analysis using
+moPepGen to avoid processing the reference files repeatedly and save massive
+time. </p>
+
+
+    </div>
+
+  </div>
+
+<div class="admonition note">
+<p class="admonition-title">Reference Version</p>
+<p>The version of reference genome and proteome FASTA and annotation GTF <strong>MUST</strong> be consistent across all analysis.</p>
+</div>
+<h2 id="usage">Usage</h2>
+<pre><code>usage: moPepGen generateIndex [-h] -o &lt;file&gt; [--gtf-symlink] [-f] [-g &lt;file&gt;]
+                              [-a &lt;file&gt;]
+                              [--reference-source {GENCODE,ENSEMBL}]
+                              [--codon-table {Alternative Flatworm Mitochondrial,Cephalodiscidae Mitochondrial,Mold Mitochondrial,Blepharisma Macronuclear,SGC3,Archaeal,Karyorelict Nuclear,Gracilibacteria,Thraustochytrium Mitochondrial,Trematode Mitochondrial,Hexamita Nuclear,Pterobranchia Mitochondrial,SGC5,Echinoderm Mitochondrial,Mycoplasma,SGC4,SGC2,Pachysolen tannophilus Nuclear,SGC9,Plant Plastid,Mesodinium Nuclear,Candidate Division SR1,Coelenterate Mitochondrial,Standard,Balanophoraceae Plastid,Ascidian Mitochondrial,Condylostoma Nuclear,Ciliate Nuclear,Vertebrate Mitochondrial,Alternative Yeast Nuclear,Scenedesmus obliquus Mitochondrial,Dasycladacean Nuclear,Bacterial,Invertebrate Mitochondrial,Yeast Mitochondrial,SGC8,Euplotid Nuclear,SGC0,SGC1,Spiroplasma,Flatworm Mitochondrial,Chlorophycean Mitochondrial,Blastocrithidia Nuclear,Protozoan Mitochondrial,Peritrich Nuclear}]
+                              [--chr-codon-table [CHR_CODON_TABLE ...]]
+                              [--start-codons [START_CODONS ...]]
+                              [--chr-start-codons [CHR_START_CODONS ...]]
+                              [-p &lt;file&gt;] [--invalid-protein-as-noncoding]
+                              [-c &lt;value&gt;] [--cleavage-exception &lt;value&gt;]
+                              [-m &lt;number&gt;] [-w &lt;number&gt;] [-l &lt;number&gt;]
+                              [-x &lt;number&gt;] [--debug-level &lt;value|number&gt;]
+                              [-q]
+
+Generate genome and proteome index files for moPepGen parsers and peptide
+caller.
+
+options:
+  -h, --help            show this help message and exit
+  -o &lt;file&gt;, --output-dir &lt;file&gt;
+                        Ouput directory for index files. (default: None)
+  --gtf-symlink         Create a symlink of the GTF file instead of copying
+                        it. (default: False)
+  -f, --force           Force write data to index dir. (default: False)
+  --debug-level &lt;value|number&gt;
+                        Debug level. (default: INFO)
+  -q, --quiet           Quiet (default: False)
+
+Reference Files:
+  -g &lt;file&gt;, --genome-fasta &lt;file&gt;
+                        Path to the genome assembly FASTA file. Only ENSEMBL
+                        and GENCODE are supported. Its version must be the
+                        same as the annotation GTF and proteome FASTA
+                        (default: None)
+  -a &lt;file&gt;, --annotation-gtf &lt;file&gt;
+                        Path to the annotation GTF file. Only ENSEMBL and
+                        GENCODE are supported. Its version must be the same as
+                        the genome and proteome FASTA. (default: None)
+  --reference-source {GENCODE,ENSEMBL}
+                        Source of reference genome and annotation. (default:
+                        None)
+  --codon-table {Alternative Flatworm Mitochondrial,Cephalodiscidae Mitochondrial,Mold Mitochondrial,Blepharisma Macronuclear,SGC3,Archaeal,Karyorelict Nuclear,Gracilibacteria,Thraustochytrium Mitochondrial,Trematode Mitochondrial,Hexamita Nuclear,Pterobranchia Mitochondrial,SGC5,Echinoderm Mitochondrial,Mycoplasma,SGC4,SGC2,Pachysolen tannophilus Nuclear,SGC9,Plant Plastid,Mesodinium Nuclear,Candidate Division SR1,Coelenterate Mitochondrial,Standard,Balanophoraceae Plastid,Ascidian Mitochondrial,Condylostoma Nuclear,Ciliate Nuclear,Vertebrate Mitochondrial,Alternative Yeast Nuclear,Scenedesmus obliquus Mitochondrial,Dasycladacean Nuclear,Bacterial,Invertebrate Mitochondrial,Yeast Mitochondrial,SGC8,Euplotid Nuclear,SGC0,SGC1,Spiroplasma,Flatworm Mitochondrial,Chlorophycean Mitochondrial,Blastocrithidia Nuclear,Protozoan Mitochondrial,Peritrich Nuclear}
+                        Codon table. Defaults to &quot;Standard&quot;. Supported codon
+                        tables: {'Alternative Flatworm Mitochondrial',
+                        'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial',
+                        'Blepharisma Macronuclear', 'SGC3', 'Archaeal',
+                        'Karyorelict Nuclear', 'Gracilibacteria',
+                        'Thraustochytrium Mitochondrial', 'Trematode
+                        Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia
+                        Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial',
+                        'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus
+                        Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium
+                        Nuclear', 'Candidate Division SR1', 'Coelenterate
+                        Mitochondrial', 'Standard', 'Balanophoraceae Plastid',
+                        'Ascidian Mitochondrial', 'Condylostoma Nuclear',
+                        'Ciliate Nuclear', 'Vertebrate Mitochondrial',
+                        'Alternative Yeast Nuclear', 'Scenedesmus obliquus
+                        Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial',
+                        'Invertebrate Mitochondrial', 'Yeast Mitochondrial',
+                        'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1',
+                        'Spiroplasma', 'Flatworm Mitochondrial',
+                        'Chlorophycean Mitochondrial', 'Blastocrithidia
+                        Nuclear', 'Protozoan Mitochondrial', 'Peritrich
+                        Nuclear'} (default: Standard)
+  --chr-codon-table [CHR_CODON_TABLE ...]
+                        Chromosome specific codon table. Must be specified in
+                        the format of &quot;chrM:SGC1&quot;, where &quot;chrM&quot; is the
+                        chromosome name and &quot;SGC1&quot; is the codon table to use
+                        to translate genes on chrM. Supported codon tables:
+                        {'Alternative Flatworm Mitochondrial',
+                        'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial',
+                        'Blepharisma Macronuclear', 'SGC3', 'Archaeal',
+                        'Karyorelict Nuclear', 'Gracilibacteria',
+                        'Thraustochytrium Mitochondrial', 'Trematode
+                        Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia
+                        Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial',
+                        'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus
+                        Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium
+                        Nuclear', 'Candidate Division SR1', 'Coelenterate
+                        Mitochondrial', 'Standard', 'Balanophoraceae Plastid',
+                        'Ascidian Mitochondrial', 'Condylostoma Nuclear',
+                        'Ciliate Nuclear', 'Vertebrate Mitochondrial',
+                        'Alternative Yeast Nuclear', 'Scenedesmus obliquus
+                        Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial',
+                        'Invertebrate Mitochondrial', 'Yeast Mitochondrial',
+                        'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1',
+                        'Spiroplasma', 'Flatworm Mitochondrial',
+                        'Chlorophycean Mitochondrial', 'Blastocrithidia
+                        Nuclear', 'Protozoan Mitochondrial', 'Peritrich
+                        Nuclear'}. By default, &quot;SGC1&quot; is assigned to
+                        mitochondrial chromosomes. (default: [])
+  --start-codons [START_CODONS ...]
+                        Default start codon(s) to use for novel ORF
+                        translation. Defaults to [&quot;ATG&quot;]. (default: ['ATG'])
+  --chr-start-codons [CHR_START_CODONS ...]
+                        Chromosome specific start codon(s). For example,
+                        &quot;chrM:ATG,ATA,ATT&quot;.By defualt, mitochondrial
+                        chromosome name is automatically inferred andstart
+                        codon &quot;ATG&quot;, &quot;ATA&quot;, &quot;ATT&quot;, &quot;ATC&quot; and &quot;GTG&quot; are
+                        assigned to it. (default: [])
+  -p &lt;file&gt;, --proteome-fasta &lt;file&gt;
+                        Path to the translated protein sequence FASTA file.
+                        Only ENSEMBL and GENCODE are supported. Its version
+                        must be the same as genome FASTA and annotation GTF.
+                        (default: None)
+  --invalid-protein-as-noncoding
+                        Treat any transcript that the protein sequence is
+                        invalid ( contains the * symbol) as noncoding.
+                        (default: False)
+
+Cleavage Parameters:
+  -c &lt;value&gt;, --cleavage-rule &lt;value&gt;
+                        Enzymatic cleavage rule. (default: trypsin)
+  --cleavage-exception &lt;value&gt;
+                        Enzymatic cleavage exception. (default: auto)
+  -m &lt;number&gt;, --miscleavage &lt;number&gt;
+                        Number of cleavages to allow per non-canonical
+                        peptide. (default: 2)
+  -w &lt;number&gt;, --min-mw &lt;number&gt;
+                        The minimal molecular weight of the non-canonical
+                        peptides. (default: 500.0)
+  -l &lt;number&gt;, --min-length &lt;number&gt;
+                        The minimal length of non-canonical peptides,
+                        inclusive. (default: 7)
+  -x &lt;number&gt;, --max-length &lt;number&gt;
+                        The maximum length of non-canonical peptides,
+                        inclusive. (default: 25)
+
+</code></pre>
+<h2 id="arguments">Arguments</h2>
+<p><strong>-h, --help</strong><br/></p>
+<p style="margin-left: 15px;">
+show this help message and exit
+
+
+</p>
+
+<p><strong>-o, --output-dir</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Ouput directory for index files.
+
+
+</p>
+
+<p><strong>--gtf-symlink</strong><br/></p>
+<p style="margin-left: 15px;">
+Create a symlink of the GTF file instead of copying it.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>-f, --force</strong><br/></p>
+<p style="margin-left: 15px;">
+Force write data to index dir.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>-g, --genome-fasta</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the genome assembly FASTA file. Only ENSEMBL and GENCODE are supported. Its version must be the same as the annotation GTF and proteome FASTA
+
+
+</p>
+
+<p><strong>-a, --annotation-gtf</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the annotation GTF file. Only ENSEMBL and GENCODE are supported. Its version must be the same as the genome and proteome FASTA.
+
+
+</p>
+
+<p><strong>--reference-source</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Source of reference genome and annotation.
+
+ <br/>Choices: ['GENCODE', 'ENSEMBL'] 
+</p>
+
+<p><strong>--codon-table</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Codon table. Defaults to "Standard". Supported codon tables: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'}
+ str <br/>Default: Standard 
+ <br/>Choices: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'} 
+</p>
+
+<p><strong>--chr-codon-table</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Chromosome specific codon table. Must be specified in the format of "chrM:SGC1", where "chrM" is the chromosome name and "SGC1" is the codon table to use to translate genes on chrM. Supported codon tables: {'Alternative Flatworm Mitochondrial', 'Cephalodiscidae Mitochondrial', 'Mold Mitochondrial', 'Blepharisma Macronuclear', 'SGC3', 'Archaeal', 'Karyorelict Nuclear', 'Gracilibacteria', 'Thraustochytrium Mitochondrial', 'Trematode Mitochondrial', 'Hexamita Nuclear', 'Pterobranchia Mitochondrial', 'SGC5', 'Echinoderm Mitochondrial', 'Mycoplasma', 'SGC4', 'SGC2', 'Pachysolen tannophilus Nuclear', 'SGC9', 'Plant Plastid', 'Mesodinium Nuclear', 'Candidate Division SR1', 'Coelenterate Mitochondrial', 'Standard', 'Balanophoraceae Plastid', 'Ascidian Mitochondrial', 'Condylostoma Nuclear', 'Ciliate Nuclear', 'Vertebrate Mitochondrial', 'Alternative Yeast Nuclear', 'Scenedesmus obliquus Mitochondrial', 'Dasycladacean Nuclear', 'Bacterial', 'Invertebrate Mitochondrial', 'Yeast Mitochondrial', 'SGC8', 'Euplotid Nuclear', 'SGC0', 'SGC1', 'Spiroplasma', 'Flatworm Mitochondrial', 'Chlorophycean Mitochondrial', 'Blastocrithidia Nuclear', 'Protozoan Mitochondrial', 'Peritrich Nuclear'}. By default, "SGC1" is assigned to mitochondrial chromosomes.
+ str <br/>Default: [] 
+
+</p>
+
+<p><strong>--start-codons</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Default start codon(s) to use for novel ORF translation. Defaults to ["ATG"].
+ str <br/>Default: ['ATG'] 
+
+</p>
+
+<p><strong>--chr-start-codons</strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Chromosome specific start codon(s). For example, "chrM:ATG,ATA,ATT".By defualt, mitochondrial chromosome name is automatically inferred andstart codon "ATG", "ATA", "ATT", "ATC" and "GTG" are assigned to it.
+ str <br/>Default: [] 
+
+</p>
+
+<p><strong>-p, --proteome-fasta</strong> <strong><em>&lt;file&gt;</em></strong> <em>Path</em><br/></p>
+<p style="margin-left: 15px;">
+Path to the translated protein sequence FASTA file. Only ENSEMBL and GENCODE are supported. Its version must be the same as genome FASTA and annotation GTF.
+
+
+</p>
+
+<p><strong>--invalid-protein-as-noncoding</strong><br/></p>
+<p style="margin-left: 15px;">
+Treat any transcript that the protein sequence is invalid ( contains the * symbol) as noncoding.
+  <br/>Default: False 
+
+</p>
+
+<p><strong>-c, --cleavage-rule</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Enzymatic cleavage rule.
+ str <br/>Default: trypsin 
+ <br/>Choices: ['arg-c', 'asp-n', 'bnps-skatole', 'caspase 1', 'caspase 2', 'caspase 3', 'caspase 4', 'caspase 5', 'caspase 6', 'caspase 7', 'caspase 8', 'caspase 9', 'caspase 10', 'chymotrypsin high specificity', 'chymotrypsin low specificity', 'clostripain', 'cnbr', 'enterokinase', 'factor xa', 'formic acid', 'glutamyl endopeptidase', 'granzyme b', 'hydroxylamine', 'iodosobenzoic acid', 'lysc', 'lysn', 'ntcb', 'pepsin ph1.3', 'pepsin ph2.0', 'proline endopeptidase', 'proteinase k', 'staphylococcal peptidase i', 'thermolysin', 'thrombin', 'trypsin', 'trypsin_exception'] 
+</p>
+
+<p><strong>--cleavage-exception</strong> <strong><em>&lt;value&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Enzymatic cleavage exception.
+ str <br/>Default: auto 
+
+</p>
+
+<p><strong>-m, --miscleavage</strong> <strong><em>&lt;number&gt;</em></strong> <em>int</em><br/></p>
+<p style="margin-left: 15px;">
+Number of cleavages to allow per non-canonical peptide.
+ int <br/>Default: 2 
+
+</p>
+
+<p><strong>-w, --min-mw</strong> <strong><em>&lt;number&gt;</em></strong> <em>float</em><br/></p>
+<p style="margin-left: 15px;">
+The minimal molecular weight of the non-canonical peptides.
+ float <br/>Default: 500.0 
+
+</p>
+
+<p><strong>-l, --min-length</strong> <strong><em>&lt;number&gt;</em></strong> <em>int</em><br/></p>
+<p style="margin-left: 15px;">
+The minimal length of non-canonical peptides, inclusive.
+ int <br/>Default: 7 
+
+</p>
+
+<p><strong>-x, --max-length</strong> <strong><em>&lt;number&gt;</em></strong> <em>int</em><br/></p>
+<p style="margin-left: 15px;">
+The maximum length of non-canonical peptides, inclusive.
+ int <br/>Default: 25 
+
+</p>
+
+<p><strong>--debug-level</strong> <strong><em>&lt;value|number&gt;</em></strong> <em>str</em><br/></p>
+<p style="margin-left: 15px;">
+Debug level.
+ str <br/>Default: INFO 
+
+</p>
+
+<p><strong>-q, --quiet</strong><br/></p>
+<p style="margin-left: 15px;">
+Quiet
+  <br/>Default: False 
+
+</p>
+
+<h2 id="input">Input</h2>
+<p>Three files are required for this command:</p>
+<ol>
+<li>Reference genome FASTA file.</li>
+<li>Genome annotation GTF file.</li>
+<li>Protein sequence FASTA file.</li>
+</ol>
+<p>All three files must be downloaded from the same release version of either <a href="https://www.gencodegenes.org/">GENCODE</a> or <a href="https://useast.ensembl.org/index.html">ENSEMBL</a>. moPepGen does not support reference files from other databases (<em>e.g.</em> RefSeq) at the moment.</p>
+<p>For GENCODE, the primary assembly is recommended (<em>i.e.</em> 'GRCh38.primary_assembly.genome.fa'). For annotation, we recommend using the comprehensive gene annotation file for the primary assembly, which matches with the genome FASTA (<em>e.g.</em> 'gencode.vXX.primary_assembly.annotation.gtf'). The version-matched protein sequence should also be downloaded from GENCODE (<em>e.g.</em> 'gencode.vXX.pc_transcripts.fa').</p>
+<p>Similarly, for ENSEMBL, we recommend using the primary genome assembly and its annotation. The genome FASTA file should resemble 'Homo_sapiens.GRCh38.dna.primary_assembly.fa', the GTF should look like 'Homo_sapiens.GRCh38.XX.chr_patch_hapl_scaff.gtf', and the protein sequence file should look like 'Homo_sapiens.GRCh38.pep.all.fa'.</p>
+<h2 id="output">Output</h2>
+<p>Users usually don't need to worry about the output files of this command. As long as the correct path is provided to subsequent moPepGen commands, the correct index files will be recognized.</p>
+<p>Files are created by this command:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">File Name</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>genome.pkl</code></td>
+<td style="text-align: left;">This file contains the entire reference genome.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>annotation.gtf</code></td>
+<td style="text-align: left;">A copy of the input annotation GTF file. If <code>--gtf-symlink</code> is used (default = <code>False</code>), this will be a symlink pointing to the input file.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>annotation_gene.idx</code></td>
+<td style="text-align: left;">A text file with the location of each gene in the GTF file.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>annotation_tx.idx</code></td>
+<td style="text-align: left;">A text file with the location of each transcript in the GTF file.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>proteome.pkl</code></td>
+<td style="text-align: left;">Contains all protein sequences.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>canonical_peptides_001.pkl</code></td>
+<td style="text-align: left;">Contains nonredundant canonical peptides from the input proteome.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>coding_transcripts.pkl</code></td>
+<td style="text-align: left;">Contains all coding transcripts.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>metadata.json</code></td>
+<td style="text-align: left;">Metadata including software versions as well as enzymes and cleavage parameters used to generate the canoincal peptide pool.</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../update-index/" class="btn btn-neutral float-right" title="updateIndex">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../file-format/" class="btn btn-neutral" title="File Format"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/zhuchcn/package-moPepGen/" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../file-format/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../update-index/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme_extra.js" defer></script>
+    <script src="../js/theme.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
